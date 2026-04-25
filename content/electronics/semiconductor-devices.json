@@ -1,0 +1,66 @@
+{
+  "topic": "Semiconductor Devices",
+  "subject": "Electronics Engineering",
+  "subtopics": ["PN Junction", "Diodes", "BJT", "FET", "Op-Amp"],
+  "flashcards": [
+    {
+      "id": "sd-fc-001",
+      "front": "What is the forward voltage drop of a silicon diode?",
+      "back": "Approximately 0.7V (due to the silicon band gap of ~1.1 eV)",
+      "tags": ["diode", "silicon", "basics"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "sd-fc-002",
+      "front": "What are the three terminals of a BJT?",
+      "back": "Base (B), Collector (C), Emitter (E)",
+      "tags": ["BJT", "terminals"],
+      "difficulty": "easy"
+    }
+  ],
+  "mcqs": [
+    {
+      "id": "sd-mcq-001",
+      "question": "A silicon diode has a forward voltage drop of approximately:",
+      "choices": ["0.3V", "0.7V", "1.1V", "1.4V"],
+      "answer": 1,
+      "explanation": "Silicon PN junctions have a built-in potential of ~0.7V due to the silicon band gap. Germanium diodes drop ~0.3V.",
+      "tags": ["diode", "silicon"],
+      "difficulty": "easy"
+    },
+    {
+      "id": "sd-mcq-002",
+      "question": "In a BJT operating in the active region, the collector current Ic relates to base current Ib by:",
+      "choices": ["Ic = Ib / β", "Ic = β × Ib", "Ic = Ib + Ie", "Ic = α × Ib"],
+      "answer": 1,
+      "explanation": "In active region, Ic = β × Ib where β (hFE) is the DC current gain, typically 20–500 for common BJTs.",
+      "tags": ["BJT", "current gain", "active region"],
+      "difficulty": "medium"
+    }
+  ],
+  "formulas": [
+    {
+      "id": "sd-f-001",
+      "name": "Shockley Diode Equation",
+      "latex": "I_D = I_S \\left(e^{\\frac{V_D}{nV_T}} - 1\\right)",
+      "variables": {
+        "I_D": "Diode current (A)",
+        "I_S": "Reverse saturation current (~10⁻¹² A for Si)",
+        "V_D": "Applied voltage (V)",
+        "n":   "Ideality factor (1 ideal, 2 recombination dominated)",
+        "V_T": "Thermal voltage = kT/q ≈ 26mV at 300K"
+      },
+      "tags": ["diode", "Shockley"]
+    },
+    {
+      "id": "sd-f-002",
+      "name": "BJT Current Relationships",
+      "latex": "I_E = I_C + I_B,\\quad I_C = \\beta I_B,\\quad I_C = \\alpha I_E",
+      "variables": {
+        "α": "Common-base current gain = β/(β+1)",
+        "β": "Common-emitter current gain (hFE)"
+      },
+      "tags": ["BJT", "current gain"]
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: var(--glow-green); }
+  50%       { box-shadow: 0 0 16px rgba(0,255,65,0.9), 0 0 40px rgba(0,255,65,0.4); }
+}
+
+@keyframes card-flip {
+  0%   { transform: rotateY(0deg); }
+  100% { transform: rotateY(180deg); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scan-line {
+  0%   { background-position: 0 0; }
+  100% { background-position: 0 100vh; }
+}
