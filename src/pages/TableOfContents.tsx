@@ -3,10 +3,10 @@ import { FolderTree, BookOpen } from 'lucide-react'
 
 export default function TableOfContents() {
   const syllabus = [
-    { title: 'Mathematics', topics: ['Algebra', 'Calculus', 'Differential Equations', 'Probability', 'Vector Analysis'] },
-    { title: 'Electronics', topics: ['Solid State Devices', 'Circuit Analysis', 'Digital Electronics', 'Microprocessors', 'Industrial Electronics'] },
-    { title: 'Communications', topics: ['Modulation', 'Wave Propagation', 'Antennas', 'Microwave Systems', 'Satellite Comms'] },
-    { title: 'GEAS', topics: ['Physics', 'Chemistry', 'Thermodynamics', 'Engineering Mechanics', 'Materials Science', 'Economics'] },
+    { title: 'Mathematics', topics: ['Advanced Algebra & Trigonometry', 'Analytical Geometry', 'Calculus', 'Differential Equations', 'Advanced Engineering Math', 'Probability & Statistics'] },
+    { title: 'Electronics Engineering', topics: ['Solid State Devices & Circuits', 'Power Supply & Amplifiers', 'Operational Amplifiers & Oscillators', 'Industrial Electronics', 'Digital Electronics & Microprocessors'] },
+    { title: 'General Engineering and Applied Sciences', topics: ['Physics & Chemistry', 'Engineering Mechanics', 'Thermodynamics', 'Materials Science', 'Engineering Economics & Management'] },
+    { title: 'Electronic Systems and Technologies', topics: ['Radio Communications', 'Data & Digital Communications', 'Microwave & Satellite Communications', 'Acoustics & Broadcasting', 'Wireless & Mobile Systems'] },
   ]
 
   return (

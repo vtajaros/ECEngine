@@ -1,59 +1,28 @@
-// electron/db/database.ts
-// SQLite via sql.js — pure JavaScript, no native compilation needed
-
-import initSqlJs, { Database } from 'sql.js'
+import Database from 'better-sqlite3'
 import { app } from 'electron'
-import * as fs from 'fs'
 import * as path from 'path'
+import * as fs from 'fs'
 
-let db: Database | null = null
-let saveTimer: ReturnType<typeof setTimeout> | null = null
+let db: ReturnType<typeof Database> | null = null
 
-// Where the .db file lives on disk
-const DB_PATH = path.join(app.getPath('userData'), 'ecengine.db')
-
-// sql.js works entirely in memory — we load from file on start,
-// and save back to file after every write operation
-export async function getDatabase(): Promise<Database> {
+export function getDatabase() {
   if (db) return db
 
-  const SQL = await initSqlJs({
-    // sql.js needs its WASM binary — electron-vite will bundle this
-    locateFile: (file: string) =>
-      path.join(__dirname, '../../node_modules/sql.js/dist/', file),
-  })
+  const DB_PATH = path.join(app.getPath('userData'), 'ecengine.db')
 
-  if (fs.existsSync(DB_PATH)) {
-    // Load existing database from disk
-    const fileBuffer = fs.readFileSync(DB_PATH)
-    db = new SQL.Database(fileBuffer)
-    console.log('[DB] Loaded existing database from', DB_PATH)
-  } else {
-    // First run — create fresh database
-    db = new SQL.Database()
-    console.log('[DB] Created new database')
-    initSchema(db)
-    persistToDisk(db)
-  }
+  // Ensure directory exists
+  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })
+
+  db = new Database(DB_PATH)
+  db.pragma('journal_mode = WAL')
+
+  initSchema(db)
 
   return db
 }
 
-// Call this after any INSERT / UPDATE / DELETE
-export function persistToDisk(database: Database) {
-  // Debounce saves — don't hammer disk on rapid writes
-  if (saveTimer) clearTimeout(saveTimer)
-  saveTimer = setTimeout(() => {
-    const data = database.export()
-    const buffer = Buffer.from(data)
-    fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })
-    fs.writeFileSync(DB_PATH, buffer)
-    console.log('[DB] Saved to disk')
-  }, 500)
-}
-
-function initSchema(database: Database) {
-  database.run(`
+function initSchema(database: ReturnType<typeof Database>) {
+  database.exec(`
     CREATE TABLE IF NOT EXISTS topics (
       id          TEXT PRIMARY KEY,
       name        TEXT NOT NULL,
@@ -74,13 +43,12 @@ function initSchema(database: Database) {
     );
 
     CREATE TABLE IF NOT EXISTS progress (
-      card_id       TEXT,
+      card_id       TEXT PRIMARY KEY,
       ease_factor   REAL    DEFAULT 2.5,
       interval      INTEGER DEFAULT 1,
       repetitions   INTEGER DEFAULT 0,
       next_review   TEXT,
-      last_reviewed TEXT,
-      PRIMARY KEY (card_id)
+      last_reviewed TEXT
     );
 
     CREATE TABLE IF NOT EXISTS exam_sessions (
@@ -100,39 +68,18 @@ function initSchema(database: Database) {
   `)
 }
 
-// ── Query helpers ─────────────────────────────────────────
-
-export function queryAll<T = Record<string, unknown>>(
-  database: Database,
-  sql: string,
-  params: unknown[] = []
-): T[] {
+export function query(sql: string, params: unknown[] = []): unknown[] {
+  const database = getDatabase()
   const stmt = database.prepare(sql)
-  stmt.bind(params)
-  const rows: T[] = []
-  while (stmt.step()) {
-    rows.push(stmt.getAsObject() as T)
+  return stmt.all(...params)
+}
+
+export function run(sql: string, params: unknown[] = []): { changes: number; lastInsertRowid: number | bigint } {
+  const database = getDatabase()
+  const stmt = database.prepare(sql)
+  const result = stmt.run(...params)
+  return {
+    changes: result.changes,
+    lastInsertRowid: result.lastInsertRowid
   }
-  stmt.free()
-  return rows
-}
-
-export function queryOne<T = Record<string, unknown>>(
-  database: Database,
-  sql: string,
-  params: unknown[] = []
-): T | null {
-  const rows = queryAll<T>(database, sql, params)
-  return rows[0] ?? null
-}
-
-export function execute(
-  database: Database,
-  sql: string,
-  params: unknown[] = []
-): void {
-  const stmt = database.prepare(sql)
-  stmt.run(params)
-  stmt.free()
-  persistToDisk(database)
 }

@@ -1,6 +1,6 @@
 # ECEngine — Architecture & Project Brief
 > Electronics Engineering Board Exam Review App (Philippines)
-> Theme: Razer-inspired Black & Neon Green | Stack: Electron + React + Node.js
+> Theme: Cyberpunk Black & Neon Green | Stack: Electron + React + Node.js
 
 ---
 
@@ -126,7 +126,7 @@ ecengine/
 │   │
 │   └── styles/
 │       ├── globals.css          # CSS variables, base reset
-│       ├── theme.css            # Razer colorway tokens
+│       ├── theme.css            # Cyberpunk colorway tokens
 │       └── animations.css       # Glow, pulse, flip keyframes
 │
 ├── content/                     # Preloaded ECE content (source of truth)
@@ -555,7 +555,7 @@ Tech stack: Electron 28 + React 18 + Vite + TypeScript + Zustand + SQLite
 KaTeX + Framer Motion.
 
 Design system:
-- Theme: Razer-inspired cyberpunk — black (#0D0D0D) background, neon green 
+- Theme: Cyberpunk — black (#0D0D0D) background, neon green 
   (#00FF41) accents, monospaced fonts (Orbitron display, IBM Plex Mono body)
 - No white backgrounds, no rounded-pill buttons, no pastel colors
 - Components should feel like high-performance engineering tools

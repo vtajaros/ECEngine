@@ -7,7 +7,7 @@ export default function Settings() {
       title: 'Appearance',
       icon: <Monitor size={20} className="text-[#00FF41]" />,
       options: [
-        { label: 'Dark Theme (Razer)', type: 'select', current: 'Default' },
+        { label: 'Dark Theme (Neon)', type: 'select', current: 'Default' },
         { label: 'UI Scaling', type: 'select', current: '100%' },
         { label: 'Reduced Motion', type: 'toggle', current: false },
       ]

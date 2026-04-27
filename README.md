@@ -2,7 +2,7 @@
 
 > Electronics Engineering Board Exam Review App — Philippines
 
-**Theme:** Razer-inspired Black & Neon Green
+**Theme:** Cyberpunk Black & Neon Green
 **Stack:** Electron + React + TypeScript + SQLite + Tailwind CSS
 
 ## Quick Start

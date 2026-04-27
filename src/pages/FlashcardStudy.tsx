@@ -3,6 +3,8 @@ import { FlashDeck } from '../components/flashcard/FlashDeck'
 import { MCQDeck } from '../components/mcq/MCQDeck'
 import { MOCK_FLASHCARDS, MOCK_MCQS } from '../lib/mockData'
 import { Play } from 'lucide-react'
+import { useSessionStore } from '../store/useSessionStore'
+import { motion } from 'framer-motion'
 
 type StudyMode = 'flashcard' | 'mcq'
 type ItemCount = 10 | 25 | 50 | 'all'
@@ -12,30 +14,51 @@ export default function FlashcardStudy() {
   const [topic, setTopic] = useState('electronics')
   const [count, setCount] = useState<ItemCount>(10)
   const [isSessionActive, setIsSessionActive] = useState(false)
+  
+  const startSession = useSessionStore(state => state.startSession)
+  const { currentDeck, currentIndex, isFinished } = useSessionStore()
 
   const handleStart = () => {
     setIsSessionActive(true)
+    const data = mode === 'flashcard' ? MOCK_FLASHCARDS : MOCK_MCQS
+    const selectedCount = count === 'all' ? data.length : count
+    startSession(data.slice(0, selectedCount) as any)
   }
 
   const handleComplete = () => {
-    // Show summary or something, deck handled it mostly
     // setIsSessionActive(false)
   }
+
+  const progress = currentDeck.length > 0 ? (currentIndex / currentDeck.length) * 100 : 0
 
   if (isSessionActive) {
     return (
       <div className="h-full bg-[#0D0D0D] p-6 lg:p-10 flex flex-col relative overflow-y-auto w-full">
         <button 
-          onClick={() => setIsSessionActive(false)}
+          onClick={() => { setIsSessionActive(false); startSession([]) }}
           className="absolute top-6 right-6 px-4 py-2 bg-[#111111] text-[#888888] rounded border border-[#161616] hover:text-[#E8E8E8] hover:border-[rgba(0,255,65,0.3)] transition-colors font-['Rajdhani'] uppercase tracking-wider z-50"
         >
           Exit Session
         </button>
-        {mode === 'flashcard' && <FlashDeck cards={MOCK_FLASHCARDS} onComplete={handleComplete} />}
-        {mode === 'mcq' && <MCQDeck cards={MOCK_MCQS} onComplete={handleComplete} />}
+
+        {/* Global Progress Bar */}
+        {!isFinished && (
+          <div className="fixed top-0 left-0 w-full bg-[#111111] h-1.5 z-50 shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
+            <motion.div
+              className="bg-[#00FF41] h-full shadow-[0_0_12px_rgba(0,255,65,0.8)]"
+              initial={{ width: 0 }}
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.3 }}
+            />
+          </div>
+        )}
+
+        {mode === 'flashcard' && <FlashDeck cards={currentDeck} onComplete={handleComplete} />}
+        {mode === 'mcq' && <MCQDeck cards={currentDeck} onComplete={handleComplete} />}
       </div>
     )
   }
+
 
   return (
     <div className="h-full bg-[#0D0D0D] p-6 lg:p-12 flex items-center justify-center overflow-y-auto">
@@ -79,7 +102,10 @@ export default function FlashcardStudy() {
                 className="w-full bg-[#111111] border border-[#161616] text-[#E8E8E8] py-3 px-4 rounded appearance-none font-['IBM_Plex_Mono'] focus:outline-none focus:border-[rgba(0,255,65,0.5)] transition-colors"
                 style={{ boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)' }}
               >
-                <option value="electronics">Electronics Engineering</option>
+                <option value="electronics-engineering">Electronics Engineering</option>
+                <option value="mathematics">Mathematics</option>
+                <option value="geas">General Engineering and Applied Sciences</option>
+                <option value="est">Electronic Systems and Technologies</option>
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-[#00FF41]">
                 <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">

@@ -59,15 +59,15 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
   const letters = ['A', 'B', 'C', 'D']
 
   return (
-    <div className="flex flex-col items-center justify-center w-full max-w-3xl mx-auto min-h-[500px] mb-12">
+    <div className="flex flex-col items-center justify-center w-full max-w-3xl mx-auto my-4">
       
       {/* Target Question Card */}
-      <div className="w-full bg-[#161616] border border-[#111111] shadow-xl rounded-lg p-8 flex flex-col mb-6 relative">
+      <div className="w-full bg-[#161616] border border-[#111111] shadow-xl rounded-lg p-5 flex flex-col mb-4 relative">
         <div className="absolute top-0 right-8 px-4 py-1 -translate-y-1/2 bg-[#0D0D0D] border border-t-0 rounded-b-md text-xs font-['Rajdhani'] uppercase tracking-widest text-[#00FF41]">
           {card.tags[0] || 'Topic'}
         </div>
         
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-4">
           <div className="text-[#888888] font-['Rajdhani'] text-sm tracking-wider uppercase">
             Question
           </div>
@@ -77,19 +77,19 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
         </div>
 
         <div 
-          className="text-2xl font-medium leading-relaxed text-[#E8E8E8]"
+          className="text-xl font-medium leading-relaxed text-[#E8E8E8]"
           dangerouslySetInnerHTML={{ __html: renderMath(data.question) }}
         />
         
         {data.yearAsked && (
-           <div className="mt-4 text-[#888888] text-sm text-right font-['Rajdhani']">
+           <div className="mt-3 text-[#888888] text-xs text-right font-['Rajdhani']">
              Board Exam {data.yearAsked}
            </div>
         )}
       </div>
 
       {/* Choices */}
-      <div className="w-full grid grid-cols-1 gap-4 select-none">
+      <div className="w-full grid grid-cols-1 gap-3 select-none">
         {data.choices.map((choice, index) => {
           const isSelected = selectedChoice === index
           const isCorrectAnswer = index === data.answer
@@ -113,9 +113,9 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
               onClick={() => handleSelect(index)}
               disabled={showResult}
               whileTap={!showResult ? { scale: 0.98 } : {}}
-              className={`w-full text-left p-4 rounded-lg flex items-center transition-all duration-300 ${btnClass}`}
+              className={`w-full text-left p-3 rounded-lg flex items-center transition-all duration-300 ${btnClass}`}
             >
-              <div className={`w-8 h-8 flex items-center justify-center rounded border font-['Rajdhani'] font-bold text-lg mr-4 flex-shrink-0 ${
+              <div className={`w-6 h-6 flex items-center justify-center rounded border font-['Rajdhani'] font-bold text-sm mr-3 flex-shrink-0 ${
                 showResult && isCorrectAnswer ? 'bg-[#00FF41] text-[#0D0D0D] border-[#00FF41]' :
                 showResult && isSelected ? 'bg-[#FF3333] text-[#E8E8E8] border-[#FF3333]' :
                 'border-[#444] text-[#888888]'
@@ -123,11 +123,11 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
                 {letters[index]}
               </div>
               <div 
-                className="flex-1 text-lg font-medium tracking-wide"
+                className="flex-1 text-base font-medium tracking-wide"
                 dangerouslySetInnerHTML={{ __html: renderMath(choice) }}
               />
-              {showResult && isCorrectAnswer && <CheckCircle2 className="text-[#00FF41] ml-4 flex-shrink-0" size={24} />}
-              {showResult && isSelected && !isCorrectAnswer && <XCircle className="text-[#FF3333] ml-4 flex-shrink-0" size={24} />}
+              {showResult && isCorrectAnswer && <CheckCircle2 className="text-[#00FF41] ml-3 flex-shrink-0" size={20} />}
+              {showResult && isSelected && !isCorrectAnswer && <XCircle className="text-[#FF3333] ml-3 flex-shrink-0" size={20} />}
             </motion.button>
           )
         })}
@@ -139,20 +139,20 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
           <motion.div
             initial={{ opacity: 0, height: 0, y: -20 }}
             animate={{ opacity: 1, height: 'auto', y: 0 }}
-            className="w-full mt-6 bg-[#161616] border-l-4 border-[#00BFFF] p-6 rounded relative overflow-hidden"
+            className="w-full mt-4 bg-[#161616] border-l-4 border-[#00BFFF] p-5 rounded relative overflow-hidden"
           >
-             <h3 className="font-['Rajdhani'] font-bold text-[#00BFFF] text-lg uppercase tracking-wider mb-2">
+             <h3 className="font-['Rajdhani'] font-bold text-[#00BFFF] text-base uppercase tracking-wider mb-2">
                Explanation
              </h3>
              <div 
-               className="text-[#E8E8E8] text-lg leading-relaxed mb-6"
+               className="text-[#E8E8E8] text-base leading-relaxed mb-4"
                dangerouslySetInnerHTML={{ __html: renderMath(data.explanation) }}
              />
              
              <div className="flex justify-end">
                <button 
                  onClick={onNext}
-                 className="px-8 py-3 bg-[#00FF41] text-[#0D0D0D] rounded font-['Rajdhani'] font-bold text-lg hover:bg-[rgba(0,255,65,0.8)] shadow-[0_0_15px_rgba(0,255,65,0.4)] transition-all flex items-center"
+                 className="px-6 py-2 bg-[#00FF41] text-[#0D0D0D] rounded font-['Rajdhani'] font-bold text-base hover:bg-[rgba(0,255,65,0.8)] shadow-[0_0_15px_rgba(0,255,65,0.4)] transition-all flex items-center"
                >
                  Next (Enter)
                </button>
