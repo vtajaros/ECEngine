@@ -72,11 +72,11 @@ export default function Settings() {
 
                   {opt.type === 'action' && (
                     <button className={`px-4 py-2 border rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all ${
-                      opt.danger 
+                      (opt as any).danger 
                         ? 'border-[#FF3333] text-[#FF3333] hover:bg-[rgba(255,51,51,0.1)] hover:shadow-[0_0_10px_rgba(255,51,51,0.5)]' 
                         : 'border-[#00FF41] text-[#00FF41] hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)]'
                     }`}>
-                      {opt.buttonText}
+                      {(opt as any).buttonText}
                     </button>
                   )}
                 </div>

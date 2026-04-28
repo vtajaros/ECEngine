@@ -2,15 +2,14 @@ import React, { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { 
   Home, 
-  Library, 
+  Brain, 
   BookOpen, 
   Sigma, 
-  List, 
-  Download, 
-  BarChart, 
+  Upload, 
   Settings,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Zap
 } from 'lucide-react'
 
 export const AppShell: React.FC = () => {
@@ -18,60 +17,64 @@ export const AppShell: React.FC = () => {
 
   const navItems = [
     { to: '/', label: 'Dashboard', icon: Home },
-    { to: '/flashcards', label: 'Study', icon: BookOpen },
-    { to: '/exam', label: 'Exam Mode', icon: Library },
+    { to: '/flashcards', label: 'Study', icon: Brain },
     { to: '/formulas', label: 'Formulas', icon: Sigma },
-    { to: '/topics', label: 'Topics', icon: List },
-    { to: '/import', label: 'Import', icon: Download },
-    { to: '/stats', label: 'Stats', icon: BarChart },
+    { to: '/topics', label: 'Topics', icon: BookOpen },
+    { to: '/import', label: 'Import', icon: Upload },
     { to: '/settings', label: 'Settings', icon: Settings },
   ]
 
   return (
-    <div className="flex h-screen bg-[#0D0D0D] text-[#E8E8E8] font-['IBM_Plex_Mono'] overflow-hidden">
+    <div className="flex h-screen bg-[#111111] text-[var(--text-primary)] font-['IBM_Plex_Mono'] overflow-hidden">
       {/* Sidebar */}
       <aside 
         className={`${
-          isCollapsed ? 'w-16' : 'w-60'
-        } bg-[#111111] border-r border-[#161616] flex flex-col transition-all duration-300 relative z-20`}
+          isCollapsed ? 'w-[64px]' : 'w-[240px]'
+        } bg-[#0D0D0D] border-r border-[var(--bg-card)] flex flex-col transition-all duration-300 relative z-20 shrink-0`}
       >
-        <div className="h-16 flex items-center justify-between px-4 border-b border-[#161616]">
+        <div className="h-[64px] flex items-center justify-center border-b border-[var(--bg-card)] px-4 mb-4">
+          <Zap className="text-[var(--accent-primary)] shrink-0" size={24} />
           {!isCollapsed && (
-            <span className="font-['Orbitron'] text-[#00FF41] font-bold text-xl tracking-wider">
+            <span className="font-['Orbitron'] text-[var(--accent-primary)] font-bold text-xl ml-3 tracking-wider whitespace-nowrap overflow-hidden transition-all">
               ECEngine
             </span>
           )}
-          <button 
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="text-[#888888] hover:text-[#00FF41] transition-colors p-1 rounded focus:outline-none"
-          >
-            {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-          </button>
         </div>
 
-        <nav className="flex-1 py-4 flex flex-col gap-2 overflow-y-auto overflow-x-hidden">
+        <nav className="flex-1 flex flex-col gap-2 overflow-y-auto overflow-x-hidden px-2">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) => `
-                flex items-center px-4 py-3 mx-2 rounded-r-md transition-all duration-200
+                flex items-center p-3 rounded-md transition-all duration-200 min-w-max border-l-2
                 ${isActive 
-                  ? 'bg-[#161616] text-[#00FF41] border-l-2 border-[#00FF41] shadow-[inset_4px_0_10px_rgba(0,255,65,0.1)]' 
-                  : 'text-[#888888] hover:bg-[#161616] hover:text-[#E8E8E8] border-l-2 border-transparent'
+                  ? 'bg-[var(--accent-glow)] text-[var(--accent-primary)] border-[var(--accent-primary)]' 
+                  : 'text-[var(--text-secondary)] hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)] border-transparent'
                 }
               `}
               title={isCollapsed ? item.label : undefined}
             >
-              <item.icon size={20} className={isCollapsed ? 'mx-auto' : 'mr-3'} />
-              {!isCollapsed && <span className="font-['Rajdhani'] text-lg font-medium tracking-wide">{item.label}</span>}
+              <div className="w-6 flex justify-center shrink-0">
+                <item.icon size={20} />
+              </div>
+              {!isCollapsed && <span className="font-['Rajdhani'] text-lg font-medium tracking-wide ml-3">{item.label}</span>}
             </NavLink>
           ))}
         </nav>
+
+        <div className="p-4 border-t border-[var(--bg-card)] flex justify-end">
+          <button 
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors p-2 rounded focus:outline-none flex justify-center w-full bg-[var(--bg-card)] hover:bg-[var(--bg-elevated)]"
+          >
+            {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          </button>
+        </div>
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 relative overflow-y-auto overflow-x-hidden">
+      <main className="flex-1 relative overflow-y-auto overflow-x-hidden bg-[#111111]">
         <Outlet />
       </main>
     </div>

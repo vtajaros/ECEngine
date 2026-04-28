@@ -84,11 +84,11 @@ export default function ExamMode() {
                  </div>
                  
                  <div className="text-xl text-[#E8E8E8] mb-6 leading-relaxed font-medium">
-                   {currentCard.data.question}
+                   {(currentCard.data as any).question}
                  </div>
 
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                   {currentCard.data.choices?.map((choice: string, idx: number) => (
+                   {(currentCard.data as any).choices?.map((choice: string, idx: number) => (
                      <button 
                        key={idx}
                        onClick={() => rateCard(3)} // Simplified answering for Exam
