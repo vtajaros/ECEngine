@@ -28,7 +28,10 @@ const getQuestionFontSize = (text: string): string => {
 export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onComplete, onExit }) => {
   const [testCards, setTestCards] = useState<Card[]>([])
   const [answers, setAnswers] = useState<Record<string, number>>({}) // card.id -> choiceIndex
-  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set())
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem('bookmarkedIds')
+    return saved ? new Set(JSON.parse(saved)) : new Set()
+  })
   const [viewState, setViewState] = useState<ViewState>('test')
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
   
@@ -39,14 +42,6 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
   useEffect(() => {
     let finalCards = [...cards]
     
-    // Optionally filter bookmarked
-    if (settings.bookmarkedOnly) {
-      // In a real scenario, we'd fetch bookmarked from user's save. 
-      // For now, this is a mock.
-      // finalCards = finalCards.filter(c => bookmarkedIds.has(c.id))
-      // It might be empty, so we keep it as is if empty for fallback.
-    }
-
     if (settings.shuffleQuestions) {
       finalCards.sort(() => Math.random() - 0.5)
     }
@@ -87,6 +82,7 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
       const next = new Set(prev)
       if (next.has(cardId)) next.delete(cardId)
       else next.add(cardId)
+      localStorage.setItem('bookmarkedIds', JSON.stringify(Array.from(next)))
       return next
     })
   }

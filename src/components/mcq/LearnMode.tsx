@@ -39,7 +39,10 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
   const [viewState, setViewState] = useState<ViewState>('question')
   const [selectedChoiceIndex, setSelectedChoiceIndex] = useState<number | null>(null)
   const [choiceStatus, setChoiceStatus] = useState<QuestionStatus>('unanswered')
-  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set())
+  const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(() => {
+    const saved = localStorage.getItem('bookmarkedIds')
+    return saved ? new Set(JSON.parse(saved)) : new Set()
+  })
   
   // Tracking
   const [partitionWrongIds, setPartitionWrongIds] = useState<Set<string>>(new Set())
@@ -104,12 +107,14 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [handleKeyDown])
 
-  const toggleBookmark = () => {
-    if (!currentCard) return
+  const toggleBookmark = (id?: string) => {
+    const targetId = typeof id === 'string' ? id : currentCard?.id
+    if (!targetId) return
     setBookmarkedIds(prev => {
       const next = new Set(prev)
-      if (next.has(currentCard.id)) next.delete(currentCard.id)
-      else next.add(currentCard.id)
+      if (next.has(targetId)) next.delete(targetId)
+      else next.add(targetId)
+      localStorage.setItem('bookmarkedIds', JSON.stringify(Array.from(next)))
       return next
     })
   }
@@ -261,8 +266,8 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
             <div className="inline-block bg-[#0D0D0D] border border-[#333] px-6 py-3 rounded-lg">
               <span className="text-[#E8E8E8] font-['Rajdhani'] text-lg font-bold tracking-wider">
                 {isLastPartition 
-                  ? `${overallCorrectFirstTryCount} / ${cards.length} correct on first try` 
-                  : `${partitionCorrectFirstTryCount} / ${currentPartitionCards.length} correct on first try`}
+                  ? `${overallCorrectFirstTryCount} / ${cards.length} flawless answers` 
+                  : `${partitionCorrectFirstTryCount} / ${currentPartitionCards.length} flawless answers`}
               </span>
             </div>
           </div>
@@ -288,6 +293,13 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
                       <span className="font-['Rajdhani'] font-bold text-[#888] whitespace-nowrap mt-0.5">Q{overallPos}</span>
                       <div className="text-[#E8E8E8] font-['IBM_Plex_Mono'] text-[13px] leading-relaxed flex-1" dangerouslySetInnerHTML={{ __html: renderMath(mcq.question) }} />
                       <div className="flex items-center gap-2 shrink-0 mt-0.5">
+                        <button 
+                          onClick={() => toggleBookmark(c.id)}
+                          className={`p-1 rounded transition-colors ${bookmarkedIds.has(c.id) ? 'text-[#FFB800] bg-[#FFB800]/10' : 'text-[#555] hover:text-[#FFB800] hover:bg-[#FFB800]/5'}`}
+                          title="Bookmark Question"
+                        >
+                          <Bookmark className={`w-4 h-4 ${bookmarkedIds.has(c.id) ? 'fill-current' : ''}`} />
+                        </button>
                         {stat.usedIDK && (
                           <span className="text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded bg-[#FFB800]/20 text-[#FFB800] border border-[#FFB800]/30">IDK</span>
                         )}
@@ -397,7 +409,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
         >
           {/* Bookmark Togggle */}
           <button 
-            onClick={toggleBookmark}
+            onClick={() => toggleBookmark()}
             className="absolute top-6 right-6 text-[#666] hover:text-[var(--warning)] transition-colors"
             title="Bookmark"
           >
@@ -441,8 +453,6 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
                 }
               }
 
-              const isKeyboardHint = viewState === 'question'
-
               return (
                 <button
                   key={idx}
@@ -454,7 +464,6 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
                     {String.fromCharCode(65 + idx)}.
                   </span>
                   <div className={`flex-1 break-words leading-snug pt-0.5 font-['IBM_Plex_Mono'] ${textClass}`} dangerouslySetInnerHTML={{ __html: renderMath(choice) }} />
-                  {isKeyboardHint && <span className="text-[#333] font-['IBM_Plex_Mono'] text-xs ml-3 border border-[#333] rounded px-1.5 py-0.5 shrink-0 mt-0.5">{idx + 1}</span>}
                 </button>
               )
             })}

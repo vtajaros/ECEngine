@@ -38,7 +38,10 @@ const MOCK_SETS: StudySet[] = [
 
 export default function FlashcardStudy() {
   const navigate = useNavigate()
-  const [allSets, setAllSets] = useState<StudySet[]>(MOCK_SETS)
+  const [allSets, setAllSets] = useState<StudySet[]>(() => {
+    const savedMastery = JSON.parse(localStorage.getItem('setMastery') || '{}');
+    return MOCK_SETS.map(s => ({ ...s, mastery: savedMastery[s.id] !== undefined ? savedMastery[s.id] : s.mastery }));
+  })
   const [setToDelete, setSetToDelete] = useState<StudySet | null>(null)
   const [deleteCountdown, setDeleteCountdown] = useState(0)
 
@@ -59,9 +62,12 @@ export default function FlashcardStudy() {
             description: row.description || 'User-created set',
             subject: SUBJECT_MAP[row.subject] || 'ELECS',
             count: row.card_count || 0,
-            mastery: 0,
+            mastery: JSON.parse(localStorage.getItem('setMastery') || '{}')[row.id] || 0,
           }))
-          setAllSets([...MOCK_SETS, ...dbSets])
+          setAllSets(prev => {
+            const nonDb = prev.filter(s => !s.id.startsWith('topic_'));
+            return [...nonDb, ...dbSets];
+          })
         }
       } catch (err) {
         console.error('Failed to load DB sets', err)
@@ -105,6 +111,7 @@ export default function FlashcardStudy() {
   
   const [isSessionActive, setIsSessionActive] = useState(false)
   const [activeSessionTitle, setActiveSessionTitle] = useState('')
+  const [activeSessionSetId, setActiveSessionSetId] = useState('')
   const startSession = useSessionStore(state => state.startSession)
   const { currentDeck, currentIndex, isFinished } = useSessionStore()
 
@@ -114,7 +121,8 @@ export default function FlashcardStudy() {
     type: 'MCQ', // 'MCQ', 'Flashcard', 'Written'
     shuffleQuestions: false,
     shuffleChoices: false,
-    bookmarkedOnly: false
+    bookmarkedOnly: false,
+    itemCount: 'All' as 'All' | number
   })
 
   // Pre-Test Settings Modal State
@@ -123,7 +131,8 @@ export default function FlashcardStudy() {
     instantChecking: false,
     shuffleQuestions: false,
     shuffleChoices: false,
-    bookmarkedOnly: false
+    bookmarkedOnly: false,
+    itemCount: 'All' as 'All' | number
   })
 
   // Open learn settings
@@ -168,6 +177,7 @@ export default function FlashcardStudy() {
     setMode('learn')
     setShowSettingsModal({ isOpen: false, setId: null })
     setIsSessionActive(true)
+    setActiveSessionSetId(setId)
 
     const setInfo = allSets.find(s => s.id === setId)
     if (setInfo) setActiveSessionTitle(setInfo.title)
@@ -200,9 +210,37 @@ export default function FlashcardStudy() {
 
     if (filteredData.length === 0) filteredData = MOCK_MCQS;
 
+    if (learnSettings.bookmarkedOnly) {
+      const savedBookmarks = localStorage.getItem('bookmarkedIds')
+      const bookmarkedSet = savedBookmarks ? new Set<string>(JSON.parse(savedBookmarks)) : new Set<string>()
+      filteredData = filteredData.filter(card => bookmarkedSet.has(card.id))
+    }
+
     // Apply basic shuffles if needed
     if (learnSettings.shuffleQuestions) {
       filteredData = [...filteredData].sort(() => Math.random() - 0.5)
+    }
+
+    if (learnSettings.shuffleChoices) {
+      filteredData = filteredData.map(card => {
+        if (card.type === 'mcq' && card.data && Array.isArray(card.data.choices)) {
+          const originalAnswer = card.data.choices[card.data.answer]
+          const shuffledChoices = [...card.data.choices].sort(() => Math.random() - 0.5)
+          return {
+            ...card,
+            data: {
+              ...card.data,
+              choices: shuffledChoices,
+              answer: shuffledChoices.indexOf(originalAnswer)
+            }
+          }
+        }
+        return card
+      })
+    }
+
+    if (learnSettings.itemCount !== 'All' && filteredData.length > learnSettings.itemCount) {
+      filteredData = filteredData.slice(0, learnSettings.itemCount)
     }
 
     startSession(filteredData as any)
@@ -214,6 +252,7 @@ export default function FlashcardStudy() {
     setMode('test')
     setShowTestModal({ isOpen: false, setId: null })
     setIsSessionActive(true)
+    setActiveSessionSetId(setId)
 
     const setInfo = allSets.find(s => s.id === setId)
     if (setInfo) setActiveSessionTitle(setInfo.title)
@@ -246,8 +285,36 @@ export default function FlashcardStudy() {
 
     if (filteredData.length === 0) filteredData = MOCK_MCQS;
 
+    if (testSettings.bookmarkedOnly) {
+      const savedBookmarks = localStorage.getItem('bookmarkedIds')
+      const bookmarkedSet = savedBookmarks ? new Set<string>(JSON.parse(savedBookmarks)) : new Set<string>()
+      filteredData = filteredData.filter(card => bookmarkedSet.has(card.id))
+    }
+
     if (testSettings.shuffleQuestions) {
       filteredData = [...filteredData].sort(() => Math.random() - 0.5)
+    }
+
+    if (testSettings.shuffleChoices) {
+      filteredData = filteredData.map(card => {
+        if (card.type === 'mcq' && card.data && Array.isArray(card.data.choices)) {
+          const originalAnswer = card.data.choices[card.data.answer]
+          const shuffledChoices = [...card.data.choices].sort(() => Math.random() - 0.5)
+          return {
+            ...card,
+            data: {
+              ...card.data,
+              choices: shuffledChoices,
+              answer: shuffledChoices.indexOf(originalAnswer)
+            }
+          }
+        }
+        return card
+      })
+    }
+
+    if (testSettings.itemCount !== 'All' && filteredData.length > testSettings.itemCount) {
+      filteredData = filteredData.slice(0, testSettings.itemCount)
     }
 
     startSession(filteredData as any)
@@ -267,7 +334,20 @@ export default function FlashcardStudy() {
           title={activeSessionTitle}
           onComplete={(stats) => {
             console.log('Learn Mode Stats:', stats)
-            // handle summary or save to db
+            const total = stats.correct + stats.wrong;
+            if (total > 0 && activeSessionSetId) {
+              const runMastery = Math.round((stats.correct / total) * 100);
+              setAllSets(prev => prev.map(s => {
+                if (s.id === activeSessionSetId) {
+                  const newMastery = s.mastery === 0 ? runMastery : Math.round((s.mastery + runMastery) / 2);
+                  const saved = JSON.parse(localStorage.getItem('setMastery') || '{}');
+                  saved[s.id] = newMastery;
+                  localStorage.setItem('setMastery', JSON.stringify(saved));
+                  return { ...s, mastery: newMastery };
+                }
+                return s;
+              }));
+            }
           }}
           onExit={() => setIsSessionActive(false)} 
         />
@@ -351,26 +431,56 @@ export default function FlashcardStudy() {
 
               {/* Body */}
               <div className="p-6 flex flex-col gap-6">
-                
-                {/* Question Type */}
-                <div className="flex flex-col gap-3">
-                  <label className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888]">Question Type</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {['MCQ', 'Flashcard', 'Written'].map(type => (
-                      <button
-                        key={type}
-                        onClick={() => setLearnSettings(s => ({ ...s, type }))}
-                        className={`py-2 rounded font-['Rajdhani'] uppercase tracking-wider text-sm transition-all border ${
-                          learnSettings.type === type 
-                            ? 'bg-[rgba(0,255,65,0.1)] border-[#00FF41] text-[#00FF41]' 
-                            : 'bg-[#161616] border-[#333] text-[#888] hover:border-[#555]'
-                        }`}
-                      >
-                        {type}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+
+                {/* Item Count */}
+                {(() => {
+                  const setInfo = allSets.find(s => s.id === showSettingsModal.setId)
+                  if (!setInfo || setInfo.count <= 20) return null
+                  
+                  const options = ['All', ...[20, 50, 100].filter(c => c < setInfo.count)]
+                  return (
+                    <div className="flex flex-col gap-3">
+                      <label className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888]">Number of Items</label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {options.map(count => (
+                          <button
+                            key={count}
+                            onClick={() => setLearnSettings(s => ({ ...s, itemCount: count as any }))}
+                            className={`py-2 rounded font-['Rajdhani'] uppercase tracking-wider text-sm transition-all border ${
+                              learnSettings.itemCount === count 
+                                ? 'bg-[rgba(0,255,65,0.1)] border-[#00FF41] text-[#00FF41]' 
+                                : 'bg-[#161616] border-[#333] text-[#888] hover:border-[#555]'
+                            }`}
+                          >
+                            {count}
+                          </button>
+                        ))}
+                        <input
+                          type="number"
+                          min="1"
+                          max={setInfo.count}
+                          placeholder="Custom"
+                          value={typeof learnSettings.itemCount === 'number' && !options.includes(learnSettings.itemCount) ? learnSettings.itemCount : ''}
+                          onChange={e => {
+                            if (e.target.value === '') {
+                              setLearnSettings(s => ({ ...s, itemCount: 'All' }))
+                              return
+                            }
+                            const val = parseInt(e.target.value)
+                            if (!isNaN(val)) {
+                              setLearnSettings(s => ({ ...s, itemCount: Math.min(Math.max(val, 1), setInfo.count) }))
+                            }
+                          }}
+                          className={`py-2 px-1 rounded font-['Rajdhani'] uppercase tracking-wider text-sm transition-all border outline-none text-center bg-[#161616] ${
+                            typeof learnSettings.itemCount === 'number' && !options.includes(learnSettings.itemCount)
+                              ? 'bg-[rgba(0,255,65,0.1)] border-[#00FF41] text-[#00FF41]' 
+                              : 'border-[#333] text-[#888] hover:border-[#555] focus:border-[#555] placeholder-[#555]'
+                          }`}
+                        />
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 {/* Toggles */}
                 <div className="flex flex-col gap-3">
@@ -387,6 +497,19 @@ export default function FlashcardStudy() {
                       </div>
                       <div className={`w-10 h-5 rounded-full transition-colors relative ${learnSettings.shuffleQuestions ? 'bg-[rgba(0,255,65,0.2)]' : 'bg-[#222]'}`}>
                         <div className={`absolute top-1 max-w-[calc(100%-8px)] h-3 w-3 rounded-full transition-all ${learnSettings.shuffleQuestions ? 'bg-[#00FF41] left-6' : 'bg-[#888] left-1'}`} />
+                      </div>
+                    </button>
+
+                    <button 
+                      onClick={() => setLearnSettings(s => ({ ...s, shuffleChoices: !s.shuffleChoices }))}
+                      className="flex items-center justify-between p-3 bg-[#161616] rounded border border-[#222] hover:border-[#333] transition-colors"
+                    >
+                      <div className="flex items-center gap-3 text-[#E8E8E8] font-['Rajdhani'] tracking-wider text-sm">
+                        <Shuffle className="w-4 h-4 text-[#888]" />
+                        Shuffle Choices
+                      </div>
+                      <div className={`w-10 h-5 rounded-full transition-colors relative ${learnSettings.shuffleChoices ? 'bg-[rgba(0,255,65,0.2)]' : 'bg-[#222]'}`}>
+                        <div className={`absolute top-1 max-w-[calc(100%-8px)] h-3 w-3 rounded-full transition-all ${learnSettings.shuffleChoices ? 'bg-[#00FF41] left-6' : 'bg-[#888] left-1'}`} />
                       </div>
                     </button>
 
@@ -463,6 +586,56 @@ export default function FlashcardStudy() {
               {/* Body */}
               <div className="p-6 flex flex-col gap-6">
                 
+                {/* Item Count */}
+                {(() => {
+                  const setInfo = allSets.find(s => s.id === showTestModal.setId)
+                  if (!setInfo || setInfo.count <= 20) return null
+                  
+                  const options = ['All', ...[20, 50, 100].filter(c => c < setInfo.count)]
+                  return (
+                    <div className="flex flex-col gap-3">
+                      <label className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888]">Number of Items</label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {options.map(count => (
+                          <button
+                            key={count}
+                            onClick={() => setTestSettings(s => ({ ...s, itemCount: count as any }))}
+                            className={`py-2 rounded font-['Rajdhani'] uppercase tracking-wider text-sm transition-all border ${
+                              testSettings.itemCount === count 
+                                ? 'bg-[rgba(0,255,65,0.1)] border-[#00FF41] text-[#00FF41]' 
+                                : 'bg-[#161616] border-[#333] text-[#888] hover:border-[#555]'
+                            }`}
+                          >
+                            {count}
+                          </button>
+                        ))}
+                        <input
+                          type="number"
+                          min="1"
+                          max={setInfo.count}
+                          placeholder="Custom"
+                          value={typeof testSettings.itemCount === 'number' && !options.includes(testSettings.itemCount) ? testSettings.itemCount : ''}
+                          onChange={e => {
+                            if (e.target.value === '') {
+                              setTestSettings(s => ({ ...s, itemCount: 'All' }))
+                              return
+                            }
+                            const val = parseInt(e.target.value)
+                            if (!isNaN(val)) {
+                              setTestSettings(s => ({ ...s, itemCount: Math.min(Math.max(val, 1), setInfo.count) }))
+                            }
+                          }}
+                          className={`py-2 px-1 rounded font-['Rajdhani'] uppercase tracking-wider text-sm transition-all border outline-none text-center bg-[#161616] ${
+                            typeof testSettings.itemCount === 'number' && !options.includes(testSettings.itemCount)
+                              ? 'bg-[rgba(0,255,65,0.1)] border-[#00FF41] text-[#00FF41]' 
+                              : 'border-[#333] text-[#888] hover:border-[#555] focus:border-[#555] placeholder-[#555]'
+                          }`}
+                        />
+                      </div>
+                    </div>
+                  )
+                })()}
+
                 {/* Toggles */}
                 <div className="flex flex-col gap-3">
                   <label className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888]">Options</label>
