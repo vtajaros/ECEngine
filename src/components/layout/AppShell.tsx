@@ -5,7 +5,8 @@ import {
   Brain, 
   BookOpen, 
   Sigma, 
-  Upload, 
+  Upload,
+  PlusSquare,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -20,7 +21,7 @@ export const AppShell: React.FC = () => {
     { to: '/flashcards', label: 'Study', icon: Brain },
     { to: '/formulas', label: 'Formulas', icon: Sigma },
     { to: '/topics', label: 'Topics', icon: BookOpen },
-    { to: '/import', label: 'Import', icon: Upload },
+    { to: '/add-set', label: 'Add Flashcard Sets', icon: PlusSquare },
     { to: '/settings', label: 'Settings', icon: Settings },
   ]
 

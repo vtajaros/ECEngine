@@ -7,6 +7,7 @@ import { Bookmark, Play, AlertCircle, ArrowRight, Flag } from 'lucide-react'
 
 interface LearnModeProps {
   cards: Card[]
+  title?: string
   onComplete: (stats: { correct: number; wrong: number; bookmarked: number }) => void
   onExit: () => void
 }
@@ -14,7 +15,7 @@ interface LearnModeProps {
 type QuestionStatus = 'unanswered' | 'correct' | 'wrong'
 type ViewState = 'question' | 'feedback' | 'partition-complete' | 'summary'
 
-export const LearnMode: React.FC<LearnModeProps> = ({ cards, onComplete, onExit }) => {
+export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, onExit }) => {
   // Partitioning logic
   const PARTITION_SIZE = 5
   
