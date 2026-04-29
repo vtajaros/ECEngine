@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { Card, MCQData } from '../../types'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bookmark, Play, AlertCircle, ArrowRight, Flag } from 'lucide-react'
+import { renderMath } from '../../lib/latex'
 
 // Partitioned learning mode handling the custom "LEARN" flow
 
@@ -285,9 +286,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
                   >
                     <div className="flex items-start justify-between gap-4 mb-2">
                       <span className="font-['Rajdhani'] font-bold text-[#888] whitespace-nowrap mt-0.5">Q{overallPos}</span>
-                      <p className="text-[#E8E8E8] font-['Outfit'] text-sm leading-relaxed flex-1">
-                        {mcq.question}
-                      </p>
+                      <div className="text-[#E8E8E8] font-['IBM_Plex_Mono'] text-[13px] leading-relaxed flex-1" dangerouslySetInnerHTML={{ __html: renderMath(mcq.question) }} />
                       <div className="flex items-center gap-2 shrink-0 mt-0.5">
                         {stat.usedIDK && (
                           <span className="text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded bg-[#FFB800]/20 text-[#FFB800] border border-[#FFB800]/30">IDK</span>
@@ -297,8 +296,9 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
                         )}
                       </div>
                     </div>
-                    <div className="pl-8">
-                      <span className="text-[#00FF41] font-['Outfit'] text-sm font-medium">✓ {correctAnswerText}</span>
+                    <div className="pl-8 flex items-start gap-2">
+                      <span className="text-[#00FF41] font-bold">✓</span>
+                      <div className="text-[#00FF41] font-['IBM_Plex_Mono'] text-[13px]" dangerouslySetInnerHTML={{ __html: renderMath(correctAnswerText) }} />
                     </div>
                   </motion.div>
                 )
@@ -406,16 +406,15 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
 
           <div className="mb-10 pr-4 max-h-[40vh] overflow-y-auto custom-scrollbar">
             <span className="text-[var(--accent-primary)] font-['IBM_Plex_Mono'] text-sm font-bold tracking-widest mb-3 block">Question {overallCurrentQuestion}</span>
-            <h3 
-              className="text-white font-medium"
+            <div 
+              className="text-white font-medium font-['IBM_Plex_Mono']"
               style={{
                 fontSize: getQuestionFontSize(mcqData.question),
                 lineHeight: 1.6,
                 whiteSpace: 'pre-wrap'
               }}
-            >
-              {mcqData.question}
-            </h3>
+              dangerouslySetInnerHTML={{ __html: renderMath(mcqData.question) }}
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3 mb-8">
@@ -454,7 +453,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
                   <span className={`font-['IBM_Plex_Mono'] mr-3 w-6 flex-shrink-0 ${prefixClass}`}>
                     {String.fromCharCode(65 + idx)}.
                   </span>
-                  <span className={`flex-1 break-words leading-snug pt-0.5 ${textClass}`}>{choice}</span>
+                  <div className={`flex-1 break-words leading-snug pt-0.5 font-['IBM_Plex_Mono'] ${textClass}`} dangerouslySetInnerHTML={{ __html: renderMath(choice) }} />
                   {isKeyboardHint && <span className="text-[#333] font-['IBM_Plex_Mono'] text-xs ml-3 border border-[#333] rounded px-1.5 py-0.5 shrink-0 mt-0.5">{idx + 1}</span>}
                 </button>
               )

@@ -4,6 +4,7 @@ import {
 } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import { parseImportedMCQs } from '../lib/parser'
+import { renderMath } from '../lib/latex'
 import { motion, AnimatePresence } from 'framer-motion'
 
 /* ------------------------------------------------------------------ */
@@ -191,6 +192,7 @@ export default function AddDeck() {
   const [showImportModal, setShowImportModal] = useState(false)
   const [cards, setCards] = useState<ImportedCard[]>([])
   const [saving, setSaving] = useState(false)
+  const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0)
 
   const handleImportCards = (imported: { mcqData?: any }[]) => {
     const newRows: ImportedCard[] = imported.filter(c => c.mcqData).map(c => ({
@@ -198,6 +200,7 @@ export default function AddDeck() {
       mcqData: c.mcqData,
     }))
     setCards(newRows)
+    setSelectedQuestionIndex(0)
     if (!title.trim() && newRows.length > 0) {
       setTitle(`Imported Set — ${new Date().toLocaleDateString()}`)
     }
@@ -394,24 +397,29 @@ export default function AddDeck() {
                   </button>
                 </div>
                 
-                <div className="flex flex-col gap-2">
-                  {cards.slice(0, 5).map((card, idx) => {
+                <div className="flex flex-col gap-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                  {cards.map((card, idx) => {
                     const qText = card.mcqData.question
                     const displayQ = qText.length > 60 ? qText.substring(0, 60) + '...' : qText
+                    const isSelected = idx === selectedQuestionIndex
                     return (
-                      <div key={card.id} className="bg-[#161616] border border-[#222] rounded flex gap-4 items-center p-[10px_16px]">
-                        <span className="font-['Rajdhani'] text-xs uppercase tracking-widest text-[#555] font-bold w-6 shrink-0">Q{idx + 1}</span>
-                        <p className="text-[#E8E8E8] font-['IBM_Plex_Mono'] text-[13px] truncate flex-1">
+                      <div 
+                        key={card.id} 
+                        onClick={() => setSelectedQuestionIndex(idx)}
+                        className={`bg-[#161616] border rounded flex gap-4 items-center p-[10px_16px] cursor-pointer transition-all ${
+                          isSelected 
+                            ? 'border-[#00FF41] shadow-[0_0_15px_rgba(0,255,65,0.2)]' 
+                            : 'border-[#222] hover:border-[#444]'
+                        }`}
+                      >
+                        <span className={`font-['Rajdhani'] text-xs uppercase tracking-widest font-bold w-6 shrink-0 ${isSelected ? 'text-[#00FF41]' : 'text-[#555]'}`}>Q{idx + 1}</span>
+                        <p className={`font-['IBM_Plex_Mono'] text-[13px] truncate flex-1 ${isSelected ? 'text-[#E8E8E8]' : 'text-[#aaa]'}`}>
                           {displayQ}
                         </p>
+                        {isSelected && <Check size={16} className="text-[#00FF41] shrink-0" />}
                       </div>
                     )
                   })}
-                  {cards.length > 5 && (
-                    <div className="text-center py-2 text-[#666] font-['IBM_Plex_Mono'] text-xs">
-                      + {cards.length - 5} more questions
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -420,57 +428,71 @@ export default function AddDeck() {
         </div>
 
         {/* Right Column (40%) */}
-        <div className="flex-[2] flex flex-col gap-4">
-          <label className="text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest">
-            Deck Preview
+        <div className="flex-[2] flex flex-col gap-4 sticky top-[100px] self-start">
+          <label className="text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest flex justify-between">
+            <span>Question Inspector</span>
+            {cards.length > 0 && <span>ITEM {(selectedQuestionIndex + 1).toString().padStart(2, '0')} / {cards.length.toString().padStart(2, '0')}</span>}
           </label>
           
-          <div className="bg-[#161616] border border-[#222] rounded-xl p-6 shadow-xl relative overflow-hidden flex flex-col select-none pointer-events-none min-h-[220px]">
-            {/* Subject Badge */}
-            <div className="flex items-center gap-2 text-[var(--accent-primary)] font-['Rajdhani'] uppercase tracking-widest font-bold text-[10px] mb-4 bg-[var(--accent-primary)]/10 self-start px-2 py-1 rounded">
-              {SUBJECTS.find(s => s.value === subject)?.icon && React.createElement(SUBJECTS.find(s => s.value === subject)!.icon, { size: 12 })}
-              {selectedSubjectShort}
-            </div>
+          <AnimatePresence mode="wait">
+            {cards.length > 0 ? (
+              <motion.div
+                key={selectedQuestionIndex}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+                className="bg-[#161616] border border-[#222] rounded-xl p-6 shadow-xl relative flex flex-col min-h-[300px]"
+              >
+                {/* Question Text */}
+                <div 
+                  className="text-white font-['IBM_Plex_Mono'] text-[15px] leading-relaxed mb-6"
+                  dangerouslySetInnerHTML={{ __html: renderMath(cards[selectedQuestionIndex].mcqData.question) }}
+                />
 
-            <div className="mb-8 flex-1">
-              <h3 className="text-xl font-bold text-white mb-2 font-['Outfit'] line-clamp-2 leading-tight">
-                {title || <span className="text-[#555]">Untitled Deck</span>}
-              </h3>
-              {description && (
-                <p className="text-[#888] text-sm line-clamp-2 font-['Outfit']">{description}</p>
-              )}
-            </div>
-
-            <div className="mt-auto">
-              {/* Mastery Progress (0% because new) */}
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex-1 h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden">
-                  <div className="h-full bg-[var(--accent-primary)]" style={{ width: '0%' }} />
+                {/* Choices */}
+                <div className="flex flex-col gap-3 mt-auto">
+                  {cards[selectedQuestionIndex].mcqData.choices.map((choice: string, cIdx: number) => {
+                    const isCorrect = cards[selectedQuestionIndex].mcqData.answer === String.fromCharCode(65 + cIdx)
+                    return (
+                      <div 
+                        key={cIdx} 
+                        className={`p-3 rounded border flex items-start gap-3 font-['IBM_Plex_Mono'] text-[13px] ${
+                          isCorrect 
+                            ? 'bg-[var(--accent-primary)]/10 border-l-2 border-l-[#00FF41] border-t-transparent border-r-transparent border-b-transparent text-[#00FF41]' 
+                            : 'bg-[#111] border-[#222] text-[#888]'
+                        }`}
+                      >
+                        <span className="font-bold shrink-0 text-current">{String.fromCharCode(65 + cIdx)}.</span>
+                        <div className="text-current" dangerouslySetInnerHTML={{ __html: renderMath(choice) }} />
+                      </div>
+                    )
+                  })}
                 </div>
-                <span className="text-[10px] text-[var(--accent-primary)] font-['IBM_Plex_Mono'] font-bold">0%</span>
-              </div>
-              
-              <div className="flex items-center justify-between text-[#666] text-xs font-['IBM_Plex_Mono'] mb-4">
-                <span>{cards.length} questions</span>
-                <span>•</span>
-                <span>0 mastered</span>
-              </div>
 
-              {/* Fake Buttons */}
-              <div className="flex gap-2">
-                <div className="flex-1 bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] py-2 rounded text-center font-['Rajdhani'] font-bold uppercase tracking-widest text-xs border border-[var(--accent-primary)]/30">
-                  LEARN
+                {/* Metadata */}
+                <div className="mt-6 pt-4 border-t border-[#222] flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 text-[var(--accent-primary)] font-['Rajdhani'] uppercase tracking-widest font-bold text-[10px] bg-[var(--accent-primary)]/10 px-2 py-1 rounded">
+                      {SUBJECTS.find(s => s.value === subject)?.icon && React.createElement(SUBJECTS.find(s => s.value === subject)!.icon, { size: 12 })}
+                      {selectedSubjectShort}
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1 bg-[#111] text-[#888] py-2 rounded text-center font-['Rajdhani'] font-bold uppercase tracking-widest text-xs border border-[#333]">
-                  TEST
-                </div>
+              </motion.div>
+            ) : (
+              <div className="bg-[#161616] border border-[#222] rounded-xl p-6 shadow-xl flex flex-col items-center justify-center min-h-[300px] text-center">
+                <FileText size={48} className="text-[#333] mb-4" />
+                <p className="text-[#666] font-['IBM_Plex_Mono'] text-sm">Import questions to inspect them here.</p>
               </div>
+            )}
+          </AnimatePresence>
+
+          {cards.length > 0 && (
+            <div className="bg-[#111] border border-[#222] rounded p-4 text-[#888] font-['IBM_Plex_Mono'] text-xs leading-relaxed text-center mt-2">
+              After saving, this deck will appear in your Study page under <span className="text-[#E8E8E8] font-bold">{subject}</span>
             </div>
-          </div>
-
-          <div className="bg-[#111] border border-[#222] rounded p-4 text-[#888] font-['IBM_Plex_Mono'] text-xs leading-relaxed text-center mt-2">
-            After saving, this deck will appear in your Study page under <span className="text-[#E8E8E8] font-bold">{subject}</span>
-          </div>
+          )}
         </div>
 
       </div>
