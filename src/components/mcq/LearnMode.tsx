@@ -15,6 +15,13 @@ interface LearnModeProps {
 type QuestionStatus = 'unanswered' | 'correct' | 'wrong'
 type ViewState = 'question' | 'feedback' | 'partition-complete' | 'summary'
 
+const getQuestionFontSize = (text: string): string => {
+  if (text.length < 80)  return '1.5rem'
+  if (text.length < 150) return '1.2rem'
+  if (text.length < 250) return '1rem'
+  return '0.9rem'
+}
+
 export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, onExit }) => {
   // Partitioning logic
   const PARTITION_SIZE = 5
@@ -35,7 +42,9 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
   
   // Tracking
   const [partitionWrongIds, setPartitionWrongIds] = useState<Set<string>>(new Set())
+  const [partitionCorrectIds, setPartitionCorrectIds] = useState<Set<string>>(new Set())
   const [globalStats, setGlobalStats] = useState({ correctFirstTry: 0, wrongFirstTry: 0 })
+  const [cardStats, setCardStats] = useState<Record<string, { wasCorrectFirstTry: boolean, usedIDK: boolean, attemptCount: number }>>({})
 
   // Initialize
   useEffect(() => {
@@ -49,7 +58,9 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
     setCurrentPartitionIndex(0)
     setCurrentCardIndex(0)
     setPartitionWrongIds(new Set())
+    setPartitionCorrectIds(new Set())
     setViewState('question')
+    setCardStats({})
   }, [cards])
 
   const currentCard = activeQueue[currentCardIndex]
@@ -67,10 +78,8 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
     }
     
     if (viewState === 'partition-complete') {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault()
-        startNextPartitionPhase()
-      }
+      // Allow enter to continue, but we need to know what button it triggers.
+      // Easiest is to ignore Enter on this screen since there are multiple buttons (Restart vs Continue).
       return
     }
 
@@ -112,15 +121,30 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
 
     setSelectedChoiceIndex(isIdk ? null : choiceIdx)
     
+    setCardStats(prev => {
+      const existing = prev[currentCard.id] || { wasCorrectFirstTry: true, usedIDK: false, attemptCount: 0 }
+      const newStats = { ...existing }
+      newStats.attemptCount += 1
+      if (isIdk) {
+        newStats.usedIDK = true
+        newStats.wasCorrectFirstTry = false
+      } else if (!isCorrect) {
+        newStats.wasCorrectFirstTry = false
+      }
+      return { ...prev, [currentCard.id]: newStats }
+    })
+    
     if (isCorrect) {
       setChoiceStatus('correct')
+      setPartitionCorrectIds(prev => new Set(prev).add(currentCard.id))
+      setPartitionWrongIds(prev => { const next = new Set(prev); next.delete(currentCard.id); return next })
       if (!partitionWrongIds.has(currentCard.id)) {
         setGlobalStats(s => ({ ...s, correctFirstTry: s.correctFirstTry + 1 }))
       }
     } else {
       setChoiceStatus('wrong')
       setPartitionWrongIds(prev => new Set(prev).add(currentCard.id))
-      // Only penalize global score if it's the first time seeing it
+      setPartitionCorrectIds(prev => { const next = new Set(prev); next.delete(currentCard.id); return next })
       if (!partitionWrongIds.has(currentCard.id)) {
         setGlobalStats(s => ({ ...s, wrongFirstTry: s.wrongFirstTry + 1 }))
       }
@@ -146,12 +170,20 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
     if (partitionWrongIds.size === 0) {
       // All correct!
       setViewState('partition-complete')
+      if (currentPartitionIndex === partitions.length - 1) {
+        onComplete({
+          correct: globalStats.correctFirstTry,
+          wrong: globalStats.wrongFirstTry,
+          bookmarked: bookmarkedIds.size
+        })
+      }
     } else {
       // Retry wrong ones
       const nextQueue = activeQueue.filter(c => partitionWrongIds.has(c.id))
       setActiveQueue(nextQueue)
       setCurrentCardIndex(0)
       setPartitionWrongIds(new Set()) // Reset wrong tracking for this retry loop
+      setPartitionCorrectIds(new Set())
       setViewState('question')
     }
   }
@@ -164,98 +196,190 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
       setActiveQueue([...partitions[nextIdx]])
       setCurrentCardIndex(0)
       setPartitionWrongIds(new Set())
+      setPartitionCorrectIds(new Set())
       setViewState('question')
       setSelectedChoiceIndex(null)
       setChoiceStatus('unanswered')
-    } else {
-      // Finished everything
-      setViewState('summary')
-      onComplete({
-        correct: globalStats.correctFirstTry,
-        wrong: globalStats.wrongFirstTry,
-        bookmarked: bookmarkedIds.size
-      })
     }
+  }
+
+  const handleRestartRound = () => {
+    const currentCards = partitions[currentPartitionIndex]
+    setCardStats(prev => {
+      const next = { ...prev }
+      currentCards.forEach(c => delete next[c.id])
+      return next
+    })
+    setActiveQueue([...currentCards])
+    setCurrentCardIndex(0)
+    setPartitionWrongIds(new Set())
+    setPartitionCorrectIds(new Set())
+    setViewState('question')
+    setSelectedChoiceIndex(null)
+    setChoiceStatus('unanswered')
+  }
+
+  const handleStudyAgain = () => {
+    setCardStats({})
+    setGlobalStats({ correctFirstTry: 0, wrongFirstTry: 0 })
+    setCurrentPartitionIndex(0)
+    setActiveQueue([...partitions[0]])
+    setCurrentCardIndex(0)
+    setPartitionWrongIds(new Set())
+    setPartitionCorrectIds(new Set())
+    setViewState('question')
+    setSelectedChoiceIndex(null)
+    setChoiceStatus('unanswered')
   }
 
   if (!cards || cards.length === 0) return null
 
-  // RENDER SUMMARY
-  if (viewState === 'summary') {
-    return (
-      <div className="flex flex-col items-center justify-center p-8 h-full bg-[#0D0D0D]">
-        <div className="bg-[#161616] p-10 rounded-lg border border-[var(--accent-primary)] shadow-[0_0_30px_rgba(0,255,65,0.2)] max-w-md w-full text-center">
-          <Flag className="w-16 h-16 text-[var(--accent-primary)] mx-auto mb-4" />
-          <h2 className="text-3xl font-['Orbitron'] font-bold text-white mb-6 tracking-wider">LEARNING <span className="text-[var(--accent-primary)]">COMPLETE</span></h2>
-          
-          <div className="space-y-4 mb-8 text-left font-['IBM_Plex_Mono']">
-            <div className="flex justify-between bg-[#111] p-3 rounded border border-[#222]">
-              <span className="text-[#888]">Mastered (1st Try):</span>
-              <span className="text-[var(--accent-primary)] font-bold">{globalStats.correctFirstTry}</span>
-            </div>
-            <div className="flex justify-between bg-[#111] p-3 rounded border border-[#222]">
-              <span className="text-[#888]">Needed Retry:</span>
-              <span className="text-[#FF3333] font-bold">{globalStats.wrongFirstTry}</span>
-            </div>
-            <div className="flex justify-between bg-[#111] p-3 rounded border border-[#222]">
-              <span className="text-[#888]">Bookmarked:</span>
-              <span className="text-[#FFB800] font-bold">{bookmarkedIds.size}</span>
-            </div>
-          </div>
-          
-          <button onClick={onExit} className="w-full py-4 bg-[var(--accent-primary)] text-black font-['Rajdhani'] font-bold text-lg uppercase tracking-widest rounded hover:bg-[var(--accent-dim)] transition-colors">
-            Return to Study Hub
-          </button>
-        </div>
-      </div>
-    )
-  }
+  // RENDER SUMMARY / PARTITION COMPLETE
+  if (viewState === 'partition-complete' || viewState === 'summary') {
+    const isLastPartition = currentPartitionIndex === partitions.length - 1
+    const currentPartitionCards = partitions[currentPartitionIndex]
+    const partitionCorrectFirstTryCount = currentPartitionCards.filter(c => cardStats[c.id]?.wasCorrectFirstTry).length
+    const overallCorrectFirstTryCount = cards.filter(c => cardStats[c.id]?.wasCorrectFirstTry).length
 
-  // RENDER PARTITION COMPLETE
-  if (viewState === 'partition-complete') {
     return (
-      <div className="flex flex-col items-center justify-center p-8 h-full bg-[#0D0D0D]">
+      <div className="flex flex-col items-center justify-center p-6 lg:p-10 h-full bg-[#0D0D0D]">
         <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-[#161616] p-10 rounded-lg border border-[#333] flex flex-col items-center max-w-md w-full"
+          initial={{ y: "100%", opacity: 0 }}
+          animate={{ y: "0%", opacity: 1 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="bg-[#111] border border-[#222] rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col max-w-3xl w-full h-[80vh] max-h-[800px] overflow-hidden"
         >
-          <div className="w-20 h-20 rounded-full bg-[var(--accent-glow)] flex items-center justify-center mb-6">
-            <AlertCircle className="w-10 h-10 text-[var(--accent-primary)]" />
+          {/* Header */}
+          <div className="p-8 border-b border-[#222] text-center bg-[#161616] shrink-0">
+            <h2 className="text-4xl font-['Orbitron'] font-bold text-[#00FF41] mb-2 tracking-widest uppercase">
+              {isLastPartition ? 'Set Complete! 🎉' : 'Round Complete'}
+            </h2>
+            <p className="text-[#888] font-['IBM_Plex_Mono'] mb-6">
+              {isLastPartition ? `You've reviewed all ${cards.length} questions` : "Here's what you just studied"}
+            </p>
+            <div className="inline-block bg-[#0D0D0D] border border-[#333] px-6 py-3 rounded-lg">
+              <span className="text-[#E8E8E8] font-['Rajdhani'] text-lg font-bold tracking-wider">
+                {isLastPartition 
+                  ? `${overallCorrectFirstTryCount} / ${cards.length} correct on first try` 
+                  : `${partitionCorrectFirstTryCount} / ${currentPartitionCards.length} correct on first try`}
+              </span>
+            </div>
           </div>
-          <h2 className="text-2xl font-['Orbitron'] font-bold text-white mb-2">Partition {currentPartitionIndex + 1} Cleared!</h2>
-          <p className="text-[#888] font-['IBM_Plex_Mono'] text-center mb-8">You've successfully mastered this block of {partitions[currentPartitionIndex].length} cards.</p>
-          
-          <button 
-            onClick={startNextPartitionPhase}
-            className="w-full py-3 bg-[#111] border border-[var(--accent-primary)] text-[var(--accent-primary)] font-['Rajdhani'] font-bold text-lg uppercase tracking-widest rounded hover:bg-[var(--accent-glow)] transition-colors flex items-center justify-center"
-          >
-            Continue <ArrowRight className="ml-2 w-5 h-5" />
-          </button>
+
+          {/* Question Review List */}
+          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-[#0D0D0D]">
+            <div className="flex flex-col gap-2">
+              {currentPartitionCards.map((c, idx) => {
+                const stat = cardStats[c.id] || { wasCorrectFirstTry: false, usedIDK: false, attemptCount: 0 }
+                const mcq = c.data as MCQData
+                const correctAnswerText = mcq.choices[mcq.answer]
+                const overallPos = (currentPartitionIndex * PARTITION_SIZE) + idx + 1
+
+                return (
+                  <motion.div 
+                    key={c.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="bg-[#161616] border border-[rgba(0,255,65,0.15)] rounded-lg p-[12px_16px] mb-2 shrink-0"
+                  >
+                    <div className="flex items-start justify-between gap-4 mb-2">
+                      <span className="font-['Rajdhani'] font-bold text-[#888] whitespace-nowrap mt-0.5">Q{overallPos}</span>
+                      <p className="text-[#E8E8E8] font-['Outfit'] text-sm leading-relaxed flex-1">
+                        {mcq.question}
+                      </p>
+                      <div className="flex items-center gap-2 shrink-0 mt-0.5">
+                        {stat.usedIDK && (
+                          <span className="text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded bg-[#FFB800]/20 text-[#FFB800] border border-[#FFB800]/30">IDK</span>
+                        )}
+                        {!stat.wasCorrectFirstTry && !stat.usedIDK && (
+                          <span className="text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded bg-[#FF3333]/20 text-[#FF3333] border border-[#FF3333]/30">Missed</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="pl-8">
+                      <span className="text-[#00FF41] font-['Outfit'] text-sm font-medium">✓ {correctAnswerText}</span>
+                    </div>
+                  </motion.div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Footer Buttons */}
+          <div className="p-6 border-t border-[#222] bg-[#161616] flex justify-between gap-4 shrink-0">
+            <button 
+              onClick={handleRestartRound}
+              className="px-6 py-3 bg-[#111] border border-[#00FF41] text-[#00FF41] rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[rgba(0,255,65,0.1)] transition-colors"
+            >
+              Restart Round
+            </button>
+            {isLastPartition ? (
+              <div className="flex gap-4">
+                <button 
+                  onClick={onExit}
+                  className="px-6 py-3 bg-[#222] text-[#E8E8E8] rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[#333] transition-colors"
+                >
+                  Exit
+                </button>
+                <button 
+                  onClick={handleStudyAgain}
+                  className="px-8 py-3 bg-[#00FF41] text-black rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[rgba(0,255,65,0.8)] shadow-[0_0_15px_rgba(0,255,65,0.2)] transition-all"
+                >
+                  Study Again
+                </button>
+              </div>
+            ) : (
+              <button 
+                onClick={startNextPartitionPhase}
+                className="px-8 py-3 bg-[#00FF41] text-black rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[rgba(0,255,65,0.8)] shadow-[0_0_15px_rgba(0,255,65,0.2)] transition-all flex items-center"
+              >
+                Continue <ArrowRight className="w-5 h-5 ml-2" />
+              </button>
+            )}
+          </div>
         </motion.div>
       </div>
     )
   }
 
   // RENDER QUESTION OR FEEDBACK
+  // Guards
+  console.log('Current card raw data:', JSON.stringify(currentCard))
   if (!currentCard || !isMcq) return <div className="text-white p-8">Only MCQ implemented for Learn Mode stub.</div>
+  
+  if (!mcqData || !Array.isArray(mcqData.choices) || mcqData.choices.length !== 4) {
+    return (
+      <div style={{color: 'red', padding: 20}}>
+        DEBUG — Bad card data: {JSON.stringify(currentCard.data)}
+      </div>
+    )
+  }
 
   const isBookmarked = bookmarkedIds.has(currentCard.id)
 
+  const originalIndex = cards.findIndex(c => c.id === currentCard.id)
+  const overallCurrentQuestion = originalIndex >= 0 ? originalIndex + 1 : 1
+  const partitionTotal = partitions[currentPartitionIndex].length
+  const totalCorrectInPartition = partitionTotal - activeQueue.length + partitionCorrectIds.size
+  const totalWrongInPartition = partitionWrongIds.size
+
   return (
     <div className="flex flex-col h-full bg-[#0D0D0D] p-6 lg:p-10 relative">
-      <div className="max-w-4xl w-full mx-auto flex justify-between items-center mb-6">
+      <div className="max-w-4xl w-full mx-auto flex justify-between items-start mb-6">
         <div>
-          <div className="text-[#888] font-['IBM_Plex_Mono'] text-sm tracking-widest uppercase mb-1">
-            Partition {currentPartitionIndex + 1} / {partitions.length}
+          <div className="flex items-center gap-4 text-[#E8E8E8] font-['IBM_Plex_Mono'] font-bold text-sm tracking-wider uppercase mb-3">
+            <span>Question {overallCurrentQuestion} of {cards.length}</span>
           </div>
-          <div className="flex gap-1 mt-2">
-            {activeQueue.map((c, i) => (
-              <div 
-                key={i} 
-                className={`w-8 h-1.5 rounded-full ${i === currentCardIndex ? 'bg-[var(--accent-primary)] shadow-[0_0_8px_rgba(0,255,65,0.6)]' : i < currentCardIndex ? 'bg-[#333]' : 'bg-[#1a1a1a]'}`} 
-              />
-            ))}
+          <div className="w-64 bg-[#1a1a1a] h-[6px] rounded-full overflow-hidden mb-3">
+            <div 
+              className="h-full bg-[#00FF41] transition-all duration-300 ease-in-out shadow-[0_0_8px_rgba(0,255,65,0.6)]" 
+              style={{ width: `${(overallCurrentQuestion / cards.length) * 100}%` }} 
+            />
+          </div>
+          <div className="text-[11px] font-['IBM_Plex_Mono'] flex items-center gap-4 text-[#888]">
+            <span className="flex items-center gap-1 text-[#00FF41]"><div className="w-2 h-2 rounded-full bg-[#00FF41]"></div> ✓ {totalCorrectInPartition} correct</span>
+            <span className="flex items-center gap-1 text-[#FF3333]"><div className="w-2 h-2 rounded-full bg-[#FF3333]"></div> ✗ {totalWrongInPartition} to retry</span>
           </div>
         </div>
         
@@ -280,28 +404,41 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
             <Bookmark className={`w-6 h-6 ${isBookmarked ? 'fill-[#FFB800] text-[#FFB800]' : ''}`} />
           </button>
 
-          <div className="mb-10 pr-12">
-            <span className="text-[var(--accent-primary)] font-['IBM_Plex_Mono'] text-sm font-bold tracking-widest mb-3 block">Question</span>
-            <h3 className="text-2xl text-white font-medium leading-relaxed">
+          <div className="mb-10 pr-4 max-h-[40vh] overflow-y-auto custom-scrollbar">
+            <span className="text-[var(--accent-primary)] font-['IBM_Plex_Mono'] text-sm font-bold tracking-widest mb-3 block">Question {overallCurrentQuestion}</span>
+            <h3 
+              className="text-white font-medium"
+              style={{
+                fontSize: getQuestionFontSize(mcqData.question),
+                lineHeight: 1.6,
+                whiteSpace: 'pre-wrap'
+              }}
+            >
               {mcqData.question}
             </h3>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 mb-8">
-            {mcqData.choices?.map((choice: string, idx: number) => {
+          <div className="grid grid-cols-2 gap-3 mb-8">
+            {[0, 2, 1, 3].map((idx) => {
+              const choice = mcqData.choices[idx];
+              if (choice === undefined) return null;
               
-              let btnClass = "border-[#222] bg-[#111] text-[#E8E8E8] hover:border-[var(--accent-dim)] hover:bg-[var(--accent-glow)] cursor-pointer"
+              let btnClass = "border-[#222] bg-[#111] hover:border-[#00FF41] hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] cursor-pointer"
               let prefixClass = "text-[#666]"
+              let textClass = "text-[#E8E8E8]"
 
               if (viewState === 'feedback') {
                 if (idx === mcqData.answer) {
-                  btnClass = "border-[var(--color-correct)] bg-[rgba(0,255,65,0.05)] text-white shadow-[0_0_15px_rgba(0,255,65,0.15)]"
+                  btnClass = "border-[var(--color-correct)] bg-[rgba(0,255,65,0.05)] shadow-[0_0_15px_rgba(0,255,65,0.15)]"
                   prefixClass = "text-[var(--color-correct)] font-bold"
+                  textClass = "text-white"
                 } else if (idx === selectedChoiceIndex) {
-                  btnClass = "border-[var(--color-wrong)] bg-[rgba(255,51,51,0.05)] text-[#aaa]"
+                  btnClass = "border-[var(--color-wrong)] bg-[rgba(255,51,51,0.05)]"
                   prefixClass = "text-[var(--color-wrong)] font-bold"
+                  textClass = "text-[#aaa]"
                 } else {
-                  btnClass = "border-[#222] bg-[#111] text-[#555] opacity-60 cursor-default"
+                  btnClass = "border-[#222] bg-[#111] opacity-60 cursor-default"
+                  textClass = "text-[#555]"
                 }
               }
 
@@ -312,13 +449,13 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
                   key={idx}
                   onClick={() => viewState === 'question' && submitAnswer(idx)}
                   disabled={viewState === 'feedback'}
-                  className={`p-4 rounded-lg border text-left flex items-start transition-all font-['Rajdhani'] text-lg ${btnClass}`}
+                  className={`p-[16px_20px] min-h-[64px] rounded-lg border text-left flex items-start transition-all font-['Rajdhani'] text-lg ${btnClass}`}
                 >
-                  <span className={`font-['IBM_Plex_Mono'] mr-4 w-6 flex-shrink-0 ${prefixClass}`}>
+                  <span className={`font-['IBM_Plex_Mono'] mr-3 w-6 flex-shrink-0 ${prefixClass}`}>
                     {String.fromCharCode(65 + idx)}.
                   </span>
-                  <span className="flex-1">{choice}</span>
-                  {isKeyboardHint && <span className="text-[#333] font-['IBM_Plex_Mono'] text-xs ml-4 border border-[#333] rounded px-1.5 py-0.5">{idx + 1}</span>}
+                  <span className={`flex-1 break-words leading-snug pt-0.5 ${textClass}`}>{choice}</span>
+                  {isKeyboardHint && <span className="text-[#333] font-['IBM_Plex_Mono'] text-xs ml-3 border border-[#333] rounded px-1.5 py-0.5 shrink-0 mt-0.5">{idx + 1}</span>}
                 </button>
               )
             })}

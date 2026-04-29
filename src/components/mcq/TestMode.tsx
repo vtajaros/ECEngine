@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Card, MCQData } from '../../types'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bookmark, Clock, ArrowRight, RefreshCw, ClipboardCheck, X } from 'lucide-react'
+import { Bookmark, Clock, ArrowRight, RefreshCw, ClipboardCheck, X, AlertTriangle } from 'lucide-react'
 
 interface TestModeProps {
   cards: Card[]
@@ -18,11 +18,19 @@ interface TestModeProps {
 
 type ViewState = 'test' | 'summary' | 'review'
 
+const getQuestionFontSize = (text: string): string => {
+  if (text.length < 80)  return '1.5rem'
+  if (text.length < 150) return '1.2rem'
+  if (text.length < 250) return '1rem'
+  return '0.9rem'
+}
+
 export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onComplete, onExit }) => {
   const [testCards, setTestCards] = useState<Card[]>([])
   const [answers, setAnswers] = useState<Record<string, number>>({}) // card.id -> choiceIndex
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set())
   const [viewState, setViewState] = useState<ViewState>('test')
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
   
   const [timeElapsed, setTimeElapsed] = useState(0)
   const [score, setScore] = useState({ correct: 0, total: 0 })
@@ -84,6 +92,7 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
   }
 
   const handleSubmit = () => {
+    setShowSubmitConfirm(false)
     // Score test
     let correct = 0
     testCards.forEach(card => {
@@ -143,7 +152,7 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
         
         {viewState === 'test' ? (
           <button 
-            onClick={handleSubmit}
+            onClick={() => setShowSubmitConfirm(true)}
             className="bg-[var(--accent-primary)] text-black px-6 py-2 rounded font-['Rajdhani'] font-bold tracking-widest uppercase hover:bg-[var(--accent-dim)] transition-colors"
           >
             Submit Test
@@ -250,9 +259,19 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
     <div className="h-full bg-[var(--bg-primary)] flex flex-col relative overflow-hidden">
       {renderTopBar()}
 
-      <div className="flex-1 overflow-y-auto mt-20 p-6 lg:p-12 pb-32 w-full max-w-4xl mx-auto flex flex-col gap-6">
+      <div className="flex-1 overflow-y-auto mt-20 p-6 lg:p-12 pb-32">
+        <div className="w-full max-w-4xl mx-auto flex flex-col gap-6">
         {testCards.map((card, index) => {
+          console.log('Current card raw data:', JSON.stringify(card))
           const mcq = card.data as MCQData
+          if (!mcq || !Array.isArray(mcq.choices) || mcq.choices.length !== 4) {
+            return (
+              <div key={card.id} style={{color: 'red', padding: 20}}>
+                DEBUG — Bad card data: {JSON.stringify(card.data)}
+              </div>
+            )
+          }
+
           const userAnswer = answers[card.id]
           const isAnswered = userAnswer !== undefined
           const isCorrect = isAnswered && userAnswer === mcq.answer
@@ -281,8 +300,14 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
                   Q{index + 1}.
                 </span>
                 
-                <div className="flex-1 flex flex-col">
-                  <h3 className="text-lg font-['Outfit'] text-[var(--text-primary)] leading-snug whitespace-pre-wrap">
+                <div className="flex-1 flex flex-col max-h-[40vh] overflow-y-auto custom-scrollbar pr-2">
+                  <h3 
+                    className="font-['Outfit'] text-[var(--text-primary)] whitespace-pre-wrap"
+                    style={{
+                      fontSize: getQuestionFontSize(mcq.question),
+                      lineHeight: 1.6
+                    }}
+                  >
                     {mcq.question}
                   </h3>
                 </div>
@@ -300,28 +325,36 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
                 </button>
               </div>
 
-              <div className="p-6 flex flex-col gap-3">
-                {mcq.choices.map((choice, cIdx) => {
+              <div className="p-6 grid grid-cols-2 gap-3">
+                {[0, 2, 1, 3].map((cIdx) => {
+                  const choice = mcq.choices[cIdx]
+                  if (choice === undefined) return null
+
                   const isSelected = userAnswer === cIdx
 
-                  let stateStyles = 'border-[#333] hover:border-[#555] bg-[#161616] text-[#E8E8E8]'
+                  let stateStyles = 'border-[#333] hover:border-[#00FF41] hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] bg-[#111] text-[#E8E8E8]'
                   let iconElement = null
+                  let prefixStyles = 'text-[#666]'
 
                   if (showFeedback) {
                     const isChoiceCorrect = cIdx === mcq.answer
 
                     if (isChoiceCorrect) {
-                      stateStyles = 'border-[#00FF41] bg-[rgba(0,255,65,0.1)] text-[#00FF41]'
+                      stateStyles = 'border-[#00FF41] bg-[rgba(0,255,65,0.1)] text-[#00FF41] shadow-[0_0_15px_rgba(0,255,65,0.15)]'
                       iconElement = <div className="text-[#00FF41] font-bold">✓</div>
+                      prefixStyles = 'text-[#00FF41] font-bold'
                     } else if (isSelected && !isChoiceCorrect) {
                       stateStyles = 'border-[#FF003C] bg-[rgba(255,0,60,0.1)] text-[#FF003C]'
                       iconElement = <div className="text-[#FF003C] font-bold">✗</div>
+                      prefixStyles = 'text-[#FF003C] font-bold'
                     } else {
-                      stateStyles = 'border-[#222] bg-[#161616] text-[#666] opacity-60'
+                      stateStyles = 'border-[#222] bg-[#111] text-[#666] opacity-60'
+                      prefixStyles = 'text-[#555]'
                     }
                   } else {
                     if (isSelected) {
                       stateStyles = 'border-[var(--accent-primary)] bg-[rgba(0,255,65,0.1)] text-[var(--accent-primary)]'
+                      prefixStyles = 'text-[var(--accent-primary)] font-bold'
                     }
                   }
 
@@ -332,17 +365,17 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
                       key={cIdx}
                       onClick={() => handleSelectChoice(card.id, cIdx)}
                       disabled={viewState === 'review' || (settings.instantChecking && isAnswered)}
-                      className={`flex items-start text-left p-4 rounded-lg border transition-all duration-200 ${stateStyles} ${
+                      className={`flex items-start text-left p-[16px_20px] min-h-[64px] rounded-lg border transition-all duration-200 ${stateStyles} ${
                         viewState === 'review' || (settings.instantChecking && isAnswered) ? 'cursor-default' : 'cursor-pointer'
                       }`}
                     >
-                      <div className="flex-shrink-0 w-6 h-6 mr-4 flex items-center justify-center font-['Rajdhani'] font-bold rounded bg-[#111] border border-inherit text-xs">
-                        {choiceLabel}
+                      <div className={`flex-shrink-0 mr-3 font-['IBM_Plex_Mono'] ${prefixStyles}`}>
+                        {choiceLabel}.
                       </div>
-                      <span className="font-['Outfit'] flex-1 translate-y-[2px]">{choice}</span>
+                      <span className="font-['Outfit'] flex-1 break-words leading-snug pt-0.5">{choice}</span>
                       
                       {iconElement && (
-                        <div className="ml-4 flex-shrink-0">
+                        <div className="ml-4 flex-shrink-0 mt-0.5">
                           {iconElement}
                         </div>
                       )}
@@ -369,7 +402,59 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
             No questions available for this test.
           </div>
         )}
+        </div>
       </div>
+
+      {/* Submit Confirmation Modal */}
+      <AnimatePresence>
+        {showSubmitConfirm && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#111] border border-[#333] p-8 rounded-xl max-w-md w-full shadow-2xl"
+            >
+              <div className="flex flex-col items-center text-center">
+                <AlertTriangle className="w-16 h-16 text-[#FFB800] mb-4" />
+                <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-2 tracking-widest uppercase">
+                  Submit Test?
+                </h3>
+                
+                {testCards.length - answeredCount > 0 ? (
+                  <p className="text-[#E8E8E8] font-['IBM_Plex_Mono'] mb-6">
+                    You still have <span className="text-[#FF3333] font-bold">{testCards.length - answeredCount}</span> unanswered questions. Are you sure you want to submit?
+                  </p>
+                ) : (
+                  <p className="text-[#E8E8E8] font-['IBM_Plex_Mono'] mb-6">
+                    You have answered all questions. Are you ready to submit and see your score?
+                  </p>
+                )}
+
+                <div className="flex gap-4 w-full">
+                  <button 
+                    onClick={() => setShowSubmitConfirm(false)}
+                    className="flex-1 py-3 bg-[#222] text-[#E8E8E8] rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[#333] transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleSubmit}
+                    className="flex-1 py-3 bg-[var(--accent-primary)] text-black rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-colors shadow-[0_0_15px_rgba(0,255,65,0.2)]"
+                  >
+                    Confirm Submit
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

@@ -11,6 +11,7 @@ function createWindow() {
     backgroundColor: '#0D0D0D', // Instant black background
     show: false, // Don't show until ready
     title: 'ECEngine',
+    autoHideMenuBar: true,
     titleBarStyle: 'hiddenInset',
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),

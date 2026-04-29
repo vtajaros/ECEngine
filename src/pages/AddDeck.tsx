@@ -1,0 +1,486 @@
+import React, { useState, useEffect } from 'react'
+import {
+  X, Save, ArrowLeft, FileText, Upload, AlertCircle, Check, Trash2, Plus, Calculator, FlaskConical, Zap, Cpu
+} from 'lucide-react'
+import { useNavigate, Link } from 'react-router-dom'
+import { parseImportedMCQs } from '../lib/parser'
+import { motion, AnimatePresence } from 'framer-motion'
+
+/* ------------------------------------------------------------------ */
+/*  Types                                                              */
+/* ------------------------------------------------------------------ */
+
+let _uid = 0
+const uid = () => `row_${Date.now()}_${++_uid}`
+
+type Subject = 'Mathematics' | 'General Engineering & Applied Sciences' | 'Electronics Engineering' | 'Electronics Systems & Technologies'
+
+const SUBJECTS: { value: Subject; short: string; icon: any }[] = [
+  { value: 'Mathematics', short: 'MATH', icon: Calculator },
+  { value: 'General Engineering & Applied Sciences', short: 'GEAS', icon: FlaskConical },
+  { value: 'Electronics Engineering', short: 'ELECS', icon: Zap },
+  { value: 'Electronics Systems & Technologies', short: 'EST', icon: Cpu },
+]
+
+/* ------------------------------------------------------------------ */
+/*  Import Modal (fullscreen overlay)                                  */
+/* ------------------------------------------------------------------ */
+
+function ImportModal({ onImportCards, onClose }: { onImportCards: (cards: { term: string; definition: string; mcqData?: any }[]) => void; onClose: () => void }) {
+  const [inputText, setInputText] = useState('')
+  const [previewData, setPreviewData] = useState<any[]>([])
+  const [previewWarnings, setPreviewWarnings] = useState<string[]>([])
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!inputText.trim()) { setPreviewData([]); setPreviewWarnings([]); return }
+      const { cards, warnings } = parseImportedMCQs(inputText)
+      setPreviewData(cards)
+      setPreviewWarnings(warnings)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [inputText])
+
+  const handleImport = () => {
+    if (previewData.length === 0) return
+    const cards = previewData.map((item: any) => ({
+      term: item.question || '', // Used as fallback
+      definition: '', // Not used for MCQ in UI
+      mcqData: item,
+    }))
+    onImportCards(cards)
+    onClose()
+  }
+
+  // Live feedback text
+  let feedbackText = "No questions detected"
+  let feedbackColor = "text-[#666]"
+  
+  if (inputText.trim()) {
+    if (previewData.length > 0 && previewWarnings.length === 0) {
+      feedbackText = `✓ ${previewData.length} questions detected`
+      feedbackColor = "text-[#00FF41]"
+    } else if (previewData.length > 0 && previewWarnings.length > 0) {
+      feedbackText = `${previewData.length} questions parsed, ${previewWarnings.length} blocks had errors`
+      feedbackColor = "text-[#FFB800]"
+    } else if (previewData.length === 0 && previewWarnings.length > 0) {
+      feedbackText = `0 questions parsed, ${previewWarnings.length} blocks had errors`
+      feedbackColor = "text-[#FF3333]"
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4" onClick={onClose}>
+      <div onClick={e => e.stopPropagation()}
+        className="bg-[#161616] border border-[#333] rounded-xl w-full max-w-4xl max-h-[95vh] shadow-2xl flex flex-col animate-[slide-up_0.2s_ease]">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-[#222]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-[rgba(0,255,65,0.08)] border border-[rgba(0,255,65,0.15)] flex items-center justify-center">
+              <FileText size={18} className="text-[#00FF41]" />
+            </div>
+            <div>
+              <h3 className="font-['Rajdhani'] text-[#E8E8E8] font-bold uppercase tracking-wider text-lg">Import MCQ Questions</h3>
+              <p className="text-[11px] text-[#888] font-['IBM_Plex_Mono']">Paste your questions using the format below</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-[#888] hover:text-[#E8E8E8] transition-colors p-2"><X size={20} /></button>
+        </div>
+
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+          
+          {/* Format Guide */}
+          <div className="bg-[#0D0D0D] border-l-4 border-l-[#00FF41] p-[12px_16px] shrink-0 relative">
+            <div className="text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
+              FORMAT GUIDE
+            </div>
+            <pre className="text-[#E8E8E8] text-[13px] font-['IBM_Plex_Mono'] leading-relaxed whitespace-pre">
+{`Q: Your question here
+A: First choice
+B: Second choice
+C: Third choice
+D: Fourth choice
+ANS: B
+
+← blank line between questions →
+
+Q: Second question here
+A: ...
+...
+ANS: D`}
+            </pre>
+          </div>
+
+          {/* Text Area */}
+          <div className="flex flex-col flex-1 min-h-[300px]">
+            <textarea
+              autoFocus
+              value={inputText}
+              onChange={e => setInputText(e.target.value)}
+              placeholder="Paste your MCQ questions here..."
+              className="w-full flex-1 bg-[#0D0D0D] text-[#E8E8E8] border border-[#333] focus:border-[#00FF41] p-5 rounded-t-lg focus:outline-none font-['IBM_Plex_Mono'] text-sm resize-none transition-colors"
+            />
+            {/* Live Feedback Bar */}
+            <div className="bg-[#111] border border-t-0 border-[#333] rounded-b-lg p-3 flex items-center justify-between">
+              <span className={`text-xs font-['IBM_Plex_Mono'] font-bold ${feedbackColor}`}>
+                {feedbackText}
+              </span>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Footer */}
+        <div className="p-6 border-t border-[#222] bg-[#111] flex justify-between items-start rounded-b-xl shrink-0 gap-6">
+          {/* Errors List */}
+          <div className="flex-1 max-h-24 overflow-y-auto pr-2 custom-scrollbar">
+            {previewWarnings.length > 0 && (
+              <div className="flex flex-col gap-1">
+                {previewWarnings.map((warning, idx) => (
+                  <div key={idx} className="text-[#FF3333] text-xs font-['IBM_Plex_Mono'] flex items-start gap-1.5">
+                    <AlertCircle size={12} className="mt-0.5 shrink-0" />
+                    <span>{warning}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-3 shrink-0 mt-auto">
+            <button onClick={onClose} className="px-6 py-2.5 rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold text-[#888] hover:text-[#E8E8E8] hover:bg-[#222] transition-colors">
+              Cancel
+            </button>
+            <button 
+              onClick={handleImport}
+              disabled={previewData.length === 0}
+              className={`px-6 py-2.5 rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all flex items-center gap-2 ${
+                previewData.length > 0
+                  ? 'bg-[var(--accent-primary)] text-black hover:bg-[var(--accent-dim)] shadow-[0_0_15px_rgba(0,255,65,0.2)]'
+                  : 'bg-[#222] text-[#555] cursor-not-allowed'
+              }`}
+            >
+              <Plus size={16} /> Import {previewData.length} Cards
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/*  Main Page                                                          */
+/* ------------------------------------------------------------------ */
+
+interface ImportedCard {
+  id: string;
+  mcqData: any;
+}
+
+export default function AddDeck() {
+  const navigate = useNavigate()
+
+  const [title, setTitle] = useState('')
+  const [description, setDescription] = useState('')
+  const [subject, setSubject] = useState<Subject>('Electronics Engineering')
+
+  const [showImportModal, setShowImportModal] = useState(false)
+  const [cards, setCards] = useState<ImportedCard[]>([])
+  const [saving, setSaving] = useState(false)
+
+  const handleImportCards = (imported: { mcqData?: any }[]) => {
+    const newRows: ImportedCard[] = imported.filter(c => c.mcqData).map(c => ({
+      id: uid(),
+      mcqData: c.mcqData,
+    }))
+    setCards(newRows)
+    if (!title.trim() && newRows.length > 0) {
+      setTitle(`Imported Set — ${new Date().toLocaleDateString()}`)
+    }
+  }
+
+  const handleClear = () => {
+    if (window.confirm('Are you sure you want to clear all imported questions?')) {
+      setCards([])
+    }
+  }
+
+  const handleSave = async () => {
+    if (!title.trim()) { alert('Please enter a title for your set.'); return }
+    if (cards.length === 0) { alert('Please import at least one question.'); return }
+
+    setSaving(true)
+    try {
+      const topicId = 'topic_' + Date.now().toString(36)
+      const topicResult = await (window as any).electron.db.run(
+        `INSERT INTO topics (id, name, subject, description) VALUES (?, ?, ?, ?)`,
+        [topicId, title.trim(), subject, description.trim()]
+      )
+      if (!topicResult.success) throw new Error(topicResult.error || 'Failed to create topic')
+
+      for (const card of cards) {
+        const cardId = 'card_' + Math.random().toString(36).substr(2, 9)
+        const type = 'mcq'
+        const data = {
+          question: card.mcqData.question,
+          choices: card.mcqData.choices,
+          answer: card.mcqData.answer,
+          explanation: card.mcqData.explanation,
+        }
+        
+        const cardResult = await (window as any).electron.db.run(
+          `INSERT INTO cards (id, topic_id, type, data, is_custom) VALUES (?, ?, ?, ?, ?)`,
+          [cardId, topicId, type, JSON.stringify(data), 1]
+        )
+        if (!cardResult.success) throw new Error(cardResult.error || 'Failed to save card')
+      }
+
+      navigate('/flashcards')
+    } catch (err: any) {
+      console.error('Save failed', err)
+      alert('Failed to save: ' + err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const canSave = title.trim().length > 0 && cards.length > 0
+  const selectedSubjectShort = SUBJECTS.find(s => s.value === subject)?.short || ''
+
+  return (
+    <div className="h-full bg-[#0D0D0D] overflow-y-auto flex flex-col">
+      {/* Top Bar */}
+      <div className="sticky top-0 z-30 bg-[#0D0D0D]/90 backdrop-blur-md border-b border-[#1a1a1a] shrink-0">
+        <div className="max-w-[1200px] mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
+          <div className="flex flex-col">
+            <h1 className="font-['Orbitron'] text-2xl font-bold text-[#E8E8E8] tracking-wider mb-1">
+              Add Decks
+            </h1>
+            <div className="text-[#888] font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest flex items-center gap-2">
+              <Link to="/flashcards" className="hover:text-[#E8E8E8] transition-colors">Study</Link>
+              <span className="text-[#444]">›</span>
+              <span className="text-[#E8E8E8]">Add Decks</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <button onClick={() => navigate(-1)}
+              className="px-6 py-2.5 rounded border border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-widest font-bold text-sm">
+              Cancel
+            </button>
+            <div className="relative group">
+              <button 
+                onClick={handleSave} 
+                disabled={!canSave || saving}
+                className={`px-8 py-2.5 rounded font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all flex items-center gap-2 ${
+                  canSave && !saving
+                    ? 'bg-[var(--accent-primary)] text-black hover:bg-[var(--accent-dim)] shadow-[0_0_15px_rgba(0,255,65,0.25)]'
+                    : 'bg-[#222] text-[#555] cursor-not-allowed'
+                }`}
+              >
+                <Save size={16} /> {saving ? 'Saving...' : 'Save Deck'}
+              </button>
+              {!canSave && (
+                <div className="absolute top-full right-0 mt-2 w-48 p-2 bg-[#161616] border border-[#333] rounded shadow-xl text-center text-xs font-['IBM_Plex_Mono'] text-[#888] opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+                  Add a title and import questions to save
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Two-Column */}
+      <div className="max-w-[1200px] mx-auto w-full px-6 lg:px-10 py-8 flex flex-col lg:flex-row gap-[32px] pb-24 flex-1">
+        
+        {/* Left Column (60%) */}
+        <div className="flex-[3] flex flex-col gap-10">
+          
+          {/* Title Section */}
+          <section className="flex flex-col gap-4">
+            <div className="relative">
+              <input
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                maxLength={80}
+                placeholder='Enter deck title, e.g. "Magnetism & Electromagnetism"'
+                className="w-full bg-transparent text-[#E8E8E8] text-[1.5rem] font-['Orbitron'] border-b-2 border-[#333] focus:border-[#00FF41] pb-3 focus:outline-none placeholder:text-[#555] transition-colors tracking-wide pr-16"
+              />
+              <span className="absolute right-0 bottom-4 text-xs font-['IBM_Plex_Mono'] text-[#666]">
+                {title.length} / 80
+              </span>
+            </div>
+            <input
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="Add a description... (optional)"
+              className="w-full bg-transparent text-[#aaa] text-sm font-['IBM_Plex_Mono'] pb-2 focus:outline-none placeholder:text-[#555] transition-colors"
+            />
+          </section>
+
+          {/* Subject Selector */}
+          <section className="flex flex-col gap-3">
+            <label className="text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest">
+              Subject
+            </label>
+            <div className="flex flex-wrap gap-3">
+              {SUBJECTS.map(s => {
+                const Icon = s.icon
+                const isSelected = subject === s.value
+                return (
+                  <button 
+                    key={s.value} 
+                    onClick={() => setSubject(s.value)}
+                    className={`px-4 py-2.5 rounded font-['Rajdhani'] uppercase tracking-widest font-bold text-sm flex items-center gap-2 transition-all ${
+                      isSelected
+                        ? 'bg-[#00FF41] text-black shadow-[0_0_15px_rgba(0,255,65,0.2)]'
+                        : 'bg-[#111] border border-[#00FF41] text-[#888] hover:bg-[#161616]'
+                    }`}
+                  >
+                    <Icon size={16} className={isSelected ? 'text-black' : 'text-[#00FF41]'} />
+                    {s.short}
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+
+          {/* Import Zone */}
+          <section className="flex flex-col gap-3 mt-4">
+            {cards.length === 0 ? (
+              <motion.div 
+                whileHover={{ borderColor: 'rgba(0,255,65,0.7)', backgroundColor: 'rgba(0,255,65,0.06)' }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                onClick={() => setShowImportModal(true)}
+                className="w-full border-2 border-dashed border-[rgba(0,255,65,0.3)] bg-[rgba(0,255,65,0.03)] rounded-xl p-12 flex flex-col items-center justify-center cursor-pointer text-center group"
+              >
+                <div className="w-16 h-16 rounded-full bg-[rgba(0,255,65,0.1)] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <Upload size={32} className="text-[#00FF41]" />
+                </div>
+                <h3 className="font-['Rajdhani'] text-[#E8E8E8] font-bold uppercase tracking-widest text-xl mb-2">
+                  Import MCQ Questions
+                </h3>
+                <p className="text-[#888] font-['IBM_Plex_Mono'] text-sm mb-8">
+                  Paste or drag your Q:/ANS: format
+                </p>
+                <button className="px-6 py-2 bg-[#111] border border-[#00FF41] text-[#00FF41] font-['Rajdhani'] uppercase tracking-widest font-bold text-sm rounded pointer-events-none group-hover:bg-[#00FF41] group-hover:text-black transition-colors">
+                  [ Open Import ]
+                </button>
+              </motion.div>
+            ) : (
+              <div className="flex flex-col gap-6">
+                <div className="flex items-center justify-between border-b border-[#222] pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[rgba(0,255,65,0.1)] flex items-center justify-center">
+                      <Check size={20} className="text-[#00FF41]" />
+                    </div>
+                    <h2 className="font-['Rajdhani'] text-lg uppercase tracking-widest text-[#00FF41] font-bold">
+                      {cards.length} questions imported
+                    </h2>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      if (window.confirm('Are you sure you want to clear and re-import?')) {
+                        setCards([])
+                        setShowImportModal(true)
+                      }
+                    }}
+                    className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888] hover:text-[#E8E8E8] underline underline-offset-4 transition-colors"
+                  >
+                    Re-import
+                  </button>
+                </div>
+                
+                <div className="flex flex-col gap-2">
+                  {cards.slice(0, 5).map((card, idx) => {
+                    const qText = card.mcqData.question
+                    const displayQ = qText.length > 60 ? qText.substring(0, 60) + '...' : qText
+                    return (
+                      <div key={card.id} className="bg-[#161616] border border-[#222] rounded flex gap-4 items-center p-[10px_16px]">
+                        <span className="font-['Rajdhani'] text-xs uppercase tracking-widest text-[#555] font-bold w-6 shrink-0">Q{idx + 1}</span>
+                        <p className="text-[#E8E8E8] font-['IBM_Plex_Mono'] text-[13px] truncate flex-1">
+                          {displayQ}
+                        </p>
+                      </div>
+                    )
+                  })}
+                  {cards.length > 5 && (
+                    <div className="text-center py-2 text-[#666] font-['IBM_Plex_Mono'] text-xs">
+                      + {cards.length - 5} more questions
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </section>
+
+        </div>
+
+        {/* Right Column (40%) */}
+        <div className="flex-[2] flex flex-col gap-4">
+          <label className="text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest">
+            Deck Preview
+          </label>
+          
+          <div className="bg-[#161616] border border-[#222] rounded-xl p-6 shadow-xl relative overflow-hidden flex flex-col select-none pointer-events-none min-h-[220px]">
+            {/* Subject Badge */}
+            <div className="flex items-center gap-2 text-[var(--accent-primary)] font-['Rajdhani'] uppercase tracking-widest font-bold text-[10px] mb-4 bg-[var(--accent-primary)]/10 self-start px-2 py-1 rounded">
+              {SUBJECTS.find(s => s.value === subject)?.icon && React.createElement(SUBJECTS.find(s => s.value === subject)!.icon, { size: 12 })}
+              {selectedSubjectShort}
+            </div>
+
+            <div className="mb-8 flex-1">
+              <h3 className="text-xl font-bold text-white mb-2 font-['Outfit'] line-clamp-2 leading-tight">
+                {title || <span className="text-[#555]">Untitled Deck</span>}
+              </h3>
+              {description && (
+                <p className="text-[#888] text-sm line-clamp-2 font-['Outfit']">{description}</p>
+              )}
+            </div>
+
+            <div className="mt-auto">
+              {/* Mastery Progress (0% because new) */}
+              <div className="flex items-center gap-3 mb-2">
+                <div className="flex-1 h-1.5 bg-[#1a1a1a] rounded-full overflow-hidden">
+                  <div className="h-full bg-[var(--accent-primary)]" style={{ width: '0%' }} />
+                </div>
+                <span className="text-[10px] text-[var(--accent-primary)] font-['IBM_Plex_Mono'] font-bold">0%</span>
+              </div>
+              
+              <div className="flex items-center justify-between text-[#666] text-xs font-['IBM_Plex_Mono'] mb-4">
+                <span>{cards.length} questions</span>
+                <span>•</span>
+                <span>0 mastered</span>
+              </div>
+
+              {/* Fake Buttons */}
+              <div className="flex gap-2">
+                <div className="flex-1 bg-[var(--accent-primary)]/20 text-[var(--accent-primary)] py-2 rounded text-center font-['Rajdhani'] font-bold uppercase tracking-widest text-xs border border-[var(--accent-primary)]/30">
+                  LEARN
+                </div>
+                <div className="flex-1 bg-[#111] text-[#888] py-2 rounded text-center font-['Rajdhani'] font-bold uppercase tracking-widest text-xs border border-[#333]">
+                  TEST
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-[#111] border border-[#222] rounded p-4 text-[#888] font-['IBM_Plex_Mono'] text-xs leading-relaxed text-center mt-2">
+            After saving, this deck will appear in your Study page under <span className="text-[#E8E8E8] font-bold">{subject}</span>
+          </div>
+        </div>
+
+      </div>
+
+      {showImportModal && (
+        <ImportModal
+          onImportCards={handleImportCards}
+          onClose={() => setShowImportModal(false)}
+        />
+      )}
+    </div>
+  )
+}

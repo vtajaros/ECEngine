@@ -21,7 +21,7 @@ export const AppShell: React.FC = () => {
     { to: '/flashcards', label: 'Study', icon: Brain },
     { to: '/formulas', label: 'Formulas', icon: Sigma },
     { to: '/topics', label: 'Topics', icon: BookOpen },
-    { to: '/add-set', label: 'Add Flashcard Sets', icon: PlusSquare },
+    { to: '/add-set', label: 'Add Decks', icon: PlusSquare },
     { to: '/settings', label: 'Settings', icon: Settings },
   ]
 
@@ -36,8 +36,8 @@ export const AppShell: React.FC = () => {
         <div className="h-[64px] flex items-center justify-center border-b border-[var(--bg-card)] px-4 mb-4">
           <Zap className="text-[var(--accent-primary)] shrink-0" size={24} />
           {!isCollapsed && (
-            <span className="font-['Orbitron'] text-[var(--accent-primary)] font-bold text-xl ml-3 tracking-wider whitespace-nowrap overflow-hidden transition-all">
-              ECEngine
+            <span className="font-['Orbitron'] font-bold text-xl ml-3 tracking-wider whitespace-nowrap overflow-hidden transition-all">
+              <span className="text-[var(--accent-primary)]">ECE</span><span className="text-white">ngine</span>
             </span>
           )}
         </div>

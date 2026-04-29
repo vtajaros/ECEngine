@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS topics (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   subject TEXT NOT NULL,
+  description TEXT,
   parent_id TEXT,
   order_index INTEGER DEFAULT 0,
   FOREIGN KEY(parent_id) REFERENCES topics(id)

@@ -85,56 +85,86 @@ export function parseQuizletMCQ(text: string, termDelimiter: string, cardDelimit
   return parsed as { question: string, choices: string[], answer: number, explanation: string }[]
 }
 
-export function parseSmartMCQ(text: string) {
-  if (!text) return []
-
-  const results: { question: string; choices: string[]; answer: number; explanation: string }[] = []
-  const normalized = text.replace(/\r\n/g, '\n')
+export function parseImportedMCQs(rawText: string): {
+  cards: any[],
+  warnings: string[]
+} {
+  const warnings: string[] = []
+  const cards: any[] = []
   
-  // Try finding blocks starting with a number and dot `1. ` or `1) `
-  const blocks = normalized.split(/\n(?=\d+[\.\)])/g)
+  // Step 1: normalize all line endings
+  const normalized = rawText
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
   
-  for (const block of blocks) {
-    if (!block.trim()) continue
+  // Step 2: split into blocks by blank lines
+  const blocks = normalized
+    .split(/\n\s*\n/)
+    .map(b => b.trim())
+    .filter(b => b.length > 0)
+  
+  // Step 3: parse each block
+  blocks.forEach((block, index) => {
+    const lines = block
+      .split('\n')
+      .map(l => l.trim())
+      .filter(l => l.length > 0)
     
-    let question = ''
-    const choices: string[] = []
-    let answerIndex = 0
-    let explanation = 'Imported from smart text.'
-
-    // Grab question until first option
-    const qMatch = block.match(/^(?:\d+[\.\)]\s*)?([\s\S]+?)(?=\n\s*(?:[A-Ea-e][\.\)]))/s)
-    if (qMatch) {
-      question = qMatch[1].trim()
-    } else {
-      question = block.split('\n')[0].trim() // Fallback
+    // Extract each labeled field
+    const qLine = lines.find(l => l.startsWith('Q:'))
+    const aLine = lines.find(l => l.startsWith('A:'))
+    const bLine = lines.find(l => l.startsWith('B:'))
+    const cLine = lines.find(l => l.startsWith('C:'))
+    const dLine = lines.find(l => l.startsWith('D:'))
+    const ansLine = lines.find(l => l.startsWith('ANS:'))
+    
+    // Validate all fields exist
+    if (!qLine) { 
+      warnings.push(`Block ${index + 1}: Missing Q: field`) 
+      return 
     }
-
-    // Extract all choices starting with A. B. C. D.
-    const choiceRegex = /\n\s*([A-Ea-e])[\.\)]\s*([^\n]+)/g
-    let match
-    while ((match = choiceRegex.exec(block)) !== null) {
-       choices.push(match[2].trim())
+    if (!aLine || !bLine || !cLine || !dLine) { 
+      warnings.push(`Block ${index + 1}: Missing one or more choices (A/B/C/D)`) 
+      return 
     }
-
-    // Extract Answer
-    const ansMatch = block.match(/\n\s*(?:Answer|Ans)[\s:=]*([A-Ea-e])/i)
-    if (ansMatch) {
-      const letter = ansMatch[1].toUpperCase()
-      answerIndex = letter.charCodeAt(0) - 65
+    if (!ansLine) { 
+      warnings.push(`Block ${index + 1}: Missing ANS: field`) 
+      return 
     }
-
-    // Explanation
-    const expMatch = block.match(/\n\s*(?:Explanation|Rationale)[\s:=]*([\s\S]+)$/i)
-    if (expMatch) {
-      explanation = expMatch[1].trim()
+    
+    // Strip prefixes
+    const question = qLine.substring(2).trim()
+    const choices = [
+      aLine.substring(2).trim(),
+      bLine.substring(2).trim(),
+      cLine.substring(2).trim(),
+      dLine.substring(2).trim(),
+    ]
+    const answerLetter = ansLine.substring(4).trim().toUpperCase()
+    
+    // Convert answer letter to index
+    const answerMap: Record<string, number> = { 
+      'A': 0, 'B': 1, 'C': 2, 'D': 3 
     }
-
-    if (question && choices.length >= 2) {
-      results.push({ question, choices, answer: answerIndex >= 0 && answerIndex < choices.length ? answerIndex : 0, explanation })
+    const answer = answerMap[answerLetter]
+    
+    // Validate
+    if (!question) { 
+      warnings.push(`Block ${index + 1}: Question text is empty`) 
+      return 
     }
-  }
-
-  return results
+    if (choices.some(c => !c)) { 
+      warnings.push(`Block ${index + 1}: One or more choices are empty`) 
+      return 
+    }
+    if (answer === undefined) { 
+      warnings.push(`Block ${index + 1}: ANS must be A, B, C, or D. Got: ${answerLetter}`) 
+      return 
+    }
+    
+    cards.push({ question, choices, answer, explanation: '' })
+  })
+  
+  return { cards, warnings }
 }
 

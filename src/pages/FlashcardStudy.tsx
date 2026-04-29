@@ -1,11 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FlashDeck } from '../components/flashcard/FlashDeck'
 import { MCQDeck } from '../components/mcq/MCQDeck'
 import { LearnMode } from '../components/mcq/LearnMode'
 import { TestMode } from '../components/mcq/TestMode'
 import { MOCK_FLASHCARDS, MOCK_MCQS } from '../lib/mockData'
-import { Play, ClipboardList, Plus, Settings2, X, Bookmark, Shuffle, Zap } from 'lucide-react'
+import { Play, ClipboardList, Plus, Settings2, X, Bookmark, Shuffle, Zap, Trash2, AlertTriangle } from 'lucide-react'
 import { useSessionStore } from '../store/useSessionStore'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -14,20 +14,92 @@ type Subject = 'MATH' | 'GEAS' | 'ELECS' | 'EST'
 
 const SUBJECTS: Subject[] = ['MATH', 'GEAS', 'ELECS', 'EST']
 
+// Map full subject names (from DB) to short codes used in the UI
+const SUBJECT_MAP: Record<string, Subject> = {
+  'Mathematics': 'MATH',
+  'General Engineering & Applied Sciences': 'GEAS',
+  'Electronics Engineering': 'ELECS',
+  'Electronics Systems & Technologies': 'EST',
+}
+
+interface StudySet {
+  id: string
+  title: string
+  description: string
+  subject: Subject
+  count: number
+  mastery: number
+}
+
 // Temporary Mock Sets for demonstration before DB integeration
-const MOCK_SETS = [
+const MOCK_SETS: StudySet[] = [
   { id: 'set-1', title: 'Set Alpha — Diodes', description: 'Basic PN junction theory & applications', subject: 'ELECS', count: 20, mastery: 45 },
-  { id: 'set-2', title: 'Set Beta — BJT', description: 'Transistor configurations and bias', subject: 'ELECS', count: 35, mastery: 12 },
-  { id: 'set-3', title: 'Operational Amplifiers', description: 'Ideal op-amp characteristics and active filters', subject: 'ELECS', count: 25, mastery: 68 },
-  { id: 'set-4', title: 'Calculus Fundamentals', description: 'Derivatives, Integrals, and Limits', subject: 'MATH', count: 50, mastery: 80 },
-  { id: 'set-5', title: 'Differential Equations', description: 'First-order and linear DEs', subject: 'MATH', count: 30, mastery: 25 },
-  { id: 'set-6', title: 'Thermodynamics', description: 'Laws of thermodynamics and cycles', subject: 'GEAS', count: 40, mastery: 10 },
-  { id: 'set-7', title: 'Material Science', description: 'Stress, strain, and material properties', subject: 'GEAS', count: 25, mastery: 55 },
-  { id: 'set-8', title: 'Digital Communications', description: 'Modulation, sampling, and PCM', subject: 'EST', count: 45, mastery: 30 },
 ]
 
 export default function FlashcardStudy() {
   const navigate = useNavigate()
+  const [allSets, setAllSets] = useState<StudySet[]>(MOCK_SETS)
+  const [setToDelete, setSetToDelete] = useState<StudySet | null>(null)
+  const [deleteCountdown, setDeleteCountdown] = useState(0)
+
+  // Load user-created sets from DB on mount
+  useEffect(() => {
+    async function loadDBSets() {
+      try {
+        if (!window.electron?.db) return
+        const topicsResult = await window.electron.db.query(
+          `SELECT t.id, t.name, t.subject, t.description, COUNT(c.id) as card_count
+           FROM topics t LEFT JOIN cards c ON c.topic_id = t.id
+           GROUP BY t.id`
+        )
+        if (topicsResult.success && topicsResult.data) {
+          const dbSets: StudySet[] = topicsResult.data.map((row: any) => ({
+            id: row.id,
+            title: row.name,
+            description: row.description || 'User-created set',
+            subject: SUBJECT_MAP[row.subject] || 'ELECS',
+            count: row.card_count || 0,
+            mastery: 0,
+          }))
+          setAllSets([...MOCK_SETS, ...dbSets])
+        }
+      } catch (err) {
+        console.error('Failed to load DB sets', err)
+      }
+    }
+    loadDBSets()
+  }, [])
+
+  useEffect(() => {
+    if (setToDelete) {
+      setDeleteCountdown(3)
+      const timer = setInterval(() => {
+        setDeleteCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(timer)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+      return () => clearInterval(timer)
+    }
+  }, [setToDelete])
+
+  const handleConfirmDelete = async () => {
+    if (!setToDelete) return
+    try {
+      if (window.electron?.db && setToDelete.id.startsWith('topic_')) {
+        await window.electron.db.run(`DELETE FROM cards WHERE topic_id = ?`, [setToDelete.id])
+        await window.electron.db.run(`DELETE FROM topics WHERE id = ?`, [setToDelete.id])
+      }
+      setAllSets(prev => prev.filter(s => s.id !== setToDelete.id))
+      setSetToDelete(null)
+    } catch (err) {
+      console.error('Failed to delete set', err)
+    }
+  }
+
   const [mode, setMode] = useState<StudyMode>('flashcard')
   const [activeSubject, setActiveSubject] = useState<Subject>('ELECS')
   
@@ -64,23 +136,67 @@ export default function FlashcardStudy() {
     setShowTestModal({ isOpen: true, setId })
   }
 
-  // Actually start learn mode
-  const handleStartLearn = () => {
+  // Helper to build MCQs out of flashcards dynamically for the Learn/Test view
+  const generateMCQs = (flashcards: any[]) => {
+    return flashcards.map((fc, i) => {
+      const allOtherDefs = flashcards.filter((_, idx) => idx !== i).map(c => c.back)
+      // Pick up to 3 random distractors
+      const shuffledOthers = [...allOtherDefs].sort(() => Math.random() - 0.5).slice(0, 3)
+      const choices = [fc.back, ...shuffledOthers].sort(() => Math.random() - 0.5)
+      const answerIndex = choices.indexOf(fc.back)
+      return {
+        id: fc.id || `card_${i}`,
+        topicId: 'custom',
+        type: 'mcq',
+        difficulty: 'medium',
+        tags: [],
+        isCustom: true,
+        createdAt: new Date().toISOString(),
+        data: {
+          question: fc.front,
+          choices: choices,
+          answer: answerIndex,
+          explanation: ''
+        }
+      }
+    })
+  }
+
+  const handleStartLearn = async () => {
     const setId = showSettingsModal.setId
     if (!setId) return
     setMode('learn')
     setShowSettingsModal({ isOpen: false, setId: null })
     setIsSessionActive(true)
 
-    const setInfo = MOCK_SETS.find(s => s.id === setId)
+    const setInfo = allSets.find(s => s.id === setId)
     if (setInfo) setActiveSessionTitle(setInfo.title)
 
-    // Using MCQ Data for Learn stub implementation
-    let filteredData = MOCK_MCQS;
-    if (activeSubject === 'MATH') filteredData = MOCK_MCQS.filter(c => c.topicId.includes('math') || c.topicId.includes('algebra'));
-    else if (activeSubject === 'ELECS') filteredData = MOCK_MCQS.filter(c => c.topicId.includes('elec') || c.topicId.includes('diode'));
-    else if (activeSubject === 'GEAS') filteredData = MOCK_MCQS.filter(c => c.topicId.includes('geas'));
-    else if (activeSubject === 'EST') filteredData = MOCK_MCQS.filter(c => c.topicId.includes('est') || c.topicId.includes('comms'));
+    let filteredData: any[] = []
+
+    if (setId.startsWith('topic_')) {
+      // Load real cards from DB
+      const res = await window.electron.db.query(`SELECT data, type, id FROM cards WHERE topic_id = ?`, [setId])
+      if (res.success && res.data) {
+        const rawCards = res.data.map((r: any) => ({ data: JSON.parse(r.data), type: r.type, id: r.id }))
+        
+        const mcqs = rawCards.filter((r: any) => r.type === 'mcq').map((r: any) => ({
+          id: r.id, topicId: 'custom', type: 'mcq', difficulty: 'medium', tags: [], isCustom: true, data: r.data
+        }))
+        
+        const flashcards = rawCards.filter((r: any) => r.type !== 'mcq').map((r: any) => ({ ...r.data, id: r.id }))
+        const generated = generateMCQs(flashcards)
+        
+        filteredData = [...mcqs, ...generated]
+      }
+    } else {
+      // Mock flow
+      filteredData = MOCK_MCQS;
+      if (activeSubject === 'MATH') filteredData = MOCK_MCQS.filter(c => c.topicId.includes('math') || c.topicId.includes('algebra'));
+      else if (activeSubject === 'ELECS') filteredData = MOCK_MCQS.filter(c => c.topicId.includes('elec') || c.topicId.includes('diode'));
+      else if (activeSubject === 'GEAS') filteredData = MOCK_MCQS.filter(c => c.topicId.includes('geas'));
+      else if (activeSubject === 'EST') filteredData = MOCK_MCQS.filter(c => c.topicId.includes('est') || c.topicId.includes('comms'));
+    }
 
     if (filteredData.length === 0) filteredData = MOCK_MCQS;
 
@@ -92,22 +208,41 @@ export default function FlashcardStudy() {
     startSession(filteredData as any)
   }
 
-  const handleStartTest = () => {
+  const handleStartTest = async () => {
     const setId = showTestModal.setId
     if (!setId) return
     setMode('test')
     setShowTestModal({ isOpen: false, setId: null })
     setIsSessionActive(true)
 
-    const setInfo = MOCK_SETS.find(s => s.id === setId)
+    const setInfo = allSets.find(s => s.id === setId)
     if (setInfo) setActiveSessionTitle(setInfo.title)
 
-    // Using MCQ Data for Test stub implementation
-    let filteredData = MOCK_MCQS;
-    if (activeSubject === 'MATH') filteredData = MOCK_MCQS.filter(c => c.topicId.includes('math') || c.topicId.includes('algebra'));
-    else if (activeSubject === 'ELECS') filteredData = MOCK_MCQS.filter(c => c.topicId.includes('elec') || c.topicId.includes('diode'));
-    else if (activeSubject === 'GEAS') filteredData = MOCK_MCQS.filter(c => c.topicId.includes('geas'));
-    else if (activeSubject === 'EST') filteredData = MOCK_MCQS.filter(c => c.topicId.includes('est') || c.topicId.includes('comms'));
+    let filteredData: any[] = []
+
+    if (setId.startsWith('topic_')) {
+      // Load real cards from DB
+      const res = await window.electron.db.query(`SELECT data, type, id FROM cards WHERE topic_id = ?`, [setId])
+      if (res.success && res.data) {
+        const rawCards = res.data.map((r: any) => ({ data: JSON.parse(r.data), type: r.type, id: r.id }))
+        
+        const mcqs = rawCards.filter((r: any) => r.type === 'mcq').map((r: any) => ({
+          id: r.id, topicId: 'custom', type: 'mcq', difficulty: 'medium', tags: [], isCustom: true, data: r.data
+        }))
+        
+        const flashcards = rawCards.filter((r: any) => r.type !== 'mcq').map((r: any) => ({ ...r.data, id: r.id }))
+        const generated = generateMCQs(flashcards)
+        
+        filteredData = [...mcqs, ...generated]
+      }
+    } else {
+      // Mock flow
+      filteredData = MOCK_MCQS;
+      if (activeSubject === 'MATH') filteredData = MOCK_MCQS.filter(c => c.topicId.includes('math') || c.topicId.includes('algebra'));
+      else if (activeSubject === 'ELECS') filteredData = MOCK_MCQS.filter(c => c.topicId.includes('elec') || c.topicId.includes('diode'));
+      else if (activeSubject === 'GEAS') filteredData = MOCK_MCQS.filter(c => c.topicId.includes('geas'));
+      else if (activeSubject === 'EST') filteredData = MOCK_MCQS.filter(c => c.topicId.includes('est') || c.topicId.includes('comms'));
+    }
 
     if (filteredData.length === 0) filteredData = MOCK_MCQS;
 
@@ -436,18 +571,29 @@ export default function FlashcardStudy() {
 
       {/* Deck Grid */}
       <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10 pb-12 items-start">
-        {MOCK_SETS.filter(s => s.subject === activeSubject).map(set => (
+        {allSets.filter(s => s.subject === activeSubject).map(set => (
           <div 
             key={set.id} 
             className="bg-[var(--bg-card)] rounded-xl border border-[#222] hover:border-[var(--accent-dim)] transition-all hover:shadow-[0_0_20px_rgba(0,255,65,0.05)] overflow-hidden flex flex-col"
           >
             {/* Card Content */}
             <div className="p-6 flex-1 flex flex-col">
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-xl font-['Orbitron'] font-bold text-[var(--text-primary)] tracking-wide">{set.title}</h3>
-                <span className="text-xs font-['Rajdhani'] px-2 py-1 bg-[#1A1A1A] text-[var(--accent-primary)] rounded border border-[#333]">
-                  {set.count} Items
-                </span>
+              <div className="flex justify-between items-start mb-4 gap-2">
+                <h3 className="text-xl font-['Orbitron'] font-bold text-[var(--text-primary)] tracking-wide flex-1">{set.title}</h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-['Rajdhani'] px-2 py-1 bg-[#1A1A1A] text-[var(--accent-primary)] rounded border border-[#333] whitespace-nowrap">
+                    {set.count} Items
+                  </span>
+                  {set.id !== 'set-1' && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setSetToDelete(set); }}
+                      className="p-1.5 text-[#555] hover:text-[#FF3333] bg-[#1A1A1A] rounded border border-[#333] hover:border-[#FF3333] transition-colors shrink-0"
+                      title="Delete Set"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </div>
               <p className="text-[#888888] text-sm mb-6 flex-1">{set.description}</p>
               
@@ -487,6 +633,57 @@ export default function FlashcardStudy() {
           </div>
         ))}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {setToDelete && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="bg-[#111] border border-[#FF3333] rounded-lg shadow-[0_0_30px_rgba(255,51,51,0.15)] w-full max-w-md overflow-hidden flex flex-col"
+            >
+              <div className="p-6 border-b border-[#222] flex items-center gap-3 bg-[#161616]">
+                <AlertTriangle className="w-6 h-6 text-[#FF3333]" />
+                <h2 className="text-xl font-bold text-[#E8E8E8] font-['Orbitron'] uppercase tracking-wider">
+                  Delete Flashcard Set
+                </h2>
+              </div>
+              <div className="p-6">
+                <p className="text-[#888] font-['Outfit'] mb-4">
+                  Are you absolutely sure you want to delete <strong className="text-[#E8E8E8]">{setToDelete.title}</strong>? 
+                  This action cannot be undone and will permanently remove all {setToDelete.count} questions inside this set.
+                </p>
+              </div>
+              <div className="p-6 border-t border-[#222] bg-[#161616] flex justify-end gap-3">
+                <button 
+                  onClick={() => setSetToDelete(null)}
+                  className="px-5 py-2 rounded bg-transparent border border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-wider text-sm"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleConfirmDelete}
+                  disabled={deleteCountdown > 0}
+                  className={`px-6 py-2 rounded font-bold transition-all font-['Rajdhani'] uppercase tracking-wider text-sm shadow-lg ${
+                    deleteCountdown > 0 
+                      ? 'bg-[#222] text-[#666] border border-[#333] cursor-not-allowed' 
+                      : 'bg-[#FF3333] text-white hover:bg-[#CC0000] shadow-[0_0_15px_rgba(255,51,51,0.3)]'
+                  }`}
+                >
+                  {deleteCountdown > 0 ? `Confirm (${deleteCountdown}s)` : 'Confirm Delete'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
