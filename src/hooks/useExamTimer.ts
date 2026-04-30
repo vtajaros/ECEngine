@@ -27,13 +27,11 @@ export function useExamTimer(initialSeconds: number = 0, isCountdown: boolean = 
           return prev + 1
         })
       }, 1000)
-    } else if (!isActive && seconds !== 0) {
-      if (interval) window.clearInterval(interval)
     }
     return () => {
       if (interval) window.clearInterval(interval)
     }
-  }, [isActive, seconds, isCountdown])
+  }, [isActive, isCountdown])
 
   const formatTime = (totalSeconds: number) => {
     const hours = Math.floor(totalSeconds / 3600)

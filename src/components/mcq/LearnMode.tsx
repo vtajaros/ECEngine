@@ -292,25 +292,25 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
                     <div className="flex items-start justify-between gap-4 mb-2">
                       <span className="font-['Rajdhani'] font-bold text-[#888] whitespace-nowrap mt-0.5">Q{overallPos}</span>
                       <div className="text-[#E8E8E8] font-['IBM_Plex_Mono'] text-[13px] leading-relaxed flex-1" dangerouslySetInnerHTML={{ __html: renderMath(mcq.question) }} />
-                      <div className="flex items-center gap-2 shrink-0 mt-0.5">
-                        <button 
-                          onClick={() => toggleBookmark(c.id)}
-                          className={`p-1 rounded transition-colors ${bookmarkedIds.has(c.id) ? 'text-[#FFB800] bg-[#FFB800]/10' : 'text-[#555] hover:text-[#FFB800] hover:bg-[#FFB800]/5'}`}
-                          title="Bookmark Question"
-                        >
-                          <Bookmark className={`w-4 h-4 ${bookmarkedIds.has(c.id) ? 'fill-current' : ''}`} />
-                        </button>
-                        {stat.usedIDK && (
-                          <span className="text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded bg-[#FFB800]/20 text-[#FFB800] border border-[#FFB800]/30">IDK</span>
-                        )}
-                        {!stat.wasCorrectFirstTry && !stat.usedIDK && (
-                          <span className="text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded bg-[#FF3333]/20 text-[#FF3333] border border-[#FF3333]/30">Missed</span>
-                        )}
-                      </div>
+                      <button 
+                        onClick={() => toggleBookmark(c.id)}
+                        className={`p-1 rounded transition-colors shrink-0 mt-0.5 ${bookmarkedIds.has(c.id) ? 'text-[#FFB800] bg-[#FFB800]/10' : 'text-[#555] hover:text-[#FFB800] hover:bg-[#FFB800]/5'}`}
+                        title="Bookmark Question"
+                      >
+                        <Bookmark className={`w-4 h-4 ${bookmarkedIds.has(c.id) ? 'fill-current' : ''}`} />
+                      </button>
                     </div>
-                    <div className="pl-8 flex items-start gap-2">
-                      <span className="text-[#00FF41] font-bold">✓</span>
-                      <div className="text-[#00FF41] font-['IBM_Plex_Mono'] text-[13px]" dangerouslySetInnerHTML={{ __html: renderMath(correctAnswerText) }} />
+                    <div className="pl-8 flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2">
+                        <span className="text-[#00FF41] font-bold">✓</span>
+                        <div className="text-[#00FF41] font-['IBM_Plex_Mono'] text-[13px]" dangerouslySetInnerHTML={{ __html: renderMath(correctAnswerText) }} />
+                      </div>
+                      {stat.usedIDK && (
+                        <span className="text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded bg-[#FFB800]/20 text-[#FFB800] border border-[#FFB800]/30 shrink-0">IDK</span>
+                      )}
+                      {!stat.wasCorrectFirstTry && !stat.usedIDK && (
+                        <span className="text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded bg-[#FF3333]/20 text-[#FF3333] border border-[#FF3333]/30 shrink-0">Missed</span>
+                      )}
                     </div>
                   </motion.div>
                 )
@@ -357,7 +357,6 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
 
   // RENDER QUESTION OR FEEDBACK
   // Guards
-  console.log('Current card raw data:', JSON.stringify(currentCard))
   if (!currentCard || !isMcq) return <div className="text-white p-8">Only MCQ implemented for Learn Mode stub.</div>
   
   if (!mcqData || !Array.isArray(mcqData.choices) || mcqData.choices.length !== 4) {

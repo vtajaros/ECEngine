@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Card, MCQData } from '../../types'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bookmark, Clock, ArrowRight, RefreshCw, ClipboardCheck, X, AlertTriangle } from 'lucide-react'
+import { shuffle, shuffleChoices } from '../../lib/scrambler'
 
 interface TestModeProps {
   cards: Card[]
@@ -43,14 +44,19 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
     let finalCards = [...cards]
     
     if (settings.shuffleQuestions) {
-      finalCards.sort(() => Math.random() - 0.5)
+      finalCards = shuffle(finalCards)
     }
 
-    // Handle shuffle choices per card. 
-    // Usually we don't mutate original `choices`, or we store a map of shuffled order.
-    // For simplicity, we assume `MCQData` choices are static, but we can render them shuffled.
-    // However, if we shuffle them dynamically, tracking correct index becomes complex.
-    // So we'll skip deep-choice scrambling in this mock unless requested explicitly to alter data structure.
+    if (settings.shuffleChoices) {
+      finalCards = finalCards.map(card => {
+        const mcq = card.data as MCQData
+        if (mcq?.choices) {
+          const sc = shuffleChoices(mcq.choices, mcq.answer)
+          return { ...card, data: { ...mcq, choices: sc.choices, answer: sc.answer } }
+        }
+        return card
+      })
+    }
 
     setTestCards(finalCards)
   }, [cards, settings])
@@ -258,7 +264,6 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
       <div className="flex-1 overflow-y-auto mt-20 p-6 lg:p-12 pb-32">
         <div className="w-full max-w-4xl mx-auto flex flex-col gap-6">
         {testCards.map((card, index) => {
-          console.log('Current card raw data:', JSON.stringify(card))
           const mcq = card.data as MCQData
           if (!mcq || !Array.isArray(mcq.choices) || mcq.choices.length !== 4) {
             return (

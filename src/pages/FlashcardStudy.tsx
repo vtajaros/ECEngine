@@ -8,6 +8,7 @@ import { MOCK_FLASHCARDS, MOCK_MCQS } from '../lib/mockData'
 import { Play, ClipboardList, Plus, Settings2, X, Bookmark, Shuffle, Zap, Trash2, AlertTriangle } from 'lucide-react'
 import { useSessionStore } from '../store/useSessionStore'
 import { motion, AnimatePresence } from 'framer-motion'
+import { shuffle, shuffleChoices } from '../lib/scrambler'
 
 type StudyMode = 'flashcard' | 'mcq' | 'learn' | 'test'
 type Subject = 'MATH' | 'GEAS' | 'ELECS' | 'EST'
@@ -150,9 +151,8 @@ export default function FlashcardStudy() {
     return flashcards.map((fc, i) => {
       const allOtherDefs = flashcards.filter((_, idx) => idx !== i).map(c => c.back)
       // Pick up to 3 random distractors
-      const shuffledOthers = [...allOtherDefs].sort(() => Math.random() - 0.5).slice(0, 3)
-      const choices = [fc.back, ...shuffledOthers].sort(() => Math.random() - 0.5)
-      const answerIndex = choices.indexOf(fc.back)
+      const shuffledOthers = shuffle(allOtherDefs).slice(0, 3)
+      const { choices, answer: answerIndex } = shuffleChoices([fc.back, ...shuffledOthers], 0)
       return {
         id: fc.id || `card_${i}`,
         topicId: 'custom',
@@ -218,20 +218,19 @@ export default function FlashcardStudy() {
 
     // Apply basic shuffles if needed
     if (learnSettings.shuffleQuestions) {
-      filteredData = [...filteredData].sort(() => Math.random() - 0.5)
+      filteredData = shuffle(filteredData)
     }
 
     if (learnSettings.shuffleChoices) {
       filteredData = filteredData.map(card => {
         if (card.type === 'mcq' && card.data && Array.isArray(card.data.choices)) {
-          const originalAnswer = card.data.choices[card.data.answer]
-          const shuffledChoices = [...card.data.choices].sort(() => Math.random() - 0.5)
+          const sc = shuffleChoices(card.data.choices, card.data.answer)
           return {
             ...card,
             data: {
               ...card.data,
-              choices: shuffledChoices,
-              answer: shuffledChoices.indexOf(originalAnswer)
+              choices: sc.choices,
+              answer: sc.answer
             }
           }
         }
@@ -292,20 +291,19 @@ export default function FlashcardStudy() {
     }
 
     if (testSettings.shuffleQuestions) {
-      filteredData = [...filteredData].sort(() => Math.random() - 0.5)
+      filteredData = shuffle(filteredData)
     }
 
     if (testSettings.shuffleChoices) {
       filteredData = filteredData.map(card => {
         if (card.type === 'mcq' && card.data && Array.isArray(card.data.choices)) {
-          const originalAnswer = card.data.choices[card.data.answer]
-          const shuffledChoices = [...card.data.choices].sort(() => Math.random() - 0.5)
+          const sc = shuffleChoices(card.data.choices, card.data.answer)
           return {
             ...card,
             data: {
               ...card.data,
-              choices: shuffledChoices,
-              answer: shuffledChoices.indexOf(originalAnswer)
+              choices: sc.choices,
+              answer: sc.answer
             }
           }
         }
@@ -722,7 +720,7 @@ export default function FlashcardStudy() {
       {/* Subject Selector Header */}
       <div className="w-full max-w-4xl mb-10 flex flex-col md:flex-row items-center justify-between gap-6 border-b border-[var(--bg-card)] pb-6 relative z-10 pt-4">
         <h1 className="text-3xl lg:text-4xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold">
-          STUDY <span className="text-[var(--accent-primary)]">HUB</span>
+          LOOKS<span className="text-[var(--accent-primary)]">FAM</span>
         </h1>
 
         <div className="flex gap-2 bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)]">

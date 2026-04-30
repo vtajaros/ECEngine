@@ -10,6 +10,7 @@ interface MCQDeckProps {
 }
 
 export const MCQDeck: React.FC<MCQDeckProps> = ({ cards, onComplete }) => {
+  const [activeCards, setActiveCards] = useState<Card[]>(cards)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [score, setScore] = useState(0)
   const [isDone, setIsDone] = useState(false)
@@ -19,12 +20,12 @@ export const MCQDeck: React.FC<MCQDeckProps> = ({ cards, onComplete }) => {
     if (isCorrect) {
       setScore(prev => prev + 1)
     } else {
-      setWrongItems(prev => [...prev, cards[currentIndex]])
+      setWrongItems(prev => [...prev, activeCards[currentIndex]])
     }
   }
 
   const handleNext = () => {
-    if (currentIndex < cards.length - 1) {
+    if (currentIndex < activeCards.length - 1) {
       setCurrentIndex(prev => prev + 1)
     } else {
       setIsDone(true)
@@ -33,6 +34,7 @@ export const MCQDeck: React.FC<MCQDeckProps> = ({ cards, onComplete }) => {
   }
 
   const restart = () => {
+    setActiveCards(cards)
     setCurrentIndex(0)
     setScore(0)
     setWrongItems([])
@@ -40,14 +42,15 @@ export const MCQDeck: React.FC<MCQDeckProps> = ({ cards, onComplete }) => {
   }
 
   const retryWrong = () => {
+    if (wrongItems.length === 0) return
+    setActiveCards(wrongItems)
     setCurrentIndex(0)
     setScore(0)
     setWrongItems([])
     setIsDone(false)
-    // In a real app we'd filter the active array, but for now we'll just restart
   }
 
-  if (!cards || cards.length === 0) {
+  if (!activeCards || activeCards.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-[#888888]">
         No MCQs available for this topic.
@@ -55,9 +58,9 @@ export const MCQDeck: React.FC<MCQDeckProps> = ({ cards, onComplete }) => {
     )
   }
 
-  const currentCard = cards[currentIndex]
-  const progress = ((currentIndex) / cards.length) * 100
-  const percentage = Math.round((score / cards.length) * 100)
+  const currentCard = activeCards[currentIndex]
+  const progress = ((currentIndex) / activeCards.length) * 100
+  const percentage = Math.round((score / activeCards.length) * 100)
   const passed = percentage >= 75
 
   return (
@@ -66,11 +69,11 @@ export const MCQDeck: React.FC<MCQDeckProps> = ({ cards, onComplete }) => {
       {/* Header and Progress */}
       <div className="mb-8 flex flex-col gap-3">
         <div className="flex justify-between items-center text-sm font-['Rajdhani'] uppercase tracking-wider text-[#888888]">
-          <span>{isDone ? 'Session Complete' : `Question ${currentIndex + 1} of ${cards.length}`}</span>
+          <span>{isDone ? 'Session Complete' : `Question ${currentIndex + 1} of ${activeCards.length}`}</span>
           {!isDone && (
             <div className="flex items-center gap-4">
-              <span className="text-[#E8E8E8] font-bold">Score: {score} / {cards.length}</span>
-              <span>{Math.round((currentIndex / cards.length) * 100)}% Complete</span>
+              <span className="text-[#E8E8E8] font-bold">Score: {score} / {activeCards.length}</span>
+              <span>{Math.round((currentIndex / activeCards.length) * 100)}% Complete</span>
             </div>
           )}
         </div>
@@ -127,7 +130,7 @@ export const MCQDeck: React.FC<MCQDeckProps> = ({ cards, onComplete }) => {
               </div>
               
               <p className="text-[#888888] mb-8 font-['Rajdhani'] text-lg">
-                You got {score} out of {cards.length} correct. The passing score is 75%.
+                You got {score} out of {activeCards.length} correct. The passing score is 75%.
               </p>
               
               <div className="flex gap-4 w-full">

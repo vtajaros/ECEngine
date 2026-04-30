@@ -10,7 +10,8 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Zap
+  Zap,
+  Layers
 } from 'lucide-react'
 
 export const AppShell: React.FC = () => {
@@ -18,7 +19,8 @@ export const AppShell: React.FC = () => {
 
   const navItems = [
     { to: '/', label: 'Dashboard', icon: Home },
-    { to: '/flashcards', label: 'Study', icon: Brain },
+    { to: '/study', label: 'LooksFam', icon: Brain },
+    { to: '/flashcards', label: 'Flashcards', icon: Layers },
     { to: '/formulas', label: 'Formulas', icon: Sigma },
     { to: '/topics', label: 'Topics', icon: BookOpen },
     { to: '/add-set', label: 'Add Decks', icon: PlusSquare },

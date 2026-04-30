@@ -453,7 +453,7 @@ export default function AddDeck() {
                 {/* Choices */}
                 <div className="flex flex-col gap-3 mt-auto">
                   {cards[selectedQuestionIndex].mcqData.choices.map((choice: string, cIdx: number) => {
-                    const isCorrect = cards[selectedQuestionIndex].mcqData.answer === String.fromCharCode(65 + cIdx)
+                    const isCorrect = cards[selectedQuestionIndex].mcqData.answer === cIdx
                     return (
                       <div 
                         key={cIdx} 
