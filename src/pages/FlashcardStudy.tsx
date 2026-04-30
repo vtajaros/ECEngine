@@ -5,7 +5,8 @@ import { MCQDeck } from '../components/mcq/MCQDeck'
 import { LearnMode } from '../components/mcq/LearnMode'
 import { TestMode } from '../components/mcq/TestMode'
 import { MOCK_FLASHCARDS, MOCK_MCQS } from '../lib/mockData'
-import { Play, ClipboardList, Plus, Settings2, X, Bookmark, Shuffle, Zap, Trash2, AlertTriangle } from 'lucide-react'
+import { Play, Filter, LayoutGrid, CheckCircle2, ChevronRight, Bookmark, X, Settings2, Trash2, AlertTriangle, ClipboardList, Shuffle, Zap } from 'lucide-react'
+import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
 import { useSessionStore } from '../store/useSessionStore'
 import { motion, AnimatePresence } from 'framer-motion'
 import { shuffle, shuffleChoices } from '../lib/scrambler'
@@ -30,19 +31,14 @@ interface StudySet {
   subject: Subject
   count: number
   mastery: number
+  deckType?: 'mcq' | 'flashcard' | 'mixed'
 }
 
-// Temporary Mock Sets for demonstration before DB integeration
-const MOCK_SETS: StudySet[] = [
-  { id: 'set-1', title: 'Set Alpha — Diodes', description: 'Basic PN junction theory & applications', subject: 'ELECS', count: 20, mastery: 45 },
-]
+// Removed Mock Sets
 
 export default function FlashcardStudy() {
   const navigate = useNavigate()
-  const [allSets, setAllSets] = useState<StudySet[]>(() => {
-    const savedMastery = JSON.parse(localStorage.getItem('setMastery') || '{}');
-    return MOCK_SETS.map(s => ({ ...s, mastery: savedMastery[s.id] !== undefined ? savedMastery[s.id] : s.mastery }));
-  })
+  const [allSets, setAllSets] = useState<StudySet[]>([])
   const [setToDelete, setSetToDelete] = useState<StudySet | null>(null)
   const [deleteCountdown, setDeleteCountdown] = useState(0)
 
@@ -52,19 +48,28 @@ export default function FlashcardStudy() {
       try {
         if (!window.electron?.db) return
         const topicsResult = await window.electron.db.query(
-          `SELECT t.id, t.name, t.subject, t.description, COUNT(c.id) as card_count
+          `SELECT t.id, t.name, t.subject, t.description, COUNT(c.id) as card_count,
+                  GROUP_CONCAT(DISTINCT c.type) as types
            FROM topics t LEFT JOIN cards c ON c.topic_id = t.id
            GROUP BY t.id`
         )
         if (topicsResult.success && topicsResult.data) {
-          const dbSets: StudySet[] = topicsResult.data.map((row: any) => ({
-            id: row.id,
-            title: row.name,
-            description: row.description || 'User-created set',
-            subject: SUBJECT_MAP[row.subject] || 'ELECS',
-            count: row.card_count || 0,
-            mastery: JSON.parse(localStorage.getItem('setMastery') || '{}')[row.id] || 0,
-          }))
+          const dbSets: StudySet[] = topicsResult.data.map((row: any) => {
+            const types = (row.types || '').split(',')
+            let deckType: 'mcq' | 'flashcard' | 'mixed' = 'mcq'
+            if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
+            else if (types.includes('flashcard')) deckType = 'flashcard'
+
+            return {
+              id: row.id,
+              title: row.name,
+              description: row.description || 'User-created set',
+              subject: SUBJECT_MAP[row.subject] || 'ELECS',
+              count: row.card_count || 0,
+              mastery: JSON.parse(localStorage.getItem('setMastery') || '{}')[row.id] || 0,
+              deckType,
+            }
+          })
           setAllSets(prev => {
             const nonDb = prev.filter(s => !s.id.startsWith('topic_'));
             return [...nonDb, ...dbSets];
@@ -724,17 +729,11 @@ export default function FlashcardStudy() {
         </h1>
 
         <div className="flex gap-2 bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)]">
-          {SUBJECTS.map(subject => (
-            <button
-              key={subject}
-              onClick={() => setActiveSubject(subject)}
-              className={`px-4 py-2 rounded-md font-['Rajdhani'] tracking-widest text-sm font-bold transition-all ${
-                activeSubject === subject
-                  ? 'bg-[var(--accent-primary)] text-[#0D0D0D] shadow-[0_0_10px_rgba(0,255,65,0.3)]'
-                  : 'text-[var(--text-secondary)] hover:text-[#E8E8E8] hover:bg-[#1A1A1A]'
-              }`}
+          {SUBJECTS.map(s => (
+            <button key={s} onClick={() => setActiveSubject(s)}
+              className={`px-4 py-2 rounded-md font-['Rajdhani'] tracking-widest text-sm font-bold transition-all ${getSubjectFilterClasses(s, activeSubject === s)}`}
             >
-              {subject}
+              {s}
             </button>
           ))}
         </div>
@@ -750,9 +749,22 @@ export default function FlashcardStudy() {
             {/* Card Content */}
             <div className="p-6 flex-1 flex flex-col">
               <div className="flex justify-between items-start mb-4 gap-2">
-                <h3 className="text-xl font-['Orbitron'] font-bold text-[var(--text-primary)] tracking-wide flex-1">{set.title}</h3>
+                <div className="flex flex-col flex-1 gap-1">
+                  <h3 className="text-xl font-['Orbitron'] font-bold text-[var(--text-primary)] tracking-wide">{set.title}</h3>
+                  {set.deckType && (
+                    <span className={`w-fit text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded border shrink-0 uppercase ${
+                      set.deckType === 'mcq'
+                        ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
+                        : set.deckType === 'mixed'
+                        ? 'text-[#B983FF] border-[#B983FF]/30 bg-[#B983FF]/10'
+                        : 'text-[#00FF41] border-[#00FF41]/30 bg-[#00FF41]/10'
+                    }`}>
+                      {set.deckType === 'mixed' ? 'MIX' : set.deckType === 'mcq' ? 'MCQ' : 'FC'}
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-['Rajdhani'] px-2 py-1 bg-[#1A1A1A] text-[var(--accent-primary)] rounded border border-[#333] whitespace-nowrap">
+                  <span className={`text-xs font-['Rajdhani'] px-2 py-1 bg-[#1A1A1A] rounded border whitespace-nowrap ${getSubjectBadgeClasses(set.subject)}`}>
                     {set.count} Items
                   </span>
                   {set.id !== 'set-1' && (

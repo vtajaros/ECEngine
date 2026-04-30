@@ -168,3 +168,46 @@ export function parseImportedMCQs(rawText: string): {
   return { cards, warnings }
 }
 
+export function parseImportedFlashcards(rawText: string): {
+  cards: any[],
+  warnings: string[]
+} {
+  const warnings: string[] = []
+  const cards: any[] = []
+  
+  const normalized = rawText
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+  
+  const blocks = normalized
+    .split(/\n\s*\n/)
+    .map(b => b.trim())
+    .filter(b => b.length > 0)
+  
+  blocks.forEach((block, index) => {
+    const lines = block
+      .split('\n')
+      .map(l => l.trim())
+      .filter(l => l.length > 0)
+    
+    const qLine = lines.find(l => l.startsWith('Q:'))
+    const aLine = lines.find(l => l.startsWith('A:'))
+    
+    if (lines.length !== 2 || !qLine || !aLine) {
+      warnings.push(`Block ${index + 1}: Must have exactly two lines starting with Q: and A:`)
+      return
+    }
+    
+    const term = qLine.substring(2).trim()
+    const definition = aLine.substring(2).trim()
+    
+    if (!term || !definition) {
+      warnings.push(`Block ${index + 1}: Term or definition is empty`)
+      return
+    }
+    
+    cards.push({ front: term, back: definition })
+  })
+  
+  return { cards, warnings }
+}

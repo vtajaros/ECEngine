@@ -1,48 +1,57 @@
-import React from 'react'
-import { FolderTree, BookOpen } from 'lucide-react'
+import React, { useState } from 'react'
+import { FolderTree, Search } from 'lucide-react'
+import { TOC_DATA } from '../components/toc/data'
+import { SubjectCard } from '../components/toc/SubjectCard'
 
 export default function TableOfContents() {
-  const syllabus = [
-    { title: 'Mathematics', topics: ['Advanced Algebra & Trigonometry', 'Analytical Geometry', 'Calculus', 'Differential Equations', 'Advanced Engineering Math', 'Probability & Statistics'] },
-    { title: 'Electronics Engineering', topics: ['Solid State Devices & Circuits', 'Power Supply & Amplifiers', 'Operational Amplifiers & Oscillators', 'Industrial Electronics', 'Digital Electronics & Microprocessors'] },
-    { title: 'General Engineering and Applied Sciences', topics: ['Physics & Chemistry', 'Engineering Mechanics', 'Thermodynamics', 'Materials Science', 'Engineering Economics & Management'] },
-    { title: 'Electronic Systems and Technologies', topics: ['Radio Communications', 'Data & Digital Communications', 'Microwave & Satellite Communications', 'Acoustics & Broadcasting', 'Wireless & Mobile Systems'] },
-  ]
+  const [searchQuery, setSearchQuery] = useState('')
 
   return (
-    <div className="h-full bg-[#0D0D0D] p-8 lg:p-12 overflow-y-auto">
-      <header className="mb-10 flex flex-col gap-2">
-        <h1 className="font-['Orbitron'] text-4xl font-bold text-[#E8E8E8] tracking-wider flex items-center">
-          <FolderTree className="text-[#00FF41] mr-4" size={36} />
-          TOPICS & SYLLABUS
-        </h1>
-        <p className="text-[#888888] font-['Rajdhani'] text-lg uppercase tracking-widest">
-          Explore all available modules
-        </p>
-      </header>
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 max-w-7xl">
-        {syllabus.map((subject, i) => (
-          <div key={i} className="bg-[#111111] border border-[#161616] rounded-xl overflow-hidden shadow-lg p-8 hover:border-[#00FF41] transition-colors duration-300">
-             <h2 className="font-['Rajdhani'] font-bold text-2xl text-[#E8E8E8] mb-6 uppercase tracking-wider flex items-center border-b border-[#222] pb-4">
-               <BookOpen className="text-[#00FF41] mr-3" size={24} />
-               {subject.title}
-             </h2>
-             <ul className="space-y-3">
-               {subject.topics.map((topic, j) => (
-                 <li key={j} className="flex items-center group cursor-pointer border border-transparent hover:border-[#222] p-3 rounded transition-all">
-                   <div className="w-2 h-2 rounded-full bg-[#333] group-hover:bg-[#00FF41] group-hover:shadow-[0_0_8px_rgba(0,255,65,0.8)] mr-4 transition-all" />
-                   <span className="font-['IBM_Plex_Mono'] text-[#A0A0A0] group-hover:text-[#E8E8E8] text-sm md:text-base">
-                     {topic}
-                   </span>
-                   <button className="opacity-0 group-hover:opacity-100 ml-auto text-xs font-['Rajdhani'] uppercase bg-[#161616] text-[#00FF41] px-3 py-1 rounded border border-[#333] hover:bg-[rgba(0,255,65,0.1)] transition-colors tracking-widest leading-none">
-                     Study
-                   </button>
-                 </li>
-               ))}
-             </ul>
+    <div className="h-full bg-[var(--bg-primary)] p-6 lg:p-12 overflow-y-auto w-full">
+      <div className="max-w-5xl mx-auto flex flex-col h-full">
+        <header className="mb-8 flex flex-col md:flex-row items-center justify-between gap-6 border-b border-[var(--bg-card)] pb-6 pt-4 shrink-0">
+          <div className="flex flex-col gap-2">
+            <h1 className="font-['Orbitron'] text-3xl lg:text-4xl font-bold text-[var(--text-primary)] tracking-wider flex items-center">
+              <FolderTree className="text-[var(--accent-primary)] mr-4" size={36} />
+              TOPICS & <span className="text-[var(--accent-primary)] ml-2">SYLLABUS</span>
+            </h1>
+            <p className="text-[var(--text-secondary)] font-['Rajdhani'] text-lg uppercase tracking-widest">
+              PRC ECE TABLE OF SPECIFICATIONS (2022 TOS)
+            </p>
           </div>
-        ))}
+          
+          <div className="relative w-full md:w-80">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search size={18} className="text-[#666]" />
+            </div>
+            <input 
+              type="text" 
+              placeholder="Search topics..." 
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full bg-[#111] border border-[#333] focus:border-[var(--accent-primary)] rounded-lg pl-10 pr-4 py-3 text-[var(--text-primary)] font-['IBM_Plex_Mono'] text-sm outline-none transition-colors shadow-inner"
+            />
+          </div>
+        </header>
+
+        <div className="flex flex-col gap-6 pb-12 flex-1">
+          {TOC_DATA.map(subject => (
+            <SubjectCard 
+              key={subject.id} 
+              subject={subject} 
+              searchQuery={searchQuery} 
+            />
+          ))}
+          
+          {searchQuery && !TOC_DATA.some(s => {
+            const hasTopic = s.topics.some(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()) || t.subtopics.some(st => st.name.toLowerCase().includes(searchQuery.toLowerCase())))
+            return s.name.toLowerCase().includes(searchQuery.toLowerCase()) || hasTopic
+          }) && (
+            <div className="text-center py-20 text-[var(--text-secondary)] font-['Rajdhani'] uppercase tracking-widest text-lg">
+              No matching topics found for "{searchQuery}"
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )

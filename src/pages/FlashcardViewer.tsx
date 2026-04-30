@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle } from 'lucide-react'
+import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
 import { Card, MCQData, FlashcardData } from '../types'
 import { renderMath } from '../lib/latex'
 import { shuffleArray } from '../lib/utils'
@@ -406,11 +407,7 @@ export default function FlashcardViewer() {
         <div className="flex gap-2 bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)]">
           {SUBJECTS.map(s => (
             <button key={s} onClick={() => setActiveSubject(s)}
-              className={`px-4 py-2 rounded-md font-['Rajdhani'] tracking-widest text-sm font-bold transition-all ${
-                activeSubject === s
-                  ? 'bg-[var(--accent-primary)] text-[#0D0D0D] shadow-[0_0_10px_rgba(0,255,65,0.3)]'
-                  : 'text-[var(--text-secondary)] hover:text-[#E8E8E8] hover:bg-[#1A1A1A]'
-              }`}
+              className={`px-4 py-2 rounded-md font-['Rajdhani'] tracking-widest text-sm font-bold transition-all ${getSubjectFilterClasses(s, activeSubject === s)}`}
             >
               {s}
             </button>
@@ -430,15 +427,15 @@ export default function FlashcardViewer() {
                   deck.deckType === 'mcq'
                     ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
                     : deck.deckType === 'mixed'
-                    ? 'text-[#FFB800] border-[#FFB800]/30 bg-[#FFB800]/10'
+                    ? 'text-[#B983FF] border-[#B983FF]/30 bg-[#B983FF]/10'
                     : 'text-[#00FF41] border-[#00FF41]/30 bg-[#00FF41]/10'
                 }`}>
-                  {deck.deckType === 'mixed' ? 'Mixed' : deck.deckType === 'mcq' ? 'MCQ' : 'Flashcard'}
+                  {deck.deckType === 'mixed' ? 'MIX' : deck.deckType === 'mcq' ? 'MCQ' : 'FC'}
                 </span>
               </div>
 
               <div className="mt-auto flex items-center justify-between pt-4 border-t border-[#222]">
-                <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[var(--accent-primary)] font-bold bg-[var(--accent-glow)] px-2 py-1 rounded">{deck.subject}</span>
+                <span className={`text-xs font-['Rajdhani'] uppercase tracking-widest font-bold px-2 py-1 rounded border ${getSubjectBadgeClasses(deck.subject)}`}>{deck.subject}</span>
                 <span className="text-xs font-['IBM_Plex_Mono'] text-[#888]">{deck.cardCount} cards</span>
               </div>
             </div>
