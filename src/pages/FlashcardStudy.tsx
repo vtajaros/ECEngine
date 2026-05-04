@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FlashDeck } from '../components/flashcard/FlashDeck'
 import { MCQDeck } from '../components/mcq/MCQDeck'
 import { LearnMode } from '../components/mcq/LearnMode'
 import { TestMode } from '../components/mcq/TestMode'
 import { MOCK_FLASHCARDS, MOCK_MCQS } from '../lib/mockData'
-import { Play, Filter, LayoutGrid, CheckCircle2, ChevronRight, Bookmark, X, Settings2, Trash2, AlertTriangle, ClipboardList, Shuffle, Zap } from 'lucide-react'
+import { Play, Filter, LayoutGrid, CheckCircle2, ChevronRight, Bookmark, X, Settings2, Trash2, AlertTriangle, ClipboardList, Shuffle, Zap, SlidersHorizontal, Check } from 'lucide-react'
 import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
 import { useSessionStore } from '../store/useSessionStore'
 import { motion, AnimatePresence } from 'framer-motion'
 import { shuffle, shuffleChoices } from '../lib/scrambler'
 
 type StudyMode = 'flashcard' | 'mcq' | 'learn' | 'test'
-type Subject = 'MATH' | 'GEAS' | 'ELECS' | 'EST'
+type Subject = 'ALL' | 'MATH' | 'GEAS' | 'ELECS' | 'EST'
 
-const SUBJECTS: Subject[] = ['MATH', 'GEAS', 'ELECS', 'EST']
+const SUBJECTS: Subject[] = ['ALL', 'MATH', 'GEAS', 'ELECS', 'EST']
 
 // Map full subject names (from DB) to short codes used in the UI
 const SUBJECT_MAP: Record<string, Subject> = {
@@ -32,6 +32,8 @@ interface StudySet {
   count: number
   mastery: number
   deckType?: 'mcq' | 'flashcard' | 'mixed'
+  tags?: string[]
+  createdAt?: number
 }
 
 // Removed Mock Sets
@@ -42,13 +44,26 @@ export default function FlashcardStudy() {
   const [setToDelete, setSetToDelete] = useState<StudySet | null>(null)
   const [deleteCountdown, setDeleteCountdown] = useState(0)
 
+  // Advanced Filters State
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+  const [filterTags, setFilterTags] = useState<string[]>([])
+  const [sortBy, setSortBy] = useState<'date' | 'title' | 'mastery'>('date')
+  const [filterType, setFilterType] = useState<'all' | 'mcq' | 'flashcard' | 'mixed'>('all')
+  const filterPopoverRef = useRef<HTMLDivElement>(null)
+
+  const availableTags = useMemo(() => {
+    const tags = new Set<string>()
+    allSets.forEach(s => s.tags?.forEach(t => tags.add(t)))
+    return Array.from(tags).sort()
+  }, [allSets])
+
   // Load user-created sets from DB on mount
   useEffect(() => {
     async function loadDBSets() {
       try {
         if (!window.electron?.db) return
         const topicsResult = await window.electron.db.query(
-          `SELECT t.id, t.name, t.subject, t.description, COUNT(c.id) as card_count,
+          `SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags, COUNT(c.id) as card_count,
                   GROUP_CONCAT(DISTINCT c.type) as types
            FROM topics t LEFT JOIN cards c ON c.topic_id = t.id
            GROUP BY t.id`
@@ -60,14 +75,26 @@ export default function FlashcardStudy() {
             if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
             else if (types.includes('flashcard')) deckType = 'flashcard'
 
+            const mastery = (() => {
+              const savedKeys = JSON.parse(localStorage.getItem(`progress_${row.id}`) || '[]');
+              return row.card_count > 0 ? Math.round((savedKeys.length / row.card_count) * 100) : 0;
+            })();
+
+            let parsedTags: string[] = []
+            try {
+              if (row.tags) parsedTags = JSON.parse(row.tags)
+            } catch (e) {}
+
             return {
               id: row.id,
               title: row.name,
-              description: row.description || 'User-created set',
+              description: row.description || '',
               subject: SUBJECT_MAP[row.subject] || 'ELECS',
               count: row.card_count || 0,
-              mastery: JSON.parse(localStorage.getItem('setMastery') || '{}')[row.id] || 0,
+              mastery,
               deckType,
+              tags: parsedTags,
+              createdAt: row.created_at || Date.now()
             }
           })
           setAllSets(prev => {
@@ -81,6 +108,39 @@ export default function FlashcardStudy() {
     }
     loadDBSets()
   }, [])
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (filterPopoverRef.current && !filterPopoverRef.current.contains(event.target as Node)) {
+        setShowAdvancedFilters(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const [activeSubject, setActiveSubject] = useState<Subject>('ALL')
+
+  const filteredAndSortedSets = useMemo(() => {
+    let result = allSets.filter(s => activeSubject === 'ALL' || s.subject === activeSubject)
+    
+    if (filterType !== 'all') {
+      result = result.filter(s => s.deckType === filterType)
+    }
+
+    if (filterTags.length > 0) {
+      result = result.filter(s => filterTags.every(tag => s.tags?.includes(tag)))
+    }
+
+    result.sort((a, b) => {
+      if (sortBy === 'date') return (b.createdAt || 0) - (a.createdAt || 0)
+      if (sortBy === 'mastery') return b.mastery - a.mastery
+      if (sortBy === 'title') return a.title.localeCompare(b.title)
+      return 0
+    })
+
+    return result
+  }, [allSets, activeSubject, filterType, filterTags, sortBy])
 
   useEffect(() => {
     if (setToDelete) {
@@ -113,7 +173,6 @@ export default function FlashcardStudy() {
   }
 
   const [mode, setMode] = useState<StudyMode>('flashcard')
-  const [activeSubject, setActiveSubject] = useState<Subject>('ELECS')
   
   const [isSessionActive, setIsSessionActive] = useState(false)
   const [activeSessionTitle, setActiveSessionTitle] = useState('')
@@ -337,15 +396,15 @@ export default function FlashcardStudy() {
           title={activeSessionTitle}
           onComplete={(stats) => {
             console.log('Learn Mode Stats:', stats)
-            const total = stats.correct + stats.wrong;
-            if (total > 0 && activeSessionSetId) {
-              const runMastery = Math.round((stats.correct / total) * 100);
+            if (stats.correctIds && activeSessionSetId) {
               setAllSets(prev => prev.map(s => {
                 if (s.id === activeSessionSetId) {
-                  const newMastery = s.mastery === 0 ? runMastery : Math.round((s.mastery + runMastery) / 2);
-                  const saved = JSON.parse(localStorage.getItem('setMastery') || '{}');
-                  saved[s.id] = newMastery;
-                  localStorage.setItem('setMastery', JSON.stringify(saved));
+                  const savedMastered = new Set<string>(JSON.parse(localStorage.getItem(`progress_${s.id}`) || '[]'));
+                  stats.correctIds.forEach(id => savedMastered.add(id));
+                  const newMasteredArray = Array.from(savedMastered);
+                  localStorage.setItem(`progress_${s.id}`, JSON.stringify(newMasteredArray));
+                  
+                  const newMastery = s.count > 0 ? Math.round((newMasteredArray.length / s.count) * 100) : 0;
                   return { ...s, mastery: newMastery };
                 }
                 return s;
@@ -365,7 +424,20 @@ export default function FlashcardStudy() {
           settings={testSettings}
           onComplete={(stats) => {
             console.log('Test Mode Stats:', stats)
-            // handle summary or save to db
+            if (stats.correctIds && activeSessionSetId) {
+              setAllSets(prev => prev.map(s => {
+                if (s.id === activeSessionSetId) {
+                  const savedMastered = new Set<string>(JSON.parse(localStorage.getItem(`progress_${s.id}`) || '[]'));
+                  stats.correctIds.forEach(id => savedMastered.add(id));
+                  const newMasteredArray = Array.from(savedMastered);
+                  localStorage.setItem(`progress_${s.id}`, JSON.stringify(newMasteredArray));
+                  
+                  const newMastery = s.count > 0 ? Math.round((newMasteredArray.length / s.count) * 100) : 0;
+                  return { ...s, mastery: newMastery };
+                }
+                return s;
+              }));
+            }
           }}
           onExit={() => setIsSessionActive(false)} 
         />
@@ -728,20 +800,134 @@ export default function FlashcardStudy() {
           LOOKS<span className="text-[var(--accent-primary)]">FAM</span>
         </h1>
 
-        <div className="flex gap-2 bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)]">
-          {SUBJECTS.map(s => (
-            <button key={s} onClick={() => setActiveSubject(s)}
-              className={`px-4 py-2 rounded-md font-['Rajdhani'] tracking-widest text-sm font-bold transition-all ${getSubjectFilterClasses(s, activeSubject === s)}`}
+        <div className="flex gap-2 items-center">
+          <div className="relative" ref={filterPopoverRef}>
+            <button 
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              className={`p-2 rounded-lg border transition-all ${
+                showAdvancedFilters || filterTags.length > 0 || filterType !== 'all' || sortBy !== 'date'
+                  ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
+                  : 'bg-[var(--bg-secondary)] border-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
             >
-              {s}
+              <SlidersHorizontal size={20} />
             </button>
-          ))}
+            
+            <AnimatePresence>
+              {showAdvancedFilters && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 top-full mt-2 w-72 bg-[#111] border border-[#333] rounded-lg shadow-2xl p-4 z-50 flex flex-col gap-4"
+                >
+                  <div className="flex justify-between items-center pb-2 border-b border-[#333]">
+                    <span className="font-['Rajdhani'] font-bold text-sm tracking-widest uppercase text-[#00FF41]">Filters & Sort</span>
+                    <button onClick={() => setShowAdvancedFilters(false)} className="text-[#888] hover:text-[#E8E8E8]">
+                      <X size={16} />
+                    </button>
+                  </div>
+                  
+                  {/* Sort Selection */}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Sort By</label>
+                    <div className="grid grid-cols-3 gap-1">
+                      {(['date', 'title', 'mastery'] as const).map(opt => (
+                        <button
+                          key={opt}
+                          onClick={() => setSortBy(opt)}
+                          className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${
+                            sortBy === opt ? 'bg-[#00FF41]/20 text-[#00FF41] font-bold' : 'bg-[#1A1A1A] text-[#888] hover:bg-[#222]'
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Type Filter */}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Type</label>
+                    <div className="grid grid-cols-4 gap-1">
+                      {(['all', 'mcq', 'flashcard', 'mixed'] as const).map(opt => (
+                        <button
+                          key={opt}
+                          onClick={() => setFilterType(opt)}
+                          className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${
+                            filterType === opt ? 'bg-[#00FF41]/20 text-[#00FF41] font-bold' : 'bg-[#1A1A1A] text-[#888] hover:bg-[#222]'
+                          }`}
+                        >
+                          {opt === 'flashcard' ? 'FC' : opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Tag Filters */}
+                  {availableTags.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Tags (AND)</label>
+                      <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
+                        {availableTags.map(tag => {
+                          const isActive = filterTags.includes(tag)
+                          return (
+                            <button
+                              key={tag}
+                              onClick={() => {
+                                setFilterTags(prev => 
+                                  isActive ? prev.filter(t => t !== tag) : [...prev, tag]
+                                )
+                              }}
+                              className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-['Rajdhani'] uppercase tracking-wider border transition-all ${
+                                isActive 
+                                  ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
+                                  : 'bg-[#1A1A1A] border-[#333] text-[#888] hover:border-[#555] hover:text-[#E8E8E8]'
+                              }`}
+                            >
+                              {tag}
+                              {isActive && <Check size={10} />}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Clear Button */}
+                  {(filterTags.length > 0 || filterType !== 'all' || sortBy !== 'date') && (
+                    <button
+                      onClick={() => {
+                        setFilterTags([])
+                        setFilterType('all')
+                        setSortBy('date')
+                      }}
+                      className="mt-2 text-xs font-['Rajdhani'] uppercase tracking-widest text-red-400 hover:text-red-300 text-center py-1 transition-colors"
+                    >
+                      Clear All Filters
+                    </button>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="flex gap-2 bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)]">
+            {SUBJECTS.map(s => (
+              <button key={s} onClick={() => setActiveSubject(s)}
+                className={`px-4 py-2 rounded-md font-['Rajdhani'] tracking-widest text-sm font-bold transition-all ${getSubjectFilterClasses(s, activeSubject === s)}`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Deck Grid */}
       <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10 pb-12 items-start">
-        {allSets.filter(s => s.subject === activeSubject).map(set => (
+        {filteredAndSortedSets.map(set => (
           <div 
             key={set.id} 
             className="bg-[var(--bg-card)] rounded-xl border border-[#222] hover:border-[var(--accent-dim)] transition-all hover:shadow-[0_0_20px_rgba(0,255,65,0.05)] overflow-hidden flex flex-col"
@@ -778,7 +964,9 @@ export default function FlashcardStudy() {
                   )}
                 </div>
               </div>
-              <p className="text-[#888888] text-sm mb-6 flex-1">{set.description}</p>
+              {set.description && set.description.trim() && (
+                <p className="text-[#888888] text-sm mb-6 flex-1">{set.description}</p>
+              )}
               
               {/* Mastery Bar */}
               <div className="mt-auto">
@@ -860,7 +1048,14 @@ export default function FlashcardStudy() {
                       : 'bg-[#FF3333] text-white hover:bg-[#CC0000] shadow-[0_0_15px_rgba(255,51,51,0.3)]'
                   }`}
                 >
-                  {deleteCountdown > 0 ? `Confirm (${deleteCountdown}s)` : 'Confirm Delete'}
+                  {deleteCountdown > 0 ? (
+                    <span className="inline-flex items-baseline gap-0.5 font-['Rajdhani']">
+                      <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#00FF41', lineHeight: 1 }}>{deleteCountdown}</span>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 400, color: '#888888', lineHeight: 1 }}>s</span>
+                    </span>
+                  ) : (
+                    'Confirm Delete'
+                  )}
                 </button>
               </div>
             </motion.div>

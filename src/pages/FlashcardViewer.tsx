@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle } from 'lucide-react'
+import { Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle, SlidersHorizontal } from 'lucide-react'
 import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
 import { Card, MCQData, FlashcardData } from '../types'
 import { renderMath } from '../lib/latex'
@@ -24,6 +24,8 @@ interface DeckInfo {
   subject: Subject
   cardCount: number
   deckType: 'mcq' | 'flashcard' | 'mixed'
+  tags?: string[]
+  createdAt?: number
 }
 
 interface FCSettings {
@@ -49,6 +51,19 @@ export default function FlashcardViewer() {
   const [activeSubject, setActiveSubject] = useState<FilterSubject>('ALL')
   const [decks, setDecks] = useState<DeckInfo[]>([])
 
+  // Advanced Filters State
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
+  const [filterTags, setFilterTags] = useState<string[]>([])
+  const [sortBy, setSortBy] = useState<'date' | 'title'>('date')
+  const [filterType, setFilterType] = useState<'all' | 'mcq' | 'flashcard' | 'mixed'>('all')
+  const filterPopoverRef = useRef<HTMLDivElement>(null)
+
+  const availableTags = useMemo(() => {
+    const tags = new Set<string>()
+    decks.forEach(d => d.tags?.forEach(t => tags.add(t)))
+    return Array.from(tags).sort()
+  }, [decks])
+
   // ── Active session state ──
   const [activeDeck, setActiveDeck] = useState<{ id: string; title: string; cards: Card[] } | null>(null)
   const [sessionCards, setSessionCards] = useState<Card[]>([])
@@ -70,7 +85,7 @@ export default function FlashcardViewer() {
       try {
         if (!window.electron?.db) return
         const r = await window.electron.db.query(
-          `SELECT t.id, t.name, t.subject,
+          `SELECT t.id, t.name, t.subject, t.created_at, t.tags,
                   COUNT(c.id) as card_count,
                   GROUP_CONCAT(DISTINCT c.type) as types
            FROM topics t LEFT JOIN cards c ON c.topic_id = t.id
@@ -82,12 +97,20 @@ export default function FlashcardViewer() {
             let deckType: 'mcq' | 'flashcard' | 'mixed' = 'flashcard'
             if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
             else if (types.includes('mcq')) deckType = 'mcq'
+
+            let parsedTags: string[] = []
+            try {
+              if (row.tags) parsedTags = JSON.parse(row.tags)
+            } catch (e) {}
+
             return {
               id: row.id,
               title: row.name,
               subject: SUBJECT_MAP[row.subject] || 'ELECS',
               cardCount: row.card_count || 0,
               deckType,
+              tags: parsedTags,
+              createdAt: row.created_at || Date.now()
             }
           }))
         }
@@ -228,7 +251,35 @@ export default function FlashcardViewer() {
     return settings.swapTermDef ? fc.front : fc.back
   }
 
-  const filteredDecks = decks.filter(d => activeSubject === 'ALL' || d.subject === activeSubject)
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (filterPopoverRef.current && !filterPopoverRef.current.contains(event.target as Node)) {
+        setShowAdvancedFilters(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  const filteredDecks = useMemo(() => {
+    let result = decks.filter(d => activeSubject === 'ALL' || d.subject === activeSubject)
+    
+    if (filterType !== 'all') {
+      result = result.filter(d => d.deckType === filterType)
+    }
+
+    if (filterTags.length > 0) {
+      result = result.filter(d => filterTags.every(tag => d.tags?.includes(tag)))
+    }
+
+    result.sort((a, b) => {
+      if (sortBy === 'date') return (b.createdAt || 0) - (a.createdAt || 0)
+      if (sortBy === 'title') return a.title.localeCompare(b.title)
+      return 0
+    })
+
+    return result
+  }, [decks, activeSubject, filterType, filterTags, sortBy])
   const progress = sessionCards.length > 0 ? ((currentIndex + 1) / sessionCards.length) * 100 : 0
   const isBookmarked = currentCard ? bookmarks.has(`fc_bookmark_${currentCard.id}`) : false
 
@@ -403,15 +454,128 @@ export default function FlashcardViewer() {
           FLASH<span className="text-[var(--accent-primary)]">CARDS</span>
         </h1>
 
-        {/* Subject Filter Chips */}
-        <div className="flex gap-2 bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)]">
-          {SUBJECTS.map(s => (
-            <button key={s} onClick={() => setActiveSubject(s)}
-              className={`px-4 py-2 rounded-md font-['Rajdhani'] tracking-widest text-sm font-bold transition-all ${getSubjectFilterClasses(s, activeSubject === s)}`}
+        <div className="flex gap-2 items-center">
+          <div className="relative" ref={filterPopoverRef}>
+            <button 
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              className={`p-2 rounded-lg border transition-all ${
+                showAdvancedFilters || filterTags.length > 0 || filterType !== 'all' || sortBy !== 'date'
+                  ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
+                  : 'bg-[var(--bg-secondary)] border-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
             >
-              {s}
+              <SlidersHorizontal size={20} />
             </button>
-          ))}
+            
+            <AnimatePresence>
+              {showAdvancedFilters && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 top-full mt-2 w-72 bg-[#111] border border-[#333] rounded-lg shadow-2xl p-4 z-50 flex flex-col gap-4"
+                >
+                  <div className="flex justify-between items-center pb-2 border-b border-[#333]">
+                    <span className="font-['Rajdhani'] font-bold text-sm tracking-widest uppercase text-[#00FF41]">Filters & Sort</span>
+                    <button onClick={() => setShowAdvancedFilters(false)} className="text-[#888] hover:text-[#E8E8E8]">
+                      <X size={16} />
+                    </button>
+                  </div>
+                  
+                  {/* Sort Selection */}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Sort By</label>
+                    <div className="grid grid-cols-2 gap-1">
+                      {(['date', 'title'] as const).map(opt => (
+                        <button
+                          key={opt}
+                          onClick={() => setSortBy(opt)}
+                          className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${
+                            sortBy === opt ? 'bg-[#00FF41]/20 text-[#00FF41] font-bold' : 'bg-[#1A1A1A] text-[#888] hover:bg-[#222]'
+                          }`}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Type Filter */}
+                  <div className="flex flex-col gap-2">
+                    <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Type</label>
+                    <div className="grid grid-cols-4 gap-1">
+                      {(['all', 'mcq', 'flashcard', 'mixed'] as const).map(opt => (
+                        <button
+                          key={opt}
+                          onClick={() => setFilterType(opt)}
+                          className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${
+                            filterType === opt ? 'bg-[#00FF41]/20 text-[#00FF41] font-bold' : 'bg-[#1A1A1A] text-[#888] hover:bg-[#222]'
+                          }`}
+                        >
+                          {opt === 'flashcard' ? 'FC' : opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Tag Filters */}
+                  {availableTags.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                      <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Tags (AND)</label>
+                      <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
+                        {availableTags.map(tag => {
+                          const isActive = filterTags.includes(tag)
+                          return (
+                            <button
+                              key={tag}
+                              onClick={() => {
+                                setFilterTags(prev => 
+                                  isActive ? prev.filter(t => t !== tag) : [...prev, tag]
+                                )
+                              }}
+                              className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-['Rajdhani'] uppercase tracking-wider border transition-all ${
+                                isActive 
+                                  ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
+                                  : 'bg-[#1A1A1A] border-[#333] text-[#888] hover:border-[#555] hover:text-[#E8E8E8]'
+                              }`}
+                            >
+                              {tag}
+                              {isActive && <Check size={10} />}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Clear Button */}
+                  {(filterTags.length > 0 || filterType !== 'all' || sortBy !== 'date') && (
+                    <button
+                      onClick={() => {
+                        setFilterTags([])
+                        setFilterType('all')
+                        setSortBy('date')
+                      }}
+                      className="mt-2 text-xs font-['Rajdhani'] uppercase tracking-widest text-red-400 hover:text-red-300 text-center py-1 transition-colors"
+                    >
+                      Clear All Filters
+                    </button>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="flex gap-2 bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)]">
+            {SUBJECTS.map(s => (
+              <button key={s} onClick={() => setActiveSubject(s)}
+                className={`px-4 py-2 rounded-md font-['Rajdhani'] tracking-widest text-sm font-bold transition-all ${getSubjectFilterClasses(s, activeSubject === s)}`}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
