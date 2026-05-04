@@ -1,7 +1,27 @@
-import React from 'react'
-import { Settings as SettingsIcon, Monitor, Bell, Database, Shield } from 'lucide-react'
+import React, { useState } from 'react'
+import { Settings as SettingsIcon, Monitor, Bell, Database, Shield, CheckCircle } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Settings() {
+  const [resetResetMenuOpen, setResetResetMenuOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const handleResetProgress = () => {
+    // Clear localStorage for mastery_ and progress_
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.startsWith('mastery_') || key.startsWith('progress_') || key === 'setMastery')) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    
+    setResetResetMenuOpen(false);
+    setToastMessage('Progress successfully reset!');
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
   const sections = [
     {
       title: 'Appearance',
@@ -25,8 +45,9 @@ export default function Settings() {
       icon: <Database size={20} className="text-[#00FF41]" />,
       options: [
         { label: 'Auto-Backup Progress Locally', type: 'toggle', current: true },
-        { label: 'Export Progress to File', type: 'action', buttonText: 'Export JSON' },
-        { label: 'Clear All Data (Danger Zone)', type: 'action', buttonText: 'Reset DB', danger: true },
+        { label: 'Export Progress to File', type: 'action', buttonText: 'Export JSON', actionId: 'export' },
+        { label: 'Reset Mastery Progress', type: 'action', buttonText: 'Reset Progress', actionId: 'reset-progress' },
+        { label: 'Clear All Data (Danger Zone)', type: 'action', buttonText: 'Reset DB', danger: true, actionId: 'clear-all' },
       ]
     }
   ]
@@ -71,7 +92,13 @@ export default function Settings() {
                   )}
 
                   {opt.type === 'action' && (
-                    <button className={`px-4 py-2 border rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all ${
+                    <button 
+                      onClick={() => {
+                        if ((opt as any).actionId === 'reset-progress') {
+                          setResetResetMenuOpen(true);
+                        }
+                      }}
+                      className={`px-4 py-2 border rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all ${
                       (opt as any).danger 
                         ? 'border-[#FF3333] text-[#FF3333] hover:bg-[rgba(255,51,51,0.1)] hover:shadow-[0_0_10px_rgba(255,51,51,0.5)]' 
                         : 'border-[#00FF41] text-[#00FF41] hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)]'
@@ -85,6 +112,68 @@ export default function Settings() {
           </section>
         ))}
       </div>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-[#161616] border border-[#00FF41] shadow-[0_0_15px_rgba(0,255,65,0.2)] px-6 py-3 rounded-full flex items-center gap-3 z-[100]"
+          >
+            <CheckCircle className="w-5 h-5 text-[#00FF41]" />
+            <span className="text-[#E8E8E8] font-['Rajdhani'] font-bold tracking-widest uppercase text-sm">
+              {toastMessage}
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Confirmation Modal */}
+      <AnimatePresence>
+        {resetResetMenuOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="bg-[#111] border border-[#00FF41] rounded-lg shadow-[0_0_30px_rgba(0,255,65,0.15)] w-full max-w-md overflow-hidden flex flex-col"
+            >
+              <div className="p-6 border-b border-[#222] bg-[#161616]">
+                <h2 className="text-xl font-bold text-[#E8E8E8] font-['Orbitron'] uppercase tracking-wider">
+                  Reset Mastery Progress
+                </h2>
+              </div>
+              <div className="p-6">
+                <p className="text-[#888] font-['Outfit'] mb-4">
+                  Are you sure you want to reset all mastery and progress data across all decks? 
+                  This will clear your studied status but keep your decks intact.
+                </p>
+              </div>
+              <div className="p-6 border-t border-[#222] bg-[#161616] flex justify-end gap-3">
+                <button 
+                  onClick={() => setResetResetMenuOpen(false)}
+                  className="px-5 py-2 rounded bg-transparent border border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-wider text-sm"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleResetProgress}
+                  className="px-6 py-2 rounded font-bold transition-all font-['Rajdhani'] uppercase tracking-wider text-sm bg-transparent border border-[#00FF41] text-[#00FF41] hover:bg-[rgba(0,255,65,0.1)] shadow-[0_0_15px_rgba(0,255,65,0.3)]"
+                >
+                  Confirm Reset
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

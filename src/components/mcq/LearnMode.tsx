@@ -9,7 +9,7 @@ import { renderMath } from '../../lib/latex'
 interface LearnModeProps {
   cards: Card[]
   title?: string
-  onComplete: (stats: { correct: number; wrong: number; bookmarked: number }) => void
+  onComplete: (stats: { correct: number; wrong: number; bookmarked: number; correctIds: string[] }) => void
   onExit: () => void
 }
 
@@ -21,6 +21,13 @@ const getQuestionFontSize = (text: string): string => {
   if (text.length < 150) return '1.2rem'
   if (text.length < 250) return '1rem'
   return '0.9rem'
+}
+
+const getChoiceFontSize = (text: string): string => {
+  if (text.length < 40)  return '1rem'
+  if (text.length < 80)  return '0.9rem'
+  if (text.length < 120) return '0.82rem'
+  return '0.75rem'
 }
 
 export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, onExit }) => {
@@ -180,7 +187,8 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
         onComplete({
           correct: globalStats.correctFirstTry,
           wrong: globalStats.wrongFirstTry,
-          bookmarked: bookmarkedIds.size
+          bookmarked: bookmarkedIds.size,
+          correctIds: Object.entries(cardStats).filter(([_, stats]) => stats.wasCorrectFirstTry).map(([id]) => id)
         })
       }
     } else {
@@ -418,10 +426,10 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
           <div className="mb-10 pr-4 max-h-[40vh] overflow-y-auto custom-scrollbar">
             <span className="text-[var(--accent-primary)] font-['IBM_Plex_Mono'] text-sm font-bold tracking-widest mb-3 block">Question {overallCurrentQuestion}</span>
             <div 
-              className="text-white font-medium font-['IBM_Plex_Mono']"
+              className="text-white font-['Rajdhani'] font-semibold"
               style={{
                 fontSize: getQuestionFontSize(mcqData.question),
-                lineHeight: 1.6,
+                lineHeight: 1.4,
                 whiteSpace: 'pre-wrap'
               }}
               dangerouslySetInnerHTML={{ __html: renderMath(mcqData.question) }}
@@ -457,12 +465,16 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
                   key={idx}
                   onClick={() => viewState === 'question' && submitAnswer(idx)}
                   disabled={viewState === 'feedback'}
-                  className={`p-[16px_20px] min-h-[64px] rounded-lg border text-left flex items-start transition-all font-['Rajdhani'] text-lg ${btnClass}`}
+                  className={`p-[16px_20px] min-h-[56px] rounded-lg border text-left flex items-center transition-all font-['Rajdhani'] ${btnClass}`}
                 >
                   <span className={`font-['IBM_Plex_Mono'] mr-3 w-6 flex-shrink-0 ${prefixClass}`}>
                     {String.fromCharCode(65 + idx)}.
                   </span>
-                  <div className={`flex-1 break-words leading-snug pt-0.5 font-['IBM_Plex_Mono'] ${textClass}`} dangerouslySetInnerHTML={{ __html: renderMath(choice) }} />
+                  <div 
+                    className={`flex-1 break-words font-['Rajdhani'] font-medium ${textClass}`} 
+                    style={{ fontSize: getChoiceFontSize(choice), lineHeight: 1.4 }}
+                    dangerouslySetInnerHTML={{ __html: renderMath(choice) }} 
+                  />
                 </button>
               )
             })}

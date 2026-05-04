@@ -5,6 +5,8 @@ CREATE TABLE IF NOT EXISTS topics (
   description TEXT,
   parent_id TEXT,
   order_index INTEGER DEFAULT 0,
+  tags TEXT,
+  created_at INTEGER DEFAULT (strftime('%s', 'now')),
   FOREIGN KEY(parent_id) REFERENCES topics(id)
 );
 

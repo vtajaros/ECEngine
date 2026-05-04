@@ -937,17 +937,28 @@ export default function FlashcardStudy() {
               <div className="flex justify-between items-start mb-4 gap-2">
                 <div className="flex flex-col flex-1 gap-1">
                   <h3 className="text-xl font-['Orbitron'] font-bold text-[var(--text-primary)] tracking-wide">{set.title}</h3>
-                  {set.deckType && (
-                    <span className={`w-fit text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded border shrink-0 uppercase ${
-                      set.deckType === 'mcq'
-                        ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
-                        : set.deckType === 'mixed'
-                        ? 'text-[#B983FF] border-[#B983FF]/30 bg-[#B983FF]/10'
-                        : 'text-[#00FF41] border-[#00FF41]/30 bg-[#00FF41]/10'
-                    }`}>
-                      {set.deckType === 'mixed' ? 'MIX' : set.deckType === 'mcq' ? 'MCQ' : 'FC'}
-                    </span>
-                  )}
+                  <div className="flex flex-wrap items-center gap-[6px]">
+                    {set.deckType && (
+                      <span className={`w-fit text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded border shrink-0 uppercase ${
+                        set.deckType === 'mcq'
+                          ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
+                          : set.deckType === 'mixed'
+                          ? 'text-[#B983FF] border-[#B983FF]/30 bg-[#B983FF]/10'
+                          : 'text-[#00FF41] border-[#00FF41]/30 bg-[#00FF41]/10'
+                      }`}>
+                        {set.deckType === 'mixed' ? 'MIX' : set.deckType === 'mcq' ? 'MCQ' : 'FC'}
+                      </span>
+                    )}
+
+                    {set.tags && set.tags.length > 0 && set.tags.map(tag => (
+                      <span 
+                        key={tag}
+                        className="text-[0.65rem] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded border border-white/20 text-[#888888] uppercase tracking-wider"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`text-xs font-['Rajdhani'] px-2 py-1 bg-[#1A1A1A] rounded border whitespace-nowrap ${getSubjectBadgeClasses(set.subject)}`}>

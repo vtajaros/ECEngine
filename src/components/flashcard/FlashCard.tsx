@@ -80,7 +80,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate }) => {
             
             <div className="flex-1 flex items-center justify-center text-center">
               <h2 
-                className="text-2xl font-medium leading-relaxed" 
+                className="text-2xl font-['Rajdhani'] font-semibold leading-snug" 
                 dangerouslySetInnerHTML={{ __html: renderMath(data.front) }}
               />
             </div>
@@ -100,7 +100,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate }) => {
              </div>
              <div className="flex-1 flex items-center justify-center text-center overflow-y-auto">
                 <div 
-                  className="text-xl leading-relaxed whitespace-pre-wrap"
+                  className="text-xl font-['Rajdhani'] font-medium leading-snug whitespace-pre-wrap"
                   dangerouslySetInnerHTML={{ __html: renderMath(data.back) }}
                 />
              </div>

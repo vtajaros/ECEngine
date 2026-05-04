@@ -16,6 +16,13 @@ export async function initDB() {
   if (fs.existsSync(dbPath)) {
     const filebuffer = fs.readFileSync(dbPath);
     db = new SQL.Database(filebuffer);
+    
+    // Apply migrations for new columns silently if they don't exist
+    try { db.run("ALTER TABLE topics ADD COLUMN tags TEXT DEFAULT '[]'"); } catch (e) {}
+    try { db.run("ALTER TABLE cards ADD COLUMN tags TEXT DEFAULT '[]'"); } catch (e) {}
+    try { db.run("ALTER TABLE topics ADD COLUMN created_at INTEGER DEFAULT (strftime('%s', 'now'))"); } catch (e) {}
+    try { db.run("ALTER TABLE cards ADD COLUMN created_at INTEGER DEFAULT (strftime('%s', 'now'))"); } catch (e) {}
+    saveDB();
   } else {
     db = new SQL.Database();
     initSchema();

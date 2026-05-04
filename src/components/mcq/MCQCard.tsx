@@ -77,7 +77,7 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
         </div>
 
         <div 
-          className="text-xl font-medium leading-relaxed text-[#E8E8E8]"
+          className="text-xl font-['Rajdhani'] font-semibold leading-relaxed text-[var(--text-primary)]"
           dangerouslySetInnerHTML={{ __html: renderMath(data.question) }}
         />
         
@@ -123,7 +123,7 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
                 {letters[index]}
               </div>
               <div 
-                className="flex-1 text-base font-medium tracking-wide"
+                className="flex-1 text-base font-['Rajdhani'] font-semibold tracking-wide"
                 dangerouslySetInnerHTML={{ __html: renderMath(choice) }}
               />
               {showResult && isCorrectAnswer && <CheckCircle2 className="text-[#00FF41] ml-3 flex-shrink-0" size={20} />}
@@ -145,7 +145,7 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
                Explanation
              </h3>
              <div 
-               className="text-[#E8E8E8] text-base leading-relaxed mb-4"
+               className="text-[var(--text-primary)] font-['Rajdhani'] text-base font-medium leading-relaxed mb-4"
                dangerouslySetInnerHTML={{ __html: renderMath(data.explanation) }}
              />
              

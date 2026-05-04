@@ -3,6 +3,7 @@ import { Card, MCQData } from '../../types'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bookmark, Clock, ArrowRight, RefreshCw, ClipboardCheck, X, AlertTriangle } from 'lucide-react'
 import { shuffle, shuffleChoices } from '../../lib/scrambler'
+import { renderMath } from '../../lib/latex'
 
 interface TestModeProps {
   cards: Card[]
@@ -13,7 +14,7 @@ interface TestModeProps {
     shuffleChoices: boolean
     bookmarkedOnly: boolean
   }
-  onComplete: (stats: { score: number; total: number; bookmarked: number }) => void
+  onComplete: (stats: { score: number; total: number; bookmarked: number; correctIds: string[] }) => void
   onExit: () => void
 }
 
@@ -24,6 +25,13 @@ const getQuestionFontSize = (text: string): string => {
   if (text.length < 150) return '1.2rem'
   if (text.length < 250) return '1rem'
   return '0.9rem'
+}
+
+const getChoiceFontSize = (text: string): string => {
+  if (text.length < 40)  return '1rem'
+  if (text.length < 80)  return '0.9rem'
+  if (text.length < 120) return '0.82rem'
+  return '0.75rem'
 }
 
 export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onComplete, onExit }) => {
@@ -105,7 +113,11 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
     })
     setScore({ correct, total: testCards.length })
     setViewState('summary')
-    onComplete({ score: correct, total: testCards.length, bookmarked: bookmarkedIds.size })
+    const correctIds = testCards.filter(card => {
+      const mcq = card.data as MCQData;
+      return answers[card.id] === mcq.answer;
+    }).map(card => card.id);
+    onComplete({ score: correct, total: testCards.length, bookmarked: bookmarkedIds.size, correctIds })
   }
 
   const formatTime = (seconds: number) => {
@@ -303,14 +315,13 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
                 
                 <div className="flex-1 flex flex-col max-h-[40vh] overflow-y-auto custom-scrollbar pr-2">
                   <h3 
-                    className="font-['Outfit'] text-[var(--text-primary)] whitespace-pre-wrap"
+                    className="font-['Rajdhani'] font-semibold text-[var(--text-primary)] whitespace-pre-wrap"
                     style={{
                       fontSize: getQuestionFontSize(mcq.question),
-                      lineHeight: 1.6
+                      lineHeight: 1.4
                     }}
-                  >
-                    {mcq.question}
-                  </h3>
+                    dangerouslySetInnerHTML={{ __html: renderMath(mcq.question) }}
+                  />
                 </div>
 
                 <button 
@@ -366,17 +377,22 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
                       key={cIdx}
                       onClick={() => handleSelectChoice(card.id, cIdx)}
                       disabled={viewState === 'review' || (settings.instantChecking && isAnswered)}
-                      className={`flex items-start text-left p-[16px_20px] min-h-[64px] rounded-lg border transition-all duration-200 ${stateStyles} ${
+                      className={`flex items-center text-left p-[16px_20px] min-h-[56px] rounded-lg border transition-all duration-200 font-['Rajdhani'] ${stateStyles} ${
                         viewState === 'review' || (settings.instantChecking && isAnswered) ? 'cursor-default' : 'cursor-pointer'
                       }`}
                     >
                       <div className={`flex-shrink-0 mr-3 font-['IBM_Plex_Mono'] ${prefixStyles}`}>
                         {choiceLabel}.
                       </div>
-                      <span className="font-['Outfit'] flex-1 break-words leading-snug pt-0.5">{choice}</span>
+                      <span 
+                        className="flex-1 break-words font-['Rajdhani'] font-medium"
+                        style={{ fontSize: getChoiceFontSize(choice), lineHeight: 1.4 }}
+                      >
+                        {choice}
+                      </span>
                       
                       {iconElement && (
-                        <div className="ml-4 flex-shrink-0 mt-0.5">
+                        <div className="ml-4 flex-shrink-0">
                           {iconElement}
                         </div>
                       )}
@@ -390,7 +406,7 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
                 <div className="px-6 pb-6 pt-2">
                   <div className="p-4 bg-[#111] rounded border border-[#222]">
                     <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888] mb-1 block">Explanation</span>
-                    <p className="text-sm text-[#CCC] font-['Outfit'] whitespace-pre-wrap">{mcq.explanation}</p>
+                    <p className="text-sm text-[#CCC] font-['Rajdhani'] font-medium whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: renderMath(mcq.explanation) }} />
                   </div>
                 </div>
               )}
