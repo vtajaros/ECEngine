@@ -23,6 +23,11 @@ const SUBJECTS: { value: Subject; short: string; icon: any }[] = [
   { value: 'Electronics Systems & Technologies', short: 'EST', icon: Cpu },
 ]
 
+const PREDEFINED_TAGS = [
+  'Excel', 'Edge', 'Indiabix', 'Pinoybix', 'Top', 
+  'PERCDC', 'EST Superbook', 'Forouzan'
+]
+
 /* ------------------------------------------------------------------ */
 /*  Import Modal (fullscreen overlay)                                  */
 /* ------------------------------------------------------------------ */
@@ -348,6 +353,8 @@ export default function AddDeck() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [subject, setSubject] = useState<Subject>('Electronics Engineering')
+  const [deckTags, setDeckTags] = useState<Set<string>>(new Set())
+  const [customTagInput, setCustomTagInput] = useState('')
 
   const [importModalType, setImportModalType] = useState<'none' | 'mcq' | 'flashcard'>('none')
   const [cards, setCards] = useState<ImportedCard[]>([])
@@ -392,8 +399,8 @@ export default function AddDeck() {
     try {
       const topicId = 'topic_' + Date.now().toString(36)
       const topicResult = await (window as any).electron.db.run(
-        `INSERT INTO topics (id, name, subject, description) VALUES (?, ?, ?, ?)`,
-        [topicId, title.trim(), subject, description.trim()]
+        `INSERT INTO topics (id, name, subject, description, tags) VALUES (?, ?, ?, ?, ?)`,
+        [topicId, title.trim(), subject, description.trim(), JSON.stringify(Array.from(deckTags))]
       )
       if (!topicResult.success) throw new Error(topicResult.error || 'Failed to create topic')
 
@@ -523,6 +530,78 @@ export default function AddDeck() {
                   </button>
                 )
               })}
+            </div>
+          </section>
+
+          {/* Tags Selector */}
+          <section className="flex flex-col gap-3 mt-4">
+            <label className="text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest">
+              SOURCE TAGS
+            </label>
+            <div className="flex flex-wrap gap-3">
+              {PREDEFINED_TAGS.map(tag => {
+                const isSelected = deckTags.has(tag)
+                return (
+                  <button
+                    key={tag}
+                    onClick={() => {
+                      const next = new Set(deckTags)
+                      if (next.has(tag)) next.delete(tag)
+                      else next.add(tag)
+                      setDeckTags(next)
+                    }}
+                    className={`px-4 py-2 rounded-full font-['Rajdhani'] uppercase tracking-wider text-xs font-bold transition-all border ${
+                      isSelected
+                        ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
+                        : 'bg-[#161616] border-[#333] text-[#888] hover:border-[#555] hover:text-[#E8E8E8]'
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                )
+              })}
+              {Array.from(deckTags).filter(t => !PREDEFINED_TAGS.includes(t)).map(tag => (
+                <div key={tag} className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#00FF41]/10 border border-[#00FF41] text-[#00FF41] font-['Rajdhani'] uppercase tracking-wider text-xs font-bold">
+                  {tag}
+                  <button onClick={() => {
+                    const next = new Set(deckTags)
+                    next.delete(tag)
+                    setDeckTags(next)
+                  }} className="text-[#00FF41] hover:text-white transition-colors cursor-pointer rounded-full p-0.5 -mr-2">
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            
+            <div className="flex items-center gap-2 mt-2 w-full max-w-sm">
+              <input
+                type="text"
+                placeholder="Add custom tag..."
+                value={customTagInput}
+                onChange={e => setCustomTagInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (customTagInput.trim()) {
+                      setDeckTags(prev => new Set(prev).add(customTagInput.trim()));
+                      setCustomTagInput('');
+                    }
+                  }
+                }}
+                className="flex-1 bg-[#111] border border-[#333] rounded px-3 py-2 text-sm text-[#E8E8E8] placeholder-[#555] focus:border-[#00FF41] focus:outline-none font-['Rajdhani'] uppercase tracking-wider transition-colors h-[38px]"
+              />
+              <button 
+                onClick={() => {
+                  if (customTagInput.trim()) {
+                    setDeckTags(prev => new Set(prev).add(customTagInput.trim()));
+                    setCustomTagInput('');
+                  }
+                }}
+                className="w-[38px] h-[38px] bg-[#111] border border-[#333] text-[#888] flex items-center justify-center rounded hover:text-[#00FF41] hover:border-[#00FF41] transition-colors shrink-0"
+              >
+                <Plus size={18} />
+              </button>
             </div>
           </section>
 
