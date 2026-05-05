@@ -585,44 +585,22 @@ export default function FlashcardViewer() {
           <motion.div key={deck.id} whileHover={{ y: -4 }} onClick={() => openDeck(deck)}
             className="bg-[var(--bg-card)] rounded-xl border border-[#222] hover:border-[var(--accent-dim)] transition-all hover:shadow-[0_0_20px_rgba(0,255,65,0.08)] overflow-hidden cursor-pointer flex flex-col">
             <div className="p-6 flex-1 flex flex-col">
-              <div className="flex flex-col gap-2 mb-3">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className="text-lg font-['Orbitron'] font-bold text-[var(--text-primary)] tracking-wide flex-1 leading-tight">{deck.title}</h3>
-                  <div className="flex flex-wrap items-center gap-[6px] shrink-0">
-                    <span className={`text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded border shrink-0 uppercase ${
-                      deck.deckType === 'mcq'
-                        ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
-                        : deck.deckType === 'mixed'
-                        ? 'text-[#B983FF] border-[#B983FF]/30 bg-[#B983FF]/10'
-                        : 'text-[#00FF41] border-[#00FF41]/30 bg-[#00FF41]/10'
-                    }`}>
-                      {deck.deckType === 'mixed' ? 'MIX' : deck.deckType === 'mcq' ? 'MCQ' : 'FC'}
-                    </span>
-                  </div>
-                </div>
-                
-                {deck.tags && deck.tags.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-[6px]">
-                    {deck.tags.map(tag => (
-                      <span 
-                        key={tag}
-                        className="text-[0.65rem] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded border border-white/20 text-[#888888] uppercase tracking-wider"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
+              <div className="flex items-start justify-between gap-2 mb-3">
+                <h3 className="text-lg font-['Orbitron'] font-bold text-[var(--text-primary)] tracking-wide flex-1 leading-tight">{deck.title}</h3>
+                <span className={`text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded border shrink-0 uppercase ${
+                  deck.deckType === 'mcq'
+                    ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
+                    : deck.deckType === 'mixed'
+                    ? 'text-[#B983FF] border-[#B983FF]/30 bg-[#B983FF]/10'
+                    : 'text-[#00FF41] border-[#00FF41]/30 bg-[#00FF41]/10'
+                }`}>
+                  {deck.deckType === 'mixed' ? 'MIX' : deck.deckType === 'mcq' ? 'MCQ' : 'FC'}
+                </span>
               </div>
 
-              <div className="mt-auto pt-4 border-t border-[#222] flex flex-col gap-2">
-                <span className="text-[#666] font-['IBM_Plex_Mono'] text-[10px] tracking-widest uppercase">
-                  ADDED: {deck.createdAt ? new Date(deck.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
-                </span>
-                <div className="flex items-center justify-between">
-                  <span className={`text-xs font-['Rajdhani'] uppercase tracking-widest font-bold px-2 py-1 rounded border ${getSubjectBadgeClasses(deck.subject)}`}>{deck.subject}</span>
-                  <span className="text-xs font-['IBM_Plex_Mono'] text-[#888]">{deck.cardCount} cards</span>
-                </div>
+              <div className="mt-auto flex items-center justify-between pt-4 border-t border-[#222]">
+                <span className={`text-xs font-['Rajdhani'] uppercase tracking-widest font-bold px-2 py-1 rounded border ${getSubjectBadgeClasses(deck.subject)}`}>{deck.subject}</span>
+                <span className="text-xs font-['IBM_Plex_Mono'] text-[#888]">{deck.cardCount} cards</span>
               </div>
             </div>
           </motion.div>

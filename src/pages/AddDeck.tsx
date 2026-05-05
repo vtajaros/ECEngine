@@ -24,8 +24,8 @@ const SUBJECTS: { value: Subject; short: string; icon: any }[] = [
 ]
 
 const PREDEFINED_TAGS = [
-  'Excel', 'Edge', 'Indiabix', 'Pinoybix', 'Top', 
-  'PERCDC', 'EST Superbook', 'Forouzan'
+  'Excel', 'Edge', 'TOP', 'Indiabix', 'Pinoybix', 
+  'EST Superbook'
 ]
 
 /* ------------------------------------------------------------------ */
@@ -231,7 +231,7 @@ ANS: D`}
             <div className="flex flex-1 flex-row border border-[#333] rounded-t-lg bg-[#0D0D0D] overflow-hidden focus-within:border-[#00FF41] transition-colors relative">
               <div 
                 ref={gutterRef}
-                className="w-12 shrink-0 bg-[#0D0D0D] text-[#888] font-['IBM_Plex_Mono'] text-[11px] text-right pr-3 pl-2 select-none overflow-hidden pt-5 border-r border-[#222]"
+                className="w-12 shrink-0 bg-[#0D0D0D] text-[#444] font-['IBM_Plex_Mono'] text-sm text-right pr-3 pl-2 select-none overflow-hidden pt-5"
               >
                 {linesArray.map(line => <div key={line}>{line}</div>)}
               </div>
@@ -513,7 +513,7 @@ A: Another definition`}
             <div className="flex flex-1 flex-row border border-[#333] rounded-t-lg bg-[#0D0D0D] overflow-hidden focus-within:border-[#00FF41] transition-colors relative">
               <div 
                 ref={gutterRef}
-                className="w-12 shrink-0 bg-[#0D0D0D] text-[#888] font-['IBM_Plex_Mono'] text-[11px] text-right pr-3 pl-2 select-none overflow-hidden pt-5 border-r border-[#222]"
+                className="w-12 shrink-0 bg-[#0D0D0D] text-[#444] font-['IBM_Plex_Mono'] text-sm text-right pr-3 pl-2 select-none overflow-hidden pt-5"
               >
                 {linesArray.map(line => <div key={line}>{line}</div>)}
               </div>
