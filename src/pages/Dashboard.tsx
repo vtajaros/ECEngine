@@ -1,18 +1,70 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { BookOpen, Library, Sigma, Download, Zap, BookMarked, BarChart2 } from 'lucide-react'
 
 export default function Dashboard() {
+  const [statsData, setStatsData] = useState({
+    totalCards: 0,
+    internalized: 0,
+    currentStreak: 0
+  })
+
+  const [subjectProgress, setSubjectProgress] = useState<any[]>([])
+
+  useEffect(() => {
+    loadDashboardData()
+  }, [])
+
+  const loadDashboardData = async () => {
+    try {
+      // 1. Total Cards
+      const totalResult = await window.electron.db.query('SELECT COUNT(id) as count FROM cards')
+      const total = totalResult[0]?.count || 0
+
+      // 2. Internalized Cards (Repetitions >= 5)
+      const internalizedResult = await window.electron.db.query('SELECT COUNT(card_id) as count FROM progress WHERE repetitions >= 5')
+      const internalized = internalizedResult[0]?.count || 0
+
+      // 3. Current Streak (Simplified for now - could be a separate log table, but assuming we fetch from a setting or calc)
+      // For now, let's keep it at 0 or a placeholder unless a streak table exists
+      const currentStreak = 0 
+
+      setStatsData({ totalCards: total, internalized, currentStreak })
+
+      // 4. Subject Progress
+      // Join topics (subjects), cards, and progress to get mastery per subject
+      const progressResult = await window.electron.db.query(`
+        SELECT 
+          t.subject, 
+          COUNT(c.id) as total, 
+          SUM(CASE WHEN p.repetitions >= 5 THEN 1 ELSE 0 END) as mastered 
+        FROM topics t 
+        JOIN cards c ON t.id = c.topic_id 
+        LEFT JOIN progress p ON c.id = p.card_id 
+        GROUP BY t.subject
+      `)
+
+      const formattedProgress = progressResult.map((row: any) => ({
+        subject: row.subject,
+        percent: row.total > 0 ? Math.round((row.mastered / row.total) * 100) : 0
+      }))
+
+      setSubjectProgress(formattedProgress)
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error)
+    }
+  }
+
   const quickLinks = [
     { title: 'Study Flashcards', desc: 'Jump back into spaced repetition', path: '/flashcards', icon: BookOpen },
-    { title: 'Take a Mock Exam', desc: 'Simulate the ECE board', path: '/exam', icon: Library },
+    { title: 'Take a Mock Exam', desc: 'Simulate the ECE board', path: '/study', icon: Library },
     { title: 'Browse Formulas', desc: 'Quick reference for equations', path: '/formulas', icon: Sigma },
   ]
 
   const stats = [
-    { label: 'Cards Internalized', value: '420', unit: 'cards' },
-    { label: 'Exam Average', value: '84', unit: '%' },
-    { label: 'Current Streak', value: '12', unit: 'days' },
+    { label: 'Total Cards', value: statsData.totalCards.toString(), unit: 'cards' },
+    { label: 'Global Mastery', value: statsData.totalCards > 0 ? Math.round((statsData.internalized / statsData.totalCards) * 100).toString() : '0', unit: '%' },
+    { label: 'Current Streak', value: statsData.currentStreak.toString(), unit: 'days' },
   ]
 
   return (
@@ -79,50 +131,45 @@ export default function Dashboard() {
              Review Progress
           </h2>
           <div className="space-y-6">
-            <div>
-              <div className="flex justify-between text-sm mb-2 font-['Rajdhani'] text-[#888888] uppercase tracking-wider">
-                <span>Electronics</span>
-                <span className="text-[#00FF41]">65%</span>
+            {subjectProgress.length > 0 ? (
+              subjectProgress.slice(0, 4).map((item, idx) => {
+                // Color logic based on percentage or index for visual variety
+                let color = '#00FF41' // Default Green
+                if (item.percent < 30) color = '#FF3333' // Red
+                else if (item.percent < 60) color = '#FFB800' // Yellow
+
+                return (
+                  <div key={idx}>
+                    <div className="flex justify-between text-sm mb-2 font-['Rajdhani'] text-[#888888] uppercase tracking-wider">
+                      <span>{item.subject}</span>
+                      <span style={{ color }}>{item.percent}%</span>
+                    </div>
+                    <div className="w-full bg-[#161616] h-2 rounded-full overflow-hidden border border-[#222]">
+                      <div 
+                        className="h-full transition-all duration-1000" 
+                        style={{ 
+                          width: `${item.percent}%`, 
+                          backgroundColor: color,
+                          boxShadow: `0 0 8px ${color}80` 
+                        }} 
+                      />
+                    </div>
+                  </div>
+                )
+              })
+            ) : (
+              <div className="text-[#444] font-['IBM_Plex_Mono'] text-xs text-center py-4">
+                No decks found.
               </div>
-              <div className="w-full bg-[#161616] h-2 rounded-full overflow-hidden border border-[#222]">
-                <div className="bg-[#00FF41] h-full shadow-[0_0_8px_rgba(0,255,65,0.8)] w-[65%]" />
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-sm mb-2 font-['Rajdhani'] text-[#888888] uppercase tracking-wider">
-                <span>Mathematics</span>
-                <span className="text-[#FFB800]">38%</span>
-              </div>
-              <div className="w-full bg-[#161616] h-2 rounded-full overflow-hidden border border-[#222]">
-                <div className="bg-[#FFB800] h-full shadow-[0_0_8px_rgba(255,184,0,0.8)] w-[38%]" />
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-sm mb-2 font-['Rajdhani'] text-[#888888] uppercase tracking-wider">
-                <span>Communications</span>
-                <span className="text-[#E8E8E8]">12%</span>
-              </div>
-              <div className="w-full bg-[#161616] h-2 rounded-full overflow-hidden border border-[#222]">
-                <div className="bg-[#E8E8E8] h-full w-[12%]" />
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-sm mb-2 font-['Rajdhani'] text-[#888888] uppercase tracking-wider">
-                <span>GEAS</span>
-                <span className="text-[#FF3333]">5%</span>
-              </div>
-              <div className="w-full bg-[#161616] h-2 rounded-full overflow-hidden border border-[#222]">
-                <div className="bg-[#FF3333] h-full shadow-[0_0_8px_rgba(255,51,51,0.8)] w-[5%]" />
-              </div>
-            </div>
+            )}
           </div>
           
           <Link 
-             to="/import"
+             to="/add-set"
              className="mt-8 relative w-full flex items-center justify-center p-3 text-center border-2 border-dashed border-[#444] rounded text-[#888888] hover:border-[#00FF41] hover:text-[#E8E8E8] transition-colors font-['Rajdhani'] uppercase tracking-wider group"
           >
              <Download size={18} className="mr-2 group-hover:text-[#00FF41]" />
-             Import Deck Content
+             Add Decks
           </Link>
         </div>
 
