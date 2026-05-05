@@ -615,9 +615,14 @@ export default function FlashcardViewer() {
                 )}
               </div>
 
-              <div className="mt-auto flex items-center justify-between pt-4 border-t border-[#222]">
-                <span className={`text-xs font-['Rajdhani'] uppercase tracking-widest font-bold px-2 py-1 rounded border ${getSubjectBadgeClasses(deck.subject)}`}>{deck.subject}</span>
-                <span className="text-xs font-['IBM_Plex_Mono'] text-[#888]">{deck.cardCount} cards</span>
+              <div className="mt-auto pt-4 border-t border-[#222] flex flex-col gap-2">
+                <span className="text-[#666] font-['IBM_Plex_Mono'] text-[10px] tracking-widest uppercase">
+                  ADDED: {deck.createdAt ? new Date(deck.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
+                </span>
+                <div className="flex items-center justify-between">
+                  <span className={`text-xs font-['Rajdhani'] uppercase tracking-widest font-bold px-2 py-1 rounded border ${getSubjectBadgeClasses(deck.subject)}`}>{deck.subject}</span>
+                  <span className="text-xs font-['IBM_Plex_Mono'] text-[#888]">{deck.cardCount} cards</span>
+                </div>
               </div>
             </div>
           </motion.div>

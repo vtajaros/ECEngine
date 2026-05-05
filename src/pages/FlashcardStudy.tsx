@@ -975,10 +975,13 @@ export default function FlashcardStudy() {
                   )}
                 </div>
               </div>
-              {set.description && set.description.trim() && (
-                <p className="text-[#888888] text-sm mb-6 flex-1">{set.description}</p>
-              )}
-              
+              {/* Date Added */}
+              <div className="mb-2">
+                <span className="text-[#666] font-['IBM_Plex_Mono'] text-[10px] tracking-widest uppercase">
+                  ADDED: {set.createdAt ? new Date(set.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
+                </span>
+              </div>
+
               {/* Mastery Bar */}
               <div className="mt-auto">
                 <div className="flex justify-between text-xs font-['Rajdhani'] tracking-widest mb-2">

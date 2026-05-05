@@ -360,6 +360,112 @@ export default function AddDeck() {
   const [cards, setCards] = useState<ImportedCard[]>([])
   const [saving, setSaving] = useState(false)
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(0)
+  const [suggestedSubject, setSuggestedSubject] = useState<Subject | null>(null)
+
+  // Auto-detect subject when cards are imported
+  useEffect(() => {
+    if (cards.length === 0) {
+      setSuggestedSubject(null)
+      return
+    }
+
+  const KEYWORDS: Record<Subject, { word: string; weight: number }[]> = {
+      'Mathematics': [
+        { word: 'calculus', weight: 1 }, { word: 'integral', weight: 1 }, { word: 'derivative', weight: 1 },
+        { word: 'laplace', weight: 3 }, { word: 'fourier', weight: 3 }, { word: 'z-transform', weight: 3 },
+        { word: 'differential equation', weight: 3 }, { word: 'matrix', weight: 1 }, { word: 'probability', weight: 2 },
+        { word: 'statistics', weight: 1 }, { word: 'divergence', weight: 3 }, { word: 'curl', weight: 2 },
+        { word: 'bessel', weight: 3 }, { word: 'legendre', weight: 3 }, { word: 'stokes theorem', weight: 3 }
+      ],
+      'General Engineering & Applied Sciences': [
+        { word: 'chemistry', weight: 2 }, { word: 'physics', weight: 1 }, { word: 'thermodynamics', weight: 3 },
+        { word: 'enthalpy', weight: 3 }, { word: 'entropy', weight: 3 }, { word: 'economics', weight: 2 },
+        { word: 'annuity', weight: 3 }, { word: 'depreciation', weight: 3 }, { word: 'present worth', weight: 3 },
+        { word: 'ethics', weight: 3 }, { word: 'prc', weight: 3 }, { word: 'licensure', weight: 3 },
+        { word: 'contract', weight: 2 }, { word: 'autocad', weight: 3 }, { word: 'cad', weight: 3 },
+        { word: 'material science', weight: 3 }, { word: 'crystalline', weight: 3 }, { word: 'polymer', weight: 3 },
+        { word: 'management', weight: 3 }, { word: 'planning', weight: 3 }, 
+        { word: 'organizing', weight: 3 }, { word: 'leading', weight: 3 }, 
+        { word: 'controlling', weight: 3 }, { word: 'swot', weight: 3 }, 
+        { word: 'budget', weight: 2 }, { word: 'project', weight: 2 },
+        { word: 'organization', weight: 2 }, { word: 'sales', weight: 2 },
+        { word: 'consulting', weight: 2 }, { word: 'manufacturing', weight: 2 },
+        { word: 'technopreneurship', weight: 3 }
+      ],
+      'Electronics Engineering': [
+        { word: 'resistor', weight: 1 }, { word: 'capacitor', weight: 1 }, { word: 'inductor', weight: 1 },
+        { word: 'diode', weight: 2 }, { word: 'transistor', weight: 2 }, { word: 'bjt', weight: 3 },
+        { word: 'fet', weight: 3 }, { word: 'mosfet', weight: 3 }, { word: 'op-amp', weight: 3 },
+        { word: 'thyristor', weight: 3 }, { word: 'scr', weight: 3 }, { word: 'triac', weight: 3 },
+        { word: 'logic gate', weight: 2 }, { word: 'boolean', weight: 2 }, { word: 'karnaugh', weight: 3 },
+        { word: 'flip flop', weight: 3 }, { word: 'microprocessor', weight: 3 }, { word: 'microcontroller', weight: 3 },
+        { word: 'thevenin', weight: 3 }, { word: 'norton', weight: 3 }, { word: 'kirchhoff', weight: 2 }
+      ],
+      'Electronics Systems & Technologies': [
+        { word: 'modulation', weight: 3 }, { word: 'demodulation', weight: 3 }, { word: 'am', weight: 2 },
+        { word: 'fm', weight: 2 }, { word: 'pcm', weight: 3 }, { word: 'ask', weight: 3 }, { word: 'fsk', weight: 3 },
+        { word: 'psk', weight: 3 }, { word: 'qam', weight: 3 }, { word: 'antenna', weight: 3 },
+        { word: 'waveguide', weight: 3 }, { word: 'smith chart', weight: 3 }, { word: 'transmission line', weight: 3 },
+        { word: 'fiber optic', weight: 3 }, { word: 'multiplexing', weight: 3 }, { word: 'tdm', weight: 3 },
+        { word: 'fdm', weight: 3 }, { word: 'cdma', weight: 3 }, { word: 'osi model', weight: 3 },
+        { word: 'tcp/ip', weight: 3 }, { word: 'superheterodyne', weight: 3 }, { word: 'path loss', weight: 3 }
+      ]
+    }
+
+    const allText = cards.map(c => {
+      if (c.mcqData) return c.mcqData.question + ' ' + (c.mcqData.choices?.join(' ') || '')
+      if (c.flashcardData) return (c.flashcardData.front || '') + ' ' + (c.flashcardData.back || '')
+      return ''
+    }).join(' ').toLowerCase()
+
+    const scores: Record<Subject, number> = {
+      'Mathematics': 0,
+      'General Engineering & Applied Sciences': 0,
+      'Electronics Engineering': 0,
+      'Electronics Systems & Technologies': 0
+    }
+
+    Object.entries(KEYWORDS).forEach(([subj, words]) => {
+      words.forEach(({ word, weight }) => {
+        const regex = new RegExp(`\\b${word}\\b`, 'gi')
+        const matches = allText.match(regex)
+        if (matches) scores[subj as Subject] += (matches.length * weight)
+      })
+    })
+
+    const sorted = Object.entries(scores)
+      .filter(([_, score]) => score > 0)
+      .sort((a, b) => b[1] - a[1])
+
+    if (sorted.length > 0) {
+      const top = sorted[0]
+      const secondScore = sorted.length > 1 ? sorted[1][1] : 0
+      
+      // Auto-switch only if the top score is a clear winner (e.g., 20% higher than 2nd place)
+      if (sorted.length === 1 || top[1] > secondScore * 1.2) {
+        const topSubject = top[0] as Subject
+        setSuggestedSubject(topSubject)
+        setSubject(topSubject)
+
+        // Smart Title Generation: only if title is currently empty
+        if (!title.trim()) {
+          const shortName = SUBJECTS.find(s => s.value === topSubject)?.short || 'MIXED'
+          setTitle(`${shortName} Review Batch — ${cards.length} items`)
+        }
+      } else {
+        // If it's too close to call, suggest it but don't force switch the UI
+        setSuggestedSubject(top[0] as Subject)
+        if (!title.trim()) {
+          setTitle(`Mixed Review Batch — ${cards.length} items`)
+        }
+      }
+    } else {
+      setSuggestedSubject(null)
+      if (cards.length > 0 && !title.trim()) {
+        setTitle(`Mixed Review Batch — ${cards.length} items`)
+      }
+    }
+  }, [cards])
 
   const handleImportMCQs = (imported: { mcqData?: any }[]) => {
     const newRows: ImportedCard[] = imported.filter(c => c.mcqData).map(c => ({
@@ -368,9 +474,6 @@ export default function AddDeck() {
     }))
     setCards(newRows)
     setSelectedQuestionIndex(0)
-    if (!title.trim() && newRows.length > 0) {
-      setTitle(`Imported MCQ Set — ${new Date().toLocaleDateString()}`)
-    }
   }
 
   const handleImportFlashcards = (imported: { flashcardData?: any }[]) => {
@@ -380,9 +483,6 @@ export default function AddDeck() {
     }))
     setCards(newRows)
     setSelectedQuestionIndex(0)
-    if (!title.trim() && newRows.length > 0) {
-      setTitle(`Imported Flashcard Set — ${new Date().toLocaleDateString()}`)
-    }
   }
 
   const handleClear = () => {
@@ -508,9 +608,24 @@ export default function AddDeck() {
 
           {/* Subject Selector */}
           <section className="flex flex-col gap-3">
-            <label className="text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest">
-              Subject
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest">
+                Subject
+              </label>
+              {suggestedSubject && suggestedSubject !== subject && (
+                <div className="flex items-center gap-2 animate-[fade-in_0.3s_ease]">
+                  <span className="text-[10px] text-[#888] font-['IBM_Plex_Mono'] uppercase">
+                    Suggested: <span className="text-[#00FF41]">{SUBJECTS.find(s => s.value === suggestedSubject)?.short}</span>
+                  </span>
+                  <button 
+                    onClick={() => setSubject(suggestedSubject)}
+                    className="text-[10px] px-2 py-0.5 rounded border border-[#00FF41]/30 text-[#00FF41] hover:bg-[#00FF41]/10 transition-colors font-['Rajdhani'] uppercase font-bold"
+                  >
+                    Use this
+                  </button>
+                </div>
+              )}
+            </div>
             <div className="flex flex-wrap gap-3">
               {SUBJECTS.map(s => {
                 const Icon = s.icon

@@ -54,6 +54,8 @@ export interface Topic {
   subject: string
   parentId: string | null
   orderIndex: number
+  createdAt?: number
+  tags?: string[]
 }
 
 export interface ExamSession {
