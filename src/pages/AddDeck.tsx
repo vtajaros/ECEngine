@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import {
-  X, Save, ArrowLeft, FileText, Upload, AlertCircle, Check, Trash2, Plus, Calculator, FlaskConical, Zap, Cpu, Layers
+  X, Save, ArrowLeft, FileText, Upload, AlertCircle, Check, Trash2, Plus, Calculator, FlaskConical, Zap, Cpu, Layers, Wand2
 } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import { parseImportedMCQs, parseImportedFlashcards } from '../lib/parser'
@@ -36,6 +36,18 @@ function ImportModal({ onImportCards, onClose }: { onImportCards: (cards: { term
   const [inputText, setInputText] = useState('')
   const [previewData, setPreviewData] = useState<any[]>([])
   const [previewWarnings, setPreviewWarnings] = useState<string[]>([])
+  const [showErrors, setShowErrors] = useState(false)
+  const [showGuide, setShowGuide] = useState(false)
+  const [autoFixMessage, setAutoFixMessage] = useState('')
+  
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null)
+  const gutterRef = React.useRef<HTMLDivElement>(null)
+
+  const handleScroll = () => {
+    if (textareaRef.current && gutterRef.current) {
+      gutterRef.current.scrollTop = textareaRef.current.scrollTop
+    }
+  }
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -66,6 +78,72 @@ function ImportModal({ onImportCards, onClose }: { onImportCards: (cards: { term
     onClose()
   }
 
+  const handleAutoFix = () => {
+    let cleanText = inputText
+    const lines = cleanText.split('\n')
+    let cleanedLines = lines.map(line => {
+      let trimmed = line.trimEnd()
+      // Fix lowercase q: or ans: at the start
+      trimmed = trimmed.replace(/^q:\s*/i, 'Q: ')
+      trimmed = trimmed.replace(/^ans:\s*/i, 'ANS: ')
+      
+      // Fix lowercase choices (a: -> A:)
+      trimmed = trimmed.replace(/^([a-e]):\s*/i, (match, p1) => `${p1.toUpperCase()}: `)
+
+      // Fix lowercase answer (ANS: a -> ANS: A)
+      if (trimmed.startsWith('ANS: ')) {
+        const parts = trimmed.split('ANS: ')
+        if (parts[1]) {
+          trimmed = `ANS: ${parts[1].trim().toUpperCase()}`
+        }
+      }
+      return trimmed
+    })
+
+    // SMART HEURISTIC: Fix missing "Q:" 
+    // If a block starts with a line that doesn't have a label and is followed by "A: ", "B: ", etc.
+    const restoredLines: string[] = []
+    for (let i = 0; i < cleanedLines.length; i++) {
+      const line = cleanedLines[i]
+      const nextLine = cleanedLines[i + 1] || ''
+      
+      // If this line has no prefix but is followed by "A: ", it's likely a question missing "Q:"
+      if (line.trim() && !/^[A-Z]+:/.test(line) && nextLine.startsWith('A:')) {
+        // Only add "Q:" prefix, check if colon already exists to avoid "Q: :"
+        if (line.trim().startsWith(':')) {
+           restoredLines.push(`Q${line}`)
+        } else {
+           restoredLines.push(`Q: ${line}`)
+        }
+      } else {
+        restoredLines.push(line)
+      }
+    }
+    cleanedLines = restoredLines
+
+    // Ensure exactly one blank line after ANS: and before next Q:
+    let result = cleanedLines.join('\n')
+    result = result.replace(/(ANS:\s*[A-E])\n+([^Q\n])/g, '$1\n\nQ: $2') // If next line has no Q: prefix
+    result = result.replace(/(ANS:\s*[A-E])\n+Q:/g, '$1\n\nQ:')
+    
+    setInputText(result)
+    setAutoFixMessage('Auto-fix applied!')
+    setTimeout(() => setAutoFixMessage(''), 2000)
+  }
+
+  const scrollToBlock = (warningIndex: number) => {
+    if (!textareaRef.current) return
+    // Assuming warning string starts with "Block N:" where N is 1-indexed
+    const match = previewWarnings[warningIndex]?.match(/Block\s*(\d+)/i)
+    if (match) {
+      const blockNum = parseInt(match[1])
+      // Rough estimation: each block is around 7 lines (Q, A, B, C, D, ANS, blank)
+      const estimatedLine = (blockNum - 1) * 7
+      const lineHeight = 20 // 14px font size + some padding usually ~ 20px
+      textareaRef.current.scrollTop = estimatedLine * lineHeight
+    }
+  }
+
   // Live feedback text
   let feedbackText = "No questions detected"
   let feedbackColor = "text-[#666]"
@@ -82,6 +160,9 @@ function ImportModal({ onImportCards, onClose }: { onImportCards: (cards: { term
       feedbackColor = "text-[#FF3333]"
     }
   }
+
+  const lineCount = inputText.split('\n').length
+  const linesArray = Array.from({ length: lineCount }, (_, i) => i + 1)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
@@ -106,11 +187,26 @@ function ImportModal({ onImportCards, onClose }: { onImportCards: (cards: { term
         <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
           
           {/* Format Guide */}
-          <div className="bg-[#0D0D0D] border-l-4 border-l-[#00FF41] p-[12px_16px] shrink-0 relative">
-            <div className="text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
-              FORMAT GUIDE
-            </div>
-            <pre className="text-[#E8E8E8] text-[13px] font-['IBM_Plex_Mono'] leading-relaxed whitespace-pre">
+          <div className="bg-[#0D0D0D] border-l-4 border-l-[#00FF41] shrink-0 relative overflow-hidden transition-all duration-300">
+            <button 
+              onClick={() => setShowGuide(!showGuide)}
+              className="w-full text-left p-[12px_16px] text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest flex items-center justify-between hover:bg-[#00FF41]/5 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <FileText size={14} />
+                FORMAT GUIDE
+              </div>
+              <span className="text-[10px] opacity-60">{showGuide ? '[ HIDE ]' : '[ SHOW ]'}</span>
+            </button>
+            <AnimatePresence>
+              {showGuide && (
+                <motion.div 
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <pre className="p-[0_16px_16px_16px] text-[#E8E8E8] text-[13px] font-['IBM_Plex_Mono'] leading-relaxed whitespace-pre">
 {`Q: Your question here
 A: First choice
 B: Second choice
@@ -124,18 +220,32 @@ Q: Second question here
 A: ...
 ...
 ANS: D`}
-            </pre>
+                  </pre>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Text Area */}
           <div className="flex flex-col flex-1 min-h-[300px]">
-            <textarea
-              autoFocus
-              value={inputText}
-              onChange={e => setInputText(e.target.value)}
-              placeholder="Paste your MCQ questions here..."
-              className="w-full flex-1 bg-[#0D0D0D] text-[#E8E8E8] border border-[#333] focus:border-[#00FF41] p-5 rounded-t-lg focus:outline-none font-['IBM_Plex_Mono'] text-sm resize-none transition-colors"
-            />
+            <div className="flex flex-1 flex-row border border-[#333] rounded-t-lg bg-[#0D0D0D] overflow-hidden focus-within:border-[#00FF41] transition-colors relative">
+              <div 
+                ref={gutterRef}
+                className="w-12 shrink-0 bg-[#0D0D0D] text-[#888] font-['IBM_Plex_Mono'] text-[11px] text-right pr-3 pl-2 select-none overflow-hidden pt-5 border-r border-[#222]"
+              >
+                {linesArray.map(line => <div key={line}>{line}</div>)}
+              </div>
+              <textarea
+                ref={textareaRef}
+                onScroll={handleScroll}
+                autoFocus
+                value={inputText}
+                onChange={e => setInputText(e.target.value)}
+                placeholder="Paste your MCQ questions here..."
+                className="w-full flex-1 bg-transparent text-[#E8E8E8] p-5 focus:outline-none font-['IBM_Plex_Mono'] text-sm resize-none leading-normal"
+                style={{ lineHeight: '1.5rem' }}
+              />
+            </div>
             {/* Live Feedback Bar */}
             <div className="bg-[#111] border border-t-0 border-[#333] rounded-b-lg p-3 flex items-center justify-between">
               <span className={`text-xs font-['IBM_Plex_Mono'] font-bold ${feedbackColor}`}>
@@ -147,23 +257,60 @@ ANS: D`}
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-[#222] bg-[#111] flex justify-between items-start rounded-b-xl shrink-0 gap-6">
-          {/* Errors List */}
-          <div className="flex-1 max-h-24 overflow-y-auto pr-2 custom-scrollbar">
-            {previewWarnings.length > 0 && (
-              <div className="flex flex-col gap-1">
-                {previewWarnings.map((warning, idx) => (
-                  <div key={idx} className="text-[#FF3333] text-xs font-['IBM_Plex_Mono'] flex items-start gap-1.5">
-                    <AlertCircle size={12} className="mt-0.5 shrink-0" />
-                    <span>{warning}</span>
-                  </div>
-                ))}
-              </div>
+        <div className="p-6 border-t border-[#222] bg-[#111] flex flex-col rounded-b-xl shrink-0 gap-4">
+          
+          <div className="flex items-center gap-3 self-end mb-1">
+            {autoFixMessage ? (
+              <span className="text-[#00FF41] text-xs font-['Rajdhani'] uppercase tracking-widest font-bold animate-[fade-in_0.2s]">
+                {autoFixMessage}
+              </span>
+            ) : (
+              <button 
+                disabled={previewWarnings.length === 0}
+                onClick={(e) => { e.stopPropagation(); handleAutoFix(); }}
+                className={`flex items-center gap-1.5 px-3 py-1 border rounded text-[10px] font-['Rajdhani'] uppercase font-bold tracking-widest transition-colors ${
+                  previewWarnings.length > 0 
+                  ? 'bg-[#111] border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#888]' 
+                  : 'bg-[#0a0a0a] border-[#222] text-[#444] cursor-not-allowed opacity-50'
+                }`}
+              >
+                <Wand2 size={12} /> Auto-Fix
+              </button>
             )}
           </div>
 
+          {previewWarnings.length > 0 && (
+            <div className="bg-[#1a1a00] border border-[#FFB800]/30 rounded-lg overflow-hidden">
+              <div className="p-3 flex items-center justify-between cursor-pointer" onClick={() => setShowErrors(!showErrors)}>
+                <div className="flex items-center gap-2">
+                  <AlertCircle size={16} className="text-[#FFB800]" />
+                  <span className="text-[#FFB800] text-xs font-['Rajdhani'] uppercase tracking-widest font-bold">
+                    {previewWarnings.length} Issues Detected
+                  </span>
+                </div>
+              </div>
+              
+              {showErrors && (
+                <div className="p-3 pt-0 border-t border-[#FFB800]/10 flex flex-col gap-2 max-h-32 overflow-y-auto custom-scrollbar bg-[#111]/50">
+                  {previewWarnings.map((warning, idx) => (
+                    <div key={idx} className="text-[#E8E8E8] text-[11px] font-['IBM_Plex_Mono'] flex items-start gap-2 py-1">
+                      <span className="text-[#FFB800] shrink-0 mt-0.5">•</span>
+                      <span className="flex-1">{warning}</span>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); scrollToBlock(idx); }}
+                        className="text-[#444] hover:text-[#00FF41] underline underline-offset-2 transition-colors text-[10px]"
+                      >
+                        Go to Line
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Actions */}
-          <div className="flex items-center gap-3 shrink-0 mt-auto">
+          <div className="flex items-center justify-end gap-3 shrink-0">
             <button onClick={onClose} className="px-6 py-2.5 rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold text-[#888] hover:text-[#E8E8E8] hover:bg-[#222] transition-colors">
               Cancel
             </button>
@@ -194,6 +341,18 @@ function ImportFlashcardsModal({ onImportCards, onClose }: { onImportCards: (car
   const [inputText, setInputText] = useState('')
   const [previewData, setPreviewData] = useState<any[]>([])
   const [previewWarnings, setPreviewWarnings] = useState<string[]>([])
+  const [showErrors, setShowErrors] = useState(false)
+  const [showGuide, setShowGuide] = useState(false)
+  const [autoFixMessage, setAutoFixMessage] = useState('')
+
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null)
+  const gutterRef = React.useRef<HTMLDivElement>(null)
+
+  const handleScroll = () => {
+    if (textareaRef.current && gutterRef.current) {
+      gutterRef.current.scrollTop = textareaRef.current.scrollTop
+    }
+  }
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -224,6 +383,56 @@ function ImportFlashcardsModal({ onImportCards, onClose }: { onImportCards: (car
     onClose()
   }
 
+  const handleAutoFix = () => {
+    let cleanText = inputText
+    const lines = cleanText.split('\n')
+    let cleanedLines = lines.map(line => {
+      let trimmed = line.trimEnd()
+      // Fix lowercase q: or a: at the start
+      trimmed = trimmed.replace(/^q:\s*/i, 'Q: ')
+      trimmed = trimmed.replace(/^a:\s*/i, 'A: ')
+      return trimmed
+    })
+
+    // SMART HEURISTIC: Fix missing "Q:" for Flashcards
+    const restoredLines: string[] = []
+    for (let i = 0; i < cleanedLines.length; i++) {
+      const line = cleanedLines[i]
+      const nextLine = cleanedLines[i + 1] || ''
+      if (line.trim() && !/^[A-Z]+:/.test(line) && nextLine.startsWith('A:')) {
+        // Only add "Q:" prefix, check if colon already exists to avoid "Q: :"
+        if (line.trim().startsWith(':')) {
+           restoredLines.push(`Q${line}`)
+        } else {
+           restoredLines.push(`Q: ${line}`)
+        }
+      } else {
+        restoredLines.push(line)
+      }
+    }
+    cleanedLines = restoredLines
+
+    // Ensure exactly one blank line between groups
+    let result = cleanedLines.join('\n')
+    result = result.replace(/(A:\s*.*)\n+Q:/g, '$1\n\nQ:')
+    
+    setInputText(result)
+    setAutoFixMessage('Auto-fix applied!')
+    setTimeout(() => setAutoFixMessage(''), 2000)
+  }
+
+  const scrollToBlock = (warningIndex: number) => {
+    if (!textareaRef.current) return
+    const match = previewWarnings[warningIndex]?.match(/Block\s*(\d+)/i)
+    if (match) {
+      const blockNum = parseInt(match[1])
+      // Flashcard blocks are around 3-4 lines (Q, A, blank)
+      const estimatedLine = (blockNum - 1) * 3
+      const lineHeight = 20
+      textareaRef.current.scrollTop = estimatedLine * lineHeight
+    }
+  }
+
   let feedbackText = "No flashcards detected"
   let feedbackColor = "text-[#666]"
   
@@ -239,6 +448,9 @@ function ImportFlashcardsModal({ onImportCards, onClose }: { onImportCards: (car
       feedbackColor = "text-[#FF3333]"
     }
   }
+
+  const lineCount = inputText.split('\n').length
+  const linesArray = Array.from({ length: lineCount }, (_, i) => i + 1)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
@@ -263,11 +475,26 @@ function ImportFlashcardsModal({ onImportCards, onClose }: { onImportCards: (car
         <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
           
           {/* Format Guide */}
-          <div className="bg-[#0D0D0D] border-l-4 border-l-[#00FF41] p-[12px_16px] shrink-0 relative">
-            <div className="text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest mb-2 flex items-center gap-2">
-              FORMAT GUIDE
-            </div>
-            <pre className="text-[#E8E8E8] text-[13px] font-['IBM_Plex_Mono'] leading-relaxed whitespace-pre">
+          <div className="bg-[#0D0D0D] border-l-4 border-l-[#00FF41] shrink-0 relative overflow-hidden transition-all duration-300">
+            <button 
+              onClick={() => setShowGuide(!showGuide)}
+              className="w-full text-left p-[12px_16px] text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest flex items-center justify-between hover:bg-[#00FF41]/5 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Layers size={14} />
+                FORMAT GUIDE
+              </div>
+              <span className="text-[10px] opacity-60">{showGuide ? '[ HIDE ]' : '[ SHOW ]'}</span>
+            </button>
+            <AnimatePresence>
+              {showGuide && (
+                <motion.div 
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <pre className="p-[0_16px_16px_16px] text-[#E8E8E8] text-[13px] font-['IBM_Plex_Mono'] leading-relaxed whitespace-pre">
 {`Q: Term here
 A: Definition here
 
@@ -275,18 +502,32 @@ A: Definition here
 
 Q: Another term
 A: Another definition`}
-            </pre>
+                  </pre>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* Text Area */}
           <div className="flex flex-col flex-1 min-h-[300px]">
-            <textarea
-              autoFocus
-              value={inputText}
-              onChange={e => setInputText(e.target.value)}
-              placeholder="Paste your flashcards here..."
-              className="w-full flex-1 bg-[#0D0D0D] text-[#E8E8E8] border border-[#333] focus:border-[#00FF41] p-5 rounded-t-lg focus:outline-none font-['IBM_Plex_Mono'] text-sm resize-none transition-colors"
-            />
+            <div className="flex flex-1 flex-row border border-[#333] rounded-t-lg bg-[#0D0D0D] overflow-hidden focus-within:border-[#00FF41] transition-colors relative">
+              <div 
+                ref={gutterRef}
+                className="w-12 shrink-0 bg-[#0D0D0D] text-[#888] font-['IBM_Plex_Mono'] text-[11px] text-right pr-3 pl-2 select-none overflow-hidden pt-5 border-r border-[#222]"
+              >
+                {linesArray.map(line => <div key={line}>{line}</div>)}
+              </div>
+              <textarea
+                ref={textareaRef}
+                onScroll={handleScroll}
+                autoFocus
+                value={inputText}
+                onChange={e => setInputText(e.target.value)}
+                placeholder="Paste your flashcards here..."
+                className="w-full flex-1 bg-transparent text-[#E8E8E8] p-5 focus:outline-none font-['IBM_Plex_Mono'] text-sm resize-none leading-normal"
+                style={{ lineHeight: '1.5rem' }}
+              />
+            </div>
             {/* Live Feedback Bar */}
             <div className="bg-[#111] border border-t-0 border-[#333] rounded-b-lg p-3 flex items-center justify-between">
               <span className={`text-xs font-['IBM_Plex_Mono'] font-bold ${feedbackColor}`}>
@@ -298,23 +539,60 @@ A: Another definition`}
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-[#222] bg-[#111] flex justify-between items-start rounded-b-xl shrink-0 gap-6">
-          {/* Errors List */}
-          <div className="flex-1 max-h-24 overflow-y-auto pr-2 custom-scrollbar">
-            {previewWarnings.length > 0 && (
-              <div className="flex flex-col gap-1">
-                {previewWarnings.map((warning, idx) => (
-                  <div key={idx} className="text-[#FF3333] text-xs font-['IBM_Plex_Mono'] flex items-start gap-1.5">
-                    <AlertCircle size={12} className="mt-0.5 shrink-0" />
-                    <span>{warning}</span>
-                  </div>
-                ))}
-              </div>
+        <div className="p-6 border-t border-[#222] bg-[#111] flex flex-col rounded-b-xl shrink-0 gap-4">
+          
+          <div className="flex items-center gap-3 self-end mb-1">
+            {autoFixMessage ? (
+              <span className="text-[#00FF41] text-xs font-['Rajdhani'] uppercase tracking-widest font-bold animate-[fade-in_0.2s]">
+                {autoFixMessage}
+              </span>
+            ) : (
+              <button 
+                disabled={previewWarnings.length === 0}
+                onClick={(e) => { e.stopPropagation(); handleAutoFix(); }}
+                className={`flex items-center gap-1.5 px-3 py-1 border rounded text-[10px] font-['Rajdhani'] uppercase font-bold tracking-widest transition-colors ${
+                  previewWarnings.length > 0 
+                  ? 'bg-[#111] border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#888]' 
+                  : 'bg-[#0a0a0a] border-[#222] text-[#444] cursor-not-allowed opacity-50'
+                }`}
+              >
+                <Wand2 size={12} /> Auto-Fix
+              </button>
             )}
           </div>
 
+          {previewWarnings.length > 0 && (
+            <div className="bg-[#1a1a00] border border-[#FFB800]/30 rounded-lg overflow-hidden">
+              <div className="p-3 flex items-center justify-between cursor-pointer" onClick={() => setShowErrors(!showErrors)}>
+                <div className="flex items-center gap-2">
+                  <AlertCircle size={16} className="text-[#FFB800]" />
+                  <span className="text-[#FFB800] text-xs font-['Rajdhani'] uppercase tracking-widest font-bold">
+                    {previewWarnings.length} Issues Detected
+                  </span>
+                </div>
+              </div>
+              
+              {showErrors && (
+                <div className="p-3 pt-0 border-t border-[#FFB800]/10 flex flex-col gap-2 max-h-32 overflow-y-auto custom-scrollbar bg-[#111]/50">
+                  {previewWarnings.map((warning, idx) => (
+                    <div key={idx} className="text-[#E8E8E8] text-[11px] font-['IBM_Plex_Mono'] flex items-start gap-2 py-1">
+                      <span className="text-[#FFB800] shrink-0 mt-0.5">•</span>
+                      <span className="flex-1">{warning}</span>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); scrollToBlock(idx); }}
+                        className="text-[#444] hover:text-[#00FF41] underline underline-offset-2 transition-colors text-[10px]"
+                      >
+                        Go to Line
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Actions */}
-          <div className="flex items-center gap-3 shrink-0 mt-auto">
+          <div className="flex items-center justify-end gap-3 shrink-0">
             <button onClick={onClose} className="px-6 py-2.5 rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold text-[#888] hover:text-[#E8E8E8] hover:bg-[#222] transition-colors">
               Cancel
             </button>

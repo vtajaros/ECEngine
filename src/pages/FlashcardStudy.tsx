@@ -1037,12 +1037,12 @@ export default function FlashcardStudy() {
               <div className="p-6 border-b border-[#222] flex items-center gap-3 bg-[#161616]">
                 <AlertTriangle className="w-6 h-6 text-[#FF3333]" />
                 <h2 className="text-xl font-bold text-[#E8E8E8] font-['Orbitron'] uppercase tracking-wider">
-                  Delete Flashcard Set
+                  DELETE DECK
                 </h2>
               </div>
               <div className="p-6">
-                <p className="text-[#888] font-['Outfit'] mb-4">
-                  Are you absolutely sure you want to delete <strong className="text-[#E8E8E8]">{setToDelete.title}</strong>? 
+                <p className="text-[#BBBBBB] font-['Rajdhani'] uppercase tracking-widest text-sm mb-4 leading-relaxed">
+                  Are you absolutely sure you want to delete <strong className="text-[#00FF41]">{setToDelete.title}</strong>? 
                   This action cannot be undone and will permanently remove all {setToDelete.count} questions inside this set.
                 </p>
               </div>
