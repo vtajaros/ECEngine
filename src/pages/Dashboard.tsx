@@ -58,7 +58,6 @@ export default function Dashboard() {
   const quickLinks = [
     { title: 'Study Flashcards', desc: 'Jump back into spaced repetition', path: '/flashcards', icon: BookOpen },
     { title: 'Take a Mock Exam', desc: 'Simulate the ECE board', path: '/study', icon: Library },
-    { title: 'Browse Formulas', desc: 'Quick reference for equations', path: '/formulas', icon: Sigma },
   ]
 
   const stats = [

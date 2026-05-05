@@ -21,7 +21,6 @@ export const AppShell: React.FC = () => {
     { to: '/', label: 'Dashboard', icon: Home },
     { to: '/study', label: 'LooksFam', icon: Brain },
     { to: '/flashcards', label: 'Flashcards', icon: Layers },
-    { to: '/formulas', label: 'Formulas', icon: Sigma },
     { to: '/topics', label: 'Topics', icon: BookOpen },
     { to: '/add-set', label: 'Add Decks', icon: PlusSquare },
     { to: '/settings', label: 'Settings', icon: Settings },
