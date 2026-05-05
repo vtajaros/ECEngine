@@ -579,10 +579,12 @@ export default function AddDeck() {
       </div>
 
       {/* Main Content Two-Column */}
-      <div className="max-w-[1200px] mx-auto w-full px-6 lg:px-10 py-8 flex flex-col lg:flex-row gap-[32px] pb-24 flex-1">
+      <div className={`mx-auto w-full px-6 py-8 flex flex-col gap-8 pb-24 flex-1 transition-all duration-500 ease-in-out ${
+        cards.length === 0 ? 'max-w-[800px]' : 'max-w-[1200px] lg:flex-row lg:gap-[32px]'
+      }`}>
         
-        {/* Left Column (60%) */}
-        <div className="flex-[3] flex flex-col gap-10">
+        {/* Left Column */}
+        <div className="flex-[3] flex flex-col gap-6">
           
           {/* Title Section */}
           <section className="flex flex-col gap-4">
@@ -591,7 +593,7 @@ export default function AddDeck() {
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 maxLength={80}
-                placeholder='Enter deck title, e.g. "Magnetism & Electromagnetism"'
+                placeholder='Enter deck title, e.g. "Electromagnetism"'
                 className="w-full bg-transparent text-[#E8E8E8] text-[1.5rem] font-['Orbitron'] border-b-2 border-[#333] focus:border-[#00FF41] pb-3 focus:outline-none placeholder:text-[#555] transition-colors tracking-wide pr-16"
               />
               <span className="absolute right-0 bottom-4 text-xs font-['IBM_Plex_Mono'] text-[#666]">
@@ -723,23 +725,23 @@ export default function AddDeck() {
           {/* Import Zone */}
           <section className="flex flex-col gap-3 mt-4">
             {cards.length === 0 ? (
-              <>
+              <div className="grid grid-cols-2 gap-4">
                 <motion.div 
                   whileHover={{ borderColor: 'rgba(0,255,65,0.7)', backgroundColor: 'rgba(0,255,65,0.06)' }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
                   onClick={() => setImportModalType('mcq')}
-                  className="w-full border-2 border-dashed border-[rgba(0,255,65,0.3)] bg-[rgba(0,255,65,0.03)] rounded-xl p-12 flex flex-col items-center justify-center cursor-pointer text-center group mb-4"
+                  className="w-full border-2 border-dashed border-[rgba(0,255,65,0.3)] bg-[rgba(0,255,65,0.03)] rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer text-center group"
                 >
-                  <div className="w-16 h-16 rounded-full bg-[rgba(0,255,65,0.1)] flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                    <Upload size={32} className="text-[#00FF41]" />
+                  <div className="w-12 h-12 rounded-full bg-[rgba(0,255,65,0.1)] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <Upload size={24} className="text-[#00FF41]" />
                   </div>
-                  <h3 className="font-['Rajdhani'] text-[#E8E8E8] font-bold uppercase tracking-widest text-xl mb-2">
-                    Import MCQ Questions
+                  <h3 className="font-['Rajdhani'] text-[#E8E8E8] font-bold uppercase tracking-widest text-lg mb-1">
+                    Import MCQs
                   </h3>
-                  <p className="text-[#888] font-['IBM_Plex_Mono'] text-sm mb-8">
-                    Paste or drag your Q:/ANS: format
+                  <p className="text-[#888] font-['IBM_Plex_Mono'] text-[11px] mb-6">
+                    Q:/ANS: format
                   </p>
-                  <button className="px-6 py-2 bg-[#111] border border-[#00FF41] text-[#00FF41] font-['Rajdhani'] uppercase tracking-widest font-bold text-sm rounded pointer-events-none group-hover:bg-[#00FF41] group-hover:text-black transition-colors">
+                  <button className="px-4 py-1.5 bg-[#111] border border-[#00FF41] text-[#00FF41] font-['Rajdhani'] uppercase tracking-widest font-bold text-[11px] rounded pointer-events-none group-hover:bg-[#00FF41] group-hover:text-black transition-colors">
                     [ Open Import ]
                   </button>
                 </motion.div>
@@ -748,18 +750,22 @@ export default function AddDeck() {
                   whileHover={{ borderColor: 'rgba(0,255,65,0.7)', backgroundColor: 'rgba(0,255,65,0.06)' }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
                   onClick={() => setImportModalType('flashcard')}
-                  className="w-full border border-dashed border-[rgba(0,255,65,0.2)] bg-[rgba(0,255,65,0.015)] rounded-xl p-6 flex items-center justify-center cursor-pointer text-center group"
+                  className="w-full border-2 border-dashed border-[rgba(0,255,65,0.3)] bg-[rgba(0,255,65,0.03)] rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer text-center group"
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-full bg-[rgba(0,255,65,0.1)] flex items-center justify-center group-hover:scale-110 transition-transform">
-                      <Layers size={20} className="text-[#00FF41]" />
-                    </div>
-                    <h3 className="font-['Rajdhani'] text-[#E8E8E8] font-bold uppercase tracking-widest text-md group-hover:text-[#00FF41] transition-colors">
-                      IMPORT FLASHCARDS
-                    </h3>
+                  <div className="w-12 h-12 rounded-full bg-[rgba(0,255,65,0.1)] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <Layers size={24} className="text-[#00FF41]" />
                   </div>
+                  <h3 className="font-['Rajdhani'] text-[#E8E8E8] font-bold uppercase tracking-widest text-lg mb-1">
+                    Import Flashcards
+                  </h3>
+                  <p className="text-[#888] font-['IBM_Plex_Mono'] text-[11px] mb-6">
+                    Q:/A: format
+                  </p>
+                  <button className="px-4 py-1.5 bg-[#111] border border-[#00FF41] text-[#00FF41] font-['Rajdhani'] uppercase tracking-widest font-bold text-[11px] rounded pointer-events-none group-hover:bg-[#00FF41] group-hover:text-black transition-colors">
+                    [ Open Import ]
+                  </button>
                 </motion.div>
-              </>
+              </div>
             ) : (
               <div className="flex flex-col gap-6">
                 <div className="flex items-center justify-between border-b border-[#222] pb-4">
@@ -816,14 +822,14 @@ export default function AddDeck() {
         </div>
 
         {/* Right Column (40%) */}
-        <div className="flex-[2] flex flex-col gap-4 sticky top-[100px] self-start">
-          <label className="text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest flex justify-between">
-            <span>Question Inspector</span>
-            {cards.length > 0 && <span>ITEM {(selectedQuestionIndex + 1).toString().padStart(2, '0')} / {cards.length.toString().padStart(2, '0')}</span>}
-          </label>
-          
-          <AnimatePresence mode="wait">
-            {cards.length > 0 ? (
+        {cards.length > 0 && (
+          <div className="flex-[2] flex flex-col gap-4 sticky top-[100px] self-start">
+            <label className="text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest flex justify-between">
+              <span>Question Inspector</span>
+              {cards.length > 0 && <span>ITEM {(selectedQuestionIndex + 1).toString().padStart(2, '0')} / {cards.length.toString().padStart(2, '0')}</span>}
+            </label>
+            
+            <AnimatePresence mode="wait">
               <motion.div
                 key={selectedQuestionIndex}
                 initial={{ opacity: 0, x: 20 }}
@@ -890,20 +896,13 @@ export default function AddDeck() {
                   </div>
                 </div>
               </motion.div>
-            ) : (
-              <div className="bg-[#161616] border border-[#222] rounded-xl p-6 shadow-xl flex flex-col items-center justify-center min-h-[300px] text-center">
-                <FileText size={48} className="text-[#333] mb-4" />
-                <p className="text-[#666] font-['IBM_Plex_Mono'] text-sm">Import questions to inspect them here.</p>
-              </div>
-            )}
-          </AnimatePresence>
+            </AnimatePresence>
 
-          {cards.length > 0 && (
             <div className="bg-[#111] border border-[#222] rounded p-4 text-[#888] font-['IBM_Plex_Mono'] text-xs leading-relaxed text-center mt-2">
               After saving, this deck will appear in your Study page under <span className="text-[#E8E8E8] font-bold">{subject}</span>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
       </div>
 
