@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle, SlidersHorizontal } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle, SlidersHorizontal, Pencil, Play, Trash2, AlertTriangle } from 'lucide-react'
 import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
 import { Card, MCQData, FlashcardData } from '../types'
 import { renderMath } from '../lib/latex'
@@ -50,6 +51,8 @@ export default function FlashcardViewer() {
   // ── Deck listing state ──
   const [activeSubject, setActiveSubject] = useState<FilterSubject>('ALL')
   const [decks, setDecks] = useState<DeckInfo[]>([])
+  const [setToDelete, setSetToDelete] = useState<DeckInfo | null>(null)
+  const [deleteCountdown, setDeleteCountdown] = useState(0)
 
   // Advanced Filters State
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
@@ -118,6 +121,37 @@ export default function FlashcardViewer() {
     }
     load()
   }, [])
+
+  // ── Countdown for delete ──
+  useEffect(() => {
+    if (setToDelete) {
+      setDeleteCountdown(3)
+      const timer = setInterval(() => {
+        setDeleteCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(timer)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+      return () => clearInterval(timer)
+    }
+  }, [setToDelete])
+
+  const handleConfirmDelete = async () => {
+    if (!setToDelete) return
+    try {
+      if (window.electron?.db) {
+        await window.electron.db.run(`DELETE FROM cards WHERE topic_id = ?`, [setToDelete.id])
+        await window.electron.db.run(`DELETE FROM topics WHERE id = ?`, [setToDelete.id])
+      }
+      setDecks(prev => prev.filter(s => s.id !== setToDelete.id))
+      setSetToDelete(null)
+    } catch (err) {
+      console.error('Failed to delete set', err)
+    }
+  }
 
   // ── Open a deck ──
   const openDeck = async (deck: DeckInfo) => {
@@ -582,28 +616,91 @@ export default function FlashcardViewer() {
       {/* Deck Grid */}
       <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-12">
         {filteredDecks.map(deck => (
-          <motion.div key={deck.id} whileHover={{ y: -4 }} onClick={() => openDeck(deck)}
-            className="bg-[var(--bg-card)] rounded-xl border border-[#222] hover:border-[var(--accent-dim)] transition-all hover:shadow-[0_0_20px_rgba(0,255,65,0.08)] overflow-hidden cursor-pointer flex flex-col">
+          <div key={deck.id}
+            className="bg-[var(--bg-card)] rounded-xl border border-[#222] hover:border-[var(--accent-dim)] transition-all hover:shadow-[0_0_20px_rgba(0,255,65,0.05)] overflow-hidden flex flex-col h-full">
+            
+            {/* Card Content */}
             <div className="p-6 flex-1 flex flex-col">
-              <div className="flex items-start justify-between gap-2 mb-3">
-                <h3 className="text-lg font-['Orbitron'] font-bold text-[var(--text-primary)] tracking-wide flex-1 leading-tight">{deck.title}</h3>
-                <span className={`text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded border shrink-0 uppercase ${
-                  deck.deckType === 'mcq'
-                    ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
-                    : deck.deckType === 'mixed'
-                    ? 'text-[#B983FF] border-[#B983FF]/30 bg-[#B983FF]/10'
-                    : 'text-[#00FF41] border-[#00FF41]/30 bg-[#00FF41]/10'
-                }`}>
-                  {deck.deckType === 'mixed' ? 'MIX' : deck.deckType === 'mcq' ? 'MCQ' : 'FC'}
+              <div className="flex justify-between items-start mb-4 gap-2">
+                <div className="flex flex-col flex-1 gap-1">
+                  <h3 className="text-lg font-['Orbitron'] font-bold text-[var(--text-primary)] tracking-wide leading-tight">{deck.title}</h3>
+                  <div className="flex flex-wrap items-center gap-[6px]">
+                    <span className={`w-fit text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded border shrink-0 uppercase ${
+                      deck.deckType === 'mcq'
+                        ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
+                        : deck.deckType === 'mixed'
+                        ? 'text-[#B983FF] border-[#B983FF]/30 bg-[#B983FF]/10'
+                        : 'text-[#00FF41] border-[#00FF41]/30 bg-[#00FF41]/10'
+                    }`}>
+                      {deck.deckType === 'mixed' ? 'MIX' : deck.deckType === 'mcq' ? 'MCQ' : 'FC'}
+                    </span>
+
+                    {deck.tags && deck.tags.length > 0 && deck.tags.map(tag => (
+                      <span 
+                        key={tag}
+                        className="text-[0.65rem] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded border border-white/20 text-[#888888] uppercase tracking-wider"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-['Rajdhani'] px-2 py-1 bg-[#1A1A1A] rounded border whitespace-nowrap ${getSubjectBadgeClasses(deck.subject)}`}>
+                    {deck.cardCount} Items
+                  </span>
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setSetToDelete(deck); }}
+                    className="p-1.5 text-[#555] hover:text-[#FF3333] bg-[#1A1A1A] rounded border border-[#333] hover:border-[#FF3333] transition-colors shrink-0"
+                    title="Delete Set"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Date Added */}
+              <div className="mb-2">
+                <span className="text-[#666] font-['IBM_Plex_Mono'] text-[10px] tracking-widest uppercase">
+                  ADDED: {deck.createdAt ? new Date(deck.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
                 </span>
               </div>
 
-              <div className="mt-auto flex items-center justify-between pt-4 border-t border-[#222]">
-                <span className={`text-xs font-['Rajdhani'] uppercase tracking-widest font-bold px-2 py-1 rounded border ${getSubjectBadgeClasses(deck.subject)}`}>{deck.subject}</span>
-                <span className="text-xs font-['IBM_Plex_Mono'] text-[#888]">{deck.cardCount} cards</span>
+              {/* Mastery Bar (Defaults to 0% in this view) */}
+              <div className="mt-auto">
+                <div className="flex justify-between text-xs font-['Rajdhani'] tracking-widest mb-2">
+                  <span className="text-[var(--text-secondary)] uppercase">Mastery</span>
+                  <span className="text-[var(--accent-primary)] font-bold">0%</span>
+                </div>
+                <div className="w-full bg-[var(--bg-secondary)] h-1.5 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `0%` }}
+                    className="h-full bg-[var(--accent-primary)] shadow-[0_0_10px_rgba(0,255,65,0.4)]"
+                  />
+                </div>
               </div>
             </div>
-          </motion.div>
+
+            {/* Action Buttons */}
+            <div className="border-t border-[var(--bg-secondary)] py-4 px-6 flex items-center gap-3 bg-[var(--bg-elevated)] mt-auto">
+              <Link 
+                to={`/edit-deck/${deck.id}`} 
+                onClick={(e) => e.stopPropagation()} 
+                className="p-2 flex items-center justify-center bg-[var(--bg-secondary)] border border-[#333] hover:border-[#555] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded transition-colors"
+                title="Edit Deck"
+              >
+                <Pencil className="w-4 h-4" />
+              </Link>
+              <button 
+                onClick={(e) => { e.stopPropagation(); openDeck(deck); }}
+                className="flex-1 py-2 flex items-center justify-center bg-[var(--accent-primary)] text-black rounded transition-colors hover:bg-[var(--accent-dim)] font-['Rajdhani'] tracking-widest font-bold uppercase text-sm shadow-[0_0_10px_rgba(0,255,65,0.1)]"
+              >
+                <Play className="w-4 h-4 mr-2" />
+                Play Flashcards
+              </button>
+            </div>
+          </div>
         ))}
 
         {filteredDecks.length === 0 && (
@@ -612,6 +709,64 @@ export default function FlashcardViewer() {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {setToDelete && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 20 }}
+              className="bg-[#111] border border-[#FF3333] rounded-lg shadow-[0_0_30px_rgba(255,51,51,0.15)] w-full max-w-md overflow-hidden flex flex-col"
+            >
+              <div className="p-6 border-b border-[#222] flex items-center gap-3 bg-[#161616]">
+                <AlertTriangle className="w-6 h-6 text-[#FF3333]" />
+                <h2 className="text-xl font-bold text-[#E8E8E8] font-['Orbitron'] uppercase tracking-wider">
+                  DELETE {setToDelete.deckType === 'mcq' ? 'MCQ SET' : 'FLASHCARD SET'}
+                </h2>
+              </div>
+              <div className="p-6">
+                <p className="text-[#CCCCCC] font-['Rajdhani'] tracking-wider mb-4 leading-relaxed text-base">
+                  Are you absolutely sure you want to delete <strong className="text-[#E8E8E8] font-bold">{setToDelete.title}</strong>? 
+                  This action cannot be undone and will permanently remove all {setToDelete.cardCount} {setToDelete.deckType === 'mcq' ? 'questions' : 'cards'} inside this set.
+                </p>
+              </div>
+              <div className="p-6 border-t border-[#222] bg-[#161616] flex justify-end gap-3">
+                <button 
+                  onClick={() => setSetToDelete(null)}
+                  className="px-5 py-2 rounded bg-transparent border border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-wider text-sm"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={handleConfirmDelete}
+                  disabled={deleteCountdown > 0}
+                  className={`px-6 py-2 rounded font-bold transition-all font-['Rajdhani'] uppercase tracking-wider text-sm shadow-lg ${
+                    deleteCountdown > 0 
+                      ? 'bg-[#222] text-[#666] border border-[#333] cursor-not-allowed' 
+                      : 'bg-[#FF3333] text-white hover:bg-[#CC0000] shadow-[0_0_15px_rgba(255,51,51,0.3)]'
+                  }`}
+                >
+                  {deleteCountdown > 0 ? (
+                    <span className="inline-flex items-baseline gap-0.5 font-['Rajdhani']">
+                      <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#00FF41', lineHeight: 1 }}>{deleteCountdown}</span>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 400, color: '#888888', lineHeight: 1 }}>s</span>
+                    </span>
+                  ) : (
+                    'Confirm Delete'
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

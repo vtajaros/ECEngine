@@ -164,7 +164,7 @@ export default function Dashboard() {
           </div>
           
           <Link 
-             to="/add-set"
+             to="/add-decks"
              className="mt-8 relative w-full flex items-center justify-center p-3 text-center border-2 border-dashed border-[#444] rounded text-[#888888] hover:border-[#00FF41] hover:text-[#E8E8E8] transition-colors font-['Rajdhani'] uppercase tracking-wider group"
           >
              <Download size={18} className="mr-2 group-hover:text-[#00FF41]" />

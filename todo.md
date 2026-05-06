@@ -14,6 +14,15 @@
 ***EXPLAIN BUTTON***
 - explain button in mcq and flashcards and in test/exam mode once you've finished everything and submitted.
 - also since were probably going to be using a low AI model for the explanation have a button to get context on explanation that we can paste into Gemini/GPT/Claude to get a better explanation
+- example get context button,
+
+when pasted on gemini/gpt or claude
+
+QUESTION TEXT HERE:
+CHOICES:
+CORRECT ANSWER:
+
+TRY TO EXPLAIN THE CORRECT ANSWER FROM THE QUESTION ABOVE
 
 ***Revamp Dashboard Tab***
 - revamp dashboard tab currently has placeholder graphics and stats

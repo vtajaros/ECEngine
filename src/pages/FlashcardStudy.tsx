@@ -7,7 +7,7 @@ import { TestMode } from '../components/mcq/TestMode'
 import { LearnSettingsModal, LearnSettings } from '../components/mcq/LearnSettingsModal'
 import { TestSettingsModal, TestSettings } from '../components/mcq/TestSettingsModal'
 import { MOCK_FLASHCARDS, MOCK_MCQS } from '../lib/mockData'
-import { Play, Bookmark, X, Trash2, AlertTriangle, ClipboardList, SlidersHorizontal, Check } from 'lucide-react'
+import { Play, Bookmark, X, Trash2, AlertTriangle, ClipboardList, SlidersHorizontal, Check, Pencil } from 'lucide-react'
 import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
 import { useSessionStore } from '../store/useSessionStore'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -627,17 +627,17 @@ export default function FlashcardStudy() {
       </div>
 
       {/* Deck Grid */}
-      <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10 pb-12 items-start">
+      <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10 pb-12">
         {filteredAndSortedSets.map(set => (
           <div 
             key={set.id} 
-            className="bg-[var(--bg-card)] rounded-xl border border-[#222] hover:border-[var(--accent-dim)] transition-all hover:shadow-[0_0_20px_rgba(0,255,65,0.05)] overflow-hidden flex flex-col"
+            className="bg-[var(--bg-card)] rounded-xl border border-[#222] hover:border-[var(--accent-dim)] transition-all hover:shadow-[0_0_20px_rgba(0,255,65,0.05)] overflow-hidden flex flex-col h-full"
           >
             {/* Card Content */}
             <div className="p-6 flex-1 flex flex-col">
               <div className="flex justify-between items-start mb-4 gap-2">
                 <div className="flex flex-col flex-1 gap-1">
-                  <h3 className="text-xl font-['Orbitron'] font-bold text-[var(--text-primary)] tracking-wide">{set.title}</h3>
+                  <h3 className="text-lg font-['Orbitron'] font-bold text-[var(--text-primary)] tracking-wide leading-tight">{set.title}</h3>
                   <div className="flex flex-wrap items-center gap-[6px]">
                     {set.deckType && (
                       <span className={`w-fit text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded border shrink-0 uppercase ${
@@ -700,17 +700,24 @@ export default function FlashcardStudy() {
             </div>
 
             {/* Action Buttons (Always Visible) */}
-            <div className="border-t border-[var(--bg-secondary)] py-4 px-6 grid grid-cols-2 gap-4 bg-[var(--bg-elevated)] mt-auto">
+            <div className="border-t border-[var(--bg-secondary)] py-4 px-6 flex items-center gap-3 bg-[var(--bg-elevated)] mt-auto">
+              <button 
+                onClick={(e) => { e.stopPropagation(); navigate(`/edit-deck/${set.id}`) }}
+                className="p-2 flex items-center justify-center bg-[var(--bg-secondary)] border border-[#333] hover:border-[#555] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded transition-colors"
+                title="Edit Deck"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
               <button 
                 onClick={(e) => { e.stopPropagation(); handleOpenLearn(set.id); }}
-                className="py-2 flex items-center justify-center bg-[var(--bg-secondary)] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-[var(--text-primary)] rounded transition-colors font-['Rajdhani'] tracking-widest uppercase text-sm font-bold"
+                className="flex-1 py-2 flex items-center justify-center bg-[var(--bg-secondary)] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-[var(--text-primary)] rounded transition-colors font-['Rajdhani'] tracking-widest uppercase text-sm font-bold"
               >
                 <Play className="w-4 h-4 mr-2" />
                 Learn
               </button>
               <button 
                 onClick={(e) => { e.stopPropagation(); handleOpenTest(set.id); }}
-                className="py-2 flex items-center justify-center bg-[var(--accent-primary)] text-black rounded transition-colors hover:bg-[var(--accent-dim)] font-['Rajdhani'] tracking-widest font-bold uppercase text-sm shadow-[0_0_10px_rgba(0,255,65,0.1)]"
+                className="flex-1 py-2 flex items-center justify-center bg-[var(--accent-primary)] text-black rounded transition-colors hover:bg-[var(--accent-dim)] font-['Rajdhani'] tracking-widest font-bold uppercase text-sm shadow-[0_0_10px_rgba(0,255,65,0.1)]"
               >
                 <ClipboardList className="w-4 h-4 mr-2" />
                 Test
@@ -738,13 +745,13 @@ export default function FlashcardStudy() {
               <div className="p-6 border-b border-[#222] flex items-center gap-3 bg-[#161616]">
                 <AlertTriangle className="w-6 h-6 text-[#FF3333]" />
                 <h2 className="text-xl font-bold text-[#E8E8E8] font-['Orbitron'] uppercase tracking-wider">
-                  Delete Flashcard Set
+                  DELETE {setToDelete.deckType === 'mcq' ? 'MCQ SET' : 'FLASHCARD SET'}
                 </h2>
               </div>
               <div className="p-6">
-                <p className="text-[#888] font-['Outfit'] mb-4">
-                  Are you absolutely sure you want to delete <strong className="text-[#E8E8E8]">{setToDelete.title}</strong>? 
-                  This action cannot be undone and will permanently remove all {setToDelete.count} questions inside this set.
+                <p className="text-[#CCCCCC] font-['Rajdhani'] tracking-wider mb-4 leading-relaxed text-base">
+                  Are you absolutely sure you want to delete <strong className="text-[#E8E8E8] font-bold">{setToDelete.title}</strong>? 
+                  This action cannot be undone and will permanently remove all {setToDelete.count} {setToDelete.deckType === 'mcq' ? 'questions' : 'cards'} inside this set.
                 </p>
               </div>
               <div className="p-6 border-t border-[#222] bg-[#161616] flex justify-end gap-3">

@@ -6,7 +6,8 @@ import {
   BookOpen, 
   Sigma, 
   Upload,
-  PlusSquare,
+  PlusCircle,
+  FlaskConical,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -22,7 +23,7 @@ export const AppShell: React.FC = () => {
     { to: '/study', label: 'LooksFam', icon: Brain },
     { to: '/flashcards', label: 'Flashcards', icon: Layers },
     { to: '/topics', label: 'Topics', icon: BookOpen },
-    { to: '/add-set', label: 'Add Decks', icon: PlusSquare },
+    { to: '/add-decks', label: 'Add Decks', icon: PlusCircle },
     { to: '/settings', label: 'Settings', icon: Settings },
   ]
 
