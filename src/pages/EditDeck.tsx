@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, Save, ChevronDown, ChevronUp, Trash2, GripVertical, Plus,
-  CheckCircle2, AlertCircle
+  CheckCircle2, AlertCircle, RotateCcw
 } from 'lucide-react'
 import {
   DndContext,
@@ -273,6 +273,41 @@ export default function EditDeck() {
   const [originalCardIds, setOriginalCardIds] = useState<Set<string>>(new Set())
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
 
+  const [historyStack, setHistoryStack] = useState<EditCard[][]>([])
+  const cardsRef = React.useRef(cards)
+  useEffect(() => { cardsRef.current = cards }, [cards])
+
+  const saveSnapshot = useCallback((currentCards: EditCard[]) => {
+    setHistoryStack(prev => {
+      const newStack = [...prev, currentCards]
+      if (newStack.length > 15) return newStack.slice(newStack.length - 15)
+      return newStack
+    })
+  }, [])
+
+  const undo = useCallback(() => {
+    if (historyStack.length === 0) return
+    const newStack = [...historyStack]
+    const lastSnapshot = newStack.pop()!
+    setHistoryStack(newStack)
+    setCards(lastSnapshot)
+    setToast({ type: 'success', msg: 'Action Undone' })
+    setTimeout(() => setToast(null), 2000)
+  }, [historyStack])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        const activeTag = document.activeElement?.tagName?.toLowerCase()
+        if (activeTag === 'input' || activeTag === 'textarea') return
+        e.preventDefault()
+        undo()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [undo])
+
   // ── Load from DB ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!deckId) return
@@ -344,8 +379,9 @@ export default function EditDeck() {
   }, [])
 
   const deleteCard = useCallback((id: string) => {
+    saveSnapshot(cardsRef.current)
     setCards(prev => prev.filter(c => c.id !== id))
-  }, [])
+  }, [saveSnapshot])
 
   const addCard = (type: 'mcq' | 'flashcard') => {
     const id = `new_${Date.now()}`
@@ -358,6 +394,7 @@ export default function EditDeck() {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (over && active.id !== over.id) {
+      saveSnapshot(cardsRef.current)
       setCards(prev => {
         const oldIndex = prev.findIndex(c => c.id === active.id)
         const newIndex = prev.findIndex(c => c.id === over.id)
@@ -604,6 +641,15 @@ export default function EditDeck() {
             {cards.length} question{cards.length !== 1 ? 's' : ''} total
           </span>
           <div className="flex items-center gap-3">
+            {historyStack.length > 0 && (
+              <button
+                onClick={undo}
+                className="flex items-center justify-center p-2 rounded border border-[#666] text-[#666] hover:text-[#00FF41] hover:border-[#00FF41] transition-colors"
+                title="Undo (Ctrl+Z)"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+            )}
             <button
               onClick={() => addCard('flashcard')}
               className="flex items-center gap-2 px-4 py-2 rounded border border-[#333] bg-[#161616] text-[#888] hover:text-[#00FF41] hover:border-[#00FF41]/50 font-['Rajdhani'] uppercase tracking-widest text-sm transition-all"

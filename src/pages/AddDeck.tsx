@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import {
-  X, Save, ArrowLeft, FileText, Upload, AlertCircle, Check, Trash2, Plus, Calculator, FlaskConical, Zap, Cpu, Layers, Wand2, GripVertical, ChevronDown, ChevronUp, AlertTriangle
+  X, Save, ArrowLeft, FileText, Upload, AlertCircle, Check, Trash2, Plus, Calculator, FlaskConical, Zap, Cpu, Layers, Wand2, GripVertical, ChevronDown, ChevronUp, AlertTriangle, RotateCcw
 } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import { parseImportedMCQs, parseImportedFlashcards } from '../lib/parser'
@@ -851,6 +851,42 @@ export default function AddDeck() {
   const [showConfirmTypeModal, setShowConfirmTypeModal] = useState(false)
   const [pendingType, setPendingType] = useState<'mcq' | 'flashcard' | null>(null)
 
+  const [historyStack, setHistoryStack] = useState<EditCard[][]>([])
+  const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+  const cardsRef = React.useRef(cards)
+  useEffect(() => { cardsRef.current = cards }, [cards])
+
+  const saveSnapshot = useCallback((currentCards: EditCard[]) => {
+    setHistoryStack(prev => {
+      const newStack = [...prev, currentCards]
+      if (newStack.length > 15) return newStack.slice(newStack.length - 15)
+      return newStack
+    })
+  }, [])
+
+  const undo = useCallback(() => {
+    if (historyStack.length === 0) return
+    const newStack = [...historyStack]
+    const lastSnapshot = newStack.pop()!
+    setHistoryStack(newStack)
+    setCards(lastSnapshot)
+    setToast({ type: 'success', msg: 'Action Undone' })
+    setTimeout(() => setToast(null), 2000)
+  }, [historyStack])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        const activeTag = document.activeElement?.tagName?.toLowerCase()
+        if (activeTag === 'input' || activeTag === 'textarea') return
+        e.preventDefault()
+        undo()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [undo])
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
@@ -943,12 +979,14 @@ export default function AddDeck() {
   }
 
   const deleteCard = (id: string) => {
+    saveSnapshot(cardsRef.current)
     setCards(prev => prev.filter(c => c.id !== id))
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (over && active.id !== over.id) {
+      saveSnapshot(cardsRef.current)
       setCards(prev => {
         const oldIndex = prev.findIndex(c => c.id === active.id)
         const newIndex = prev.findIndex(c => c.id === over.id)
@@ -970,6 +1008,7 @@ export default function AddDeck() {
       }
     }))
     
+    saveSnapshot(cardsRef.current)
     setCards(prev => {
       const isAllEmpty = prev.every(c => {
         if (c.type === 'mcq') return !(c.data as MCQEdit).question.trim();
@@ -991,6 +1030,7 @@ export default function AddDeck() {
       }
     }))
     
+    saveSnapshot(cardsRef.current)
     setCards(prev => {
       const isAllEmpty = prev.every(c => {
         if (c.type === 'mcq') return !(c.data as MCQEdit).question.trim();
@@ -1051,6 +1091,23 @@ export default function AddDeck() {
 
   return (
     <div className="h-full bg-[#0D0D0D] overflow-y-auto flex flex-col font-['IBM_Plex_Mono']">
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className={`fixed top-4 right-4 z-[200] flex items-center gap-3 px-5 py-3 rounded-lg border shadow-2xl font-['Rajdhani'] tracking-wider text-sm ${
+              toast.type === 'success'
+                ? 'bg-[#0a1a0a] border-[#00FF41]/40 text-[#00FF41]'
+                : 'bg-[#1a0a0a] border-[#FF4444]/40 text-[#FF4444]'
+            }`}
+          >
+            {toast.type === 'success' ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+            {toast.msg}
+          </motion.div>
+        )}
+      </AnimatePresence>
       {/* Top Bar */}
       <div className="sticky top-0 z-30 bg-[#0D0D0D]/90 backdrop-blur-md border-b border-[#1a1a1a] shrink-0">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -1280,15 +1337,26 @@ export default function AddDeck() {
           </DndContext>
 
           {/* 4. Footer Actions */}
-          <button
-            onClick={addCard}
-            className="mt-4 w-full py-5 rounded-lg border-2 border-dashed border-[#333] bg-[#111] hover:bg-[#161616] hover:border-[#00FF41]/50 text-[#888] hover:text-[#00FF41] flex flex-col items-center justify-center gap-2 transition-all group"
-          >
-            <div className="w-8 h-8 rounded-full bg-[#1a1a1a] group-hover:bg-[#00FF41]/10 flex items-center justify-center transition-colors">
-              <Plus size={18} />
-            </div>
-            <span className="font-['Rajdhani'] font-bold uppercase tracking-widest text-sm">Add Card</span>
-          </button>
+          <div className="mt-4 flex items-center gap-3">
+            {historyStack.length > 0 && (
+              <button
+                onClick={undo}
+                className="flex items-center justify-center p-5 rounded-lg border-2 border-[#666] text-[#666] hover:text-[#00FF41] hover:border-[#00FF41] transition-colors"
+                title="Undo (Ctrl+Z)"
+              >
+                <RotateCcw className="w-5 h-5" />
+              </button>
+            )}
+            <button
+              onClick={addCard}
+              className="w-full py-5 rounded-lg border-2 border-dashed border-[#333] bg-[#111] hover:bg-[#161616] hover:border-[#00FF41]/50 text-[#888] hover:text-[#00FF41] flex flex-col items-center justify-center gap-2 transition-all group"
+            >
+              <div className="w-8 h-8 rounded-full bg-[#1a1a1a] group-hover:bg-[#00FF41]/10 flex items-center justify-center transition-colors">
+                <Plus size={18} />
+              </div>
+              <span className="font-['Rajdhani'] font-bold uppercase tracking-widest text-sm">Add Card</span>
+            </button>
+          </div>
         </section>
 
       </div>
