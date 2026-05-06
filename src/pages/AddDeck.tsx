@@ -25,7 +25,7 @@ const SUBJECTS: { value: Subject; short: string; icon: any }[] = [
 
 const PREDEFINED_TAGS = [
   'Excel', 'Edge', 'TOP', 'Indiabix', 'Pinoybix', 
-  'EST Superbook'
+  'EST Superbook', 'Cuervo'
 ]
 
 /* ------------------------------------------------------------------ */
@@ -671,13 +671,34 @@ export default function AddDeck() {
         { word: 'technopreneurship', weight: 3 }
       ],
       'Electronics Engineering': [
+        // Circuit Analysis & Fundamentals
         { word: 'resistor', weight: 1 }, { word: 'capacitor', weight: 1 }, { word: 'inductor', weight: 1 },
-        { word: 'diode', weight: 2 }, { word: 'transistor', weight: 2 }, { word: 'bjt', weight: 3 },
+        { word: 'ohm', weight: 2 }, { word: 'kirchhoff', weight: 3 }, { word: 'thevenin', weight: 3 },
+        { word: 'norton', weight: 3 }, { word: 'mesh', weight: 2 }, { word: 'node', weight: 2 },
+        { word: 'impedance', weight: 2 }, { word: 'admittance', weight: 2 }, { word: 'reactance', weight: 2 },
+        
+        // Devices & Semiconductors (Crucial for overriding 'Atom' noise)
+        { word: 'diode', weight: 3 }, { word: 'transistor', weight: 3 }, { word: 'bjt', weight: 3 },
         { word: 'fet', weight: 3 }, { word: 'mosfet', weight: 3 }, { word: 'op-amp', weight: 3 },
-        { word: 'thyristor', weight: 3 }, { word: 'scr', weight: 3 }, { word: 'triac', weight: 3 },
-        { word: 'logic gate', weight: 2 }, { word: 'boolean', weight: 2 }, { word: 'karnaugh', weight: 3 },
-        { word: 'flip flop', weight: 3 }, { word: 'microprocessor', weight: 3 }, { word: 'microcontroller', weight: 3 },
-        { word: 'thevenin', weight: 3 }, { word: 'norton', weight: 3 }, { word: 'kirchhoff', weight: 2 }
+        { word: 'valence electron', weight: 3 }, { word: 'electron-volt', weight: 3 },
+        { word: 'ev', weight: 2 }, { word: 'semiconductor', weight: 3 }, { word: 'hole', weight: 2 },
+        
+        // Electromagnetics (The source of your current misfire)
+        { word: 'magnetic flux', weight: 3 }, { word: 'flux density', weight: 3 },
+        { word: 'faraday', weight: 3 }, { word: 'lenz', weight: 3 }, { word: 'maxwell', weight: 3 },
+        { word: 'oersted', weight: 3 }, { word: 'ampere', weight: 2 }, { word: 'coulomb', weight: 2 },
+        { word: 'electromagnetic induction', weight: 3 }, { word: 'permeability', weight: 3 },
+        { word: 'reluctance', weight: 3 }, { word: 'mmf', weight: 3 }, { word: 'hysteresis', weight: 3 },
+        { word: 'solenoid', weight: 3 }, { word: 'toroid', weight: 3 }, { word: 'hall effect', weight: 3 },
+        
+        // Magnetic Units (Strongest Identifiers)
+        { word: 'tesla', weight: 3 }, { word: 'weber', weight: 3 }, { word: 'wb', weight: 3 },
+        { word: 'gilbert', weight: 3 }, { word: 'gauss', weight: 3 }, { word: 'maxwell', weight: 3 },
+        { word: 'ampere-turn', weight: 3 }, { word: 'at/m', weight: 3 },
+        
+        // Materials
+        { word: 'ferrite', weight: 3 }, { word: 'permalloy', weight: 3 }, { word: 'alnico', weight: 3 },
+        { word: 'soft iron', weight: 2 }, { word: 'retentivity', weight: 3 }, { word: 'coercivity', weight: 3 }
       ],
       'Electronics Systems & Technologies': [
         { word: 'modulation', weight: 3 }, { word: 'demodulation', weight: 3 }, { word: 'am', weight: 2 },

@@ -4,8 +4,10 @@ import { FlashDeck } from '../components/flashcard/FlashDeck'
 import { MCQDeck } from '../components/mcq/MCQDeck'
 import { LearnMode } from '../components/mcq/LearnMode'
 import { TestMode } from '../components/mcq/TestMode'
+import { LearnSettingsModal, LearnSettings } from '../components/mcq/LearnSettingsModal'
+import { TestSettingsModal, TestSettings } from '../components/mcq/TestSettingsModal'
 import { MOCK_FLASHCARDS, MOCK_MCQS } from '../lib/mockData'
-import { Play, Filter, LayoutGrid, CheckCircle2, ChevronRight, Bookmark, X, Settings2, Trash2, AlertTriangle, ClipboardList, Shuffle, Zap, SlidersHorizontal, Check } from 'lucide-react'
+import { Play, Bookmark, X, Trash2, AlertTriangle, ClipboardList, SlidersHorizontal, Check } from 'lucide-react'
 import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
 import { useSessionStore } from '../store/useSessionStore'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -182,22 +184,22 @@ export default function FlashcardStudy() {
 
   // Pre-Learn Settings Modal State
   const [showSettingsModal, setShowSettingsModal] = useState<{ isOpen: boolean; setId: string | null }>({ isOpen: false, setId: null })
-  const [learnSettings, setLearnSettings] = useState({
-    type: 'MCQ', // 'MCQ', 'Flashcard', 'Written'
+  const [learnSettings, setLearnSettings] = useState<LearnSettings>({
+    type: 'MCQ',
     shuffleQuestions: false,
     shuffleChoices: false,
     bookmarkedOnly: false,
-    itemCount: 'All' as 'All' | number
+    itemCount: 'All'
   })
 
   // Pre-Test Settings Modal State
   const [showTestModal, setShowTestModal] = useState<{ isOpen: boolean; setId: string | null }>({ isOpen: false, setId: null })
-  const [testSettings, setTestSettings] = useState({
+  const [testSettings, setTestSettings] = useState<TestSettings>({
     instantChecking: false,
     shuffleQuestions: false,
     shuffleChoices: false,
     bookmarkedOnly: false,
-    itemCount: 'All' as 'All' | number
+    itemCount: 'All'
   })
 
   // Open learn settings
@@ -473,326 +475,25 @@ export default function FlashcardStudy() {
 
   return (
     <div className="h-full bg-[var(--bg-primary)] p-6 lg:p-12 flex flex-col items-center justify-start overflow-y-auto w-full">
-      {/* Learn Settings Modal */}
-      <AnimatePresence>
-        {showSettingsModal.isOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-          >
-            <motion.div 
-              initial={{ scale: 0.95, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 20 }}
-              className="bg-[#111] border border-[#333] rounded-lg shadow-2xl w-full max-w-md overflow-hidden flex flex-col"
-            >
-              {/* Header */}
-              <div className="p-6 border-b border-[#222] flex justify-between items-center bg-[#161616]">
-                <div className="flex items-center gap-3">
-                  <Settings2 className="w-5 h-5 text-[#00FF41]" />
-                  <h2 className="text-xl font-bold text-[#E8E8E8] font-['Orbitron'] uppercase tracking-wider">
-                    Learn Settings
-                  </h2>
-                </div>
-                <button 
-                  onClick={() => setShowSettingsModal({ isOpen: false, setId: null })}
-                  className="text-[#888] hover:text-white transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
+      <LearnSettingsModal
+        isOpen={showSettingsModal.isOpen}
+        setId={showSettingsModal.setId}
+        settings={learnSettings}
+        allSets={allSets}
+        onSettingsChange={setLearnSettings}
+        onStart={handleStartLearn}
+        onClose={() => setShowSettingsModal({ isOpen: false, setId: null })}
+      />
 
-              {/* Body */}
-              <div className="p-6 flex flex-col gap-6">
-
-                {/* Item Count */}
-                {(() => {
-                  const setInfo = allSets.find(s => s.id === showSettingsModal.setId)
-                  if (!setInfo || setInfo.count <= 20) return null
-                  
-                  const options = ['All', ...[20, 50, 100].filter(c => c < setInfo.count)]
-                  return (
-                    <div className="flex flex-col gap-3">
-                      <label className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888]">Number of Items</label>
-                      <div className="grid grid-cols-4 gap-2">
-                        {options.map(count => (
-                          <button
-                            key={count}
-                            onClick={() => setLearnSettings(s => ({ ...s, itemCount: count as any }))}
-                            className={`py-2 rounded font-['Rajdhani'] uppercase tracking-wider text-sm transition-all border ${
-                              learnSettings.itemCount === count 
-                                ? 'bg-[rgba(0,255,65,0.1)] border-[#00FF41] text-[#00FF41]' 
-                                : 'bg-[#161616] border-[#333] text-[#888] hover:border-[#555]'
-                            }`}
-                          >
-                            {count}
-                          </button>
-                        ))}
-                        <input
-                          type="number"
-                          min="1"
-                          max={setInfo.count}
-                          placeholder="Custom"
-                          value={typeof learnSettings.itemCount === 'number' && !options.includes(learnSettings.itemCount) ? learnSettings.itemCount : ''}
-                          onChange={e => {
-                            if (e.target.value === '') {
-                              setLearnSettings(s => ({ ...s, itemCount: 'All' }))
-                              return
-                            }
-                            const val = parseInt(e.target.value)
-                            if (!isNaN(val)) {
-                              setLearnSettings(s => ({ ...s, itemCount: Math.min(Math.max(val, 1), setInfo.count) }))
-                            }
-                          }}
-                          className={`py-2 px-1 rounded font-['Rajdhani'] uppercase tracking-wider text-sm transition-all border outline-none text-center bg-[#161616] ${
-                            typeof learnSettings.itemCount === 'number' && !options.includes(learnSettings.itemCount)
-                              ? 'bg-[rgba(0,255,65,0.1)] border-[#00FF41] text-[#00FF41]' 
-                              : 'border-[#333] text-[#888] hover:border-[#555] focus:border-[#555] placeholder-[#555]'
-                          }`}
-                        />
-                      </div>
-                    </div>
-                  )
-                })()}
-
-                {/* Toggles */}
-                <div className="flex flex-col gap-3">
-                  <label className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888]">Modifiers</label>
-                  
-                  <div className="flex flex-col gap-2">
-                    <button 
-                      onClick={() => setLearnSettings(s => ({ ...s, shuffleQuestions: !s.shuffleQuestions }))}
-                      className="flex items-center justify-between p-3 bg-[#161616] rounded border border-[#222] hover:border-[#333] transition-colors"
-                    >
-                      <div className="flex items-center gap-3 text-[#E8E8E8] font-['Rajdhani'] tracking-wider text-sm">
-                        <Shuffle className="w-4 h-4 text-[#888]" />
-                        Shuffle Questions
-                      </div>
-                      <div className={`w-10 h-5 rounded-full transition-colors relative ${learnSettings.shuffleQuestions ? 'bg-[rgba(0,255,65,0.2)]' : 'bg-[#222]'}`}>
-                        <div className={`absolute top-1 max-w-[calc(100%-8px)] h-3 w-3 rounded-full transition-all ${learnSettings.shuffleQuestions ? 'bg-[#00FF41] left-6' : 'bg-[#888] left-1'}`} />
-                      </div>
-                    </button>
-
-                    <button 
-                      onClick={() => setLearnSettings(s => ({ ...s, shuffleChoices: !s.shuffleChoices }))}
-                      className="flex items-center justify-between p-3 bg-[#161616] rounded border border-[#222] hover:border-[#333] transition-colors"
-                    >
-                      <div className="flex items-center gap-3 text-[#E8E8E8] font-['Rajdhani'] tracking-wider text-sm">
-                        <Shuffle className="w-4 h-4 text-[#888]" />
-                        Shuffle Choices
-                      </div>
-                      <div className={`w-10 h-5 rounded-full transition-colors relative ${learnSettings.shuffleChoices ? 'bg-[rgba(0,255,65,0.2)]' : 'bg-[#222]'}`}>
-                        <div className={`absolute top-1 max-w-[calc(100%-8px)] h-3 w-3 rounded-full transition-all ${learnSettings.shuffleChoices ? 'bg-[#00FF41] left-6' : 'bg-[#888] left-1'}`} />
-                      </div>
-                    </button>
-
-                    <button 
-                      onClick={() => setLearnSettings(s => ({ ...s, bookmarkedOnly: !s.bookmarkedOnly }))}
-                      className="flex items-center justify-between p-3 bg-[#161616] rounded border border-[#222] hover:border-[#333] transition-colors"
-                    >
-                      <div className="flex items-center gap-3 text-[#E8E8E8] font-['Rajdhani'] tracking-wider text-sm">
-                        <Bookmark className="w-4 h-4 text-[#888]" />
-                        Bookmarked Only
-                      </div>
-                      <div className={`w-10 h-5 rounded-full transition-colors relative ${learnSettings.bookmarkedOnly ? 'bg-[rgba(0,255,65,0.2)]' : 'bg-[#222]'}`}>
-                        <div className={`absolute top-1 max-w-[calc(100%-8px)] h-3 w-3 rounded-full transition-all ${learnSettings.bookmarkedOnly ? 'bg-[#00FF41] left-6' : 'bg-[#888] left-1'}`} />
-                      </div>
-                    </button>
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Footer */}
-              <div className="p-6 border-t border-[#222] bg-[#161616] flex justify-end gap-3">
-                <button 
-                  onClick={() => setShowSettingsModal({ isOpen: false, setId: null })}
-                  className="px-5 py-2 rounded bg-transparent border border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-wider text-sm"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleStartLearn}
-                  className="flex items-center px-6 py-2 rounded bg-[#00FF41] text-black font-bold hover:bg-[rgba(0,255,65,0.8)] shadow-[0_0_10px_rgba(0,255,65,0.2)] transition-all font-['Rajdhani'] uppercase tracking-wider text-sm"
-                >
-                  <Play className="w-4 h-4 mr-2 fill-current" />
-                  Start Session
-                </button>
-              </div>
-
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Test Settings Modal */}
-      <AnimatePresence>
-        {showTestModal.isOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-          >
-            <motion.div 
-              initial={{ scale: 0.95, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 20 }}
-              className="bg-[#111] border border-[#333] rounded-lg shadow-2xl w-full max-w-md overflow-hidden flex flex-col"
-            >
-              {/* Header */}
-              <div className="p-6 border-b border-[#222] flex justify-between items-center bg-[#161616]">
-                <div className="flex items-center gap-3">
-                  <ClipboardList className="w-5 h-5 text-[#00FF41]" />
-                  <h2 className="text-xl font-bold text-[#E8E8E8] font-['Orbitron'] uppercase tracking-wider">
-                    Test Settings
-                  </h2>
-                </div>
-                <button 
-                  onClick={() => setShowTestModal({ isOpen: false, setId: null })}
-                  className="text-[#888] hover:text-white transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Body */}
-              <div className="p-6 flex flex-col gap-6">
-                
-                {/* Item Count */}
-                {(() => {
-                  const setInfo = allSets.find(s => s.id === showTestModal.setId)
-                  if (!setInfo || setInfo.count <= 20) return null
-                  
-                  const options = ['All', ...[20, 50, 100].filter(c => c < setInfo.count)]
-                  return (
-                    <div className="flex flex-col gap-3">
-                      <label className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888]">Number of Items</label>
-                      <div className="grid grid-cols-4 gap-2">
-                        {options.map(count => (
-                          <button
-                            key={count}
-                            onClick={() => setTestSettings(s => ({ ...s, itemCount: count as any }))}
-                            className={`py-2 rounded font-['Rajdhani'] uppercase tracking-wider text-sm transition-all border ${
-                              testSettings.itemCount === count 
-                                ? 'bg-[rgba(0,255,65,0.1)] border-[#00FF41] text-[#00FF41]' 
-                                : 'bg-[#161616] border-[#333] text-[#888] hover:border-[#555]'
-                            }`}
-                          >
-                            {count}
-                          </button>
-                        ))}
-                        <input
-                          type="number"
-                          min="1"
-                          max={setInfo.count}
-                          placeholder="Custom"
-                          value={typeof testSettings.itemCount === 'number' && !options.includes(testSettings.itemCount) ? testSettings.itemCount : ''}
-                          onChange={e => {
-                            if (e.target.value === '') {
-                              setTestSettings(s => ({ ...s, itemCount: 'All' }))
-                              return
-                            }
-                            const val = parseInt(e.target.value)
-                            if (!isNaN(val)) {
-                              setTestSettings(s => ({ ...s, itemCount: Math.min(Math.max(val, 1), setInfo.count) }))
-                            }
-                          }}
-                          className={`py-2 px-1 rounded font-['Rajdhani'] uppercase tracking-wider text-sm transition-all border outline-none text-center bg-[#161616] ${
-                            typeof testSettings.itemCount === 'number' && !options.includes(testSettings.itemCount)
-                              ? 'bg-[rgba(0,255,65,0.1)] border-[#00FF41] text-[#00FF41]' 
-                              : 'border-[#333] text-[#888] hover:border-[#555] focus:border-[#555] placeholder-[#555]'
-                          }`}
-                        />
-                      </div>
-                    </div>
-                  )
-                })()}
-
-                {/* Toggles */}
-                <div className="flex flex-col gap-3">
-                  <label className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888]">Options</label>
-                  
-                  <div className="flex flex-col gap-2">
-                    <button 
-                      onClick={() => setTestSettings(s => ({ ...s, instantChecking: !s.instantChecking }))}
-                      className="flex items-center justify-between p-3 bg-[#161616] rounded border border-[#222] hover:border-[#333] transition-colors"
-                    >
-                      <div className="flex items-center gap-3 text-[#E8E8E8] font-['Rajdhani'] tracking-wider text-sm">
-                        <Zap className="w-4 h-4 text-[#888]" />
-                        Instant Checking
-                      </div>
-                      <div className={`w-10 h-5 rounded-full transition-colors relative ${testSettings.instantChecking ? 'bg-[rgba(0,255,65,0.2)]' : 'bg-[#222]'}`}>
-                        <div className={`absolute top-1 max-w-[calc(100%-8px)] h-3 w-3 rounded-full transition-all ${testSettings.instantChecking ? 'bg-[#00FF41] left-6' : 'bg-[#888] left-1'}`} />
-                      </div>
-                    </button>
-
-                    <button 
-                      onClick={() => setTestSettings(s => ({ ...s, shuffleQuestions: !s.shuffleQuestions }))}
-                      className="flex items-center justify-between p-3 bg-[#161616] rounded border border-[#222] hover:border-[#333] transition-colors"
-                    >
-                      <div className="flex items-center gap-3 text-[#E8E8E8] font-['Rajdhani'] tracking-wider text-sm">
-                        <Shuffle className="w-4 h-4 text-[#888]" />
-                        Shuffle Questions
-                      </div>
-                      <div className={`w-10 h-5 rounded-full transition-colors relative ${testSettings.shuffleQuestions ? 'bg-[rgba(0,255,65,0.2)]' : 'bg-[#222]'}`}>
-                        <div className={`absolute top-1 max-w-[calc(100%-8px)] h-3 w-3 rounded-full transition-all ${testSettings.shuffleQuestions ? 'bg-[#00FF41] left-6' : 'bg-[#888] left-1'}`} />
-                      </div>
-                    </button>
-
-                    <button 
-                      onClick={() => setTestSettings(s => ({ ...s, shuffleChoices: !s.shuffleChoices }))}
-                      className="flex items-center justify-between p-3 bg-[#161616] rounded border border-[#222] hover:border-[#333] transition-colors"
-                    >
-                      <div className="flex items-center gap-3 text-[#E8E8E8] font-['Rajdhani'] tracking-wider text-sm">
-                        <Shuffle className="w-4 h-4 text-[#888]" />
-                        Shuffle Choices
-                      </div>
-                      <div className={`w-10 h-5 rounded-full transition-colors relative ${testSettings.shuffleChoices ? 'bg-[rgba(0,255,65,0.2)]' : 'bg-[#222]'}`}>
-                        <div className={`absolute top-1 max-w-[calc(100%-8px)] h-3 w-3 rounded-full transition-all ${testSettings.shuffleChoices ? 'bg-[#00FF41] left-6' : 'bg-[#888] left-1'}`} />
-                      </div>
-                    </button>
-
-                    <button 
-                      onClick={() => setTestSettings(s => ({ ...s, bookmarkedOnly: !s.bookmarkedOnly }))}
-                      className="flex items-center justify-between p-3 bg-[#161616] rounded border border-[#222] hover:border-[#333] transition-colors"
-                    >
-                      <div className="flex items-center gap-3 text-[#E8E8E8] font-['Rajdhani'] tracking-wider text-sm">
-                        <Bookmark className="w-4 h-4 text-[#888]" />
-                        Bookmarked Only
-                      </div>
-                      <div className={`w-10 h-5 rounded-full transition-colors relative ${testSettings.bookmarkedOnly ? 'bg-[rgba(0,255,65,0.2)]' : 'bg-[#222]'}`}>
-                        <div className={`absolute top-1 max-w-[calc(100%-8px)] h-3 w-3 rounded-full transition-all ${testSettings.bookmarkedOnly ? 'bg-[#00FF41] left-6' : 'bg-[#888] left-1'}`} />
-                      </div>
-                    </button>
-                  </div>
-                </div>
-
-              </div>
-
-              {/* Footer */}
-              <div className="p-6 border-t border-[#222] bg-[#161616] flex justify-end gap-3">
-                <button 
-                  onClick={() => setShowTestModal({ isOpen: false, setId: null })}
-                  className="px-5 py-2 rounded bg-transparent border border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-wider text-sm"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={handleStartTest}
-                  className="flex items-center px-6 py-2 rounded bg-[var(--accent-primary)] text-black font-bold hover:bg-[rgba(0,255,65,0.8)] shadow-[0_0_10px_rgba(0,255,65,0.2)] transition-all font-['Rajdhani'] uppercase tracking-wider text-sm"
-                >
-                  <Play className="w-4 h-4 mr-2 fill-current" />
-                  Start Test
-                </button>
-              </div>
-
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <TestSettingsModal
+        isOpen={showTestModal.isOpen}
+        setId={showTestModal.setId}
+        settings={testSettings}
+        allSets={allSets}
+        onSettingsChange={setTestSettings}
+        onStart={handleStartTest}
+        onClose={() => setShowTestModal({ isOpen: false, setId: null })}
+      />
 
       {/* Subject Selector Header */}
       <div className="w-full max-w-4xl mb-10 flex flex-col md:flex-row items-center justify-between gap-6 border-b border-[var(--bg-card)] pb-6 relative z-10 pt-4">

@@ -22,6 +22,7 @@ export async function initDB() {
     try { db.run("ALTER TABLE cards ADD COLUMN tags TEXT DEFAULT '[]'"); } catch (e) {}
     try { db.run("ALTER TABLE topics ADD COLUMN created_at INTEGER DEFAULT (strftime('%s', 'now'))"); } catch (e) {}
     try { db.run("ALTER TABLE cards ADD COLUMN created_at INTEGER DEFAULT (strftime('%s', 'now'))"); } catch (e) {}
+    try { db.run("ALTER TABLE cards ADD COLUMN is_custom BOOLEAN DEFAULT 0"); } catch (e) {}
     saveDB();
   } else {
     db = new SQL.Database();
@@ -29,11 +30,17 @@ export async function initDB() {
   }
 }
 
+let saveTimeout: NodeJS.Timeout | null = null;
+
 export function saveDB() {
-  if (!db) return;
-  const data = db.export();
-  const buffer = Buffer.from(data);
-  fs.writeFileSync(dbPath, buffer);
+  if (saveTimeout) clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    if (!db) return;
+    const data = db.export();
+    const buffer = Buffer.from(data);
+    fs.writeFileSync(dbPath, buffer);
+    saveTimeout = null;
+  }, 1000);
 }
 
 function initSchema() {
