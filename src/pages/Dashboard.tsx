@@ -19,11 +19,11 @@ export default function Dashboard() {
     try {
       // 1. Total Cards
       const totalResult = await window.electron.db.query('SELECT COUNT(id) as count FROM cards')
-      const total = totalResult[0]?.count || 0
+      const total = totalResult.data?.[0]?.count || 0
 
       // 2. Internalized Cards (Repetitions >= 5)
       const internalizedResult = await window.electron.db.query('SELECT COUNT(card_id) as count FROM progress WHERE repetitions >= 5')
-      const internalized = internalizedResult[0]?.count || 0
+      const internalized = internalizedResult.data?.[0]?.count || 0
 
       // 3. Current Streak (Simplified for now - could be a separate log table, but assuming we fetch from a setting or calc)
       // For now, let's keep it at 0 or a placeholder unless a streak table exists
@@ -44,7 +44,7 @@ export default function Dashboard() {
         GROUP BY t.subject
       `)
 
-      const formattedProgress = progressResult.map((row: any) => ({
+      const formattedProgress = (progressResult.data || []).map((row: any) => ({
         subject: row.subject,
         percent: row.total > 0 ? Math.round((row.mastered / row.total) * 100) : 0
       }))

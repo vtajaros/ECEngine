@@ -81,6 +81,18 @@ export default function FlashcardViewer() {
   const [writtenSubmitted, setWrittenSubmitted] = useState(false)
   const [writtenCorrect, setWrittenCorrect] = useState<boolean | null>(null)
   const [writtenStats, setWrittenStats] = useState({ correct: 0, total: 0 })
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (zoomedImage) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'auto'
+    }
+    return () => {
+      document.body.style.overflow = 'auto'
+    }
+  }, [zoomedImage])
 
   // ── Load decks from DB ──
   useEffect(() => {
@@ -400,6 +412,16 @@ export default function FlashcardViewer() {
                   <div className="flex-1 flex items-center justify-center px-8 pb-8 cursor-pointer" onClick={() => !settings.writtenMode && setIsFlipped(f => !f)}>
                     {!isFlipped ? (
                       <div className="text-center w-full">
+                        {currentCard.data.imagePath && (
+                          <div className="mb-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
+                            <img 
+                              src={`ece-app://${currentCard.data.imagePath}`} 
+                              alt="Card diagram"
+                              className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
+                              onClick={(e) => { e.stopPropagation(); setZoomedImage(currentCard.data.imagePath!); }}
+                            />
+                          </div>
+                        )}
                         <div className="text-xl lg:text-2xl font-medium text-[#E8E8E8] leading-relaxed font-['IBM_Plex_Mono']" dangerouslySetInnerHTML={{ __html: renderMath(getFrontText(currentCard)) }} />
                         {!settings.writtenMode && <p className="text-[#555] text-sm mt-6 font-['Rajdhani']">Click or press Space to flip</p>}
                       </div>
@@ -462,6 +484,35 @@ export default function FlashcardViewer() {
             </AnimatePresence>
           </div>
         </div>
+
+        {/* Lightbox Modal */}
+        <AnimatePresence>
+          {zoomedImage && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4 lg:p-10 cursor-zoom-out backdrop-blur-sm"
+              onClick={() => setZoomedImage(null)}
+            >
+              <button 
+                className="absolute top-6 right-6 text-[#888] hover:text-[#00FF41] transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-[#00FF41]"
+                onClick={() => setZoomedImage(null)}
+                title="Close"
+              >
+                <X size={24} />
+              </button>
+              <motion.img
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                src={`ece-app://${zoomedImage}`}
+                alt="Zoomed diagram"
+                className="max-w-[90vw] max-h-[90vh] object-contain shadow-2xl rounded-lg"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     )
   }

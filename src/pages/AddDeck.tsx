@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import {
-  X, Save, ArrowLeft, FileText, Upload, AlertCircle, Check, Trash2, Plus, Calculator, FlaskConical, Zap, Cpu, Layers, Wand2, GripVertical, ChevronDown, ChevronUp, AlertTriangle, RotateCcw
+  X, Save, ArrowLeft, FileText, Upload, AlertCircle, Check, Trash2, Plus, Calculator, FlaskConical, Zap, Cpu, Layers, Wand2, GripVertical, ChevronDown, ChevronUp, AlertTriangle, RotateCcw, ImageIcon
 } from 'lucide-react'
 import { useNavigate, Link } from 'react-router-dom'
 import { parseImportedMCQs, parseImportedFlashcards } from '../lib/parser'
@@ -57,11 +57,13 @@ interface MCQEdit {
   choices: [string, string, string, string]
   answer: number
   explanation: string
+  imagePath?: string
 }
 
 interface FlashcardEdit {
   front: string
   back: string
+  imagePath?: string
 }
 
 /* ------------------------------------------------------------------ */
@@ -644,9 +646,10 @@ interface CardRowProps {
   index: number
   onUpdate: (id: string, data: Partial<EditCard>) => void
   onDelete: (id: string) => void
+  onError?: (msg: string) => void
 }
 
-const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?: boolean }> = ({ data, onChange, isNew }) => {
+const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?: boolean; onError?: (msg: string) => void }> = ({ data, onChange, isNew, onError }) => {
   const set = (patch: Partial<MCQEdit>) => onChange({ ...data, ...patch })
   const setChoice = (i: number, val: string) => {
     const choices = [...data.choices] as MCQEdit['choices']
@@ -662,12 +665,60 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
     }
   }, [isNew])
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    // 10MB limit guardrail
+    if (file.size > 10 * 1024 * 1024) {
+      if (onError) onError('Image exceeds 10MB limit.')
+      e.target.value = ''
+      return
+    }
+
+    const path = (file as any).path
+    if (!path) return
+    try {
+      const result = await (window as any).electron.saveImage(path)
+      if (result.success && result.filename) {
+        set({ imagePath: result.filename })
+      } else {
+        if (onError) onError(result.error || 'Failed to save image')
+      }
+    } catch (err: any) {
+      console.error(err)
+      if (onError) onError('Error saving image: ' + err.message)
+    }
+    e.target.value = ''
+  }
+
   return (
     <div className="flex flex-col gap-4">
-      <div>
-        <Label>Question</Label>
-        <textarea ref={inputRef} rows={3} className={textareaCls} value={data.question}
-          onChange={e => set({ question: e.target.value })} placeholder="Enter question text..." />
+      <div className="flex items-start gap-4">
+        <div className="flex-1">
+          <Label>Question</Label>
+          <textarea ref={inputRef} rows={3} className={textareaCls} value={data.question}
+            onChange={e => set({ question: e.target.value })} placeholder="Enter question text..." />
+        </div>
+        <div className="shrink-0 flex flex-col items-center justify-start mt-5">
+          {data.imagePath ? (
+            <div className="relative group">
+              <img src={`ece-app://${data.imagePath}`} alt="Question image" className="w-24 h-24 object-cover rounded border border-[#333]" />
+              <button 
+                onClick={() => set({ imagePath: undefined })}
+                className="absolute -top-2 -right-2 bg-[#FF4B4B] text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          ) : (
+            <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#888] rounded transition-colors bg-[#0a0a0a]">
+              <ImageIcon size={24} />
+              <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest mt-2 font-bold text-center leading-tight">Add<br/>Image</span>
+              <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+            </label>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -699,30 +750,81 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
   )
 }
 
-const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit) => void; isNew?: boolean }> = ({ data, onChange, isNew }) => {
+const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit) => void; isNew?: boolean; onError?: (msg: string) => void }> = ({ data, onChange, isNew, onError }) => {
   const inputRef = React.useRef<HTMLTextAreaElement>(null)
   useEffect(() => {
     if (isNew && inputRef.current) {
       inputRef.current.focus()
     }
   }, [isNew])
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    // 10MB limit guardrail
+    if (file.size > 10 * 1024 * 1024) {
+      if (onError) onError('Image exceeds 10MB limit.')
+      e.target.value = ''
+      return
+    }
+
+    const path = (file as any).path
+    if (!path) return
+    try {
+      const result = await (window as any).electron.saveImage(path)
+      if (result.success && result.filename) {
+        onChange({ ...data, imagePath: result.filename })
+      } else {
+        if (onError) onError(result.error || 'Failed to save image')
+      }
+    } catch (err: any) {
+      console.error(err)
+      if (onError) onError('Error saving image: ' + err.message)
+    }
+    e.target.value = ''
+  }
+
   return (
-    <div className="grid grid-cols-2 gap-4">
-      <div>
-        <Label>Front / Term</Label>
-        <textarea ref={inputRef} rows={4} className={textareaCls} value={data.front}
-          onChange={e => onChange({ ...data, front: e.target.value })} placeholder="Term or question..." />
-      </div>
-      <div>
-        <Label>Back / Definition</Label>
-        <textarea rows={4} className={textareaCls} value={data.back}
-          onChange={e => onChange({ ...data, back: e.target.value })} placeholder="Definition or answer..." />
+    <div className="flex flex-col gap-4">
+      <div className="flex items-start gap-4">
+        <div className="flex-1 grid grid-cols-2 gap-4">
+          <div>
+            <Label>Front / Term</Label>
+            <textarea ref={inputRef} rows={4} className={textareaCls} value={data.front}
+              onChange={e => onChange({ ...data, front: e.target.value })} placeholder="Term or question..." />
+          </div>
+          <div>
+            <Label>Back / Definition</Label>
+            <textarea rows={4} className={textareaCls} value={data.back}
+              onChange={e => onChange({ ...data, back: e.target.value })} placeholder="Definition or answer..." />
+          </div>
+        </div>
+        <div className="shrink-0 flex flex-col items-center justify-start mt-5">
+          {data.imagePath ? (
+            <div className="relative group">
+              <img src={`ece-app://${data.imagePath}`} alt="Flashcard image" className="w-24 h-24 object-cover rounded border border-[#333]" />
+              <button 
+                onClick={() => onChange({ ...data, imagePath: undefined })}
+                className="absolute -top-2 -right-2 bg-[#FF4B4B] text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+              >
+                <X size={12} />
+              </button>
+            </div>
+          ) : (
+            <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#888] rounded transition-colors bg-[#0a0a0a]">
+              <ImageIcon size={24} />
+              <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest mt-2 font-bold text-center leading-tight">Add<br/>Image</span>
+              <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+            </label>
+          )}
+        </div>
       </div>
     </div>
   )
 }
 
-const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<HTMLElement> }> = ({ card, index, onUpdate, onDelete, dragHandleProps }) => {
+const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<HTMLElement> }> = ({ card, index, onUpdate, onDelete, onError, dragHandleProps }) => {
   const [expanded, setExpanded] = useState(card.isNew ?? false)
 
   const preview = card.type === 'mcq'
@@ -785,12 +887,14 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
                   data={card.data as MCQEdit}
                   onChange={d => onUpdate(card.id, { data: d })}
                   isNew={card.isNew}
+                  onError={onError}
                 />
               ) : (
                 <FlashcardForm
                   data={card.data as FlashcardEdit}
                   onChange={d => onUpdate(card.id, { data: d })}
                   isNew={card.isNew}
+                  onError={onError}
                 />
               )}
             </div>
@@ -1330,6 +1434,10 @@ export default function AddDeck() {
                     index={i}
                     onUpdate={updateCard}
                     onDelete={deleteCard}
+                    onError={(msg) => {
+                      setToast({ type: 'error', msg })
+                      setTimeout(() => setToast(null), 3000)
+                    }}
                   />
                 ))}
               </AnimatePresence>

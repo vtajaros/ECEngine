@@ -9,4 +9,6 @@ contextBridge.exposeInMainWorld('electron', {
     import: (filePath: string) => ipcRenderer.invoke('file:import', filePath),
     export: (data: unknown, savePath: string) => ipcRenderer.invoke('file:export', data, savePath),
   },
+  saveImage: (srcPath: string): Promise<{ success: boolean; filename?: string; error?: string }> =>
+    ipcRenderer.invoke('save-image', srcPath),
 })

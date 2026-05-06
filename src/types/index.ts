@@ -17,6 +17,7 @@ export interface FlashcardData {
   back: string
   imageFront?: string
   imageBack?: string
+  imagePath?: string
 }
 
 export interface MCQData {
@@ -24,6 +25,7 @@ export interface MCQData {
   choices: string[]
   answer: number
   explanation: string
+  imagePath?: string
   yearAsked?: number
 }
 
@@ -31,12 +33,14 @@ export interface FormulaData {
   name: string
   latex: string
   variables: Record<string, string>
+  imagePath?: string
 }
 
 export interface ConceptData {
   title: string
   body: string
   image?: string
+  imagePath?: string
 }
 
 export interface Progress {

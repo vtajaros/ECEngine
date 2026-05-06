@@ -1,6 +1,10 @@
 import { app, BrowserWindow, shell, session } from 'electron'
 import { join } from 'path'
 import { registerDBHandlers } from './ipc/db.ipc'
+import { registerImageHandlers, registerImageProtocolScheme, handleImageProtocol } from './ipc/image.ipc'
+
+// Register custom protocol BEFORE app is ready (Electron requirement)
+registerImageProtocolScheme()
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -45,6 +49,8 @@ function createWindow() {
 
 app.whenReady().then(() => {
   registerDBHandlers()
+  registerImageHandlers()
+  handleImageProtocol()
   createWindow()
 })
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit() })

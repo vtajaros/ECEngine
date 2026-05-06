@@ -46,6 +46,18 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
   
   const [timeElapsed, setTimeElapsed] = useState(0)
   const [score, setScore] = useState({ correct: 0, total: 0 })
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (zoomedImage) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'auto'
+    }
+    return () => {
+      document.body.style.overflow = 'auto'
+    }
+  }, [zoomedImage])
 
   // Initialize test cards
   useEffect(() => {
@@ -313,7 +325,17 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
                   Q{index + 1}.
                 </span>
                 
-                <div className="flex-1 flex flex-col max-h-[40vh] overflow-y-auto custom-scrollbar pr-2">
+                <div className="flex-1 flex flex-col max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
+                  {mcq.imagePath && (
+                    <div className="mb-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
+                      <img 
+                        src={`ece-app://${mcq.imagePath}`} 
+                        alt="Question diagram"
+                        className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
+                        onClick={() => setZoomedImage(mcq.imagePath!)}
+                      />
+                    </div>
+                  )}
                   <h3 
                     className="font-['Rajdhani'] font-semibold text-[var(--text-primary)] whitespace-pre-wrap"
                     style={{
@@ -469,6 +491,35 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
                 </div>
               </div>
             </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Lightbox Modal */}
+      <AnimatePresence>
+        {zoomedImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4 lg:p-10 cursor-zoom-out backdrop-blur-sm"
+            onClick={() => setZoomedImage(null)}
+          >
+            <button 
+              className="absolute top-6 right-6 text-[#888] hover:text-[#00FF41] transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-[#00FF41]"
+              onClick={() => setZoomedImage(null)}
+              title="Close"
+            >
+              <X size={24} />
+            </button>
+            <motion.img
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              src={`ece-app://${zoomedImage}`}
+              alt="Zoomed diagram"
+              className="max-w-[90vw] max-h-[90vh] object-contain shadow-2xl rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
           </motion.div>
         )}
       </AnimatePresence>

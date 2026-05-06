@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Card, MCQData } from '../../types'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bookmark, Play, AlertCircle, ArrowRight, Flag } from 'lucide-react'
+import { Bookmark, Play, AlertCircle, ArrowRight, Flag, X } from 'lucide-react'
 import { renderMath } from '../../lib/latex'
 
 // Partitioned learning mode handling the custom "LEARN" flow
@@ -56,6 +56,18 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
   const [partitionCorrectIds, setPartitionCorrectIds] = useState<Set<string>>(new Set())
   const [globalStats, setGlobalStats] = useState({ correctFirstTry: 0, wrongFirstTry: 0 })
   const [cardStats, setCardStats] = useState<Record<string, { wasCorrectFirstTry: boolean, usedIDK: boolean, attemptCount: number }>>({})
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (zoomedImage) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'auto'
+    }
+    return () => {
+      document.body.style.overflow = 'auto'
+    }
+  }, [zoomedImage])
 
   // Initialize
   useEffect(() => {
@@ -423,10 +435,10 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
             <Bookmark className={`w-6 h-6 ${isBookmarked ? 'fill-[#FFB800] text-[#FFB800]' : ''}`} />
           </button>
 
-          <div className="mb-10 pr-4 max-h-[40vh] overflow-y-auto custom-scrollbar">
+          <div className="mb-10 pr-4 max-h-[50vh] overflow-y-auto custom-scrollbar">
             <span className="text-[var(--accent-primary)] font-['IBM_Plex_Mono'] text-sm font-bold tracking-widest mb-3 block">Question {overallCurrentQuestion}</span>
             <div 
-              className="text-white font-['Rajdhani'] font-semibold"
+              className="text-white font-['Rajdhani'] font-semibold mb-6"
               style={{
                 fontSize: getQuestionFontSize(mcqData.question),
                 lineHeight: 1.4,
@@ -434,6 +446,17 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
               }}
               dangerouslySetInnerHTML={{ __html: renderMath(mcqData.question) }}
             />
+
+            {mcqData.imagePath && (
+              <div className="mb-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
+                <img 
+                  src={`ece-app://${mcqData.imagePath}`} 
+                  alt="Circuit diagram"
+                  className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
+                  onClick={() => setZoomedImage(mcqData.imagePath!)}
+                />
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3 mb-8">
@@ -514,6 +537,35 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
 
         </motion.div>
       </div>
+
+      {/* Lightbox Modal */}
+      <AnimatePresence>
+        {zoomedImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4 lg:p-10 cursor-zoom-out backdrop-blur-sm"
+            onClick={() => setZoomedImage(null)}
+          >
+            <button 
+              className="absolute top-6 right-6 text-[#888] hover:text-[#00FF41] transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-[#00FF41]"
+              onClick={() => setZoomedImage(null)}
+              title="Close"
+            >
+              <X size={24} />
+            </button>
+            <motion.img
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              src={`ece-app://${zoomedImage}`}
+              alt="Zoomed diagram"
+              className="max-w-[90vw] max-h-[90vh] object-contain shadow-2xl rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

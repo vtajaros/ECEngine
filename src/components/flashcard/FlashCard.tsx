@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
+import { X } from 'lucide-react'
 import { Card, FlashcardData } from '../../types'
 import { renderMath } from '../../lib/latex'
 
@@ -19,6 +20,18 @@ const getContextColor = (difficulty: string) => {
 
 export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate }) => {
   const [isFlipped, setIsFlipped] = useState(false)
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (zoomedImage) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = 'auto'
+    }
+    return () => {
+      document.body.style.overflow = 'auto'
+    }
+  }, [zoomedImage])
   const data = card.data as FlashcardData
 
   // Handle keyboard shortcuts
@@ -78,12 +91,22 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate }) => {
                </span>
             </div>
             
-            <div className="flex-1 flex items-center justify-center text-center">
-              <h2 
-                className="text-2xl font-['Rajdhani'] font-semibold leading-snug" 
-                dangerouslySetInnerHTML={{ __html: renderMath(data.front) }}
-              />
-            </div>
+              <div className="flex-1 flex flex-col items-center justify-center text-center">
+                {data.imagePath && (
+                  <div className="mb-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
+                    <img 
+                      src={`ece-app://${data.imagePath}`} 
+                      alt="Flashcard diagram"
+                      className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
+                      onClick={(e) => { e.stopPropagation(); setZoomedImage(data.imagePath!); }}
+                    />
+                  </div>
+                )}
+                <h2 
+                  className="text-2xl font-['Rajdhani'] font-semibold leading-snug" 
+                  dangerouslySetInnerHTML={{ __html: renderMath(data.front) }}
+                />
+              </div>
             
             <div className="text-center text-[#888888] text-sm mt-4 font-['Rajdhani']">
               Press SPACE or click to flip
@@ -127,6 +150,35 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate }) => {
           <span className="text-xs text-[#888888]">(4) 4d</span>
         </button>
       </div>
+
+      {/* Lightbox Modal */}
+      <AnimatePresence>
+        {zoomedImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4 lg:p-10 cursor-zoom-out backdrop-blur-sm"
+            onClick={() => setZoomedImage(null)}
+          >
+            <button 
+              className="absolute top-6 right-6 text-[#888] hover:text-[#00FF41] transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-[#00FF41]"
+              onClick={() => setZoomedImage(null)}
+              title="Close"
+            >
+              <X size={24} />
+            </button>
+            <motion.img
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              src={`ece-app://${zoomedImage}`}
+              alt="Zoomed diagram"
+              className="max-w-[90vw] max-h-[90vh] object-contain shadow-2xl rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   )
