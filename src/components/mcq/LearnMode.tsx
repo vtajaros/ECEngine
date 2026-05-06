@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Card, MCQData } from '../../types'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bookmark, Play, AlertCircle, ArrowRight, Flag, X } from 'lucide-react'
+import { Bookmark, Play, AlertCircle, ArrowRight, Flag, X, Copy, Sparkles } from 'lucide-react'
 import { renderMath } from '../../lib/latex'
+import Toast from '../ui/Toast'
+import { ExplanationPanel } from '../ui/ExplanationPanel'
 
 // Partitioned learning mode handling the custom "LEARN" flow
 
@@ -57,6 +59,10 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
   const [globalStats, setGlobalStats] = useState({ correctFirstTry: 0, wrongFirstTry: 0 })
   const [cardStats, setCardStats] = useState<Record<string, { wasCorrectFirstTry: boolean, usedIDK: boolean, attemptCount: number }>>({})
   const [zoomedImage, setZoomedImage] = useState<string | null>(null)
+  const [showToast, setShowToast] = useState(false)
+  const [explanationOpen, setExplanationOpen] = useState(false)
+  // Summary view: which question row has its panel open (null = all closed)
+  const [openExplanationId, setOpenExplanationId] = useState<number | null>(null)
 
   useEffect(() => {
     if (zoomedImage) {
@@ -182,6 +188,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
     setViewState('question')
     setSelectedChoiceIndex(null)
     setChoiceStatus('unanswered')
+    setExplanationOpen(false) // Reset explanation on each new question
 
     if (currentCardIndex < activeQueue.length - 1) {
       setCurrentCardIndex(prev => prev + 1)
@@ -243,6 +250,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
     setViewState('question')
     setSelectedChoiceIndex(null)
     setChoiceStatus('unanswered')
+    setOpenExplanationId(null) // close any open summary panel
   }
 
   const handleStudyAgain = () => {
@@ -256,6 +264,35 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
     setViewState('question')
     setSelectedChoiceIndex(null)
     setChoiceStatus('unanswered')
+  }
+
+  const handleGetContext = () => {
+    if (!mcqData) return
+
+    const template = `---
+Please explain the correct answer to this multiple choice question:
+
+QUESTION:
+${mcqData.question}
+
+CHOICES:
+A. ${mcqData.choices[0]}
+B. ${mcqData.choices[1]}
+C. ${mcqData.choices[2]}
+D. ${mcqData.choices[3]}
+
+CORRECT ANSWER: ${String.fromCharCode(65 + mcqData.answer)}. ${mcqData.choices[mcqData.answer]}
+
+Please explain:
+1. Why the correct answer is right
+2. Why each of the other choices is wrong
+3. Any relevant formula, law, or concept that applies
+4. A memory tip or way to remember this for the board exam
+---`
+
+    navigator.clipboard.writeText(template).then(() => {
+      setShowToast(true)
+    })
   }
 
   if (!cards || cards.length === 0) return null
@@ -319,6 +356,18 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
                       >
                         <Bookmark className={`w-4 h-4 ${bookmarkedIds.has(c.id) ? 'fill-current' : ''}`} />
                       </button>
+                      {/* Sparkles: toggle AI explanation for this row */}
+                      <button
+                        onClick={() => setOpenExplanationId(openExplanationId === idx ? null : idx)}
+                        className={`p-1 rounded transition-colors shrink-0 mt-0.5 border ${
+                          openExplanationId === idx
+                            ? 'border-[#00FF41] text-[#00FF41] bg-[rgba(0,255,65,0.1)]'
+                            : 'border-[rgba(0,255,65,0.3)] text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41]'
+                        }`}
+                        title={openExplanationId === idx ? 'Hide explanation' : 'AI Explain'}
+                      >
+                        <Sparkles className="w-4 h-4" />
+                      </button>
                     </div>
                     <div className="pl-8 flex items-start justify-between gap-2">
                       <div className="flex items-start gap-2">
@@ -332,6 +381,27 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
                         <span className="text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded bg-[#FF3333]/20 text-[#FF3333] border border-[#FF3333]/30 shrink-0">Missed</span>
                       )}
                     </div>
+
+                    {/* ExplanationPanel: slides in below this row when selected */}
+                    <AnimatePresence>
+                      {openExplanationId === idx && (
+                        <motion.div
+                          key="explanation"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.25, ease: 'easeOut' }}
+                          style={{ overflow: 'hidden' }}
+                        >
+                          <ExplanationPanel
+                            question={mcq.question}
+                            choices={mcq.choices}
+                            answerIndex={mcq.answer}
+                            onClose={() => setOpenExplanationId(null)}
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </motion.div>
                 )
               })}
@@ -503,6 +573,16 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
             })}
           </div>
 
+          {/* ExplanationPanel: slides in below choices when open */}
+          {viewState === 'feedback' && explanationOpen && (
+            <ExplanationPanel
+              question={mcqData.question}
+              choices={mcqData.choices}
+              answerIndex={mcqData.answer}
+              onClose={() => setExplanationOpen(false)}
+            />
+          )}
+
           {viewState === 'question' ? (
             <div className="flex justify-center border-t border-[#222] pt-6 mt-auto">
               <button 
@@ -528,15 +608,42 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
                )}
                <button 
                  onClick={handleNext}
-                 className="w-full max-w-sm py-4 rounded bg-[var(--accent-primary)] text-black font-bold font-['Orbitron'] tracking-widest uppercase hover:bg-[var(--accent-dim)] transition-colors shadow-[0_0_20px_rgba(0,255,65,0.3)] hover:shadow-[0_0_30px_rgba(0,255,65,0.5)]"
+                 className="w-full max-w-sm py-4 rounded bg-[var(--accent-primary)] text-black font-bold font-['Orbitron'] tracking-widest uppercase hover:bg-[var(--accent-dim)] transition-colors shadow-[0_0_20px_rgba(0,255,65,0.3)] hover:shadow-[0_0_30px_rgba(0,255,65,0.5)] mb-4"
                >
                  Next <span className="font-['IBM_Plex_Mono'] text-xs ml-2 opacity-60">(Space)</span>
                </button>
+
+               {/* Secondary action buttons: GET CONTEXT and EXPLAIN */}
+               <div className="flex items-center gap-3 flex-wrap justify-center">
+                 <button 
+                   onClick={handleGetContext}
+                   className="flex items-center gap-2 px-4 py-2 border border-[rgba(255,255,255,0.15)] rounded text-[#888888] hover:text-white hover:border-[#666] transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
+                 >
+                   <Copy size={14} />
+                   Get Context
+                 </button>
+                 <button 
+                   onClick={() => setExplanationOpen(true)}
+                   className="flex items-center gap-2 px-4 py-2 border border-[rgba(0,255,65,0.3)] rounded text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41] transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
+                 >
+                   <Sparkles size={14} />
+                   Explain
+                 </button>
+               </div>
             </div>
           )}
 
         </motion.div>
       </div>
+
+      <AnimatePresence>
+        {showToast && (
+          <Toast 
+            message="Context copied to clipboard — paste into Gemini, ChatGPT, or Claude" 
+            onDismiss={() => setShowToast(false)} 
+          />
+        )}
+      </AnimatePresence>
 
       {/* Lightbox Modal */}
       <AnimatePresence>

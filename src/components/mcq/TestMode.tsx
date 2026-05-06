@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { Card, MCQData } from '../../types'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bookmark, Clock, ArrowRight, RefreshCw, ClipboardCheck, X, AlertTriangle } from 'lucide-react'
+import { Bookmark, Clock, ArrowRight, RefreshCw, ClipboardCheck, X, AlertTriangle, Copy, Sparkles } from 'lucide-react'
 import { shuffle, shuffleChoices } from '../../lib/scrambler'
 import { renderMath } from '../../lib/latex'
+import { ExplanationPanel } from '../ui/ExplanationPanel'
+import Toast from '../ui/Toast'
 
 interface TestModeProps {
   cards: Card[]
@@ -47,6 +49,35 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
   const [timeElapsed, setTimeElapsed] = useState(0)
   const [score, setScore] = useState({ correct: 0, total: 0 })
   const [zoomedImage, setZoomedImage] = useState<string | null>(null)
+
+  // AI Explanation state — stores the index of the currently open panel (null = all closed)
+  const [openExplanationId, setOpenExplanationId] = useState<number | null>(null)
+  const [showToast, setShowToast] = useState(false)
+
+  // GET CONTEXT helper — formats the question into a structured clipboard prompt
+  const handleGetContext = (mcq: MCQData) => {
+    const template = `---
+Please explain the correct answer to this multiple choice question:
+
+QUESTION:
+${mcq.question}
+
+CHOICES:
+A. ${mcq.choices[0]}
+B. ${mcq.choices[1]}
+C. ${mcq.choices[2]}
+D. ${mcq.choices[3]}
+
+CORRECT ANSWER: ${String.fromCharCode(65 + mcq.answer)}. ${mcq.choices[mcq.answer]}
+
+Please explain:
+1. Why the correct answer is right
+2. Why each of the other choices is wrong
+3. Any relevant formula, law, or concept that applies
+4. A memory tip or way to remember this for the board exam
+---`
+    navigator.clipboard.writeText(template).then(() => setShowToast(true))
+  }
 
   useEffect(() => {
     if (zoomedImage) {
@@ -432,6 +463,40 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
                   </div>
                 </div>
               )}
+
+              {/* AI Action Buttons — only visible in review phase */}
+              {viewState === 'review' && (
+                <div className="px-6 pb-6 pt-1 flex items-center gap-3">
+                  <button
+                    onClick={() => handleGetContext(mcq)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 border border-[rgba(255,255,255,0.15)] rounded text-[#888888] hover:text-white hover:border-[#666] transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem]"
+                  >
+                    <Copy size={12} />
+                    Get Context
+                  </button>
+                  <button
+                    onClick={() => setOpenExplanationId(openExplanationId === index ? null : index)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 border rounded transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem] ${
+                      openExplanationId === index
+                        ? 'border-[#00FF41] bg-[rgba(0,255,65,0.08)] text-[#00FF41]'
+                        : 'border-[rgba(0,255,65,0.3)] text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41]'
+                    }`}
+                  >
+                    <Sparkles size={12} />
+                    {openExplanationId === index ? 'Hide Explanation' : 'Explain'}
+                  </button>
+                </div>
+              )}
+
+              {/* ExplanationPanel — mounts inline below this card's choices when its index is active */}
+              {viewState === 'review' && openExplanationId === index && (
+                <ExplanationPanel
+                  question={mcq.question}
+                  choices={mcq.choices}
+                  answerIndex={mcq.answer}
+                  onClose={() => setOpenExplanationId(null)}
+                />
+              )}
             </div>
           )
         })}
@@ -492,6 +557,16 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast Notification for clipboard copy */}
+      <AnimatePresence>
+        {showToast && (
+          <Toast
+            message="Context copied to clipboard — paste into Gemini, ChatGPT, or Claude"
+            onDismiss={() => setShowToast(false)}
+          />
         )}
       </AnimatePresence>
 

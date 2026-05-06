@@ -1216,13 +1216,13 @@ export default function AddDeck() {
       <div className="sticky top-0 z-30 bg-[#0D0D0D]/90 backdrop-blur-md border-b border-[#1a1a1a] shrink-0">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex flex-col">
-            <h1 className="font-['Orbitron'] text-2xl font-bold text-[#E8E8E8] tracking-wider mb-1">
-              Add Decks (V2)
+            <h1 className="font-['Orbitron'] text-2xl font-bold tracking-wider mb-1">
+              <span className="text-[var(--accent-primary)]">ADD</span> <span className="text-white">DECKS</span>
             </h1>
             <div className="text-[#888] font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest flex items-center gap-2">
               <Link to="/study" className="hover:text-[#E8E8E8] transition-colors">Study</Link>
               <span className="text-[#444]">›</span>
-              <span className="text-[#E8E8E8]">Add Decks (V2)</span>
+              <span className="text-[#E8E8E8]">Add Decks</span>
             </div>
           </div>
           <div className="flex items-center gap-4">

@@ -19,6 +19,20 @@ export default {
         'glow':  '0 0 8px rgba(0,255,65,0.6), 0 0 20px rgba(0,255,65,0.2)',
         'card':  '0 0 0 1px rgba(0,255,65,0.15), 0 4px 24px rgba(0,0,0,0.6)',
       },
+      keyframes: {
+        'slide-down': {
+          '0%': { opacity: '0', transform: 'translateY(-10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        'razer-pulse': {
+          '0%, 100%': { opacity: '1', color: '#00FF41' },
+          '50%': { opacity: '0.3', color: '#00FF41' },
+        }
+      },
+      animation: {
+        'slide-down': 'slide-down 0.3s ease-out forwards',
+        'razer-pulse': 'razer-pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+      }
     },
   },
   plugins: [],

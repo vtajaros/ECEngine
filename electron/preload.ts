@@ -11,4 +11,11 @@ contextBridge.exposeInMainWorld('electron', {
   },
   saveImage: (srcPath: string): Promise<{ success: boolean; filename?: string; error?: string }> =>
     ipcRenderer.invoke('save-image', srcPath),
+  explainQuestion: (payload: {
+    question: string
+    choices: string[]
+    correctAnswerIndex: number
+    apiKey: string
+  }): Promise<{ text?: string; error?: string }> =>
+    ipcRenderer.invoke('ai:explain', payload),
 })

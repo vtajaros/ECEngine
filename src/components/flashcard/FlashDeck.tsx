@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { Card } from '../../types'
 import { FlashCard } from './FlashCard'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -12,12 +12,27 @@ interface FlashDeckProps {
 
 export const FlashDeck: React.FC<FlashDeckProps> = ({ cards, onComplete }) => {
   const { currentIndex, isFinished, rateCard, startSession } = useSessionStore()
+  const [isSwapped, setIsSwapped] = useState(false)
+  const [swapResetKey, setSwapResetKey] = useState(0) // Forces FlashCard to re-mount or reset when swapped
 
   useEffect(() => {
     if (isFinished && onComplete) {
       onComplete()
     }
   }, [isFinished, onComplete])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      
+      if (e.key === 'f' || e.key === 'F') {
+        setIsSwapped(prev => !prev)
+        setSwapResetKey(k => k + 1) // Reset the flip state of the card
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   const restart = () => {
     startSession(cards)
@@ -32,6 +47,21 @@ export const FlashDeck: React.FC<FlashDeckProps> = ({ cards, onComplete }) => {
   }
 
   const currentCard = cards[currentIndex]
+  
+  // Apply swap transformation if enabled
+  const displayCard = useMemo(() => {
+    if (!currentCard) return null
+    if (!isSwapped) return currentCard
+    const data = currentCard.data as any
+    return {
+      ...currentCard,
+      data: {
+        ...data,
+        front: data.back,
+        back: data.front
+      }
+    }
+  }, [currentCard, isSwapped])
 
   return (
     <div className="w-full max-w-4xl mx-auto py-6 mt-8">
@@ -39,7 +69,20 @@ export const FlashDeck: React.FC<FlashDeckProps> = ({ cards, onComplete }) => {
       {/* Header */}
       <div className="mb-6 flex flex-col gap-3">
         <div className="flex justify-between items-center text-sm font-['Rajdhani'] uppercase tracking-wider text-[#888888]">
-          <span>{isFinished ? 'Session Complete' : `Card ${currentIndex + 1} of ${cards.length}`}</span>
+            <div className="flex items-center gap-4">
+              <span>{isFinished ? 'Session Complete' : `Card ${currentIndex + 1} of ${cards.length}`}</span>
+              <button 
+                onClick={() => { setIsSwapped(!isSwapped); setSwapResetKey(k => k + 1); }}
+                className={`flex items-center gap-2 px-2 py-0.5 rounded text-[10px] font-bold border transition-all ${
+                  isSwapped 
+                    ? 'bg-[#00FF41]/20 text-[#00FF41] border-[#00FF41]' 
+                    : 'bg-[#1A1A1A] text-[#888] border-[#333] hover:border-[#555] hover:text-[#E8E8E8]'
+                }`}
+                title="Toggle Term/Definition Swap (Shortcut: F)"
+              >
+                {isSwapped ? 'SWAPPED (DEF → TERM)' : 'SWAP TERM/DEF'}
+              </button>
+            </div>
           {!isFinished && <span>{Math.round((currentIndex / cards.length) * 100)}%</span>}
         </div>
       </div>
@@ -56,7 +99,7 @@ export const FlashDeck: React.FC<FlashDeckProps> = ({ cards, onComplete }) => {
               transition={{ duration: 0.2 }}
               className="w-full"
             >
-              {currentCard && <FlashCard card={currentCard} onRate={rateCard} />}
+              {displayCard && <FlashCard key={`${displayCard.id}_${swapResetKey}`} card={displayCard} onRate={rateCard} />}
             </motion.div>
           ) : (
             <motion.div

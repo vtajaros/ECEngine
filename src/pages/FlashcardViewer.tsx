@@ -237,6 +237,11 @@ export default function FlashcardViewer() {
       if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); setIsFlipped(f => !f) }
       if (e.key === 'ArrowRight') goNext()
       if (e.key === 'ArrowLeft') goPrev()
+      if (e.key === 'f' || e.key === 'F') {
+        // Toggle swap term/def and reset flip so front face shows first
+        setSettings(s => ({ ...s, swapTermDef: !s.swapTermDef }))
+        setIsFlipped(false)
+      }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
@@ -270,6 +275,7 @@ export default function FlashcardViewer() {
     setCurrentIndex(0)
     setIsFlipped(false)
     setShowSettings(false)
+    setSettings(s => ({ ...s, bookmarkedOnly: false })) // Reset bookmark filter on exit
     setWrittenStats({ correct: 0, total: 0 })
   }
 
@@ -277,14 +283,18 @@ export default function FlashcardViewer() {
   const currentCard = sessionCards[currentIndex] || null
 
   function getFrontText(card: Card): string {
-    if (card.type === 'mcq') return (card.data as MCQData).question
+    if (card.type === 'mcq') {
+      const mcq = card.data as MCQData
+      return settings.swapTermDef ? mcq.choices[mcq.answer] : mcq.question
+    }
     return settings.swapTermDef ? (card.data as FlashcardData).back : (card.data as FlashcardData).front
   }
 
   function getBackContent(card: Card): React.ReactNode {
     if (card.type === 'mcq') {
       const mcq = card.data as MCQData
-      return <div className="text-xl lg:text-2xl leading-relaxed font-['IBM_Plex_Mono'] text-[#00FF41] font-medium" dangerouslySetInnerHTML={{ __html: renderMath(mcq.choices[mcq.answer]) }} />
+      const text = settings.swapTermDef ? mcq.question : mcq.choices[mcq.answer]
+      return <div className="text-xl lg:text-2xl leading-relaxed font-['IBM_Plex_Mono'] text-[#00FF41] font-medium" dangerouslySetInnerHTML={{ __html: renderMath(text) }} />
     }
     const fc = card.data as FlashcardData
     const text = settings.swapTermDef ? fc.front : fc.back
@@ -292,7 +302,10 @@ export default function FlashcardViewer() {
   }
 
   function getCorrectAnswer(card: Card): string {
-    if (card.type === 'mcq') { const m = card.data as MCQData; return m.choices[m.answer] }
+    if (card.type === 'mcq') {
+      const mcq = card.data as MCQData
+      return settings.swapTermDef ? mcq.question : mcq.choices[mcq.answer]
+    }
     const fc = card.data as FlashcardData
     return settings.swapTermDef ? fc.front : fc.back
   }
@@ -352,6 +365,19 @@ export default function FlashcardViewer() {
                 Accuracy: <span className="text-[var(--accent-primary)]">{writtenStats.total > 0 ? Math.round((writtenStats.correct / writtenStats.total) * 100) : 0}%</span>
               </span>
             )}
+            {/* Swap Term/Def toggle button — always visible */}
+            <button
+              onClick={() => { setSettings(s => ({ ...s, swapTermDef: !s.swapTermDef })); setIsFlipped(false); }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${
+                settings.swapTermDef
+                  ? 'bg-[#00FF41]/20 text-[#00FF41] border-[#00FF41]'
+                  : 'bg-[#1a1a1a] text-[#888] border-[#333] hover:border-[#555] hover:text-[#E8E8E8]'
+              }`}
+              title="Swap Term / Definition (Shortcut: F)"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              {settings.swapTermDef ? 'SWAPPED' : 'SWAP'}
+            </button>
             <button onClick={() => setShowSettings(!showSettings)} className="text-[#888] hover:text-[var(--accent-primary)] transition-colors p-2 rounded hover:bg-[#222]">
               <Settings2 className="w-5 h-5" />
             </button>
@@ -404,7 +430,9 @@ export default function FlashcardViewer() {
                   {/* Card Label */}
                   <div className="px-8 pt-6 pb-2">
                     <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888]">
-                      {isFlipped ? (currentCard.type === 'mcq' ? 'Answer' : (settings.swapTermDef ? 'Term' : 'Definition')) : (currentCard.type === 'mcq' ? 'Question' : (settings.swapTermDef ? 'Definition' : 'Term'))}
+                      {isFlipped 
+                        ? (currentCard.type === 'mcq' ? (settings.swapTermDef ? 'Question' : 'Answer') : (settings.swapTermDef ? 'Term' : 'Definition')) 
+                        : (currentCard.type === 'mcq' ? (settings.swapTermDef ? 'Answer' : 'Question') : (settings.swapTermDef ? 'Definition' : 'Term'))}
                     </span>
                   </div>
 
@@ -520,9 +548,29 @@ export default function FlashcardViewer() {
   // Empty session fallback
   if (activeDeck && sessionCards.length === 0) {
     return (
-      <div className="h-full bg-[#0D0D0D] flex flex-col items-center justify-center gap-4">
-        <p className="text-[#888] font-['IBM_Plex_Mono']">No cards match your current filters.</p>
-        <button onClick={exitSession} className="px-6 py-3 bg-[var(--accent-primary)] text-black rounded font-['Rajdhani'] font-bold uppercase tracking-widest">Back to Decks</button>
+      <div className="h-full bg-[#0D0D0D] flex flex-col items-center justify-center gap-6 p-10 text-center">
+        <div className="flex flex-col items-center gap-2">
+          <Bookmark className="w-12 h-12 text-[#FFB800] opacity-50 mb-2" />
+          <p className="text-[#888] font-['IBM_Plex_Mono'] text-lg">No cards match your current filters.</p>
+          <p className="text-[#555] font-['Rajdhani'] uppercase tracking-widest text-sm">
+            (You might have 'Bookmarked Only' enabled with no bookmarks in this deck)
+          </p>
+        </div>
+        
+        <div className="flex gap-4">
+          <button 
+            onClick={() => setSettings(s => ({ ...s, bookmarkedOnly: false }))}
+            className="px-6 py-3 bg-[var(--accent-primary)] text-black rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-colors shadow-[0_0_15px_rgba(0,255,65,0.2)]"
+          >
+            Show All Cards
+          </button>
+          <button 
+            onClick={exitSession} 
+            className="px-6 py-3 bg-[#111] border border-[#333] text-[#888] hover:text-white hover:border-[#555] rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
+          >
+            Back to Decks
+          </button>
+        </div>
       </div>
     )
   }

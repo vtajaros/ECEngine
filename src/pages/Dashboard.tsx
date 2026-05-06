@@ -4,12 +4,37 @@ import { BookOpen, Library, Sigma, Download, Zap, BookMarked, BarChart2 } from '
 
 export default function Dashboard() {
   const [statsData, setStatsData] = useState({
+    totalDecks: 0,
     totalCards: 0,
     internalized: 0,
     currentStreak: 0
   })
 
   const [subjectProgress, setSubjectProgress] = useState<any[]>([])
+  const calculateTimeLeft = () => {
+    const targetDate = new Date('2026-10-16T00:00:00').getTime()
+    const now = new Date().getTime()
+    const distance = targetDate - now
+
+    if (distance < 0) return { days: 0, hours: 0, mins: 0, secs: 0 }
+
+    return {
+      days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+      mins: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+      secs: Math.floor((distance % (1000 * 60)) / 1000)
+    }
+  }
+
+  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft())
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft())
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [])
 
   useEffect(() => {
     loadDashboardData()
@@ -17,7 +42,11 @@ export default function Dashboard() {
 
   const loadDashboardData = async () => {
     try {
-      // 1. Total Cards
+      // 1. Total Decks
+      const decksResult = await window.electron.db.query('SELECT COUNT(id) as count FROM topics')
+      const totalDecks = decksResult.data?.[0]?.count || 0
+
+      // 2. Total Cards
       const totalResult = await window.electron.db.query('SELECT COUNT(id) as count FROM cards')
       const total = totalResult.data?.[0]?.count || 0
 
@@ -29,7 +58,7 @@ export default function Dashboard() {
       // For now, let's keep it at 0 or a placeholder unless a streak table exists
       const currentStreak = 0 
 
-      setStatsData({ totalCards: total, internalized, currentStreak })
+      setStatsData({ totalDecks, totalCards: total, internalized, currentStreak })
 
       // 4. Subject Progress
       // Join topics (subjects), cards, and progress to get mastery per subject
@@ -56,12 +85,13 @@ export default function Dashboard() {
   }
 
   const quickLinks = [
-    { title: 'Study Flashcards', desc: 'Jump back into spaced repetition', path: '/flashcards', icon: BookOpen },
-    { title: 'Take a Mock Exam', desc: 'Simulate the ECE board', path: '/study', icon: Library },
+    { title: 'Study Decks', desc: 'Jump back into spaced repetition and mastery', path: '/study', icon: BookOpen },
+    { title: 'Take a Mock Exam', desc: 'Simulate the ECE board exam conditions', path: '/study', icon: Library },
+    { title: 'Board Topics', desc: 'Table of Specification topics for the ECE board exam', path: '/topics', icon: Sigma },
   ]
 
   const stats = [
-    { label: 'Total Cards', value: statsData.totalCards.toString(), unit: 'cards' },
+    { label: 'Total Decks', value: statsData.totalDecks.toString(), unit: 'decks' },
     { label: 'Global Mastery', value: statsData.totalCards > 0 ? Math.round((statsData.internalized / statsData.totalCards) * 100).toString() : '0', unit: '%' },
     { label: 'Current Streak', value: statsData.currentStreak.toString(), unit: 'days' },
   ]
@@ -69,13 +99,42 @@ export default function Dashboard() {
   return (
     <div className="h-full bg-[#0D0D0D] p-8 lg:p-12 overflow-y-auto">
       {/* Header */}
-      <header className="mb-12">
-        <h1 className="font-['Orbitron'] text-4xl lg:text-5xl font-bold text-[#E8E8E8] mb-2 tracking-wider">
-          <span className="text-[#00FF41]">ECE</span>ngine
-        </h1>
-        <p className="text-[#888888] font-['Rajdhani'] text-xl uppercase tracking-widest">
-          Electronics Engineering Review Dashboard
-        </p>
+      <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div>
+          <h1 className="font-['Orbitron'] text-4xl lg:text-5xl font-bold text-[#E8E8E8] mb-2 tracking-wider">
+            <span className="text-[#00FF41]">ECE</span>ngine
+          </h1>
+          <p className="text-[#888888] font-['Rajdhani'] text-xl uppercase tracking-widest">
+            Electronics Engineering Review Dashboard
+          </p>
+        </div>
+
+        {/* Board Exam Countdown */}
+        <div className="bg-[#111] border border-[#00FF41]/20 rounded-lg px-6 py-4 flex flex-col items-center md:items-end shadow-[0_0_20px_rgba(0,0,0,0.4)]">
+          <span className="text-[10px] font-['Orbitron'] text-[#00FF41] uppercase tracking-[0.2em] mb-2 opacity-90">Board Exam Countdown</span>
+          <div className="flex gap-5">
+            <div className="flex flex-col items-center">
+              <span className="text-3xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{timeLeft.days}</span>
+              <span className="text-[10px] uppercase text-[#AAAAAA] font-['Rajdhani'] font-bold mt-1 tracking-widest">Days</span>
+            </div>
+            <div className="text-2xl font-bold text-[#00FF41]/20 pt-1">:</div>
+            <div className="flex flex-col items-center">
+              <span className="text-3xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{timeLeft.hours.toString().padStart(2, '0')}</span>
+              <span className="text-[10px] uppercase text-[#AAAAAA] font-['Rajdhani'] font-bold mt-1 tracking-widest">Hrs</span>
+            </div>
+            <div className="text-2xl font-bold text-[#00FF41]/20 pt-1">:</div>
+            <div className="flex flex-col items-center">
+              <span className="text-3xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{timeLeft.mins.toString().padStart(2, '0')}</span>
+              <span className="text-[10px] uppercase text-[#AAAAAA] font-['Rajdhani'] font-bold mt-1 tracking-widest">Mins</span>
+            </div>
+            <div className="text-2xl font-bold text-[#00FF41]/20 pt-1">:</div>
+            <div className="flex flex-col items-center">
+              <span className="text-3xl font-bold font-['IBM_Plex_Mono'] text-[#00FF41] leading-none shadow-[0_0_15px_rgba(0,255,65,0.3)]">{timeLeft.secs.toString().padStart(2, '0')}</span>
+              <span className="text-[10px] uppercase text-[#AAAAAA] font-['Rajdhani'] font-bold mt-1 tracking-widest">Secs</span>
+            </div>
+          </div>
+          <span className="text-[11px] font-['Rajdhani'] text-[#888888] mt-2 uppercase tracking-[0.1em] font-medium">Target Exam: October 16, 2026</span>
+        </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">

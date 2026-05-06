@@ -1,31 +1,13 @@
 *For IMPROVEMENT TODO LIST MAY 11, 2026
 
-***ADD DECK EDITOR TAB***
-- be able to edit currently loaded decks
-- be able to edit deck name and description
-- be able to edit each question and choices
-- be able to change subject of the deck
-- be able to change/add filter tags to the deck
-- insert images and insert equations (kind of how equation typing is in microsoft word)
+***DECK EDITOR TAB***
+- insert equations (kind of how equation typing is in microsoft word)
 
 ***EQUATION DISPLAY***
 - ability to display equation natively and fractions as well, equation editing like mathway and microsoft word equation editor
 
-***EXPLAIN BUTTON***
-- explain button in mcq and flashcards and in test/exam mode once you've finished everything and submitted.
-- also since were probably going to be using a low AI model for the explanation have a button to get context on explanation that we can paste into Gemini/GPT/Claude to get a better explanation
-- example get context button,
-
-when pasted on gemini/gpt or claude
-
-QUESTION TEXT HERE:
-CHOICES:
-CORRECT ANSWER:
-
-TRY TO EXPLAIN THE CORRECT ANSWER FROM THE QUESTION ABOVE
-
 ***Revamp Dashboard Tab***
-- revamp dashboard tab currently has placeholder graphics and stats
+- revamp dashboard improve it
 
 ***Exam Tab***
 - Flashcards here are separate as i plan to have only decks that are problem solving here
@@ -36,4 +18,14 @@ TRY TO EXPLAIN THE CORRECT ANSWER FROM THE QUESTION ABOVE
 
 ***Add Quizlet Format Detector in import mcq/import flashcard***
 - add the quizlet to engine python function in auto detection of the quizlet format and conversion
+
+***POMODORO TIMER***
+- add a pomodoro timer to the study tab
+- it should have the same timer options as test mode
+
+***UI NAVIGATION THRU DECKS AND FLASHCARDS***
+- animation booktype etc etc.
+
+***ANDROID/IOS PORT***
+- able to run on android and ios
 

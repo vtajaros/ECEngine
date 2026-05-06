@@ -2,6 +2,7 @@ import { app, BrowserWindow, shell, session } from 'electron'
 import { join } from 'path'
 import { registerDBHandlers } from './ipc/db.ipc'
 import { registerImageHandlers, registerImageProtocolScheme, handleImageProtocol } from './ipc/image.ipc'
+import { registerAIHandlers } from './ipc/ai.ipc'
 
 // Register custom protocol BEFORE app is ready (Electron requirement)
 registerImageProtocolScheme()
@@ -50,6 +51,7 @@ function createWindow() {
 app.whenReady().then(() => {
   registerDBHandlers()
   registerImageHandlers()
+  registerAIHandlers()
   handleImageProtocol()
   createWindow()
 })
