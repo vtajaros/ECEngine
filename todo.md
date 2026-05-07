@@ -35,3 +35,7 @@
 ***ANDROID/IOS/LINUX/WEB PORT***
 - able to run on android and ios
 
+***TO FIX***
+- Descriptions not showing up on flashcards
+- Subject auto detection in add decks seems to be not working properly
+

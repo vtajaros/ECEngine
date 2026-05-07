@@ -67,19 +67,19 @@
       "buildResources": "resources"
     },
     "win": {
-      "icon": "resources/ECEngine_orig.ico",
+      "icon": "resources/ecengine_icon.ico",
       "target": [
         "nsis"
       ]
     },
     "mac": {
-      "icon": "resources/ECEngine_orig.icns",
+      "icon": "resources/ecengine_icon.icns",
       "target": [
         "dmg"
       ]
     },
     "linux": {
-      "icon": "resources/ECEngine_orig.png",
+      "icon": "resources/ecengine_icon.png",
       "target": [
         "AppImage"
       ]

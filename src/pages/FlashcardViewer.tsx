@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle, SlidersHorizontal, Pencil, Play, Trash2, AlertTriangle } from 'lucide-react'
+import { Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle, SlidersHorizontal, Pencil, Play, Trash2, AlertTriangle, Trophy } from 'lucide-react'
 import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
 import { Card, MCQData, FlashcardData } from '../types'
 import { renderMath } from '../lib/latex'
@@ -25,6 +25,7 @@ interface DeckInfo {
   subject: Subject
   cardCount: number
   deckType: 'mcq' | 'flashcard' | 'mixed'
+  description: string
   tags?: string[]
   createdAt?: number
 }
@@ -100,7 +101,7 @@ export default function FlashcardViewer() {
       try {
         if (!window.electron?.db) return
         const r = await window.electron.db.query(
-          `SELECT t.id, t.name, t.subject, t.created_at, t.tags,
+          `SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags,
                   COUNT(c.id) as card_count,
                   GROUP_CONCAT(DISTINCT c.type) as types
            FROM topics t LEFT JOIN cards c ON c.topic_id = t.id
@@ -124,6 +125,7 @@ export default function FlashcardViewer() {
               subject: SUBJECT_MAP[row.subject] || 'ELECS',
               cardCount: row.card_count || 0,
               deckType,
+              description: row.description || '',
               tags: parsedTags,
               createdAt: row.created_at || Date.now()
             }
@@ -579,9 +581,9 @@ export default function FlashcardViewer() {
   // RENDER — Deck Listing
   // ══════════════════════════════════════════════
   return (
-    <div className="h-full bg-[#0D0D0D] px-6 pb-6 pt-6 lg:px-12 lg:pb-12 lg:pt-6 overflow-y-auto w-full">
+    <div className="h-full bg-[#0D0D0D] px-6 pb-6 pt-6 lg:px-12 lg:pb-12 lg:pt-6 overflow-y-auto w-full flex flex-col items-center">
       {/* Header */}
-      <div className="max-w-5xl mx-auto mb-10 flex flex-col md:flex-row items-center justify-between gap-6 border-b border-[var(--bg-card)] pb-6 pt-4">
+      <div className="w-full max-w-2xl mb-10 flex flex-col md:flex-row items-center justify-between gap-6 border-b border-[var(--bg-card)] pb-6 pt-4">
         <h1 className="text-3xl lg:text-4xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4">
           <Layers className="text-[var(--accent-primary)]" size={36} />
           FLASH<span className="text-[var(--accent-primary)]">CARDS</span>
@@ -713,95 +715,96 @@ export default function FlashcardViewer() {
       </div>
 
       {/* Deck Grid */}
-      <div className="max-w-4xl mx-auto flex flex-col gap-4 pb-12 w-full">
+      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4 pb-12 w-full">
         {filteredDecks.map(deck => (
           <div 
             key={deck.id}
-            className="bg-[#1A1A1A] rounded-xl border border-[#333] transition-all duration-200 ease-in-out hover:-translate-y-1 hover:border-[#00FF41] hover:shadow-lg hover:shadow-[#00FF41]/10 p-5 flex flex-col w-full group"
+            className="bg-[#1A1A1A] rounded-xl border border-[#333] transition-all duration-200 ease-in-out hover:-translate-y-1 hover:border-[#00FF41] hover:shadow-lg hover:shadow-[#00FF41]/10 p-5 flex flex-col w-full group min-h-[180px] justify-between"
           >
-            {/* Top Row: Title, Metadata, and Delete */}
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <h3 className="text-lg font-bold font-rajdhani tracking-wide text-[#E8E8E8] group-hover:text-[#00FF41] transition-colors uppercase">
-                  {deck.title}
-                </h3>
-                
-                {/* Metadata Row: Date, Separator, Tags, and Item Count */}
-                <div className="flex flex-wrap items-center gap-3 mt-1 text-[10px] text-gray-500 uppercase font-['IBM_Plex_Mono'] tracking-widest">
-                  <span>
-                    ADDED: {deck.createdAt ? new Date(deck.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
+            {/* Top Section: Title & Stats Stack */}
+            <div className="flex justify-between items-start gap-4">
+              {/* Left Column: Title & Tags */}
+              <div className="flex-1 min-w-0 flex flex-col gap-3">
+                {/* Title Row */}
+                <div className="flex items-center gap-3">
+                  <span className={`w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] uppercase font-rajdhani font-bold tracking-widest text-[10px] shrink-0 ${getSubjectBadgeClasses(deck.subject)}`}>
+                    {deck.subject}
                   </span>
-                  <span className="text-[#333]">•</span>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-0.5 rounded border uppercase font-bold ${
-                      deck.deckType === 'mcq'
-                        ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
-                        : deck.deckType === 'mixed'
-                        ? 'text-[#B983FF] border-[#B983FF]/30 bg-[#B983FF]/10'
-                        : 'text-[#00FF41] border-[#00FF41]/30 bg-[#00FF41]/10'
-                    }`}>
-                      {deck.deckType === 'mixed' ? 'MIX' : deck.deckType === 'mcq' ? 'MCQ' : 'FC'}
+                  <h3 className="text-lg font-bold font-rajdhani tracking-wide text-[#E8E8E8] group-hover:text-[#00FF41] transition-colors uppercase truncate flex-1">
+                    {deck.title}
+                  </h3>
+                </div>
+                {/* Tag Row: Type & Custom Tags (Aligned with Date) */}
+                <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                  <span className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]">
+                    {deck.deckType === 'mixed' ? 'MIX' : deck.deckType === 'mcq' ? 'MCQ' : 'FC'}
+                  </span>
+                  {deck.tags && deck.tags.length > 0 && deck.tags.map(tag => (
+                    <span 
+                      key={tag}
+                      className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]"
+                    >
+                      {tag}
                     </span>
-                    <span className={`px-2 py-0.5 rounded border border-[#333] bg-[#111] uppercase font-rajdhani font-bold tracking-widest ${getSubjectBadgeClasses(deck.subject)}`}>
-                      {deck.subject}
-                    </span>
-                    {deck.tags && deck.tags.length > 0 && deck.tags.map(tag => (
-                      <span 
-                        key={tag}
-                        className="px-2 py-0.5 rounded border border-white/10 text-[#666] uppercase font-bold tracking-wider"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                    <span className="px-2 py-0.5 rounded border border-[#333] bg-[#111] text-[#E8E8E8] font-rajdhani font-bold tracking-widest">
-                      {deck.cardCount} ITEMS
-                    </span>
-                  </div>
+                  ))}
                 </div>
               </div>
 
-              <button 
-                onClick={(e) => { e.stopPropagation(); setSetToDelete(deck); }}
-                className="p-1.5 text-gray-500 hover:text-red-500 transition-colors"
-                title="Delete Set"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
+              {/* Right Column: Administrative Info */}
+              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                {/* Items Tag */}
+                <span className="w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] text-[#E8E8E8] font-rajdhani font-bold tracking-widest text-[10px] shrink-0 uppercase whitespace-nowrap">
+                  {deck.cardCount} ITEMS
+                </span>
+                {/* Date String */}
+                <span className="text-[10px] text-gray-500 uppercase font-['IBM_Plex_Mono'] tracking-widest">
+                  {deck.createdAt ? new Date(deck.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
+                </span>
+              </div>
             </div>
 
+              {/* Deck Description */}
+              {deck.description && deck.description.trim() !== "" && (
+                <p className="text-[11px] text-gray-400 font-['IBM_Plex_Mono'] leading-relaxed mt-2 line-clamp-2 uppercase pr-4">
+                  {deck.description}
+                </p>
+              )}
+
             {/* Bottom Row: Progress and Actions */}
-            <div className="flex justify-between items-end mt-4 gap-6">
-              {/* Left Side: Progress Bar */}
-              <div className="flex-1 max-w-md">
+            <div className="flex justify-between items-end mt-4 gap-4">
+              {/* Left Side: Progress Bar (Condensed Width) */}
+              <div className="flex-1 max-w-[200px]">
                 <div className="flex justify-between text-[10px] font-rajdhani tracking-widest mb-1 uppercase text-gray-500">
                   <span>MASTERY</span>
                   <span className="text-[#00FF41] font-bold">0%</span>
                 </div>
                 <div className="w-full bg-[#111] h-1 rounded-full overflow-hidden">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `0%` }}
-                    className="h-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.4)]"
-                  />
+                  <div className="h-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.4)] w-0" />
                 </div>
               </div>
 
               {/* Right Side: Action Buttons */}
-              <div className="flex items-center gap-2 shrink-0">
-                <Link 
-                  to={`/edit-deck/${deck.id}`} 
-                  onClick={(e) => e.stopPropagation()} 
+              <div className="flex items-center gap-2 flex-1 justify-end">
+                <button 
+                  onClick={(e) => { e.stopPropagation(); navigate(`/edit-deck/${deck.id}`) }}
                   className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
                   title="Edit Deck"
                 >
                   <Pencil className="w-4 h-4" />
-                </Link>
+                </button>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setSetToDelete(deck); }}
+                  className="p-2 bg-[#111] border border-[#333] hover:border-red-500/50 text-gray-500 hover:text-red-500 rounded transition-colors"
+                  title="Delete Set"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
                 <button 
                   onClick={(e) => { e.stopPropagation(); openDeck(deck); }}
-                  className="px-6 py-2 bg-[#00FF41] text-black rounded transition-colors hover:bg-[#00D737] font-rajdhani tracking-widest font-bold uppercase text-xs flex items-center justify-center gap-2 shadow-[0_0_10px_rgba(0,255,65,0.1)]"
+                  className="flex-1 py-2 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
                 >
                   <Play className="w-3 h-3" />
-                  Learn Flashcards
+                  Learn
                 </button>
               </div>
             </div>
@@ -844,12 +847,6 @@ export default function FlashcardViewer() {
               </div>
               <div className="p-6 border-t border-[#222] bg-[#161616] flex justify-end gap-3">
                 <button 
-                  onClick={() => setSetToDelete(null)}
-                  className="px-5 py-2 rounded bg-transparent border border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-wider text-sm"
-                >
-                  Cancel
-                </button>
-                <button 
                   onClick={handleConfirmDelete}
                   disabled={deleteCountdown > 0}
                   className={`px-6 py-2 rounded font-bold transition-all font-['Rajdhani'] uppercase tracking-wider text-sm shadow-lg ${
@@ -866,6 +863,12 @@ export default function FlashcardViewer() {
                   ) : (
                     'Confirm Delete'
                   )}
+                </button>
+                <button 
+                  onClick={() => setSetToDelete(null)}
+                  className="px-5 py-2 rounded bg-transparent border border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-wider text-sm"
+                >
+                  Cancel
                 </button>
               </div>
             </motion.div>

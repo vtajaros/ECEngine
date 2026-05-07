@@ -7,16 +7,8 @@ export const TitleBar: React.FC = () => {
 
   return (
     <div className="w-full h-10 bg-[#1A1A1A] text-gray-400 flex items-center select-none border-b border-[#222] [-webkit-app-region:drag] relative shrink-0">
-      {/* Left Side: Navigation & Menu */}
+      {/* Left Side: Navigation */}
       <div className="flex items-center gap-1 ml-2 [-webkit-app-region:no-drag]">
-        {/* Hamburger Menu */}
-        <button className="p-2 text-gray-400 hover:text-white hover:bg-[#333] rounded transition-colors">
-          <Menu size={16} />
-        </button>
-
-        {/* Divider */}
-        <div className="w-[1px] h-4 bg-[#333] mx-1"></div>
-
         {/* Navigation Arrows */}
         <button 
           onClick={() => navigate(-1)}
@@ -32,8 +24,10 @@ export const TitleBar: React.FC = () => {
 
       {/* Centered Brand */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2">
-        <img src="/ECEngine_orig.png" alt="Logo" className="w-5 h-5 object-contain" />
-        <span className="font-rajdhani font-bold tracking-wider text-white">ECEngine</span>
+        <img src="/ecengine_icon.png" alt="Logo" className="w-5 h-5 object-contain" />
+        <span className="font-rajdhani font-bold tracking-wider text-white">
+          <span className="text-[#00FF41]">ECE</span>ngine
+        </span>
       </div>
 
       {/* Right Side: Window Controls */}

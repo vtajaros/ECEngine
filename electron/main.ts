@@ -18,7 +18,7 @@ function createWindow() {
     title: 'ECEngine',
     autoHideMenuBar: true,
     frame: false,
-    icon: join(__dirname, '../../resources/ECEngine_orig.png'),
+    icon: join(__dirname, '../../resources/ecengine_icon.ico'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
