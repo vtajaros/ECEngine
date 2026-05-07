@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell, session } from 'electron'
+import { app, BrowserWindow, shell, session, ipcMain } from 'electron'
 import { join } from 'path'
 import { registerDBHandlers } from './ipc/db.ipc'
 import { registerImageHandlers, registerImageProtocolScheme, handleImageProtocol } from './ipc/image.ipc'
@@ -17,7 +17,8 @@ function createWindow() {
     show: false, // Don't show until ready
     title: 'ECEngine',
     autoHideMenuBar: true,
-    titleBarStyle: 'hiddenInset',
+    frame: false,
+    icon: join(__dirname, '../../resources/ECEngine_orig.png'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -53,6 +54,22 @@ app.whenReady().then(() => {
   registerImageHandlers()
   registerAIHandlers()
   handleImageProtocol()
+  
+  // Window Control Handlers
+  ipcMain.on('window-minimize', () => {
+    BrowserWindow.getFocusedWindow()?.minimize()
+  })
+  ipcMain.on('window-maximize', () => {
+    const win = BrowserWindow.getFocusedWindow()
+    if (win) {
+      if (win.isMaximized()) win.unmaximize()
+      else win.maximize()
+    }
+  })
+  ipcMain.on('window-close', () => {
+    BrowserWindow.getFocusedWindow()?.close()
+  })
+
   createWindow()
 })
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit() })

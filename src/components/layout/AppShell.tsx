@@ -14,6 +14,7 @@ import {
   Zap,
   Layers
 } from 'lucide-react'
+import { TitleBar } from './TitleBar'
 
 export const AppShell: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -28,32 +29,26 @@ export const AppShell: React.FC = () => {
   ]
 
   return (
-    <div className="flex h-screen bg-[#111111] text-[var(--text-primary)] font-['IBM_Plex_Mono'] overflow-hidden">
-      {/* Sidebar */}
+    <div className="flex flex-col h-screen bg-[#111111] text-[var(--text-primary)] font-['IBM_Plex_Mono'] overflow-hidden w-screen">
+      <TitleBar />
+      
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
       <aside 
         className={`${
-          isCollapsed ? 'w-[64px]' : 'w-[240px]'
-        } bg-[#0D0D0D] border-r border-[var(--bg-card)] flex flex-col transition-all duration-300 relative z-20 shrink-0`}
+          isCollapsed ? 'w-16' : 'w-48'
+        } bg-[#1A1A1A] border-r border-[#333] flex flex-col transition-all duration-300 relative z-20 shrink-0`}
       >
-        <div className="h-[64px] flex items-center justify-center border-b border-[var(--bg-card)] px-4 mb-4">
-          <Zap className="text-[var(--accent-primary)] shrink-0" size={24} />
-          {!isCollapsed && (
-            <span className="font-['Orbitron'] font-bold text-xl ml-3 tracking-wider whitespace-nowrap overflow-hidden transition-all">
-              <span className="text-[var(--accent-primary)]">ECE</span><span className="text-white">ngine</span>
-            </span>
-          )}
-        </div>
-
-        <nav className="flex-1 flex flex-col gap-2 overflow-y-auto overflow-x-hidden px-2">
+        <nav className="flex-1 flex flex-col gap-2 overflow-y-auto overflow-x-hidden px-2 pt-4">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) => `
-                flex items-center p-3 rounded-md transition-all duration-200 min-w-max border-l-2
+                flex items-center p-2.5 transition-all duration-200 min-w-max group
                 ${isActive 
-                  ? 'bg-[var(--accent-glow)] text-[var(--accent-primary)] border-[var(--accent-primary)]' 
-                  : 'text-[var(--text-secondary)] hover:bg-[var(--bg-card)] hover:text-[var(--text-primary)] border-transparent'
+                  ? 'border-l-4 border-[#00FF41] bg-gradient-to-r from-[#00FF41]/10 to-transparent text-white' 
+                  : 'text-gray-400 hover:bg-[#222] hover:text-gray-300 border-l-4 border-transparent'
                 }
               `}
               title={isCollapsed ? item.label : undefined}
@@ -80,6 +75,7 @@ export const AppShell: React.FC = () => {
       <main className="flex-1 relative overflow-y-auto overflow-x-hidden bg-[#111111]">
         <Outlet />
       </main>
+      </div>
     </div>
   )
 }

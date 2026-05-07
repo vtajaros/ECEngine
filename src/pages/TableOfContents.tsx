@@ -7,7 +7,7 @@ export default function TableOfContents() {
   const [searchQuery, setSearchQuery] = useState('')
 
   return (
-    <div className="h-full bg-[var(--bg-primary)] p-6 lg:p-12 overflow-y-auto w-full">
+    <div className="h-full bg-[var(--bg-primary)] px-6 pb-6 pt-6 lg:px-12 lg:pb-12 lg:pt-6 overflow-y-auto w-full">
       <div className="max-w-5xl mx-auto flex flex-col h-full">
         <header className="mb-8 flex flex-col md:flex-row items-center justify-between gap-6 border-b border-[var(--bg-card)] pb-6 pt-4 shrink-0">
           <div className="flex flex-col gap-2">

@@ -97,7 +97,7 @@ export default function Dashboard() {
   ]
 
   return (
-    <div className="h-full bg-[#0D0D0D] p-8 lg:p-12 overflow-y-auto">
+    <div className="h-full bg-[#0D0D0D] px-8 pb-8 pt-6 lg:px-12 lg:pb-12 lg:pt-6 overflow-y-auto">
       {/* Header */}
       <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>

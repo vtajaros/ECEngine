@@ -18,4 +18,9 @@ contextBridge.exposeInMainWorld('electron', {
     apiKey: string
   }): Promise<{ text?: string; error?: string }> =>
     ipcRenderer.invoke('ai:explain', payload),
+  windowControls: {
+    minimize: () => ipcRenderer.send('window-minimize'),
+    maximize: () => ipcRenderer.send('window-maximize'),
+    close: () => ipcRenderer.send('window-close'),
+  },
 })

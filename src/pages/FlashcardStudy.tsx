@@ -474,7 +474,7 @@ export default function FlashcardStudy() {
   }
 
   return (
-    <div className="h-full bg-[var(--bg-primary)] p-6 lg:p-12 flex flex-col items-center justify-start overflow-y-auto w-full">
+    <div className="h-full bg-[var(--bg-primary)] px-6 pb-6 pt-6 lg:px-12 lg:pb-12 lg:pt-6 flex flex-col items-center justify-start overflow-y-auto w-full">
       <LearnSettingsModal
         isOpen={showSettingsModal.isOpen}
         setId={showSettingsModal.setId}

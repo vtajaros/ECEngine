@@ -15,29 +15,35 @@ html, body, #root {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Custom Scrollbar Styles */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 3px;
-  height: 3px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #0D0D0D; /* Matches the main app background */
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 255, 65, 0.25);
-  border-radius: 3px;
+  background: #00FF41; /* Signature ECEngine Green */
+  border-radius: 4px;
+  border: 2px solid #0D0D0D; /* Creates a slight padding effect */
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 255, 65, 0.6);
+  background: #00CC33; /* Slightly darker green on hover */
+}
+
+::-webkit-scrollbar-corner {
+  background: #0D0D0D;
 }
 
 /* Firefox Fallback */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 255, 65, 0.25) transparent;
+  scrollbar-color: #00FF41 #0D0D0D;
 }
 
 .page-stub {
