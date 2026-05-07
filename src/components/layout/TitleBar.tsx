@@ -1,31 +1,49 @@
 import { Zap, Minus, Square, X, Menu, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
-export const TitleBar: React.FC = () => {
+interface TitleBarProps {
+  isCollapsed?: boolean;
+  onToggleSidebar?: () => void;
+}
+
+export const TitleBar: React.FC<TitleBarProps> = ({ isCollapsed, onToggleSidebar }) => {
   const controls = (window as any).electron?.windowControls
   const navigate = useNavigate()
 
   return (
-    <div className="w-full h-10 bg-[#1A1A1A] text-gray-400 flex items-center select-none border-b border-[#222] [-webkit-app-region:drag] relative shrink-0">
-      {/* Left Side: Navigation */}
-      <div className="flex items-center gap-1 ml-2 [-webkit-app-region:no-drag]">
-        {/* Navigation Arrows */}
-        <button 
-          onClick={() => navigate(-1)}
-          className="p-1.5 text-gray-400 hover:text-white hover:bg-[#333] rounded transition-colors"
-          title="Go Back"
-        >
-          <ChevronLeft size={18} />
-        </button>
-        <button className="p-1.5 text-[#333] cursor-not-allowed rounded">
-          <ChevronRight size={18} />
-        </button>
+    <div className="w-full h-8 bg-[#1A1A1A] text-gray-400 flex items-center justify-between select-none [-webkit-app-region:drag] relative shrink-0 px-0">
+      {/* Left Side: Navigation (Anchored to Sidebar Width) */}
+      <div className="flex items-center [-webkit-app-region:no-drag]">
+        {/* Hamburger Container (Fixed width to align with sidebar icons) */}
+        <div className="w-16 flex justify-center shrink-0">
+          <button 
+            onClick={onToggleSidebar}
+            className="p-1 rounded-md hover:bg-[#222] text-gray-400 hover:text-white transition-colors"
+            title="Toggle Sidebar"
+          >
+            <Menu size={18} />
+          </button>
+        </div>
+
+        {/* Arrows Container (Flows naturally next to the fixed toggle) */}
+        <div className="flex items-center gap-1 ml-1">
+          <button 
+            onClick={() => navigate(-1)}
+            className="p-1 text-gray-400 hover:text-white hover:bg-[#333] rounded transition-colors"
+            title="Go Back"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <button className="p-1 text-[#333] cursor-not-allowed rounded">
+            <ChevronRight size={16} />
+          </button>
+        </div>
       </div>
 
       {/* Centered Brand */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2">
-        <img src="/ecengine_icon.png" alt="Logo" className="w-5 h-5 object-contain" />
-        <span className="font-rajdhani font-bold tracking-wider text-white">
+        <img src="/ecengine_icon.png" alt="Logo" className="w-4 h-4 object-contain" />
+        <span className="font-rajdhani font-bold tracking-wider text-white text-xs">
           <span className="text-[#00FF41]">ECE</span>ngine
         </span>
       </div>
@@ -34,24 +52,24 @@ export const TitleBar: React.FC = () => {
       <div className="flex h-full ml-auto [-webkit-app-region:no-drag]">
         <button
           onClick={() => controls?.minimize()}
-          className="px-4 h-full hover:bg-[#333] transition-colors flex items-center justify-center"
+          className="px-3 h-full hover:bg-[#333] transition-colors flex items-center justify-center"
           title="Minimize"
         >
-          <Minus size={14} />
+          <Minus size={12} />
         </button>
         <button
           onClick={() => controls?.maximize()}
-          className="px-4 h-full hover:bg-[#333] transition-colors flex items-center justify-center"
+          className="px-3 h-full hover:bg-[#333] transition-colors flex items-center justify-center"
           title="Maximize"
         >
-          <Square size={12} />
+          <Square size={10} />
         </button>
         <button
           onClick={() => controls?.close()}
-          className="px-4 h-full hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center"
+          className="px-3 h-full hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center"
           title="Close"
         >
-          <X size={16} />
+          <X size={14} />
         </button>
       </div>
     </div>

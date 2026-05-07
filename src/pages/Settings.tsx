@@ -66,13 +66,13 @@ export default function Settings() {
   return (
     <div className="h-full bg-[#0D0D0D] px-8 pb-8 pt-6 lg:px-12 lg:pb-12 lg:pt-6 overflow-y-auto w-full relative">
       <div className="max-w-3xl mx-auto">
-        <header className="mb-12 flex flex-col gap-2">
-          <h1 className="font-['Orbitron'] text-4xl font-bold text-[#E8E8E8] tracking-wider flex items-center">
+        <header className="mb-12 flex flex-col items-center text-center gap-2">
+          <h1 className="font-['Orbitron'] text-4xl font-bold text-[#E8E8E8] tracking-wider flex items-center justify-center">
             <SettingsIcon className="text-[#00FF41] mr-4" size={36} />
-            PREFERENCES
+            SETTINGS
           </h1>
           <p className="text-[#888888] font-['Rajdhani'] text-lg uppercase tracking-widest mt-2">
-            Configure application behavior and engine data
+            MANAGE YOUR AI INTEGRATION, APPLICATION BEHAVIOR, AND FLASHCARD DATA
           </p>
         </header>
 

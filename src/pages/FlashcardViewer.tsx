@@ -715,11 +715,11 @@ export default function FlashcardViewer() {
       </div>
 
       {/* Deck Grid */}
-      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4 pb-12 w-full">
+      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 pb-12 w-full">
         {filteredDecks.map(deck => (
           <div 
             key={deck.id}
-            className="bg-[#1A1A1A] rounded-xl border border-[#333] transition-all duration-200 ease-in-out hover:-translate-y-1 hover:border-[#00FF41] hover:shadow-lg hover:shadow-[#00FF41]/10 p-5 flex flex-col w-full group min-h-[180px] justify-between"
+            className="relative isolate group transition-all duration-300 border border-[#333] bg-[#1a1a1a] p-5 flex flex-col w-full min-h-[180px] justify-between hover:-translate-x-[6px] hover:-translate-y-[6px] rounded-xl before:absolute before:w-full before:h-full before:top-0 before:left-0 before:bg-[#1a1a1a] before:border before:border-[#333] before:rounded-xl before:translate-x-[6px] before:translate-y-[6px] before:z-[-1] before:transition-transform before:duration-300 group-hover:before:translate-x-[12px] group-hover:before:translate-y-[12px] after:absolute after:w-full after:h-full after:top-0 after:left-0 after:bg-[#1a1a1a] after:border after:border-[#333] after:rounded-xl after:translate-x-[12px] after:translate-y-[12px] after:z-[-2] after:transition-transform after:duration-300 group-hover:after:translate-x-[18px] group-hover:after:translate-y-[18px]"
           >
             {/* Top Section: Title & Stats Stack */}
             <div className="flex justify-between items-start gap-4">
@@ -730,7 +730,7 @@ export default function FlashcardViewer() {
                   <span className={`w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] uppercase font-rajdhani font-bold tracking-widest text-[10px] shrink-0 ${getSubjectBadgeClasses(deck.subject)}`}>
                     {deck.subject}
                   </span>
-                  <h3 className="text-lg font-bold font-rajdhani tracking-wide text-[#E8E8E8] group-hover:text-[#00FF41] transition-colors uppercase truncate flex-1">
+                  <h3 className="text-lg font-bold font-rajdhani tracking-wide text-[#E8E8E8] uppercase truncate flex-1">
                     {deck.title}
                   </h3>
                 </div>

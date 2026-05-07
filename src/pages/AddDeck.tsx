@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import {
-  X, Save, ArrowLeft, FileText, Upload, AlertCircle, Check, Trash2, Plus, Calculator, FlaskConical, Zap, Cpu, Layers, Wand2, GripVertical, ChevronDown, ChevronUp, AlertTriangle, RotateCcw, ImageIcon
+  X, Save, ArrowLeft, FileText, Upload, AlertCircle, Check, Trash2, Plus, Calculator, FlaskConical, Zap, Cpu, Layers, Wand2, GripVertical, ChevronDown, ChevronUp, AlertTriangle, RotateCcw, ImageIcon, Menu
 } from 'lucide-react'
+import { getSubjectFilterClasses } from '../lib/subjectColors'
 import { useNavigate, Link } from 'react-router-dom'
 import { parseImportedMCQs, parseImportedFlashcards } from '../lib/parser'
 import { renderMath } from '../lib/latex'
@@ -1281,21 +1282,21 @@ export default function AddDeck() {
             <label className="text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest mb-3 block">
               Subject
             </label>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2">
               {SUBJECTS.map(s => {
                 const Icon = s.icon
                 const isSelected = subject === s.value
+                const colorClasses = getSubjectFilterClasses(s.short, isSelected)
+                
                 return (
                   <button 
                     key={s.value} 
                     onClick={() => setSubject(s.value)}
-                    className={`px-4 py-2.5 rounded font-['Rajdhani'] uppercase tracking-widest font-bold text-sm flex items-center gap-2 transition-all ${
-                      isSelected
-                        ? 'bg-[#00FF41] text-black shadow-[0_0_15px_rgba(0,255,65,0.2)]'
-                        : 'bg-[#161616] border border-[#333] text-[#888] hover:border-[#555] hover:text-[#E8E8E8]'
+                    className={`px-4 py-2 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-[11px] flex items-center gap-2 transition-all duration-200 ${colorClasses} ${
+                      !isSelected ? 'bg-[#111] hover:bg-[#1A1A1A] border-[#222] text-[#888]' : ''
                     }`}
                   >
-                    <Icon size={16} className={isSelected ? 'text-black' : 'text-[#888]'} />
+                    <Icon size={14} className={isSelected ? 'text-inherit' : 'text-[#888]'} />
                     {s.short}
                   </button>
                 )
