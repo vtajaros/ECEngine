@@ -10,7 +10,8 @@
 - ability to display equation natively and fractions as well, equation editing like mathway and microsoft word equation editor
 
 ***Revamp Dashboard Tab***
-- revamp dashboard improve it
+- revamp dashboard make improvements
+- allow goal timer setting (manually setting the board exam goal date by making a date prompt)
 
 ***LEARN ALGORITHM***
 - learn questions where user is struggling, if a question is being incorrectly answered wrong, we save it to a still learning array or set that we can revisit later on. Build an algorithm on how to determine if a user actually knows the content.
@@ -29,13 +30,9 @@
 - add a pomodoro timer to the study tab
 - it should have the same timer options as test mode
 
-***UI NAVIGATION THRU DECKS AND FLASHCARDS***
-- animation booktype etc etc.
-
 ***ANDROID/IOS/LINUX/WEB PORT***
 - able to run on android and ios
 
 ***TO FIX***
-- Descriptions not showing up on flashcards
 - Subject auto detection in add decks seems to be not working properly
 

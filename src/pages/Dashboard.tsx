@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { BookOpen, Library, Sigma, Download, Zap, BookMarked, BarChart2, TrendingUp } from 'lucide-react'
+import { BookOpen, Library, Sigma, Download, Zap, BookMarked, BarChart2, TrendingUp, Check } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { getSubjectBadgeClasses } from '../lib/subjectColors'
 
@@ -76,15 +76,15 @@ export default function Dashboard() {
           ])
         } else if (timeRange === 'Monthly') {
           setChartData([
-            { name: 'Week 1', cards: 450 }, { name: 'Week 2', cards: 720 },
-            { name: 'Week 3', cards: 850 }, { name: 'Week 4', cards: 1100 },
+            { name: 'Jan', cards: 450 }, { name: 'Feb', cards: 720 },
+            { name: 'Mar', cards: 850 }, { name: 'Apr', cards: 1100 },
           ])
         } else {
           setChartData([
-            { name: 'Mon', cards: 45 }, { name: 'Tue', cards: 120 },
-            { name: 'Wed', cards: 85 }, { name: 'Thu', cards: 210 },
-            { name: 'Fri', cards: 160 }, { name: 'Sat', cards: 250 },
-            { name: 'Sun', cards: 190 },
+            { name: 'Tue 05', cards: 45 }, { name: 'Wed 06', cards: 120 },
+            { name: 'Thu 07', cards: 85 }, { name: 'Fri 08', cards: 210 },
+            { name: 'Sat 09', cards: 160 }, { name: 'Sun 10', cards: 250 },
+            { name: 'Mon 11', cards: 190 },
           ])
         }
       }
@@ -127,16 +127,28 @@ export default function Dashboard() {
         GROUP BY t.subject
       `)
 
-      const formattedProgress = (progressResult.data || []).map((row: any) => ({
-        subject: SUBJECT_MAP[row.subject] || row.subject,
-        percent: row.total > 0 ? Math.round((row.mastered / row.total) * 100) : 0
-      }))
+      const formattedProgress = subjects.map(s => {
+        const found = (progressResult.data || []).find((r: any) => (SUBJECT_MAP[r.subject] || r.subject) === s)
+        return {
+          subject: s,
+          percent: found && found.total > 0 ? Math.round((found.mastered / found.total) * 100) : 0
+        }
+      })
 
       setSubjectProgress(formattedProgress)
     } catch (error) {
       console.error('Failed to load dashboard data:', error)
     }
   }
+
+  const getFlawlessAccuracy = () => {
+    const flawless = Number(localStorage.getItem('flawless_rounds') || '0')
+    const total = Number(localStorage.getItem('total_rounds') || '0')
+    if (total === 0) return 0
+    return Math.round((flawless / total) * 100)
+  }
+
+  const flawlessAcc = getFlawlessAccuracy()
 
   const getSubjectClasses = (subject: string) => {
     switch (subject) {
@@ -229,6 +241,18 @@ export default function Dashboard() {
             </div>
             <TrendingUp className="text-[#00FF41]/10" size={20} />
           </div>
+
+          <div className="bg-[#1A1A1A] p-4 rounded-xl border border-[#222] flex items-center justify-between shadow-lg">
+            <div>
+              <p className="text-[#666] font-['Rajdhani'] uppercase tracking-widest text-[10px] mb-1 font-bold">Flawless Accuracy</p>
+              <div className="flex items-baseline gap-2">
+                <span className="font-['IBM_Plex_Mono'] text-2xl font-bold text-[#E8E8E8]">{flawlessAcc}</span>
+                <span className="font-['Rajdhani'] text-[#00FF41] font-bold text-[10px]">%</span>
+              </div>
+              <p className="text-[9px] text-[#444] font-['Rajdhani'] uppercase tracking-widest font-bold mt-1">Perfect Rounds</p>
+            </div>
+            <Check className="text-[#00FF41]/10" size={20} />
+          </div>
         </div>
 
         {/* Study Analytics Chart */}
@@ -268,7 +292,7 @@ export default function Dashboard() {
                   dataKey="name" 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fill: '#444', fontSize: 9, fontFamily: 'IBM Plex Mono' }}
+                  tick={{ fill: '#A1A1AA', fontSize: 12, fontFamily: 'IBM Plex Mono' }}
                   dy={10}
                 />
                 <YAxis hide />
@@ -297,78 +321,70 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Quick Actions */}
-        <div className="lg:col-span-2 p-5 bg-[#161616] rounded-xl border border-[rgba(0,255,65,0.05)] shadow-lg">
-          <h2 className="font-['Rajdhani'] font-bold text-xl text-[#E8E8E8] mb-4 uppercase tracking-wider flex items-center">
-            <BookMarked className="mr-2 text-[#00FF41]" size={20} />
-            Quick Actions
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {quickLinks.map((link, i) => (
-              <Link 
-                key={i} 
-                to={link.path}
-                className="group block p-4 rounded-lg border border-[#111111] bg-[#111111] hover:bg-[#161616] hover:border-[#00FF41] transition-all duration-300 relative overflow-hidden"
-              >
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-br from-[rgba(0,255,65,0.05)] to-transparent transition-opacity" />
-                <link.icon className="w-6 h-6 text-[#00FF41] mb-3 drop-shadow-[0_0_5px_rgba(0,255,65,0.3)]" />
-                <h3 className="font-['Orbitron'] text-base font-medium text-[#E8E8E8] mb-1">{link.title}</h3>
-                <p className="text-[#666] text-xs font-['IBM_Plex_Mono'] leading-relaxed">{link.desc}</p>
-              </Link>
-            ))}
+        {/* Main Content Area */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Quick Actions */}
+          <div className="lg:col-span-2 p-5 bg-[#161616] rounded-xl border border-[rgba(0,255,65,0.05)] shadow-lg">
+            <h2 className="font-['Rajdhani'] font-bold text-xl text-[#E8E8E8] mb-4 uppercase tracking-wider flex items-center">
+              <BookMarked className="mr-2 text-[#00FF41]" size={20} />
+              Quick Actions
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {quickLinks.map((link, i) => (
+                <Link 
+                  key={i} 
+                  to={link.path}
+                  className="group block p-4 rounded-lg border border-[#111111] bg-[#111111] hover:bg-[#161616] hover:border-[#00FF41] transition-all duration-300 relative overflow-hidden"
+                >
+                  <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-br from-[rgba(0,255,65,0.05)] to-transparent transition-opacity" />
+                  <link.icon className="w-6 h-6 text-[#00FF41] mb-3 drop-shadow-[0_0_5px_rgba(0,255,65,0.3)]" />
+                  <h3 className="font-['Orbitron'] text-base font-medium text-[#E8E8E8] mb-1">{link.title}</h3>
+                  <p className="text-[#666] text-xs font-['IBM_Plex_Mono'] leading-relaxed">{link.desc}</p>
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Recently Added / News Panel */}
-        <div className="p-5 bg-[#111111] rounded-xl border border-[#161616]">
-          <h2 className="font-['Rajdhani'] font-bold text-lg text-[#E8E8E8] mb-4 uppercase tracking-wider border-b border-[#161616] pb-3 flex items-center">
-             <TrendingUp className="mr-2 text-[#666]" size={18} />
-             Review Progress
-          </h2>
-          <div className="space-y-5">
-            {subjectProgress.length > 0 ? (
-              subjectProgress.slice(0, 4).map((item, idx) => {
-                let color = '#00FF41'
-                if (item.percent < 30) color = '#FF3333'
-                else if (item.percent < 60) color = '#FFB800'
+          {/* Recently Added / News Panel */}
+          <div className="p-5 bg-[#111111] rounded-xl border border-[#161616]">
+            <h2 className="font-['Rajdhani'] font-bold text-lg text-[#E8E8E8] mb-4 uppercase tracking-wider border-b border-[#161616] pb-3 flex items-center">
+               <TrendingUp className="mr-2 text-[#666]" size={18} />
+               Review Progress
+            </h2>
+            <div className="space-y-5">
+              {subjectProgress.length > 0 ? (
+                subjectProgress.slice(0, 4).map((item, idx) => {
+                  let color = '#00FF41'
+                  if (item.percent < 30) color = '#FF3333'
+                  else if (item.percent < 60) color = '#FFB800'
 
-                return (
-                  <div key={idx}>
-                    <div className="flex justify-between text-[11px] mb-1.5 font-['Rajdhani'] text-[#666] uppercase tracking-wider font-bold">
-                      <span>{item.subject}</span>
-                      <span style={{ color }}>{item.percent}%</span>
+                  return (
+                    <div key={idx}>
+                      <div className="flex justify-between text-[11px] mb-1.5 font-['Rajdhani'] text-[#666] uppercase tracking-wider font-bold">
+                        <span>{item.subject}</span>
+                        <span style={{ color }}>{item.percent}%</span>
+                      </div>
+                      <div className="w-full bg-[#161616] h-1.5 rounded-full overflow-hidden border border-[#222]">
+                        <div 
+                          className="h-full transition-all duration-1000" 
+                          style={{ 
+                            width: `${item.percent}%`, 
+                            backgroundColor: color,
+                            boxShadow: `0 0 5px ${color}40` 
+                          }} 
+                        />
+                      </div>
                     </div>
-                    <div className="w-full bg-[#161616] h-1.5 rounded-full overflow-hidden border border-[#222]">
-                      <div 
-                        className="h-full transition-all duration-1000" 
-                        style={{ 
-                          width: `${item.percent}%`, 
-                          backgroundColor: color,
-                          boxShadow: `0 0 5px ${color}40` 
-                        }} 
-                      />
-                    </div>
-                  </div>
-                )
-              })
-            ) : (
-              <div className="text-[#444] font-['IBM_Plex_Mono'] text-[10px] text-center py-2">
-                No decks found.
-              </div>
-            )}
+                  )
+                })
+              ) : (
+                <div className="text-[#444] font-['IBM_Plex_Mono'] text-[10px] text-center py-2">
+                  No decks found.
+                </div>
+              )}
+            </div>
           </div>
-          
-          <Link 
-             to="/add-decks"
-             className="mt-6 relative w-full flex items-center justify-center p-2 text-center border-2 border-dashed border-[#222] rounded text-[#666] hover:border-[#00FF41] hover:text-[#E8E8E8] transition-colors font-['Rajdhani'] uppercase tracking-wider group text-xs"
-          >
-             <Download size={14} className="mr-2 group-hover:text-[#00FF41]" />
-             Add Decks
-          </Link>
         </div>
       </div>
-    </div>
-  )
+    )
 }

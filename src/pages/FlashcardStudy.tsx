@@ -426,6 +426,14 @@ export default function FlashcardStudy() {
           settings={testSettings}
           onComplete={(stats) => {
             console.log('Test Mode Stats:', stats)
+            
+            // Track Flawless Accuracy
+            const isFlawless = stats.score === stats.total && stats.total > 0;
+            const flawlessRounds = Number(localStorage.getItem('flawless_rounds') || '0');
+            const totalRounds = Number(localStorage.getItem('total_rounds') || '0');
+            localStorage.setItem('flawless_rounds', String(flawlessRounds + (isFlawless ? 1 : 0)));
+            localStorage.setItem('total_rounds', String(totalRounds + 1));
+
             if (stats.correctIds && activeSessionSetId) {
               setAllSets(prev => prev.map(s => {
                 if (s.id === activeSessionSetId) {
