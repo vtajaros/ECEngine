@@ -14,6 +14,7 @@ export default {
         display: ['Orbitron', 'sans-serif'],
         body:    ['IBM Plex Mono', 'monospace'],
         ui:      ['Rajdhani', 'sans-serif'],
+        rajdhani: ['Rajdhani', 'sans-serif'],
       },
       boxShadow: {
         'glow':  '0 0 8px rgba(0,255,65,0.6), 0 0 20px rgba(0,255,65,0.2)',

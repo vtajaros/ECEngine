@@ -7,7 +7,7 @@ import { TestMode } from '../components/mcq/TestMode'
 import { LearnSettingsModal, LearnSettings } from '../components/mcq/LearnSettingsModal'
 import { TestSettingsModal, TestSettings } from '../components/mcq/TestSettingsModal'
 import { MOCK_FLASHCARDS, MOCK_MCQS } from '../lib/mockData'
-import { Play, Bookmark, X, Trash2, AlertTriangle, ClipboardList, SlidersHorizontal, Check, Pencil } from 'lucide-react'
+import { Play, Bookmark, X, Trash2, AlertTriangle, ClipboardList, SlidersHorizontal, Check, Pencil, Brain } from 'lucide-react'
 import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
 import { useSessionStore } from '../store/useSessionStore'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -497,7 +497,8 @@ export default function FlashcardStudy() {
 
       {/* Subject Selector Header */}
       <div className="w-full max-w-4xl mb-10 flex flex-col md:flex-row items-center justify-between gap-6 border-b border-[var(--bg-card)] pb-6 relative z-10 pt-4">
-        <h1 className="text-3xl lg:text-4xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold">
+        <h1 className="text-3xl lg:text-4xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4 uppercase">
+          <Brain className="text-[var(--accent-primary)]" size={36} />
           LOOKS<span className="text-[var(--accent-primary)]">FAM</span>
         </h1>
 
@@ -627,101 +628,105 @@ export default function FlashcardStudy() {
       </div>
 
       {/* Deck Grid */}
-      <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10 pb-12">
+      <div className="w-full max-w-4xl mx-auto flex flex-col gap-4 relative z-10 pb-12">
         {filteredAndSortedSets.map(set => (
           <div 
             key={set.id} 
-            className="bg-[var(--bg-card)] rounded-xl border border-[#222] hover:border-[var(--accent-dim)] transition-all hover:shadow-[0_0_20px_rgba(0,255,65,0.05)] overflow-hidden flex flex-col h-full"
+            className="bg-[#1A1A1A] rounded-xl border border-[#333] transition-all duration-200 ease-in-out hover:-translate-y-1 hover:border-[#00FF41] hover:shadow-lg hover:shadow-[#00FF41]/10 p-5 flex flex-col w-full group"
           >
-            {/* Card Content */}
-            <div className="p-6 flex-1 flex flex-col">
-              <div className="flex justify-between items-start mb-4 gap-2">
-                <div className="flex flex-col flex-1 gap-1">
-                  <h3 className="text-lg font-['Orbitron'] font-bold text-[var(--text-primary)] tracking-wide leading-tight">{set.title}</h3>
-                  <div className="flex flex-wrap items-center gap-[6px]">
-                    {set.deckType && (
-                      <span className={`w-fit text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded border shrink-0 uppercase ${
-                        set.deckType === 'mcq'
-                          ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
-                          : set.deckType === 'mixed'
-                          ? 'text-[#B983FF] border-[#B983FF]/30 bg-[#B983FF]/10'
-                          : 'text-[#00FF41] border-[#00FF41]/30 bg-[#00FF41]/10'
-                      }`}>
-                        {set.deckType === 'mixed' ? 'MIX' : set.deckType === 'mcq' ? 'MCQ' : 'FC'}
-                      </span>
-                    )}
-
+            {/* Top Row: Title, Metadata, and Delete */}
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <h3 className="text-lg font-bold font-rajdhani tracking-wide text-[#E8E8E8] group-hover:text-[#00FF41] transition-colors uppercase">
+                  {set.title}
+                </h3>
+                
+                {/* Metadata Row: Date, Separator, Tags, and Item Count */}
+                <div className="flex flex-wrap items-center gap-3 mt-1 text-[10px] text-gray-500 uppercase font-['IBM_Plex_Mono'] tracking-widest">
+                  <span>
+                    ADDED: {set.createdAt ? new Date(set.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
+                  </span>
+                  <span className="text-[#333]">•</span>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 rounded border uppercase font-bold ${
+                      set.deckType === 'mcq'
+                        ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
+                        : set.deckType === 'mixed'
+                        ? 'text-[#B983FF] border-[#B983FF]/30 bg-[#B983FF]/10'
+                        : 'text-[#00FF41] border-[#00FF41]/30 bg-[#00FF41]/10'
+                    }`}>
+                      {set.deckType === 'mixed' ? 'MIX' : set.deckType === 'mcq' ? 'MCQ' : 'FC'}
+                    </span>
+                    <span className={`px-2 py-0.5 rounded border border-[#333] bg-[#111] uppercase font-rajdhani font-bold tracking-widest ${getSubjectBadgeClasses(set.subject)}`}>
+                      {set.subject}
+                    </span>
                     {set.tags && set.tags.length > 0 && set.tags.map(tag => (
                       <span 
                         key={tag}
-                        className="text-[0.65rem] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded border border-white/20 text-[#888888] uppercase tracking-wider"
+                        className="px-2 py-0.5 rounded border border-white/10 text-[#666] uppercase font-bold tracking-wider"
                       >
                         {tag}
                       </span>
                     ))}
+                    <span className="px-2 py-0.5 rounded border border-[#333] bg-[#111] text-[#E8E8E8] font-rajdhani font-bold tracking-widest">
+                      {set.count} ITEMS
+                    </span>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs font-['Rajdhani'] px-2 py-1 bg-[#1A1A1A] rounded border whitespace-nowrap ${getSubjectBadgeClasses(set.subject)}`}>
-                    {set.count} Items
-                  </span>
-                  {set.id !== 'set-1' && (
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setSetToDelete(set); }}
-                      className="p-1.5 text-[#555] hover:text-[#FF3333] bg-[#1A1A1A] rounded border border-[#333] hover:border-[#FF3333] transition-colors shrink-0"
-                      title="Delete Set"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-              {/* Date Added */}
-              <div className="mb-2">
-                <span className="text-[#666] font-['IBM_Plex_Mono'] text-[10px] tracking-widest uppercase">
-                  ADDED: {set.createdAt ? new Date(set.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
-                </span>
               </div>
 
-              {/* Mastery Bar */}
-              <div className="mt-auto">
-                <div className="flex justify-between text-xs font-['Rajdhani'] tracking-widest mb-2">
-                  <span className="text-[var(--text-secondary)] uppercase">Mastery</span>
-                  <span className="text-[var(--accent-primary)] font-bold">{set.mastery}%</span>
+              {set.id !== 'set-1' && (
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setSetToDelete(set); }}
+                  className="p-1.5 text-gray-500 hover:text-red-500 transition-colors"
+                  title="Delete Set"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+
+            {/* Bottom Row: Progress and Actions */}
+            <div className="flex justify-between items-end mt-4 gap-6">
+              {/* Left Side: Progress Bar */}
+              <div className="flex-1 max-w-md">
+                <div className="flex justify-between text-[10px] font-rajdhani tracking-widest mb-1 uppercase text-gray-500">
+                  <span>MASTERY</span>
+                  <span className="text-[#00FF41] font-bold">{set.mastery}%</span>
                 </div>
-                <div className="w-full bg-[var(--bg-secondary)] h-1.5 rounded-full overflow-hidden">
+                <div className="w-full bg-[#111] h-1 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${set.mastery}%` }}
-                    className="h-full bg-[var(--accent-primary)] shadow-[0_0_10px_rgba(0,255,65,0.4)]"
+                    className="h-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.4)]"
                   />
                 </div>
               </div>
-            </div>
 
-            {/* Action Buttons (Always Visible) */}
-            <div className="border-t border-[var(--bg-secondary)] py-4 px-6 flex items-center gap-3 bg-[var(--bg-elevated)] mt-auto">
-              <button 
-                onClick={(e) => { e.stopPropagation(); navigate(`/edit-deck/${set.id}`) }}
-                className="p-2 flex items-center justify-center bg-[var(--bg-secondary)] border border-[#333] hover:border-[#555] text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded transition-colors"
-                title="Edit Deck"
-              >
-                <Pencil className="w-4 h-4" />
-              </button>
-              <button 
-                onClick={(e) => { e.stopPropagation(); handleOpenLearn(set.id); }}
-                className="flex-1 py-2 flex items-center justify-center bg-[var(--bg-secondary)] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-[var(--text-primary)] rounded transition-colors font-['Rajdhani'] tracking-widest uppercase text-sm font-bold"
-              >
-                <Play className="w-4 h-4 mr-2" />
-                Learn
-              </button>
-              <button 
-                onClick={(e) => { e.stopPropagation(); handleOpenTest(set.id); }}
-                className="flex-1 py-2 flex items-center justify-center bg-[var(--accent-primary)] text-black rounded transition-colors hover:bg-[var(--accent-dim)] font-['Rajdhani'] tracking-widest font-bold uppercase text-sm shadow-[0_0_10px_rgba(0,255,65,0.1)]"
-              >
-                <ClipboardList className="w-4 h-4 mr-2" />
-                Test
-              </button>
+              {/* Right Side: Action Buttons */}
+              <div className="flex items-center gap-2 shrink-0">
+                <button 
+                  onClick={(e) => { e.stopPropagation(); navigate(`/edit-deck/${set.id}`) }}
+                  className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
+                  title="Edit Deck"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); handleOpenLearn(set.id); }}
+                  className="px-4 py-2 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                >
+                  <Play className="w-3 h-3" />
+                  Learn
+                </button>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); handleOpenTest(set.id); }}
+                  className="px-4 py-2 bg-[#00FF41] text-black rounded transition-colors hover:bg-[#00D737] font-rajdhani tracking-widest font-bold uppercase text-xs flex items-center justify-center gap-2 shadow-[0_0_10px_rgba(0,255,65,0.1)]"
+                >
+                  <ClipboardList className="w-3 h-3" />
+                  Test
+                </button>
+              </div>
             </div>
           </div>
         ))}

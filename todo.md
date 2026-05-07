@@ -4,6 +4,8 @@
 - insert equations (kind of how equation typing is in microsoft word)
 - export function to export flashcard content in text
 
+***FOLDER/NOTEBOOK FUNCTION FOR DECKS***
+
 ***EQUATION DISPLAY***
 - ability to display equation natively and fractions as well, equation editing like mathway and microsoft word equation editor
 
@@ -30,6 +32,6 @@
 ***UI NAVIGATION THRU DECKS AND FLASHCARDS***
 - animation booktype etc etc.
 
-***ANDROID/IOS PORT***
+***ANDROID/IOS/LINUX/WEB PORT***
 - able to run on android and ios
 
