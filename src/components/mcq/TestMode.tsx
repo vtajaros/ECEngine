@@ -5,7 +5,9 @@ import { Bookmark, Clock, ArrowRight, RefreshCw, ClipboardCheck, X, AlertTriangl
 import { shuffle, shuffleChoices } from '../../lib/scrambler'
 import { renderMath } from '../../lib/latex'
 import { ExplanationPanel } from '../ui/ExplanationPanel'
+import { Tooltip } from '../ui/Tooltip'
 import Toast from '../ui/Toast'
+
 
 interface TestModeProps {
   cards: Card[]
@@ -52,6 +54,11 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
 
   // AI Explanation state — stores the index of the currently open panel (null = all closed)
   const [openExplanationId, setOpenExplanationId] = useState<number | null>(null)
+
+  // Reset the explanation panel when transitioning between views
+  useEffect(() => {
+    setOpenExplanationId(null);
+  }, [viewState, testCards]);
   const [showToast, setShowToast] = useState(false)
 
   // GET CONTEXT helper — formats the question into a structured clipboard prompt
@@ -467,24 +474,30 @@ Please explain:
               {/* AI Action Buttons — only visible in review phase */}
               {viewState === 'review' && (
                 <div className="px-6 pb-6 pt-1 flex items-center gap-3">
-                  <button
-                    onClick={() => handleGetContext(mcq)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 border border-[rgba(255,255,255,0.15)] rounded text-[#888888] hover:text-white hover:border-[#666] transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem]"
-                  >
-                    <Copy size={12} />
-                    Get Context
-                  </button>
-                  <button
-                    onClick={() => setOpenExplanationId(openExplanationId === index ? null : index)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 border rounded transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem] ${
-                      openExplanationId === index
-                        ? 'border-[#00FF41] bg-[rgba(0,255,65,0.08)] text-[#00FF41]'
-                        : 'border-[rgba(0,255,65,0.3)] text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41]'
-                    }`}
-                  >
-                    <Sparkles size={12} />
-                    {openExplanationId === index ? 'Hide Explanation' : 'Explain'}
-                  </button>
+                  <Tooltip content="Copy context to paste into GPT/Gemini/Claude for a better AI explanation.">
+                    <button
+                      onClick={() => handleGetContext(mcq)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 border border-[rgba(255,255,255,0.15)] rounded text-[#888888] hover:text-white hover:border-[#666] transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem]"
+                    >
+                      <Copy size={12} />
+                      Get Context
+                    </button>
+                  </Tooltip>
+
+                  <Tooltip position="right" content="Explain using Grok Llama-3.3-70B">
+                    <button
+                      onClick={() => setOpenExplanationId(openExplanationId === index ? null : index)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 border rounded transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem] ${
+                        openExplanationId === index
+                          ? 'border-[#00FF41] bg-[rgba(0,255,65,0.08)] text-[#00FF41]'
+                          : 'border-[rgba(0,255,65,0.3)] text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41]'
+                      }`}
+                    >
+                      <Sparkles size={12} />
+                      {openExplanationId === index ? 'Hide Explanation' : 'Explain'}
+                    </button>
+                  </Tooltip>
+
                 </div>
               )}
 

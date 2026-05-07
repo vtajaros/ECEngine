@@ -2,12 +2,16 @@
 
 ***DECK EDITOR TAB***
 - insert equations (kind of how equation typing is in microsoft word)
+- export function to export flashcard content in text
 
 ***EQUATION DISPLAY***
 - ability to display equation natively and fractions as well, equation editing like mathway and microsoft word equation editor
 
 ***Revamp Dashboard Tab***
 - revamp dashboard improve it
+
+***LEARN ALGORITHM***
+- learn questions where user is struggling, if a question is being incorrectly answered wrong, we save it to a still learning array or set that we can revisit later on. Build an algorithm on how to determine if a user actually knows the content.
 
 ***Exam Tab***
 - Flashcards here are separate as i plan to have only decks that are problem solving here

@@ -11,7 +11,7 @@ import DOMPurify from 'dompurify'
  */
 export const renderMath = (text: string): string => {
   // First pass: render KaTeX expressions
-  const rendered = text.replace(/\$([^$]+)\$/g, (match, formula) => {
+  let rendered = text.replace(/\$([^$]+)\$/g, (match, formula) => {
     try {
       return katex.renderToString(formula, {
         throwOnError: false,
@@ -23,10 +23,15 @@ export const renderMath = (text: string): string => {
     }
   })
 
+  // Second pass: handle basic markdown bolding **text**
+  rendered = rendered.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+
+
   // Second pass: sanitize to prevent XSS from user-imported content
   return DOMPurify.sanitize(rendered, {
     ALLOWED_TAGS: ['span', 'svg', 'path', 'line', 'rect',
-                   'circle', 'g', 'defs', 'use', 'br'],
+                   'circle', 'g', 'defs', 'use', 'br', 'strong', 'b'],
+
     ALLOWED_ATTR: ['class', 'style', 'd', 'viewBox',
                    'xmlns', 'width', 'height', 'x', 'y',
                    'x1', 'y1', 'x2', 'y2', 'stroke',

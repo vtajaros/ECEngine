@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getExplanation } from '../../services/explain.service';
+import { renderMath } from '../../lib/latex';
+
 
 export interface ExplanationPanelProps {
   question: string;
@@ -62,9 +64,9 @@ export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({
         ⚡ EXPLANATION
       </h4>
 
-      <div className="font-['IBM_Plex_Mono'] text-[0.85rem] text-[#E8E8E8] leading-relaxed">
+      <div className="font-sans text-[0.875rem] text-[#E8E8E8] leading-[1.6]">
         {loading && (
-          <div className="flex items-center text-[#888888]">
+          <div className="flex items-center text-[#888888] font-mono">
             Generating explanation
             <span className="flex ml-1">
               <span className="animate-razer-pulse" style={{ animationDelay: '0ms' }}>.</span>
@@ -75,8 +77,18 @@ export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({
         )}
 
         {!loading && explanation && (
-          <div className="whitespace-pre-wrap">{explanation}</div>
+          <div className="space-y-3">
+            {explanation.trim().split(/\n\s*\n/).filter(p => p.trim()).map((paragraph, idx) => (
+              <div 
+                key={idx}
+                dangerouslySetInnerHTML={{ __html: renderMath(paragraph.trim()) }}
+              />
+            ))}
+          </div>
         )}
+
+
+
 
         {!loading && errorType && (
           <div className="text-[#FF3333]">

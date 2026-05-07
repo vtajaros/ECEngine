@@ -5,6 +5,8 @@ import { Bookmark, Play, AlertCircle, ArrowRight, Flag, X, Copy, Sparkles } from
 import { renderMath } from '../../lib/latex'
 import Toast from '../ui/Toast'
 import { ExplanationPanel } from '../ui/ExplanationPanel'
+import { Tooltip } from '../ui/Tooltip'
+
 
 // Partitioned learning mode handling the custom "LEARN" flow
 
@@ -63,6 +65,11 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
   const [explanationOpen, setExplanationOpen] = useState(false)
   // Summary view: which question row has its panel open (null = all closed)
   const [openExplanationId, setOpenExplanationId] = useState<number | null>(null)
+
+  // Reset the explanation panel when the round changes
+  useEffect(() => {
+    setOpenExplanationId(null);
+  }, [currentPartitionIndex, activeQueue]);
 
   useEffect(() => {
     if (zoomedImage) {
@@ -615,20 +622,27 @@ Please explain:
 
                {/* Secondary action buttons: GET CONTEXT and EXPLAIN */}
                <div className="flex items-center gap-3 flex-wrap justify-center">
-                 <button 
-                   onClick={handleGetContext}
-                   className="flex items-center gap-2 px-4 py-2 border border-[rgba(255,255,255,0.15)] rounded text-[#888888] hover:text-white hover:border-[#666] transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
-                 >
-                   <Copy size={14} />
-                   Get Context
-                 </button>
-                 <button 
-                   onClick={() => setExplanationOpen(true)}
-                   className="flex items-center gap-2 px-4 py-2 border border-[rgba(0,255,65,0.3)] rounded text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41] transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
-                 >
-                   <Sparkles size={14} />
-                   Explain
-                 </button>
+                 <Tooltip content="Copy context to paste into GPT/Gemini/Claude for a better AI explanation.">
+                   <button 
+                     onClick={handleGetContext}
+                     className="flex items-center gap-2 px-4 py-2 border border-[rgba(255,255,255,0.15)] rounded text-[#888888] hover:text-white hover:border-[#666] transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
+                   >
+                     <Copy size={14} />
+                     Get Context
+                   </button>
+                 </Tooltip>
+
+                 <Tooltip position="right" content="Explain using Grok Llama-3.3-70B">
+
+                   <button 
+                     onClick={() => setExplanationOpen(true)}
+                     className="flex items-center gap-2 px-4 py-2 border border-[rgba(0,255,65,0.3)] rounded text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41] transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
+                   >
+                     <Sparkles size={14} />
+                     Explain
+                   </button>
+                 </Tooltip>
+
                </div>
             </div>
           )}
