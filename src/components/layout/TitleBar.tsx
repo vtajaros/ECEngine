@@ -1,4 +1,3 @@
-import React from 'react'
 import { Zap, Minus, Square, X, Menu, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
@@ -7,7 +6,7 @@ export const TitleBar: React.FC = () => {
   const navigate = useNavigate()
 
   return (
-    <div className="w-full h-10 bg-[#1A1A1A] text-gray-400 flex items-center select-none border-b border-[#333] [-webkit-app-region:drag] relative shrink-0">
+    <div className="w-full h-10 bg-[#1A1A1A] text-gray-400 flex items-center select-none border-b border-[#222] [-webkit-app-region:drag] relative shrink-0">
       {/* Left Side: Navigation & Menu */}
       <div className="flex items-center gap-1 ml-2 [-webkit-app-region:no-drag]">
         {/* Hamburger Menu */}
@@ -33,7 +32,7 @@ export const TitleBar: React.FC = () => {
 
       {/* Centered Brand */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2">
-        <Zap className="w-4 h-4 text-[#00FF41]" fill="currentColor" />
+        <img src="/ECEngine_orig.png" alt="Logo" className="w-5 h-5 object-contain" />
         <span className="font-rajdhani font-bold tracking-wider text-white">ECEngine</span>
       </div>
 

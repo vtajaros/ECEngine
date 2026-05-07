@@ -37,7 +37,7 @@ export const AppShell: React.FC = () => {
       <aside 
         className={`${
           isCollapsed ? 'w-16' : 'w-48'
-        } bg-[#1A1A1A] border-r border-[#333] flex flex-col transition-all duration-300 relative z-20 shrink-0`}
+        } bg-[#1A1A1A] border-r border-[#222] flex flex-col transition-all duration-300 relative z-20 shrink-0`}
       >
         <nav className="flex-1 flex flex-col gap-2 overflow-y-auto overflow-x-hidden px-2 pt-4">
           {navItems.map((item) => (
