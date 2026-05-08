@@ -504,7 +504,7 @@ export default function FlashcardStudy() {
       />
 
       {/* Subject Selector Header */}
-      <div className="w-full max-w-2xl mb-10 flex flex-col md:flex-row items-center justify-between gap-6 border-b border-[var(--bg-card)] pb-6 relative z-10 pt-4">
+      <div className="w-full max-w-2xl mb-10 flex flex-col md:flex-row items-center justify-between gap-6 border-b border-[var(--bg-card)] pb-6 relative z-30 pt-4">
         <h1 className="text-3xl lg:text-4xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4 uppercase">
           <Brain className="text-[var(--accent-primary)]" size={36} />
           LOOKS<span className="text-[var(--accent-primary)]">FAM</span>

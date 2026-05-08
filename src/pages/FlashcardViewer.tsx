@@ -583,7 +583,7 @@ export default function FlashcardViewer() {
   return (
     <div className="h-full bg-[#0D0D0D] px-6 pb-6 pt-6 lg:px-12 lg:pb-12 lg:pt-6 overflow-y-auto w-full flex flex-col items-center">
       {/* Header */}
-      <div className="w-full max-w-2xl mb-10 flex flex-col md:flex-row items-center justify-between gap-6 border-b border-[var(--bg-card)] pb-6 pt-4">
+      <div className="w-full max-w-2xl mb-10 flex flex-col md:flex-row items-center justify-between gap-6 border-b border-[var(--bg-card)] pb-6 pt-4 relative z-30">
         <h1 className="text-3xl lg:text-4xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4">
           <Layers className="text-[var(--accent-primary)]" size={36} />
           FLASH<span className="text-[var(--accent-primary)]">CARDS</span>
