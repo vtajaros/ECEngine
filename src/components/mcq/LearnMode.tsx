@@ -321,9 +321,14 @@ Please explain:
         >
           {/* Header */}
           <div className="p-8 border-b border-[#222] text-center bg-[#161616] shrink-0">
-            <h2 className="text-4xl font-['Orbitron'] font-bold text-[#00FF41] mb-2 tracking-widest uppercase">
+            <h2 className="text-4xl font-['Orbitron'] font-bold text-[#00FF41] mb-1 tracking-widest uppercase">
               {isLastPartition ? 'Set Complete! 🎉' : 'Round Complete'}
             </h2>
+            {title && (
+              <div className="text-[#00FF41] font-['Orbitron'] font-bold text-xl tracking-[0.2em] uppercase mb-4">
+                {title}
+              </div>
+            )}
             <p className="text-[#888] font-['IBM_Plex_Mono'] mb-6">
               {isLastPartition ? `You've reviewed all ${cards.length} questions` : "Here's what you just studied"}
             </p>
@@ -474,10 +479,15 @@ Please explain:
 
   return (
     <div className="flex flex-col h-full bg-[#0D0D0D] p-6 lg:p-10 relative">
-      <div className="max-w-4xl w-full mx-auto flex justify-between items-start mb-6">
-        <div>
+      <div className="max-w-4xl w-full mx-auto flex justify-between items-start mb-6 relative">
+        <div className="flex flex-col">
           <div className="flex items-center gap-4 text-[#E8E8E8] font-['IBM_Plex_Mono'] font-bold text-sm tracking-wider uppercase mb-3">
             <span>Question {overallCurrentQuestion} of {cards.length}</span>
+            {title && (
+              <div className="absolute left-1/2 -translate-x-1/2 top-[-2px] text-[#00FF41] font-['Orbitron'] font-bold text-lg tracking-[0.1em] uppercase whitespace-nowrap">
+                {title}
+              </div>
+            )}
           </div>
           <div className="w-64 bg-[#1a1a1a] h-[6px] rounded-full overflow-hidden mb-3">
             <div 
@@ -625,7 +635,7 @@ Please explain:
                  <Tooltip content="Copy context to paste into GPT/Gemini/Claude for a better AI explanation.">
                    <button 
                      onClick={handleGetContext}
-                     className="flex items-center gap-2 px-4 py-2 border border-[rgba(255,255,255,0.15)] rounded text-[#888888] hover:text-white hover:border-[#666] transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
+                     className="flex items-center gap-2 px-4 py-2 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-[#888] transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
                    >
                      <Copy size={14} />
                      Get Context

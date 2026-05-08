@@ -251,9 +251,14 @@ Please explain:
 
             <div className="z-10 flex flex-col items-center w-full">
               <ClipboardCheck className={`w-16 h-16 mb-6 ${isPassed ? 'text-[#00FF41]' : 'text-[#FF003C]'}`} />
-              <h2 className="text-3xl font-['Orbitron'] font-bold text-[var(--text-primary)] mb-2 uppercase tracking-wide">
+              <h2 className="text-3xl font-['Orbitron'] font-bold text-[var(--text-primary)] mb-1 uppercase tracking-wide">
                 Test Completed
               </h2>
+              {title && (
+                <div className="text-[#00FF41] font-['Orbitron'] font-bold text-xl tracking-[0.2em] uppercase mb-4">
+                  {title}
+                </div>
+              )}
               <p className="text-[#888] font-['Rajdhani'] text-lg tracking-widest mb-8">
                 {isPassed ? 'Passed (≥ 75%)' : 'Failed (< 75%)'}
               </p>
@@ -477,7 +482,7 @@ Please explain:
                   <Tooltip content="Copy context to paste into GPT/Gemini/Claude for a better AI explanation.">
                     <button
                       onClick={() => handleGetContext(mcq)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 border border-[rgba(255,255,255,0.15)] rounded text-[#888888] hover:text-white hover:border-[#666] transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem]"
+                      className="flex items-center gap-1.5 px-3 py-1.5 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-[#888] transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem]"
                     >
                       <Copy size={12} />
                       Get Context
