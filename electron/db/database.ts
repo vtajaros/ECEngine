@@ -26,11 +26,15 @@ export async function initDB() {
     try { db.run("ALTER TABLE topics ADD COLUMN description TEXT DEFAULT ''"); } catch (e) {}
     try { db.run("ALTER TABLE topics ADD COLUMN parent_id TEXT"); } catch (e) {}
     try { db.run("ALTER TABLE topics ADD COLUMN order_index INTEGER DEFAULT 0"); } catch (e) {}
+    try { db.run("ALTER TABLE cards ADD COLUMN difficulty TEXT DEFAULT 'medium'"); } catch (e) {}
+    try { db.run("ALTER TABLE topics ADD COLUMN folder_name TEXT DEFAULT 'Uncategorized'"); } catch (e) {}
     runTableMigrations();
     saveDB();
   } else {
     db = new SQL.Database();
     initSchema();
+    try { db.run("ALTER TABLE cards ADD COLUMN difficulty TEXT DEFAULT 'medium'"); } catch (e) {}
+    try { db.run("ALTER TABLE topics ADD COLUMN folder_name TEXT DEFAULT 'Uncategorized'"); } catch (e) {}
     runTableMigrations();
   }
 }
@@ -76,9 +80,14 @@ function runTableMigrations() {
         interval INTEGER DEFAULT 1,
         repetitions INTEGER DEFAULT 0,
         next_review TEXT,
-        last_reviewed TEXT
+        last_reviewed TEXT,
+        correct_count INTEGER DEFAULT 0,
+        total_count INTEGER DEFAULT 0
       )
     `);
+    // Migration for existing progress table
+    try { db.run("ALTER TABLE progress ADD COLUMN correct_count INTEGER DEFAULT 0"); } catch (e) {}
+    try { db.run("ALTER TABLE progress ADD COLUMN total_count INTEGER DEFAULT 0"); } catch (e) {}
   } catch (e) {}
 
   try {
@@ -92,6 +101,14 @@ function runTableMigrations() {
         score INTEGER DEFAULT 0,
         total INTEGER DEFAULT 0,
         answers TEXT DEFAULT '{}'
+      )
+    `);
+    
+    db.run(`
+      CREATE TABLE IF NOT EXISTS study_activity (
+        day TEXT PRIMARY KEY,
+        count INTEGER DEFAULT 0,
+        time_spent INTEGER DEFAULT 0 -- in minutes
       )
     `);
   } catch (e) {}

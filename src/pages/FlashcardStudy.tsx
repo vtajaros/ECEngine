@@ -7,7 +7,7 @@ import { TestMode } from '../components/mcq/TestMode'
 import { LearnSettingsModal, LearnSettings } from '../components/mcq/LearnSettingsModal'
 import { TestSettingsModal, TestSettings } from '../components/mcq/TestSettingsModal'
 import { MOCK_FLASHCARDS, MOCK_MCQS } from '../lib/mockData'
-import { Play, Bookmark, X, Trash2, AlertTriangle, ClipboardList, SlidersHorizontal, Check, Pencil, Brain, Trophy } from 'lucide-react'
+import { Play, Bookmark, X, Trash2, AlertTriangle, ClipboardList, SlidersHorizontal, Check, Pencil, Brain, Trophy, ChevronDown } from 'lucide-react'
 import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
 import { useSessionStore } from '../store/useSessionStore'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -36,6 +36,7 @@ interface StudySet {
   deckType?: 'mcq' | 'flashcard' | 'mixed'
   tags?: string[]
   createdAt?: number
+  folderName?: string
 }
 
 // Removed Mock Sets
@@ -65,14 +66,19 @@ export default function FlashcardStudy() {
       try {
         if (!window.electron?.db) return
         const topicsResult = await window.electron.db.query(
-          `SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags, COUNT(c.id) as card_count,
+          `SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags, t.folder_name,
+                  COUNT(c.id) as card_count,
                   GROUP_CONCAT(DISTINCT c.type) as types
            FROM topics t LEFT JOIN cards c ON c.topic_id = t.id
            GROUP BY t.id`
         )
         if (topicsResult.success && topicsResult.data) {
           const dbSets: StudySet[] = topicsResult.data.map((row: any) => {
-            const types = (row.types || '').split(',')
+            const types = (row.types || '').split(',').filter(Boolean)
+            
+            // Skip formula-only decks or empty decks
+            if (types.length === 0 || (types.length === 1 && types[0] === 'formula')) return null
+
             let deckType: 'mcq' | 'flashcard' | 'mixed' = 'mcq'
             if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
             else if (types.includes('flashcard')) deckType = 'flashcard'
@@ -96,9 +102,10 @@ export default function FlashcardStudy() {
               mastery,
               deckType,
               tags: parsedTags,
-              createdAt: row.created_at || Date.now()
+              createdAt: row.created_at || Date.now(),
+              folderName: row.folder_name || 'Uncategorized'
             }
-          })
+          }).filter((s: StudySet | null): s is StudySet => s !== null)
           setAllSets(prev => {
             const nonDb = prev.filter(s => !s.id.startsWith('topic_'));
             return [...nonDb, ...dbSets];
@@ -143,6 +150,33 @@ export default function FlashcardStudy() {
 
     return result
   }, [allSets, activeSubject, filterType, filterTags, sortBy])
+
+  const groupedSets = useMemo(() => {
+    const groups: Record<string, StudySet[]> = {}
+    filteredAndSortedSets.forEach(set => {
+      const folder = set.folderName || 'Uncategorized'
+      if (!groups[folder]) groups[folder] = []
+      groups[folder].push(set)
+    })
+    
+    // Sort folder names, putting 'Uncategorized' last
+    const sortedFolders = Object.keys(groups).sort((a, b) => {
+      if (a === 'Uncategorized') return 1
+      if (b === 'Uncategorized') return -1
+      return a.localeCompare(b)
+    })
+
+    return sortedFolders.map(folder => ({
+      name: folder,
+      sets: groups[folder]
+    }))
+  }, [filteredAndSortedSets])
+
+  const [collapsedFolders, setCollapsedFolders] = useState<Record<string, boolean>>({})
+
+  const toggleFolder = (name: string) => {
+    setCollapsedFolders(prev => ({ ...prev, [name]: !prev[name] }))
+  }
 
   useEffect(() => {
     if (setToDelete) {
@@ -635,113 +669,155 @@ export default function FlashcardStudy() {
         </div>
       </div>
 
-      {/* Deck Grid */}
-      <div className="w-full max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 relative z-10 pb-12">
-        {filteredAndSortedSets.map(set => (
-          <div 
-            key={set.id} 
-            className="relative isolate group transition-all duration-300 border border-[#333] bg-[#1a1a1a] p-5 flex flex-col w-full min-h-[180px] justify-between hover:-translate-x-[6px] hover:-translate-y-[6px] rounded-xl before:absolute before:w-full before:h-full before:top-0 before:left-0 before:bg-[#1a1a1a] before:border before:border-[#333] before:rounded-xl before:translate-x-[6px] before:translate-y-[6px] before:z-[-1] before:transition-transform before:duration-300 group-hover:before:translate-x-[12px] group-hover:before:translate-y-[12px] after:absolute after:w-full after:h-full after:top-0 after:left-0 after:bg-[#1a1a1a] after:border after:border-[#333] after:rounded-xl after:translate-x-[12px] after:translate-y-[12px] after:z-[-2] after:transition-transform after:duration-300 group-hover:after:translate-x-[18px] group-hover:after:translate-y-[18px]"
-          >
-            {/* Top Section: Title & Stats Stack */}
-            <div className="flex justify-between items-start gap-4">
-              {/* Left Column: Title & Tags */}
-              <div className="flex-1 min-w-0 flex flex-col gap-3">
-                {/* Title Row */}
-                <div className="flex items-center gap-3">
-                  <span className={`w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] uppercase font-rajdhani font-bold tracking-widest text-[10px] shrink-0 ${getSubjectBadgeClasses(set.subject)}`}>
-                    {set.subject}
+      {/* Folder Sections */}
+      <div className="w-full max-w-5xl mx-auto flex flex-col gap-12 relative z-10 pb-12">
+        {groupedSets.map(folder => (
+          <div key={folder.name} className="flex flex-col gap-6">
+            {/* Folder Header */}
+            <button 
+              onClick={() => toggleFolder(folder.name)}
+              className="flex items-center justify-between group border-b border-[#222] pb-2 hover:border-[#00FF41]/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.8)]" />
+                <h2 className="text-xl font-bold font-['Orbitron'] tracking-widest text-[#E8E8E8] uppercase flex items-center gap-3">
+                  {folder.name}
+                  <span className="text-xs font-['IBM_Plex_Mono'] text-[#555] font-normal lowercase tracking-normal">
+                    ({folder.sets.length} {folder.sets.length === 1 ? 'deck' : 'decks'})
                   </span>
-                  <h3 className="text-lg font-bold font-rajdhani tracking-wide text-[#E8E8E8] uppercase truncate flex-1">
-                    {set.title}
-                  </h3>
-                </div>
-                {/* Tag Row: Type & Custom Tags (Aligned with Date) */}
-                <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                  <span className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]">
-                    {set.deckType === 'mixed' ? 'MIX' : set.deckType === 'mcq' ? 'MCQ' : 'FC'}
-                  </span>
-                  {set.tags && set.tags.length > 0 && set.tags.map(tag => (
-                    <span 
-                      key={tag}
-                      className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+                </h2>
               </div>
+              <motion.div
+                animate={{ rotate: collapsedFolders[folder.name] ? -90 : 0 }}
+                transition={{ duration: 0.2 }}
+                className="text-[#444] group-hover:text-[#00FF41] transition-colors"
+              >
+                <ChevronDown size={20} />
+              </motion.div>
+            </button>
 
-              {/* Right Column: Administrative Info */}
-              <div className="flex flex-col items-end gap-1.5 shrink-0">
-                {/* Items Tag */}
-                <span className="w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] text-[#E8E8E8] font-rajdhani font-bold tracking-widest text-[10px] shrink-0 uppercase whitespace-nowrap">
-                  {set.count} ITEMS
-                </span>
-                {/* Date String */}
-                <span className="text-[10px] text-gray-500 uppercase font-['IBM_Plex_Mono'] tracking-widest">
-                  {set.createdAt ? new Date(set.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
-                </span>
-              </div>
-            </div>
-
-              {/* Deck Description */}
-              {set.description && set.description.trim() !== "" && (
-                <p className="text-[11px] text-gray-400 font-['IBM_Plex_Mono'] leading-relaxed mt-2 line-clamp-2 uppercase pr-4">
-                  {set.description}
-                </p>
+            {/* Deck Grid in Folder */}
+            <AnimatePresence initial={false}>
+              {!collapsedFolders[folder.name] && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                  className="overflow-hidden"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-2 pb-4">
+                    {folder.sets.map(set => (
+                      <div 
+                        key={set.id} 
+                        className="relative isolate group transition-all duration-300 border border-[#333] bg-[#1a1a1a] p-5 flex flex-col w-full min-h-[180px] justify-between hover:-translate-x-[6px] hover:-translate-y-[6px] rounded-xl before:absolute before:w-full before:h-full before:top-0 before:left-0 before:bg-[#1a1a1a] before:border before:border-[#333] before:rounded-xl before:translate-x-[6px] before:translate-y-[6px] before:z-[-1] before:transition-transform before:duration-300 group-hover:before:translate-x-[12px] group-hover:before:translate-y-[12px] after:absolute after:w-full after:h-full after:top-0 after:left-0 after:bg-[#1a1a1a] after:border after:border-[#333] after:rounded-xl after:translate-x-[12px] after:translate-y-[12px] after:z-[-2] after:transition-transform after:duration-300 group-hover:after:translate-x-[18px] group-hover:after:translate-y-[18px]"
+                      >
+                        {/* Top Section: Title & Stats Stack */}
+                        <div className="flex justify-between items-start gap-4">
+                          {/* Left Column: Title & Tags */}
+                          <div className="flex-1 min-w-0 flex flex-col gap-3">
+                            {/* Title Row */}
+                            <div className="flex items-center gap-3">
+                              <span className={`w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] uppercase font-rajdhani font-bold tracking-widest text-[10px] shrink-0 ${getSubjectBadgeClasses(set.subject)}`}>
+                                {set.subject}
+                              </span>
+                              <h3 className="text-lg font-bold font-rajdhani tracking-wide text-[#E8E8E8] uppercase truncate flex-1">
+                                {set.title}
+                              </h3>
+                            </div>
+                            {/* Tag Row: Type & Custom Tags (Aligned with Date) */}
+                            <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                              <span className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]">
+                                {set.deckType === 'mixed' ? 'MIX' : set.deckType === 'mcq' ? 'MCQ' : 'FC'}
+                              </span>
+                              {set.tags && set.tags.length > 0 && set.tags.map(tag => (
+                                <span 
+                                  key={tag}
+                                  className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+ 
+                          {/* Right Column: Administrative Info */}
+                          <div className="flex flex-col items-end gap-1.5 shrink-0">
+                            {/* Items Tag */}
+                            <span className="w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] text-[#E8E8E8] font-rajdhani font-bold tracking-widest text-[10px] shrink-0 uppercase whitespace-nowrap">
+                              {set.count} ITEMS
+                            </span>
+                            {/* Date String */}
+                            <span className="text-[10px] text-gray-500 uppercase font-['IBM_Plex_Mono'] tracking-widest">
+                              {set.createdAt ? new Date(set.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
+                            </span>
+                          </div>
+                        </div>
+ 
+                          {/* Deck Description */}
+                          {set.description && set.description.trim() !== "" && (
+                            <p className="text-[11px] text-gray-400 font-['IBM_Plex_Mono'] leading-relaxed mt-2 line-clamp-2 uppercase pr-4">
+                              {set.description}
+                            </p>
+                          )}
+ 
+                        {/* Bottom Row: Progress and Actions */}
+                        <div className="flex justify-between items-end mt-4 gap-4">
+                          {/* Left Side: Progress Bar (Condensed Width) */}
+                          <div className="flex-1 max-w-[200px]">
+                            <div className="flex justify-between text-[10px] font-rajdhani tracking-widest mb-1 uppercase text-gray-500">
+                              <span>MASTERY</span>
+                              <span className="text-[#00FF41] font-bold">{set.mastery}%</span>
+                            </div>
+                            <div className="w-full bg-[#111] h-1 rounded-full overflow-hidden">
+                              <motion.div 
+                                initial={{ width: 0 }}
+                                animate={{ width: `${set.mastery}%` }}
+                                className="h-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.4)]"
+                              />
+                            </div>
+                          </div>
+ 
+                          {/* Right Side: Action Buttons */}
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); navigate(`/edit-deck/${set.id}`) }}
+                              className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
+                              title="Edit Deck"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            {set.id !== 'set-1' && (
+                              <button 
+                                onClick={(e) => { e.stopPropagation(); setSetToDelete(set); }}
+                                className="p-2 bg-[#111] border border-[#333] hover:border-red-500/50 text-gray-500 hover:text-red-500 rounded transition-colors"
+                                title="Delete Set"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); handleOpenLearn(set.id); }}
+                              className="w-[105px] py-2 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                            >
+                              <Play className="w-3 h-3" />
+                              Learn
+                            </button>
+                            <button 
+                              onClick={(e) => { e.stopPropagation(); handleOpenTest(set.id); }}
+                              className="w-[105px] py-2 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                            >
+                              <Trophy className="w-3 h-3" />
+                              Test
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
               )}
-
-            {/* Bottom Row: Progress and Actions */}
-            <div className="flex justify-between items-end mt-4 gap-4">
-              {/* Left Side: Progress Bar (Condensed Width) */}
-              <div className="flex-1 max-w-[200px]">
-                <div className="flex justify-between text-[10px] font-rajdhani tracking-widest mb-1 uppercase text-gray-500">
-                  <span>MASTERY</span>
-                  <span className="text-[#00FF41] font-bold">{set.mastery}%</span>
-                </div>
-                <div className="w-full bg-[#111] h-1 rounded-full overflow-hidden">
-                  <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${set.mastery}%` }}
-                    className="h-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.4)]"
-                  />
-                </div>
-              </div>
-
-              {/* Right Side: Action Buttons */}
-              <div className="flex items-center gap-2 shrink-0">
-                <button 
-                  onClick={(e) => { e.stopPropagation(); navigate(`/edit-deck/${set.id}`) }}
-                  className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
-                  title="Edit Deck"
-                >
-                  <Pencil className="w-4 h-4" />
-                </button>
-                {set.id !== 'set-1' && (
-                  <button 
-                    onClick={(e) => { e.stopPropagation(); setSetToDelete(set); }}
-                    className="p-2 bg-[#111] border border-[#333] hover:border-red-500/50 text-gray-500 hover:text-red-500 rounded transition-colors"
-                    title="Delete Set"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
-                <button 
-                  onClick={(e) => { e.stopPropagation(); handleOpenLearn(set.id); }}
-                  className="w-[105px] py-2 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
-                >
-                  <Play className="w-3 h-3" />
-                  Learn
-                </button>
-                <button 
-                  onClick={(e) => { e.stopPropagation(); handleOpenTest(set.id); }}
-                  className="w-[105px] py-2 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
-                >
-                  <Trophy className="w-3 h-3" />
-                  Test
-                </button>
-              </div>
-            </div>
+            </AnimatePresence>
           </div>
         ))}
       </div>

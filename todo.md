@@ -1,7 +1,7 @@
 *For IMPROVEMENT TODO LIST MAY 11, 2026
 
 ***DECK EDITOR TAB***
-- insert equations (kind of how equation typing is in microsoft word)
+- insert equations (kind of how equation typing is in microsoft word) or symbolab/mathway
 - export function to export flashcard content in text
 
 ***FOLDER/NOTEBOOK FUNCTION FOR DECKS***

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { 
   Home, 
@@ -8,6 +8,7 @@ import {
   Upload,
   PlusCircle,
   FlaskConical,
+  Trophy,
   Zap,
   Settings,
   ChevronLeft,
@@ -19,13 +20,23 @@ import { TitleBar } from './TitleBar'
 
 export const AppShell: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false)
+  
+  // Track time spent in the app (every minute)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      import('../../services/db.service').then(({ dbService }) => {
+        dbService.updateTimeSpent(1)
+      })
+    }, 60000)
+    return () => clearInterval(interval)
+  }, [])
 
   const navItems = [
     { to: '/', label: 'Dashboard', icon: Home },
     { to: '/study', label: 'LooksFam', icon: Brain },
     { to: '/flashcards', label: 'Flashcards', icon: Layers },
-    { to: '/exam', label: 'Exam Mode', icon: FlaskConical },
-    { to: '/statistics', label: 'Statistics', icon: Zap },
+    { to: '/formulas', label: 'Formulas', icon: FlaskConical },
+    { to: '/exam', label: 'Exam Mode', icon: Trophy },
     { to: '/topics', label: 'Topics', icon: BookOpen },
     { to: '/add-decks', label: 'Add Decks', icon: PlusCircle },
     { to: '/settings', label: 'Settings', icon: Settings },

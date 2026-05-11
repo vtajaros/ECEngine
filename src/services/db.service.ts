@@ -77,6 +77,125 @@ export const dbService = {
     if (!result.success) {
       console.error('Failed to update progress', result.error)
     }
+
+    // Also record activity for today
+    await dbService.recordActivity()
+  },
+
+  recordActivity: async () => {
+    const today = new Date().toISOString().split('T')[0]
+    const sql = `
+      INSERT INTO study_activity (day, count) 
+      VALUES (?, 1) 
+      ON CONFLICT(day) DO UPDATE SET count = count + 1
+    `
+    await window.electron.db.run(sql, [today])
+  },
+
+  getActivityHistory: async (): Promise<Record<string, { count: number, timeSpent: number }>> => {
+    const res = await window.electron.db.query('SELECT day, count, time_spent FROM study_activity')
+    const history: Record<string, { count: number, timeSpent: number }> = {}
+    if (res.success && res.data) {
+      res.data.forEach((row: any) => {
+        history[row.day] = { 
+          count: row.count, 
+          timeSpent: row.time_spent || 0 
+        }
+      })
+    }
+    return history
+  },
+
+  updateTimeSpent: async (minutes: number) => {
+    const today = new Date().toISOString().split('T')[0]
+    const sql = `
+      INSERT INTO study_activity (day, time_spent) 
+      VALUES (?, ?) 
+      ON CONFLICT(day) DO UPDATE SET time_spent = time_spent + excluded.time_spent
+    `
+    await window.electron.db.run(sql, [today, minutes])
+  },
+
+  getDashboardStats: async () => {
+    // 1. Total cards studied (at least one repetition)
+    const studiedResult = await window.electron.db.query('SELECT COUNT(card_id) as count FROM progress WHERE repetitions > 0')
+    const totalStudied = studiedResult.data?.[0]?.count || 0
+
+    // 2. Cards due today
+    const dueResult = await window.electron.db.query("SELECT COUNT(id) as count FROM cards c LEFT JOIN progress p ON c.id = p.card_id WHERE p.next_review <= datetime('now') OR p.next_review IS NULL")
+    const dueToday = dueResult.data?.[0]?.count || 0
+
+    // 3. Accuracy Rate
+    const accResult = await window.electron.db.query('SELECT SUM(correct_count) as correct, SUM(total_count) as total FROM progress')
+    const accData = accResult.data?.[0]
+    const accuracy = accData?.total > 0 ? Math.round((accData.correct / accData.total) * 100) : 0
+
+    // 4. Streak
+    const datesResult = await window.electron.db.query("SELECT DISTINCT date(last_reviewed) as day FROM progress WHERE last_reviewed IS NOT NULL ORDER BY day DESC")
+    const dates = (datesResult.data || []).map((r: any) => r.day)
+    
+    let streak = 0
+    if (dates.length > 0) {
+      const today = new Date().toISOString().split('T')[0]
+      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+      
+      let currentIdx = 0
+      // If the latest review isn't today or yesterday, streak is 0
+      if (dates[0] !== today && dates[0] !== yesterday) {
+        streak = 0
+      } else {
+        streak = 1
+        for (let i = 0; i < dates.length - 1; i++) {
+          const d1 = new Date(dates[i])
+          const d2 = new Date(dates[i+1])
+          const diff = (d1.getTime() - d2.getTime()) / 86400000
+          if (diff === 1) {
+            streak++
+          } else {
+            break
+          }
+        }
+      }
+    }
+
+    return { totalStudied, dueToday, accuracy, streak }
+  },
+
+  getSubjectBreakdown: async () => {
+    const sql = `
+      SELECT subject, COUNT(id) as count 
+      FROM topics 
+      GROUP BY subject
+    `
+    const result = await window.electron.db.query(sql)
+    return result.data || []
+  },
+
+  getSubjectProgress: async () => {
+    const sql = `
+      SELECT 
+        t.subject, 
+        COUNT(c.id) as total, 
+        SUM(CASE WHEN p.repetitions >= 5 THEN 1 ELSE 0 END) as mastered 
+      FROM topics t 
+      JOIN cards c ON t.id = c.topic_id 
+      LEFT JOIN progress p ON c.id = p.card_id 
+      GROUP BY t.subject
+    `
+    const result = await window.electron.db.query(sql)
+    return result.data || []
+  },
+
+  getGlobalStats: async () => {
+    const decks = await window.electron.db.query('SELECT COUNT(id) as count FROM topics')
+    const cards = await window.electron.db.query('SELECT COUNT(id) as count FROM cards')
+    const internalized = await window.electron.db.query('SELECT COUNT(card_id) as count FROM progress WHERE repetitions >= 5')
+    
+    return {
+      totalDecks: decks.data?.[0]?.count || 0,
+      totalCards: cards.data?.[0]?.count || 0,
+      internalized: internalized.data?.[0]?.count || 0
+    }
   }
 }
 

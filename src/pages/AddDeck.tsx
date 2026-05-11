@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import {
-  X, Save, ArrowLeft, FileText, Upload, AlertCircle, Check, Trash2, Plus, Calculator, FlaskConical, Zap, Cpu, Layers, Wand2, GripVertical, ChevronDown, ChevronUp, AlertTriangle, RotateCcw, ImageIcon, Menu
+  X, Save, ArrowLeft, FileText, Upload, AlertCircle, Check, Trash2, Plus, Calculator, FlaskConical, Zap, Cpu, Layers, Wand2, GripVertical, ChevronDown, ChevronUp, AlertTriangle, RotateCcw, ImageIcon, Menu, Sigma, Type
 } from 'lucide-react'
 import { getSubjectFilterClasses } from '../lib/subjectColors'
 import { useNavigate, Link } from 'react-router-dom'
@@ -24,6 +24,18 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import 'mathlive'
+import type { MathfieldElement } from 'mathlive'
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'math-field': React.DetailedHTMLProps<
+        React.HTMLAttributes<MathfieldElement>, MathfieldElement
+      > & { [key: string]: any }
+    }
+  }
+}
 
 /* ------------------------------------------------------------------ */
 /*  Types & Constants                                                 */
@@ -83,9 +95,16 @@ const PREDEFINED_TAGS = [
 
 interface EditCard {
   id: string
-  type: 'mcq' | 'flashcard'
-  data: MCQEdit | FlashcardEdit
+  type: 'mcq' | 'flashcard' | 'formula'
+  data: MCQEdit | FlashcardEdit | FormulaEdit
   isNew?: boolean
+}
+
+interface FormulaEdit {
+  name: string
+  latex: string
+  description: string
+  variables: string
 }
 
 interface MCQEdit {
@@ -100,6 +119,23 @@ interface FlashcardEdit {
   front: string
   back: string
   imagePath?: string
+}
+
+const stripPlaceholders = (data: unknown): unknown => {
+  if (typeof data === 'string') {
+    return data.replace(/\\placeholder\{[^}]*\}/g, '').trim()
+  }
+  if (Array.isArray(data)) {
+    return data.map(item => stripPlaceholders(item))
+  }
+  if (typeof data === 'object' && data !== null) {
+    const result: Record<string, unknown> = {}
+    for (const key of Object.keys(data as object)) {
+      result[key] = stripPlaceholders((data as Record<string, unknown>)[key])
+    }
+    return result
+  }
+  return data
 }
 
 /* ------------------------------------------------------------------ */
@@ -685,6 +721,108 @@ interface CardRowProps {
   onError?: (msg: string) => void
 }
 
+interface MathInputFieldProps {
+  value: string
+  onChange: (val: string) => void
+  placeholder?: string
+  rows?: number
+  multiline?: boolean
+  defaultMathMode?: boolean
+}
+
+const MathInputField: React.FC<MathInputFieldProps> = ({
+  value, onChange, placeholder, rows = 3, multiline = true, defaultMathMode = false
+}) => {
+  const [mathMode, setMathMode] = useState(defaultMathMode)
+  const mathfieldRef = React.useRef<any>(null)
+
+  // Sync external value into math-field
+  useEffect(() => {
+    const el = mathfieldRef.current
+    if (!el || !mathMode) return
+    if (el.value !== value) el.value = value
+  }, [mathMode, value])
+
+  // Wire input event listener
+  useEffect(() => {
+    const el = mathfieldRef.current
+    if (!el || !mathMode) return
+    const handler = () => {
+      console.log('[RAW from MathLive]', el.value)
+      console.log('[typeof]', typeof el.value)
+      onChange(el.value)
+    }
+    el.addEventListener('input', handler)
+    return () => el.removeEventListener('input', handler)
+  }, [mathMode, onChange])
+
+  return (
+    <div className="relative flex flex-col gap-2 w-full flex-1">
+      <button
+        type="button"
+        onClick={() => setMathMode(m => !m)}
+        title={mathMode ? 'Switch to text mode' : 'Switch to equation mode'}
+        className="absolute top-2 right-2 z-10 flex items-center justify-center min-w-[28px] h-[24px] px-2 rounded-full bg-[var(--bg-elevated)] border border-[rgba(0,255,65,0.3)] text-[var(--accent-primary)] hover:bg-[rgba(0,255,65,0.1)] font-bold text-xs transition-colors shadow-sm"
+      >
+        {mathMode ? 'Aa' : '∑'}
+      </button>
+
+      {!mathMode ? (
+        multiline ? (
+          <textarea
+            rows={rows}
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            placeholder={placeholder}
+            className={`${textareaCls} pr-10`}
+          />
+        ) : (
+          <input
+            type="text"
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            placeholder={placeholder}
+            className={`${inputCls} pr-10`}
+          />
+        )
+      ) : (
+        <>
+          <math-field
+            ref={mathfieldRef}
+            virtual-keyboard-mode="onfocus"
+            style={{
+              width: '100%',
+              minHeight: multiline ? '100px' : '48px',
+              background: 'var(--bg-secondary)',
+              border: '1px solid rgba(0,255,65,0.3)',
+              borderRadius: '6px',
+              padding: '12px',
+              paddingRight: '40px',
+              color: 'var(--text-primary)',
+              fontSize: '1rem',
+              fontFamily: 'IBM Plex Mono, monospace',
+              '--keyboard-zindex': '99999',
+            } as React.CSSProperties & Record<string, string>}
+          />
+          {value.trim().length > 0 && (
+            <div className="bg-[var(--bg-elevated)] border border-[rgba(0,255,65,0.1)] rounded-lg p-3">
+              <div className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-[#888] mb-1">Preview</div>
+              {(() => {
+                try {
+                  const rendered = renderMath(value)
+                  return <div className="text-[#E8E8E8]" dangerouslySetInnerHTML={{ __html: rendered }} />
+                } catch {
+                  return <code className="text-[#E8E8E8] break-all">{value}</code>
+                }
+              })()}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
 const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?: boolean; onError?: (msg: string) => void }> = ({ data, onChange, isNew, onError }) => {
   const set = (patch: Partial<MCQEdit>) => onChange({ ...data, ...patch })
   const setChoice = (i: number, val: string) => {
@@ -693,13 +831,6 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
     set({ choices })
   }
   const labels = ['A', 'B', 'C', 'D']
-  
-  const inputRef = React.useRef<HTMLTextAreaElement>(null)
-  useEffect(() => {
-    if (isNew && inputRef.current) {
-      inputRef.current.focus()
-    }
-  }, [isNew])
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -730,54 +861,63 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-start gap-4">
-        <div className="flex-1">
+      {/* QUESTION (full width) */}
+      <div className="relative w-full">
+        <div className="flex items-center justify-between mb-1">
           <Label>Question</Label>
-          <textarea ref={inputRef} rows={3} className={textareaCls} value={data.question}
-            onChange={e => set({ question: e.target.value })} placeholder="Enter question text..." />
+          <div className="flex items-center gap-2 mr-10 z-10 relative">
+            {data.imagePath ? (
+              <div className="relative group flex items-center justify-center">
+                <img src={`ece-app://${data.imagePath}`} alt="Question image" className="w-6 h-6 object-cover rounded border border-[#333]" />
+                <button 
+                  onClick={() => set({ imagePath: undefined })}
+                  className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Remove image"
+                >
+                  <X size={10} />
+                </button>
+              </div>
+            ) : (
+              <label className="cursor-pointer text-[#888] hover:text-[#00FF41] transition-colors" title="Add Image">
+                <ImageIcon size={18} />
+                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+              </label>
+            )}
+          </div>
         </div>
-        <div className="shrink-0 flex flex-col items-center justify-start mt-5">
-          {data.imagePath ? (
-            <div className="relative group">
-              <img src={`ece-app://${data.imagePath}`} alt="Question image" className="w-24 h-24 object-cover rounded border border-[#333]" />
-              <button 
-                onClick={() => set({ imagePath: undefined })}
-                className="absolute -top-2 -right-2 bg-[#FF4B4B] text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-              >
-                <X size={12} />
-              </button>
-            </div>
-          ) : (
-            <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#888] rounded transition-colors bg-[#0a0a0a]">
-              <ImageIcon size={24} />
-              <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest mt-2 font-bold text-center leading-tight">Add<br/>Image</span>
-              <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-            </label>
-          )}
-        </div>
+        <MathInputField
+          value={data.question}
+          onChange={val => set({ question: val })}
+          placeholder="Enter question text..."
+          rows={4}
+          multiline={true}
+        />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         {data.choices.map((choice, i) => (
-          <div key={i}>
+          <div key={i} className="flex flex-col">
             <Label>Choice {labels[i]}</Label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-start gap-2">
               <input
                 type="radio"
                 name={`ans-${data.question.slice(0, 8) || Math.random()}`}
                 checked={data.answer === i}
                 onChange={() => set({ answer: i })}
-                className="accent-[#00FF41] w-4 h-4 flex-shrink-0 cursor-pointer"
+                className="accent-[#00FF41] w-4 h-4 flex-shrink-0 cursor-pointer mt-3"
               />
-              <input type="text" className={inputCls} value={choice}
-                onChange={e => setChoice(i, e.target.value)}
-                placeholder={`Choice ${labels[i]}...`} />
+              <MathInputField
+                value={choice}
+                onChange={val => setChoice(i, val)}
+                placeholder={`Choice ${labels[i]}...`}
+                multiline={false}
+              />
             </div>
           </div>
         ))}
       </div>
 
-      <div>
+      <div className="w-full">
         <Label>Explanation (optional)</Label>
         <textarea rows={2} className={textareaCls} value={data.explanation}
           onChange={e => set({ explanation: e.target.value })} placeholder="Explanation for the correct answer..." />
@@ -786,14 +926,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
   )
 }
 
-const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit) => void; isNew?: boolean; onError?: (msg: string) => void }> = ({ data, onChange, isNew, onError }) => {
-  const inputRef = React.useRef<HTMLTextAreaElement>(null)
-  useEffect(() => {
-    if (isNew && inputRef.current) {
-      inputRef.current.focus()
-    }
-  }, [isNew])
-
+const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit) => void; isNew?: boolean; onError?: (msg: string) => void }> = ({ data, onChange, onError }) => {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -823,40 +956,77 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-start gap-4">
-        <div className="flex-1 grid grid-cols-2 gap-4">
-          <div>
-            <Label>Front / Term</Label>
-            <textarea ref={inputRef} rows={4} className={textareaCls} value={data.front}
-              onChange={e => onChange({ ...data, front: e.target.value })} placeholder="Term or question..." />
-          </div>
-          <div>
-            <Label>Back / Definition</Label>
-            <textarea rows={4} className={textareaCls} value={data.back}
-              onChange={e => onChange({ ...data, back: e.target.value })} placeholder="Definition or answer..." />
+      {/* FRONT (full width) */}
+      <div className="relative w-full">
+        <div className="flex items-center justify-between mb-1">
+          <Label>Front / Term</Label>
+          <div className="flex items-center gap-2 mr-10 z-10 relative">
+            {data.imagePath ? (
+              <div className="relative group flex items-center justify-center">
+                <img src={`ece-app://${data.imagePath}`} alt="Flashcard image" className="w-6 h-6 object-cover rounded border border-[#333]" />
+                <button 
+                  onClick={() => onChange({ ...data, imagePath: undefined })}
+                  className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Remove image"
+                >
+                  <X size={10} />
+                </button>
+              </div>
+            ) : (
+              <label className="cursor-pointer text-[#888] hover:text-[#00FF41] transition-colors" title="Add Image">
+                <ImageIcon size={18} />
+                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+              </label>
+            )}
           </div>
         </div>
-        <div className="shrink-0 flex flex-col items-center justify-start mt-5">
-          {data.imagePath ? (
-            <div className="relative group">
-              <img src={`ece-app://${data.imagePath}`} alt="Flashcard image" className="w-24 h-24 object-cover rounded border border-[#333]" />
-              <button 
-                onClick={() => onChange({ ...data, imagePath: undefined })}
-                className="absolute -top-2 -right-2 bg-[#FF4B4B] text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-              >
-                <X size={12} />
-              </button>
-            </div>
-          ) : (
-            <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#888] rounded transition-colors bg-[#0a0a0a]">
-              <ImageIcon size={24} />
-              <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest mt-2 font-bold text-center leading-tight">Add<br/>Image</span>
-              <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-            </label>
-          )}
-        </div>
+        <MathInputField
+          value={data.front}
+          onChange={val => onChange({ ...data, front: val })}
+          placeholder="Term or question..."
+          rows={5}
+          multiline={true}
+        />
+      </div>
+
+      {/* BACK (full width) */}
+      <div className="relative w-full">
+        <Label>Back / Definition</Label>
+        <MathInputField
+          value={data.back}
+          onChange={val => onChange({ ...data, back: val })}
+          placeholder="Definition or answer..."
+          rows={5}
+          multiline={true}
+        />
       </div>
     </div>
+  )
+}
+
+const FormulaForm: React.FC<{
+  data: FormulaEdit
+  onChange: (d: FormulaEdit) => void
+  isNew?: boolean
+  onError?: (msg: string) => void
+}> = ({ data, onChange, isNew, onError }) => {
+  const mappedData: FlashcardEdit = {
+    front: data.name,
+    back: data.latex,
+    imagePath: undefined,
+  }
+
+  return (
+    <FlashcardForm
+      data={mappedData}
+      isNew={isNew}
+      onError={onError}
+      onChange={(next) => onChange({
+        ...data,
+        name: next.front,
+        latex: next.back,
+      })}
+    />
   )
 }
 
@@ -865,7 +1035,9 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
 
   const preview = card.type === 'mcq'
     ? (card.data as MCQEdit).question || '(empty question)'
-    : (card.data as FlashcardEdit).front || '(empty term)'
+    : card.type === 'formula'
+      ? (card.data as FormulaEdit).name || '(empty formula)'
+      : (card.data as FlashcardEdit).front || '(empty term)'
 
   const truncated = preview.length > 72 ? preview.slice(0, 72) + '…' : preview
 
@@ -894,9 +1066,11 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
         <span className={`text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded border uppercase flex-shrink-0 ${
           card.type === 'mcq'
             ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
-            : 'text-[#00FF41] border-[#00FF41]/30 bg-[#00FF41]/10'
+            : card.type === 'formula'
+              ? 'text-[#A855F7] border-[#A855F7]/30 bg-[#A855F7]/10'
+              : 'text-[#00FF41] border-[#00FF41]/30 bg-[#00FF41]/10'
         }`}>
-          {card.type === 'mcq' ? 'MCQ' : 'FC'}
+          {card.type === 'mcq' ? 'MCQ' : card.type === 'formula' ? 'FM' : 'FC'}
         </span>
         <button
           onClick={e => { e.stopPropagation(); onDelete(card.id) }}
@@ -924,6 +1098,12 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
                   onChange={d => onUpdate(card.id, { data: d })}
                   isNew={card.isNew}
                   onError={onError}
+                />
+              ) : card.type === 'formula' ? (
+                <FormulaForm
+                  data={card.data as FormulaEdit}
+                  onChange={d => onUpdate(card.id, { data: d })}
+                  isNew={card.isNew}
                 />
               ) : (
                 <FlashcardForm
@@ -978,23 +1158,37 @@ export default function AddDeck() {
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [folderName, setFolderName] = useState('Uncategorized')
+  const [existingFolders, setExistingFolders] = useState<string[]>([])
   const [subject, setSubject] = useState<Subject>('Electronics Engineering')
   const [deckTags, setDeckTags] = useState<Set<string>>(new Set())
   const [customTagInput, setCustomTagInput] = useState('')
 
-  const [deckType, setDeckType] = useState<'mcq' | 'flashcard'>('mcq')
+  const [deckType, setDeckType] = useState<'mcq' | 'flashcard' | 'formula'>('mcq')
   const [cards, setCards] = useState<EditCard[]>([])
   
   const [importModalType, setImportModalType] = useState<'none' | 'mcq' | 'flashcard'>('none')
   const [saving, setSaving] = useState(false)
   
   const [showConfirmTypeModal, setShowConfirmTypeModal] = useState(false)
-  const [pendingType, setPendingType] = useState<'mcq' | 'flashcard' | null>(null)
+  const [pendingType, setPendingType] = useState<'mcq' | 'flashcard' | 'formula' | null>(null)
 
   const [historyStack, setHistoryStack] = useState<EditCard[][]>([])
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
   const cardsRef = React.useRef(cards)
   useEffect(() => { cardsRef.current = cards }, [cards])
+
+  // Fetch existing folders for autocomplete
+  useEffect(() => {
+    async function fetchFolders() {
+      if (!window.electron?.db) return
+      const r = await window.electron.db.query('SELECT DISTINCT folder_name FROM topics ORDER BY folder_name')
+      if (r.success && r.data) {
+        setExistingFolders(r.data.map((row: any) => row.folder_name).filter(Boolean))
+      }
+    }
+    fetchFolders()
+  }, [])
 
   const saveSnapshot = useCallback((currentCards: EditCard[]) => {
     setHistoryStack(prev => {
@@ -1036,6 +1230,9 @@ export default function AddDeck() {
       if (card.type === 'mcq') {
         const d = card.data as MCQEdit
         return [d.question, ...d.choices].join(' ')
+      } else if (card.type === 'formula') {
+        const d = card.data as FormulaEdit
+        return [d.name, d.latex, d.description, d.variables].join(' ')
       } else {
         const d = card.data as FlashcardEdit
         return [d.front, d.back].join(' ')
@@ -1073,17 +1270,20 @@ export default function AddDeck() {
         isNew: true,
         data: deckType === 'mcq' 
           ? { question: '', choices: ['', '', '', ''], answer: 0, explanation: '' }
-          : { front: '', back: '' }
+          : deckType === 'formula'
+            ? { name: '', latex: '', description: '', variables: '' }
+            : { front: '', back: '' }
       }))
       setCards(initialCards)
     }
   }, [deckType, cards.length])
 
   // Handle deck type toggle (warn if switching with filled data)
-  const performTypeChange = (newType: 'mcq' | 'flashcard'): boolean => {
+  const performTypeChange = (newType: 'mcq' | 'flashcard' | 'formula'): boolean => {
     if (newType === deckType) return true
     const hasData = cards.some(c => {
       if (c.type === 'mcq') return (c.data as MCQEdit).question.trim().length > 0;
+      if (c.type === 'formula') return (c.data as FormulaEdit).name.trim().length > 0;
       return (c.data as FlashcardEdit).front.trim().length > 0;
     })
     
@@ -1100,13 +1300,15 @@ export default function AddDeck() {
       isNew: true,
       data: newType === 'mcq' 
         ? { question: '', choices: ['', '', '', ''], answer: 0, explanation: '' }
-        : { front: '', back: '' }
+        : newType === 'formula'
+          ? { name: '', latex: '', description: '', variables: '' }
+          : { front: '', back: '' }
     }))
     setCards(initialCards)
     return true
   }
 
-  const handleDeckTypeChange = (newType: 'mcq' | 'flashcard') => {
+  const handleDeckTypeChange = (newType: 'mcq' | 'flashcard' | 'formula') => {
     performTypeChange(newType)
   }
 
@@ -1121,7 +1323,9 @@ export default function AddDeck() {
       isNew: true,
       data: newType === 'mcq' 
         ? { question: '', choices: ['', '', '', ''], answer: 0, explanation: '' }
-        : { front: '', back: '' }
+        : newType === 'formula'
+          ? { name: '', latex: '', description: '', variables: '' }
+          : { front: '', back: '' }
     }))
     setCards(initialCards)
     setShowConfirmTypeModal(false)
@@ -1141,7 +1345,9 @@ export default function AddDeck() {
       isNew: true,
       data: deckType === 'mcq' 
         ? { question: '', choices: ['', '', '', ''], answer: 0, explanation: '' }
-        : { front: '', back: '' }
+        : deckType === 'formula'
+          ? { name: '', latex: '', description: '', variables: '' }
+          : { front: '', back: '' }
     }
     setCards(prev => [...prev, newCard])
   }
@@ -1184,6 +1390,7 @@ export default function AddDeck() {
     setCards(prev => {
       const isAllEmpty = prev.every(c => {
         if (c.type === 'mcq') return !(c.data as MCQEdit).question.trim();
+        if (c.type === 'formula') return !(c.data as FormulaEdit).name.trim();
         return !(c.data as FlashcardEdit).front.trim();
       });
       if (isAllEmpty) return newRows;
@@ -1206,6 +1413,7 @@ export default function AddDeck() {
     setCards(prev => {
       const isAllEmpty = prev.every(c => {
         if (c.type === 'mcq') return !(c.data as MCQEdit).question.trim();
+        if (c.type === 'formula') return !(c.data as FormulaEdit).name.trim();
         return !(c.data as FlashcardEdit).front.trim();
       });
       if (isAllEmpty) return newRows;
@@ -1218,6 +1426,9 @@ export default function AddDeck() {
     if (card.type === 'mcq') {
       const d = card.data as MCQEdit
       return d.question.trim().length > 0 && d.choices.every(c => c.trim().length > 0)
+    } else if (card.type === 'formula') {
+      const d = card.data as FormulaEdit
+      return d.name.trim().length > 0 && d.latex.trim().length > 0
     } else {
       const d = card.data as FlashcardEdit
       return d.front.trim().length > 0 && d.back.trim().length > 0
@@ -1232,21 +1443,32 @@ export default function AddDeck() {
     setSaving(true)
     
     const run = (sql: string, params: any[] = []) => (window as any).electron.db.run(sql, params)
+    const serializeCardData = (data: any) => {
+      // Prevent double encode if data happens to be a string already
+      if (typeof data === 'string') return data
+      return JSON.stringify(data)
+    }
 
     try {
       await run('BEGIN TRANSACTION')
 
       const topicId = 'topic_' + Date.now().toString(36)
       await run(
-        `INSERT INTO topics (id, name, subject, description, tags) VALUES (?, ?, ?, ?, ?)`,
-        [topicId, title.trim(), subject, description.trim(), JSON.stringify(Array.from(deckTags))]
+        `INSERT INTO topics (id, name, subject, description, tags, folder_name) VALUES (?, ?, ?, ?, ?, ?)`,
+        [topicId, title.trim(), subject, description.trim(), JSON.stringify(Array.from(deckTags)), folderName.trim()]
       )
 
       for (const card of validCards) {
         const cardId = 'card_' + Math.random().toString(36).substr(2, 9)
+        const cleanedData = stripPlaceholders(card.data)
+        if (card.type === 'mcq') {
+          console.log('[SAVE choices type]', Array.isArray((cleanedData as any).choices), (cleanedData as any).choices)
+        }
+        const dataJson = serializeCardData(cleanedData)
+        console.log('[before save]', dataJson)
         await run(
           `INSERT INTO cards (id, topic_id, type, data, is_custom) VALUES (?, ?, ?, ?, ?)`,
-          [cardId, topicId, card.type, JSON.stringify(card.data), 1]
+          [cardId, topicId, card.type, dataJson, 1]
         )
       }
 
@@ -1343,6 +1565,33 @@ export default function AddDeck() {
               placeholder="Add a description... (optional)"
               className="w-full bg-transparent text-[#aaa] text-sm font-['IBM_Plex_Mono'] pb-2 focus:outline-none placeholder:text-[#555] transition-colors"
             />
+            <div className="mt-2 pt-2 border-t border-[#222]">
+              <label className="text-[10px] text-[#555] font-['Rajdhani'] font-bold uppercase tracking-widest mb-1 block">
+                Folder / Category
+              </label>
+              <div className="relative group/folder">
+                <input
+                  value={folderName}
+                  list="folder-suggestions"
+                  onChange={e => setFolderName(e.target.value)}
+                  placeholder='e.g. "Electronics Review", "Midterms"...'
+                  className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-[#E8E8E8] text-sm font-['IBM_Plex_Mono'] focus:border-[#00FF41] focus:bg-[#111] outline-none transition-colors pr-8"
+                />
+                {folderName && (
+                  <button 
+                    onClick={() => setFolderName('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-[#444] hover:text-[#00FF41] transition-colors"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+                <datalist id="folder-suggestions">
+                  {existingFolders.map(f => (
+                    <option key={f} value={f} />
+                  ))}
+                </datalist>
+              </div>
+            </div>
           </div>
 
           <div>
@@ -1444,12 +1693,12 @@ export default function AddDeck() {
         </section>
 
         {/* 2. Creation Controls */}
-        <section className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <section className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           {/* Deck Type Toggle */}
-          <div className="flex bg-[#111] border border-[#222] p-1 rounded-lg">
+          <div className="flex shrink-0 flex-wrap bg-[#111] border border-[#222] p-1 rounded-lg gap-1">
             <button
               onClick={() => handleDeckTypeChange('mcq')}
-              className={`px-6 py-2 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all ${
+              className={`px-6 py-2 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${
                 deckType === 'mcq'
                   ? 'bg-[#222] text-[#00FF41] shadow-sm'
                   : 'text-[#888] hover:text-[#ccc]'
@@ -1459,7 +1708,7 @@ export default function AddDeck() {
             </button>
             <button
               onClick={() => handleDeckTypeChange('flashcard')}
-              className={`px-6 py-2 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all ${
+              className={`px-6 py-2 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${
                 deckType === 'flashcard'
                   ? 'bg-[#222] text-[#00FF41] shadow-sm'
                   : 'text-[#888] hover:text-[#ccc]'
@@ -1467,10 +1716,20 @@ export default function AddDeck() {
             >
               Flashcard Set
             </button>
+            <button
+              onClick={() => handleDeckTypeChange('formula')}
+              className={`px-6 py-2 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${
+                deckType === 'formula'
+                  ? 'bg-[#222] text-[#00FF41] shadow-sm'
+                  : 'text-[#888] hover:text-[#ccc]'
+              }`}
+            >
+              Formula Set
+            </button>
           </div>
 
           {/* Import Buttons */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 sm:justify-end">
             <button
               onClick={() => openImportModal('mcq')}
               className="flex items-center gap-2 px-4 py-2 rounded border border-[#333] bg-[#161616] text-[#888] hover:text-[#00FF41] hover:border-[#00FF41]/50 font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all"
@@ -1574,7 +1833,7 @@ export default function AddDeck() {
               </div>
               <div className="p-6">
                 <p className="text-[#CCCCCC] font-['Rajdhani'] tracking-wider mb-4 leading-relaxed text-base">
-                  Switching to <strong className="text-[#E8E8E8] font-bold">{pendingType === 'mcq' ? 'MCQ Set' : 'Flashcard Set'}</strong> will permanently clear all current cards in this editor. This action cannot be undone.
+                  Switching to <strong className="text-[#E8E8E8] font-bold">{pendingType === 'mcq' ? 'MCQ Set' : pendingType === 'flashcard' ? 'Flashcard Set' : 'Formula Set'}</strong> will permanently clear all current cards in this editor. This action cannot be undone.
                 </p>
               </div>
               <div className="p-6 border-t border-[#222] bg-[#111] flex justify-end gap-3">

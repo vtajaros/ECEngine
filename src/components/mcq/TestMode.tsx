@@ -7,6 +7,9 @@ import { renderMath } from '../../lib/latex'
 import { ExplanationPanel } from '../ui/ExplanationPanel'
 import { Tooltip } from '../ui/Tooltip'
 import Toast from '../ui/Toast'
+import { useBlocker } from 'react-router-dom'
+import { LeaveConfirmModal } from '../ui/LeaveConfirmModal'
+import { useRef } from 'react'
 
 
 interface TestModeProps {
@@ -52,8 +55,20 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
   const [score, setScore] = useState({ correct: 0, total: 0 })
   const [zoomedImage, setZoomedImage] = useState<string | null>(null)
 
-  // AI Explanation state — stores the index of the currently open panel (null = all closed)
+   // AI Explanation state — stores the index of the currently open panel (null = all closed)
   const [openExplanationId, setOpenExplanationId] = useState<number | null>(null)
+
+  const [showExitConfirm, setShowExitConfirm] = useState(false)
+
+  // Question tracking refs for scrolling
+  const questionRefs = useRef<(HTMLDivElement | null)[]>([])
+  const [currentVisibleIndex, setCurrentVisibleIndex] = useState(0)
+
+  // Navigation Blocking logic
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      viewState === 'test' && currentLocation.pathname !== nextLocation.pathname
+  )
 
   // Reset the explanation panel when transitioning between views
   useEffect(() => {
@@ -128,6 +143,29 @@ Please explain:
     return () => clearInterval(interval)
   }, [viewState])
 
+  // Intersection Observer to track which question is in view
+  useEffect(() => {
+    if (viewState !== 'test' || testCards.length === 0) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleEntry = entries.find(e => e.isIntersecting)
+        if (visibleEntry) {
+          const index = questionRefs.current.findIndex(ref => ref === visibleEntry.target)
+          if (index !== -1) setCurrentVisibleIndex(index)
+        }
+      },
+      { threshold: 0.5, rootMargin: '-100px 0px -50% 0px' }
+    )
+
+    questionRefs.current.forEach(ref => ref && observer.observe(ref))
+    return () => observer.disconnect()
+  }, [viewState, testCards])
+
+  const scrollToQuestion = (index: number) => {
+    questionRefs.current[index]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+
   const handleSelectChoice = (cardId: string, choiceIndex: number) => {
     if (viewState !== 'test') return
 
@@ -182,10 +220,13 @@ Please explain:
 
   // Render top bar
   const renderTopBar = () => (
-    <div className="fixed top-0 left-0 w-full bg-[var(--bg-secondary)] border-b border-[var(--bg-card)] shadow-lg z-50 px-6 py-4 flex items-center justify-between">
+    <div className="sticky top-0 left-0 w-full bg-[var(--bg-secondary)] border-b border-[var(--bg-card)] shadow-lg z-50 px-6 py-4 flex items-center justify-between shrink-0">
       <div className="flex items-center gap-6">
         <button 
-          onClick={onExit}
+          onClick={() => {
+            if (viewState === 'test') setShowExitConfirm(true)
+            else onExit()
+          }}
           className="text-[#888] hover:text-[var(--text-primary)] transition-colors flex items-center justify-center p-2 rounded hover:bg-[#222]"
           title="Exit Test"
         >
@@ -328,11 +369,82 @@ Please explain:
     <div className="h-full bg-[var(--bg-primary)] flex flex-col relative overflow-hidden">
       {renderTopBar()}
 
-      <div className="flex-1 overflow-y-auto mt-20 p-6 lg:p-12 pb-32">
+      <LeaveConfirmModal 
+        isOpen={blocker.state === 'blocked' || showExitConfirm}
+        onConfirm={() => {
+          if (blocker.state === 'blocked') {
+            blocker.proceed && blocker.proceed()
+          } else {
+            setShowExitConfirm(false)
+            onExit()
+          }
+        }}
+        onCancel={() => {
+          if (blocker.state === 'blocked') {
+            blocker.reset && blocker.reset()
+          } else {
+            setShowExitConfirm(false)
+          }
+        }}
+      />
+
+      {/* Question Tracker Strip */}
+      {viewState === 'test' && (
+        <div className="sticky top-[72px] left-0 w-full bg-[#111] border-b border-[#222] z-40 h-[48px] flex items-center px-6 overflow-x-auto scrollbar-hide shadow-md shrink-0">
+          <div className="flex items-center gap-2 min-w-max mx-auto">
+            {testCards.map((card, idx) => {
+              const isAnswered = answers[card.id] !== undefined
+              const isCurrent = currentVisibleIndex === idx
+              
+              return (
+                <button
+                  key={card.id}
+                  onClick={() => scrollToQuestion(idx)}
+                  className="relative group p-1"
+                >
+                  <div
+                    className={`
+                      relative w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold font-['IBM_Plex_Mono'] transition-all border z-10
+                      ${isAnswered 
+                        ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)] text-black' 
+                        : 'bg-transparent border-[#444] text-[#888] hover:border-[#666]'
+                      }
+                    `}
+                  >
+                    {idx + 1}
+                    
+                    {/* Pulsing ring for current question */}
+                    {isCurrent && (
+                      <motion.div 
+                        initial={{ scale: 0.8, opacity: 0.5 }}
+                        animate={{ scale: 1.4, opacity: 0 }}
+                        transition={{ repeat: Infinity, duration: 1.5, ease: "easeOut" }}
+                        className="absolute inset-0 border-2 border-[var(--accent-primary)] rounded-full z-[-1]"
+                      />
+                    )}
+                  </div>
+                  
+                  {isCurrent && (
+                    <div className="absolute inset-0 border-2 border-[var(--accent-primary)] rounded-full scale-110" />
+                  )}
+                  
+                  {/* Tooltip hint on hover */}
+                  <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-[#222] text-white text-[9px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 uppercase tracking-widest border border-[#444]">
+                    Question {idx + 1}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className={`flex-1 overflow-y-auto p-6 lg:p-12 pb-32`}>
         <div className="w-full max-w-4xl mx-auto flex flex-col gap-6">
         {testCards.map((card, index) => {
           const mcq = card.data as MCQData
-          if (!mcq || !Array.isArray(mcq.choices) || mcq.choices.length !== 4) {
+          if (!mcq || typeof mcq === 'string' || !Array.isArray(mcq.choices) || mcq.choices.length !== 4) {
+            console.warn('[ECEngine] Card data parse error — card may have been saved with double-escaped LaTeX. Please re-save this card in Edit Deck.', card.id, card.data)
             return (
               <div key={card.id} style={{color: 'red', padding: 20}}>
                 DEBUG — Bad card data: {JSON.stringify(card.data)}
@@ -357,6 +469,7 @@ Please explain:
           return (
             <div 
               key={card.id} 
+              ref={el => questionRefs.current[index] = el}
               className={`flex-shrink-0 bg-[var(--bg-card)] border rounded-xl overflow-hidden shadow-lg transition-colors duration-300 relative
                 ${showFeedback 
                   ? (isCorrect ? 'border-[#00FF41]/30 bg-[#00FF41]/5' : (isAnswered ? 'border-[#FF003C]/30 bg-[#FF003C]/5' : 'border-[#333]')) 

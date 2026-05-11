@@ -46,6 +46,7 @@ interface DeckMeta {
   description: string
   subject: Subject
   tags: string
+  folderName: string
 }
 
 interface EditCard {
@@ -373,12 +374,14 @@ export default function EditDeck() {
     description: '',
     subject: 'ELECS',
     tags: '',
+    folderName: 'Uncategorized'
   })
   const [cards, setCards] = useState<EditCard[]>([])
   const [loading, setLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [originalCardIds, setOriginalCardIds] = useState<Set<string>>(new Set())
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+  const [existingFolders, setExistingFolders] = useState<string[]>([])
 
   const [historyStack, setHistoryStack] = useState<EditCard[][]>([])
   const cardsRef = React.useRef(cards)
@@ -415,6 +418,18 @@ export default function EditDeck() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [undo])
 
+  // Fetch folders for autocomplete
+  useEffect(() => {
+    async function fetchFolders() {
+      if (!window.electron?.db) return
+      const r = await window.electron.db.query('SELECT DISTINCT folder_name FROM topics ORDER BY folder_name')
+      if (r.success && r.data) {
+        setExistingFolders(r.data.map((row: any) => row.folder_name).filter(Boolean))
+      }
+    }
+    fetchFolders()
+  }, [])
+
   // ── Load from DB ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!deckId) return
@@ -422,7 +437,7 @@ export default function EditDeck() {
       try {
         setLoading(true)
         const topicRes = await window.electron.db.query(
-          'SELECT id, name, subject, description, tags FROM topics WHERE id = ?',
+          'SELECT id, name, subject, description, tags, folder_name FROM topics WHERE id = ?',
           [deckId]
         )
         if (topicRes.success && topicRes.data?.[0]) {
@@ -435,6 +450,7 @@ export default function EditDeck() {
             description: t.description || '',
             subject: subjectCode,
             tags: parsedTags,
+            folderName: t.folder_name || 'Uncategorized'
           })
         }
 
@@ -532,15 +548,16 @@ export default function EditDeck() {
           .filter(Boolean)
       )
       await run(
-        'UPDATE topics SET name = ?, description = ?, subject = ?, tags = ? WHERE id = ?',
-        [deckMeta.title, deckMeta.description, subjectFull, tagsJson, deckId]
+        'UPDATE topics SET name = ?, description = ?, subject = ?, tags = ?, folder_name = ? WHERE id = ?',
+        [deckMeta.title, deckMeta.description, subjectFull, tagsJson, deckMeta.folderName.trim(), deckId]
       )
 
       // 2. Partition cards into updates vs inserts
       const currentIds = new Set(cards.filter(c => !c.id.startsWith('new_')).map(c => c.id))
 
       for (const card of cards) {
-        const dataJson = JSON.stringify(card.data)
+        // Prevent double encode if data happens to be a string already
+        const dataJson = typeof card.data === 'string' ? card.data : JSON.stringify(card.data)
         if (card.id.startsWith('new_')) {
           // INSERT
           await run(
@@ -657,7 +674,7 @@ export default function EditDeck() {
             <Label>Title</Label>
             <input
               type="text"
-              className={`${inputCls} text-xl font-bold`}
+              className={`${inputCls} text-xl`}
               value={deckMeta.title}
               onChange={e => setDeckMeta(m => ({ ...m, title: e.target.value }))}
               placeholder="Deck title..."
@@ -673,6 +690,33 @@ export default function EditDeck() {
               onChange={e => setDeckMeta(m => ({ ...m, description: e.target.value }))}
               placeholder="Short description..."
             />
+          </div>
+ 
+          <div>
+            <Label>Folder / Category</Label>
+            <div className="relative group/folder">
+              <input
+                type="text"
+                list="folder-suggestions"
+                className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-[#E8E8E8] font-['IBM_Plex_Mono'] text-sm focus:border-[#00FF41] focus:bg-[#111] outline-none transition-colors pr-8"
+                value={deckMeta.folderName}
+                onChange={e => setDeckMeta(m => ({ ...m, folderName: e.target.value }))}
+                placeholder="e.g. Midterms, AC Circuits..."
+              />
+              {deckMeta.folderName && (
+                <button 
+                  onClick={() => setDeckMeta(m => ({ ...m, folderName: '' }))}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-[#444] hover:text-[#00FF41] transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              )}
+              <datalist id="folder-suggestions">
+                {existingFolders.map(f => (
+                  <option key={f} value={f} />
+                ))}
+              </datalist>
+            </div>
           </div>
 
           <div>

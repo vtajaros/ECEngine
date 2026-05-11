@@ -6,6 +6,8 @@ import { renderMath } from '../../lib/latex'
 import Toast from '../ui/Toast'
 import { ExplanationPanel } from '../ui/ExplanationPanel'
 import { Tooltip } from '../ui/Tooltip'
+import { LeaveConfirmModal } from '../ui/LeaveConfirmModal'
+import { useBlocker } from 'react-router-dom'
 
 
 // Partitioned learning mode handling the custom "LEARN" flow
@@ -63,8 +65,16 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
   const [zoomedImage, setZoomedImage] = useState<string | null>(null)
   const [showToast, setShowToast] = useState(false)
   const [explanationOpen, setExplanationOpen] = useState(false)
-  // Summary view: which question row has its panel open (null = all closed)
+    // Summary view: which question row has its panel open (null = all closed)
   const [openExplanationId, setOpenExplanationId] = useState<number | null>(null)
+
+  const [showExitConfirm, setShowExitConfirm] = useState(false)
+
+  // Navigation Blocking logic
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      viewState !== 'summary' && currentLocation.pathname !== nextLocation.pathname
+  )
 
   // Reset the explanation panel when the round changes
   useEffect(() => {
@@ -461,7 +471,8 @@ Please explain:
   // Guards
   if (!currentCard || !isMcq) return <div className="text-white p-8">Only MCQ implemented for Learn Mode stub.</div>
   
-  if (!mcqData || !Array.isArray(mcqData.choices) || mcqData.choices.length !== 4) {
+  if (!mcqData || typeof mcqData === 'string' || !Array.isArray(mcqData.choices) || mcqData.choices.length !== 4) {
+    console.warn('[ECEngine] Card data parse error — card may have been saved with double-escaped LaTeX. Please re-save this card in Edit Deck.', currentCard.id, currentCard.data)
     return (
       <div style={{color: 'red', padding: 20}}>
         DEBUG — Bad card data: {JSON.stringify(currentCard.data)}
@@ -479,6 +490,25 @@ Please explain:
 
   return (
     <div className="flex flex-col h-full bg-[#0D0D0D] p-6 lg:p-10 relative">
+      <LeaveConfirmModal 
+        isOpen={blocker.state === 'blocked' || showExitConfirm}
+        onConfirm={() => {
+          if (blocker.state === 'blocked') {
+            blocker.proceed && blocker.proceed()
+          } else {
+            setShowExitConfirm(false)
+            onExit()
+          }
+        }}
+        onCancel={() => {
+          if (blocker.state === 'blocked') {
+            blocker.reset && blocker.reset()
+          } else {
+            setShowExitConfirm(false)
+          }
+        }}
+      />
+      
       <div className="max-w-4xl w-full mx-auto flex justify-between items-start mb-6 relative">
         <div className="flex flex-col">
           <div className="flex items-center gap-4 text-[#E8E8E8] font-['IBM_Plex_Mono'] font-bold text-sm tracking-wider uppercase mb-3">
@@ -501,7 +531,7 @@ Please explain:
           </div>
         </div>
         
-        <button onClick={onExit} className="px-4 py-2 border border-[#333] text-[#888] rounded hover:text-white hover:border-[#666] transition-colors font-['Rajdhani'] uppercase tracking-widest text-sm">
+        <button onClick={() => setShowExitConfirm(true)} className="px-4 py-2 border border-[#333] text-[#888] rounded hover:text-white hover:border-[#666] transition-colors font-['Rajdhani'] uppercase tracking-widest text-sm">
           Exit Learn Mode
         </button>
       </div>
