@@ -41,6 +41,41 @@ const SUBJECTS: { value: Subject; short: string; icon: any }[] = [
   { value: 'Electronics Systems & Technologies', short: 'EST', icon: Cpu },
 ]
 
+const SUBJECT_KEYWORDS: Record<Subject, string[]> = {
+  'Mathematics': [
+    'calculus', 'differential', 'integral', 'laplace',
+    'fourier', 'probability', 'statistics', 'algebra',
+    'trigonometry', 'derivative', 'determinant', 'eigenvalue',
+    'logarithm', 'polynomial', 'binomial', 'permutation',
+    'combination', 'matrices', 'vectors', 'z-transform'
+  ],
+  'General Engineering & Applied Sciences': [
+    'chemistry', 'physics', 'economics', 'thermodynamics',
+    'programming', 'ethics', 'materials', 'environmental',
+    'management', 'stress', 'strain', 'newton', 'momentum',
+    'energy', 'power', 'heat', 'atom', 'molecule', 'reaction',
+    'pascal', 'fluid', 'pressure', 'density', 'viscosity',
+    'resistivity', 'bond', 'force', 'velocity', 'acceleration'
+  ],
+  'Electronics Engineering': [
+    'transistor', 'amplifier', 'diode', 'op-amp',
+    'logic gate', 'microprocessor', 'feedback', 'control',
+    'impedance', 'resistor', 'capacitor', 'inductor',
+    'thevenin', 'norton', 'kirchhoff', 'boolean',
+    'flip-flop', 'multiplexer', 'encoder', 'decoder',
+    'oscillator', 'filter', 'rectifier', 'mosfet', 'bjt', 'jfet',
+    'semiconductor', 'circuit', 'voltage', 'current'
+  ],
+  'Electronics Systems & Technologies': [
+    'modulation', 'antenna', 'transmission', 'bandwidth',
+    'fiber', 'satellite', 'protocol', 'tcp', 'osi', 'noise',
+    'decibel', 'attenuation', 'propagation', 'wavelength',
+    'spectrum', 'multiplexing', 'fdma', 'tdma', 'cdma', 'gsm',
+    'ethernet', 'router', 'packet', 'frame', 'bit rate', 'snr',
+    'frequency', 'signal', 'channel', 'network'
+  ]
+}
+
 const PREDEFINED_TAGS = [
   'Excel', 'Edge', 'TOP', 'Indiabix', 'Pinoybix', 
   'EST Superbook', 'Cuervo'
@@ -991,6 +1026,38 @@ export default function AddDeck() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [undo])
+
+  useEffect(() => {
+    // Skip if too few cards (initial empty state)
+    if (cards.length <= 3) return
+
+    // Build searchable text from all card content
+    const text = cards.map(card => {
+      if (card.type === 'mcq') {
+        const d = card.data as MCQEdit
+        return [d.question, ...d.choices].join(' ')
+      } else {
+        const d = card.data as FlashcardEdit
+        return [d.front, d.back].join(' ')
+      }
+    }).join(' ').toLowerCase()
+
+    // Score each subject
+    const scores = (Object.entries(SUBJECT_KEYWORDS) as [Subject, string[]][])
+      .map(([subj, keywords]) => ({
+        subject: subj,
+        score: keywords.filter(kw => text.includes(kw)).length
+      }))
+      .sort((a, b) => b.score - a.score)
+
+    const [first, second] = scores
+    console.log('[AutoDetect] scores:', scores, '→', first.subject)
+
+    // Only set if clear winner (score > 0 and strictly greater than second)
+    if (first.score > 0 && first.score > second.score) {
+      setSubject(first.subject)
+    }
+  }, [cards])
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),

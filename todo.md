@@ -33,6 +33,13 @@
 ***ANDROID/IOS/LINUX/WEB PORT***
 - able to run on android and ios
 
+***DASHBOARD DATA INSIGHTS***
+- think of a way to get or try to see progress of student over time and areas where they are struggling and whatnot
+- dashboard needs to be a tab where you can see actual data insights about you
+
+***ONE PROMPT DESIGN***
+- make the prompts and buttons look the same (delete prompt)
+
 ***TO FIX***
 - Subject auto detection in add decks seems to be not working properly
 

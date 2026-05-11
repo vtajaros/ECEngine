@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle, SlidersHorizontal, Pencil, Play, Trash2, AlertTriangle, Trophy } from 'lucide-react'
 import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
 import { Card, MCQData, FlashcardData } from '../types'
@@ -49,6 +49,8 @@ function saveFCBookmarks(set: Set<string>) {
 }
 
 export default function FlashcardViewer() {
+  const navigate = useNavigate()
+
   // ── Deck listing state ──
   const [activeSubject, setActiveSubject] = useState<FilterSubject>('ALL')
   const [decks, setDecks] = useState<DeckInfo[]>([])

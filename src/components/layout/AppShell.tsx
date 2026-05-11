@@ -8,10 +8,10 @@ import {
   Upload,
   PlusCircle,
   FlaskConical,
+  Zap,
   Settings,
   ChevronLeft,
   ChevronRight,
-  Zap,
   Layers,
   Menu
 } from 'lucide-react'
@@ -24,6 +24,8 @@ export const AppShell: React.FC = () => {
     { to: '/', label: 'Dashboard', icon: Home },
     { to: '/study', label: 'LooksFam', icon: Brain },
     { to: '/flashcards', label: 'Flashcards', icon: Layers },
+    { to: '/exam', label: 'Exam Mode', icon: FlaskConical },
+    { to: '/statistics', label: 'Statistics', icon: Zap },
     { to: '/topics', label: 'Topics', icon: BookOpen },
     { to: '/add-decks', label: 'Add Decks', icon: PlusCircle },
     { to: '/settings', label: 'Settings', icon: Settings },

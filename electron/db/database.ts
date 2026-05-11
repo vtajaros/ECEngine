@@ -23,10 +23,15 @@ export async function initDB() {
     try { db.run("ALTER TABLE topics ADD COLUMN created_at INTEGER DEFAULT (strftime('%s', 'now'))"); } catch (e) {}
     try { db.run("ALTER TABLE cards ADD COLUMN created_at INTEGER DEFAULT (strftime('%s', 'now'))"); } catch (e) {}
     try { db.run("ALTER TABLE cards ADD COLUMN is_custom BOOLEAN DEFAULT 0"); } catch (e) {}
+    try { db.run("ALTER TABLE topics ADD COLUMN description TEXT DEFAULT ''"); } catch (e) {}
+    try { db.run("ALTER TABLE topics ADD COLUMN parent_id TEXT"); } catch (e) {}
+    try { db.run("ALTER TABLE topics ADD COLUMN order_index INTEGER DEFAULT 0"); } catch (e) {}
+    runTableMigrations();
     saveDB();
   } else {
     db = new SQL.Database();
     initSchema();
+    runTableMigrations();
   }
 }
 
@@ -58,6 +63,38 @@ function initSchema() {
   } else {
     console.error('schema.sql not found at', resolvedSchemaPath);
   }
+}
+
+function runTableMigrations() {
+  if (!db) return;
+
+  try {
+    db.run(`
+      CREATE TABLE IF NOT EXISTS progress (
+        card_id TEXT PRIMARY KEY,
+        ease_factor REAL DEFAULT 2.5,
+        interval INTEGER DEFAULT 1,
+        repetitions INTEGER DEFAULT 0,
+        next_review TEXT,
+        last_reviewed TEXT
+      )
+    `);
+  } catch (e) {}
+
+  try {
+    db.run(`
+      CREATE TABLE IF NOT EXISTS exam_sessions (
+        id TEXT PRIMARY KEY,
+        topic_id TEXT,
+        mode TEXT,
+        started_at TEXT,
+        finished_at TEXT,
+        score INTEGER DEFAULT 0,
+        total INTEGER DEFAULT 0,
+        answers TEXT DEFAULT '{}'
+      )
+    `);
+  } catch (e) {}
 }
 
 export function queryAll(sql: string, params: any[] = []): any[] {
