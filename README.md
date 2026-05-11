@@ -1,77 +1,92 @@
-# ⚡ ECEngine: The Technical Manifest
+# ⚡ ECEngine: The Ultimate Board Exam Command Center
 
-## Project Identity & Vision
-**ECEngine** is a high-performance, offline-first study ecosystem engineered specifically for the **Philippine Electronics Engineering (ECE) Licensure Exam**. Designed for the October 2026 goal, it transforms traditional review into a data-driven engineering workflow.
-
-### Cyberpunk-Utility Philosophy
-The system implements a **'Cyberpunk-Utility'** design language:
-- **Palette:** Razer-inspired high-contrast theme (`#0D0D0D` deep blacks / `#00FF41` neon greens).
-- **Typography:** Monospaced precision using IBM Plex Mono and Rajdhani for a high-tech equipment feel.
-- **Motion:** 60fps physics-based animations via Framer Motion to reduce cognitive load during long study sessions.
+**ECEngine** is a high-performance, cyberpunk-inspired study ecosystem specifically engineered for the **Philippine Electronics Engineering (ECE) Licensure Exam**. It transforms traditional review into a high-octane engineering workflow, designed to dominate the October 2026 boards.
 
 ---
 
-## 🛠 The Hybrid Stack
+## 🚀 Core Features & Functionality
 
-ECEngine utilizes a robust, modern architecture designed for maximum reliability and local performance.
+### 📊 Tactical Dashboard (Telemetry)
+- **Activity Heatmap**: Tracks your "Heartbeat" (time spent in app) across a 6-month window. Colors saturate from deep green (1h) to neon green (4h+).
+- **Performance Telemetry**: Real-time Area Charts visualize your **Accuracy Trend**, allowing you to identify "fatigue zones" in your study schedule.
+- **Subject Intelligence**: Dynamically calculates mastery percentage per subject (**MATH**, **GEAS**, **ELECS**, **EST**) based on successfully "Internalized" cards.
+- **Exam Countdown**: A high-precision digital clock counting down to your target board exam date, creating a "Mission Critical" environment.
 
-- **Frontend:** React 18 & TypeScript for type-safe UI logic.
-- **Styling:** Tailwind CSS for rapid, utility-first layout construction.
-- **Math Engine:** KaTeX for high-performance LaTeX formula rendering across all subjects.
-- **Desktop Shell:** Electron 31 with a secure, context-isolated IPC bridge.
-- **State Management:** Zustand for lightweight, reactive store patterns.
-- **Persistence (Hybrid Architecture):**
-    - **Local:** SQLite (`sql.js` / `better-sqlite3`) for instant, zero-latency offline storage.
-    - **Cloud:** Future integration for PostgreSQL (Supabase) to handle cross-device synchronization and global performance analytics.
+### 🧠 LooksFam Study Hub (Core Engine)
+- **Multi-Modal Review**: Toggle between **Learn** (Partitioned repetition), **Test** (Full simulation), and **Mixed** modes.
+- **Advanced Spaced Repetition**: Implements the **SM-2 Algorithm**. The system calculates your next review date based on your performance:
+  - `Correct (First Try)`: Increases interval exponentially.
+  - `Missed`: Resets interval, adding the card back to the "Critical List."
+- **AI Explainer (✨)**: Leverages Large Language Models to provide "Just-In-Time" tutoring. It breaks down engineering solutions into:
+  - *Theoretical Foundation*: The law/principle applied.
+  - *Mathematical Derivation*: Step-by-step formula application.
+  - *Distractor Rationale*: Why other choices were designed to trick you.
+- **Interactive Question Tracker**: A sticky numbered navigation strip in Test Mode that uses pulsing indicators to show your current location in the "Manifest."
+
+### 🧪 Formulas & Reference Laboratory
+- **KaTeX Integration**: Renders complex ECE equations (e.g., Friis Transmission Equation, Shannon-Hartley Theorem) with textbook-grade precision.
+- **Search & Filter**: Instantly isolate formulas by subject or tag for quick reference during problem-solving sessions.
+
+### 📂 Manifest Management
+- **Intelligent Parser**: Ingests raw text, JSON, or Quizlet exports.
+- **Cyberpunk Folder System**: Organize decks into hierarchical folders. Folders are collapsible to maintain a clean workspace.
+- **Navigation Protection**: Custom `useBlocker` integration intercepts accidental sidebar clicks, protecting your active session data.
 
 ---
 
-## ⚙️ Core Engineering Logic
+## 🛠 Engineering Specifications & Stack
 
-### SM-2 Spaced Repetition
-Retention is managed via an implementation of the **SuperMemo-2 (SM-2)** algorithm. The system tracks `ease_factor`, `interval`, and `repetitions` for every card, dynamically scheduling reviews to optimize the forgetting curve.
-
-### MCQ Engine & Parser
-The engine features a sophisticated regex-based parser located in `src/lib/parser.ts` designed to ingest legacy Quizlet and text-based formats. It automatically identifies structures, choices, and LaTeX markers, converting messy review data into structured JSON topics.
+- **Framework**: Electron 31 + React 18 + Vite (Desktop Native)
+- **Language**: TypeScript 5.4 (Strict Typing)
+- **State**: Zustand 4.5 (Flux Architecture)
+- **Database**: SQLite 3 (Offline-First persistence)
+- **UI/UX**: Tailwind CSS + Framer Motion (60FPS Animations)
+- **Fonts**: `Orbitron`, `Rajdhani`, `IBM Plex Mono`
 
 ---
 
-## 📂 Folder Structure & Architecture
+## 🏗 Development Workflow
 
-```text
-├── content/              # Subject matter source (JSON) for initial seeding
-├── electron/             # Main process, Database migrations, and SQLite controllers
-│   ├── db/               # Local persistence layer (SQL schemas and migrations)
-│   └── ipc/              # Secure bridge between shell and renderer
-├── scripts/              # Build tools and data seeding utilities
-├── src/                  # React Renderer
-│   ├── components/       # Atomic UI parts (MCQ, Flashcards, Formula Viewers)
-│   ├── services/         # Platform Abstraction Layer (PAL)
-│   ├── store/            # Zustand global state (Settings, Session, Content)
-│   └── styles/           # Razer-themefiles (Globals, Animations, Theme)
-└── types/                # Unified TypeScript interface definitions
+```bash
+# Start the engine
+npm run dev
+
+# Run diagnostic type checks
+npx tsc --noEmit
+
+# Build production executable (.exe)
+npm run build
 ```
 
-### Platform Abstraction Layer (PAL)
-The logic in `src/services/db.service.ts` acts as a switcher between local SQLite and cloud PostgreSQL, ensuring the UI remains agnostic to the underlying storage implementation.
+---
+
+## 🗺 Future Roadmap & TODO List
+
+### 🛰 Phase 1: Persistence & Sync
+- [ ] **Cloud Sync (Supabase)**: Enable cross-device progress synchronization (PC to Laptop).
+- [ ] **Multi-Profile Support**: Allow different study profiles for different users on the same machine.
+- [ ] **Automatic Backups**: Encrypted SQLite exports to local or cloud drives.
+
+### 🤖 Phase 2: AI & Analytics
+- [ ] **Integrated AI Chat**: A dedicated sidebar chat to ask follow-up questions about the current card.
+- [ ] **Predictive Accuracy**: An AI model that predicts your board exam score based on current trend data.
+- [ ] **Voice-Activated Review**: Hands-free study mode using Speech-to-Text for MCQ selection.
+
+### 🌐 Phase 3: Community & Content
+- [ ] **Global Leaderboards**: Opt-in "Speed-Run" rankings for subject completion.
+- [ ] **Public Manifest Gallery**: A community-driven repository to download shared decks for specific topics (e.g., "Advanced Filter Design").
+- [ ] **Mobile Companion**: A lightweight React Native app for reviewing flashcards on the go.
+
+### 🎨 Phase 4: UI/UX Refinement
+- [ ] **Theming Engine**: Support for multiple cyberpunk sub-themes (e.g., "Night City Blue", "Matrix Green").
+- [ ] **Interactive 3D Components**: Integrate Three.js for 3D circuit visualizations in the formula lab.
 
 ---
 
-## 📈 Current Development Status (May 4th Roadmap)
-
-### Technical Debt & In-Progress
-- [ ] **UI Stabilization:** Resolving layout shifting/shaking during Framer Motion transitions.
-- [ ] **Responsive Scaling:** Implementing dynamic viewport-based font scaling for long-form MCQs.
-- [ ] **Persistence Transition:** Moving active session state from mockups to persistent SQL storage.
-- [ ] **Schema Migrations:** Finalizing the automated `ALTER TABLE` block for zero-user-intervention updates.
+## 🤖 AI Auditor Manifesto
+1. **Never Hardcode Hex**: Use existing CSS variables.
+2. **DB Integrity**: Proxied access via `db.service.ts` only.
+3. **Cyberpunk Aesthetic**: High contrast and technical fonts are mandatory.
 
 ---
-
-## 🤖 Instruction for AI Auditors
-> **Critical Guidelines for AI Agents:**
-> 1. **Data Integrity:** Prioritize analysis of `src/services/db.service.ts` when modifying data flow.
-> 2. **Algorithmic Accuracy:** Ensure any changes to study schedules strictly follow the math in `src/lib/sm2.ts`.
-> 3. **Design System:** All UI contributions **must** strictly adhere to the Razer-themed CSS variables defined in `/src/styles/theme.css`. Do not introduce arbitrary hex codes outside this scope.
-
----
-*Optimized for the Oct 2026 ECE Board Exam.*
+*Developed for the Engineers of 2026. Non sibi sed aliis.*
