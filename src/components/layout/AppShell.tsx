@@ -5,16 +5,10 @@ import {
   Brain, 
   BookOpen, 
   Sigma, 
-  Upload,
   PlusCircle,
-  FlaskConical,
   Trophy,
-  Zap,
   Settings,
-  ChevronLeft,
-  ChevronRight,
-  Layers,
-  Menu
+  Layers
 } from 'lucide-react'
 import { TitleBar } from './TitleBar'
 
@@ -35,7 +29,7 @@ export const AppShell: React.FC = () => {
     { to: '/', label: 'Dashboard', icon: Home },
     { to: '/study', label: 'LooksFam', icon: Brain },
     { to: '/flashcards', label: 'Flashcards', icon: Layers },
-    { to: '/formulas', label: 'Formulas', icon: FlaskConical },
+    { to: '/formulas', label: 'Formulas', icon: Sigma },
     { to: '/exam', label: 'Exam Mode', icon: Trophy },
     { to: '/topics', label: 'Topics', icon: BookOpen },
     { to: '/add-decks', label: 'Add Decks', icon: PlusCircle },

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
-import { Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle, SlidersHorizontal, Pencil, Play, Trash2, AlertTriangle, Trophy, ChevronDown } from 'lucide-react'
+import { Sigma, Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle, SlidersHorizontal, Pencil, Play, Trash2, AlertTriangle, Trophy, ChevronDown } from 'lucide-react'
 import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
 import { Card, MCQData, FlashcardData } from '../types'
 import { renderMath } from '../lib/latex'
@@ -686,7 +686,7 @@ export default function Formulas() {
       {/* Header */}
       <div className="w-full max-w-2xl mb-10 flex flex-col md:flex-row items-center justify-between gap-6 border-b border-[var(--bg-card)] pb-6 pt-4 relative z-30">
         <h1 className="text-3xl lg:text-4xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4">
-          <Layers className="text-[var(--accent-primary)]" size={36} />
+          <Sigma className="text-[var(--accent-primary)]" size={36} />
           FORMULAS
         </h1>
 
@@ -977,16 +977,16 @@ export default function Formulas() {
                 <button 
                   onClick={handleConfirmDelete}
                   disabled={deleteCountdown > 0}
-                  className={`px-6 py-2 rounded font-bold transition-all font-['Rajdhani'] uppercase tracking-wider text-sm shadow-lg ${
+                  className={`min-w-[150px] py-2 rounded font-bold transition-all font-['Rajdhani'] uppercase tracking-wider text-sm shadow-lg ${
                     deleteCountdown > 0 
-                      ? 'bg-[#222] text-[#666] border border-[#333] cursor-not-allowed' 
+                      ? 'bg-[#1a1a1a] text-[#444] border border-[#222] cursor-not-allowed shadow-none opacity-50' 
                       : 'bg-[#FF3333] text-white hover:bg-[#CC0000] shadow-[0_0_15px_rgba(255,51,51,0.3)]'
                   }`}
                 >
                   {deleteCountdown > 0 ? (
                     <span className="inline-flex items-baseline gap-0.5 font-['Rajdhani']">
-                      <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#00FF41', lineHeight: 1 }}>{deleteCountdown}</span>
-                      <span style={{ fontSize: '0.8rem', fontWeight: 400, color: '#888888', lineHeight: 1 }}>s</span>
+                      <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#666666', lineHeight: 1 }}>{deleteCountdown}</span>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 400, color: '#444444', lineHeight: 1 }}>s</span>
                     </span>
                   ) : (
                     'Confirm Delete'
@@ -994,7 +994,11 @@ export default function Formulas() {
                 </button>
                 <button 
                   onClick={() => setSetToDelete(null)}
-                  className="px-5 py-2 rounded bg-transparent border border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-wider text-sm"
+                  className={`px-5 py-2 rounded transition-all font-['Rajdhani'] uppercase tracking-wider text-sm border ${
+                    deleteCountdown > 0
+                      ? 'bg-transparent border-[#00FF41]/50 text-[#E8E8E8] font-bold'
+                      : 'bg-transparent border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555]'
+                  }`}
                 >
                   Cancel
                 </button>
