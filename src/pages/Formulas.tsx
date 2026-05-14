@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import FolderPanel from '@/components/ui/FolderPanel'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
-import { Sigma, Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle, SlidersHorizontal, Pencil, Play, Trash2, AlertTriangle, Trophy, ChevronDown } from 'lucide-react'
+import { Sigma, Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle, SlidersHorizontal, Pencil, Play, Trash2, AlertTriangle, Trophy } from 'lucide-react'
 import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
 import { Card, MCQData, FlashcardData } from '../types'
 import { renderMath } from '../lib/latex'
@@ -63,6 +64,7 @@ export default function Formulas() {
   const [filterTags, setFilterTags] = useState<string[]>([])
   const [sortBy, setSortBy] = useState<'date' | 'title'>('date')
   const [filterType, setFilterType] = useState<'all' | 'mcq' | 'formula' | 'mixed'>('all')
+  const [activeFolder, setActiveFolder] = useState<string | 'all'>('all')
   const filterPopoverRef = useRef<HTMLDivElement>(null)
 
   const availableTags = useMemo(() => {
@@ -396,8 +398,32 @@ export default function Formulas() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  const folders = useMemo(() => {
+    const names = [...new Set(
+      decks.map(d => d.folderName || 'Uncategorized')
+    )].sort()
+    const idx = names.indexOf('Uncategorized')
+    if (idx > -1) { names.splice(idx, 1); names.push('Uncategorized') }
+    return names
+  }, [decks])
+
+  const deckCountByFolder = useMemo(() =>
+    folders.reduce((acc, f) => ({
+      ...acc,
+      [f]: decks.filter(d =>
+        (d.folderName || 'Uncategorized') === f
+      ).length
+    }), {} as Record<string, number>)
+  , [decks, folders])
+
   const filteredDecks = useMemo(() => {
-    let result = decks.filter(d => activeSubject === 'ALL' || d.subject === activeSubject)
+    // Formula type filter is already applied at DB level (HAVING clause)
+    // Folder filter → subject filter → type filter → tag filter → sort
+    const folderFiltered = activeFolder === 'all'
+      ? decks
+      : decks.filter(d => (d.folderName || 'Uncategorized') === activeFolder)
+
+    let result = folderFiltered.filter(d => activeSubject === 'ALL' || d.subject === activeSubject)
     
     if (filterType !== 'all') {
       result = result.filter(d => d.deckType === filterType)
@@ -414,34 +440,7 @@ export default function Formulas() {
     })
 
     return result
-  }, [decks, activeSubject, filterType, filterTags, sortBy])
-
-  const groupedDecks = useMemo(() => {
-    const groups: Record<string, DeckInfo[]> = {}
-    filteredDecks.forEach(deck => {
-      const folder = deck.folderName || 'Uncategorized'
-      if (!groups[folder]) groups[folder] = []
-      groups[folder].push(deck)
-    })
-    
-    // Sort folder names, putting 'Uncategorized' last
-    const sortedFolders = Object.keys(groups).sort((a, b) => {
-      if (a === 'Uncategorized') return 1
-      if (b === 'Uncategorized') return -1
-      return a.localeCompare(b)
-    })
-
-    return sortedFolders.map(folder => ({
-      name: folder,
-      decks: groups[folder]
-    }))
-  }, [filteredDecks])
-
-  const [collapsedFolders, setCollapsedFolders] = useState<Record<string, boolean>>({})
-
-  const toggleFolder = (name: string) => {
-    setCollapsedFolders(prev => ({ ...prev, [name]: !prev[name] }))
-  }
+  }, [decks, activeFolder, activeSubject, filterType, filterTags, sortBy])
   const progress = sessionCards.length > 0 ? ((currentIndex + 1) / sessionCards.length) * 100 : 0
   const isBookmarked = currentCard ? bookmarks.has(`fc_bookmark_${currentCard.id}`) : false
 
@@ -814,45 +813,19 @@ export default function Formulas() {
           </div>
         </div>
       </div>
-      {/* Folder Sections */}
-      <div className="max-w-5xl mx-auto flex flex-col gap-12 pb-12 w-full">
-        {groupedDecks.map(folder => (
-          <div key={folder.name} className="flex flex-col gap-6">
-            {/* Folder Header */}
-            <button 
-              onClick={() => toggleFolder(folder.name)}
-              className="flex items-center justify-between group border-b border-[#222] pb-2 hover:border-[#00FF41]/50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.8)]" />
-                <h2 className="text-xl font-bold font-['Orbitron'] tracking-widest text-[#E8E8E8] uppercase flex items-center gap-3">
-                  {folder.name}
-                  <span className="text-xs font-['IBM_Plex_Mono'] text-[#555] font-normal lowercase tracking-normal">
-                    ({folder.decks.length} {folder.decks.length === 1 ? 'deck' : 'decks'})
-                  </span>
-                </h2>
-              </div>
-              <motion.div
-                animate={{ rotate: collapsedFolders[folder.name] ? -90 : 0 }}
-                transition={{ duration: 0.2 }}
-                className="text-[#444] group-hover:text-[#00FF41] transition-colors"
-              >
-                <ChevronDown size={20} />
-              </motion.div>
-            </button>
-
-            {/* Deck Grid in Folder */}
-            <AnimatePresence initial={false}>
-              {!collapsedFolders[folder.name] && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  className="overflow-hidden"
-                >
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-2 pb-4">
-                    {folder.decks.map(deck => (
+      {/* Folder Panel + Deck Grid */}
+      <div className="flex w-full h-full">
+        <FolderPanel
+          folders={folders}
+          deckCountByFolder={deckCountByFolder}
+          totalDeckCount={decks.length}
+          selected={activeFolder}
+          onSelect={setActiveFolder}
+        />
+        <div className="flex-1 min-w-0 pr-6">
+          <div className="flex flex-col gap-12 pb-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-2 pb-4">
+              {filteredDecks.map(deck => (
                       <div 
                         key={deck.id}
                         className="relative isolate group transition-all duration-300 border border-[#333] bg-[#1a1a1a] p-5 flex flex-col w-full min-h-[180px] justify-between hover:-translate-x-[6px] hover:-translate-y-[6px] rounded-xl before:absolute before:w-full before:h-full before:top-0 before:left-0 before:bg-[#1a1a1a] before:border before:border-[#333] before:rounded-xl before:translate-x-[6px] before:translate-y-[6px] before:z-[-1] before:transition-transform before:duration-300 group-hover:before:translate-x-[12px] group-hover:before:translate-y-[12px] after:absolute after:w-full after:h-full after:top-0 after:left-0 after:bg-[#1a1a1a] after:border after:border-[#333] after:rounded-xl after:translate-x-[12px] after:translate-y-[12px] after:z-[-2] after:transition-transform after:duration-300 group-hover:after:translate-x-[18px] group-hover:after:translate-y-[18px]"
@@ -931,19 +904,16 @@ export default function Formulas() {
                           </button>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        ))}
+              ))}
+            </div>
 
-        {filteredDecks.length === 0 && (
-          <div className="text-center py-20 text-[#888] font-rajdhani uppercase tracking-widest text-lg">
-            No decks found{activeSubject !== 'ALL' ? ` for ${activeSubject}` : ''}. Import some from Add Decks.
+            {filteredDecks.length === 0 && (
+              <div className="text-center py-20 text-[#888] font-rajdhani uppercase tracking-widest text-lg">
+                No decks found{activeSubject !== 'ALL' ? ` for ${activeSubject}` : ''}. Import some from Add Decks.
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Delete Confirmation Modal */}
