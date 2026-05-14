@@ -851,7 +851,7 @@ export default function Formulas() {
                       </div>
                       {/* Tag Row: Type & Custom Tags (Aligned with Date) */}
                       <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                        <span className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-[#00BFFF] border-[#00BFFF]/30 uppercase font-bold tracking-wider text-[10px]">
+                        <span className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]">
                           FM
                         </span>
                         {deck.tags && deck.tags.length > 0 && deck.tags.map(tag => (

@@ -3,8 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, Save, ChevronDown, ChevronUp, Trash2, GripVertical, Plus,
-  CheckCircle2, AlertCircle, RotateCcw, ImageIcon, X
+  CheckCircle2, AlertCircle, RotateCcw, ImageIcon, X, Sigma
 } from 'lucide-react'
+import { renderMath, isRawLatex } from '../lib/latex'
 import {
   DndContext,
   closestCenter,
@@ -51,8 +52,8 @@ interface DeckMeta {
 
 interface EditCard {
   id: string
-  type: 'mcq' | 'flashcard'
-  data: MCQEdit | FlashcardEdit
+  type: 'mcq' | 'flashcard' | 'formula'
+  data: MCQEdit | FlashcardEdit | FormulaEdit
   isNew?: boolean
 }
 
@@ -70,6 +71,13 @@ interface FlashcardEdit {
   imagePath?: string
 }
 
+interface FormulaEdit {
+  name: string
+  latex: string
+  description: string
+  variables: string
+}
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -78,6 +86,146 @@ const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 
 const inputCls = "w-full bg-[#0D0D0D] border border-[#2a2a2a] rounded px-3 py-2 text-[#E8E8E8] font-['IBM_Plex_Mono'] text-sm outline-none focus:border-[#00FF41] transition-colors placeholder-[#555]"
 const textareaCls = `${inputCls} resize-none leading-relaxed`
+
+// ── MathInputField: text area with ∑ toggle for MathLive equation entry ──────
+interface MathInputFieldProps {
+  value: string
+  onChange: (val: string) => void
+  placeholder?: string
+  rows?: number
+  multiline?: boolean
+  defaultMathMode?: boolean
+}
+
+const MathInputField: React.FC<MathInputFieldProps> = ({
+  value, onChange, placeholder, rows = 3, multiline = true, defaultMathMode = false
+}) => {
+  const [mathMode, setMathMode] = useState(defaultMathMode)
+  const mathfieldRef = React.useRef<any>(null)
+
+  useEffect(() => {
+    const el = mathfieldRef.current
+    if (!el || !mathMode) return
+    if (el.value !== value) el.value = value
+  }, [mathMode, value])
+
+  useEffect(() => {
+    const el = mathfieldRef.current
+    if (!el || !mathMode) return
+    const handler = () => onChange(el.value)
+    el.addEventListener('input', handler)
+    return () => el.removeEventListener('input', handler)
+  }, [mathMode, onChange])
+
+  return (
+    <div className="relative flex flex-col gap-2 w-full flex-1">
+      <button
+        type="button"
+        onClick={() => setMathMode(m => !m)}
+        title={mathMode ? 'Switch to text mode' : 'Switch to equation mode'}
+        className="absolute top-2 right-2 z-10 flex items-center justify-center min-w-[28px] h-[24px] px-2 rounded-full bg-[#1C1C1C] border border-[rgba(0,255,65,0.3)] text-[#00FF41] hover:bg-[rgba(0,255,65,0.1)] font-bold text-xs transition-colors shadow-sm"
+      >
+        {mathMode ? 'Aa' : <Sigma size={12} />}
+      </button>
+
+      {!mathMode ? (
+        multiline ? (
+          <textarea
+            rows={rows}
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            placeholder={placeholder}
+            className={`${textareaCls} pr-10`}
+          />
+        ) : (
+          <input
+            type="text"
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            placeholder={placeholder}
+            className={`${inputCls} pr-10`}
+          />
+        )
+      ) : (
+        <>
+          <math-field
+            ref={mathfieldRef}
+            virtual-keyboard-mode="onfocus"
+            style={{
+              width: '100%',
+              minHeight: multiline ? '100px' : '48px',
+              background: '#111111',
+              border: '1px solid rgba(0,255,65,0.3)',
+              borderRadius: '6px',
+              padding: '12px',
+              paddingRight: '40px',
+              color: '#E8E8E8',
+              fontSize: '1rem',
+              fontFamily: 'IBM Plex Mono, monospace',
+              '--keyboard-zindex': '99999',
+            } as React.CSSProperties & Record<string, string>}
+          />
+          {value.trim().length > 0 && (
+            <div className="bg-[#1C1C1C] border border-[rgba(0,255,65,0.1)] rounded-lg p-3">
+              <div className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-[#888] mb-1">Preview</div>
+              {(() => {
+                try {
+                  return <div className="text-[#E8E8E8]" dangerouslySetInnerHTML={{ __html: renderMath(value) }} />
+                } catch {
+                  return <code className="text-[#E8E8E8] break-all">{value}</code>
+                }
+              })()}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+// ── FormulaForm: maps name→front, latex→back ──────────────────────────────────
+const FormulaForm: React.FC<{ data: FormulaEdit; onChange: (d: FormulaEdit) => void; isNew?: boolean }> = ({ data, onChange }) => {
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="relative w-full">
+        <Label>Front / Term (formula name)</Label>
+        <MathInputField
+          value={data.name}
+          onChange={val => onChange({ ...data, name: val })}
+          placeholder="Formula name, e.g. Inverse Sine..."
+          rows={3}
+          multiline={true}
+          defaultMathMode={isRawLatex(data.name) || data.name.includes('\\')}
+        />
+      </div>
+      <div className="relative w-full">
+        <Label>Back / LaTeX (equation)</Label>
+        <MathInputField
+          value={data.latex}
+          onChange={val => onChange({ ...data, latex: val })}
+          placeholder="LaTeX equation, e.g. \\sin^{-1}u..."
+          rows={3}
+          multiline={true}
+          defaultMathMode={true}
+        />
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <Label>Description (optional)</Label>
+          <textarea rows={2} className={textareaCls} value={data.description}
+            onChange={e => onChange({ ...data, description: e.target.value })}
+            placeholder="Brief description..." />
+        </div>
+        <div>
+          <Label>Variables (optional)</Label>
+          <textarea rows={2} className={textareaCls} value={data.variables}
+            onChange={e => onChange({ ...data, variables: e.target.value })}
+            placeholder="e.g. u = angle in radians" />
+        </div>
+      </div>
+    </div>
+  )
+}
 
 interface CardRowProps {
   card: EditCard
@@ -253,7 +401,9 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
 
   const preview = card.type === 'mcq'
     ? (card.data as MCQEdit).question || '(empty question)'
-    : (card.data as FlashcardEdit).front || '(empty term)'
+    : card.type === 'formula'
+      ? (card.data as FormulaEdit).name || '(empty formula)'
+      : (card.data as FlashcardEdit).front || '(empty term)'
 
   const truncated = preview.length > 72 ? preview.slice(0, 72) + '…' : preview
 
@@ -266,7 +416,6 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
         className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none"
         onClick={() => setExpanded(e => !e)}
       >
-        {/* Grip handle — only this triggers drag */}
         <span
           {...dragHandleProps}
           onClick={e => e.stopPropagation()}
@@ -278,13 +427,21 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
         <span className="text-[#555] font-['IBM_Plex_Mono'] text-xs w-6 flex-shrink-0">
           {String(index + 1).padStart(2, '0')}
         </span>
-        <span className="flex-1 text-[#ccc] font-['IBM_Plex_Mono'] text-sm truncate">{truncated}</span>
+        <span className="flex-1 text-[#ccc] font-['IBM_Plex_Mono'] text-sm truncate">
+          {card.type === 'formula' || isRawLatex(truncated) || truncated.includes('$') || truncated.includes('\\') ? (
+            <span dangerouslySetInnerHTML={{ __html: renderMath(isRawLatex(truncated) && !truncated.includes('$') ? `$${truncated}$` : truncated) }} />
+          ) : (
+            truncated
+          )}
+        </span>
         <span className={`text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded border uppercase flex-shrink-0 ${
           card.type === 'mcq'
             ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
-            : 'text-[#00FF41] border-[#00FF41]/30 bg-[#00FF41]/10'
+            : card.type === 'formula'
+              ? 'text-[#A855F7] border-[#A855F7]/30 bg-[#A855F7]/10'
+              : 'text-[#00FF41] border-[#00FF41]/30 bg-[#00FF41]/10'
         }`}>
-          {card.type === 'mcq' ? 'MCQ' : 'FC'}
+          {card.type === 'mcq' ? 'MCQ' : card.type === 'formula' ? 'FM' : 'FC'}
         </span>
         <button
           onClick={e => { e.stopPropagation(); onDelete(card.id) }}
@@ -295,7 +452,6 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
         {expanded ? <ChevronUp className="w-4 h-4 text-[#555] flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-[#555] flex-shrink-0" />}
       </div>
 
-      {/* Expanded form */}
       <AnimatePresence>
         {expanded && (
           <motion.div
@@ -312,6 +468,12 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
                   onChange={d => onUpdate(card.id, { data: d })}
                   isNew={card.isNew}
                   onError={onError}
+                />
+              ) : card.type === 'formula' ? (
+                <FormulaForm
+                  data={card.data as FormulaEdit}
+                  onChange={d => onUpdate(card.id, { data: d })}
+                  isNew={card.isNew}
                 />
               ) : (
                 <FlashcardForm
@@ -475,14 +637,27 @@ export default function EditDeck() {
                 explanation: parsed.explanation ?? '',
               }
               if (parsed.imagePath) d.imagePath = parsed.imagePath
-              return { id: row.id, type: 'mcq', data: d }
+              return { id: row.id, type: 'mcq', data: d } as EditCard
+            } else if (row.type === 'formula') {
+              // variables may be stored as object or string in DB
+              const varsRaw = parsed.variables
+              const varsStr = typeof varsRaw === 'object' && varsRaw !== null
+                ? Object.entries(varsRaw).map(([k, v]) => `${k}: ${v}`).join('\n')
+                : (varsRaw ?? '')
+              const d: FormulaEdit = {
+                name: parsed.name ?? '',
+                latex: parsed.latex ?? '',
+                description: parsed.description ?? '',
+                variables: varsStr,
+              }
+              return { id: row.id, type: 'formula', data: d } as EditCard
             } else {
               const d: FlashcardEdit = {
                 front: parsed.front ?? '',
                 back: parsed.back ?? '',
               }
               if (parsed.imagePath) d.imagePath = parsed.imagePath
-              return { id: row.id, type: 'flashcard', data: d }
+              return { id: row.id, type: 'flashcard', data: d } as EditCard
             }
           })
           setCards(loaded)
@@ -508,11 +683,13 @@ export default function EditDeck() {
     setCards(prev => prev.filter(c => c.id !== id))
   }, [saveSnapshot])
 
-  const addCard = (type: 'mcq' | 'flashcard') => {
+  const addCard = (type: 'mcq' | 'flashcard' | 'formula') => {
     const id = `new_${Date.now()}`
     const data: EditCard = type === 'mcq'
       ? { id, type, data: { question: '', choices: ['', '', '', ''], answer: 0, explanation: '' }, isNew: true }
-      : { id, type, data: { front: '', back: '' }, isNew: true }
+      : type === 'formula'
+        ? { id, type, data: { name: '', latex: '', description: '', variables: '' }, isNew: true }
+        : { id, type, data: { front: '', back: '' }, isNew: true }
     setCards(prev => [...prev, data])
   }
 
@@ -813,6 +990,13 @@ export default function EditDeck() {
             >
               <Plus className="w-4 h-4" />
               Add Flashcard
+            </button>
+            <button
+              onClick={() => addCard('formula')}
+              className="flex items-center gap-2 px-4 py-2 rounded border border-[#A855F7]/40 bg-[#A855F7]/5 text-[#A855F7] hover:bg-[#A855F7]/10 font-['Rajdhani'] uppercase tracking-widest text-sm transition-all"
+            >
+              <Sigma className="w-4 h-4" />
+              Add Formula
             </button>
             <button
               onClick={() => addCard('mcq')}

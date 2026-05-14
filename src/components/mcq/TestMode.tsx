@@ -163,7 +163,8 @@ Please explain:
   }, [viewState, testCards])
 
   const scrollToQuestion = (index: number) => {
-    questionRefs.current[index]?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    setCurrentVisibleIndex(index)
+    questionRefs.current[index]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
   const handleSelectChoice = (cardId: string, choiceIndex: number) => {
@@ -388,59 +389,60 @@ Please explain:
         }}
       />
 
-      {/* Question Tracker Strip */}
-      {viewState === 'test' && (
-        <div className="sticky top-[72px] left-0 w-full bg-[#111] border-b border-[#222] z-40 h-[48px] flex items-center px-6 overflow-x-auto scrollbar-hide shadow-md shrink-0">
-          <div className="flex items-center gap-2 min-w-max mx-auto">
-            {testCards.map((card, idx) => {
-              const isAnswered = answers[card.id] !== undefined
-              const isCurrent = currentVisibleIndex === idx
-              
-              return (
-                <button
-                  key={card.id}
-                  onClick={() => scrollToQuestion(idx)}
-                  className="relative group p-1"
-                >
-                  <div
-                    className={`
-                      relative w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold font-['IBM_Plex_Mono'] transition-all border z-10
-                      ${isAnswered 
-                        ? 'bg-[var(--accent-primary)] border-[var(--accent-primary)] text-black' 
-                        : 'bg-transparent border-[#444] text-[#888] hover:border-[#666]'
-                      }
-                    `}
+      {/* Main Content Wrapper: Left Vertical Rail + Right Scrollable Content */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Left Vertical Exam Map Rail */}
+        {viewState === 'test' && (
+          <div className="w-20 shrink-0 bg-[#111] border-r border-[#222] flex flex-col items-center pt-12 pb-6 overflow-y-auto scrollbar-hide select-none z-30">
+            <div className="flex flex-col items-center gap-3 w-full px-2">
+              {testCards.map((card, idx) => {
+                const isAnswered = answers[card.id] !== undefined
+                const isCurrent = currentVisibleIndex === idx
+                
+                return (
+                  <button
+                    key={card.id}
+                    onClick={() => scrollToQuestion(idx)}
+                    className="relative group p-1 flex items-center justify-center w-full"
                   >
-                    {idx + 1}
+                    <div
+                      className={`
+                        relative w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold font-['IBM_Plex_Mono'] transition-all border z-10
+                        ${isCurrent
+                          ? 'bg-[#00FF41] border-[#00FF41] text-black shadow-[0_0_12px_rgba(0,255,65,0.4)] scale-110'
+                          : isAnswered 
+                            ? 'bg-[var(--accent-primary)]/20 border-[var(--accent-primary)] text-[#00FF41]' 
+                            : 'bg-transparent border-[#333] text-[#666] hover:border-[#555] hover:text-[#aaa]'
+                        }
+                      `}
+                    >
+                      {idx + 1}
+                      
+                      {/* Pulsing ring for current question */}
+                      {isCurrent && (
+                        <motion.div 
+                          initial={{ scale: 0.8, opacity: 0.6 }}
+                          animate={{ scale: 1.4, opacity: 0 }}
+                          transition={{ repeat: Infinity, duration: 1.5, ease: "easeOut" }}
+                          className="absolute inset-0 border-2 border-[#00FF41] rounded-full z-[-1]"
+                        />
+                      )}
+                    </div>
                     
-                    {/* Pulsing ring for current question */}
-                    {isCurrent && (
-                      <motion.div 
-                        initial={{ scale: 0.8, opacity: 0.5 }}
-                        animate={{ scale: 1.4, opacity: 0 }}
-                        transition={{ repeat: Infinity, duration: 1.5, ease: "easeOut" }}
-                        className="absolute inset-0 border-2 border-[var(--accent-primary)] rounded-full z-[-1]"
-                      />
-                    )}
-                  </div>
-                  
-                  {isCurrent && (
-                    <div className="absolute inset-0 border-2 border-[var(--accent-primary)] rounded-full scale-110" />
-                  )}
-                  
-                  {/* Tooltip hint on hover */}
-                  <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-[#222] text-white text-[9px] px-2 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 uppercase tracking-widest border border-[#444]">
-                    Question {idx + 1}
-                  </div>
-                </button>
-              )
-            })}
+                    {/* Tooltip hint on hover */}
+                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-[#222] text-white text-[10px] px-2.5 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 uppercase tracking-widest border border-[#444] font-['Rajdhani'] font-bold shadow-lg">
+                      Question {idx + 1}
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className={`flex-1 overflow-y-auto p-6 lg:p-12 pb-32`}>
-        <div className="w-full max-w-4xl mx-auto flex flex-col gap-6">
+        {/* Right Scrollable Questions Container */}
+        <div className="flex-1 overflow-y-auto p-6 lg:p-12 pb-32">
+          <div className="w-full max-w-4xl mx-auto flex flex-col gap-8">
         {testCards.map((card, index) => {
           const mcq = card.data as MCQData
           if (!mcq || typeof mcq === 'string' || !Array.isArray(mcq.choices) || mcq.choices.length !== 4) {
@@ -481,7 +483,7 @@ Please explain:
                   Q{index + 1}.
                 </span>
                 
-                <div className="flex-1 flex flex-col max-h-[50vh] overflow-y-auto custom-scrollbar pr-2">
+                <div className="flex-1 flex flex-col max-h-[50vh] overflow-y-auto pr-2">
                   {mcq.imagePath && (
                     <div className="mb-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
                       <img 
@@ -639,6 +641,7 @@ Please explain:
         )}
         </div>
       </div>
+    </div>
 
       {/* Submit Confirmation Modal */}
       <AnimatePresence>
