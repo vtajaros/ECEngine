@@ -62,7 +62,21 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
 
   // Question tracking refs for scrolling
   const questionRefs = useRef<(HTMLDivElement | null)[]>([])
+  const navItemRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const isClickNavigating = useRef(false)
+  const clickNavTimeout = useRef<NodeJS.Timeout | null>(null)
   const [currentVisibleIndex, setCurrentVisibleIndex] = useState(0)
+
+  // Auto-scroll sidebar to current question instantly without animation queueing lag
+  useEffect(() => {
+    if (navItemRefs.current[currentVisibleIndex]) {
+      navItemRefs.current[currentVisibleIndex]?.scrollIntoView({
+        behavior: 'auto',
+        block: 'center'
+      })
+    }
+  }, [currentVisibleIndex])
 
   // Navigation Blocking logic
   const blocker = useBlocker(
@@ -143,28 +157,48 @@ Please explain:
     return () => clearInterval(interval)
   }, [viewState])
 
-  // Intersection Observer to track which question is in view
-  useEffect(() => {
-    if (viewState !== 'test' || testCards.length === 0) return
+  // Highly optimized synchronous scroll tracking to guarantee zero-delay updating
+  const handleContainerScroll = () => {
+    if (isClickNavigating.current || !scrollContainerRef.current) return
+    
+    const containerRect = scrollContainerRef.current.getBoundingClientRect()
+    const targetY = containerRect.top + 180 // Scanline slightly below container top padding
+    const refs = questionRefs.current
+    let foundIdx = -1
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visibleEntry = entries.find(e => e.isIntersecting)
-        if (visibleEntry) {
-          const index = questionRefs.current.findIndex(ref => ref === visibleEntry.target)
-          if (index !== -1) setCurrentVisibleIndex(index)
-        }
-      },
-      { threshold: 0.5, rootMargin: '-100px 0px -50% 0px' }
-    )
+    for (let i = 0; i < refs.length; i++) {
+      const el = refs[i]
+      if (!el) continue
+      const rect = el.getBoundingClientRect()
+      // If the top of the question is above/near scanline and bottom is below scanline
+      if (rect.top <= targetY && rect.bottom > targetY) {
+        foundIdx = i
+        break
+      }
+    }
 
-    questionRefs.current.forEach(ref => ref && observer.observe(ref))
-    return () => observer.disconnect()
-  }, [viewState, testCards])
+    if (foundIdx !== -1 && foundIdx !== currentVisibleIndex) {
+      setCurrentVisibleIndex(foundIdx)
+    }
+  }
 
   const scrollToQuestion = (index: number) => {
+    isClickNavigating.current = true
+    if (clickNavTimeout.current) clearTimeout(clickNavTimeout.current)
+    clickNavTimeout.current = setTimeout(() => {
+      isClickNavigating.current = false
+    }, 800)
+
     setCurrentVisibleIndex(index)
-    questionRefs.current[index]?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+
+    const container = scrollContainerRef.current
+    const el = questionRefs.current[index]
+    if (container && el) {
+      const containerTop = container.getBoundingClientRect().top
+      const elTop = el.getBoundingClientRect().top
+      const offset = container.scrollTop + (elTop - containerTop) - 32 // 32px top padding offset
+      container.scrollTo({ top: offset, behavior: 'smooth' })
+    }
   }
 
   const handleSelectChoice = (cardId: string, choiceIndex: number) => {
@@ -393,7 +427,7 @@ Please explain:
       <div className="flex-1 flex overflow-hidden relative">
         {/* Left Vertical Exam Map Rail */}
         {viewState === 'test' && (
-          <div className="w-20 shrink-0 bg-[#111] border-r border-[#222] flex flex-col items-center pt-12 pb-6 overflow-y-auto scrollbar-hide select-none z-30">
+          <div className="w-16 shrink-0 bg-[#111] border-r border-[#222] flex flex-col items-center pt-8 pb-6 overflow-y-auto overflow-x-hidden scrollbar-hide select-none z-30">
             <div className="flex flex-col items-center gap-3 w-full px-2">
               {testCards.map((card, idx) => {
                 const isAnswered = answers[card.id] !== undefined
@@ -402,6 +436,7 @@ Please explain:
                 return (
                   <button
                     key={card.id}
+                    ref={el => navItemRefs.current[idx] = el}
                     onClick={() => scrollToQuestion(idx)}
                     className="relative group p-1 flex items-center justify-center w-full"
                   >
@@ -429,8 +464,8 @@ Please explain:
                       )}
                     </div>
                     
-                    {/* Tooltip hint on hover */}
-                    <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-[#222] text-white text-[10px] px-2.5 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 uppercase tracking-widest border border-[#444] font-['Rajdhani'] font-bold shadow-lg">
+                    {/* Tooltip hint on hover - Positioned right to avoid clipping */}
+                    <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-[#222] text-white text-[10px] px-2.5 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 uppercase tracking-widest border border-[#444] font-['Rajdhani'] font-bold shadow-lg">
                       Question {idx + 1}
                     </div>
                   </button>
@@ -441,7 +476,11 @@ Please explain:
         )}
 
         {/* Right Scrollable Questions Container */}
-        <div className="flex-1 overflow-y-auto p-6 lg:p-12 pb-32">
+        <div 
+          ref={scrollContainerRef}
+          onScroll={handleContainerScroll}
+          className="flex-1 overflow-y-auto p-6 lg:p-12 pb-32 scroll-smooth"
+        >
           <div className="w-full max-w-4xl mx-auto flex flex-col gap-8">
         {testCards.map((card, index) => {
           const mcq = card.data as MCQData

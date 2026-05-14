@@ -30,13 +30,13 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
           Your folders
         </h2>
 
-        <motion.div layout className="flex flex-col gap-1">
+        <motion.div className="flex flex-col gap-1">
           {/* All Row */}
           <motion.button
             whileHover={{ scale: 1.01 }}
             onClick={() => onSelect('all')}
             title="All Folders"
-            className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 transition-all duration-200 rounded-r-md border-l-[3px] group ${selected === 'all'
+            className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-r-md border-l-[3px] group ${selected === 'all'
                 ? 'bg-[var(--bg-card)] border-[var(--accent-primary)]'
                 : 'bg-transparent border-transparent hover:bg-[var(--bg-secondary)]'
               }`}
@@ -67,11 +67,10 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
             return (
               <motion.button
                 key={folder}
-                layout
                 whileHover={{ scale: 1.01 }}
                 onClick={() => onSelect(folder)}
                 title={folder}
-                className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 transition-all duration-200 rounded-r-md border-l-[3px] group ${isSelected
+                className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-r-md border-l-[3px] group ${isSelected
                     ? 'bg-[var(--bg-card)] border-[var(--accent-primary)]'
                     : 'bg-transparent border-transparent hover:bg-[var(--bg-secondary)]'
                   }`}

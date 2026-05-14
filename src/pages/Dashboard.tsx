@@ -15,13 +15,20 @@ const SUBJECT_MAP: Record<string, string> = {
 
 // ── Components ──────────────────────────────────────────────────────────────
 
-const ReviewHeatmap = ({ history }: { history: Record<string, { count: number, timeSpent: number }> }) => {
-  const { grid, monthLabels } = useMemo(() => {
-    const startDate = new Date('2026-05-01')
+const ReviewHeatmap = ({ history, examDate }: { history: Record<string, { count: number, timeSpent: number }>, examDate: string }) => {
+  const { grid, monthLabels, gridStartDate, gridEndDate } = useMemo(() => {
+    const target = new Date(examDate)
+    const endMonth = target.getMonth()
+    const endYear = target.getFullYear()
+    
+    // End date: last day of the exam month
+    const endDate = new Date(endYear, endMonth + 1, 0)
+    // Start date: first day of 5 months before (total 6 months)
+    const startDate = new Date(endYear, endMonth - 5, 1)
+    
     const firstSunday = new Date(startDate)
     firstSunday.setDate(startDate.getDate() - startDate.getDay())
     
-    const endDate = new Date('2026-10-31')
     const lastSaturday = new Date(endDate)
     lastSaturday.setDate(endDate.getDate() + (6 - endDate.getDay()))
     
@@ -38,22 +45,22 @@ const ReviewHeatmap = ({ history }: { history: Record<string, { count: number, t
     }
 
     const labels: { name: string; weekIndex: number }[] = []
-    const months = ['MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT']
-    let currentMonth = -1
+    const monthNames = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
     
+    let lastLabeledMonth = -1
     weeks.forEach((week, index) => {
       const firstDayOfWeek = new Date(week[0])
       const m = firstDayOfWeek.getMonth()
-      const year = firstDayOfWeek.getFullYear()
       
-      if (m !== currentMonth && year === 2026 && m >= 4 && m <= 9) {
-        labels.push({ name: months[m - 4], weekIndex: index })
-        currentMonth = m
+      // Only label if this is a new month and falls within our active window
+      if (m !== lastLabeledMonth && firstDayOfWeek >= startDate && firstDayOfWeek <= endDate) {
+        labels.push({ name: monthNames[m], weekIndex: index })
+        lastLabeledMonth = m
       }
     })
 
-    return { grid: weeks, monthLabels: labels }
-  }, [])
+    return { grid: weeks, monthLabels: labels, gridStartDate: startDate, gridEndDate: endDate }
+  }, [examDate])
 
   const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 
@@ -99,7 +106,7 @@ const ReviewHeatmap = ({ history }: { history: Record<string, { count: number, t
                   const timeH = Math.floor(data.timeSpent / 60)
                   const timeM = data.timeSpent % 60
                   const dateObj = new Date(day)
-                  const isOutRange = dateObj < new Date('2026-05-01') || dateObj > new Date('2026-10-31')
+                  const isOutRange = dateObj < gridStartDate || dateObj > gridEndDate
 
                   return (
                     <div
@@ -260,7 +267,7 @@ export default function Dashboard() {
         <div className="bg-[#111] border border-[#00FF41]/10 rounded-lg px-4 py-2 flex items-center gap-6 shadow-xl relative group">
           <button 
             onClick={() => setIsEditingDate(!isEditingDate)}
-            className="absolute -top-2 -right-2 p-1.5 bg-[#1A1A1A] border border-[#333] rounded-full text-[#666] hover:text-[#00FF41] opacity-0 group-hover:opacity-100 transition-opacity z-10"
+            className="absolute -top-2 -right-2 p-1.5 bg-[#1A1A1A] border border-[#333] rounded-full text-[#666] hover:text-[#00FF41] opacity-70 hover:opacity-100 transition-all z-10 shadow-lg"
           >
             <Edit2 size={12} />
           </button>
@@ -385,7 +392,7 @@ export default function Dashboard() {
             </div>
             
             <div className="flex-1 w-full flex justify-center py-4">
-              <ReviewHeatmap history={history} />
+              <ReviewHeatmap history={history} examDate={examDate} />
             </div>
         </div>
       </div>

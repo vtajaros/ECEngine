@@ -27,6 +27,7 @@ interface DeckInfo {
   cardCount: number
   deckType: 'mcq' | 'flashcard' | 'formula' | 'mixed'
   description: string
+  mastery: number
   tags?: string[]
   createdAt?: number
   folderName?: string
@@ -62,7 +63,7 @@ export default function Formulas() {
   // Advanced Filters State
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const [filterTags, setFilterTags] = useState<string[]>([])
-  const [sortBy, setSortBy] = useState<'date' | 'title'>('date')
+  const [sortBy, setSortBy] = useState<'date' | 'title' | 'mastery'>('date')
   const [filterType, setFilterType] = useState<'all' | 'mcq' | 'formula' | 'mixed'>('all')
   const [activeFolder, setActiveFolder] = useState<string | 'all'>('all')
   const filterPopoverRef = useRef<HTMLDivElement>(null)
@@ -130,6 +131,11 @@ export default function Formulas() {
               if (row.tags) parsedTags = JSON.parse(row.tags)
             } catch (e) { }
 
+            const mastery = (() => {
+              const savedKeys = JSON.parse(localStorage.getItem(`progress_${row.id}`) || '[]');
+              return row.card_count > 0 ? Math.round((savedKeys.length / row.card_count) * 100) : 0;
+            })();
+
             return {
               id: row.id,
               title: row.name,
@@ -137,6 +143,7 @@ export default function Formulas() {
               cardCount: row.card_count || 0,
               deckType,
               description: row.description || '',
+              mastery,
               tags: parsedTags,
               createdAt: row.created_at || Date.now(),
               folderName: row.folder_name || 'Uncategorized'
@@ -443,6 +450,7 @@ export default function Formulas() {
     result.sort((a, b) => {
       if (sortBy === 'date') return (b.createdAt || 0) - (a.createdAt || 0)
       if (sortBy === 'title') return a.title.localeCompare(b.title)
+      if (sortBy === 'mastery') return b.mastery - a.mastery
       return 0
     })
 
@@ -797,6 +805,23 @@ export default function Formulas() {
                         )}
 
                         {/* Clear Button */}
+                        {/* Sort Selection */}
+                        <div className="flex flex-col gap-2">
+                          <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Sort By</label>
+                          <div className="grid grid-cols-3 gap-1">
+                            {(['date', 'title', 'mastery'] as const).map(opt => (
+                              <button
+                                key={opt}
+                                onClick={() => setSortBy(opt)}
+                                className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${sortBy === opt ? 'bg-[#00FF41]/20 text-[#00FF41] font-bold' : 'bg-[#1A1A1A] text-[#888] hover:bg-[#222]'
+                                  }`}
+                              >
+                                {opt}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
                         {(filterTags.length > 0 || filterType !== 'all' || sortBy !== 'date') && (
                           <button
                             onClick={() => {
@@ -885,29 +910,47 @@ export default function Formulas() {
                     </p>
                   )}
 
-                  {/* Bottom Row: Actions */}
-                  <div className="flex justify-end items-center mt-4 gap-2">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); navigate(`/edit-deck/${deck.id}`) }}
-                      className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
-                      title="Edit Deck"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setSetToDelete(deck); }}
-                      className="p-2 bg-[#111] border border-[#333] hover:border-red-500/50 text-gray-500 hover:text-red-500 rounded transition-colors"
-                      title="Delete Deck"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); openDeck(deck); }}
-                      className="w-[120px] py-2 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
-                    >
-                      <Play className="w-3 h-3" />
-                      Review
-                    </button>
+                  {/* Bottom Row: Progress and Actions */}
+                  <div className="flex justify-between items-end mt-4 gap-4">
+                    {/* Left Side: Progress Bar (Condensed Width) */}
+                    <div className="flex-1 max-w-[200px]">
+                      <div className="flex justify-between text-[10px] font-rajdhani tracking-widest mb-1 uppercase text-gray-500">
+                        <span>MASTERY</span>
+                        <span className="text-[#00FF41] font-bold">{deck.mastery}%</span>
+                      </div>
+                      <div className="w-full bg-[#111] h-1 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${deck.mastery}%` }}
+                          className="h-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.4)]"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Right Side: Action Buttons */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigate(`/edit-deck/${deck.id}`) }}
+                        className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
+                        title="Edit Deck"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setSetToDelete(deck); }}
+                        className="p-2 bg-[#111] border border-[#333] hover:border-red-500/50 text-gray-500 hover:text-red-500 rounded transition-colors"
+                        title="Delete Deck"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openDeck(deck); }}
+                        className="w-[120px] py-2 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                      >
+                        <Play className="w-3 h-3" />
+                        Review
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

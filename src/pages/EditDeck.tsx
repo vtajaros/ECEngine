@@ -3,9 +3,11 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, Save, ChevronDown, ChevronUp, Trash2, GripVertical, Plus,
-  CheckCircle2, AlertCircle, RotateCcw, ImageIcon, X, Sigma
+  CheckCircle2, AlertCircle, RotateCcw, ImageIcon, X, Sigma,
+  Calculator, FlaskConical, Zap, Cpu
 } from 'lucide-react'
 import { renderMath, isRawLatex } from '../lib/latex'
+import { getSubjectFilterClasses } from '../lib/subjectColors'
 import {
   DndContext,
   closestCenter,
@@ -26,21 +28,14 @@ import { CSS } from '@dnd-kit/utilities'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type Subject = 'MATH' | 'GEAS' | 'ELECS' | 'EST'
-const SUBJECTS: Subject[] = ['MATH', 'GEAS', 'ELECS', 'EST']
+type Subject = 'Mathematics' | 'General Engineering & Applied Sciences' | 'Electronics Engineering' | 'Electronics Systems & Technologies'
 
-const SUBJECT_DB_MAP: Record<string, Subject> = {
-  'Mathematics': 'MATH',
-  'General Engineering & Applied Sciences': 'GEAS',
-  'Electronics Engineering': 'ELECS',
-  'Electronics Systems & Technologies': 'EST',
-}
-const SUBJECT_DISPLAY_MAP: Record<Subject, string> = {
-  MATH: 'Mathematics',
-  GEAS: 'General Engineering & Applied Sciences',
-  ELECS: 'Electronics Engineering',
-  EST: 'Electronics Systems & Technologies',
-}
+const SUBJECTS: { value: Subject; short: string; icon: any }[] = [
+  { value: 'Mathematics', short: 'MATH', icon: Calculator },
+  { value: 'General Engineering & Applied Sciences', short: 'GEAS', icon: FlaskConical },
+  { value: 'Electronics Engineering', short: 'ELECS', icon: Zap },
+  { value: 'Electronics Systems & Technologies', short: 'EST', icon: Cpu },
+]
 
 interface DeckMeta {
   title: string
@@ -534,9 +529,9 @@ export default function EditDeck() {
   const [deckMeta, setDeckMeta] = useState<DeckMeta>({
     title: '',
     description: '',
-    subject: 'ELECS',
+    subject: 'Electronics Engineering',
     tags: '',
-    folderName: 'Uncategorized'
+    folderName: ''
   })
   const [cards, setCards] = useState<EditCard[]>([])
   const [loading, setLoading] = useState(true)
@@ -544,6 +539,18 @@ export default function EditDeck() {
   const [originalCardIds, setOriginalCardIds] = useState<Set<string>>(new Set())
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
   const [existingFolders, setExistingFolders] = useState<string[]>([])
+  const [showFolderDropdown, setShowFolderDropdown] = useState(false)
+  const folderDropdownRef = React.useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (folderDropdownRef.current && !folderDropdownRef.current.contains(event.target as Node)) {
+        setShowFolderDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const [historyStack, setHistoryStack] = useState<EditCard[][]>([])
   const cardsRef = React.useRef(cards)
@@ -604,15 +611,14 @@ export default function EditDeck() {
         )
         if (topicRes.success && topicRes.data?.[0]) {
           const t = topicRes.data[0]
-          const subjectCode = SUBJECT_DB_MAP[t.subject] ?? 'ELECS'
           let parsedTags = ''
           try { parsedTags = JSON.parse(t.tags || '[]').join(', ') } catch {}
           setDeckMeta({
             title: t.name || '',
             description: t.description || '',
-            subject: subjectCode,
+            subject: t.subject as Subject || 'Electronics Engineering',
             tags: parsedTags,
-            folderName: t.folder_name || 'Uncategorized'
+            folderName: (!t.folder_name || t.folder_name === 'Uncategorized') ? '' : t.folder_name
           })
         }
 
@@ -717,16 +723,14 @@ export default function EditDeck() {
       await run('BEGIN TRANSACTION')
 
       // 1. Update topic metadata
-      const subjectFull = SUBJECT_DISPLAY_MAP[deckMeta.subject]
-      const tagsJson = JSON.stringify(
-        deckMeta.tags
-          .split(',')
-          .map(t => t.trim())
-          .filter(Boolean)
-      )
+      const tagsArr = deckMeta.tags
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean)
+      
       await run(
-        'UPDATE topics SET name = ?, description = ?, subject = ?, tags = ?, folder_name = ? WHERE id = ?',
-        [deckMeta.title, deckMeta.description, subjectFull, tagsJson, deckMeta.folderName.trim(), deckId]
+        `UPDATE topics SET name = ?, subject = ?, description = ?, tags = ?, folder_name = ? WHERE id = ?`,
+        [deckMeta.title.trim(), deckMeta.subject, deckMeta.description.trim(), JSON.stringify(tagsArr), deckMeta.folderName.trim(), deckId]
       )
 
       // 2. Partition cards into updates vs inserts
@@ -871,47 +875,111 @@ export default function EditDeck() {
  
           <div>
             <Label>Folder / Category</Label>
-            <div className="relative group/folder">
-              <input
-                type="text"
-                list="folder-suggestions"
-                className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-[#E8E8E8] font-['IBM_Plex_Mono'] text-sm focus:border-[#00FF41] focus:bg-[#111] outline-none transition-colors pr-8"
-                value={deckMeta.folderName}
-                onChange={e => setDeckMeta(m => ({ ...m, folderName: e.target.value }))}
-                placeholder="e.g. Midterms, AC Circuits..."
-              />
-              {deckMeta.folderName && (
-                <button 
-                  onClick={() => setDeckMeta(m => ({ ...m, folderName: '' }))}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-[#444] hover:text-[#00FF41] transition-colors"
-                >
-                  <X size={14} />
-                </button>
-              )}
-              <datalist id="folder-suggestions">
-                {existingFolders.map(f => (
-                  <option key={f} value={f} />
-                ))}
-              </datalist>
+            <div className="relative" ref={folderDropdownRef}>
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-[#E8E8E8] font-['IBM_Plex_Mono'] text-sm focus:border-[#00FF41] focus:bg-[#111] outline-none transition-colors pr-16 placeholder-[#555]"
+                  value={deckMeta.folderName}
+                  onChange={e => {
+                    setDeckMeta(m => ({ ...m, folderName: e.target.value }))
+                    setShowFolderDropdown(true)
+                  }}
+                  onFocus={() => setShowFolderDropdown(true)}
+                  placeholder="e.g. Select or type folder name..."
+                />
+                <div className="absolute right-2 flex items-center gap-1">
+                  {deckMeta.folderName && (
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        setDeckMeta(m => ({ ...m, folderName: '' }))
+                        setShowFolderDropdown(true)
+                      }}
+                      className="p-1 text-[#444] hover:text-[#00FF41] transition-colors"
+                      title="Clear folder"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowFolderDropdown(prev => !prev)}
+                    className="p-1 text-[#666] hover:text-[#00FF41] transition-colors"
+                    title="Toggle folder list"
+                  >
+                    <ChevronDown size={14} className={`transform transition-transform ${showFolderDropdown ? 'rotate-180' : ''}`} />
+                  </button>
+                </div>
+              </div>
+              
+              <AnimatePresence>
+                {showFolderDropdown && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-[#161616] border border-[#333] rounded-lg shadow-2xl max-h-48 overflow-y-auto custom-scrollbar"
+                  >
+                    {existingFolders.length === 0 ? (
+                      <div className="p-3 text-xs text-[#666] font-['IBM_Plex_Mono'] text-center">
+                        No folders created yet. Type above to create one.
+                      </div>
+                    ) : (
+                      <div className="flex flex-col py-1">
+                        {existingFolders
+                          .filter(f => f.toLowerCase().includes(deckMeta.folderName.toLowerCase()))
+                          .map(f => (
+                            <button
+                              key={f}
+                              type="button"
+                              onClick={() => {
+                                setDeckMeta(m => ({ ...m, folderName: f }))
+                                setShowFolderDropdown(false)
+                              }}
+                              className="w-full text-left px-3 py-2 text-xs font-['IBM_Plex_Mono'] text-[#ccc] hover:bg-[#222] hover:text-[#00FF41] transition-colors flex items-center justify-between"
+                            >
+                              <span>{f}</span>
+                              {deckMeta.folderName.toLowerCase() === f.toLowerCase() && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#00FF41]" />
+                              )}
+                            </button>
+                          ))}
+                        {existingFolders.filter(f => f.toLowerCase().includes(deckMeta.folderName.toLowerCase())).length === 0 && (
+                          <div className="p-3 text-xs text-[#666] font-['IBM_Plex_Mono'] text-center">
+                            Press save to create folder "{deckMeta.folderName}"
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
           <div>
             <Label>Subject</Label>
             <div className="flex gap-2 flex-wrap">
-              {SUBJECTS.map(s => (
-                <button
-                  key={s}
-                  onClick={() => setDeckMeta(m => ({ ...m, subject: s }))}
-                  className={`px-4 py-1.5 rounded border font-['Rajdhani'] font-bold uppercase tracking-widest text-sm transition-all ${
-                    deckMeta.subject === s
-                      ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
-                      : 'bg-[#161616] border-[#333] text-[#888] hover:border-[#555]'
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
+              {SUBJECTS.map(s => {
+                const Icon = s.icon
+                const isSelected = deckMeta.subject === s.value
+                const colorClasses = getSubjectFilterClasses(s.short, isSelected)
+
+                return (
+                  <button
+                    key={s.value}
+                    onClick={() => setDeckMeta(m => ({ ...m, subject: s.value }))}
+                    className={`px-4 py-2 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-[11px] flex items-center gap-2 transition-all duration-200 ${colorClasses} ${
+                      !isSelected ? 'bg-[#111] hover:bg-[#1A1A1A] border-[#222] text-[#888]' : ''
+                    }`}
+                  >
+                    <Icon size={14} className={isSelected ? 'text-inherit' : 'text-[#888]'} />
+                    {s.short}
+                  </button>
+                )
+              })}
             </div>
           </div>
 

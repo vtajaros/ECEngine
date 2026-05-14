@@ -1158,8 +1158,20 @@ export default function AddDeck() {
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [folderName, setFolderName] = useState('Uncategorized')
+  const [folderName, setFolderName] = useState('')
   const [existingFolders, setExistingFolders] = useState<string[]>([])
+  const [showFolderDropdown, setShowFolderDropdown] = useState(false)
+  const folderDropdownRef = React.useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (folderDropdownRef.current && !folderDropdownRef.current.contains(event.target as Node)) {
+        setShowFolderDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
   const [subject, setSubject] = useState<Subject>('Electronics Engineering')
   const [deckTags, setDeckTags] = useState<Set<string>>(new Set())
   const [customTagInput, setCustomTagInput] = useState('')
@@ -1569,27 +1581,87 @@ export default function AddDeck() {
               <label className="text-[10px] text-[#555] font-['Rajdhani'] font-bold uppercase tracking-widest mb-1 block">
                 Folder / Category
               </label>
-              <div className="relative group/folder">
-                <input
-                  value={folderName}
-                  list="folder-suggestions"
-                  onChange={e => setFolderName(e.target.value)}
-                  placeholder='e.g. "Electronics Review", "Midterms"...'
-                  className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-[#E8E8E8] text-sm font-['IBM_Plex_Mono'] focus:border-[#00FF41] focus:bg-[#111] outline-none transition-colors pr-8"
-                />
-                {folderName && (
-                  <button 
-                    onClick={() => setFolderName('')}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-[#444] hover:text-[#00FF41] transition-colors"
-                  >
-                    <X size={14} />
-                  </button>
-                )}
-                <datalist id="folder-suggestions">
-                  {existingFolders.map(f => (
-                    <option key={f} value={f} />
-                  ))}
-                </datalist>
+              <div className="relative" ref={folderDropdownRef}>
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    value={folderName}
+                    onChange={e => {
+                      setFolderName(e.target.value)
+                      setShowFolderDropdown(true)
+                    }}
+                    onFocus={() => setShowFolderDropdown(true)}
+                    placeholder="e.g. Select or type folder name..."
+                    className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-[#E8E8E8] text-sm font-['IBM_Plex_Mono'] focus:border-[#00FF41] focus:bg-[#111] outline-none transition-colors pr-16 placeholder-[#555]"
+                  />
+                  <div className="absolute right-2 flex items-center gap-1">
+                    {folderName && (
+                      <button 
+                        type="button"
+                        onClick={() => {
+                          setFolderName('')
+                          setShowFolderDropdown(true)
+                        }}
+                        className="p-1 text-[#444] hover:text-[#00FF41] transition-colors"
+                        title="Clear folder"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setShowFolderDropdown(prev => !prev)}
+                      className="p-1 text-[#666] hover:text-[#00FF41] transition-colors"
+                      title="Toggle folder list"
+                    >
+                      <ChevronDown size={14} className={`transform transition-transform ${showFolderDropdown ? 'rotate-180' : ''}`} />
+                    </button>
+                  </div>
+                </div>
+
+                <AnimatePresence>
+                  {showFolderDropdown && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-[#161616] border border-[#333] rounded-lg shadow-2xl max-h-48 overflow-y-auto custom-scrollbar"
+                    >
+                      {existingFolders.length === 0 ? (
+                        <div className="p-3 text-xs text-[#666] font-['IBM_Plex_Mono'] text-center">
+                          No folders created yet. Type above to create one.
+                        </div>
+                      ) : (
+                        <div className="flex flex-col py-1">
+                          {existingFolders
+                            .filter(f => f.toLowerCase().includes(folderName.toLowerCase()))
+                            .map(f => (
+                              <button
+                                key={f}
+                                type="button"
+                                onClick={() => {
+                                  setFolderName(f)
+                                  setShowFolderDropdown(false)
+                                }}
+                                className="w-full text-left px-3 py-2 text-xs font-['IBM_Plex_Mono'] text-[#ccc] hover:bg-[#222] hover:text-[#00FF41] transition-colors flex items-center justify-between"
+                              >
+                                <span>{f}</span>
+                                {folderName.toLowerCase() === f.toLowerCase() && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[#00FF41]" />
+                                )}
+                              </button>
+                            ))}
+                          {existingFolders.filter(f => f.toLowerCase().includes(folderName.toLowerCase())).length === 0 && (
+                            <div className="p-3 text-xs text-[#666] font-['IBM_Plex_Mono'] text-center">
+                              Press save to create folder "{folderName}"
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
           </div>

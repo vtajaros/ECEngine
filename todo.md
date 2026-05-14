@@ -1,15 +1,15 @@
 *For IMPROVEMENT TODO LIST MAY 11, 2026
 
 ***DECK EDITOR TAB***
-- insert equations (kind of how equation typing is in microsoft word) or symbolab/mathway
 - export function to export flashcard content in text
 
 ***EQUATION DISPLAY***
-- ability to display equation natively and fractions as well, equation editing like mathway and microsoft word equation editor
+- some symbols may not be displaying properly (more testing needed)
 
 ***Revamp Dashboard Tab***
 - revamp dashboard make improvements
-- allow goal timer setting (manually setting the board exam goal date by making a date prompt)
+- update dashboard with real data
+- data insights
 
 ***LEARN ALGORITHM***
 - learn questions where user is struggling, if a question is being incorrectly answered wrong, we save it to a still learning array or set that we can revisit later on. Build an algorithm on how to determine if a user actually knows the content.
@@ -30,10 +30,6 @@
 
 ***ANDROID/IOS/LINUX/WEB PORT***
 - able to run on android and ios
-
-***DASHBOARD DATA INSIGHTS***
-- think of a way to get or try to see progress of student over time and areas where they are struggling and whatnot
-- dashboard needs to be a tab where you can see actual data insights about you
 
 ***ONE PROMPT DESIGN***
 - make the prompts and buttons look the same (delete prompt)

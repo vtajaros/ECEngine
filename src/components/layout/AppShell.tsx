@@ -6,7 +6,6 @@ import {
   BookOpen,
   Sigma,
   PlusCircle,
-  Trophy,
   Settings,
   Layers
 } from 'lucide-react'
@@ -30,7 +29,6 @@ export const AppShell: React.FC = () => {
     { to: '/study', label: 'LooksFam', icon: Brain },
     { to: '/flashcards', label: 'Flashcards', icon: Layers },
     { to: '/formulas', label: 'Formulas', icon: Sigma },
-    { to: '/exam', label: 'Exam Mode', icon: Trophy },
     { to: '/topics', label: 'Topics', icon: BookOpen },
     { to: '/add-decks', label: 'Add Decks', icon: PlusCircle },
     { to: '/settings', label: 'Settings', icon: Settings },

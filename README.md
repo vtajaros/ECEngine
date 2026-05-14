@@ -7,29 +7,26 @@
 ## 🚀 Core Features & Functionality
 
 ### 📊 Tactical Dashboard (Telemetry)
-- **Activity Heatmap**: Tracks your "Heartbeat" (time spent in app) across a 6-month window. Colors saturate from deep green (1h) to neon green (4h+).
+- **Activity Heatmap**: Tracks your "Heartbeat" (time spent in app) across a **dynamic 6-month window** leading up to your target exam date. Colors saturate from deep green (1h) to neon green (4h+).
 - **Performance Telemetry**: Real-time Area Charts visualize your **Accuracy Trend**, allowing you to identify "fatigue zones" in your study schedule.
 - **Subject Intelligence**: Dynamically calculates mastery percentage per subject (**MATH**, **GEAS**, **ELECS**, **EST**) based on successfully "Internalized" cards.
 - **Exam Countdown**: A high-precision digital clock counting down to your target board exam date, creating a "Mission Critical" environment.
 
 ### 🧠 LooksFam Study Hub (Core Engine)
 - **Multi-Modal Review**: Toggle between **Learn** (Partitioned repetition), **Test** (Full simulation), and **Mixed** modes.
-- **Advanced Spaced Repetition**: Implements the **SM-2 Algorithm**. The system calculates your next review date based on your performance:
-  - `Correct (First Try)`: Increases interval exponentially.
-  - `Missed`: Resets interval, adding the card back to the "Critical List."
-- **AI Explainer (✨)**: Leverages Large Language Models to provide "Just-In-Time" tutoring. It breaks down engineering solutions into:
-  - *Theoretical Foundation*: The law/principle applied.
-  - *Mathematical Derivation*: Step-by-step formula application.
-  - *Distractor Rationale*: Why other choices were designed to trick you.
-- **Interactive Question Tracker**: A sticky numbered navigation strip in Test Mode that uses pulsing indicators to show your current location in the "Manifest."
+- **Advanced Spaced Repetition**: Implements the **SM-2 Algorithm**. The system calculates your next review date based on your performance.
+- **Synchronous Navigation (🚀)**: A high-performance, frame-perfect scroll tracking system in Test Mode. Replaces asynchronous observers with a manual scanline engine for zero-lag navigation in high-density question banks.
+- **AI Explainer (✨)**: Leverages LLMs to provide "Just-In-Time" tutoring. It breaks down engineering solutions into Theoretical Foundation, Mathematical Derivation, and Distractor Rationale.
 
 ### 🧪 Formulas & Reference Laboratory
-- **KaTeX Integration**: Renders complex ECE equations (e.g., Friis Transmission Equation, Shannon-Hartley Theorem) with textbook-grade precision.
-- **Search & Filter**: Instantly isolate formulas by subject or tag for quick reference during problem-solving sessions.
+- **Expanded LaTeX Engine**: Robust rendering for complex ECE equations using KaTeX.
+  - *Normalization*: Automatically translates non-standard/MathJax commands (e.g., `\exponentialE`, `\imaginaryI`) to standard KaTeX equivalents.
+  - *SVG Hardening*: Custom DOMPurify profiles ensure complex radicals (`\sqrt`) and fraction bars are never stripped by sanitizers.
+- **Mastery Tracking**: Now features the same "MASTERY" progress bar as the main study hub, ensuring visual and data parity across all reference decks.
 
 ### 📂 Manifest Management
 - **Intelligent Parser**: Ingests raw text, JSON, or Quizlet exports.
-- **Cyberpunk Folder System**: Organize decks into hierarchical folders. Folders are collapsible to maintain a clean workspace.
+- **Cyberpunk Folder System**: Organize decks into hierarchical folders with standardized color-coded subject tags.
 - **Navigation Protection**: Custom `useBlocker` integration intercepts accidental sidebar clicks, protecting your active session data.
 
 ---
@@ -63,19 +60,18 @@ npm run build
 ## 🗺 Future Roadmap & TODO List
 
 ### 🛰 Phase 1: Persistence & Sync
+- [ ] **DB-Driven Mastery**: Transition from localStorage sets to SQLite-persisted `correct_count` / `total_count` tracking for unified analytics.
 - [ ] **Cloud Sync (Supabase)**: Enable cross-device progress synchronization (PC to Laptop).
-- [ ] **Multi-Profile Support**: Allow different study profiles for different users on the same machine.
 - [ ] **Automatic Backups**: Encrypted SQLite exports to local or cloud drives.
 
 ### 🤖 Phase 2: AI & Analytics
 - [ ] **Integrated AI Chat**: A dedicated sidebar chat to ask follow-up questions about the current card.
 - [ ] **Predictive Accuracy**: An AI model that predicts your board exam score based on current trend data.
-- [ ] **Voice-Activated Review**: Hands-free study mode using Speech-to-Text for MCQ selection.
+- [ ] **Time-in-Study Gate**: Refine heatmap telemetry to count active study time rather than app-uptime.
 
 ### 🌐 Phase 3: Community & Content
 - [ ] **Global Leaderboards**: Opt-in "Speed-Run" rankings for subject completion.
-- [ ] **Public Manifest Gallery**: A community-driven repository to download shared decks for specific topics (e.g., "Advanced Filter Design").
-- [ ] **Mobile Companion**: A lightweight React Native app for reviewing flashcards on the go.
+- [ ] **Public Manifest Gallery**: A community-driven repository to download shared decks for specific topics.
 
 ### 🎨 Phase 4: UI/UX Refinement
 - [ ] **Theming Engine**: Support for multiple cyberpunk sub-themes (e.g., "Night City Blue", "Matrix Green").
