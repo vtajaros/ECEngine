@@ -23,8 +23,8 @@ export function registerDBHandlers() {
   ipcMain.handle('db:run', async (_, sql: string, params: unknown[] = []) => {
     try {
       await dbReady
-      execute(sql, params)
-      return { success: true, data: { changes: 1, lastInsertRowid: 0 } }
+      const { changes, lastInsertRowid } = execute(sql, params)
+      return { success: true, data: { changes, lastInsertRowid } }
     } catch (error) {
       console.error('[DB Run Error]', error)
       return { success: false, error: (error as Error).message }

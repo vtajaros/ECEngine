@@ -48,6 +48,20 @@ export const dbService = {
     }))
   },
 
+  getProgress: async (cardId: string): Promise<{ repetitions: number; interval: number; easeFactor: number } | null> => {
+    const result = await window.electron.db.query(
+      `SELECT repetitions, interval, ease_factor FROM progress WHERE card_id = ?`,
+      [cardId]
+    )
+    if (!result.success || !result.data || result.data.length === 0) return null
+    const row = result.data[0]
+    return {
+      repetitions: row.repetitions ?? 0,
+      interval: row.interval ?? 1,
+      easeFactor: row.ease_factor ?? 2.5,
+    }
+  },
+
   saveProgress: async (cardId: string, progressUpdates: Partial<Progress>) => {
     const { easeFactor, interval, repetitions, nextReview, lastReviewed } = progressUpdates
     
@@ -196,7 +210,17 @@ export const dbService = {
       totalCards: cards.data?.[0]?.count || 0,
       internalized: internalized.data?.[0]?.count || 0
     }
+  },
+
+  clearAllData: async (): Promise<void> => {
+    // Delete in FK-safe order: progress → cards → topics
+    await window.electron.db.run('DELETE FROM progress')
+    await window.electron.db.run('DELETE FROM study_activity')
+    await window.electron.db.run('DELETE FROM exam_sessions')
+    await window.electron.db.run('DELETE FROM cards')
+    await window.electron.db.run('DELETE FROM topics')
   }
 }
+
 
 

@@ -138,13 +138,17 @@ export function queryOne(sql: string, params: any[] = []): any | null {
   return result;
 }
 
-export function execute(sql: string, params: any[] = []) {
+export function execute(sql: string, params: any[] = []): { changes: number; lastInsertRowid: number } {
   if (!db) throw new Error('DB not initialized');
   const stmt = db.prepare(sql);
   stmt.bind(params);
   stmt.step();
   stmt.free();
+  const changes = db.getRowsModified();
+  const rowidRows = queryAll('SELECT last_insert_rowid() as id');
+  const lastInsertRowid = rowidRows.length > 0 ? (rowidRows[0].id as number) : 0;
   saveDB();
+  return { changes, lastInsertRowid };
 }
 
 

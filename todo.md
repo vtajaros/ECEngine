@@ -4,8 +4,6 @@
 - insert equations (kind of how equation typing is in microsoft word) or symbolab/mathway
 - export function to export flashcard content in text
 
-***FOLDER/NOTEBOOK FUNCTION FOR DECKS***
-
 ***EQUATION DISPLAY***
 - ability to display equation natively and fractions as well, equation editing like mathway and microsoft word equation editor
 
@@ -39,7 +37,4 @@
 
 ***ONE PROMPT DESIGN***
 - make the prompts and buttons look the same (delete prompt)
-
-***TO FIX***
-- Subject auto detection in add decks seems to be not working properly
 

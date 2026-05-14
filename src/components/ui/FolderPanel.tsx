@@ -24,7 +24,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
   });
 
   return (
-    <div className="w-[220px] h-full flex flex-col border-r border-[var(--bg-elevated)] bg-[var(--bg-primary)] flex-shrink-0 pl-2 pt-6">
+    <div className="w-[240px] flex-shrink-0 h-full flex flex-col border-r border-[var(--bg-card)] bg-[var(--bg-primary)] overflow-y-auto" style={{ padding: '16px 8px 16px 12px' }}>
       <div className="px-4">
         <h2 className="text-[var(--text-secondary)] text-[10px] uppercase tracking-[0.15em] font-bold mb-6">
           Your folders
@@ -35,20 +35,22 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
           <motion.button
             whileHover={{ scale: 1.01 }}
             onClick={() => onSelect('all')}
-            className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 transition-all duration-200 rounded-r-md border-l-[3px] group ${
-              selected === 'all'
+            title="All Folders"
+            className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 transition-all duration-200 rounded-r-md border-l-[3px] group ${selected === 'all'
                 ? 'bg-[var(--bg-card)] border-[var(--accent-primary)]'
                 : 'bg-transparent border-transparent hover:bg-[var(--bg-secondary)]'
-            }`}
+              }`}
           >
             <div className="flex items-center gap-3 min-w-0">
-              <LayoutGrid 
-                size={16} 
-                className={selected === 'all' ? 'text-[var(--accent-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors'} 
+              <LayoutGrid
+                size={16}
+                className={selected === 'all' ? 'text-[var(--accent-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors'}
               />
-              <span className={`text-sm truncate font-medium ${
-                selected === 'all' ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'
-              }`}>
+              <span 
+                className={`text-[13px] truncate font-bold font-['Rajdhani'] uppercase tracking-wider ${selected === 'all' ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'
+                }`}
+                title="All Folders"
+              >
                 All
               </span>
             </div>
@@ -68,20 +70,22 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                 layout
                 whileHover={{ scale: 1.01 }}
                 onClick={() => onSelect(folder)}
-                className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 transition-all duration-200 rounded-r-md border-l-[3px] group ${
-                  isSelected
+                title={folder}
+                className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 transition-all duration-200 rounded-r-md border-l-[3px] group ${isSelected
                     ? 'bg-[var(--bg-card)] border-[var(--accent-primary)]'
                     : 'bg-transparent border-transparent hover:bg-[var(--bg-secondary)]'
-                }`}
+                  }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <Folder 
-                    size={16} 
-                    className={isSelected ? 'text-[var(--accent-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors'} 
+                  <Folder
+                    size={16}
+                    className={isSelected ? 'text-[var(--accent-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors'}
                   />
-                  <span className={`text-sm truncate font-medium ${
-                    isSelected ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'
-                  }`}>
+                  <span 
+                    className={`text-[13px] truncate font-bold font-['Rajdhani'] uppercase tracking-wider ${isSelected ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'
+                    }`}
+                    title={folder}
+                  >
                     {folder}
                   </span>
                 </div>

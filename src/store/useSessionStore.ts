@@ -18,7 +18,7 @@ interface SessionStore {
   isFinished: boolean
   startSession: (cards: Card[]) => void
   flipCard: () => void
-  rateCard: (quality: number) => void
+  rateCard: (quality: number) => Promise<void>
 }
 
 export const useSessionStore = create<SessionStore>((set, get) => ({
@@ -40,16 +40,17 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
 
   flipCard: () => set((state) => ({ isFlipped: !state.isFlipped })),
 
-  rateCard: (quality) => {
+  rateCard: async (quality) => {
     const state = get()
     if (state.isFinished || state.currentIndex >= state.currentDeck.length) return
 
     const currentCard = state.currentDeck[state.currentIndex]
 
-    // Default mock values if progress isn't retrieved beforehand
-    const previousRepetitions = 0
-    const previousInterval = 1
-    const previousEaseFactor = 2.5
+    // Load prior SM2 state from DB; fall back to defaults on first review
+    const prior = await dbService.getProgress(currentCard.id)
+    const previousRepetitions = prior?.repetitions ?? 0
+    const previousInterval    = prior?.interval    ?? 1
+    const previousEaseFactor  = prior?.easeFactor  ?? 2.5
 
     const { interval, repetitions, easeFactor } = calculateSM2(
       quality,
@@ -61,7 +62,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     const nextReview = new Date()
     nextReview.setDate(nextReview.getDate() + interval)
 
-    dbService.saveProgress(currentCard.id, {
+    await dbService.saveProgress(currentCard.id, {
       easeFactor,
       interval,
       repetitions,

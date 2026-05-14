@@ -76,7 +76,7 @@ export default function FlashcardStudy() {
         if (topicsResult.success && topicsResult.data) {
           const dbSets: StudySet[] = topicsResult.data.map((row: any) => {
             const types = (row.types || '').split(',').filter(Boolean)
-            
+
             // Skip formula-only decks or empty decks
             if (types.length === 0 || (types.length === 1 && types[0] === 'formula')) return null
 
@@ -92,7 +92,7 @@ export default function FlashcardStudy() {
             let parsedTags: string[] = []
             try {
               if (row.tags) parsedTags = JSON.parse(row.tags)
-            } catch (e) {}
+            } catch (e) { }
 
             return {
               id: row.id,
@@ -148,7 +148,7 @@ export default function FlashcardStudy() {
         (d.folderName || 'Uncategorized') === f
       ).length
     }), {} as Record<string, number>)
-  , [allSets, folders])
+    , [allSets, folders])
 
   const filteredAndSortedSets = useMemo(() => {
     const folderFiltered = activeFolder === 'all'
@@ -156,7 +156,7 @@ export default function FlashcardStudy() {
       : allSets.filter(d => (d.folderName || 'Uncategorized') === activeFolder)
 
     let result = folderFiltered.filter(s => activeSubject === 'ALL' || s.subject === activeSubject)
-    
+
     if (filterType !== 'all') {
       result = result.filter(s => s.deckType === filterType)
     }
@@ -206,7 +206,7 @@ export default function FlashcardStudy() {
   }
 
   const [mode, setMode] = useState<StudyMode>('flashcard')
-  
+
   const [isSessionActive, setIsSessionActive] = useState(false)
   const [activeSessionTitle, setActiveSessionTitle] = useState('')
   const [activeSessionSetId, setActiveSessionSetId] = useState('')
@@ -286,14 +286,14 @@ export default function FlashcardStudy() {
       const res = await window.electron.db.query(`SELECT data, type, id FROM cards WHERE topic_id = ?`, [setId])
       if (res.success && res.data) {
         const rawCards = res.data.map((r: any) => ({ data: JSON.parse(r.data), type: r.type, id: r.id }))
-        
+
         const mcqs = rawCards.filter((r: any) => r.type === 'mcq').map((r: any) => ({
           id: r.id, topicId: 'custom', type: 'mcq', difficulty: 'medium', tags: [], isCustom: true, data: r.data
         }))
-        
+
         const flashcards = rawCards.filter((r: any) => r.type !== 'mcq').map((r: any) => ({ ...r.data, id: r.id }))
         const generated = generateMCQs(flashcards)
-        
+
         filteredData = [...mcqs, ...generated]
       }
     } else {
@@ -360,14 +360,14 @@ export default function FlashcardStudy() {
       const res = await window.electron.db.query(`SELECT data, type, id FROM cards WHERE topic_id = ?`, [setId])
       if (res.success && res.data) {
         const rawCards = res.data.map((r: any) => ({ data: JSON.parse(r.data), type: r.type, id: r.id }))
-        
+
         const mcqs = rawCards.filter((r: any) => r.type === 'mcq').map((r: any) => ({
           id: r.id, topicId: 'custom', type: 'mcq', difficulty: 'medium', tags: [], isCustom: true, data: r.data
         }))
-        
+
         const flashcards = rawCards.filter((r: any) => r.type !== 'mcq').map((r: any) => ({ ...r.data, id: r.id }))
         const generated = generateMCQs(flashcards)
-        
+
         filteredData = [...mcqs, ...generated]
       }
     } else {
@@ -424,8 +424,8 @@ export default function FlashcardStudy() {
   if (isSessionActive) {
     if (mode === 'learn') {
       return (
-        <LearnMode 
-          cards={currentDeck} 
+        <LearnMode
+          cards={currentDeck}
           title={activeSessionTitle}
           onComplete={(stats) => {
             console.log('Learn Mode Stats:', stats)
@@ -436,7 +436,7 @@ export default function FlashcardStudy() {
                   stats.correctIds.forEach(id => savedMastered.add(id));
                   const newMasteredArray = Array.from(savedMastered);
                   localStorage.setItem(`progress_${s.id}`, JSON.stringify(newMasteredArray));
-                  
+
                   const newMastery = s.count > 0 ? Math.round((newMasteredArray.length / s.count) * 100) : 0;
                   return { ...s, mastery: newMastery };
                 }
@@ -444,20 +444,20 @@ export default function FlashcardStudy() {
               }));
             }
           }}
-          onExit={() => setIsSessionActive(false)} 
+          onExit={() => setIsSessionActive(false)}
         />
       )
     }
 
     if (mode === 'test') {
       return (
-        <TestMode 
-          cards={currentDeck} 
+        <TestMode
+          cards={currentDeck}
           title={activeSessionTitle}
           settings={testSettings}
           onComplete={(stats) => {
             console.log('Test Mode Stats:', stats)
-            
+
             // Track Flawless Accuracy
             const isFlawless = stats.score === stats.total && stats.total > 0;
             const flawlessRounds = Number(localStorage.getItem('flawless_rounds') || '0');
@@ -472,7 +472,7 @@ export default function FlashcardStudy() {
                   stats.correctIds.forEach(id => savedMastered.add(id));
                   const newMasteredArray = Array.from(savedMastered);
                   localStorage.setItem(`progress_${s.id}`, JSON.stringify(newMasteredArray));
-                  
+
                   const newMastery = s.count > 0 ? Math.round((newMasteredArray.length / s.count) * 100) : 0;
                   return { ...s, mastery: newMastery };
                 }
@@ -480,14 +480,14 @@ export default function FlashcardStudy() {
               }));
             }
           }}
-          onExit={() => setIsSessionActive(false)} 
+          onExit={() => setIsSessionActive(false)}
         />
       )
     }
 
     return (
       <div className="h-full bg-[var(--bg-primary)] p-6 lg:p-10 flex flex-col relative overflow-y-auto w-full">
-        <button 
+        <button
           onClick={() => { setIsSessionActive(false); startSession([]) }}
           className="absolute top-6 right-6 px-4 py-2 bg-[var(--bg-secondary)] text-[var(--text-secondary)] rounded border border-[var(--bg-card)] hover:text-[var(--text-primary)] hover:border-[var(--accent-border)] transition-colors font-['Rajdhani'] uppercase tracking-wider z-50"
         >
@@ -513,7 +513,7 @@ export default function FlashcardStudy() {
   }
 
   return (
-    <div className="h-full bg-[var(--bg-primary)] px-6 pb-6 pt-6 lg:px-12 lg:pb-12 lg:pt-6 flex flex-col items-center justify-start overflow-y-auto w-full">
+    <div className="flex flex-col h-full w-full">
       <LearnSettingsModal
         isOpen={showSettingsModal.isOpen}
         setId={showSettingsModal.setId}
@@ -534,140 +534,7 @@ export default function FlashcardStudy() {
         onClose={() => setShowTestModal({ isOpen: false, setId: null })}
       />
 
-      {/* Subject Selector Header */}
-      <div className="w-full max-w-2xl mb-10 flex flex-col md:flex-row items-center justify-between gap-6 border-b border-[var(--bg-card)] pb-6 relative z-30 pt-4">
-        <h1 className="text-3xl lg:text-4xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4 uppercase">
-          <Brain className="text-[var(--accent-primary)]" size={36} />
-          LOOKS<span className="text-[var(--accent-primary)]">FAM</span>
-        </h1>
-
-        <div className="flex gap-2 items-center">
-          <div className="relative" ref={filterPopoverRef}>
-            <button 
-              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-              className={`p-2 rounded-lg border transition-all ${
-                showAdvancedFilters || filterTags.length > 0 || filterType !== 'all' || sortBy !== 'date'
-                  ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
-                  : 'bg-[var(--bg-secondary)] border-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-              }`}
-            >
-              <SlidersHorizontal size={20} />
-            </button>
-            
-            <AnimatePresence>
-              {showAdvancedFilters && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  transition={{ duration: 0.15 }}
-                  className="absolute right-0 top-full mt-2 w-72 bg-[#111] border border-[#333] rounded-lg shadow-2xl p-4 z-50 flex flex-col gap-4"
-                >
-                  <div className="flex justify-between items-center pb-2 border-b border-[#333]">
-                    <span className="font-['Rajdhani'] font-bold text-sm tracking-widest uppercase text-[#00FF41]">Filters & Sort</span>
-                    <button onClick={() => setShowAdvancedFilters(false)} className="text-[#888] hover:text-[#E8E8E8]">
-                      <X size={16} />
-                    </button>
-                  </div>
-                  
-                  {/* Sort Selection */}
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Sort By</label>
-                    <div className="grid grid-cols-3 gap-1">
-                      {(['date', 'title', 'mastery'] as const).map(opt => (
-                        <button
-                          key={opt}
-                          onClick={() => setSortBy(opt)}
-                          className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${
-                            sortBy === opt ? 'bg-[#00FF41]/20 text-[#00FF41] font-bold' : 'bg-[#1A1A1A] text-[#888] hover:bg-[#222]'
-                          }`}
-                        >
-                          {opt}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Type Filter */}
-                  <div className="flex flex-col gap-2">
-                    <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Type</label>
-                    <div className="grid grid-cols-4 gap-1">
-                      {(['all', 'mcq', 'flashcard', 'mixed'] as const).map(opt => (
-                        <button
-                          key={opt}
-                          onClick={() => setFilterType(opt)}
-                          className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${
-                            filterType === opt ? 'bg-[#00FF41]/20 text-[#00FF41] font-bold' : 'bg-[#1A1A1A] text-[#888] hover:bg-[#222]'
-                          }`}
-                        >
-                          {opt === 'flashcard' ? 'FC' : opt}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Tag Filters */}
-                  {availableTags.length > 0 && (
-                    <div className="flex flex-col gap-2">
-                      <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Tags (AND)</label>
-                      <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
-                        {availableTags.map(tag => {
-                          const isActive = filterTags.includes(tag)
-                          return (
-                            <button
-                              key={tag}
-                              onClick={() => {
-                                setFilterTags(prev => 
-                                  isActive ? prev.filter(t => t !== tag) : [...prev, tag]
-                                )
-                              }}
-                              className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-['Rajdhani'] uppercase tracking-wider border transition-all ${
-                                isActive 
-                                  ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
-                                  : 'bg-[#1A1A1A] border-[#333] text-[#888] hover:border-[#555] hover:text-[#E8E8E8]'
-                              }`}
-                            >
-                              {tag}
-                              {isActive && <Check size={10} />}
-                            </button>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Clear Button */}
-                  {(filterTags.length > 0 || filterType !== 'all' || sortBy !== 'date') && (
-                    <button
-                      onClick={() => {
-                        setFilterTags([])
-                        setFilterType('all')
-                        setSortBy('date')
-                      }}
-                      className="mt-2 text-xs font-['Rajdhani'] uppercase tracking-widest text-red-400 hover:text-red-300 text-center py-1 transition-colors"
-                    >
-                      Clear All Filters
-                    </button>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          <div className="flex gap-2 bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)]">
-            {SUBJECTS.map(s => (
-              <button key={s} onClick={() => setActiveSubject(s)}
-                className={`px-4 py-2 rounded-md font-['Rajdhani'] tracking-widest text-sm font-bold transition-all ${getSubjectFilterClasses(s, activeSubject === s)}`}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Folder Panel + Deck Grid */}
-      <div className="flex w-full h-full">
+      <div className="flex flex-1 w-full overflow-hidden">
         <FolderPanel
           folders={folders}
           deckCountByFolder={deckCountByFolder}
@@ -675,116 +542,247 @@ export default function FlashcardStudy() {
           selected={activeFolder}
           onSelect={setActiveFolder}
         />
-        <div className="flex-1 min-w-0 pr-6">
-          <div className="flex flex-col gap-12 pb-12">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-2 pb-4">
-                    {filteredAndSortedSets.map(set => (
-                      <div 
-                        key={set.id} 
-                        className="relative isolate group transition-all duration-300 border border-[#333] bg-[#1a1a1a] p-5 flex flex-col w-full min-h-[180px] justify-between hover:-translate-x-[6px] hover:-translate-y-[6px] rounded-xl before:absolute before:w-full before:h-full before:top-0 before:left-0 before:bg-[#1a1a1a] before:border before:border-[#333] before:rounded-xl before:translate-x-[6px] before:translate-y-[6px] before:z-[-1] before:transition-transform before:duration-300 group-hover:before:translate-x-[12px] group-hover:before:translate-y-[12px] after:absolute after:w-full after:h-full after:top-0 after:left-0 after:bg-[#1a1a1a] after:border after:border-[#333] after:rounded-xl after:translate-x-[12px] after:translate-y-[12px] after:z-[-2] after:transition-transform after:duration-300 group-hover:after:translate-x-[18px] group-hover:after:translate-y-[18px]"
+        <div className="flex flex-col flex-1 min-w-0 overflow-y-auto">
+          {/* Header centered above decks */}
+          <div className="flex flex-col items-center w-full pt-6 pb-2 px-6">
+            <div className="w-full max-w-5xl mb-10 flex flex-col md:flex-row items-center justify-between gap-6 border-b border-[var(--bg-card)] pb-6 relative z-30 pt-4">
+              <h1 className="text-3xl lg:text-4xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4 uppercase">
+                <Brain className="text-[var(--accent-primary)]" size={36} />
+                LOOKS<span className="text-[var(--accent-primary)]">FAM</span>
+              </h1>
+
+              <div className="flex gap-2 items-center">
+                <div className="relative" ref={filterPopoverRef}>
+                  <button
+                    onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                    className={`p-2 rounded-lg border transition-all ${showAdvancedFilters || filterTags.length > 0 || filterType !== 'all' || sortBy !== 'date'
+                        ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
+                        : 'bg-[var(--bg-secondary)] border-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                      }`}
+                  >
+                    <SlidersHorizontal size={20} />
+                  </button>
+
+                  <AnimatePresence>
+                    {showAdvancedFilters && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        className="absolute right-0 top-full mt-2 w-72 bg-[#111] border border-[#333] rounded-lg shadow-2xl p-4 z-50 flex flex-col gap-4"
                       >
-                        {/* Top Section: Title & Stats Stack */}
-                        <div className="flex justify-between items-start gap-4">
-                          {/* Left Column: Title & Tags */}
-                          <div className="flex-1 min-w-0 flex flex-col gap-3">
-                            {/* Title Row */}
-                            <div className="flex items-center gap-3">
-                              <span className={`w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] uppercase font-rajdhani font-bold tracking-widest text-[10px] shrink-0 ${getSubjectBadgeClasses(set.subject)}`}>
-                                {set.subject}
-                              </span>
-                              <h3 className="text-lg font-bold font-rajdhani tracking-wide text-[#E8E8E8] uppercase truncate flex-1">
-                                {set.title}
-                              </h3>
-                            </div>
-                            {/* Tag Row: Type & Custom Tags (Aligned with Date) */}
-                            <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                              <span className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]">
-                                {set.deckType === 'mixed' ? 'MIX' : set.deckType === 'mcq' ? 'MCQ' : 'FC'}
-                              </span>
-                              {set.tags && set.tags.length > 0 && set.tags.map(tag => (
-                                <span 
-                                  key={tag}
-                                  className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]"
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
- 
-                          {/* Right Column: Administrative Info */}
-                          <div className="flex flex-col items-end gap-1.5 shrink-0">
-                            {/* Items Tag */}
-                            <span className="w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] text-[#E8E8E8] font-rajdhani font-bold tracking-widest text-[10px] shrink-0 uppercase whitespace-nowrap">
-                              {set.count} ITEMS
-                            </span>
-                            {/* Date String */}
-                            <span className="text-[10px] text-gray-500 uppercase font-['IBM_Plex_Mono'] tracking-widest">
-                              {set.createdAt ? new Date(set.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
-                            </span>
+                        <div className="flex justify-between items-center pb-2 border-b border-[#333]">
+                          <span className="font-['Rajdhani'] font-bold text-sm tracking-widest uppercase text-[#00FF41]">Filters & Sort</span>
+                          <button onClick={() => setShowAdvancedFilters(false)} className="text-[#888] hover:text-[#E8E8E8]">
+                            <X size={16} />
+                          </button>
+                        </div>
+
+                        {/* Sort Selection */}
+                        <div className="flex flex-col gap-2">
+                          <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Sort By</label>
+                          <div className="grid grid-cols-3 gap-1">
+                            {(['date', 'title', 'mastery'] as const).map(opt => (
+                              <button
+                                key={opt}
+                                onClick={() => setSortBy(opt)}
+                                className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${sortBy === opt ? 'bg-[#00FF41]/20 text-[#00FF41] font-bold' : 'bg-[#1A1A1A] text-[#888] hover:bg-[#222]'
+                                  }`}
+                              >
+                                {opt}
+                              </button>
+                            ))}
                           </div>
                         </div>
- 
-                          {/* Deck Description */}
-                          {set.description && set.description.trim() !== "" && (
-                            <p className="text-[11px] text-gray-400 font-['IBM_Plex_Mono'] leading-relaxed mt-2 line-clamp-2 uppercase pr-4">
-                              {set.description}
-                            </p>
-                          )}
- 
-                        {/* Bottom Row: Progress and Actions */}
-                        <div className="flex justify-between items-end mt-4 gap-4">
-                          {/* Left Side: Progress Bar (Condensed Width) */}
-                          <div className="flex-1 max-w-[200px]">
-                            <div className="flex justify-between text-[10px] font-rajdhani tracking-widest mb-1 uppercase text-gray-500">
-                              <span>MASTERY</span>
-                              <span className="text-[#00FF41] font-bold">{set.mastery}%</span>
-                            </div>
-                            <div className="w-full bg-[#111] h-1 rounded-full overflow-hidden">
-                              <motion.div 
-                                initial={{ width: 0 }}
-                                animate={{ width: `${set.mastery}%` }}
-                                className="h-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.4)]"
-                              />
-                            </div>
-                          </div>
- 
-                          {/* Right Side: Action Buttons */}
-                          <div className="flex items-center gap-2 shrink-0">
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); navigate(`/edit-deck/${set.id}`) }}
-                              className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
-                              title="Edit Deck"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </button>
-                            {set.id !== 'set-1' && (
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); setSetToDelete(set); }}
-                                className="p-2 bg-[#111] border border-[#333] hover:border-red-500/50 text-gray-500 hover:text-red-500 rounded transition-colors"
-                                title="Delete Set"
+
+                        {/* Type Filter */}
+                        <div className="flex flex-col gap-2">
+                          <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Type</label>
+                          <div className="grid grid-cols-4 gap-1">
+                            {(['all', 'mcq', 'flashcard', 'mixed'] as const).map(opt => (
+                              <button
+                                key={opt}
+                                onClick={() => setFilterType(opt)}
+                                className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${filterType === opt ? 'bg-[#00FF41]/20 text-[#00FF41] font-bold' : 'bg-[#1A1A1A] text-[#888] hover:bg-[#222]'
+                                  }`}
                               >
-                                <Trash2 className="w-4 h-4" />
+                                {opt === 'flashcard' ? 'FC' : opt}
                               </button>
-                            )}
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); handleOpenLearn(set.id); }}
-                              className="w-[105px] py-2 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
-                            >
-                              <Play className="w-3 h-3" />
-                              Learn
-                            </button>
-                            <button 
-                              onClick={(e) => { e.stopPropagation(); handleOpenTest(set.id); }}
-                              className="w-[105px] py-2 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
-                            >
-                              <Trophy className="w-3 h-3" />
-                              Test
-                            </button>
+                            ))}
                           </div>
+                        </div>
+
+                        {/* Tag Filters */}
+                        {availableTags.length > 0 && (
+                          <div className="flex flex-col gap-2">
+                            <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Tags (AND)</label>
+                            <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
+                              {availableTags.map(tag => {
+                                const isActive = filterTags.includes(tag)
+                                return (
+                                  <button
+                                    key={tag}
+                                    onClick={() => {
+                                      setFilterTags(prev =>
+                                        isActive ? prev.filter(t => t !== tag) : [...prev, tag]
+                                      )
+                                    }}
+                                    className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-['Rajdhani'] uppercase tracking-wider border transition-all ${isActive
+                                        ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
+                                        : 'bg-[#1A1A1A] border-[#333] text-[#888] hover:border-[#555] hover:text-[#E8E8E8]'
+                                      }`}
+                                  >
+                                    {tag}
+                                    {isActive && <Check size={10} />}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Clear Button */}
+                        {(filterTags.length > 0 || filterType !== 'all' || sortBy !== 'date') && (
+                          <button
+                            onClick={() => {
+                              setFilterTags([])
+                              setFilterType('all')
+                              setSortBy('date')
+                            }}
+                            className="mt-2 text-xs font-['Rajdhani'] uppercase tracking-widest text-red-400 hover:text-red-300 text-center py-1 transition-colors"
+                          >
+                            Clear All Filters
+                          </button>
+                        )}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+
+                <div className="flex gap-2 bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)]">
+                  {SUBJECTS.map(s => (
+                    <button key={s} onClick={() => setActiveSubject(s)}
+                      className={`px-4 py-2 rounded-md font-['Rajdhani'] tracking-widest text-sm font-bold transition-all ${getSubjectFilterClasses(s, activeSubject === s)}`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex-1 px-6 pb-6">
+            <div className="flex flex-col items-center">
+              <div className="w-full max-w-5xl">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-2 pb-4">
+                  {filteredAndSortedSets.map(set => (
+                    <div
+                      key={set.id}
+                      className="relative isolate group transition-all duration-300 border border-[#333] bg-[#1a1a1a] p-5 flex flex-col w-full min-h-[180px] justify-between hover:-translate-x-[6px] hover:-translate-y-[6px] rounded-xl before:absolute before:w-full before:h-full before:top-0 before:left-0 before:bg-[#1a1a1a] before:border before:border-[#333] before:rounded-xl before:translate-x-[6px] before:translate-y-[6px] before:z-[-1] before:transition-transform before:duration-300 group-hover:before:translate-x-[12px] group-hover:before:translate-y-[12px] after:absolute after:w-full after:h-full after:top-0 after:left-0 after:bg-[#1a1a1a] after:border after:border-[#333] after:rounded-xl after:translate-x-[12px] after:translate-y-[12px] after:z-[-2] after:transition-transform after:duration-300 group-hover:after:translate-x-[18px] group-hover:after:translate-y-[18px]"
+                    >
+                      <div className="flex justify-between items-start gap-4">
+                        {/* Left Column: Title & Tags */}
+                        <div className="flex-1 min-w-0 flex flex-col gap-3">
+                          {/* Title Row */}
+                          <div className="flex items-center gap-3">
+                            <span className={`w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] uppercase font-rajdhani font-bold tracking-widest text-[10px] shrink-0 ${getSubjectBadgeClasses(set.subject)}`}>
+                              {set.subject}
+                            </span>
+                            <h3 className="text-lg font-bold font-rajdhani tracking-wide text-[#E8E8E8] uppercase truncate flex-1">
+                              {set.title}
+                            </h3>
+                          </div>
+                          {/* Tag Row: Type & Custom Tags (Aligned with Date) */}
+                          <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                            <span className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]">
+                              {set.deckType === 'mixed' ? 'MIX' : set.deckType === 'mcq' ? 'MCQ' : 'FC'}
+                            </span>
+                            {set.tags && set.tags.length > 0 && set.tags.map(tag => (
+                              <span
+                                key={tag}
+                                className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Right Column: Administrative Info */}
+                        <div className="flex flex-col items-end gap-1.5 shrink-0">
+                          {/* Items Tag */}
+                          <span className="w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] text-[#E8E8E8] font-rajdhani font-bold tracking-widest text-[10px] shrink-0 uppercase whitespace-nowrap">
+                            {set.count} ITEMS
+                          </span>
+                          {/* Date String */}
+                          <span className="text-[10px] text-gray-500 uppercase font-['IBM_Plex_Mono'] tracking-widest">
+                            {set.createdAt ? new Date(set.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
+                          </span>
                         </div>
                       </div>
-                    ))}
+
+                      {/* Deck Description */}
+                      {set.description && set.description.trim() !== "" && (
+                        <p className="text-[11px] text-gray-400 font-['IBM_Plex_Mono'] leading-relaxed mt-2 line-clamp-2 uppercase pr-4">
+                          {set.description}
+                        </p>
+                      )}
+
+                      {/* Bottom Row: Progress and Actions */}
+                      <div className="flex justify-between items-end mt-4 gap-4">
+                        {/* Left Side: Progress Bar (Condensed Width) */}
+                        <div className="flex-1 max-w-[200px]">
+                          <div className="flex justify-between text-[10px] font-rajdhani tracking-widest mb-1 uppercase text-gray-500">
+                            <span>MASTERY</span>
+                            <span className="text-[#00FF41] font-bold">{set.mastery}%</span>
+                          </div>
+                      <div className="w-full bg-[#111] h-1 rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${set.mastery}%` }}
+                          className="h-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.4)]"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Right Side: Action Buttons */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigate(`/edit-deck/${set.id}`) }}
+                        className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
+                        title="Edit Deck"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      {set.id !== 'set-1' && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setSetToDelete(set); }}
+                          className="p-2 bg-[#111] border border-[#333] hover:border-red-500/50 text-gray-500 hover:text-red-500 rounded transition-colors"
+                          title="Delete Set"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleOpenLearn(set.id); }}
+                        className="w-[105px] py-2 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                      >
+                        <Play className="w-3 h-3" />
+                        Learn
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleOpenTest(set.id); }}
+                        className="w-[105px] py-2 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                      >
+                        <Trophy className="w-3 h-3" />
+                        Test
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -793,13 +791,13 @@ export default function FlashcardStudy() {
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {setToDelete && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
           >
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
@@ -813,19 +811,18 @@ export default function FlashcardStudy() {
               </div>
               <div className="p-6">
                 <p className="text-[#CCCCCC] font-['Rajdhani'] tracking-wider mb-4 leading-relaxed text-base">
-                  Are you absolutely sure you want to delete <strong className="text-[#E8E8E8] font-bold">{setToDelete.title}</strong>? 
+                  Are you absolutely sure you want to delete <strong className="text-[#E8E8E8] font-bold">{setToDelete.title}</strong>?
                   This action cannot be undone and will permanently remove all {setToDelete.count} {setToDelete.deckType === 'mcq' ? 'questions' : 'cards'} inside this set.
                 </p>
               </div>
               <div className="p-6 border-t border-[#222] bg-[#161616] flex justify-end gap-3">
-                <button 
+                <button
                   onClick={handleConfirmDelete}
                   disabled={deleteCountdown > 0}
-                  className={`min-w-[150px] py-2 rounded font-bold transition-all font-['Rajdhani'] uppercase tracking-wider text-sm shadow-lg ${
-                    deleteCountdown > 0 
-                      ? 'bg-[#1a1a1a] text-[#444] border border-[#222] cursor-not-allowed shadow-none opacity-50' 
-                      : 'bg-[#FF3333] text-white hover:bg-[#CC0000] shadow-[0_0_15px_rgba(255,51,51,0.3)]'
-                  }`}
+                  className={`min-w-[150px] py-2 rounded font-bold transition-all font-['Rajdhani'] uppercase tracking-wider text-sm shadow-lg ${deleteCountdown > 0
+                    ? 'bg-[#1a1a1a] text-[#444] border border-[#222] cursor-not-allowed shadow-none opacity-50'
+                    : 'bg-[#FF3333] text-white hover:bg-[#CC0000] shadow-[0_0_15px_rgba(255,51,51,0.3)]'
+                    }`}
                 >
                   {deleteCountdown > 0 ? (
                     <span className="inline-flex items-baseline gap-0.5 font-['Rajdhani']">
@@ -836,13 +833,12 @@ export default function FlashcardStudy() {
                     'Confirm Delete'
                   )}
                 </button>
-                <button 
+                <button
                   onClick={() => setSetToDelete(null)}
-                  className={`px-5 py-2 rounded transition-all font-['Rajdhani'] uppercase tracking-wider text-sm border ${
-                    deleteCountdown > 0
-                      ? 'bg-transparent border-[#00FF41]/50 text-[#E8E8E8] font-bold'
-                      : 'bg-transparent border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555]'
-                  }`}
+                  className={`px-5 py-2 rounded transition-all font-['Rajdhani'] uppercase tracking-wider text-sm border ${deleteCountdown > 0
+                    ? 'bg-transparent border-[#00FF41]/50 text-[#E8E8E8] font-bold'
+                    : 'bg-transparent border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555]'
+                    }`}
                 >
                   Cancel
                 </button>
@@ -851,6 +847,8 @@ export default function FlashcardStudy() {
           </motion.div>
         )}
       </AnimatePresence>
+        </div>
+      </div>
     </div>
   )
 }

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { 
-  Home, 
-  Brain, 
-  BookOpen, 
-  Sigma, 
+import {
+  Home,
+  Brain,
+  BookOpen,
+  Sigma,
   PlusCircle,
   Trophy,
   Settings,
@@ -14,7 +14,7 @@ import { TitleBar } from './TitleBar'
 
 export const AppShell: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false)
-  
+
   // Track time spent in the app (every minute)
   useEffect(() => {
     const interval = setInterval(() => {
@@ -38,17 +38,16 @@ export const AppShell: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen bg-[#0D0D0D] text-[var(--text-primary)] font-['IBM_Plex_Mono'] overflow-hidden w-screen">
-      <TitleBar 
-        isCollapsed={isCollapsed} 
-        onToggleSidebar={() => setIsCollapsed(!isCollapsed)} 
+      <TitleBar
+        isCollapsed={isCollapsed}
+        onToggleSidebar={() => setIsCollapsed(!isCollapsed)}
       />
-      
+
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <aside 
-          className={`${
-            isCollapsed ? 'w-16' : 'w-[170px]'
-          } bg-[#1A1A1A] border-r border-[#222] flex flex-col transition-all duration-300 relative z-20 shrink-0`}
+        <aside
+          className={`${isCollapsed ? 'w-16' : 'w-[170px]'
+            } bg-[#1A1A1A] border-r border-[#222] flex flex-col transition-all duration-300 relative z-20 shrink-0`}
         >
           <nav className="flex-1 flex flex-col gap-2 overflow-y-auto overflow-x-hidden px-0 pt-4">
             {navItems.map((item) => (
@@ -57,8 +56,8 @@ export const AppShell: React.FC = () => {
                 to={item.to}
                 className={({ isActive }) => `
                   flex items-center h-10 transition-all duration-200 min-w-max group relative
-                  ${isActive 
-                    ? 'bg-gradient-to-r from-[#00FF41]/10 to-transparent text-white' 
+                  ${isActive
+                    ? 'bg-gradient-to-r from-[#00FF41]/10 to-transparent text-white'
                     : 'text-gray-400 hover:bg-[#222] hover:text-gray-300'
                   }
                 `}

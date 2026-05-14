@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { Settings as SettingsIcon, Monitor, Bell, Database, Shield, CheckCircle } from 'lucide-react'
+import { Settings as SettingsIcon, Monitor, Bell, Database, Shield, CheckCircle, AlertTriangle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { dbService } from '../services/db.service'
 
 export default function Settings() {
   const [resetResetMenuOpen, setResetResetMenuOpen] = useState(false);
@@ -33,21 +34,23 @@ export default function Settings() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleClearAllDecks = () => {
-    // Logic to clear all decks
+  const handleClearAllDecks = async () => {
+    // Delete from SQL DB (FK-safe order via db.service)
+    await dbService.clearAllData();
+
+    // Also clear any localStorage remnants
     const keysToRemove: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && (key.startsWith('deck-') || key.startsWith('custom-deck-') || key === 'ecengine_decks')) {
+      if (key && (key.startsWith('deck-') || key.startsWith('custom-deck-') || key.startsWith('progress_') || key.startsWith('mastery_') || key === 'ecengine_decks')) {
         keysToRemove.push(key);
       }
     }
     keysToRemove.forEach(key => localStorage.removeItem(key));
 
     setShowClearModal(false);
-    setToastMessage('All decks cleared successfully!');
+    setToastMessage('All decks and progress cleared successfully!');
     setTimeout(() => setToastMessage(null), 3000);
-    // Reload or update state if necessary
   };
 
   const sections = [
@@ -240,16 +243,17 @@ export default function Settings() {
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
-              className="bg-[#111] border border-[#FF3333] rounded-lg shadow-[0_0_30px_rgba(255,51,51,0.15)] w-full max-w-md overflow-hidden flex flex-col"
+              className="bg-[#111] border border-[var(--color-wrong,#FF3333)] rounded-lg shadow-[0_0_30px_rgba(255,51,51,0.15)] w-full max-w-md overflow-hidden flex flex-col"
             >
-              <div className="p-6 border-b border-[#222] bg-[#161616]">
+              <div className="p-6 border-b border-[#222] bg-[#161616] flex items-center gap-3">
+                <AlertTriangle size={22} className="text-[var(--color-wrong,#FF3333)] shrink-0" />
                 <h2 className="text-xl font-bold text-[#E8E8E8] font-['Orbitron'] uppercase tracking-wider">
                   Clear All Decks
                 </h2>
               </div>
               <div className="p-6">
                 <p className="text-[#888] font-['Outfit'] mb-4">
-                  Are you absolutely sure you want to clear all decks? This action cannot be undone and will delete all your study materials.
+                  This will permanently delete <strong className="text-[#E8E8E8]">ALL decks, cards, and progress</strong> from the database. This cannot be undone.
                 </p>
               </div>
               <div className="p-6 border-t border-[#222] bg-[#161616] flex justify-end gap-3">
