@@ -36,6 +36,7 @@ export async function initDB() {
     try { db.run("ALTER TABLE cards ADD COLUMN difficulty TEXT DEFAULT 'medium'"); } catch (e) {}
     try { db.run("ALTER TABLE topics ADD COLUMN folder_name TEXT DEFAULT 'Uncategorized'"); } catch (e) {}
     runTableMigrations();
+    saveDB();
   }
 }
 
@@ -44,12 +45,19 @@ let saveTimeout: NodeJS.Timeout | null = null;
 export function saveDB() {
   if (saveTimeout) clearTimeout(saveTimeout);
   saveTimeout = setTimeout(() => {
-    if (!db) return;
-    const data = db.export();
-    const buffer = Buffer.from(data);
-    fs.writeFileSync(dbPath, buffer);
-    saveTimeout = null;
+    flushDB();
   }, 1000);
+}
+
+export function flushDB() {
+  if (saveTimeout) {
+    clearTimeout(saveTimeout);
+    saveTimeout = null;
+  }
+  if (!db || !dbPath) return;
+  const data = db.export();
+  const buffer = Buffer.from(data);
+  fs.writeFileSync(dbPath, buffer);
 }
 
 function initSchema() {

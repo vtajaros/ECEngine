@@ -1,4 +1,7 @@
-*For IMPROVEMENT TODO LIST MAY 11, 2026
+*For IMPROVEMENT TODO LIST
+
+***LEARN AND QUESTION UI***
+- explore changing of font to a more simpler and bold font for better readability
 
 ***DECK EDITOR TAB***
 - export function to export flashcard content in text

@@ -25,7 +25,8 @@ const LATEX_COMMANDS = [
   '\\overline', '\\underline', '\\overbrace', '\\underbrace',
   '\\binom', '\\choose', '\\begin', '\\end', '\\matrix', '\\pmatrix',
   '\\placeholder', '\\cdots', '\\ldots', '\\vdots', '\\ddots',
-  '\\hline', '\\circ', '\\bullet', '\\star', '\\degree'
+  '\\hline', '\\circ', '\\bullet', '\\star', '\\degree',
+  '\\phase', '\\SI', '\\unit', '\\ang', '\\boldsymbol'
 ]
 
 // Detects if text contains LaTeX that needs rendering:
@@ -104,6 +105,12 @@ export const renderMath = (text: string): string => {
     .replace(/\\DoubleStruckCapitalR\b/g, '\\mathbb{R}') // Reals
     .replace(/\\DoubleStruckCapitalZ\b/g, '\\mathbb{Z}') // Integers
     .replace(/\\DoubleStruckCapitalC\b/g, '\\mathbb{C}') // Complex numbers
+    // ECE-specific command normalization
+    .replace(/\\phase\{([^}]+)\}/g, '\\angle $1')
+    .replace(/\\SI\{([^}]+)\}\{([^}]+)\}/g, '$1\\,\\text{$2}')
+    .replace(/\\unit\{([^}]+)\}/g, '\\text{$1}')
+    .replace(/\\ang\{([^}]+)\}/g, '$1^{\\circ}')
+    .replace(/\\boldsymbol\{([^}]+)\}/g, '\\mathbf{$1}')
 
   const hasDollar = normalized.includes('$')
   const hasRaw = isRawLatex(normalized)
@@ -195,4 +202,13 @@ export const renderMath = (text: string): string => {
   rendered = rendered.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
 
   return DOMPurify.sanitize(rendered, PURIFY_OPTS_FULL)
+}
+
+/**
+ * Scans for double-escaped backslashes followed by a letter (e.g. \\frac).
+ * These often occur due to incorrect JSON stringification of LaTeX data.
+ */
+export const scanForDoubleEscapes = (text: string): boolean => {
+  if (!text || typeof text !== 'string') return false
+  return /\\\\\w/.test(text)
 }
