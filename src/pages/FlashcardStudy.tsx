@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import FolderPanel from '@/components/ui/FolderPanel'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useBlocker } from 'react-router-dom'
 import { FlashDeck } from '../components/flashcard/FlashDeck'
 import { MCQDeck } from '../components/mcq/MCQDeck'
 import { LearnMode } from '../components/mcq/LearnMode'
 import { TestMode } from '../components/mcq/TestMode'
 import { LearnSettingsModal, LearnSettings } from '../components/mcq/LearnSettingsModal'
 import { TestSettingsModal, TestSettings } from '../components/mcq/TestSettingsModal'
+import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
 import { MOCK_FLASHCARDS, MOCK_MCQS } from '../lib/mockData'
 import { Play, Bookmark, X, Trash2, AlertTriangle, ClipboardList, SlidersHorizontal, Check, Pencil, Brain, Trophy } from 'lucide-react'
 import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
@@ -210,8 +211,31 @@ export default function FlashcardStudy() {
   const [isSessionActive, setIsSessionActive] = useState(false)
   const [activeSessionTitle, setActiveSessionTitle] = useState('')
   const [activeSessionSetId, setActiveSessionSetId] = useState('')
+  const [showExitConfirm, setShowExitConfirm] = useState(false)
   const startSession = useSessionStore(state => state.startSession)
   const { currentDeck, currentIndex, isFinished } = useSessionStore()
+
+  // Navigation Blocking logic
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      isSessionActive && (mode === 'flashcard' || mode === 'mcq') && currentLocation.pathname !== nextLocation.pathname
+  )
+
+  // Reset blocker on unmount if still in blocked state
+  useEffect(() => {
+    return () => {
+      if (blocker.state === 'blocked') {
+        blocker.reset()
+      }
+    }
+  }, [blocker])
+
+  // Safe exit: reset any active blocker before handing control to parent
+  const handleExit = () => {
+    if (blocker.state === 'blocked') blocker.reset()
+    setIsSessionActive(false)
+    startSession([])
+  }
 
   // Pre-Learn Settings Modal State
   const [showSettingsModal, setShowSettingsModal] = useState<{ isOpen: boolean; setId: string | null }>({ isOpen: false, setId: null })
@@ -487,8 +511,26 @@ export default function FlashcardStudy() {
 
     return (
       <div className="h-full bg-[var(--bg-primary)] p-6 lg:p-10 flex flex-col relative overflow-y-auto w-full">
+        <LeaveConfirmModal 
+          isOpen={blocker.state === 'blocked' || showExitConfirm}
+          onConfirm={() => {
+            if (blocker.state === 'blocked') {
+              blocker.proceed && blocker.proceed()
+            } else {
+              setShowExitConfirm(false)
+              handleExit()
+            }
+          }}
+          onCancel={() => {
+            if (blocker.state === 'blocked') {
+              blocker.reset && blocker.reset()
+            } else {
+              setShowExitConfirm(false)
+            }
+          }}
+        />
         <button
-          onClick={() => { setIsSessionActive(false); startSession([]) }}
+          onClick={() => setShowExitConfirm(true)}
           className="absolute top-6 right-6 px-4 py-2 bg-[var(--bg-secondary)] text-[var(--text-secondary)] rounded border border-[var(--bg-card)] hover:text-[var(--text-primary)] hover:border-[var(--accent-border)] transition-colors font-['Rajdhani'] uppercase tracking-wider z-50"
         >
           Exit Session

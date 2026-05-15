@@ -46,8 +46,8 @@ export const isRawLatex = (text: string): boolean => {
   if (/[\^_]\{/.test(text)) return true
   // Bare superscripts: a^2, x^n
   if (/\^\w/.test(text)) return true
-  // Bare subscripts: a_1, x_n
-  if (/_\w/.test(text)) return true
+  // Bare subscripts: x_1, x_n but NOT __ or ___
+  if (/(?<!^|[_])_(?![_])[a-zA-Z0-9{]/.test(text)) return true
   return false
 }
 

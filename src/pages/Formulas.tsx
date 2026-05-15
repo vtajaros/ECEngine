@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import FolderPanel from '@/components/ui/FolderPanel'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useBlocker } from 'react-router-dom'
 import { Sigma, Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle, SlidersHorizontal, Pencil, Play, Trash2, AlertTriangle, Trophy } from 'lucide-react'
+import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
 import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
 import { Card, MCQData, FlashcardData } from '../types'
 import { renderMath } from '../lib/latex'
@@ -89,6 +90,28 @@ export default function Formulas() {
   const [writtenCorrect, setWrittenCorrect] = useState<boolean | null>(null)
   const [writtenStats, setWrittenStats] = useState({ correct: 0, total: 0 })
   const [zoomedImage, setZoomedImage] = useState<string | null>(null)
+  const [showExitConfirm, setShowExitConfirm] = useState(false)
+
+  // Navigation Blocking logic
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      activeDeck !== null && currentLocation.pathname !== nextLocation.pathname
+  )
+
+  // Reset blocker on unmount if still in blocked state
+  useEffect(() => {
+    return () => {
+      if (blocker.state === 'blocked') {
+        blocker.reset()
+      }
+    }
+  }, [blocker])
+
+  // Safe exit: reset any active blocker before handing control to parent
+  const handleExit = () => {
+    if (blocker.state === 'blocked') blocker.reset()
+    exitSession()
+  }
 
   useEffect(() => {
     if (zoomedImage) {
@@ -343,7 +366,7 @@ export default function Formulas() {
     if (card.type === 'mcq') {
       const mcq = card.data as MCQData
       const text = settings.swapTermDef ? mcq.question : mcq.choices[mcq.answer]
-      return <div className="text-xl lg:text-2xl leading-relaxed font-['IBM_Plex_Mono'] text-[#00FF41] font-medium" dangerouslySetInnerHTML={{ __html: renderMath(text) }} />
+      return <div className="text-xl lg:text-2xl leading-relaxed font-[var(--font-card-body)] text-[var(--text-accent)] font-medium" dangerouslySetInnerHTML={{ __html: renderMath(text) }} />
     }
     if (card.type === 'formula') {
       const f = card.data as any
@@ -365,7 +388,7 @@ export default function Formulas() {
 
       const backStr = [f.latex ? `$$${f.latex}$$` : '', descVars].filter(Boolean).join('\n\n')
       const text = settings.swapTermDef ? frontStr : backStr
-      return <div className={`leading-relaxed ${settings.swapTermDef ? "text-xl text-left" : "text-xl lg:text-2xl font-['IBM_Plex_Mono'] text-[#E8E8E8] font-medium"}`} dangerouslySetInnerHTML={{ __html: renderMath(text) }} />
+      return <div className={`leading-relaxed ${settings.swapTermDef ? "text-xl text-left font-[var(--font-card-body)]" : "text-4xl text-center font-[var(--font-card-body)] text-[var(--text-primary)] font-medium"}`} dangerouslySetInnerHTML={{ __html: renderMath(text) }} />
     }
     const fc = card.data as FlashcardData
     const text = settings.swapTermDef ? fc.front : fc.back
@@ -467,8 +490,26 @@ export default function Formulas() {
       <div className="h-full bg-[#0D0D0D] flex flex-col overflow-hidden">
         {/* Top Bar */}
         <div className="shrink-0 bg-[#111] border-b border-[#222] px-6 py-4 flex items-center justify-between z-20">
+          <LeaveConfirmModal 
+            isOpen={blocker.state === 'blocked' || showExitConfirm}
+            onConfirm={() => {
+              if (blocker.state === 'blocked') {
+                blocker.proceed && blocker.proceed()
+              } else {
+                setShowExitConfirm(false)
+                handleExit()
+              }
+            }}
+            onCancel={() => {
+              if (blocker.state === 'blocked') {
+                blocker.reset && blocker.reset()
+              } else {
+                setShowExitConfirm(false)
+              }
+            }}
+          />
           <div className="flex items-center gap-4">
-            <button onClick={exitSession} className="text-[#888] hover:text-white transition-colors p-2 rounded hover:bg-[#222]" title="Exit">
+            <button onClick={() => setShowExitConfirm(true)} className="text-[#888] hover:text-white transition-colors p-2 rounded hover:bg-[#222]" title="Exit">
               <X className="w-5 h-5" />
             </button>
             <div className="flex flex-col">
@@ -565,8 +606,19 @@ export default function Formulas() {
                             />
                           </div>
                         )}
-                        <div className="text-xl lg:text-2xl font-medium text-[#E8E8E8] leading-relaxed font-['IBM_Plex_Mono']" dangerouslySetInnerHTML={{ __html: renderMath(getFrontText(currentCard)) }} />
-                        {!settings.writtenMode && <p className="text-[#555] text-sm mt-6 font-['Rajdhani']">Click or press Space to flip</p>}
+                        {currentCard.type === 'formula' ? (
+                          <div className="flex flex-col items-center justify-center w-full gap-4" style={{ minHeight: '200px' }}>
+                            {(currentCard.data as any).name && (
+                              <span className="text-xs font-['Rajdhani'] uppercase tracking-widest" style={{ color: 'var(--text-secondary)' }}>
+                                {(currentCard.data as any).name}
+                              </span>
+                            )}
+                            <div className="text-4xl font-medium leading-relaxed" style={{ color: 'var(--text-primary)' }} dangerouslySetInnerHTML={{ __html: renderMath(getFrontText(currentCard)) }} />
+                          </div>
+                        ) : (
+                          <div className="text-xl lg:text-2xl font-medium leading-relaxed font-[var(--font-card-body)]" style={{ color: 'var(--text-primary)' }} dangerouslySetInnerHTML={{ __html: renderMath(getFrontText(currentCard)) }} />
+                        )}
+                        {!settings.writtenMode && currentCard?.type !== 'formula' && <p className="text-sm mt-6 font-['Rajdhani']" style={{ color: 'var(--text-muted)' }}>Click or press Space to flip</p>}
                       </div>
                     ) : (
                       <div className="text-center w-full text-[#E8E8E8]">{getBackContent(currentCard)}</div>
@@ -680,7 +732,7 @@ export default function Formulas() {
             Show All Cards
           </button>
           <button
-            onClick={exitSession}
+            onClick={handleExit}
             className="px-6 py-3 bg-[#111] border border-[#333] text-[#888] hover:text-white hover:border-[#555] rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
           >
             Back to Decks

@@ -19,9 +19,10 @@
   --color-warning:  #FFB800;
   --color-info:     #00BFFF;
 
-  --font-display: 'Orbitron', sans-serif;
-  --font-body:    'IBM Plex Mono', monospace;
-  --font-ui:      'Rajdhani', sans-serif;
+  --font-display:    'Orbitron', sans-serif;
+  --font-body:       'IBM Plex Mono', monospace;
+  --font-ui:         'Rajdhani', sans-serif;
+  --font-card-body:  'Rajdhani', sans-serif;
 
   --glow-green:  0 0 8px rgba(0,255,65,0.6), 0 0 20px rgba(0,255,65,0.2);
   --glow-card:   0 0 0 1px rgba(0,255,65,0.15), 0 4px 24px rgba(0,0,0,0.6);

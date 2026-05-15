@@ -76,6 +76,22 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
       viewState !== 'summary' && currentLocation.pathname !== nextLocation.pathname
   )
 
+  // Reset blocker on unmount if still in blocked state to prevent permanent
+  // navigation lockout when user exits via UI button after sidebar click.
+  useEffect(() => {
+    return () => {
+      if (blocker.state === 'blocked') {
+        blocker.reset()
+      }
+    }
+  }, [blocker])
+
+  // Safe exit: reset any active blocker before handing control to parent
+  const handleExit = () => {
+    if (blocker.state === 'blocked') blocker.reset()
+    onExit()
+  }
+
   // Reset the explanation panel when the round changes
   useEffect(() => {
     setOpenExplanationId(null);
@@ -441,7 +457,7 @@ Please explain:
             {isLastPartition ? (
               <div className="flex gap-4">
                 <button 
-                  onClick={onExit}
+                  onClick={handleExit}
                   className="px-6 py-3 bg-[#222] text-[#E8E8E8] rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[#333] transition-colors"
                 >
                   Exit
@@ -497,7 +513,7 @@ Please explain:
             blocker.proceed && blocker.proceed()
           } else {
             setShowExitConfirm(false)
-            onExit()
+            handleExit()
           }
         }}
         onCancel={() => {

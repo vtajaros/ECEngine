@@ -84,6 +84,22 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
       viewState === 'test' && currentLocation.pathname !== nextLocation.pathname
   )
 
+  // Reset blocker on unmount if still in blocked state to prevent permanent
+  // navigation lockout when user exits via UI button after sidebar click.
+  useEffect(() => {
+    return () => {
+      if (blocker.state === 'blocked') {
+        blocker.reset()
+      }
+    }
+  }, [blocker])
+
+  // Safe exit: reset any active blocker before handing control to parent
+  const handleExit = () => {
+    if (blocker.state === 'blocked') blocker.reset()
+    onExit()
+  }
+
   // Reset the explanation panel when transitioning between views
   useEffect(() => {
     setOpenExplanationId(null);
@@ -182,6 +198,13 @@ Please explain:
     }
   }
 
+  // Clear pending click-nav timeout on unmount to avoid stale timer callbacks
+  useEffect(() => {
+    return () => {
+      if (clickNavTimeout.current) clearTimeout(clickNavTimeout.current)
+    }
+  }, [])
+
   const scrollToQuestion = (index: number) => {
     isClickNavigating.current = true
     if (clickNavTimeout.current) clearTimeout(clickNavTimeout.current)
@@ -260,7 +283,7 @@ Please explain:
         <button 
           onClick={() => {
             if (viewState === 'test') setShowExitConfirm(true)
-            else onExit()
+            else handleExit()
           }}
           className="text-[#888] hover:text-[var(--text-primary)] transition-colors flex items-center justify-center p-2 rounded hover:bg-[#222]"
           title="Exit Test"
@@ -299,7 +322,7 @@ Please explain:
           </button>
         ) : (
           <button 
-            onClick={onExit}
+            onClick={handleExit}
             className="bg-[#222] text-[#E8E8E8] px-6 py-2 rounded font-['Rajdhani'] font-bold tracking-widest uppercase hover:bg-[#333] border border-[#444] transition-colors"
           >
             Finish Review
@@ -411,7 +434,7 @@ Please explain:
             blocker.proceed && blocker.proceed()
           } else {
             setShowExitConfirm(false)
-            onExit()
+            handleExit()
           }
         }}
         onCancel={() => {
@@ -487,8 +510,17 @@ Please explain:
           if (!mcq || typeof mcq === 'string' || !Array.isArray(mcq.choices) || mcq.choices.length !== 4) {
             console.warn('[ECEngine] Card data parse error — card may have been saved with double-escaped LaTeX. Please re-save this card in Edit Deck.', card.id, card.data)
             return (
-              <div key={card.id} style={{color: 'red', padding: 20}}>
-                DEBUG — Bad card data: {JSON.stringify(card.data)}
+              <div
+                key={card.id}
+                className="rounded-xl p-6 border"
+                style={{
+                  color: 'var(--color-wrong)',
+                  background: 'var(--bg-card)',
+                  borderColor: 'var(--color-wrong)',
+                }}
+              >
+                <p className="font-['Rajdhani'] font-bold uppercase tracking-widest text-sm mb-1">Card Load Error</p>
+                <p className="font-['Rajdhani'] text-sm opacity-80">Card data could not be loaded. Check import format.</p>
               </div>
             )
           }
@@ -556,7 +588,7 @@ Please explain:
                 </button>
               </div>
 
-              <div className="p-6 grid grid-cols-2 gap-3">
+              <div className="p-6 grid grid-cols-2 gap-3 items-start">
                 {[0, 2, 1, 3].map((cIdx) => {
                   const choice = mcq.choices[cIdx]
                   if (choice === undefined) return null

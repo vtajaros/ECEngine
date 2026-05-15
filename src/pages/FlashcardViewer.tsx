@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import FolderPanel from '@/components/ui/FolderPanel'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useBlocker } from 'react-router-dom'
 import { Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle, SlidersHorizontal, Pencil, Play, Trash2, AlertTriangle, Trophy } from 'lucide-react'
+import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
 import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
 import { Card, MCQData, FlashcardData } from '../types'
 import { renderMath } from '../lib/latex'
@@ -88,6 +89,28 @@ export default function FlashcardViewer() {
   const [writtenCorrect, setWrittenCorrect] = useState<boolean | null>(null)
   const [writtenStats, setWrittenStats] = useState({ correct: 0, total: 0 })
   const [zoomedImage, setZoomedImage] = useState<string | null>(null)
+  const [showExitConfirm, setShowExitConfirm] = useState(false)
+
+  // Navigation Blocking logic
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      activeDeck !== null && currentLocation.pathname !== nextLocation.pathname
+  )
+
+  // Reset blocker on unmount if still in blocked state
+  useEffect(() => {
+    return () => {
+      if (blocker.state === 'blocked') {
+        blocker.reset()
+      }
+    }
+  }, [blocker])
+
+  // Safe exit: reset any active blocker before handing control to parent
+  const handleExit = () => {
+    if (blocker.state === 'blocked') blocker.reset()
+    exitSession()
+  }
 
   useEffect(() => {
     if (zoomedImage) {
@@ -413,8 +436,26 @@ export default function FlashcardViewer() {
       <div className="h-full bg-[#0D0D0D] flex flex-col overflow-hidden">
         {/* Top Bar */}
         <div className="shrink-0 bg-[#111] border-b border-[#222] px-6 py-4 flex items-center justify-between z-20">
+          <LeaveConfirmModal 
+            isOpen={blocker.state === 'blocked' || showExitConfirm}
+            onConfirm={() => {
+              if (blocker.state === 'blocked') {
+                blocker.proceed && blocker.proceed()
+              } else {
+                setShowExitConfirm(false)
+                handleExit()
+              }
+            }}
+            onCancel={() => {
+              if (blocker.state === 'blocked') {
+                blocker.reset && blocker.reset()
+              } else {
+                setShowExitConfirm(false)
+              }
+            }}
+          />
           <div className="flex items-center gap-4">
-            <button onClick={exitSession} className="text-[#888] hover:text-white transition-colors p-2 rounded hover:bg-[#222]" title="Exit">
+            <button onClick={() => setShowExitConfirm(true)} className="text-[#888] hover:text-white transition-colors p-2 rounded hover:bg-[#222]" title="Exit">
               <X className="w-5 h-5" />
             </button>
             <div className="flex flex-col">
@@ -626,7 +667,7 @@ export default function FlashcardViewer() {
             Show All Cards
           </button>
           <button
-            onClick={exitSession}
+            onClick={handleExit}
             className="px-6 py-3 bg-[#111] border border-[#333] text-[#888] hover:text-white hover:border-[#555] rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
           >
             Back to Decks
