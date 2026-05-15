@@ -1,5 +1,12 @@
 import { Card, Progress } from '../types'
 
+const toLocalDateString = (date: Date): string => {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
 declare global {
   interface Window {
     electron: {
@@ -97,7 +104,7 @@ export const dbService = {
   },
 
   recordActivity: async () => {
-    const today = new Date().toISOString().split('T')[0]
+    const today = toLocalDateString(new Date())
     const sql = `
       INSERT INTO study_activity (day, count) 
       VALUES (?, 1) 
@@ -121,10 +128,10 @@ export const dbService = {
   },
 
   updateTimeSpent: async (minutes: number) => {
-    const today = new Date().toISOString().split('T')[0]
+    const today = toLocalDateString(new Date())
     const sql = `
-      INSERT INTO study_activity (day, time_spent) 
-      VALUES (?, ?) 
+      INSERT INTO study_activity (day, count, time_spent) 
+      VALUES (?, 0, ?) 
       ON CONFLICT(day) DO UPDATE SET time_spent = time_spent + excluded.time_spent
     `
     await window.electron.db.run(sql, [today, minutes])
@@ -144,24 +151,23 @@ export const dbService = {
     const accData = accResult.data?.[0]
     const accuracy = accData?.total > 0 ? Math.round((accData.correct / accData.total) * 100) : 0
 
-    // 4. Streak
-    const datesResult = await window.electron.db.query("SELECT DISTINCT date(last_reviewed) as day FROM progress WHERE last_reviewed IS NOT NULL ORDER BY day DESC")
-    const dates = (datesResult.data || []).map((r: any) => r.day)
-    
+    // 4. Streak — read from study_activity for consistency with the activity grid
+    const datesResult = await window.electron.db.query("SELECT day FROM study_activity WHERE time_spent > 0 ORDER BY day DESC")
+    const dates = (datesResult.data || []).map((r: { day: string }) => r.day)
+
     let streak = 0
     if (dates.length > 0) {
-      const today = new Date().toISOString().split('T')[0]
-      const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
-      
-      let currentIdx = 0
-      // If the latest review isn't today or yesterday, streak is 0
+      const today = toLocalDateString(new Date())
+      const yesterday = toLocalDateString(new Date(Date.now() - 86400000))
+
+      // If the most recent activity day isn't today or yesterday, streak is broken
       if (dates[0] !== today && dates[0] !== yesterday) {
         streak = 0
       } else {
         streak = 1
         for (let i = 0; i < dates.length - 1; i++) {
           const d1 = new Date(dates[i])
-          const d2 = new Date(dates[i+1])
+          const d2 = new Date(dates[i + 1])
           const diff = (d1.getTime() - d2.getTime()) / 86400000
           if (diff === 1) {
             streak++

@@ -38,7 +38,11 @@ const ReviewHeatmap = ({ history, examDate }: { history: Record<string, { count:
     while (curr <= lastSaturday) {
       const week = []
       for (let i = 0; i < 7; i++) {
-        week.push(new Date(curr).toISOString().split('T')[0])
+        // Use local date parts to avoid UTC timezone shift at midnight
+        const y = curr.getFullYear()
+        const m = String(curr.getMonth() + 1).padStart(2, '0')
+        const d = String(curr.getDate()).padStart(2, '0')
+        week.push(`${y}-${m}-${d}`)
         curr.setDate(curr.getDate() + 1)
       }
       weeks.push(week)
@@ -49,11 +53,13 @@ const ReviewHeatmap = ({ history, examDate }: { history: Record<string, { count:
     
     let lastLabeledMonth = -1
     weeks.forEach((week, index) => {
-      const firstDayOfWeek = new Date(week[0])
-      const m = firstDayOfWeek.getMonth()
-      
-      // Only label if this is a new month and falls within our active window
-      if (m !== lastLabeledMonth && firstDayOfWeek >= startDate && firstDayOfWeek <= endDate) {
+      // Use Monday (index 1) as anchor — avoids partial-week skip when month
+      // starts on Tue–Sat, which would push Sunday-anchored label to next column.
+      const anchor = new Date(week[1] ?? week[0])
+      const m = anchor.getMonth()
+
+      // Only label if this is a new month and the anchor falls within our active window
+      if (m !== lastLabeledMonth && anchor >= startDate && anchor <= endDate) {
         labels.push({ name: monthNames[m], weekIndex: index })
         lastLabeledMonth = m
       }
@@ -90,8 +96,8 @@ const ReviewHeatmap = ({ history, examDate }: { history: Record<string, { count:
         </div>
         
         <div className="flex gap-4 items-start">
-          {/* Day Labels */}
-          <div className="flex flex-col justify-between h-[152px] text-[10px] font-['Rajdhani'] text-[#666] font-bold pr-2 pt-1 uppercase tracking-widest leading-none w-10">
+          {/* Day Labels — gap-2 matches the square grid's row gap so labels align naturally */}
+          <div className="flex flex-col gap-2 text-[10px] font-['Rajdhani'] text-[#666] font-bold pr-2 uppercase tracking-widest leading-none w-10">
             {dayNames.map(d => (
               <span key={d} className="h-4 flex items-center">{d}</span>
             ))}
@@ -367,7 +373,6 @@ export default function Dashboard() {
                 <span className="font-['IBM_Plex_Mono'] text-2xl font-bold text-[#E8E8E8]">{statsData.accuracy || 0}</span>
                 <span className="font-['Rajdhani'] text-[#00FF41] font-bold text-[10px]">%</span>
               </div>
-              <p className="text-[9px] text-[#444] font-['Rajdhani'] uppercase tracking-widest font-bold mt-1">Study Streak: {statsData.streak || 0} Days</p>
             </div>
             <TrendingUp className="text-[#00FF41]/10" size={20} />
           </div>
@@ -393,6 +398,14 @@ export default function Dashboard() {
             
             <div className="flex-1 w-full flex justify-center py-4">
               <ReviewHeatmap history={history} examDate={examDate} />
+            </div>
+
+            {/* Streak Footer */}
+            <div className="w-full flex items-center justify-center pt-2 pb-1">
+              <p className="font-['Rajdhani'] uppercase tracking-widest text-[11px] font-bold" style={{ color: 'var(--text-secondary)' }}>
+                Study Streak:&nbsp;
+                <span style={{ color: 'var(--accent-primary)' }}>{statsData.streak || 0} Day{statsData.streak !== 1 ? 's' : ''}</span>
+              </p>
             </div>
         </div>
       </div>
