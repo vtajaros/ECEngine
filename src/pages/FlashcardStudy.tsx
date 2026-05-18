@@ -85,10 +85,7 @@ export default function FlashcardStudy() {
             if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
             else if (types.includes('flashcard')) deckType = 'flashcard'
 
-            const mastery = (() => {
-              const savedKeys = JSON.parse(localStorage.getItem(`progress_${row.id}`) || '[]');
-              return row.card_count > 0 ? Math.round((savedKeys.length / row.card_count) * 100) : 0;
-            })();
+            const mastery = 0; // DB-based progress handles mastery calculation in the service layer
 
             let parsedTags: string[] = []
             try {
@@ -453,20 +450,6 @@ export default function FlashcardStudy() {
           title={activeSessionTitle}
           onComplete={(stats) => {
             console.log('Learn Mode Stats:', stats)
-            if (stats.correctIds && activeSessionSetId) {
-              setAllSets(prev => prev.map(s => {
-                if (s.id === activeSessionSetId) {
-                  const savedMastered = new Set<string>(JSON.parse(localStorage.getItem(`progress_${s.id}`) || '[]'));
-                  stats.correctIds.forEach(id => savedMastered.add(id));
-                  const newMasteredArray = Array.from(savedMastered);
-                  localStorage.setItem(`progress_${s.id}`, JSON.stringify(newMasteredArray));
-
-                  const newMastery = s.count > 0 ? Math.round((newMasteredArray.length / s.count) * 100) : 0;
-                  return { ...s, mastery: newMastery };
-                }
-                return s;
-              }));
-            }
           }}
           onExit={() => setIsSessionActive(false)}
         />
@@ -481,28 +464,6 @@ export default function FlashcardStudy() {
           settings={testSettings}
           onComplete={(stats) => {
             console.log('Test Mode Stats:', stats)
-
-            // Track Flawless Accuracy
-            const isFlawless = stats.score === stats.total && stats.total > 0;
-            const flawlessRounds = Number(localStorage.getItem('flawless_rounds') || '0');
-            const totalRounds = Number(localStorage.getItem('total_rounds') || '0');
-            localStorage.setItem('flawless_rounds', String(flawlessRounds + (isFlawless ? 1 : 0)));
-            localStorage.setItem('total_rounds', String(totalRounds + 1));
-
-            if (stats.correctIds && activeSessionSetId) {
-              setAllSets(prev => prev.map(s => {
-                if (s.id === activeSessionSetId) {
-                  const savedMastered = new Set<string>(JSON.parse(localStorage.getItem(`progress_${s.id}`) || '[]'));
-                  stats.correctIds.forEach(id => savedMastered.add(id));
-                  const newMasteredArray = Array.from(savedMastered);
-                  localStorage.setItem(`progress_${s.id}`, JSON.stringify(newMasteredArray));
-
-                  const newMastery = s.count > 0 ? Math.round((newMasteredArray.length / s.count) * 100) : 0;
-                  return { ...s, mastery: newMastery };
-                }
-                return s;
-              }));
-            }
           }}
           onExit={() => setIsSessionActive(false)}
         />

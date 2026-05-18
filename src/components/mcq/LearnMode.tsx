@@ -8,7 +8,7 @@ import { ExplanationPanel } from '../ui/ExplanationPanel'
 import { Tooltip } from '../ui/Tooltip'
 import { LeaveConfirmModal } from '../ui/LeaveConfirmModal'
 import { useBlocker } from 'react-router-dom'
-
+import { dbService } from '../../services/db.service'
 
 // Partitioned learning mode handling the custom "LEARN" flow
 
@@ -236,11 +236,17 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
     }
   }
 
-  const handleEndOfQueue = () => {
+  const handleEndOfQueue = async () => {
     if (partitionWrongIds.size === 0) {
       // All correct!
       setViewState('partition-complete')
       if (currentPartitionIndex === partitions.length - 1) {
+        
+        // Record progress for all cards in session
+        for (const [id, stats] of Object.entries(cardStats)) {
+          await dbService.recordCardResult(id, stats.wasCorrectFirstTry)
+        }
+
         onComplete({
           correct: globalStats.correctFirstTry,
           wrong: globalStats.wrongFirstTry,

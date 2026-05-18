@@ -1,4 +1,5 @@
 import { Card, Progress } from '../types'
+import { calculateSM2 } from '../lib/sm2'
 
 const toLocalDateString = (date: Date): string => {
   const y = date.getFullYear()
@@ -38,6 +39,29 @@ declare global {
 }
 
 export const dbService = {
+  recordCardResult: async (cardId: string, correct: boolean): Promise<void> => {
+    const existing = await dbService.getProgress(cardId)
+    const repetitions = existing?.repetitions ?? 0
+    const interval = existing?.interval ?? 1
+    const easeFactor = existing?.easeFactor ?? 2.5
+
+    const quality = correct ? 4 : 1
+    const sm2Result = calculateSM2(quality, repetitions, interval, easeFactor)
+
+    const now = new Date()
+    const nextReview = new Date(now.getTime() + sm2Result.interval * 86400000)
+
+    await dbService.saveProgress(
+      cardId,
+      {
+        ...sm2Result,
+        nextReview: nextReview.toISOString(),
+        lastReviewed: now.toISOString(),
+      },
+      correct
+    )
+  },
+
   getCards: async (topicId?: string): Promise<Card[]> => {
     // Get due cards based on next_review being null or <= now
     let sql = `
@@ -164,6 +188,30 @@ export const dbService = {
     return history
   },
 
+  getSubjectAccuracyHistory: async (subjectCode: string): Promise<{ subject: string; accuracy: number }[]> => {
+    const SUBJECT_FULL: Record<string, string> = {
+      'MATH': 'Mathematics',
+      'GEAS': 'General Engineering & Applied Sciences',
+      'ELECS': 'Electronics Engineering',
+      'EST': 'Electronics Systems & Technologies'
+    };
+    const fullSubject = SUBJECT_FULL[subjectCode] || subjectCode;
+    const sql = `
+      SELECT 
+        CAST(SUM(p.correct_count) AS REAL) / NULLIF(SUM(p.total_count), 0) as accuracy 
+      FROM progress p 
+      JOIN cards c ON p.card_id = c.id 
+      JOIN topics t ON c.topic_id = t.id 
+      WHERE t.subject = ?
+    `;
+    const result = await window.electron.db.query(sql, [fullSubject]);
+    const accuracy = result.data?.[0]?.accuracy;
+    return [{ 
+      subject: subjectCode, 
+      accuracy: accuracy != null ? Math.round(accuracy * 100) : 0 
+    }];
+  },
+
   getAccuracyHistory: async () => {
     // Generate an array of the last 14 days up to today
     const today = new Date();
@@ -215,9 +263,9 @@ export const dbService = {
     const dueToday = dueResult.data?.[0]?.count || 0
 
     // 3. Accuracy Rate
-    const accResult = await window.electron.db.query('SELECT SUM(correct_count) as correct, SUM(total_count) as total FROM progress')
-    const accData = accResult.data?.[0]
-    const accuracy = accData?.total > 0 ? Math.round((accData.correct / accData.total) * 100) : 0
+    const accResult = await window.electron.db.query('SELECT CAST(SUM(correct_count) AS REAL) / NULLIF(SUM(total_count), 0) as accuracy FROM progress')
+    const accuracyVal = accResult.data?.[0]?.accuracy
+    const accuracy = accuracyVal != null ? Math.round(accuracyVal * 100) : 0
 
     // 4. Streak — read from study_activity for consistency with the activity grid
     const datesResult = await window.electron.db.query("SELECT day FROM study_activity WHERE time_spent > 0 ORDER BY day DESC")
@@ -265,8 +313,7 @@ export const dbService = {
     const sql = `
       SELECT 
         t.subject, 
-        COUNT(c.id) as total, 
-        SUM(CASE WHEN p.repetitions >= 5 THEN 1 ELSE 0 END) as mastered 
+        CAST(SUM(p.correct_count) AS REAL) / NULLIF(SUM(p.total_count), 0) as accuracy 
       FROM topics t 
       JOIN cards c ON t.id = c.topic_id 
       LEFT JOIN progress p ON c.id = p.card_id 

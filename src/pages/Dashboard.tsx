@@ -135,6 +135,7 @@ export default function Dashboard() {
   const [statsData, setStatsData] = useState({
     totalDecks: 0,
     totalCards: 0,
+    totalStudied: 0,
     internalized: 0,
     accuracy: 0,
     streak: 0,
@@ -150,6 +151,9 @@ export default function Dashboard() {
   const [subjectProgress, setSubjectProgress] = useState<any[]>([])
   const [history, setHistory] = useState<Record<string, { count: number, timeSpent: number }>>({})
   const [accuracyHistory, setAccuracyHistory] = useState<any[]>([])
+
+  const [selectedSubject, setSelectedSubject] = useState<'ALL' | 'MATH' | 'GEAS' | 'ELECS' | 'EST'>('ALL')
+  const [subjectAccuracy, setSubjectAccuracy] = useState<{subject: string; accuracy: number} | null>(null)
   
   const [examDate, setExamDate] = useState(localStorage.getItem('ecengine_exam_date') || '2026-10-16')
   const [isEditingDate, setIsEditingDate] = useState(false)
@@ -178,6 +182,15 @@ export default function Dashboard() {
     return () => clearInterval(timer)
   }, [examDate])
 
+  useEffect(() => {
+    if (selectedSubject !== 'ALL') {
+      dbService.getSubjectAccuracyHistory(selectedSubject).then(res => {
+        setSubjectAccuracy(res[0] ?? { subject: selectedSubject, accuracy: 0 })
+      }).catch(err => console.error(err))
+    } else {
+      setSubjectAccuracy(null)
+    }
+  }, [selectedSubject])
 
   useEffect(() => {
     loadDashboardData()
@@ -197,6 +210,7 @@ export default function Dashboard() {
       setStatsData({
         totalDecks: globalStats.totalDecks,
         totalCards: globalStats.totalCards,
+        totalStudied: dbStats.totalStudied,
         internalized: globalStats.internalized,
         accuracy: dbStats.accuracy,
         streak: dbStats.streak,
@@ -214,7 +228,7 @@ export default function Dashboard() {
         const found = rawSubjectProgress.find((r: any) => (SUBJECT_MAP[r.subject] || r.subject) === s)
         return {
           subject: s,
-          percent: found && found.total > 0 ? Math.round((found.mastered / found.total) * 100) : 0
+          percent: found && found.accuracy != null ? Math.round(found.accuracy * 100) : 0
         }
       })
 
@@ -346,7 +360,7 @@ export default function Dashboard() {
               <p className="text-[#666] font-['Rajdhani'] uppercase tracking-widest text-[10px] mb-1 font-bold">Cards Studied</p>
               <div className="flex items-baseline gap-2">
                 <span className="font-['IBM_Plex_Mono'] text-2xl font-bold text-[#E8E8E8]">
-                  {statsData.totalCards || 0}
+                  {statsData.totalStudied || 0}
                 </span>
                 <span className="font-['Rajdhani'] text-[#00FF41] font-bold text-[10px]">CARDS</span>
               </div>
@@ -405,55 +419,91 @@ export default function Dashboard() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-['Rajdhani'] font-bold text-sm text-[#E8E8E8] uppercase tracking-widest flex items-center">
               <Activity className="mr-2 text-[#00FF41]" size={16} />
-              Accuracy Trend
+              {selectedSubject === 'ALL' ? 'Accuracy Trend' : `${selectedSubject} ACCURACY`}
             </h2>
+            <div className="flex gap-1 bg-[#111] p-1 rounded-lg border border-[#222]">
+              {(['ALL', 'MATH', 'GEAS', 'ELECS', 'EST'] as const).map(subj => (
+                <button
+                  key={subj}
+                  onClick={() => setSelectedSubject(subj)}
+                  className={`px-3 py-1 text-[10px] font-bold font-['Rajdhani'] uppercase tracking-widest rounded transition-colors ${
+                    selectedSubject === subj 
+                      ? 'bg-[var(--accent-primary)] text-black' 
+                      : 'text-[#888] hover:text-[#E8E8E8] hover:bg-[#222]'
+                  }`}
+                >
+                  {subj}
+                </button>
+              ))}
+            </div>
           </div>
           
-          <div className="flex-1 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={accuracyHistory}>
-                <defs>
-                  <linearGradient id="colorAcc" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#00FF41" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#00FF41" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#222" />
-                <XAxis 
-                  dataKey="date" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#A1A1AA', fontSize: 10, fontFamily: 'IBM Plex Mono' }}
-                  dy={10}
-                />
-                <YAxis 
-                  domain={[0, 100]} 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{ fill: '#A1A1AA', fontSize: 10, fontFamily: 'IBM Plex Mono' }}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#111', 
-                    border: '1px solid #333',
-                    borderRadius: '8px',
-                    fontSize: '11px',
-                    fontFamily: 'IBM Plex Mono'
-                  }}
-                  itemStyle={{ color: '#00FF41' }}
-                />
-                <Area 
-                  type="monotone" 
-                  dataKey="acc" 
-                  stroke="#00FF41" 
-                  strokeWidth={2}
-                  fillOpacity={1} 
-                  fill="url(#colorAcc)" 
-                  animationDuration={1000}
-                  connectNulls={true}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+          <div className="flex-1 w-full flex items-center justify-center">
+            {selectedSubject === 'ALL' ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={accuracyHistory}>
+                  <defs>
+                    <linearGradient id="colorAcc" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#00FF41" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#00FF41" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#222" />
+                  <XAxis 
+                    dataKey="date" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#A1A1AA', fontSize: 10, fontFamily: 'IBM Plex Mono' }}
+                    dy={10}
+                  />
+                  <YAxis 
+                    domain={[0, 100]} 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#A1A1AA', fontSize: 10, fontFamily: 'IBM Plex Mono' }}
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#111', 
+                      border: '1px solid #333',
+                      borderRadius: '8px',
+                      fontSize: '11px',
+                      fontFamily: 'IBM Plex Mono'
+                    }}
+                    itemStyle={{ color: '#00FF41' }}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="acc" 
+                    stroke="#00FF41" 
+                    strokeWidth={2}
+                    fillOpacity={1} 
+                    fill="url(#colorAcc)" 
+                    animationDuration={1000}
+                    connectNulls={true}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex flex-col items-center w-full max-w-sm mt-8">
+                <span className="font-['IBM_Plex_Mono'] font-bold" style={{ color: 'var(--accent-primary)', fontSize: subjectAccuracy?.accuracy === 0 ? '2rem' : '4.5rem' }}>
+                  {subjectAccuracy?.accuracy === 0 ? (
+                    <span className="font-['Rajdhani'] uppercase tracking-widest text-[#666]">No data yet</span>
+                  ) : (
+                    `${subjectAccuracy?.accuracy ?? 0}%`
+                  )}
+                </span>
+                <div className="w-full bg-[#111] h-3 mt-8 rounded-full border border-[#222] overflow-hidden">
+                  <motion.div
+                    className="h-full bg-[var(--accent-primary)]"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${subjectAccuracy?.accuracy ?? 0}%` }}
+                    transition={{ duration: 1, ease: 'easeOut' }}
+                    style={{ boxShadow: '0 0 10px var(--accent-border)' }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

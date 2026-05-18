@@ -10,6 +10,7 @@ import Toast from '../ui/Toast'
 import { useBlocker } from 'react-router-dom'
 import { LeaveConfirmModal } from '../ui/LeaveConfirmModal'
 import { useRef } from 'react'
+import { dbService } from '../../services/db.service'
 
 
 interface TestModeProps {
@@ -252,7 +253,7 @@ Please explain:
     })
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setShowSubmitConfirm(false)
     // Score test
     let correct = 0
@@ -262,6 +263,14 @@ Please explain:
         correct++
       }
     })
+
+    // Record progress for all cards in session
+    for (const card of testCards) {
+      const mcq = card.data as MCQData
+      const isCorrect = answers[card.id] === mcq.answer
+      await dbService.recordCardResult(card.id, isCorrect)
+    }
+
     setScore({ correct, total: testCards.length })
     setViewState('summary')
     const correctIds = testCards.filter(card => {
