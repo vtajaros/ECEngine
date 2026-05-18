@@ -1,6 +1,9 @@
 import { Card, Progress } from '../types'
 import { calculateSM2 } from '../lib/sm2'
 
+export type AccuracyGranularity = 'day' | 'week' | 'month'
+export type AccuracySubject = 'ALL' | 'MATH' | 'GEAS' | 'ELECS' | 'EST'
+
 const toLocalDateString = (date: Date): string => {
   const y = date.getFullYear()
   const m = String(date.getMonth() + 1).padStart(2, '0')
@@ -188,59 +191,125 @@ export const dbService = {
     return history
   },
 
-  getSubjectAccuracyHistory: async (subjectCode: string): Promise<{ subject: string; accuracy: number }[]> => {
+  getAccuracyTrend: async (
+    subject: AccuracySubject,
+    granularity: AccuracyGranularity
+  ): Promise<{ date: string; acc: number | null }[]> => {
+
     const SUBJECT_FULL: Record<string, string> = {
-      'MATH': 'Mathematics',
-      'GEAS': 'General Engineering & Applied Sciences',
-      'ELECS': 'Electronics Engineering',
-      'EST': 'Electronics Systems & Technologies'
-    };
-    const fullSubject = SUBJECT_FULL[subjectCode] || subjectCode;
-    const sql = `
-      SELECT 
-        CAST(SUM(p.correct_count) AS REAL) / NULLIF(SUM(p.total_count), 0) as accuracy 
-      FROM progress p 
-      JOIN cards c ON p.card_id = c.id 
-      JOIN topics t ON c.topic_id = t.id 
-      WHERE t.subject = ?
-    `;
-    const result = await window.electron.db.query(sql, [fullSubject]);
-    const accuracy = result.data?.[0]?.accuracy;
-    return [{ 
-      subject: subjectCode, 
-      accuracy: accuracy != null ? Math.round(accuracy * 100) : 0 
-    }];
-  },
-
-  getAccuracyHistory: async () => {
-    // Generate an array of the last 14 days up to today
-    const today = new Date();
-    const startDate = new Date(today);
-    startDate.setDate(startDate.getDate() - 13);
-    const startStr = toLocalDateString(startDate);
-
-    const res = await window.electron.db.query('SELECT day, correct_count, total_count FROM study_activity WHERE day >= ? ORDER BY day ASC', [startStr]);
-    const history: Array<{ date: string, acc: number | null }> = [];
-    
-    const dataMap: Record<string, { correct: number, total: number }> = {};
-    if (res.success && res.data) {
-      res.data.forEach((r: any) => { dataMap[r.day] = { correct: r.correct_count || 0, total: r.total_count || 0 } });
+      MATH:  'Mathematics',
+      GEAS:  'General Engineering & Applied Sciences',
+      ELECS: 'Electronics Engineering',
+      EST:   'Electronics Systems & Technologies',
     }
 
-    for (let i = 0; i < 14; i++) {
-      const d = new Date(startDate);
-      d.setDate(d.getDate() + i);
-      const dStr = toLocalDateString(d);
-      const dLabel = d.toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
-      
-      const metrics = dataMap[dStr];
-      if (metrics && metrics.total > 0) {
-        history.push({ date: dLabel, acc: Math.round((metrics.correct / metrics.total) * 100) });
-      } else {
-        history.push({ date: dLabel, acc: null });
+    const toLocal = (d: Date): string => {
+      const y = d.getFullYear()
+      const m = String(d.getMonth() + 1).padStart(2, '0')
+      const dy = String(d.getDate()).padStart(2, '0')
+      return `${y}-${m}-${dy}`
+    }
+
+    const lookback: Record<AccuracyGranularity, number> = {
+      day:   13,
+      week:  55,
+      month: 179,
+    }
+
+    const getMonday = (dateStr: string): string => {
+      const d = new Date(dateStr + 'T00:00:00')
+      const mon = new Date(d)
+      mon.setDate(d.getDate() - ((d.getDay() + 6) % 7))
+      return toLocal(mon)
+    }
+
+    const bucketKey = (day: string): string => {
+      if (granularity === 'day')  return day
+      if (granularity === 'week') return getMonday(day)
+      return day.slice(0, 7)
+    }
+
+    const bucketLabel = (day: string): string => {
+      const d = new Date(day + 'T00:00:00')
+      if (granularity === 'day') {
+        return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })
+      }
+      if (granularity === 'week') {
+        const mon = new Date(getMonday(day) + 'T00:00:00')
+        return mon.toLocaleDateString('en-US', { month: 'short', day: '2-digit' })
+      }
+      return d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
+    }
+
+    const startDate = new Date()
+    startDate.setDate(startDate.getDate() - lookback[granularity])
+    const startStr = toLocal(startDate)
+
+    type RawRow = { day: string; correct: number; total: number }
+    let rawRows: RawRow[] = []
+
+    if (subject === 'ALL') {
+      const res = await window.electron.db.query(
+        `SELECT day,
+                correct_count AS correct,
+                total_count   AS total
+         FROM   study_activity
+         WHERE  day >= ?
+         ORDER  BY day ASC`,
+        [startStr]
+      )
+      if (res.success && res.data) {
+        rawRows = res.data.map((r: any) => ({
+          day:     String(r.day),
+          correct: Number(r.correct) || 0,
+          total:   Number(r.total)   || 0,
+        }))
+      }
+    } else {
+      const fullSubject = SUBJECT_FULL[subject] ?? subject
+      const res = await window.electron.db.query(
+        `SELECT DATE(p.last_reviewed)  AS day,
+                SUM(p.correct_count)   AS correct,
+                SUM(p.total_count)     AS total
+         FROM   progress p
+         JOIN   cards   c ON p.card_id  = c.id
+         JOIN   topics  t ON c.topic_id = t.id
+         WHERE  t.subject = ?
+           AND  DATE(p.last_reviewed) >= ?
+         GROUP  BY DATE(p.last_reviewed)
+         ORDER  BY day ASC`,
+        [fullSubject, startStr]
+      )
+      if (res.success && res.data) {
+        rawRows = res.data
+          .filter((r: any) => r.day != null)
+          .map((r: any) => ({
+            day:     String(r.day),
+            correct: Number(r.correct) || 0,
+            total:   Number(r.total)   || 0,
+          }))
       }
     }
-    return history;
+
+    const bucketMap = new Map<string, { label: string; correct: number; total: number }>()
+
+    for (const row of rawRows) {
+      const key   = bucketKey(row.day)
+      const label = bucketLabel(row.day)
+      if (!bucketMap.has(key)) {
+        bucketMap.set(key, { label, correct: 0, total: 0 })
+      }
+      const b = bucketMap.get(key)!
+      b.correct += row.correct
+      b.total   += row.total
+    }
+
+    return Array.from(bucketMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([, b]) => ({
+        date: b.label,
+        acc:  b.total > 0 ? Math.round((b.correct / b.total) * 100) : null,
+      }))
   },
 
   updateTimeSpent: async (minutes: number) => {

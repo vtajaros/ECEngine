@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { BookOpen, Library, Sigma, Download, Zap, BookMarked, BarChart2, TrendingUp, Check, Calendar, Edit2, Activity, Clock } from 'lucide-react'
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { BookOpen, Library, Sigma, Download, Zap, BookMarked, BarChart2, TrendingUp, Check, Calendar, Edit2, Activity, Clock, X, AlertCircle } from 'lucide-react'
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { getSubjectBadgeClasses } from '../lib/subjectColors'
-import { dbService } from '../services/db.service'
+import { dbService, AccuracyGranularity, AccuracySubject } from '../services/db.service'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const SUBJECT_MAP: Record<string, string> = {
@@ -11,6 +11,14 @@ const SUBJECT_MAP: Record<string, string> = {
   'General Engineering & Applied Sciences': 'GEAS',
   'Electronics Engineering': 'ELECS',
   'Electronics Systems & Technologies': 'EST',
+}
+
+const SUBJECT_LINE_COLOR: Record<AccuracySubject, string> = {
+  ALL:   '#00FF41',
+  MATH:  '#FB923C',
+  GEAS:  '#60A5FA',
+  ELECS: '#F87171',
+  EST:   '#22C55E',
 }
 
 // ── Components ──────────────────────────────────────────────────────────────
@@ -150,13 +158,16 @@ export default function Dashboard() {
   ])
   const [subjectProgress, setSubjectProgress] = useState<any[]>([])
   const [history, setHistory] = useState<Record<string, { count: number, timeSpent: number }>>({})
-  const [accuracyHistory, setAccuracyHistory] = useState<any[]>([])
-
-  const [selectedSubject, setSelectedSubject] = useState<'ALL' | 'MATH' | 'GEAS' | 'ELECS' | 'EST'>('ALL')
-  const [subjectAccuracy, setSubjectAccuracy] = useState<{subject: string; accuracy: number} | null>(null)
+  
+  const [selectedSubject, setSelectedSubject] = useState<AccuracySubject>('ALL')
+  const [granularity, setGranularity]         = useState<AccuracyGranularity>('day')
+  const [accuracyTrend, setAccuracyTrend]     = useState<{ date: string; acc: number | null }[]>([])
+  const [trendLoading, setTrendLoading]       = useState(false)
   
   const [examDate, setExamDate] = useState(localStorage.getItem('ecengine_exam_date') || '2026-10-16')
-  const [isEditingDate, setIsEditingDate] = useState(false)
+  const [modalOpen, setModalOpen]       = useState(false)
+  const [modalDate, setModalDate]       = useState(examDate)
+  const [modalError, setModalError]     = useState<string | null>(null)
   
   const calculateTimeLeft = (target: string) => {
     const targetDate = new Date(`${target}T00:00:00`).getTime()
@@ -183,14 +194,12 @@ export default function Dashboard() {
   }, [examDate])
 
   useEffect(() => {
-    if (selectedSubject !== 'ALL') {
-      dbService.getSubjectAccuracyHistory(selectedSubject).then(res => {
-        setSubjectAccuracy(res[0] ?? { subject: selectedSubject, accuracy: 0 })
-      }).catch(err => console.error(err))
-    } else {
-      setSubjectAccuracy(null)
-    }
-  }, [selectedSubject])
+    setTrendLoading(true)
+    dbService.getAccuracyTrend(selectedSubject, granularity)
+      .then(data => setAccuracyTrend(data))
+      .catch(err => console.error('AccuracyTrend fetch failed:', err))
+      .finally(() => setTrendLoading(false))
+  }, [selectedSubject, granularity])
 
   useEffect(() => {
     loadDashboardData()
@@ -234,18 +243,52 @@ export default function Dashboard() {
 
       setSubjectProgress(formattedProgress)
 
-      const realAccuracyHistory = await dbService.getAccuracyHistory()
-      setAccuracyHistory(realAccuracyHistory)
-
     } catch (error) {
       console.error('Failed to load dashboard data:', error)
     }
   }
 
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newDate = e.target.value
-    setExamDate(newDate)
-    localStorage.setItem('ecengine_exam_date', newDate)
+  const openDateModal = () => {
+    setModalDate(examDate)
+    setModalError(null)
+    setModalOpen(true)
+  }
+
+  const closeDateModal = () => {
+    setModalOpen(false)
+    setModalError(null)
+  }
+
+  const handleModalDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value
+    setModalDate(val)
+    if (!val) {
+      setModalError('Please enter a date.')
+      return
+    }
+    const chosen = new Date(val + 'T00:00:00')
+    const today  = new Date()
+    today.setHours(0, 0, 0, 0)
+    if (chosen <= today) {
+      setModalError('That date has already passed. Please choose a future date.')
+    } else {
+      setModalError(null)
+    }
+  }
+
+  const confirmDateChange = () => {
+    if (modalError || !modalDate) return
+    const chosen = new Date(modalDate + 'T00:00:00')
+    const today  = new Date()
+    today.setHours(0, 0, 0, 0)
+    if (chosen <= today) {
+      setModalError('That date has already passed. Please choose a future date.')
+      return
+    }
+    setExamDate(modalDate)
+    localStorage.setItem('ecengine_exam_date', modalDate)
+    setModalOpen(false)
+    setModalError(null)
   }
 
   const getSubjectClasses = (subject: string) => {
@@ -273,45 +316,23 @@ export default function Dashboard() {
 
         {/* Board Exam Countdown */}
         <div className="bg-[#111] border border-[#00FF41]/10 rounded-lg px-4 py-2 flex items-center gap-6 shadow-xl relative group">
-          <button 
-            onClick={() => setIsEditingDate(!isEditingDate)}
+          <button
+            onClick={openDateModal}
             className="absolute -top-2 -right-2 p-1.5 bg-[#1A1A1A] border border-[#333] rounded-full text-[#666] hover:text-[#00FF41] opacity-70 hover:opacity-100 transition-all z-10 shadow-lg"
+            title="Change exam date"
           >
             <Edit2 size={12} />
           </button>
 
           <div className="flex flex-col">
-             <span className="text-[10px] font-['Orbitron'] text-[#00FF41] uppercase tracking-widest opacity-80">Exam Target</span>
-             <AnimatePresence mode="wait">
-               {isEditingDate ? (
-                 <motion.div
-                   key="editing"
-                   initial={{ opacity: 0, y: -5 }}
-                   animate={{ opacity: 1, y: 0 }}
-                   exit={{ opacity: 0, y: 5 }}
-                 >
-                   <input 
-                     type="date" 
-                     value={examDate}
-                     onChange={handleDateChange}
-                     onBlur={() => setIsEditingDate(false)}
-                     autoFocus
-                     className="bg-transparent border-none text-[11px] font-['Rajdhani'] text-[#00FF41] uppercase tracking-widest font-bold focus:outline-none w-32"
-                   />
-                 </motion.div>
-               ) : (
-                 <motion.div
-                   key="viewing"
-                   initial={{ opacity: 0, y: 5 }}
-                   animate={{ opacity: 1, y: 0 }}
-                   exit={{ opacity: 0, y: -5 }}
-                   className="text-[11px] font-['Rajdhani'] text-[#888] uppercase tracking-widest font-bold"
-                 >
-                   {new Date(examDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase()}
-                 </motion.div>
-               )}
-             </AnimatePresence>
+            <span className="text-[10px] font-['Orbitron'] text-[#00FF41] uppercase tracking-widest opacity-80">
+              Exam Target
+            </span>
+            <span className="text-[11px] font-['Rajdhani'] text-[#888] uppercase tracking-widest font-bold">
+              {new Date(examDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase()}
+            </span>
           </div>
+
           <div className="flex gap-4">
             <div className="flex flex-col items-center">
               <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{timeLeft.days}</span>
@@ -414,97 +435,199 @@ export default function Dashboard() {
 
       {/* Row 2 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* ACCURACY TREND (Swapped to Bottom) */}
+        {/* ACCURACY TREND */}
         <div className="lg:col-span-2 bg-[#1A1A1A] border border-[#222] rounded-xl p-6 shadow-xl relative overflow-hidden flex flex-col min-h-[300px]">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="font-['Rajdhani'] font-bold text-sm text-[#E8E8E8] uppercase tracking-widest flex items-center">
-              <Activity className="mr-2 text-[#00FF41]" size={16} />
-              {selectedSubject === 'ALL' ? 'Accuracy Trend' : `${selectedSubject} ACCURACY`}
+
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
+            <h2 className="font-['Rajdhani'] font-bold text-sm text-[#E8E8E8] uppercase tracking-widest flex items-center shrink-0">
+              <Activity
+                className="mr-2 shrink-0 transition-colors duration-300"
+                size={16}
+                style={{ color: SUBJECT_LINE_COLOR[selectedSubject] }}
+              />
+              {selectedSubject === 'ALL' ? 'Accuracy Trend' : `${selectedSubject} Accuracy`}
             </h2>
-            <div className="flex gap-1 bg-[#111] p-1 rounded-lg border border-[#222]">
-              {(['ALL', 'MATH', 'GEAS', 'ELECS', 'EST'] as const).map(subj => (
-                <button
-                  key={subj}
-                  onClick={() => setSelectedSubject(subj)}
-                  className={`px-3 py-1 text-[10px] font-bold font-['Rajdhani'] uppercase tracking-widest rounded transition-colors ${
-                    selectedSubject === subj 
-                      ? 'bg-[var(--accent-primary)] text-black' 
-                      : 'text-[#888] hover:text-[#E8E8E8] hover:bg-[#222]'
-                  }`}
+
+            <div className="flex items-center gap-2 flex-wrap justify-end">
+              <div className="flex gap-1 bg-[#111] p-1 rounded-lg border border-[#222]">
+                {(['ALL', 'MATH', 'GEAS', 'ELECS', 'EST'] as const).map(subj => (
+                  <button
+                    key={subj}
+                    onClick={() => setSelectedSubject(subj)}
+                    className={`px-3 py-1 text-[10px] font-bold font-['Rajdhani'] uppercase tracking-widest rounded transition-all duration-200 ${
+                      selectedSubject === subj ? 'text-black' : 'text-[#888] hover:text-[#E8E8E8] hover:bg-[#222]'
+                    }`}
+                    style={selectedSubject === subj ? { backgroundColor: SUBJECT_LINE_COLOR[subj] } : {}}
+                  >
+                    {subj}
+                  </button>
+                ))}
+              </div>
+
+              <div className="relative">
+                <select
+                  value={granularity}
+                  onChange={e => setGranularity(e.target.value as AccuracyGranularity)}
+                  className="appearance-none bg-[#111] border border-[#2A2A2A] text-[#888] text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest rounded-lg pl-3 pr-7 py-[6px] focus:outline-none focus:border-[#444] hover:text-[#E8E8E8] cursor-pointer transition-colors"
                 >
-                  {subj}
-                </button>
-              ))}
+                  <option value="day">Daily</option>
+                  <option value="week">Weekly</option>
+                  <option value="month">Monthly</option>
+                </select>
+                <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2" width="8" height="5" viewBox="0 0 8 5" fill="none">
+                  <path d="M0 0L4 5L8 0" fill="#555" />
+                </svg>
+              </div>
             </div>
           </div>
-          
-          <div className="flex-1 w-full flex items-center justify-center">
-            {selectedSubject === 'ALL' ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={accuracyHistory}>
-                  <defs>
-                    <linearGradient id="colorAcc" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#00FF41" stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor="#00FF41" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#222" />
-                  <XAxis 
-                    dataKey="date" 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#A1A1AA', fontSize: 10, fontFamily: 'IBM Plex Mono' }}
-                    dy={10}
-                  />
-                  <YAxis 
-                    domain={[0, 100]} 
-                    axisLine={false} 
-                    tickLine={false} 
-                    tick={{ fill: '#A1A1AA', fontSize: 10, fontFamily: 'IBM Plex Mono' }}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: '#111', 
-                      border: '1px solid #333',
-                      borderRadius: '8px',
-                      fontSize: '11px',
-                      fontFamily: 'IBM Plex Mono'
-                    }}
-                    itemStyle={{ color: '#00FF41' }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="acc" 
-                    stroke="#00FF41" 
-                    strokeWidth={2}
-                    fillOpacity={1} 
-                    fill="url(#colorAcc)" 
-                    animationDuration={1000}
-                    connectNulls={true}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex flex-col items-center w-full max-w-sm mt-8">
-                <span className="font-['IBM_Plex_Mono'] font-bold" style={{ color: 'var(--accent-primary)', fontSize: subjectAccuracy?.accuracy === 0 ? '2rem' : '4.5rem' }}>
-                  {subjectAccuracy?.accuracy === 0 ? (
-                    <span className="font-['Rajdhani'] uppercase tracking-widest text-[#666]">No data yet</span>
-                  ) : (
-                    `${subjectAccuracy?.accuracy ?? 0}%`
-                  )}
-                </span>
-                <div className="w-full bg-[#111] h-3 mt-8 rounded-full border border-[#222] overflow-hidden">
-                  <motion.div
-                    className="h-full bg-[var(--accent-primary)]"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${subjectAccuracy?.accuracy ?? 0}%` }}
-                    transition={{ duration: 1, ease: 'easeOut' }}
-                    style={{ boxShadow: '0 0 10px var(--accent-border)' }}
-                  />
-                </div>
-              </div>
-            )}
+
+          {/* Chart */}
+          <div className="flex-1 w-full relative" style={{ minHeight: 200 }}>
+            <AnimatePresence mode="wait">
+              {trendLoading ? (
+                <motion.div
+                  key="loading"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <span className="font-['IBM_Plex_Mono'] text-[10px] text-[#444] uppercase tracking-widest animate-pulse">
+                    Loading…
+                  </span>
+                </motion.div>
+              ) : accuracyTrend.length === 0 || accuracyTrend.every(d => d.acc === null) ? (
+                <motion.div
+                  key="empty"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <p className="font-['Rajdhani'] uppercase tracking-widest text-[#444] text-sm font-bold">
+                    No data yet
+                  </p>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key={`${selectedSubject}-${granularity}`}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.25, ease: 'easeOut' }}
+                  className="absolute inset-0"
+                >
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={accuracyTrend} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
+                      <defs>
+                        <filter id="lineglow" x="-20%" y="-20%" width="140%" height="140%">
+                          <feGaussianBlur stdDeviation="2.5" result="blur" />
+                          <feMerge>
+                            <feMergeNode in="blur" />
+                            <feMergeNode in="SourceGraphic" />
+                          </feMerge>
+                        </filter>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1E1E1E" />
+                      <XAxis
+                        dataKey="date"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#555', fontSize: 10, fontFamily: 'IBM Plex Mono' }}
+                        dy={10}
+                        interval="preserveStartEnd"
+                      />
+                      <YAxis
+                        domain={[0, 100]}
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: '#555', fontSize: 10, fontFamily: 'IBM Plex Mono' }}
+                        tickFormatter={(v: number) => `${v}%`}
+                        width={38}
+                      />
+                      <ReferenceLine
+                        y={50}
+                        stroke="#2A2A2A"
+                        strokeDasharray="4 4"
+                        label={{ value: '50%', fill: '#3A3A3A', fontSize: 9, fontFamily: 'IBM Plex Mono', position: 'insideTopRight' }}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#0D0D0D',
+                          border: '1px solid #2A2A2A',
+                          borderRadius: '8px',
+                          fontSize: '11px',
+                          fontFamily: 'IBM Plex Mono',
+                          boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
+                          padding: '8px 12px',
+                        }}
+                        labelStyle={{ color: '#666', marginBottom: 4 }}
+                        itemStyle={{ color: SUBJECT_LINE_COLOR[selectedSubject] }}
+                        formatter={(value: any) =>
+                          value !== null ? [`${value}%`, 'Accuracy'] : ['—', 'No data']
+                        }
+                        cursor={{ stroke: '#2A2A2A', strokeWidth: 1 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="acc"
+                        stroke={SUBJECT_LINE_COLOR[selectedSubject]}
+                        strokeWidth={2}
+                        filter="url(#lineglow)"
+                        dot={(props: any) => {
+                          const { cx, cy, payload, index } = props
+                          if (payload.acc === null) return <g key={index} />
+                          return (
+                            <circle
+                              key={index}
+                              cx={cx}
+                              cy={cy}
+                              r={3}
+                              fill={SUBJECT_LINE_COLOR[selectedSubject]}
+                              stroke="#1A1A1A"
+                              strokeWidth={2}
+                            />
+                          )
+                        }}
+                        activeDot={{ r: 5, fill: SUBJECT_LINE_COLOR[selectedSubject], stroke: '#0D0D0D', strokeWidth: 2 }}
+                        connectNulls={false}
+                        animationDuration={500}
+                        animationEasing="ease-out"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
+
+          {/* Footer drill-down legend — ALL tab only */}
+          <AnimatePresence>
+            {selectedSubject === 'ALL' && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="flex gap-4 justify-center items-center pt-4 border-t border-[#1E1E1E] mt-4">
+                  {(['MATH', 'GEAS', 'ELECS', 'EST'] as const).map(s => (
+                    <button
+                      key={s}
+                      onClick={() => setSelectedSubject(s)}
+                      className="flex items-center gap-1.5 text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest text-[#555] hover:text-[#E8E8E8] transition-colors"
+                    >
+                      <span className="inline-block w-4 h-[2px] rounded-full" style={{ backgroundColor: SUBJECT_LINE_COLOR[s] }} />
+                      {s}
+                    </button>
+                  ))}
+                  <span className="text-[#333] font-['Rajdhani'] text-[9px] tracking-widest">↑ CLICK TO DRILL IN</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Subject Mastery Panel */}
@@ -547,6 +670,136 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* ── Exam Date Modal ───────────────────────────────────────── */}
+      <AnimatePresence>
+        {modalOpen && (
+          <>
+            <motion.div
+              key="modal-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
+              onClick={closeDateModal}
+            />
+            <motion.div
+              key="modal-dialog"
+              initial={{ opacity: 0, scale: 0.95, y: -12 }}
+              animate={{ opacity: 1, scale: 1,    y: 0 }}
+              exit={{   opacity: 0, scale: 0.95,  y: -8 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+            >
+              <div
+                className="pointer-events-auto w-full max-w-sm mx-4 bg-[#111] border border-[#2A2A2A] rounded-2xl shadow-2xl overflow-hidden"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#1E1E1E]">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="text-[#00FF41]" size={16} />
+                    <span className="font-['Rajdhani'] font-bold text-sm text-[#E8E8E8] uppercase tracking-widest">
+                      Set Exam Target
+                    </span>
+                  </div>
+                  <button
+                    onClick={closeDateModal}
+                    className="text-[#555] hover:text-[#E8E8E8] transition-colors p-1 rounded-lg hover:bg-[#1A1A1A]"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+
+                <div className="px-6 py-6 space-y-5">
+                  <div className="text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest text-[#555]">
+                    Current target:&nbsp;
+                    <span className="text-[#00FF41]">
+                      {new Date(examDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest text-[#666]">
+                      New Date
+                    </label>
+                    <input
+                      type="date"
+                      value={modalDate}
+                      onChange={handleModalDateChange}
+                      min={new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0]}
+                      className="w-full bg-[#0D0D0D] border border-[#2A2A2A] rounded-xl px-4 py-3 text-[#E8E8E8] font-['IBM_Plex_Mono'] text-sm focus:outline-none focus:border-[#00FF41]/40 transition-colors [color-scheme:dark]"
+                    />
+                  </div>
+
+                  <AnimatePresence mode="wait">
+                    {modalError && (
+                      <motion.div
+                        key="modal-error"
+                        initial={{ opacity: 0, y: -4, height: 0 }}
+                        animate={{ opacity: 1, y: 0,  height: 'auto' }}
+                        exit={{   opacity: 0, y: -4,  height: 0 }}
+                        transition={{ duration: 0.15 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="flex items-start gap-2 bg-red-500/5 border border-red-500/20 rounded-xl px-4 py-3">
+                          <AlertCircle className="text-red-400 shrink-0 mt-0.5" size={14} />
+                          <span className="font-['Rajdhani'] text-red-400 text-xs font-bold leading-relaxed">
+                            {modalError}
+                          </span>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <AnimatePresence>
+                    {modalDate && !modalError && (() => {
+                      const d = Math.ceil(
+                        (new Date(modalDate + 'T00:00:00').getTime() - new Date().setHours(0,0,0,0)) / 86400000
+                      )
+                      return d > 0 ? (
+                        <motion.div
+                          key="days-preview"
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.15 }}
+                          className="flex items-center justify-center gap-2 py-2"
+                        >
+                          <span className="font-['IBM_Plex_Mono'] text-2xl font-bold text-[#00FF41]">{d}</span>
+                          <span className="font-['Rajdhani'] text-[#555] text-xs uppercase tracking-widest font-bold">
+                            days until exam
+                          </span>
+                        </motion.div>
+                      ) : null
+                    })()}
+                  </AnimatePresence>
+                </div>
+
+                <div className="flex gap-3 px-6 pb-6">
+                  <button
+                    onClick={closeDateModal}
+                    className="flex-1 px-4 py-2.5 bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl text-[#888] font-['Rajdhani'] font-bold text-xs uppercase tracking-widest hover:text-[#E8E8E8] hover:bg-[#222] transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDateChange}
+                    disabled={!!modalError || !modalDate}
+                    className="flex-1 px-4 py-2.5 rounded-xl font-['Rajdhani'] font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                    style={{
+                      backgroundColor: (!modalError && modalDate) ? '#00FF41' : '#1A1A1A',
+                      color: (!modalError && modalDate) ? '#000' : '#555',
+                    }}
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
