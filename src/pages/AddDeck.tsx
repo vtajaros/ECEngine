@@ -89,7 +89,7 @@ const SUBJECT_KEYWORDS: Record<Subject, string[]> = {
 }
 
 const PREDEFINED_TAGS = [
-  'Excel', 'Edge', 'TOP', 'Indiabix', 'Pinoybix', 
+  'Excel', 'Edge', 'TOP', 'Indiabix', 'Pinoybix',
   'EST Superbook', 'Cuervo'
 ]
 
@@ -149,7 +149,7 @@ function ImportModal({ onImportCards, onClose }: { onImportCards: (cards: { term
   const [showErrors, setShowErrors] = useState(false)
   const [showGuide, setShowGuide] = useState(false)
   const [autoFixMessage, setAutoFixMessage] = useState('')
-  
+
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
   const gutterRef = React.useRef<HTMLDivElement>(null)
 
@@ -211,9 +211,9 @@ function ImportModal({ onImportCards, onClose }: { onImportCards: (cards: { term
       const nextLine = cleanedLines[i + 1] || ''
       if (line.trim() && !/^[A-Z]+:/.test(line) && nextLine.startsWith('A:')) {
         if (line.trim().startsWith(':')) {
-           restoredLines.push(`Q${line}`)
+          restoredLines.push(`Q${line}`)
         } else {
-           restoredLines.push(`Q: ${line}`)
+          restoredLines.push(`Q: ${line}`)
         }
       } else {
         restoredLines.push(line)
@@ -224,7 +224,7 @@ function ImportModal({ onImportCards, onClose }: { onImportCards: (cards: { term
     let result = cleanedLines.join('\n')
     result = result.replace(/(ANS:\s*[A-E])\n+([^Q\n])/g, '$1\n\nQ: $2')
     result = result.replace(/(ANS:\s*[A-E])\n+Q:/g, '$1\n\nQ:')
-    
+
     setInputText(result)
     setAutoFixMessage('Auto-fix applied!')
     setTimeout(() => setAutoFixMessage(''), 2000)
@@ -243,7 +243,7 @@ function ImportModal({ onImportCards, onClose }: { onImportCards: (cards: { term
 
   let feedbackText = "No questions detected"
   let feedbackColor = "text-[#666]"
-  
+
   if (inputText.trim()) {
     if (previewData.length > 0 && previewWarnings.length === 0) {
       feedbackText = `✓ ${previewData.length} questions detected`
@@ -262,9 +262,9 @@ function ImportModal({ onImportCards, onClose }: { onImportCards: (cards: { term
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div 
+      <div
         className="bg-[#161616] border border-[#333] rounded-xl w-full max-w-4xl max-h-[95vh] shadow-2xl flex flex-col animate-[slide-up_0.2s_ease]">
-        
+
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-[#222]">
           <div className="flex items-center gap-3">
@@ -281,10 +281,10 @@ function ImportModal({ onImportCards, onClose }: { onImportCards: (cards: { term
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
-          
+
           {/* Format Guide */}
           <div className="bg-[#0D0D0D] border-l-4 border-l-[#00FF41] shrink-0 relative overflow-hidden transition-all duration-300">
-            <button 
+            <button
               onClick={() => setShowGuide(!showGuide)}
               className="w-full text-left p-[12px_16px] text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest flex items-center justify-between hover:bg-[#00FF41]/5 transition-colors"
             >
@@ -296,14 +296,14 @@ function ImportModal({ onImportCards, onClose }: { onImportCards: (cards: { term
             </button>
             <AnimatePresence>
               {showGuide && (
-                <motion.div 
+                <motion.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
                   <pre className="p-[0_16px_16px_16px] text-[#E8E8E8] text-[13px] font-['IBM_Plex_Mono'] leading-relaxed whitespace-pre">
-{`Q: Your question here
+                    {`Q: Your question here
 A: First choice
 B: Second choice
 C: Third choice
@@ -325,7 +325,7 @@ ANS: D`}
           {/* Text Area */}
           <div className="flex flex-col flex-1 min-h-[300px]">
             <div className="flex flex-1 flex-row border border-[#333] rounded-t-lg bg-[#0D0D0D] overflow-hidden focus-within:border-[#00FF41] transition-colors relative">
-              <div 
+              <div
                 ref={gutterRef}
                 className="w-12 shrink-0 bg-[#0D0D0D] text-[#444] font-['IBM_Plex_Mono'] text-sm text-right pr-3 pl-2 select-none overflow-hidden pt-5"
               >
@@ -354,21 +354,20 @@ ANS: D`}
 
         {/* Footer */}
         <div className="p-6 border-t border-[#222] bg-[#111] flex flex-col rounded-b-xl shrink-0 gap-4">
-          
+
           <div className="flex items-center gap-3 self-end mb-1">
             {autoFixMessage ? (
               <span className="text-[#00FF41] text-xs font-['Rajdhani'] uppercase tracking-widest font-bold animate-[fade-in_0.2s]">
                 {autoFixMessage}
               </span>
             ) : (
-              <button 
+              <button
                 disabled={previewWarnings.length === 0}
                 onClick={(e) => { e.stopPropagation(); handleAutoFix(); }}
-                className={`flex items-center gap-1.5 px-3 py-1 border rounded text-[10px] font-['Rajdhani'] uppercase font-bold tracking-widest transition-colors ${
-                  previewWarnings.length > 0 
-                  ? 'bg-[#111] border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#888]' 
+                className={`flex items-center gap-1.5 px-3 py-1 border rounded text-[10px] font-['Rajdhani'] uppercase font-bold tracking-widest transition-colors ${previewWarnings.length > 0
+                  ? 'bg-[#111] border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#888]'
                   : 'bg-[#0a0a0a] border-[#222] text-[#444] cursor-not-allowed opacity-50'
-                }`}
+                  }`}
               >
                 <Wand2 size={12} /> Auto-Fix
               </button>
@@ -385,14 +384,14 @@ ANS: D`}
                   </span>
                 </div>
               </div>
-              
+
               {showErrors && (
                 <div className="p-3 pt-0 border-t border-[#FFB800]/10 flex flex-col gap-2 max-h-32 overflow-y-auto custom-scrollbar bg-[#111]/50">
                   {previewWarnings.map((warning, idx) => (
                     <div key={idx} className="text-[#E8E8E8] text-[11px] font-['IBM_Plex_Mono'] flex items-start gap-2 py-1">
                       <span className="text-[#FFB800] shrink-0 mt-0.5">•</span>
                       <span className="flex-1">{warning}</span>
-                      <button 
+                      <button
                         onClick={(e) => { e.stopPropagation(); scrollToBlock(idx); }}
                         className="text-[#444] hover:text-[#00FF41] underline underline-offset-2 transition-colors text-[10px]"
                       >
@@ -410,14 +409,13 @@ ANS: D`}
             <button onClick={onClose} className="px-6 py-2.5 rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold text-[#888] hover:text-[#E8E8E8] hover:bg-[#222] transition-colors">
               Cancel
             </button>
-            <button 
+            <button
               onClick={handleImport}
               disabled={previewData.length === 0}
-              className={`px-6 py-2.5 rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all flex items-center gap-2 ${
-                previewData.length > 0
-                  ? 'bg-[var(--accent-primary)] text-black hover:bg-[var(--accent-dim)] shadow-[0_0_15px_rgba(0,255,65,0.2)]'
-                  : 'bg-[#222] text-[#555] cursor-not-allowed'
-              }`}
+              className={`px-6 py-2.5 rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all flex items-center gap-2 ${previewData.length > 0
+                ? 'bg-[var(--accent-primary)] text-black hover:bg-[var(--accent-dim)] shadow-[0_0_15px_rgba(0,255,65,0.2)]'
+                : 'bg-[#222] text-[#555] cursor-not-allowed'
+                }`}
             >
               <Plus size={16} /> Import {previewData.length} Cards
             </button>
@@ -491,9 +489,9 @@ function ImportFlashcardsModal({ onImportCards, onClose }: { onImportCards: (car
       const nextLine = cleanedLines[i + 1] || ''
       if (line.trim() && !/^[A-Z]+:/.test(line) && nextLine.startsWith('A:')) {
         if (line.trim().startsWith(':')) {
-           restoredLines.push(`Q${line}`)
+          restoredLines.push(`Q${line}`)
         } else {
-           restoredLines.push(`Q: ${line}`)
+          restoredLines.push(`Q: ${line}`)
         }
       } else {
         restoredLines.push(line)
@@ -503,7 +501,7 @@ function ImportFlashcardsModal({ onImportCards, onClose }: { onImportCards: (car
 
     let result = cleanedLines.join('\n')
     result = result.replace(/(A:\s*.*)\n+Q:/g, '$1\n\nQ:')
-    
+
     setInputText(result)
     setAutoFixMessage('Auto-fix applied!')
     setTimeout(() => setAutoFixMessage(''), 2000)
@@ -522,7 +520,7 @@ function ImportFlashcardsModal({ onImportCards, onClose }: { onImportCards: (car
 
   let feedbackText = "No flashcards detected"
   let feedbackColor = "text-[#666]"
-  
+
   if (inputText.trim()) {
     if (previewData.length > 0 && previewWarnings.length === 0) {
       feedbackText = `✓ ${previewData.length} flashcard pairs detected`
@@ -541,9 +539,9 @@ function ImportFlashcardsModal({ onImportCards, onClose }: { onImportCards: (car
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div 
+      <div
         className="bg-[#161616] border border-[#333] rounded-xl w-full max-w-4xl max-h-[95vh] shadow-2xl flex flex-col animate-[slide-up_0.2s_ease]">
-        
+
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-[#222]">
           <div className="flex items-center gap-3">
@@ -560,10 +558,10 @@ function ImportFlashcardsModal({ onImportCards, onClose }: { onImportCards: (car
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
-          
+
           {/* Format Guide */}
           <div className="bg-[#0D0D0D] border-l-4 border-l-[#00FF41] shrink-0 relative overflow-hidden transition-all duration-300">
-            <button 
+            <button
               onClick={() => setShowGuide(!showGuide)}
               className="w-full text-left p-[12px_16px] text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest flex items-center justify-between hover:bg-[#00FF41]/5 transition-colors"
             >
@@ -575,14 +573,14 @@ function ImportFlashcardsModal({ onImportCards, onClose }: { onImportCards: (car
             </button>
             <AnimatePresence>
               {showGuide && (
-                <motion.div 
+                <motion.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
                   <pre className="p-[0_16px_16px_16px] text-[#E8E8E8] text-[13px] font-['IBM_Plex_Mono'] leading-relaxed whitespace-pre">
-{`Q: Term here
+                    {`Q: Term here
 A: Definition here
 
 ← blank line between flashcards →
@@ -598,7 +596,7 @@ A: Another definition`}
           {/* Text Area */}
           <div className="flex flex-col flex-1 min-h-[300px]">
             <div className="flex flex-1 flex-row border border-[#333] rounded-t-lg bg-[#0D0D0D] overflow-hidden focus-within:border-[#00FF41] transition-colors relative">
-              <div 
+              <div
                 ref={gutterRef}
                 className="w-12 shrink-0 bg-[#0D0D0D] text-[#444] font-['IBM_Plex_Mono'] text-sm text-right pr-3 pl-2 select-none overflow-hidden pt-5"
               >
@@ -627,21 +625,20 @@ A: Another definition`}
 
         {/* Footer */}
         <div className="p-6 border-t border-[#222] bg-[#111] flex flex-col rounded-b-xl shrink-0 gap-4">
-          
+
           <div className="flex items-center gap-3 self-end mb-1">
             {autoFixMessage ? (
               <span className="text-[#00FF41] text-xs font-['Rajdhani'] uppercase tracking-widest font-bold animate-[fade-in_0.2s]">
                 {autoFixMessage}
               </span>
             ) : (
-              <button 
+              <button
                 disabled={previewWarnings.length === 0}
                 onClick={(e) => { e.stopPropagation(); handleAutoFix(); }}
-                className={`flex items-center gap-1.5 px-3 py-1 border rounded text-[10px] font-['Rajdhani'] uppercase font-bold tracking-widest transition-colors ${
-                  previewWarnings.length > 0 
-                  ? 'bg-[#111] border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#888]' 
+                className={`flex items-center gap-1.5 px-3 py-1 border rounded text-[10px] font-['Rajdhani'] uppercase font-bold tracking-widest transition-colors ${previewWarnings.length > 0
+                  ? 'bg-[#111] border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#888]'
                   : 'bg-[#0a0a0a] border-[#222] text-[#444] cursor-not-allowed opacity-50'
-                }`}
+                  }`}
               >
                 <Wand2 size={12} /> Auto-Fix
               </button>
@@ -658,14 +655,14 @@ A: Another definition`}
                   </span>
                 </div>
               </div>
-              
+
               {showErrors && (
                 <div className="p-3 pt-0 border-t border-[#FFB800]/10 flex flex-col gap-2 max-h-32 overflow-y-auto custom-scrollbar bg-[#111]/50">
                   {previewWarnings.map((warning, idx) => (
                     <div key={idx} className="text-[#E8E8E8] text-[11px] font-['IBM_Plex_Mono'] flex items-start gap-2 py-1">
                       <span className="text-[#FFB800] shrink-0 mt-0.5">•</span>
                       <span className="flex-1">{warning}</span>
-                      <button 
+                      <button
                         onClick={(e) => { e.stopPropagation(); scrollToBlock(idx); }}
                         className="text-[#444] hover:text-[#00FF41] underline underline-offset-2 transition-colors text-[10px]"
                       >
@@ -683,14 +680,13 @@ A: Another definition`}
             <button onClick={onClose} className="px-6 py-2.5 rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold text-[#888] hover:text-[#E8E8E8] hover:bg-[#222] transition-colors">
               Cancel
             </button>
-            <button 
+            <button
               onClick={handleImport}
               disabled={previewData.length === 0}
-              className={`px-6 py-2.5 rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all flex items-center gap-2 ${
-                previewData.length > 0
-                  ? 'bg-[var(--accent-primary)] text-black hover:bg-[var(--accent-dim)] shadow-[0_0_15px_rgba(0,255,65,0.2)]'
-                  : 'bg-[#222] text-[#555] cursor-not-allowed'
-              }`}
+              className={`px-6 py-2.5 rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all flex items-center gap-2 ${previewData.length > 0
+                ? 'bg-[var(--accent-primary)] text-black hover:bg-[var(--accent-dim)] shadow-[0_0_15px_rgba(0,255,65,0.2)]'
+                : 'bg-[#222] text-[#555] cursor-not-allowed'
+                }`}
             >
               <Plus size={16} /> Import {previewData.length} Flashcards
             </button>
@@ -835,7 +831,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    
+
     // 10MB limit guardrail
     if (file.size > 10 * 1024 * 1024) {
       if (onError) onError('Image exceeds 10MB limit.')
@@ -869,7 +865,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
             {data.imagePath ? (
               <div className="relative group flex items-center justify-center">
                 <img src={`ece-app://${data.imagePath}`} alt="Question image" className="w-6 h-6 object-cover rounded border border-[#333]" />
-                <button 
+                <button
                   onClick={() => set({ imagePath: undefined })}
                   className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                   title="Remove image"
@@ -930,7 +926,7 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    
+
     // 10MB limit guardrail
     if (file.size > 10 * 1024 * 1024) {
       if (onError) onError('Image exceeds 10MB limit.')
@@ -964,7 +960,7 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
             {data.imagePath ? (
               <div className="relative group flex items-center justify-center">
                 <img src={`ece-app://${data.imagePath}`} alt="Flashcard image" className="w-6 h-6 object-cover rounded border border-[#333]" />
-                <button 
+                <button
                   onClick={() => onChange({ ...data, imagePath: undefined })}
                   className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                   title="Remove image"
@@ -1063,13 +1059,12 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
           {String(index + 1).padStart(2, '0')}
         </span>
         <span className="flex-1 text-[#ccc] font-['IBM_Plex_Mono'] text-sm truncate">{truncated}</span>
-        <span className={`text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded border uppercase flex-shrink-0 ${
-          card.type === 'mcq'
-            ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
-            : card.type === 'formula'
-              ? 'text-[#A855F7] border-[#A855F7]/30 bg-[#A855F7]/10'
-              : 'text-[#00FF41] border-[#00FF41]/30 bg-[#00FF41]/10'
-        }`}>
+        <span className={`text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded border uppercase flex-shrink-0 ${card.type === 'mcq'
+          ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
+          : card.type === 'formula'
+            ? 'text-[#A855F7] border-[#A855F7]/30 bg-[#A855F7]/10'
+            : 'text-[#00FF41] border-[#00FF41]/30 bg-[#00FF41]/10'
+          }`}>
           {card.type === 'mcq' ? 'MCQ' : card.type === 'formula' ? 'FM' : 'FC'}
         </span>
         <button
@@ -1178,10 +1173,10 @@ export default function AddDeck() {
 
   const [deckType, setDeckType] = useState<'mcq' | 'flashcard' | 'formula'>('mcq')
   const [cards, setCards] = useState<EditCard[]>([])
-  
+
   const [importModalType, setImportModalType] = useState<'none' | 'mcq' | 'flashcard'>('none')
   const [saving, setSaving] = useState(false)
-  
+
   const [showConfirmTypeModal, setShowConfirmTypeModal] = useState(false)
   const [pendingType, setPendingType] = useState<'mcq' | 'flashcard' | 'formula' | null>(null)
 
@@ -1280,7 +1275,7 @@ export default function AddDeck() {
         id: uid(),
         type: deckType,
         isNew: true,
-        data: deckType === 'mcq' 
+        data: deckType === 'mcq'
           ? { question: '', choices: ['', '', '', ''], answer: 0, explanation: '' }
           : deckType === 'formula'
             ? { name: '', latex: '', description: '', variables: '' }
@@ -1298,19 +1293,19 @@ export default function AddDeck() {
       if (c.type === 'formula') return (c.data as FormulaEdit).name.trim().length > 0;
       return (c.data as FlashcardEdit).front.trim().length > 0;
     })
-    
+
     if (hasData) {
       setPendingType(newType)
       setShowConfirmTypeModal(true)
       return false
     }
-    
+
     setDeckType(newType)
     const initialCards: EditCard[] = Array.from({ length: 3 }).map(() => ({
       id: uid(),
       type: newType,
       isNew: true,
-      data: newType === 'mcq' 
+      data: newType === 'mcq'
         ? { question: '', choices: ['', '', '', ''], answer: 0, explanation: '' }
         : newType === 'formula'
           ? { name: '', latex: '', description: '', variables: '' }
@@ -1327,13 +1322,13 @@ export default function AddDeck() {
   const handleConfirmTypeChange = () => {
     if (!pendingType) return
     const newType = pendingType
-    
+
     setDeckType(newType)
     const initialCards: EditCard[] = Array.from({ length: 3 }).map(() => ({
       id: uid(),
       type: newType,
       isNew: true,
-      data: newType === 'mcq' 
+      data: newType === 'mcq'
         ? { question: '', choices: ['', '', '', ''], answer: 0, explanation: '' }
         : newType === 'formula'
           ? { name: '', latex: '', description: '', variables: '' }
@@ -1355,7 +1350,7 @@ export default function AddDeck() {
       id: uid(),
       type: deckType,
       isNew: true,
-      data: deckType === 'mcq' 
+      data: deckType === 'mcq'
         ? { question: '', choices: ['', '', '', ''], answer: 0, explanation: '' }
         : deckType === 'formula'
           ? { name: '', latex: '', description: '', variables: '' }
@@ -1397,7 +1392,7 @@ export default function AddDeck() {
         explanation: c.mcqData.explanation || ''
       }
     }))
-    
+
     saveSnapshot(cardsRef.current)
     setCards(prev => {
       const isAllEmpty = prev.every(c => {
@@ -1420,7 +1415,7 @@ export default function AddDeck() {
         back: c.flashcardData.back || '',
       }
     }))
-    
+
     saveSnapshot(cardsRef.current)
     setCards(prev => {
       const isAllEmpty = prev.every(c => {
@@ -1453,7 +1448,7 @@ export default function AddDeck() {
   const handleSave = async () => {
     if (!canSave) return
     setSaving(true)
-    
+
     const run = (sql: string, params: any[] = []) => (window as any).electron.db.run(sql, params)
     const serializeCardData = (data: any) => {
       // Prevent double encode if data happens to be a string already
@@ -1488,7 +1483,7 @@ export default function AddDeck() {
       navigate('/study')
     } catch (err: any) {
       console.error('Save failed', err)
-      try { await run('ROLLBACK') } catch {}
+      try { await run('ROLLBACK') } catch { }
       alert('Failed to save: ' + err.message)
     } finally {
       setSaving(false)
@@ -1503,11 +1498,10 @@ export default function AddDeck() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className={`fixed top-4 right-4 z-[200] flex items-center gap-3 px-5 py-3 rounded-lg border shadow-2xl font-['Rajdhani'] tracking-wider text-sm ${
-              toast.type === 'success'
-                ? 'bg-[#0a1a0a] border-[#00FF41]/40 text-[#00FF41]'
-                : 'bg-[#1a0a0a] border-[#FF4444]/40 text-[#FF4444]'
-            }`}
+            className={`fixed top-4 right-4 z-[200] flex items-center gap-3 px-5 py-3 rounded-lg border shadow-2xl font-['Rajdhani'] tracking-wider text-sm ${toast.type === 'success'
+              ? 'bg-[#0a1a0a] border-[#00FF41]/40 text-[#00FF41]'
+              : 'bg-[#1a0a0a] border-[#FF4444]/40 text-[#FF4444]'
+              }`}
           >
             {toast.type === 'success' ? <Check className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
             {toast.msg}
@@ -1516,7 +1510,7 @@ export default function AddDeck() {
       </AnimatePresence>
       {/* Top Bar */}
       <div className="sticky top-0 z-30 bg-[#0D0D0D]/90 backdrop-blur-md border-b border-[#1a1a1a] shrink-0">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="w-full px-6 py-4 flex items-center justify-between">
           <div className="flex flex-col">
             <h1 className="font-['Orbitron'] text-2xl font-bold tracking-wider mb-1">
               <span className="text-[var(--accent-primary)]">ADD</span> <span className="text-white">DECKS</span>
@@ -1533,14 +1527,13 @@ export default function AddDeck() {
               Cancel
             </button>
             <div className="relative group">
-              <button 
-                onClick={handleSave} 
+              <button
+                onClick={handleSave}
                 disabled={!canSave || saving}
-                className={`px-8 py-2.5 rounded font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all flex items-center gap-2 ${
-                  canSave && !saving
-                    ? 'bg-[var(--accent-primary)] text-black hover:bg-[var(--accent-dim)] shadow-[0_0_15px_rgba(0,255,65,0.25)]'
-                    : 'bg-[#222] text-[#555] cursor-not-allowed'
-                }`}
+                className={`px-8 py-2.5 rounded font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all flex items-center gap-2 ${canSave && !saving
+                  ? 'bg-[var(--accent-primary)] text-black hover:bg-[var(--accent-dim)] shadow-[0_0_15px_rgba(0,255,65,0.25)]'
+                  : 'bg-[#222] text-[#555] cursor-not-allowed'
+                  }`}
               >
                 <Save size={16} /> {saving ? 'Saving...' : 'Save Deck'}
               </button>
@@ -1554,18 +1547,18 @@ export default function AddDeck() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto w-full px-6 py-8 flex flex-col gap-8 pb-32">
-        
-        {/* 1. Metadata & Tags Header */}
-        <section className="flex flex-col gap-6 bg-[#111] border border-[#1e1e1e] p-6 rounded-xl">
+      <div className="w-full px-6 py-8 xl:grid xl:grid-cols-3 xl:gap-6 flex flex-col gap-8 pb-32 items-start">
+
+        {/* 1. Metadata & Tags — Pane 1 (sticky left) */}
+        <section className="xl:col-span-1 xl:sticky xl:top-20 flex flex-col gap-6 bg-[#111] border border-zinc-800 p-6 rounded-xl">
           <div className="flex flex-col gap-4">
             <div className="relative">
               <input
                 value={title}
                 onChange={e => setTitle(e.target.value)}
                 maxLength={80}
-                placeholder='Enter deck title, e.g. "Electromagnetism"'
-                className="w-full bg-transparent text-[#E8E8E8] text-[1.5rem] font-['Orbitron'] border-b-2 border-[#333] focus:border-[#00FF41] pb-3 focus:outline-none placeholder:text-[#555] transition-colors tracking-wide pr-16"
+                placeholder='Enter deck title...'
+                className="w-full bg-transparent text-[#E8E8E8] text-[1.15rem] font-['Orbitron'] border-b-2 border-[#333] focus:border-[#00FF41] pb-3 focus:outline-none placeholder:text-[#555] transition-colors tracking-wide pr-16"
               />
               <span className="absolute right-0 bottom-4 text-xs font-['IBM_Plex_Mono'] text-[#666]">
                 {title.length} / 80
@@ -1596,7 +1589,7 @@ export default function AddDeck() {
                   />
                   <div className="absolute right-2 flex items-center gap-1">
                     {folderName && (
-                      <button 
+                      <button
                         type="button"
                         onClick={() => {
                           setFolderName('')
@@ -1675,14 +1668,13 @@ export default function AddDeck() {
                 const Icon = s.icon
                 const isSelected = subject === s.value
                 const colorClasses = getSubjectFilterClasses(s.short, isSelected)
-                
+
                 return (
-                  <button 
-                    key={s.value} 
+                  <button
+                    key={s.value}
                     onClick={() => setSubject(s.value)}
-                    className={`px-4 py-2 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-[11px] flex items-center gap-2 transition-all duration-200 ${colorClasses} ${
-                      !isSelected ? 'bg-[#111] hover:bg-[#1A1A1A] border-[#222] text-[#888]' : ''
-                    }`}
+                    className={`px-4 py-2 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-[11px] flex items-center gap-2 transition-all duration-200 ${colorClasses} ${!isSelected ? 'bg-[#111] hover:bg-[#1A1A1A] border-[#222] text-[#888]' : ''
+                      }`}
                   >
                     <Icon size={14} className={isSelected ? 'text-inherit' : 'text-[#888]'} />
                     {s.short}
@@ -1708,11 +1700,10 @@ export default function AddDeck() {
                       else next.add(tag)
                       setDeckTags(next)
                     }}
-                    className={`px-4 py-2 rounded-full font-['Rajdhani'] uppercase tracking-wider text-xs font-bold transition-all border ${
-                      isSelected
-                        ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
-                        : 'bg-[#161616] border-[#333] text-[#888] hover:border-[#555] hover:text-[#E8E8E8]'
-                    }`}
+                    className={`px-4 py-2 rounded-full font-['Rajdhani'] uppercase tracking-wider text-xs font-bold transition-all border ${isSelected
+                      ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
+                      : 'bg-[#161616] border-[#333] text-[#888] hover:border-[#555] hover:text-[#E8E8E8]'
+                      }`}
                   >
                     {tag}
                   </button>
@@ -1731,7 +1722,7 @@ export default function AddDeck() {
                 </div>
               ))}
             </div>
-            
+
             <div className="flex items-center gap-2 mt-3 w-full max-w-sm">
               <input
                 type="text"
@@ -1749,7 +1740,7 @@ export default function AddDeck() {
                 }}
                 className="flex-1 bg-[#111] border border-[#333] rounded px-3 py-2 text-sm text-[#E8E8E8] placeholder-[#555] focus:border-[#00FF41] focus:outline-none font-['Rajdhani'] uppercase tracking-wider transition-colors h-[38px]"
               />
-              <button 
+              <button
                 onClick={() => {
                   if (customTagInput.trim()) {
                     setDeckTags(prev => new Set(prev).add(customTagInput.trim()));
@@ -1764,107 +1755,106 @@ export default function AddDeck() {
           </div>
         </section>
 
-        {/* 2. Creation Controls */}
-        <section className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-          {/* Deck Type Toggle */}
-          <div className="flex shrink-0 flex-wrap bg-[#111] border border-[#222] p-1 rounded-lg gap-1">
-            <button
-              onClick={() => handleDeckTypeChange('mcq')}
-              className={`px-6 py-2 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${
-                deckType === 'mcq'
-                  ? 'bg-[#222] text-[#00FF41] shadow-sm'
-                  : 'text-[#888] hover:text-[#ccc]'
-              }`}
-            >
-              MCQ Set
-            </button>
-            <button
-              onClick={() => handleDeckTypeChange('flashcard')}
-              className={`px-6 py-2 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${
-                deckType === 'flashcard'
-                  ? 'bg-[#222] text-[#00FF41] shadow-sm'
-                  : 'text-[#888] hover:text-[#ccc]'
-              }`}
-            >
-              Flashcard Set
-            </button>
-            <button
-              onClick={() => handleDeckTypeChange('formula')}
-              className={`px-6 py-2 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${
-                deckType === 'formula'
-                  ? 'bg-[#222] text-[#00FF41] shadow-sm'
-                  : 'text-[#888] hover:text-[#ccc]'
-              }`}
-            >
-              Formula Set
-            </button>
-          </div>
-
-          {/* Import Buttons */}
-          <div className="flex flex-wrap items-center gap-3 sm:justify-end">
-            <button
-              onClick={() => openImportModal('mcq')}
-              className="flex items-center gap-2 px-4 py-2 rounded border border-[#333] bg-[#161616] text-[#888] hover:text-[#00FF41] hover:border-[#00FF41]/50 font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all"
-            >
-              <Upload size={14} /> Import MCQs
-            </button>
-            <button
-              onClick={() => openImportModal('flashcard')}
-              className="flex items-center gap-2 px-4 py-2 rounded border border-[#333] bg-[#161616] text-[#888] hover:text-[#00FF41] hover:border-[#00FF41]/50 font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all"
-            >
-              <Upload size={14} /> Import Flashcards
-            </button>
-          </div>
-        </section>
-
-        {/* 3. The Manual Editor */}
-        <section className="flex flex-col gap-3">
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext items={cards.map(c => c.id)} strategy={verticalListSortingStrategy}>
-              <AnimatePresence mode="popLayout">
-                {cards.map((card, i) => (
-                  <SortableQuestionRow
-                    key={card.id}
-                    card={card}
-                    index={i}
-                    onUpdate={updateCard}
-                    onDelete={deleteCard}
-                    onError={(msg) => {
-                      setToast({ type: 'error', msg })
-                      setTimeout(() => setToast(null), 3000)
-                    }}
-                  />
-                ))}
-              </AnimatePresence>
-            </SortableContext>
-          </DndContext>
-
-          {/* 4. Footer Actions */}
-          <div className="mt-4 flex items-center gap-3">
-            {historyStack.length > 0 && (
+        {/* 2 & 3. Cards Pane — Pane 2 (right, 2/3 wide) */}
+        <div className="xl:col-span-2 flex flex-col gap-6">
+          <section className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+            {/* Deck Type Toggle */}
+            <div className="flex shrink-0 flex-wrap bg-[#111] border border-[#222] p-1 rounded-lg gap-1">
               <button
-                onClick={undo}
-                className="flex items-center justify-center p-5 rounded-lg border-2 border-[#666] text-[#666] hover:text-[#00FF41] hover:border-[#00FF41] transition-colors"
-                title="Undo (Ctrl+Z)"
+                onClick={() => handleDeckTypeChange('mcq')}
+                className={`px-6 py-2 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${deckType === 'mcq'
+                  ? 'bg-[#222] text-[#00FF41] shadow-sm'
+                  : 'text-[#888] hover:text-[#ccc]'
+                  }`}
               >
-                <RotateCcw className="w-5 h-5" />
+                MCQ Set
               </button>
-            )}
-            <button
-              onClick={addCard}
-              className="w-full py-5 rounded-lg border-2 border-dashed border-[#333] bg-[#111] hover:bg-[#161616] hover:border-[#00FF41]/50 text-[#888] hover:text-[#00FF41] flex flex-col items-center justify-center gap-2 transition-all group"
+              <button
+                onClick={() => handleDeckTypeChange('flashcard')}
+                className={`px-6 py-2 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${deckType === 'flashcard'
+                  ? 'bg-[#222] text-[#00FF41] shadow-sm'
+                  : 'text-[#888] hover:text-[#ccc]'
+                  }`}
+              >
+                Flashcard Set
+              </button>
+              <button
+                onClick={() => handleDeckTypeChange('formula')}
+                className={`px-6 py-2 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${deckType === 'formula'
+                  ? 'bg-[#222] text-[#00FF41] shadow-sm'
+                  : 'text-[#888] hover:text-[#ccc]'
+                  }`}
+              >
+                Formula Set
+              </button>
+            </div>
+
+            {/* Import Buttons */}
+            <div className="flex flex-wrap items-center gap-3 sm:justify-end">
+              <button
+                onClick={() => openImportModal('mcq')}
+                className="flex items-center gap-2 px-4 py-2 rounded border border-[#333] bg-[#161616] text-[#888] hover:text-[#00FF41] hover:border-[#00FF41]/50 font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all"
+              >
+                <Upload size={14} /> Import MCQs
+              </button>
+              <button
+                onClick={() => openImportModal('flashcard')}
+                className="flex items-center gap-2 px-4 py-2 rounded border border-[#333] bg-[#161616] text-[#888] hover:text-[#00FF41] hover:border-[#00FF41]/50 font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all"
+              >
+                <Upload size={14} /> Import Flashcards
+              </button>
+            </div>
+          </section>
+
+          {/* 3. The Manual Editor */}
+          <section className="flex flex-col gap-3">
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
             >
-              <div className="w-8 h-8 rounded-full bg-[#1a1a1a] group-hover:bg-[#00FF41]/10 flex items-center justify-center transition-colors">
-                <Plus size={18} />
-              </div>
-              <span className="font-['Rajdhani'] font-bold uppercase tracking-widest text-sm">Add Card</span>
-            </button>
-          </div>
-        </section>
+              <SortableContext items={cards.map(c => c.id)} strategy={verticalListSortingStrategy}>
+                <AnimatePresence mode="popLayout">
+                  {cards.map((card, i) => (
+                    <SortableQuestionRow
+                      key={card.id}
+                      card={card}
+                      index={i}
+                      onUpdate={updateCard}
+                      onDelete={deleteCard}
+                      onError={(msg) => {
+                        setToast({ type: 'error', msg })
+                        setTimeout(() => setToast(null), 3000)
+                      }}
+                    />
+                  ))}
+                </AnimatePresence>
+              </SortableContext>
+            </DndContext>
+
+            {/* 4. Footer Actions */}
+            <div className="mt-4 flex items-center gap-3">
+              {historyStack.length > 0 && (
+                <button
+                  onClick={undo}
+                  className="flex items-center justify-center p-5 rounded-lg border-2 border-[#666] text-[#666] hover:text-[#00FF41] hover:border-[#00FF41] transition-colors"
+                  title="Undo (Ctrl+Z)"
+                >
+                  <RotateCcw className="w-5 h-5" />
+                </button>
+              )}
+              <button
+                onClick={addCard}
+                className="w-full py-5 rounded-lg border-2 border-dashed border-[#333] bg-[#111] hover:bg-[#161616] hover:border-[#00FF41]/50 text-[#888] hover:text-[#00FF41] flex flex-col items-center justify-center gap-2 transition-all group"
+              >
+                <div className="w-8 h-8 rounded-full bg-[#1a1a1a] group-hover:bg-[#00FF41]/10 flex items-center justify-center transition-colors">
+                  <Plus size={18} />
+                </div>
+                <span className="font-['Rajdhani'] font-bold uppercase tracking-widest text-sm">Add Card</span>
+              </button>
+            </div>
+          </section>
+        </div>{/* end Pane 2 */}
 
       </div>
 
@@ -1874,7 +1864,7 @@ export default function AddDeck() {
           onClose={() => setImportModalType('none')}
         />
       )}
-      
+
       {importModalType === 'flashcard' && (
         <ImportFlashcardsModal
           onImportCards={handleImportFlashcards}
@@ -1885,13 +1875,13 @@ export default function AddDeck() {
       {/* Change Type Confirmation Modal */}
       <AnimatePresence>
         {showConfirmTypeModal && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
           >
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
@@ -1909,13 +1899,13 @@ export default function AddDeck() {
                 </p>
               </div>
               <div className="p-6 border-t border-[#222] bg-[#111] flex justify-end gap-3">
-                <button 
+                <button
                   onClick={() => { setShowConfirmTypeModal(false); setPendingType(null); }}
                   className="px-5 py-2 rounded bg-transparent border border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-wider text-sm font-bold"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={handleConfirmTypeChange}
                   className="px-6 py-2 rounded bg-[#FF4B4B] text-white hover:bg-[#D32F2F] font-bold transition-all font-['Rajdhani'] uppercase tracking-wider text-sm shadow-[0_0_15px_rgba(255,75,75,0.3)]"
                 >

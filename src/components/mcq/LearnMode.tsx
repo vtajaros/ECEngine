@@ -23,17 +23,17 @@ type QuestionStatus = 'unanswered' | 'correct' | 'wrong'
 type ViewState = 'question' | 'feedback' | 'partition-complete' | 'summary'
 
 const getQuestionFontSize = (text: string): string => {
-  if (text.length < 80)  return '1.5rem'
-  if (text.length < 150) return '1.2rem'
-  if (text.length < 250) return '1rem'
-  return '0.9rem'
+  if (text.length < 80)  return '1.8rem'
+  if (text.length < 150) return '1.5rem'
+  if (text.length < 250) return '1.25rem'
+  return '1.1rem'
 }
 
 const getChoiceFontSize = (text: string): string => {
-  if (text.length < 40)  return '1rem'
-  if (text.length < 80)  return '0.9rem'
-  if (text.length < 120) return '0.82rem'
-  return '0.75rem'
+  if (text.length < 40)  return '1.2rem'
+  if (text.length < 80)  return '1.1rem'
+  if (text.length < 120) return '1rem'
+  return '0.9rem'
 }
 
 export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, onExit }) => {
@@ -562,7 +562,7 @@ Please explain:
           key={currentCard.id}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-3xl bg-[#161616] border border-[#222] rounded-xl shadow-2xl p-8 relative flex flex-col"
+          className="w-full max-w-5xl bg-[#161616] border border-[#222] rounded-xl shadow-2xl p-10 relative flex flex-col"
         >
           {/* Bookmark Togggle */}
           <button 
@@ -626,9 +626,9 @@ Please explain:
                   key={idx}
                   onClick={() => viewState === 'question' && submitAnswer(idx)}
                   disabled={viewState === 'feedback'}
-                  className={`p-[16px_20px] min-h-[56px] rounded-lg border text-left flex items-center transition-all font-['Rajdhani'] ${btnClass}`}
+                  className={`p-[24px_28px] min-h-[80px] rounded-lg border text-left flex items-center transition-all font-['Rajdhani'] ${btnClass}`}
                 >
-                  <span className={`font-['IBM_Plex_Mono'] mr-3 w-6 flex-shrink-0 ${prefixClass}`}>
+                  <span className={`font-['IBM_Plex_Mono'] mr-4 w-8 text-xl flex-shrink-0 ${prefixClass}`} style={{ fontSize: getChoiceFontSize(choice) }}>
                     {String.fromCharCode(65 + idx)}.
                   </span>
                   <div 

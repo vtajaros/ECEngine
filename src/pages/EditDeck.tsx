@@ -199,7 +199,7 @@ const FormulaForm: React.FC<{ data: FormulaEdit; onChange: (d: FormulaEdit) => v
           value={data.latex}
           onChange={val => onChange({ ...data, latex: val })}
           placeholder="LaTeX equation, e.g. \\sin^{-1}u..."
-          rows={3}
+          rows={5}
           multiline={true}
           defaultMathMode={true}
         />
@@ -271,7 +271,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
       <div className="flex items-start gap-4">
         <div className="flex-1">
           <Label>Question</Label>
-          <textarea rows={3} className={textareaCls} value={data.question}
+          <textarea rows={6} className={textareaCls} value={data.question}
             onChange={e => set({ question: e.target.value })} placeholder="Enter question text..." />
         </div>
         <div className="shrink-0 flex flex-col items-center justify-start mt-5">
@@ -358,12 +358,12 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
         <div className="flex-1 grid grid-cols-2 gap-4">
           <div>
             <Label>Front / Term</Label>
-            <textarea rows={4} className={textareaCls} value={data.front}
+            <textarea rows={8} className={textareaCls} value={data.front}
               onChange={e => onChange({ ...data, front: e.target.value })} placeholder="Term or question..." />
           </div>
           <div>
             <Label>Back / Definition</Label>
-            <textarea rows={4} className={textareaCls} value={data.back}
+            <textarea rows={8} className={textareaCls} value={data.back}
               onChange={e => onChange({ ...data, back: e.target.value })} placeholder="Definition or answer..." />
           </div>
         </div>
@@ -456,7 +456,7 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-5 pt-2 border-t border-[#1a1a1a]">
+            <div className="px-4 pb-8 pt-4 border-t border-[#1a1a1a] min-h-[220px]">
               {card.type === 'mcq' ? (
                 <MCQForm
                   data={card.data as MCQEdit}
@@ -541,6 +541,7 @@ export default function EditDeck() {
   const [existingFolders, setExistingFolders] = useState<string[]>([])
   const [showFolderDropdown, setShowFolderDropdown] = useState(false)
   const folderDropdownRef = React.useRef<HTMLDivElement>(null)
+  const [customTagInput, setCustomTagInput] = useState('')
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -845,21 +846,26 @@ export default function EditDeck() {
 
       {/* ── Scrollable Body ── */}
       <div className="flex-1 overflow-y-auto w-full">
-        <div className="max-w-4xl mx-auto px-6 lg:px-10 flex flex-col gap-6 py-6 lg:py-10">
+        <div className="w-full px-6 lg:px-10 xl:grid xl:grid-cols-3 xl:gap-6 flex flex-col gap-6 py-6 lg:py-8 items-start">
 
-        {/* ── Metadata Section ── */}
-        <div className="bg-[#111] border border-[#1e1e1e] rounded-xl p-6 flex flex-col gap-5">
+        {/* ── Metadata Section — Pane 1 (sticky left 1/3) */}
+        <div className="xl:col-span-1 xl:sticky xl:top-6 bg-[#111] border border-zinc-800 rounded-xl p-6 flex flex-col gap-5">
           <h2 className="font-['Rajdhani'] font-bold uppercase tracking-widest text-[#888] text-xs">Deck Info</h2>
 
           <div>
-            <Label>Title</Label>
-            <input
-              type="text"
-              className={`${inputCls} text-xl`}
-              value={deckMeta.title}
-              onChange={e => setDeckMeta(m => ({ ...m, title: e.target.value }))}
-              placeholder="Deck title..."
-            />
+            <div className="relative">
+              <input
+                type="text"
+                className="w-full bg-transparent text-[#E8E8E8] text-[1.15rem] font-['Orbitron'] border-b-2 border-[#333] focus:border-[#00FF41] pb-3 focus:outline-none placeholder:text-[#555] transition-colors tracking-wide pr-16"
+                value={deckMeta.title}
+                onChange={e => setDeckMeta(m => ({ ...m, title: e.target.value }))}
+                placeholder="Deck title..."
+                maxLength={80}
+              />
+              <span className="absolute right-0 bottom-4 text-xs font-['IBM_Plex_Mono'] text-[#666]">
+                {deckMeta.title.length} / 80
+              </span>
+            </div>
           </div>
 
           <div>
@@ -984,19 +990,75 @@ export default function EditDeck() {
           </div>
 
           <div>
-            <Label>Tags (comma-separated)</Label>
-            <input
-              type="text"
-              className={inputCls}
-              value={deckMeta.tags}
-              onChange={e => setDeckMeta(m => ({ ...m, tags: e.target.value }))}
-              placeholder="e.g. 2022, midterms, AC circuits"
-            />
+            <label className="text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest mb-3 block">
+              Source Tags
+            </label>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {['Excel','Edge','TOP','Indiabix','Pinoybix','EST Superbook','Cuervo'].map(tag => {
+                const currentTags = deckMeta.tags.split(',').map(t => t.trim()).filter(Boolean)
+                const isSelected = currentTags.includes(tag)
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => {
+                      const arr = deckMeta.tags.split(',').map(t => t.trim()).filter(Boolean)
+                      const next = isSelected ? arr.filter(t => t !== tag) : [...arr, tag]
+                      setDeckMeta(m => ({ ...m, tags: next.join(', ') }))
+                    }}
+                    className={`px-4 py-2 rounded-full font-['Rajdhani'] uppercase tracking-wider text-xs font-bold transition-all border ${
+                      isSelected
+                        ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
+                        : 'bg-[#161616] border-[#333] text-[#888] hover:border-[#555] hover:text-[#E8E8E8]'
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                )
+              })}
+            </div>
+            <div className="flex items-center gap-2 w-full">
+              <input
+                type="text"
+                placeholder="Add custom tag..."
+                value={customTagInput}
+                onChange={e => setCustomTagInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (customTagInput.trim()) {
+                      const currentTags = deckMeta.tags.split(',').map(t => t.trim()).filter(Boolean);
+                      if (!currentTags.includes(customTagInput.trim())) {
+                        setDeckMeta(m => ({ ...m, tags: [...currentTags, customTagInput.trim()].join(', ') }));
+                      }
+                      setCustomTagInput('');
+                    }
+                  }
+                }}
+                className="flex-1 bg-[#111] border border-[#333] rounded px-3 py-2 text-sm text-[#E8E8E8] placeholder-[#555] focus:border-[#00FF41] focus:outline-none font-['Rajdhani'] uppercase tracking-wider transition-colors h-[38px]"
+              />
+              <button 
+                type="button"
+                onClick={() => {
+                  if (customTagInput.trim()) {
+                    const currentTags = deckMeta.tags.split(',').map(t => t.trim()).filter(Boolean);
+                    if (!currentTags.includes(customTagInput.trim())) {
+                      setDeckMeta(m => ({ ...m, tags: [...currentTags, customTagInput.trim()].join(', ') }));
+                    }
+                    setCustomTagInput('');
+                  }
+                }}
+                className="w-[38px] h-[38px] bg-[#111] border border-[#333] text-[#888] flex items-center justify-center rounded hover:text-[#00FF41] hover:border-[#00FF41] transition-colors shrink-0"
+              >
+                <Plus size={18} />
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* ── Question List ── */}
-        <div className="flex flex-col gap-3">
+        {/* ── Cards Pane — Pane 2 (right 2/3) */}
+        <div className="xl:col-span-2 flex flex-col gap-4">
+          <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <h2 className="font-['Rajdhani'] font-bold uppercase tracking-widest text-[#888] text-xs">
               Questions
@@ -1035,7 +1097,7 @@ export default function EditDeck() {
               No questions yet. Add one below.
             </div>
           )}
-        </div>
+          </div>{/* end question list */}
 
         {/* ── Bottom Bar ── */}
         <div className="flex items-center justify-between bg-[#111] border border-[#1e1e1e] rounded-xl px-6 py-4 gap-4">
@@ -1075,6 +1137,8 @@ export default function EditDeck() {
             </button>
           </div>
         </div>
+
+        </div>{/* end Pane 2 */}
 
         </div>
       </div>

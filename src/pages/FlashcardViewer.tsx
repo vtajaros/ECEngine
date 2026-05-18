@@ -344,14 +344,14 @@ export default function FlashcardViewer() {
     if (card.type === 'mcq') {
       const mcq = card.data as MCQData
       const text = settings.swapTermDef ? mcq.question : mcq.choices[mcq.answer]
-      return <div className="text-xl lg:text-2xl leading-relaxed font-['IBM_Plex_Mono'] text-[#00FF41] font-medium" dangerouslySetInnerHTML={{ __html: renderMath(text) }} />
+      return <div className="text-xl lg:text-2xl leading-relaxed font-['IBM_Plex_Mono'] text-[#E8E8E8] font-medium" dangerouslySetInnerHTML={{ __html: renderMath(text) }} />
     }
     if (card.type === 'formula') {
       const f = card.data as any
       const frontStr = f.name + (f.latex ? `\n\n$$${f.latex}$$` : '')
       const backStr = [f.description, f.variables].filter(Boolean).join('\n\n')
       const text = settings.swapTermDef ? frontStr : backStr
-      return <div className={`leading-relaxed ${settings.swapTermDef ? "text-xl lg:text-2xl font-['IBM_Plex_Mono'] text-[#00FF41] font-medium" : "text-xl"}`} dangerouslySetInnerHTML={{ __html: renderMath(text) }} />
+      return <div className={`leading-relaxed ${settings.swapTermDef ? "text-xl lg:text-2xl font-['IBM_Plex_Mono'] text-[#E8E8E8] font-medium" : "text-xl text-[#E8E8E8]"}`} dangerouslySetInnerHTML={{ __html: renderMath(text) }} />
     }
     const fc = card.data as FlashcardData
     const text = settings.swapTermDef ? fc.front : fc.back
@@ -533,8 +533,8 @@ export default function FlashcardViewer() {
                   <div className="px-8 pt-6 pb-2">
                     <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888]">
                       {isFlipped
-                        ? (currentCard.type === 'mcq' ? (settings.swapTermDef ? 'Question' : 'Answer') : (settings.swapTermDef ? 'Term' : 'Definition'))
-                        : (currentCard.type === 'mcq' ? (settings.swapTermDef ? 'Answer' : 'Question') : (settings.swapTermDef ? 'Definition' : 'Term'))}
+                        ? (settings.swapTermDef ? 'Term' : 'Definition')
+                        : (settings.swapTermDef ? 'Definition' : 'Term')}
                     </span>
                   </div>
 

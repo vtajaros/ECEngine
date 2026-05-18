@@ -826,6 +826,12 @@ export default function FlashcardStudy() {
                 </div>
               ))}
             </div>
+
+            {filteredAndSortedSets.length === 0 && (
+              <div className="text-center py-20 text-[#888] font-rajdhani uppercase tracking-widest text-lg">
+                No decks found{activeSubject !== 'ALL' ? ` for ${activeSubject}` : ''}. Import some from Add Decks.
+              </div>
+            )}
           </div>
         </div>
       </div>
