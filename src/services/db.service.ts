@@ -69,48 +69,66 @@ export const dbService = {
     }
   },
 
-  saveProgress: async (cardId: string, progressUpdates: Partial<Progress>) => {
+  saveProgress: async (
+    cardId: string,
+    progressUpdates: Partial<Progress>,
+    isCorrect: boolean
+  ) => {
     const { easeFactor, interval, repetitions, nextReview, lastReviewed } = progressUpdates
-    
-    // UPSERT progress
+    const correctIncrement = isCorrect ? 1 : 0
+
+    // Atomic UPSERT:
+    // - INSERT initialises all fields including correct/total counts.
+    // - ON CONFLICT increments total_count by 1 and correct_count conditionally.
     const sql = `
-      INSERT INTO progress (card_id, ease_factor, interval, repetitions, next_review, last_reviewed)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO progress
+        (card_id, ease_factor, interval, repetitions, next_review, last_reviewed,
+         correct_count, total_count)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 1)
       ON CONFLICT(card_id) DO UPDATE SET
-        ease_factor = excluded.ease_factor,
-        interval = excluded.interval,
-        repetitions = excluded.repetitions,
-        next_review = excluded.next_review,
-        last_reviewed = excluded.last_reviewed
+        ease_factor   = excluded.ease_factor,
+        interval      = excluded.interval,
+        repetitions   = excluded.repetitions,
+        next_review   = excluded.next_review,
+        last_reviewed = excluded.last_reviewed,
+        total_count   = total_count + 1,
+        correct_count = correct_count + ?
     `
-    
-    const params = [
-      cardId, 
-      easeFactor ?? 2.5, 
-      interval ?? 1, 
-      repetitions ?? 0, 
-      nextReview, 
-      lastReviewed
+
+    const params: unknown[] = [
+      cardId,
+      easeFactor   ?? 2.5,
+      interval     ?? 1,
+      repetitions  ?? 0,
+      nextReview,
+      lastReviewed,
+      correctIncrement, // used in INSERT initial value
+      correctIncrement, // used in ON CONFLICT increment
     ]
 
     const result = await window.electron.db.run(sql, params)
-    
+
     if (!result.success) {
       console.error('Failed to update progress', result.error)
     }
 
     // Also record activity for today
-    await dbService.recordActivity()
+    await dbService.recordActivity(isCorrect)
   },
 
-  recordActivity: async () => {
+  recordActivity: async (isCorrect?: boolean) => {
     const today = toLocalDateString(new Date())
+    const correctInc = isCorrect ? 1 : 0
+    const totalInc = isCorrect !== undefined ? 1 : 0
     const sql = `
-      INSERT INTO study_activity (day, count) 
-      VALUES (?, 1) 
-      ON CONFLICT(day) DO UPDATE SET count = count + 1
+      INSERT INTO study_activity (day, count, correct_count, total_count) 
+      VALUES (?, 1, ?, ?) 
+      ON CONFLICT(day) DO UPDATE SET 
+        count = count + 1,
+        correct_count = correct_count + ?,
+        total_count = total_count + ?
     `
-    await window.electron.db.run(sql, [today])
+    await window.electron.db.run(sql, [today, correctInc, totalInc, correctInc, totalInc])
   },
 
   getActivityHistory: async (): Promise<Record<string, { count: number, timeSpent: number }>> => {
@@ -125,6 +143,37 @@ export const dbService = {
       })
     }
     return history
+  },
+
+  getAccuracyHistory: async () => {
+    // Generate an array of the last 14 days up to today
+    const today = new Date();
+    const startDate = new Date(today);
+    startDate.setDate(startDate.getDate() - 13);
+    const startStr = toLocalDateString(startDate);
+
+    const res = await window.electron.db.query('SELECT day, correct_count, total_count FROM study_activity WHERE day >= ? ORDER BY day ASC', [startStr]);
+    const history: Array<{ date: string, acc: number | null }> = [];
+    
+    const dataMap: Record<string, { correct: number, total: number }> = {};
+    if (res.success && res.data) {
+      res.data.forEach((r: any) => { dataMap[r.day] = { correct: r.correct_count || 0, total: r.total_count || 0 } });
+    }
+
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(startDate);
+      d.setDate(d.getDate() + i);
+      const dStr = toLocalDateString(d);
+      const dLabel = d.toLocaleDateString('en-US', { month: 'short', day: '2-digit' });
+      
+      const metrics = dataMap[dStr];
+      if (metrics && metrics.total > 0) {
+        history.push({ date: dLabel, acc: Math.round((metrics.correct / metrics.total) * 100) });
+      } else {
+        history.push({ date: dLabel, acc: null });
+      }
+    }
+    return history;
   },
 
   updateTimeSpent: async (minutes: number) => {
@@ -225,6 +274,59 @@ export const dbService = {
     await window.electron.db.run('DELETE FROM exam_sessions')
     await window.electron.db.run('DELETE FROM cards')
     await window.electron.db.run('DELETE FROM topics')
+  },
+
+  exportDecks: async (): Promise<string> => {
+    const topicsRes = await window.electron.db.query('SELECT * FROM topics')
+    const cardsRes = await window.electron.db.query('SELECT * FROM cards')
+    const progressRes = await window.electron.db.query('SELECT * FROM progress')
+    
+    const exportData = {
+      version: 1,
+      topics: topicsRes.data || [],
+      cards: cardsRes.data || [],
+      progress: progressRes.data || []
+    }
+    return JSON.stringify(exportData, null, 2)
+  },
+
+  importDecks: async (jsonData: string): Promise<{ success: boolean; message: string }> => {
+    try {
+      const parsed = JSON.parse(jsonData)
+      if (!parsed.topics || !parsed.cards) {
+        return { success: false, message: 'Invalid backup file format' }
+      }
+
+      for (const t of parsed.topics) {
+        await window.electron.db.run(
+          `INSERT OR REPLACE INTO topics (id, title, subject, created_at, description, folder_name, tags) 
+           VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [t.id, t.title, t.subject, t.created_at || Date.now()/1000, t.description || '', t.folder_name || 'Uncategorized', t.tags || '[]']
+        )
+      }
+
+      for (const c of parsed.cards) {
+        await window.electron.db.run(
+          `INSERT OR REPLACE INTO cards (id, topic_id, type, data, difficulty, tags, is_custom, created_at) 
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [c.id, c.topic_id, c.type, c.data, c.difficulty || 'medium', c.tags || '[]', c.is_custom ? 1 : 0, c.created_at || Date.now()/1000]
+        )
+      }
+
+      if (parsed.progress) {
+        for (const p of parsed.progress) {
+          await window.electron.db.run(
+            `INSERT OR REPLACE INTO progress (card_id, ease_factor, interval, repetitions, next_review, last_reviewed, correct_count, total_count) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [p.card_id, p.ease_factor || 2.5, p.interval || 1, p.repetitions || 0, p.next_review, p.last_reviewed, p.correct_count || 0, p.total_count || 0]
+          )
+        }
+      }
+
+      return { success: true, message: 'Decks and progress imported successfully' }
+    } catch (e: any) {
+      return { success: false, message: e.message || 'Failed to parse backup file' }
+    }
   }
 }
 

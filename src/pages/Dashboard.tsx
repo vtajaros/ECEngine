@@ -191,14 +191,8 @@ export default function Dashboard() {
       const rawSubjectProgress = await dbService.getSubjectProgress()
       const activityHistory = await dbService.getActivityHistory()
       
-      const finalHistory = { ...activityHistory }
-      const datesToFill = ['2026-05-09', '2026-05-10', '2026-05-11']
-      datesToFill.forEach(d => {
-        if (!finalHistory[d]) {
-           finalHistory[d] = { count: 10, timeSpent: Math.floor(Math.random() * 150) + 90 } 
-        }
-      })
-      setHistory(finalHistory)
+      // Use real history for heatmap
+      setHistory(activityHistory)
 
       setStatsData({
         totalDecks: globalStats.totalDecks,
@@ -226,14 +220,8 @@ export default function Dashboard() {
 
       setSubjectProgress(formattedProgress)
 
-      setAccuracyHistory([
-        { date: 'May 01', acc: 65 },
-        { date: 'May 03', acc: 68 },
-        { date: 'May 05', acc: 72 },
-        { date: 'May 07', acc: 70 },
-        { date: 'May 09', acc: 75 },
-        { date: 'May 11', acc: dbStats.accuracy || 75 },
-      ])
+      const realAccuracyHistory = await dbService.getAccuracyHistory()
+      setAccuracyHistory(realAccuracyHistory)
 
     } catch (error) {
       console.error('Failed to load dashboard data:', error)
@@ -462,6 +450,7 @@ export default function Dashboard() {
                   fillOpacity={1} 
                   fill="url(#colorAcc)" 
                   animationDuration={1000}
+                  connectNulls={true}
                 />
               </AreaChart>
             </ResponsiveContainer>

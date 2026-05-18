@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Card, MCQData } from '../../types'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bookmark, Play, AlertCircle, ArrowRight, Flag, X, Copy, Sparkles } from 'lucide-react'
@@ -76,15 +76,20 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
       viewState !== 'summary' && currentLocation.pathname !== nextLocation.pathname
   )
 
-  // Reset blocker on unmount if still in blocked state to prevent permanent
-  // navigation lockout when user exits via UI button after sidebar click.
+  // Keep a live ref to the blocker so the unmount cleanup always calls reset()
+  // on the *current* blocker instance — not a stale closure copy.
+  const blockerRef = useRef(blocker)
+  useEffect(() => { blockerRef.current = blocker }, [blocker])
+
+  // On unmount, unconditionally reset any lingering blocked state so the
+  // sidebar never gets permanently locked after the user exits a learn session.
   useEffect(() => {
     return () => {
-      if (blocker.state === 'blocked') {
-        blocker.reset()
+      if (blockerRef.current.state === 'blocked') {
+        blockerRef.current.reset()
       }
     }
-  }, [blocker])
+  }, []) // intentionally empty — runs only on unmount
 
   // Safe exit: reset any active blocker before handing control to parent
   const handleExit = () => {

@@ -6,8 +6,8 @@ contextBridge.exposeInMainWorld('electron', {
     run: (sql: string, params?: unknown[]) => ipcRenderer.invoke('db:run', sql, params),
   },
   file: {
-    import: (filePath: string) => ipcRenderer.invoke('file:import', filePath),
-    export: (data: unknown, savePath: string) => ipcRenderer.invoke('file:export', data, savePath),
+    import: (filePath?: string) => ipcRenderer.invoke('file:import', filePath),
+    export: (data: unknown, savePath?: string) => ipcRenderer.invoke('file:export', data, savePath),
   },
   saveImage: (srcPath: string): Promise<{ success: boolean; filename?: string; error?: string }> =>
     ipcRenderer.invoke('save-image', srcPath),

@@ -608,11 +608,6 @@ export default function Formulas() {
                         )}
                         {currentCard.type === 'formula' ? (
                           <div className="flex flex-col items-center justify-center w-full gap-4" style={{ minHeight: '200px' }}>
-                            {(currentCard.data as any).name && (
-                              <span className="text-xs font-['Rajdhani'] uppercase tracking-widest" style={{ color: 'var(--text-secondary)' }}>
-                                {(currentCard.data as any).name}
-                              </span>
-                            )}
                             <div className="text-4xl font-medium leading-relaxed" style={{ color: 'var(--text-primary)' }} dangerouslySetInnerHTML={{ __html: renderMath(getFrontText(currentCard)) }} />
                           </div>
                         ) : (
@@ -964,8 +959,8 @@ export default function Formulas() {
 
                   {/* Bottom Row: Progress and Actions */}
                   <div className="flex justify-between items-end mt-4 gap-4">
-                    {/* Left Side: Progress Bar (Condensed Width) */}
-                    <div className="flex-1 max-w-[200px]">
+                    {/* Left Side: Progress Bar (Expanded to Maximize Space) */}
+                    <div className="flex-1">
                       <div className="flex justify-between text-[10px] font-rajdhani tracking-widest mb-1 uppercase text-gray-500">
                         <span>MASTERY</span>
                         <span className="text-[#00FF41] font-bold">{deck.mastery}%</span>
@@ -1000,7 +995,7 @@ export default function Formulas() {
                         className="w-[120px] py-2 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
                       >
                         <Play className="w-3 h-3" />
-                        Review
+                        Learn
                       </button>
                     </div>
                   </div>

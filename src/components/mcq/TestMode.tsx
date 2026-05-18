@@ -28,15 +28,15 @@ interface TestModeProps {
 type ViewState = 'test' | 'summary' | 'review'
 
 const getQuestionFontSize = (text: string): string => {
-  if (text.length < 80)  return '1.5rem'
+  if (text.length < 80) return '1.5rem'
   if (text.length < 150) return '1.2rem'
   if (text.length < 250) return '1rem'
   return '0.9rem'
 }
 
 const getChoiceFontSize = (text: string): string => {
-  if (text.length < 40)  return '1rem'
-  if (text.length < 80)  return '0.9rem'
+  if (text.length < 40) return '1rem'
+  if (text.length < 80) return '0.9rem'
   if (text.length < 120) return '0.82rem'
   return '0.75rem'
 }
@@ -50,12 +50,12 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
   })
   const [viewState, setViewState] = useState<ViewState>('test')
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
-  
+
   const [timeElapsed, setTimeElapsed] = useState(0)
   const [score, setScore] = useState({ correct: 0, total: 0 })
   const [zoomedImage, setZoomedImage] = useState<string | null>(null)
 
-   // AI Explanation state — stores the index of the currently open panel (null = all closed)
+  // AI Explanation state — stores the index of the currently open panel (null = all closed)
   const [openExplanationId, setOpenExplanationId] = useState<number | null>(null)
 
   const [showExitConfirm, setShowExitConfirm] = useState(false)
@@ -84,15 +84,20 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
       viewState === 'test' && currentLocation.pathname !== nextLocation.pathname
   )
 
-  // Reset blocker on unmount if still in blocked state to prevent permanent
-  // navigation lockout when user exits via UI button after sidebar click.
+  // Keep a live ref to the blocker so the unmount cleanup always calls reset()
+  // on the *current* blocker instance — not a stale closure copy.
+  const blockerRef = useRef(blocker)
+  useEffect(() => { blockerRef.current = blocker }, [blocker])
+
+  // On unmount, unconditionally reset any lingering blocked state so the
+  // sidebar never gets permanently locked after the user exits a test.
   useEffect(() => {
     return () => {
-      if (blocker.state === 'blocked') {
-        blocker.reset()
+      if (blockerRef.current.state === 'blocked') {
+        blockerRef.current.reset()
       }
     }
-  }, [blocker])
+  }, []) // intentionally empty — runs only on unmount
 
   // Safe exit: reset any active blocker before handing control to parent
   const handleExit = () => {
@@ -145,7 +150,7 @@ Please explain:
   // Initialize test cards
   useEffect(() => {
     let finalCards = [...cards]
-    
+
     if (settings.shuffleQuestions) {
       finalCards = shuffle(finalCards)
     }
@@ -176,7 +181,7 @@ Please explain:
   // Highly optimized synchronous scroll tracking to guarantee zero-delay updating
   const handleContainerScroll = () => {
     if (isClickNavigating.current || !scrollContainerRef.current) return
-    
+
     const containerRect = scrollContainerRef.current.getBoundingClientRect()
     const targetY = containerRect.top + 180 // Scanline slightly below container top padding
     const refs = questionRefs.current
@@ -233,7 +238,7 @@ Please explain:
     if (settings.instantChecking && answers[cardId] !== undefined) {
       return // Already answered, locked.
     }
-    
+
     setAnswers(prev => ({ ...prev, [cardId]: choiceIndex }))
   }
 
@@ -280,7 +285,7 @@ Please explain:
   const renderTopBar = () => (
     <div className="sticky top-0 left-0 w-full bg-[var(--bg-secondary)] border-b border-[var(--bg-card)] shadow-lg z-50 px-6 py-4 flex items-center justify-between shrink-0">
       <div className="flex items-center gap-6">
-        <button 
+        <button
           onClick={() => {
             if (viewState === 'test') setShowExitConfirm(true)
             else handleExit()
@@ -294,7 +299,7 @@ Please explain:
           <span className="text-[var(--text-primary)] font-['Orbitron'] tracking-widest font-bold text-lg uppercase flex items-center">
             {title ? (
               <>
-                <span className="text-[#888] mr-2">TEST:</span> 
+                <span className="text-[#888] mr-2">TEST:</span>
                 <span className="text-[var(--accent-primary)]">{title}</span>
               </>
             ) : 'Test Mode'}
@@ -312,16 +317,16 @@ Please explain:
           <Clock className="w-4 h-4 text-[var(--accent-primary)]" />
           {formatTime(timeElapsed)}
         </div>
-        
+
         {viewState === 'test' ? (
-          <button 
+          <button
             onClick={() => setShowSubmitConfirm(true)}
             className="bg-[var(--accent-primary)] text-black px-6 py-2 rounded font-['Rajdhani'] font-bold tracking-widest uppercase hover:bg-[var(--accent-dim)] transition-colors"
           >
             Submit Test
           </button>
         ) : (
-          <button 
+          <button
             onClick={handleExit}
             className="bg-[#222] text-[#E8E8E8] px-6 py-2 rounded font-['Rajdhani'] font-bold tracking-widest uppercase hover:bg-[#333] border border-[#444] transition-colors"
           >
@@ -338,9 +343,9 @@ Please explain:
     return (
       <div className="h-full bg-[var(--bg-primary)] flex flex-col relative overflow-hidden">
         {renderTopBar()}
-        
+
         <div className="flex-1 overflow-y-auto mt-20 p-6 lg:p-12 flex flex-col items-center justify-center">
-          <motion.div 
+          <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             className="bg-[var(--bg-card)] border border-[#333] rounded-xl p-10 max-w-2xl w-full flex flex-col items-center text-center shadow-2xl relative overflow-hidden"
@@ -388,7 +393,7 @@ Please explain:
               <div className="flex items-center gap-4 w-full">
                 {/* Retry Wrong Items */}
                 {score.correct < score.total && (
-                  <button 
+                  <button
                     onClick={() => {
                       // Filter cards to only wrong ones and restart
                       const wrongCards = testCards.filter(c => {
@@ -407,7 +412,7 @@ Please explain:
                   </button>
                 )}
 
-                <button 
+                <button
                   onClick={() => setViewState('review')}
                   className="flex-1 py-3 px-6 rounded bg-[var(--accent-primary)] hover:bg-[var(--accent-dim)] text-black transition-all font-['Rajdhani'] font-bold tracking-widest uppercase flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(0,255,65,0.2)]"
                 >
@@ -427,7 +432,7 @@ Please explain:
     <div className="h-full bg-[var(--bg-primary)] flex flex-col relative overflow-hidden">
       {renderTopBar()}
 
-      <LeaveConfirmModal 
+      <LeaveConfirmModal
         isOpen={blocker.state === 'blocked' || showExitConfirm}
         onConfirm={() => {
           if (blocker.state === 'blocked') {
@@ -455,7 +460,7 @@ Please explain:
               {testCards.map((card, idx) => {
                 const isAnswered = answers[card.id] !== undefined
                 const isCurrent = currentVisibleIndex === idx
-                
+
                 return (
                   <button
                     key={card.id}
@@ -468,17 +473,17 @@ Please explain:
                         relative w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold font-['IBM_Plex_Mono'] transition-all border z-10
                         ${isCurrent
                           ? 'bg-[#00FF41] border-[#00FF41] text-black shadow-[0_0_12px_rgba(0,255,65,0.4)] scale-110'
-                          : isAnswered 
-                            ? 'bg-[var(--accent-primary)]/20 border-[var(--accent-primary)] text-[#00FF41]' 
+                          : isAnswered
+                            ? 'bg-[var(--accent-primary)]/20 border-[var(--accent-primary)] text-[#00FF41]'
                             : 'bg-transparent border-[#333] text-[#666] hover:border-[#555] hover:text-[#aaa]'
                         }
                       `}
                     >
                       {idx + 1}
-                      
+
                       {/* Pulsing ring for current question */}
                       {isCurrent && (
-                        <motion.div 
+                        <motion.div
                           initial={{ scale: 0.8, opacity: 0.6 }}
                           animate={{ scale: 1.4, opacity: 0 }}
                           transition={{ repeat: Infinity, duration: 1.5, ease: "easeOut" }}
@@ -486,7 +491,7 @@ Please explain:
                         />
                       )}
                     </div>
-                    
+
                     {/* Tooltip hint on hover - Positioned right to avoid clipping */}
                     <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-[#222] text-white text-[10px] px-2.5 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 uppercase tracking-widest border border-[#444] font-['Rajdhani'] font-bold shadow-lg">
                       Question {idx + 1}
@@ -499,231 +504,235 @@ Please explain:
         )}
 
         {/* Right Scrollable Questions Container */}
-        <div 
+        <div
           ref={scrollContainerRef}
           onScroll={handleContainerScroll}
           className="flex-1 overflow-y-auto p-6 lg:p-12 pb-32 scroll-smooth"
         >
           <div className="w-full max-w-4xl mx-auto flex flex-col gap-8">
-        {testCards.map((card, index) => {
-          const mcq = card.data as MCQData
-          if (!mcq || typeof mcq === 'string' || !Array.isArray(mcq.choices) || mcq.choices.length !== 4) {
-            console.warn('[ECEngine] Card data parse error — card may have been saved with double-escaped LaTeX. Please re-save this card in Edit Deck.', card.id, card.data)
-            return (
-              <div
-                key={card.id}
-                className="rounded-xl p-6 border"
-                style={{
-                  color: 'var(--color-wrong)',
-                  background: 'var(--bg-card)',
-                  borderColor: 'var(--color-wrong)',
-                }}
-              >
-                <p className="font-['Rajdhani'] font-bold uppercase tracking-widest text-sm mb-1">Card Load Error</p>
-                <p className="font-['Rajdhani'] text-sm opacity-80">Card data could not be loaded. Check import format.</p>
-              </div>
-            )
-          }
-
-          const userAnswer = answers[card.id]
-          const isAnswered = userAnswer !== undefined
-          const isCorrect = isAnswered && userAnswer === mcq.answer
-          const isBookmarked = bookmarkedIds.has(card.id)
-
-          // Evaluate state logic
-          // If in test state:
-          //   if instantChecking == true && answered: show colors
-          //   else: show normal selection color
-          // If in review state:
-          //   always show colors, mark correct, mark wrong 
-
-          const showFeedback = viewState === 'review' || (settings.instantChecking && isAnswered)
-
-          return (
-            <div 
-              key={card.id} 
-              ref={el => questionRefs.current[index] = el}
-              className={`flex-shrink-0 bg-[var(--bg-card)] border rounded-xl overflow-hidden shadow-lg transition-colors duration-300 relative
-                ${showFeedback 
-                  ? (isCorrect ? 'border-[#00FF41]/30 bg-[#00FF41]/5' : (isAnswered ? 'border-[#FF003C]/30 bg-[#FF003C]/5' : 'border-[#333]')) 
-                  : (isAnswered ? 'border-[#555]' : 'border-[#222]')
-                }`}
-            >
-              <div className="p-6 border-b border-[#333] flex items-start gap-4">
-                <span className="text-[var(--accent-primary)] font-['Rajdhani'] font-bold text-xl leading-none mt-1">
-                  Q{index + 1}.
-                </span>
-                
-                <div className="flex-1 flex flex-col max-h-[50vh] overflow-y-auto pr-2">
-                  {mcq.imagePath && (
-                    <div className="mb-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
-                      <img 
-                        src={`ece-app://${mcq.imagePath}`} 
-                        alt="Question diagram"
-                        className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
-                        onClick={() => setZoomedImage(mcq.imagePath!)}
-                      />
-                    </div>
-                  )}
-                  <h3 
-                    className="font-['Rajdhani'] font-semibold text-[var(--text-primary)] whitespace-pre-wrap"
+            {testCards.map((card, index) => {
+              const mcq = card.data as MCQData
+              if (!mcq || typeof mcq === 'string' || !Array.isArray(mcq.choices) || mcq.choices.length !== 4) {
+                console.warn('[ECEngine] Card data parse error — card may have been saved with double-escaped LaTeX. Please re-save this card in Edit Deck.', card.id, card.data)
+                return (
+                  <div
+                    key={card.id}
+                    className="rounded-xl p-6 border"
                     style={{
-                      fontSize: getQuestionFontSize(mcq.question),
-                      lineHeight: 1.4
+                      color: 'var(--color-wrong)',
+                      background: 'var(--bg-card)',
+                      borderColor: 'var(--color-wrong)',
                     }}
-                    dangerouslySetInnerHTML={{ __html: renderMath(mcq.question) }}
-                  />
-                </div>
+                  >
+                    <p className="font-['Rajdhani'] font-bold uppercase tracking-widest text-sm mb-1">Card Load Error</p>
+                    <p className="font-['Rajdhani'] text-sm opacity-80">Card data could not be loaded. Check import format.</p>
+                  </div>
+                )
+              }
 
-                <button 
-                  onClick={() => toggleBookmark(card.id)}
-                  className={`p-2 rounded transition-colors ${
-                    isBookmarked 
-                    ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/10' 
-                    : 'text-[#555] hover:bg-[#222] hover:text-[#888]'
-                  }`}
-                  title={isBookmarked ? 'Remove Bookmark' : 'Bookmark Question'}
+              const userAnswer = answers[card.id]
+              const isAnswered = userAnswer !== undefined
+              const isCorrect = isAnswered && userAnswer === mcq.answer
+              const isBookmarked = bookmarkedIds.has(card.id)
+
+              // Evaluate state logic
+              // If in test state:
+              //   if instantChecking == true && answered: show colors
+              //   else: show normal selection color
+              // If in review state:
+              //   always show colors, mark correct, mark wrong 
+
+              const showFeedback = viewState === 'review' || (settings.instantChecking && isAnswered)
+
+              return (
+                <div
+                  key={card.id}
+                  ref={el => questionRefs.current[index] = el}
+                  className={`flex-shrink-0 bg-[var(--bg-card)] border rounded-xl overflow-hidden shadow-lg transition-colors duration-300 relative
+                ${showFeedback
+                      ? (isCorrect ? 'border-[#00FF41]/30 bg-[#00FF41]/5' : (isAnswered ? 'border-[#FF003C]/30 bg-[#FF003C]/5' : 'border-[#333]'))
+                      : (isAnswered ? 'border-[#555]' : 'border-[#222]')
+                    }`}
                 >
-                  <Bookmark className="w-5 h-5 fill-current" />
-                </button>
-              </div>
+                  <div className="p-6 border-b border-[#333] flex items-start gap-4">
 
-              <div className="p-6 grid grid-cols-2 gap-3 items-start">
-                {[0, 2, 1, 3].map((cIdx) => {
-                  const choice = mcq.choices[cIdx]
-                  if (choice === undefined) return null
-
-                  const isSelected = userAnswer === cIdx
-
-                  let stateStyles = 'border-[#333] hover:border-[#00FF41] hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] bg-[#111] text-[#E8E8E8]'
-                  let iconElement = null
-                  let prefixStyles = 'text-[#666]'
-
-                  if (showFeedback) {
-                    const isChoiceCorrect = cIdx === mcq.answer
-
-                    if (isChoiceCorrect) {
-                      stateStyles = 'border-[#00FF41] bg-[rgba(0,255,65,0.1)] text-[#00FF41] shadow-[0_0_15px_rgba(0,255,65,0.15)]'
-                      iconElement = <div className="text-[#00FF41] font-bold">✓</div>
-                      prefixStyles = 'text-[#00FF41] font-bold'
-                    } else if (isSelected && !isChoiceCorrect) {
-                      stateStyles = 'border-[#FF003C] bg-[rgba(255,0,60,0.1)] text-[#FF003C]'
-                      iconElement = <div className="text-[#FF003C] font-bold">✗</div>
-                      prefixStyles = 'text-[#FF003C] font-bold'
-                    } else {
-                      stateStyles = 'border-[#222] bg-[#111] text-[#666] opacity-60'
-                      prefixStyles = 'text-[#555]'
-                    }
-                  } else {
-                    if (isSelected) {
-                      stateStyles = 'border-[var(--accent-primary)] bg-[rgba(0,255,65,0.1)] text-[var(--accent-primary)]'
-                      prefixStyles = 'text-[var(--accent-primary)] font-bold'
-                    }
-                  }
-
-                  const choiceLabel = String.fromCharCode(65 + cIdx) // A, B, C, D
-
-                  return (
-                    <button
-                      key={cIdx}
-                      onClick={() => handleSelectChoice(card.id, cIdx)}
-                      disabled={viewState === 'review' || (settings.instantChecking && isAnswered)}
-                      className={`flex items-center text-left p-[16px_20px] min-h-[56px] rounded-lg border transition-all duration-200 font-['Rajdhani'] ${stateStyles} ${
-                        viewState === 'review' || (settings.instantChecking && isAnswered) ? 'cursor-default' : 'cursor-pointer'
-                      }`}
-                    >
-                      <div className={`flex-shrink-0 mr-3 font-['IBM_Plex_Mono'] ${prefixStyles}`}>
-                        {choiceLabel}.
-                      </div>
-                      <span 
-                        className="flex-1 break-words font-['Rajdhani'] font-medium"
-                        style={{ fontSize: getChoiceFontSize(choice), lineHeight: 1.4 }}
-                      >
-                        {choice}
-                      </span>
-                      
-                      {iconElement && (
-                        <div className="ml-4 flex-shrink-0">
-                          {iconElement}
+                    <div className="flex-1 flex flex-col max-h-[50vh] overflow-y-auto pr-2">
+                      {mcq.imagePath && (
+                        <div className="mb-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
+                          <img
+                            src={`ece-app://${mcq.imagePath}`}
+                            alt="Question diagram"
+                            className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
+                            onClick={() => setZoomedImage(mcq.imagePath!)}
+                          />
                         </div>
                       )}
+                      <h3
+                        className="font-['Rajdhani'] font-semibold text-[var(--text-primary)] whitespace-pre-wrap flex items-start gap-3"
+                        style={{
+                          fontSize: getQuestionFontSize(mcq.question),
+                          lineHeight: 1.4
+                        }}
+                      >
+                        <span 
+                          className="text-[var(--accent-primary)] font-bold shrink-0"
+                          style={{ fontSize: '1.25rem', lineHeight: 1.4 }}
+                        >
+                          {index + 1}.
+                        </span>
+                        <span
+                          className="flex-1 mt-[2px]"
+                          dangerouslySetInnerHTML={{ __html: renderMath(mcq.question) }}
+                        />
+                      </h3>
+                    </div>
+
+                    <button
+                      onClick={() => toggleBookmark(card.id)}
+                      className={`p-2 rounded transition-colors ${isBookmarked
+                          ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/10'
+                          : 'text-[#555] hover:bg-[#222] hover:text-[#888]'
+                        }`}
+                      title={isBookmarked ? 'Remove Bookmark' : 'Bookmark Question'}
+                    >
+                      <Bookmark className="w-5 h-5 fill-current" />
                     </button>
-                  )
-                })}
-              </div>
-              
-              {/* Optional Explanation Display logic can fit here when showFeedback == true */}
-              {showFeedback && mcq.explanation && (
-                <div className="px-6 pb-6 pt-2">
-                  <div className="p-4 bg-[#111] rounded border border-[#222]">
-                    <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888] mb-1 block">Explanation</span>
-                    <p className="text-sm text-[#CCC] font-['Rajdhani'] font-medium whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: renderMath(mcq.explanation) }} />
                   </div>
+
+                  <div className="p-6 grid grid-cols-2 gap-3 items-start">
+                    {[0, 2, 1, 3].map((cIdx) => {
+                      const choice = mcq.choices[cIdx]
+                      if (choice === undefined) return null
+
+                      const isSelected = userAnswer === cIdx
+
+                      let stateStyles = 'border-[#333] hover:border-[#00FF41] hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] bg-[#111] text-[#E8E8E8]'
+                      let iconElement = null
+                      let prefixStyles = 'text-[#666]'
+
+                      if (showFeedback) {
+                        const isChoiceCorrect = cIdx === mcq.answer
+
+                        if (isChoiceCorrect) {
+                          stateStyles = 'border-[#00FF41] bg-[rgba(0,255,65,0.1)] text-[#00FF41] shadow-[0_0_15px_rgba(0,255,65,0.15)]'
+                          iconElement = <div className="text-[#00FF41] font-bold">✓</div>
+                          prefixStyles = 'text-[#00FF41] font-bold'
+                        } else if (isSelected && !isChoiceCorrect) {
+                          stateStyles = 'border-[#FF003C] bg-[rgba(255,0,60,0.1)] text-[#FF003C]'
+                          iconElement = <div className="text-[#FF003C] font-bold">✗</div>
+                          prefixStyles = 'text-[#FF003C] font-bold'
+                        } else {
+                          stateStyles = 'border-[#222] bg-[#111] text-[#666] opacity-60'
+                          prefixStyles = 'text-[#555]'
+                        }
+                      } else {
+                        if (isSelected) {
+                          stateStyles = 'border-[var(--accent-primary)] bg-[rgba(0,255,65,0.1)] text-[var(--accent-primary)]'
+                          prefixStyles = 'text-[var(--accent-primary)] font-bold'
+                        }
+                      }
+
+                      const choiceLabel = String.fromCharCode(65 + cIdx) // A, B, C, D
+
+                      return (
+                        <button
+                          key={cIdx}
+                          onClick={() => handleSelectChoice(card.id, cIdx)}
+                          disabled={viewState === 'review' || (settings.instantChecking && isAnswered)}
+                          className={`flex items-center text-left p-[16px_20px] min-h-[56px] rounded-lg border transition-all duration-200 font-['Rajdhani'] ${stateStyles} ${viewState === 'review' || (settings.instantChecking && isAnswered) ? 'cursor-default' : 'cursor-pointer'
+                            }`}
+                        >
+                          <div className={`flex-shrink-0 mr-3 font-['IBM_Plex_Mono'] ${prefixStyles}`}>
+                            {choiceLabel}.
+                          </div>
+                          <span
+                            className="flex-1 break-words font-['Rajdhani'] font-medium"
+                            style={{ fontSize: getChoiceFontSize(choice), lineHeight: 1.4 }}
+                          >
+                            {choice}
+                          </span>
+
+                          {iconElement && (
+                            <div className="ml-4 flex-shrink-0">
+                              {iconElement}
+                            </div>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {/* Optional Explanation Display logic can fit here when showFeedback == true */}
+                  {showFeedback && mcq.explanation && (
+                    <div className="px-6 pb-6 pt-2">
+                      <div className="p-4 bg-[#111] rounded border border-[#222]">
+                        <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888] mb-1 block">Explanation</span>
+                        <p className="text-sm text-[#CCC] font-['Rajdhani'] font-medium whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: renderMath(mcq.explanation) }} />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* AI Action Buttons — only visible in review phase */}
+                  {viewState === 'review' && (
+                    <div className="px-6 pb-6 pt-1 flex items-center gap-3">
+                      <Tooltip content="Copy context to paste into GPT/Gemini/Claude for a better AI explanation.">
+                        <button
+                          onClick={() => handleGetContext(mcq)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-[#888] transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem]"
+                        >
+                          <Copy size={12} />
+                          Get Context
+                        </button>
+                      </Tooltip>
+
+                      <Tooltip position="right" content="Explain using Grok Llama-3.3-70B">
+                        <button
+                          onClick={() => setOpenExplanationId(openExplanationId === index ? null : index)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 border rounded transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem] ${openExplanationId === index
+                              ? 'border-[#00FF41] bg-[rgba(0,255,65,0.08)] text-[#00FF41]'
+                              : 'border-[rgba(0,255,65,0.3)] text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41]'
+                            }`}
+                        >
+                          <Sparkles size={12} />
+                          {openExplanationId === index ? 'Hide Explanation' : 'Explain'}
+                        </button>
+                      </Tooltip>
+
+                    </div>
+                  )}
+
+                  {/* ExplanationPanel — mounts inline below this card's choices when its index is active */}
+                  {viewState === 'review' && openExplanationId === index && (
+                    <ExplanationPanel
+                      question={mcq.question}
+                      choices={mcq.choices}
+                      answerIndex={mcq.answer}
+                      onClose={() => setOpenExplanationId(null)}
+                    />
+                  )}
                 </div>
-              )}
+              )
+            })}
 
-              {/* AI Action Buttons — only visible in review phase */}
-              {viewState === 'review' && (
-                <div className="px-6 pb-6 pt-1 flex items-center gap-3">
-                  <Tooltip content="Copy context to paste into GPT/Gemini/Claude for a better AI explanation.">
-                    <button
-                      onClick={() => handleGetContext(mcq)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-[#888] transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem]"
-                    >
-                      <Copy size={12} />
-                      Get Context
-                    </button>
-                  </Tooltip>
-
-                  <Tooltip position="right" content="Explain using Grok Llama-3.3-70B">
-                    <button
-                      onClick={() => setOpenExplanationId(openExplanationId === index ? null : index)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 border rounded transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem] ${
-                        openExplanationId === index
-                          ? 'border-[#00FF41] bg-[rgba(0,255,65,0.08)] text-[#00FF41]'
-                          : 'border-[rgba(0,255,65,0.3)] text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41]'
-                      }`}
-                    >
-                      <Sparkles size={12} />
-                      {openExplanationId === index ? 'Hide Explanation' : 'Explain'}
-                    </button>
-                  </Tooltip>
-
-                </div>
-              )}
-
-              {/* ExplanationPanel — mounts inline below this card's choices when its index is active */}
-              {viewState === 'review' && openExplanationId === index && (
-                <ExplanationPanel
-                  question={mcq.question}
-                  choices={mcq.choices}
-                  answerIndex={mcq.answer}
-                  onClose={() => setOpenExplanationId(null)}
-                />
-              )}
-            </div>
-          )
-        })}
-
-        {testCards.length === 0 && (
-          <div className="text-center text-[#888] mt-20 font-['Rajdhani'] uppercase tracking-widest">
-            No questions available for this test.
+            {testCards.length === 0 && (
+              <div className="text-center text-[#888] mt-20 font-['Rajdhani'] uppercase tracking-widest">
+                No questions available for this test.
+              </div>
+            )}
           </div>
-        )}
         </div>
       </div>
-    </div>
 
       {/* Submit Confirmation Modal */}
       <AnimatePresence>
         {showSubmitConfirm && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm"
           >
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
@@ -734,7 +743,7 @@ Please explain:
                 <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-2 tracking-widest uppercase">
                   Submit Test?
                 </h3>
-                
+
                 {testCards.length - answeredCount > 0 ? (
                   <p className="text-[#E8E8E8] font-['IBM_Plex_Mono'] mb-6">
                     You still have <span className="text-[#FF3333] font-bold">{testCards.length - answeredCount}</span> unanswered questions. Are you sure you want to submit?
@@ -746,13 +755,13 @@ Please explain:
                 )}
 
                 <div className="flex gap-4 w-full">
-                  <button 
+                  <button
                     onClick={() => setShowSubmitConfirm(false)}
                     className="flex-1 py-3 bg-[#222] text-[#E8E8E8] rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[#333] transition-colors"
                   >
                     Cancel
                   </button>
-                  <button 
+                  <button
                     onClick={handleSubmit}
                     className="flex-1 py-3 bg-[var(--accent-primary)] text-black rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-colors shadow-[0_0_15px_rgba(0,255,65,0.2)]"
                   >
@@ -785,7 +794,7 @@ Please explain:
             className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4 lg:p-10 cursor-zoom-out backdrop-blur-sm"
             onClick={() => setZoomedImage(null)}
           >
-            <button 
+            <button
               className="absolute top-6 right-6 text-[#888] hover:text-[#00FF41] transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-[#00FF41]"
               onClick={() => setZoomedImage(null)}
               title="Close"

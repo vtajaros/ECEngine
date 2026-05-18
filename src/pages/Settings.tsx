@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { Settings as SettingsIcon, Monitor, Bell, Database, Shield, CheckCircle, AlertTriangle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { dbService } from '../services/db.service'
@@ -7,6 +7,7 @@ export default function Settings() {
   const [resetResetMenuOpen, setResetResetMenuOpen] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [advancedSyncEnabled, setAdvancedSyncEnabled] = useState(false);
 
   // API Key State — Groq (OpenAI-compatible, ultra-fast inference)
   const envKey = import.meta.env.VITE_GROQ_API_KEY;
@@ -53,15 +54,55 @@ export default function Settings() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
+  const handleExportDecks = async () => {
+    try {
+      const dataStr = await dbService.exportDecks();
+      const res = await (window as any).electron.file.export(dataStr);
+      if (res.success) {
+        setToastMessage('Database exported successfully!');
+        setTimeout(() => setToastMessage(null), 3000);
+      } else if (!res.canceled) {
+        setToastMessage(res.error || 'Export failed.');
+        setTimeout(() => setToastMessage(null), 3000);
+      }
+    } catch (e) {
+      console.error(e);
+      setToastMessage('Export failed.');
+      setTimeout(() => setToastMessage(null), 3000);
+    }
+  };
+
+  const handleImportDecks = async () => {
+    try {
+      const res = await (window as any).electron.file.import();
+      if (res.success && res.data) {
+        const result = await dbService.importDecks(res.data);
+        setToastMessage(result.message);
+        setTimeout(() => setToastMessage(null), 3000);
+        if (result.success) {
+          setTimeout(() => window.location.reload(), 1500);
+        }
+      } else if (!res.canceled) {
+        setToastMessage(res.error || 'Import failed.');
+        setTimeout(() => setToastMessage(null), 3000);
+      }
+    } catch (err) {
+      console.error(err);
+      setToastMessage('Import failed.');
+      setTimeout(() => setToastMessage(null), 3000);
+    }
+  };
+
   const sections = [
     {
       title: 'Data & Sync',
       icon: <Database size={20} className="text-[#00FF41]" />,
       options: [
-        { label: 'Auto-Backup Progress Locally', type: 'toggle', current: true },
-        { label: 'Export Decks', type: 'action', buttonText: 'Export DB', actionId: 'export' },
-        { label: 'Reset Mastery Progress', type: 'action', buttonText: 'Reset Progress', actionId: 'reset-progress' },
-        { label: 'Clear All Decks', type: 'action', buttonText: 'CLEAR ALL DECKS', danger: true, actionId: 'clear-all' },
+        { label: 'Auto-Backup Progress Locally', type: 'toggle', current: true, advanced: true },
+        { label: 'Import Decks', type: 'action', buttonText: 'IMPORT JSON', actionId: 'import', advanced: true },
+        { label: 'Export Decks', type: 'action', buttonText: 'EXPORT JSON', actionId: 'export', advanced: true },
+        { label: 'Reset Mastery Progress', type: 'action', buttonText: 'Reset Progress', actionId: 'reset-progress', advanced: true },
+        { label: 'Clear All Decks', type: 'action', buttonText: 'CLEAR ALL DECKS', danger: true, actionId: 'clear-all', advanced: true },
       ]
     }
   ]
@@ -120,14 +161,31 @@ export default function Settings() {
 
           {sections.map((section, idx) => (
             <section key={idx}>
-              <h2 className="font-['Rajdhani'] font-bold text-xl text-[#E8E8E8] mb-6 uppercase tracking-wider flex items-center border-b border-[#161616] pb-4">
-                {section.icon}
-                <span className="ml-3">{section.title}</span>
+              <h2 className="font-['Rajdhani'] font-bold text-xl text-[#E8E8E8] mb-6 uppercase tracking-wider flex items-center justify-between border-b border-[#161616] pb-4">
+                <div className="flex items-center">
+                  {section.icon}
+                  <span className="ml-3">{section.title}</span>
+                </div>
+                {section.title === 'Data & Sync' && (
+                  <div className="flex items-center gap-3">
+                    <span className="text-[10px] text-[#666] tracking-widest uppercase font-bold">Unlock Advanced</span>
+                    <button 
+                      onClick={() => setAdvancedSyncEnabled(!advancedSyncEnabled)}
+                      className={`w-10 h-5 rounded-full p-0.5 transition-colors ${advancedSyncEnabled ? 'bg-[rgba(255,51,51,0.2)] border border-[#FF3333]' : 'bg-[#161616] border border-[#222]'} focus:outline-none relative shadow-inner flex items-center`}
+                    >
+                      <span className={`block w-3.5 h-3.5 rounded-full shadow-md transform transition-transform ${advancedSyncEnabled ? 'bg-[#FF3333] translate-x-5 shadow-[0_0_8px_rgba(255,51,51,0.8)]' : 'bg-[#555] translate-x-0'}`} />
+                    </button>
+                  </div>
+                )}
               </h2>
 
               <div className="bg-[#111111] p-6 lg:p-8 rounded-lg border border-[#161616] shadow-lg space-y-8">
-                {section.options.map((opt, idy) => (
-                  <div key={idy} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                {section.options.map((opt, idy) => {
+                  const isAdvanced = (opt as any).advanced;
+                  const isDisabled = isAdvanced && section.title === 'Data & Sync' && !advancedSyncEnabled;
+
+                  return (
+                    <div key={idy} className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-300 ${isDisabled ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
                     <div className="font-['IBM_Plex_Mono'] text-[#E8E8E8] text-sm md:text-base">
                       {opt.label}
                     </div>
@@ -151,6 +209,10 @@ export default function Settings() {
                             setResetResetMenuOpen(true);
                           } else if ((opt as any).actionId === 'clear-all') {
                             setShowClearModal(true);
+                          } else if ((opt as any).actionId === 'export') {
+                            handleExportDecks();
+                          } else if ((opt as any).actionId === 'import') {
+                            handleImportDecks();
                           }
                         }}
                         className={`px-4 py-2 border rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all ${(opt as any).danger
@@ -161,7 +223,7 @@ export default function Settings() {
                       </button>
                     )}
                   </div>
-                ))}
+                )})}
               </div>
             </section>
           ))}

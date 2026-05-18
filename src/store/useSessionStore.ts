@@ -62,13 +62,16 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     const nextReview = new Date()
     nextReview.setDate(nextReview.getDate() + interval)
 
+    // quality 3 (Good) or 4 (Easy) = correct answer; 1 (Again) or 2 (Hard) = incorrect
+    const isCorrect = quality >= 3
+
     await dbService.saveProgress(currentCard.id, {
       easeFactor,
       interval,
       repetitions,
       nextReview: nextReview.toISOString(),
       lastReviewed: new Date().toISOString()
-    })
+    }, isCorrect)
 
     const newStats = { ...state.sessionStats }
     if (quality === 1) newStats.again++

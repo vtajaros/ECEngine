@@ -116,9 +116,13 @@ function runTableMigrations() {
       CREATE TABLE IF NOT EXISTS study_activity (
         day TEXT PRIMARY KEY,
         count INTEGER DEFAULT 0,
-        time_spent INTEGER DEFAULT 0 -- in minutes
+        time_spent INTEGER DEFAULT 0, -- in minutes
+        correct_count INTEGER DEFAULT 0,
+        total_count INTEGER DEFAULT 0
       )
     `);
+    try { db.run("ALTER TABLE study_activity ADD COLUMN correct_count INTEGER DEFAULT 0"); } catch (e) {}
+    try { db.run("ALTER TABLE study_activity ADD COLUMN total_count INTEGER DEFAULT 0"); } catch (e) {}
   } catch (e) {}
 }
 
