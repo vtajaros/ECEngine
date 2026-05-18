@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Settings as SettingsIcon, Monitor, Bell, Database, Shield, CheckCircle, AlertTriangle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { dbService } from '../services/db.service'
@@ -9,13 +9,27 @@ export default function Settings() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [advancedSyncEnabled, setAdvancedSyncEnabled] = useState(false);
 
-  // API Key State — Groq (OpenAI-compatible, ultra-fast inference)
-  const envKey = import.meta.env.VITE_GROQ_API_KEY;
-  const [localApiKey, setLocalApiKey] = useState(localStorage.getItem('ecengine_groq_key') || '');
+  // API Key State — stored main-process-only; renderer only learns if it is configured
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const [apiKeyConfigured, setApiKeyConfigured] = useState(false);
 
-  const handleSaveApiKey = () => {
-    localStorage.setItem('ecengine_groq_key', localApiKey);
-    setToastMessage('Groq API Key saved successfully!');
+  useEffect(() => {
+    const check = async () => {
+      const result = await window.electron.config.getApiKeyStatus();
+      setApiKeyConfigured(result?.configured ?? false);
+    };
+    check();
+  }, []);
+
+  const handleSaveApiKey = async () => {
+    const result = await window.electron.config.setApiKey(apiKeyInput);
+    if (result?.success) {
+      setApiKeyConfigured(apiKeyInput.trim().length > 0);
+      setApiKeyInput('');
+      setToastMessage('API Key saved successfully!');
+    } else {
+      setToastMessage('Failed to save API Key.');
+    }
     setTimeout(() => setToastMessage(null), 3000);
   };
 
@@ -57,7 +71,7 @@ export default function Settings() {
   const handleExportDecks = async () => {
     try {
       const dataStr = await dbService.exportDecks();
-      const res = await (window as any).electron.file.export(dataStr);
+      const res = await window.electron.file.export(dataStr);
       if (res.success) {
         setToastMessage('Database exported successfully!');
         setTimeout(() => setToastMessage(null), 3000);
@@ -74,7 +88,7 @@ export default function Settings() {
 
   const handleImportDecks = async () => {
     try {
-      const res = await (window as any).electron.file.import();
+      const res = await window.electron.file.import();
       if (res.success && res.data) {
         const result = await dbService.importDecks(res.data);
         setToastMessage(result.message);
@@ -129,31 +143,43 @@ export default function Settings() {
             </h2>
             <div className="bg-[#111111] p-6 lg:p-8 rounded-lg border border-[#161616] shadow-lg space-y-4">
               <div className="flex flex-col gap-2">
-                <label className="font-['IBM_Plex_Mono'] text-[#E8E8E8] text-sm">Groq API Key</label>
-                {envKey ? (
-                  <div className="flex items-center justify-between bg-[#161616] border border-[#222] rounded px-4 py-3">
-                    <span className="text-[#888] font-['IBM_Plex_Mono'] text-sm">Using Developer Key (read-only)</span>
-                    <Shield size={16} className="text-[#00FF41]" />
-                  </div>
-                ) : (
-                  <div className="flex gap-4">
-                    <input
-                      type="password"
-                      placeholder="Enter your Groq API key..."
-                      value={localApiKey}
-                      onChange={(e) => setLocalApiKey(e.target.value)}
-                      className="flex-1 bg-[#161616] border border-[#222] focus:border-[#00FF41] rounded px-4 py-2 text-[#E8E8E8] outline-none font-['IBM_Plex_Mono'] transition-colors"
-                    />
-                    <button
-                      onClick={handleSaveApiKey}
-                      className="px-6 py-2 border border-[#00FF41] text-[#00FF41] rounded hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)] font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all whitespace-nowrap"
-                    >
-                      Save Key
-                    </button>
-                  </div>
-                )}
+                <label className="font-['IBM_Plex_Mono'] text-[var(--text-primary)] text-sm">Groq API Key</label>
+
+                {/* Status badge */}
+                <div className="flex items-center gap-2 bg-[#161616] border border-[#222] rounded px-4 py-3">
+                  {apiKeyConfigured ? (
+                    <>
+                      <CheckCircle size={16} className="text-[var(--accent-primary)] shrink-0" />
+                      <span className="font-['IBM_Plex_Mono'] text-[var(--accent-primary)] text-sm">API key configured ✓</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle size={16} className="text-[var(--color-wrong)] shrink-0" />
+                      <span className="font-['IBM_Plex_Mono'] text-[var(--color-wrong)] text-sm">No API key set</span>
+                    </>
+                  )}
+                </div>
+
+                {/* Input to set a new key — value is never read back from main process */}
+                <div className="flex gap-4 mt-2">
+                  <input
+                    type="password"
+                    placeholder={apiKeyConfigured ? 'Enter new key to replace…' : 'Enter your Groq API key…'}
+                    value={apiKeyInput}
+                    onChange={(e) => setApiKeyInput(e.target.value)}
+                    className="flex-1 bg-[#161616] border border-[#222] focus:border-[var(--accent-primary)] rounded px-4 py-2 text-[var(--text-primary)] outline-none font-['IBM_Plex_Mono'] transition-colors"
+                  />
+                  <button
+                    onClick={handleSaveApiKey}
+                    disabled={apiKeyInput.trim().length === 0}
+                    className="px-6 py-2 border border-[var(--accent-primary)] text-[var(--accent-primary)] rounded hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)] font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Save Key
+                  </button>
+                </div>
+
                 <p className="text-[#555] text-xs font-['Rajdhani'] uppercase tracking-widest mt-2">
-                  Required for AI explanations. Get a free key at <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" className="text-[#00FF41] hover:underline transition-all">console.groq.com/keys</a>.
+                  Required for AI explanations. Get a free key at <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" className="text-[var(--accent-primary)] hover:underline transition-all">console.groq.com/keys</a>.
                 </p>
               </div>
             </div>

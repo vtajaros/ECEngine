@@ -1,10 +1,11 @@
 import { ipcMain, net } from 'electron'
+import { resolveGroqApiKey } from './config.ipc'
 
 interface ExplainPayload {
   question: string
   choices: string[]
   correctAnswerIndex: number
-  apiKey: string
+  // apiKey intentionally removed — key is read main-process-only via resolveGroqApiKey()
 }
 
 // Groq OpenAI-compatible response shape
@@ -18,7 +19,13 @@ interface GroqResponse {
 
 export function registerAIHandlers() {
   ipcMain.handle('ai:explain', async (_event, payload: ExplainPayload) => {
-    const { question, choices, correctAnswerIndex, apiKey } = payload
+    const { question, choices, correctAnswerIndex } = payload
+
+    // Key is resolved exclusively in the main process — never from the renderer payload
+    const apiKey = resolveGroqApiKey()
+    if (!apiKey) {
+      return { error: 'NO_KEY' }
+    }
 
     const correctAnswerText = choices[correctAnswerIndex]
     const correctAnswerLetter = String.fromCharCode(65 + correctAnswerIndex)
@@ -41,7 +48,7 @@ STRICT FORMATTING RULES:
      - Ban Generic Filler: Strictly prohibit sentences like "This is essential for ECE students" or "Marking a significant milestone." If a sentence doesn't contain a technical fact, delete it.
    - **Key Formula:** Include this section ONLY if a mathematical calculation or specific formula is required. If conceptual, skip entirely. Do not write "N/A".
    - **Memory Tip:** Always end with this header. Provide a Mnemonic or Mental Hook (e.g., "Oersted = Observed magnetism first"). If a specific mnemonic isn't possible, provide a "Quick Fact" instead of generic advice.
-2. LATEX: Wrap ALL mathematical formulas, variables (like $V_{gs}$, $I_d$, or $\mu$), and units in standard LaTeX delimiters ($ ... $).
+2. LATEX: Wrap ALL mathematical formulas, variables (like $V_{gs}$, $I_d$, or $\\mu$), and units in standard LaTeX delimiters ($ ... $).
 3. SEPARATION: Use exactly two newlines (\\n\\n) between sections.
 4. CONSTRAINTS: Max 150 words. Ensure exponents (r^3) and subscripts (V_gs) render naturally in LaTeX.
 5. LATEX REFERENCE:

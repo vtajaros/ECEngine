@@ -1,6 +1,6 @@
 import { ipcMain, app, protocol, net } from 'electron'
 import { existsSync, mkdirSync } from 'fs'
-import { join, extname, basename } from 'path'
+import { join, extname, basename, resolve, sep } from 'path'
 import { pathToFileURL } from 'url'
 import sharp from 'sharp'
 
@@ -88,19 +88,28 @@ export function handleImageProtocol() {
       const imagesDir = join(app.getPath('userData'), 'ece-images')
       const filePath = join(imagesDir, filename)
 
-      if (!existsSync(filePath)) {
-        console.warn(`[ece-app://] File not found: ${filePath}`)
+      // Guard against path traversal: resolved path must stay within imagesDir
+      const resolvedPath = resolve(filePath)
+      const resolvedImagesDir = resolve(imagesDir)
+      if (!resolvedPath.startsWith(resolvedImagesDir + sep) &&
+          resolvedPath !== resolvedImagesDir) {
+        console.warn(`[ece-app://] Path traversal attempt blocked: ${resolvedPath}`)
+        return new Response('Forbidden', { status: 403 })
+      }
+
+      if (!existsSync(resolvedPath)) {
+        console.warn(`[ece-app://] File not found: ${resolvedPath}`)
         return new Response('Not Found', { status: 404 })
       }
 
       // Convert Node ReadStream to Web ReadableStream
-      const nodeStream = createReadStream(filePath)
+      const nodeStream = createReadStream(resolvedPath)
       const webStream = Readable.toWeb(nodeStream)
 
       return new Response(webStream as any, {
         status: 200,
         headers: {
-          'Content-Type': `image/${extname(filePath).slice(1) || 'webp'}`,
+          'Content-Type': `image/${extname(resolvedPath).slice(1) || 'webp'}`,
           'Cache-Control': 'public, max-age=86400',
         },
       })

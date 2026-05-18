@@ -819,7 +819,7 @@ const MathInputField: React.FC<MathInputFieldProps> = ({
   )
 }
 
-const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?: boolean; onError?: (msg: string) => void }> = ({ data, onChange, isNew, onError }) => {
+const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?: boolean; onError?: (msg: string) => void; cardId: string }> = ({ data, onChange, isNew, onError, cardId }) => {
   const set = (patch: Partial<MCQEdit>) => onChange({ ...data, ...patch })
   const setChoice = (i: number, val: string) => {
     const choices = [...data.choices] as MCQEdit['choices']
@@ -897,7 +897,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
             <div className="flex items-start gap-2">
               <input
                 type="radio"
-                name={`ans-${data.question.slice(0, 8) || Math.random()}`}
+                name={`ans-${cardId}`}
                 checked={data.answer === i}
                 onChange={() => set({ answer: i })}
                 className="accent-[#00FF41] w-4 h-4 flex-shrink-0 cursor-pointer mt-3"
@@ -1092,6 +1092,7 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
                   data={card.data as MCQEdit}
                   onChange={d => onUpdate(card.id, { data: d })}
                   isNew={card.isNew}
+                  cardId={card.id}
                   onError={onError}
                 />
               ) : card.type === 'formula' ? (
@@ -1255,7 +1256,7 @@ export default function AddDeck() {
       .sort((a, b) => b.score - a.score)
 
     const [first, second] = scores
-    console.log('[AutoDetect] scores:', scores, '→', first.subject)
+
 
     // Only set if clear winner (score > 0 and strictly greater than second)
     if (first.score > 0 && first.score > second.score) {
@@ -1468,11 +1469,9 @@ export default function AddDeck() {
       for (const card of validCards) {
         const cardId = 'card_' + Math.random().toString(36).substr(2, 9)
         const cleanedData = stripPlaceholders(card.data)
-        if (card.type === 'mcq') {
-          console.log('[SAVE choices type]', Array.isArray((cleanedData as any).choices), (cleanedData as any).choices)
-        }
+
         const dataJson = serializeCardData(cleanedData)
-        console.log('[before save]', dataJson)
+
         await run(
           `INSERT INTO cards (id, topic_id, type, data, is_custom) VALUES (?, ?, ?, ?, ?)`,
           [cardId, topicId, card.type, dataJson, 1]

@@ -15,9 +15,17 @@ contextBridge.exposeInMainWorld('electron', {
     question: string
     choices: string[]
     correctAnswerIndex: number
-    apiKey: string
+    // apiKey removed — key is managed exclusively in the main process
   }): Promise<{ text?: string; error?: string }> =>
     ipcRenderer.invoke('ai:explain', payload),
+  config: {
+    /** Save the API key to userData/config.json in the main process */
+    setApiKey: (key: string): Promise<{ success: boolean; error?: string }> =>
+      ipcRenderer.invoke('config:setApiKey', key),
+    /** Returns whether an API key is configured — never returns the key value */
+    getApiKeyStatus: (): Promise<{ configured: boolean }> =>
+      ipcRenderer.invoke('config:getApiKey'),
+  },
   windowControls: {
     minimize: () => ipcRenderer.send('window-minimize'),
     maximize: () => ipcRenderer.send('window-maximize'),

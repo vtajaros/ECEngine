@@ -14,6 +14,25 @@ declare global {
         query: (sql: string, params?: unknown[]) => Promise<{ success: boolean; data?: any; error?: string }>
         run: (sql: string, params?: unknown[]) => Promise<{ success: boolean; data?: any; error?: string }>
       }
+      file: {
+        import: (filePath?: string) => Promise<{ success: boolean; data?: string; canceled?: boolean; error?: string }>
+        export: (data: unknown, savePath?: string) => Promise<{ success: boolean; canceled?: boolean; error?: string }>
+      }
+      saveImage: (srcPath: string) => Promise<{ success: boolean; filename?: string; error?: string }>
+      explainQuestion: (payload: {
+        question: string
+        choices: string[]
+        correctAnswerIndex: number
+      }) => Promise<{ text?: string; error?: string }>
+      config: {
+        setApiKey: (key: string) => Promise<{ success: boolean; error?: string }>
+        getApiKeyStatus: () => Promise<{ configured: boolean }>
+      }
+      windowControls: {
+        minimize: () => void
+        maximize: () => void
+        close: () => void
+      }
     }
   }
 }
@@ -207,7 +226,9 @@ export const dbService = {
     let streak = 0
     if (dates.length > 0) {
       const today = toLocalDateString(new Date())
-      const yesterday = toLocalDateString(new Date(Date.now() - 86400000))
+      const yesterdayDate = new Date()
+      yesterdayDate.setDate(yesterdayDate.getDate() - 1)
+      const yesterday = toLocalDateString(yesterdayDate)
 
       // If the most recent activity day isn't today or yesterday, streak is broken
       if (dates[0] !== today && dates[0] !== yesterday) {
@@ -299,9 +320,9 @@ export const dbService = {
 
       for (const t of parsed.topics) {
         await window.electron.db.run(
-          `INSERT OR REPLACE INTO topics (id, title, subject, created_at, description, folder_name, tags) 
+          `INSERT OR REPLACE INTO topics (id, name, subject, created_at, description, folder_name, tags) 
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [t.id, t.title, t.subject, t.created_at || Date.now()/1000, t.description || '', t.folder_name || 'Uncategorized', t.tags || '[]']
+          [t.id, t.name, t.subject, t.created_at || Date.now()/1000, t.description || '', t.folder_name || 'Uncategorized', t.tags || '[]']
         )
       }
 
