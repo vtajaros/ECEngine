@@ -19,6 +19,7 @@ export interface SubjectArea {
 }
 
 export const TOC_DATA: SubjectArea[] = [
+  // ─── 1. MATHEMATICS (MATH) ───
   {
     id: 'MATH',
     name: 'MATHEMATICS',
@@ -97,6 +98,116 @@ export const TOC_DATA: SubjectArea[] = [
       }
     ]
   },
+
+  // ─── 2. ELECTRONICS ENGINEERING (ELECS) ───
+  {
+    id: 'ELECS',
+    name: 'ELECTRONICS ENGINEERING',
+    icon: Zap,
+    topics: [
+      {
+        id: 'ELECS-1.0',
+        name: '1.0 DC Electrical Circuits',
+        subtopics: [
+          { id: 'ELECS-1.1', name: '1.1 Resistive Network' },
+          { id: 'ELECS-1.2', name: '1.2 Mesh and Node Equations' },
+          { id: 'ELECS-1.3', name: '1.3 Network Theorems' },
+          { id: 'ELECS-1.4', name: '1.4 Transient Analysis' },
+          { id: 'ELECS-1.5', name: '1.5 Solution to DC Network Problems' },
+        ]
+      },
+      {
+        id: 'ELECS-2.0',
+        name: '2.0 AC Electrical Circuits',
+        subtopics: [
+          { id: 'ELECS-2.1', name: '2.1 Solution to AC Network Problems' },
+          { id: 'ELECS-2.2', name: '2.2 Impedance and Admittance' },
+          { id: 'ELECS-2.3', name: '2.3 Resonance' },
+          { id: 'ELECS-2.4', name: '2.4 Power in AC Circuits' },
+          { id: 'ELECS-2.5', name: '2.5 Two-Port Network Parameters and Transfer Function' },
+        ]
+      },
+      {
+        id: 'ELECS-3.0',
+        name: '3.0 Electromagnetics',
+        subtopics: [
+          { id: 'ELECS-3.1', name: '3.1 Steady Electric and Magnetic Fields' },
+          { id: 'ELECS-3.2', name: '3.2 Dielectric and Magnetic Materials' },
+          { id: 'ELECS-3.3', name: '3.3 Coupled and Magnetic Circuits' },
+          { id: 'ELECS-3.4', name: '3.4 Time-Varying Fields and Maxwell\'s Equations' },
+        ]
+      },
+      {
+        id: 'ELECS-4.0',
+        name: '4.0 Electronic Devices and Circuits',
+        subtopics: [
+          { id: 'ELECS-4.1', name: '4.1 Diode Wave Shaping and Special Diode Applications' },
+          { id: 'ELECS-4.2', name: '4.2 BJT and FET Small Signal Analysis' },
+          { id: 'ELECS-4.3', name: '4.3 Diode Equivalent Circuits' },
+          { id: 'ELECS-4.4', name: '4.4 Voltage Multipliers, Power Supply, Voltage Regulation' },
+          { id: 'ELECS-4.5', name: '4.5 Bipolar Junction Transistor and FET' },
+        ]
+      },
+      {
+        id: 'ELECS-5.0',
+        name: '5.0 Electronic Circuit Analysis and Design',
+        subtopics: [
+          { id: 'ELECS-5.1', name: '5.1 BJT and FET Frequency Response' },
+          { id: 'ELECS-5.2', name: '5.2 Cascade and Cascode Connections' },
+          { id: 'ELECS-5.3', name: '5.3 Current Mirrors and Current Sources' },
+          { id: 'ELECS-5.4', name: '5.4 Differential and Operational Amplifiers' },
+          { id: 'ELECS-5.5', name: '5.5 Feedback Systems, Oscillators, and Filters' },
+        ]
+      },
+      {
+        id: 'ELECS-6.0',
+        name: '6.0 Electronic Systems and Design',
+        subtopics: [
+          { id: 'ELECS-6.1', name: '6.1 SCRs, UJT, PUT, TRIAC, DIAC, and Thyristors' },
+          { id: 'ELECS-6.2', name: '6.2 Optoelectronic Devices and Sensors' },
+          { id: 'ELECS-6.3', name: '6.3 Transducers, Data Acquisition, and Interfacing' },
+          { id: 'ELECS-6.4', name: '6.4 Programmable Logic Controllers' },
+          { id: 'ELECS-6.5', name: '6.5 Building Management Systems and HVAC Controls' },
+          { id: 'ELECS-6.6', name: '6.6 Security, Safety, and Surveillance Systems' },
+        ]
+      },
+      {
+        id: 'ELECS-7.0',
+        name: '7.0 Logic Circuits and Switching Theory',
+        subtopics: [
+          { id: 'ELECS-7.1', name: '7.1 Boolean Algebra and Logic Gates' },
+          { id: 'ELECS-7.2', name: '7.2 Minimization of Combinational Logic Circuits' },
+          { id: 'ELECS-7.3', name: '7.3 Sequential Logic Circuits' },
+          { id: 'ELECS-7.4', name: '7.4 Algorithmic State Machine (ASM)' },
+          { id: 'ELECS-7.5', name: '7.5 Asynchronous Sequential Logic' },
+        ]
+      },
+      {
+        id: 'ELECS-8.0',
+        name: '8.0 Microprocessor and Microcontroller Systems',
+        subtopics: [
+          { id: 'ELECS-8.1', name: '8.1 Microprocessor Unit' },
+          { id: 'ELECS-8.2', name: '8.2 Memory Subsystem' },
+          { id: 'ELECS-8.3', name: '8.3 I/O Subsystem' },
+          { id: 'ELECS-8.4', name: '8.4 Instruction Set Architecture and Assembly Programming' },
+          { id: 'ELECS-8.5', name: '8.5 Microcontrollers' },
+        ]
+      },
+      {
+        id: 'ELECS-9.0',
+        name: '9.0 Feedback and Control Systems',
+        subtopics: [
+          { id: 'ELECS-9.1', name: '9.1 Block Diagram and Signal Flow Graphs' },
+          { id: 'ELECS-9.2', name: '9.2 LTI Systems and Transient Analysis' },
+          { id: 'ELECS-9.3', name: '9.3 System Modeling and Transfer Function' },
+          { id: 'ELECS-9.4', name: '9.4 Poles, Zeros, Root Locus, and Stability Analysis' },
+          { id: 'ELECS-9.5', name: '9.5 Steady State Analysis and Frequency Response' },
+        ]
+      }
+    ]
+  },
+
+  // ─── 3. GENERAL ENGINEERING AND APPLIED SCIENCES (GEAS) ───
   {
     id: 'GEAS',
     name: 'GENERAL ENGINEERING AND APPLIED SCIENCES',
@@ -234,112 +345,8 @@ export const TOC_DATA: SubjectArea[] = [
       }
     ]
   },
-  {
-    id: 'ELECS',
-    name: 'ELECTRONICS ENGINEERING',
-    icon: Zap,
-    topics: [
-      {
-        id: 'ELECS-1.0',
-        name: '1.0 DC Electrical Circuits',
-        subtopics: [
-          { id: 'ELECS-1.1', name: '1.1 Resistive Network' },
-          { id: 'ELECS-1.2', name: '1.2 Mesh and Node Equations' },
-          { id: 'ELECS-1.3', name: '1.3 Network Theorems' },
-          { id: 'ELECS-1.4', name: '1.4 Transient Analysis' },
-          { id: 'ELECS-1.5', name: '1.5 Solution to DC Network Problems' },
-        ]
-      },
-      {
-        id: 'ELECS-2.0',
-        name: '2.0 AC Electrical Circuits',
-        subtopics: [
-          { id: 'ELECS-2.1', name: '2.1 Solution to AC Network Problems' },
-          { id: 'ELECS-2.2', name: '2.2 Impedance and Admittance' },
-          { id: 'ELECS-2.3', name: '2.3 Resonance' },
-          { id: 'ELECS-2.4', name: '2.4 Power in AC Circuits' },
-          { id: 'ELECS-2.5', name: '2.5 Two-Port Network Parameters and Transfer Function' },
-        ]
-      },
-      {
-        id: 'ELECS-3.0',
-        name: '3.0 Electromagnetics',
-        subtopics: [
-          { id: 'ELECS-3.1', name: '3.1 Steady Electric and Magnetic Fields' },
-          { id: 'ELECS-3.2', name: '3.2 Dielectric and Magnetic Materials' },
-          { id: 'ELECS-3.3', name: '3.3 Coupled and Magnetic Circuits' },
-          { id: 'ELECS-3.4', name: '3.4 Time-Varying Fields and Maxwell\'s Equations' },
-        ]
-      },
-      {
-        id: 'ELECS-4.0',
-        name: '4.0 Electronic Devices and Circuits',
-        subtopics: [
-          { id: 'ELECS-4.1', name: '4.1 Diode Wave Shaping and Special Diode Applications' },
-          { id: 'ELECS-4.2', name: '4.2 BJT and FET Small Signal Analysis' },
-          { id: 'ELECS-4.3', name: '4.3 Diode Equivalent Circuits' },
-          { id: 'ELECS-4.4', name: '4.4 Voltage Multipliers, Power Supply, Voltage Regulation' },
-          { id: 'ELECS-4.5', name: '4.5 Bipolar Junction Transistor and FET' },
-        ]
-      },
-      {
-        id: 'ELECS-5.0',
-        name: '5.0 Electronic Circuit Analysis and Design',
-        subtopics: [
-          { id: 'ELECS-5.1', name: '5.1 BJT and FET Frequency Response' },
-          { id: 'ELECS-5.2', name: '5.2 Cascade and Cascode Connections' },
-          { id: 'ELECS-5.3', name: '5.3 Current Mirrors and Current Sources' },
-          { id: 'ELECS-5.4', name: '5.4 Differential and Operational Amplifiers' },
-          { id: 'ELECS-5.5', name: '5.5 Feedback Systems, Oscillators, and Filters' },
-        ]
-      },
-      {
-        id: 'ELECS-6.0',
-        name: '6.0 Electronic Systems and Design',
-        subtopics: [
-          { id: 'ELECS-6.1', name: '6.1 SCRs, UJT, PUT, TRIAC, DIAC, and Thyristors' },
-          { id: 'ELECS-6.2', name: '6.2 Optoelectronic Devices and Sensors' },
-          { id: 'ELECS-6.3', name: '6.3 Transducers, Data Acquisition, and Interfacing' },
-          { id: 'ELECS-6.4', name: '6.4 Programmable Logic Controllers' },
-          { id: 'ELECS-6.5', name: '6.5 Building Management Systems and HVAC Controls' },
-          { id: 'ELECS-6.6', name: '6.6 Security, Safety, and Surveillance Systems' },
-        ]
-      },
-      {
-        id: 'ELECS-7.0',
-        name: '7.0 Logic Circuits and Switching Theory',
-        subtopics: [
-          { id: 'ELECS-7.1', name: '7.1 Boolean Algebra and Logic Gates' },
-          { id: 'ELECS-7.2', name: '7.2 Minimization of Combinational Logic Circuits' },
-          { id: 'ELECS-7.3', name: '7.3 Sequential Logic Circuits' },
-          { id: 'ELECS-7.4', name: '7.4 Algorithmic State Machine (ASM)' },
-          { id: 'ELECS-7.5', name: '7.5 Asynchronous Sequential Logic' },
-        ]
-      },
-      {
-        id: 'ELECS-8.0',
-        name: '8.0 Microprocessor and Microcontroller Systems',
-        subtopics: [
-          { id: 'ELECS-8.1', name: '8.1 Microprocessor Unit' },
-          { id: 'ELECS-8.2', name: '8.2 Memory Subsystem' },
-          { id: 'ELECS-8.3', name: '8.3 I/O Subsystem' },
-          { id: 'ELECS-8.4', name: '8.4 Instruction Set Architecture and Assembly Programming' },
-          { id: 'ELECS-8.5', name: '8.5 Microcontrollers' },
-        ]
-      },
-      {
-        id: 'ELECS-9.0',
-        name: '9.0 Feedback and Control Systems',
-        subtopics: [
-          { id: 'ELECS-9.1', name: '9.1 Block Diagram and Signal Flow Graphs' },
-          { id: 'ELECS-9.2', name: '9.2 LTI Systems and Transient Analysis' },
-          { id: 'ELECS-9.3', name: '9.3 System Modeling and Transfer Function' },
-          { id: 'ELECS-9.4', name: '9.4 Poles, Zeros, Root Locus, and Stability Analysis' },
-          { id: 'ELECS-9.5', name: '9.5 Steady State Analysis and Frequency Response' },
-        ]
-      }
-    ]
-  },
+
+  // ─── 4. ELECTRONICS SYSTEMS AND TECHNOLOGIES (EST) ───
   {
     id: 'EST',
     name: 'ELECTRONICS SYSTEMS AND TECHNOLOGIES',

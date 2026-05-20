@@ -749,12 +749,6 @@ export default function FlashcardStudy() {
                           <span className="w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] text-[#E8E8E8] font-rajdhani font-bold tracking-widest text-[10px] shrink-0 uppercase whitespace-nowrap">
                             {set.count} ITEMS
                           </span>
-                          {/* Due Today Tag */}
-                          {(set.dueCount ?? 0) > 0 && (
-                            <span className="w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] text-[#E8E8E8] font-rajdhani font-bold tracking-widest text-[10px] shrink-0 uppercase whitespace-nowrap">
-                              {set.dueCount} DUE
-                            </span>
-                          )}
                           {/* Date String */}
                           <span className="text-[10px] text-gray-500 uppercase font-['IBM_Plex_Mono'] tracking-widest">
                             {set.createdAt ? new Date(set.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}

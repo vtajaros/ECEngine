@@ -13,7 +13,7 @@ export default function TableOfContents() {
           <div className="flex flex-col gap-2">
             <h1 className="font-['Orbitron'] text-3xl lg:text-4xl font-bold text-[var(--text-primary)] tracking-wider flex items-center">
               <FolderTree className="text-[var(--accent-primary)] mr-4" size={36} />
-              TOPICS & <span className="text-[var(--accent-primary)] ml-2">SYLLABUS</span>
+              REELE <span className="text-[var(--accent-primary)] ml-2">ToS</span>
             </h1>
             <p className="text-[var(--text-secondary)] font-['Rajdhani'] text-lg uppercase tracking-widest">
               PRC ECE TABLE OF SPECIFICATIONS (2022 TOS)

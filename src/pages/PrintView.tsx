@@ -113,13 +113,20 @@ interface MCQGlossaryItemProps {
   qaMode?: boolean
 }
 function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) {
-  const { question, choices, answer } = card.data
+  const { question, choices, answer, imagePath } = card.data
   if (qaMode) {
     return (
       <div style={{ marginBottom: '14px', pageBreakInside: 'avoid', borderBottom: '1px solid #e5e7eb', paddingBottom: '10px' }}>
         <p style={{ fontWeight: 400, color: '#111827', marginBottom: '4px' }}>
           {index}. <MathText text={question} />
         </p>
+        {imagePath && (
+          <img
+            src={`ece-app://${imagePath}`}
+            alt="Question diagram"
+            style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', marginLeft: '16px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
+          />
+        )}
         <p style={{ fontWeight: 700, color: '#374151', margin: 0, paddingLeft: '16px' }}>
           <MathText text={choices[answer] ?? '—'} />
         </p>
@@ -131,6 +138,13 @@ function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) 
       <p style={{ fontWeight: 600, color: '#111827', marginBottom: '6px' }}>
         {index}. <MathText text={question} />
       </p>
+      {imagePath && (
+        <img
+          src={`ece-app://${imagePath}`}
+          alt="Question diagram"
+          style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
+        />
+      )}
       <ol style={{ listStyle: 'none', padding: 0, margin: 0 }}>
         {choices.map((choice, ci) => (
           <li key={ci} style={{ marginBottom: '4px', listStyle: 'none' }}>
@@ -160,7 +174,7 @@ interface FormulaItemProps {
   card: Card & { data: FormulaData }
 }
 function FormulaItem({ index, card }: FormulaItemProps) {
-  const { name, latex, variables } = card.data
+  const { name, latex, variables, imagePath } = card.data
   const vars = variables as unknown
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', pageBreakInside: 'avoid', borderBottom: '1px solid #e5e7eb', paddingBottom: '12px' }}>
@@ -187,13 +201,20 @@ function FormulaItem({ index, card }: FormulaItemProps) {
           </div>
         ) : null}
       </div>
-      <div style={{ flex: 1 }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {latex ? (
           <div
             style={{ fontFamily: 'monospace', backgroundColor: '#f3f4f6', padding: '6px 8px', borderRadius: '4px', color: '#1e40af', marginBottom: '0px', overflowX: 'auto' }}
             dangerouslySetInnerHTML={{ __html: renderMath(`$$${latex}$$`) }}
           />
         ) : null}
+        {imagePath && (
+          <img
+            src={`ece-app://${imagePath}`}
+            alt="Formula diagram"
+            style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', borderRadius: '4px', border: '1px solid #e5e7eb' }}
+          />
+        )}
       </div>
     </div>
   )
@@ -249,12 +270,19 @@ export default function PrintView() {
   const formulaCards = cards.filter(isFormula)
 
   const isFlashcardOnly = flashcardCards.length > 0 && mcqCards.length === 0
+  const hasFormulas = formulaCards.length > 0
 
   useEffect(() => {
     if (isFlashcardOnly && layout === 'qa') {
       setLayout('glossary')
     }
   }, [isFlashcardOnly, layout])
+
+  useEffect(() => {
+    if (hasFormulas && (layout === 'glossary' || layout === 'qa')) {
+      setLayout('table')
+    }
+  }, [hasFormulas, layout])
 
   const dateStr = new Date().toLocaleDateString('en-US', {
     year: 'numeric', month: 'long', day: 'numeric',
@@ -362,7 +390,7 @@ export default function PrintView() {
       >
         {([['table', Table2, 'Table'], ['glossary', List, 'Glossary'], ['qa', BookOpen, 'Q&A']] as const).map(
           ([mode, Icon, label]) => {
-            const isDisabled = mode === 'qa' && isFlashcardOnly
+            const isDisabled = (mode === 'qa' && isFlashcardOnly) || (hasFormulas && (mode === 'glossary' || mode === 'qa'))
             return (
               <motion.button
                 key={mode}
@@ -589,7 +617,7 @@ export default function PrintView() {
               </thead>
               <tbody>
                 {flashcardCards.map((card) => {
-                  const { front, back, imageFront, imageBack } = card.data
+                  const { front, back, imageFront, imageBack, imagePath } = card.data
                   return (
                     <tr key={card.id} style={{ borderBottom: '1px solid #d1d5db', pageBreakInside: 'avoid' }}>
                       <td style={{ padding: '10px 12px', verticalAlign: 'top', width: '50%', overflow: 'hidden' }}>
@@ -597,6 +625,13 @@ export default function PrintView() {
                           <img
                             src={`ece-app://${imageFront}`}
                             alt="Front diagram"
+                            style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
+                          />
+                        )}
+                        {imagePath && (
+                          <img
+                            src={`ece-app://${imagePath}`}
+                            alt="Flashcard diagram"
                             style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
                           />
                         )}
@@ -620,7 +655,7 @@ export default function PrintView() {
           ) : (
             <div>
               {flashcardCards.map((card) => {
-                const { front, back, imageFront, imageBack } = card.data
+                const { front, back, imageFront, imageBack, imagePath } = card.data
                 return (
                   <div key={card.id} style={{ marginBottom: '16px', pageBreakInside: 'avoid' }}>
                     <p style={{ fontWeight: boldSide === 'term' ? 700 : 400, color: '#111827', marginBottom: '4px' }}>
@@ -630,6 +665,13 @@ export default function PrintView() {
                       <img
                         src={`ece-app://${imageFront}`}
                         alt="Front diagram"
+                        style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginLeft: '20px', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
+                      />
+                    )}
+                    {imagePath && (
+                      <img
+                        src={`ece-app://${imagePath}`}
+                        alt="Flashcard diagram"
                         style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginLeft: '20px', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
                       />
                     )}

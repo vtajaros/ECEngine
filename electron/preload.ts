@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('electron', {
     getDueCardsForSession: (topicId: string) => ipcRenderer.invoke('decks:getDueCardsForSession', topicId),
     addDeckWithCards: (payload: any) => ipcRenderer.invoke('decks:addDeckWithCards', payload),
     deleteTopic: (topicId: string) => ipcRenderer.invoke('decks:deleteTopic', topicId),
+    exportToText: (topicId: number | string, topicName: string) => ipcRenderer.invoke('decks:exportToText', topicId, topicName),
   },
   file: {
     import: (filePath?: string) => ipcRenderer.invoke('file:import', filePath),

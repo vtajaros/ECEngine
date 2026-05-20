@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react'
 import { Card, MCQData } from '../../types'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bookmark, Clock, ArrowRight, RefreshCw, ClipboardCheck, X, AlertTriangle, Copy, Sparkles } from 'lucide-react'
@@ -9,8 +9,9 @@ import { Tooltip } from '../ui/Tooltip'
 import Toast from '../ui/Toast'
 import { useBlocker } from 'react-router-dom'
 import { LeaveConfirmModal } from '../ui/LeaveConfirmModal'
-import { useRef } from 'react'
 import { dbService } from '../../services/db.service'
+import { useVirtualizer } from '@tanstack/react-virtual'
+import { TestNavRail } from '../ui/TestNavRail'
 
 
 interface TestModeProps {
@@ -42,9 +43,231 @@ const getChoiceFontSize = (text: string): string => {
   return '0.75rem'
 }
 
+// ─── Memoised Question Card ───────────────────────────────────────────────────
+interface TestQuestionCardProps {
+  card: Card
+  index: number
+  viewState: ViewState
+  answers: Record<string, number>
+  bookmarkedIds: Set<string>
+  currentVisibleIndex: number
+  settings: { instantChecking: boolean }
+  openExplanationId: number | null
+  onSelectChoice: (cardId: string, choiceIndex: number) => void
+  onToggleBookmark: (cardId: string) => void
+  onScrollTo: (index: number) => void
+  onToggleExplanation: (index: number) => void
+  onGetContext: (mcq: MCQData) => void
+  onSetZoomedImage: (path: string) => void
+}
+
+const TestQuestionCard = memo(({
+  card,
+  index,
+  viewState,
+  answers,
+  bookmarkedIds,
+  currentVisibleIndex,
+  settings,
+  openExplanationId,
+  onSelectChoice,
+  onToggleBookmark,
+  onScrollTo,
+  onToggleExplanation,
+  onGetContext,
+  onSetZoomedImage,
+}: TestQuestionCardProps) => {
+  const mcq = card.data as MCQData
+
+  if (!mcq || typeof mcq === 'string' || !Array.isArray(mcq.choices) || mcq.choices.length !== 4) {
+    console.warn('[ECEngine] Card data parse error', card.id, card.data)
+    return (
+      <div
+        className="rounded-xl p-6 border"
+        style={{ color: 'var(--color-wrong)', background: 'var(--bg-card)', borderColor: 'var(--color-wrong)' }}
+      >
+        <p className="font-['Rajdhani'] font-bold uppercase tracking-widest text-sm mb-1">Card Load Error</p>
+        <p className="font-['Rajdhani'] text-sm opacity-80">Card data could not be loaded. Check import format.</p>
+      </div>
+    )
+  }
+
+  const userAnswer = answers[card.id]
+  const isAnswered = userAnswer !== undefined
+  const isCorrect = isAnswered && userAnswer === mcq.answer
+  const isBookmarked = bookmarkedIds.has(card.id)
+
+  const showFeedback = viewState === 'review' || (settings.instantChecking && isAnswered)
+
+  return (
+    <div
+      id={`test-question-${index}`}
+      onClick={() => onScrollTo(index)}
+      className={`flex-shrink-0 bg-[var(--bg-card)] border rounded-xl overflow-hidden shadow-lg transition-colors duration-300 relative cursor-pointer scroll-mt-20
+        ${showFeedback
+          ? (isCorrect ? 'border-[#00FF41]/30 bg-[#00FF41]/5' : (isAnswered ? 'border-[#FF003C]/30 bg-[#FF003C]/5' : 'border-[#333]'))
+          : (isAnswered ? 'border-[#555]' : 'border-[#222]')
+        }`}
+    >
+      <div className="p-6 border-b border-[#333] flex items-start gap-4">
+        <div className="flex-1 flex flex-col max-h-[50vh] overflow-y-auto pr-2">
+          <h3
+            className="font-['Rajdhani'] font-semibold text-[var(--text-primary)] whitespace-pre-wrap flex items-start gap-3"
+            style={{ fontSize: getQuestionFontSize(mcq.question), lineHeight: 1.4 }}
+          >
+            <span
+              className="text-[var(--accent-primary)] font-bold shrink-0"
+              style={{ fontSize: '1.25rem', lineHeight: 1.4 }}
+            >
+              {index + 1}.
+            </span>
+            <span
+              className="flex-1 mt-[2px]"
+              dangerouslySetInnerHTML={{ __html: renderMath(mcq.question) }}
+            />
+          </h3>
+
+          {mcq.imagePath && (
+            <div className="mt-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
+              <img
+                src={`ece-app://${mcq.imagePath}`}
+                alt="Question diagram"
+                className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
+                onClick={(e) => { e.stopPropagation(); onSetZoomedImage(mcq.imagePath!) }}
+              />
+            </div>
+          )}
+        </div>
+
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleBookmark(card.id) }}
+          className={`p-2 rounded transition-colors ${isBookmarked
+            ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/10'
+            : 'text-[#555] hover:bg-[#222] hover:text-[#888]'
+          }`}
+          title={isBookmarked ? 'Remove Bookmark' : 'Bookmark Question'}
+        >
+          <Bookmark className="w-5 h-5 fill-current" />
+        </button>
+      </div>
+
+      <div className="p-6 grid grid-cols-2 gap-3 items-start">
+        {[0, 2, 1, 3].map((cIdx) => {
+          const choice = mcq.choices[cIdx]
+          if (choice === undefined) return null
+
+          const isSelected = userAnswer === cIdx
+
+          let stateStyles = 'border-[#333] hover:border-[#00FF41] hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] bg-[#111] text-[#E8E8E8]'
+          let iconElement: React.ReactNode = null
+          let prefixStyles = 'text-[#666]'
+
+          if (showFeedback) {
+            const isChoiceCorrect = cIdx === mcq.answer
+            if (isChoiceCorrect) {
+              stateStyles = 'border-[#00FF41] bg-[rgba(0,255,65,0.1)] text-[#00FF41] shadow-[0_0_15px_rgba(0,255,65,0.15)]'
+              iconElement = <div className="text-[#00FF41] font-bold">✓</div>
+              prefixStyles = 'text-[#00FF41] font-bold'
+            } else if (isSelected && !isChoiceCorrect) {
+              stateStyles = 'border-[#FF003C] bg-[rgba(255,0,60,0.1)] text-[#FF003C]'
+              iconElement = <div className="text-[#FF003C] font-bold">✗</div>
+              prefixStyles = 'text-[#FF003C] font-bold'
+            } else {
+              stateStyles = 'border-[#222] bg-[#111] text-[#666] opacity-60'
+              prefixStyles = 'text-[#555]'
+            }
+          } else {
+            if (isSelected) {
+              stateStyles = 'border-[var(--accent-primary)] bg-[rgba(0,255,65,0.1)] text-[var(--accent-primary)]'
+              prefixStyles = 'text-[var(--accent-primary)] font-bold'
+            }
+          }
+
+          const choiceLabel = String.fromCharCode(65 + cIdx)
+
+          return (
+            <button
+              key={cIdx}
+              onClick={(e) => { e.stopPropagation(); onSelectChoice(card.id, cIdx) }}
+              disabled={viewState === 'review' || (settings.instantChecking && isAnswered)}
+              className={`flex items-center text-left p-[16px_20px] min-h-[56px] rounded-lg border transition-all duration-200 font-['Rajdhani'] ${stateStyles} ${
+                viewState === 'review' || (settings.instantChecking && isAnswered) ? 'cursor-default' : 'cursor-pointer'
+              }`}
+            >
+              <div className={`flex-shrink-0 mr-3 font-['IBM_Plex_Mono'] ${prefixStyles}`}>
+                {choiceLabel}.
+              </div>
+              <span
+                className="flex-1 break-words font-['Rajdhani'] font-medium"
+                style={{ fontSize: getChoiceFontSize(choice), lineHeight: 1.4 }}
+                dangerouslySetInnerHTML={{ __html: renderMath(choice) }}
+              />
+              {iconElement && <div className="ml-4 flex-shrink-0">{iconElement}</div>}
+            </button>
+          )
+        })}
+      </div>
+
+      {showFeedback && mcq.explanation && (
+        <div className="px-6 pb-6 pt-2">
+          <div className="p-4 bg-[#111] rounded border border-[#222]">
+            <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888] mb-1 block">Explanation</span>
+            <p
+              className="text-sm text-[#CCC] font-['Rajdhani'] font-medium whitespace-pre-wrap leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: renderMath(mcq.explanation) }}
+            />
+          </div>
+        </div>
+      )}
+
+      {viewState === 'review' && (
+        <div className="px-6 pb-6 pt-1 flex items-center gap-3">
+          <Tooltip content="Copy context to paste into GPT/Gemini/Claude for a better AI explanation.">
+            <button
+              onClick={(e) => { e.stopPropagation(); onGetContext(mcq) }}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-[#888] transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem]"
+            >
+              <Copy size={12} />
+              Get Context
+            </button>
+          </Tooltip>
+
+          <Tooltip position="right" content="Explain using Grok Llama-3.3-70B">
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleExplanation(index) }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 border rounded transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem] ${
+                openExplanationId === index
+                  ? 'border-[#00FF41] bg-[rgba(0,255,65,0.08)] text-[#00FF41]'
+                  : 'border-[rgba(0,255,65,0.3)] text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41]'
+              }`}
+            >
+              <Sparkles size={12} />
+              {openExplanationId === index ? 'Hide Explanation' : 'Explain'}
+            </button>
+          </Tooltip>
+        </div>
+      )}
+
+      {viewState === 'review' && openExplanationId === index && (
+        <div onClick={(e) => e.stopPropagation()}>
+          <ExplanationPanel
+            question={mcq.question}
+            choices={mcq.choices}
+            answerIndex={mcq.answer}
+            onClose={() => onToggleExplanation(index)}
+          />
+        </div>
+      )}
+    </div>
+  )
+})
+
+TestQuestionCard.displayName = 'TestQuestionCard'
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onComplete, onExit }) => {
   const [testCards, setTestCards] = useState<Card[]>([])
-  const [answers, setAnswers] = useState<Record<string, number>>({}) // card.id -> choiceIndex
+  const [answers, setAnswers] = useState<Record<string, number>>({})
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(() => {
     const saved = localStorage.getItem('bookmarkedIds')
     return saved ? new Set(JSON.parse(saved)) : new Set()
@@ -56,98 +279,100 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
   const [score, setScore] = useState({ correct: 0, total: 0 })
   const [zoomedImage, setZoomedImage] = useState<string | null>(null)
 
-  // AI Explanation state — stores the index of the currently open panel (null = all closed)
   const [openExplanationId, setOpenExplanationId] = useState<number | null>(null)
-
   const [showExitConfirm, setShowExitConfirm] = useState(false)
+  const [showToast, setShowToast] = useState(false)
 
-  // Question tracking refs for scrolling
-  const questionRefs = useRef<(HTMLDivElement | null)[]>([])
-  const navItemRefs = useRef<(HTMLButtonElement | null)[]>([])
+  // Scroll tracking
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const isClickNavigating = useRef(false)
   const clickNavTimeout = useRef<NodeJS.Timeout | null>(null)
   const [currentVisibleIndex, setCurrentVisibleIndex] = useState(0)
 
-  // IntersectionObserver Scroll-Spy logic to sync sidebar with manual scrolling
-  useEffect(() => {
+  // ── Virtualizer ────────────────────────────────────────────────────────────
+  const virtualizer = useVirtualizer({
+    count: testCards.length,
+    getScrollElement: () => scrollContainerRef.current,
+    // Estimated height covers a medium question + 4 choices; actual sizes are
+    // measured on first render and cached, so accuracy only matters for the
+    // initial scroll-bar thumb size.
+    estimateSize: () => 380,
+    overscan: 4,
+  })
+
+  // ── Scroll-spy: determine current visible index from scroll position ────────
+  const handleContainerScroll = useCallback(() => {
     if (isClickNavigating.current || !scrollContainerRef.current) return
 
-    const observerOptions = {
-      root: scrollContainerRef.current,
-      rootMargin: '-30% 0px -30% 0px', // Focus on the middle 40% of the viewport
-      threshold: 0
+    const container = scrollContainerRef.current
+    const { scrollTop, scrollHeight, clientHeight } = container
+
+    // At absolute bottom → highlight last card
+    if (Math.abs(scrollHeight - scrollTop - clientHeight) < 2) {
+      setCurrentVisibleIndex(testCards.length - 1)
+      return
     }
 
-    const observerCallback = (entries: IntersectionObserverEntry[]) => {
-      // If we are currently animating a click-scroll, ignore observer updates
-      if (isClickNavigating.current) return
-
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          const id = entry.target.id
-          const index = parseInt(id.split('-').pop() || '0', 10)
-          if (!isNaN(index) && index !== currentVisibleIndex) {
-            setCurrentVisibleIndex(index)
-          }
-        }
-      })
+    // Find the virtual item whose top is closest to the upper third of viewport
+    const targetY = scrollTop + clientHeight * 0.3
+    const items = virtualizer.getVirtualItems()
+    let bestIdx = currentVisibleIndex
+    let bestDist = Infinity
+    for (const item of items) {
+      const dist = Math.abs(item.start - targetY)
+      if (dist < bestDist) {
+        bestDist = dist
+        bestIdx = item.index
+      }
     }
+    if (bestIdx !== currentVisibleIndex) {
+      setCurrentVisibleIndex(bestIdx)
+    }
+  }, [testCards.length, virtualizer, currentVisibleIndex])
 
-    const observer = new IntersectionObserver(observerCallback, observerOptions)
+  // Scroll to a question via virtualizer
+  const scrollToQuestion = useCallback((index: number) => {
+    isClickNavigating.current = true
+    if (clickNavTimeout.current) clearTimeout(clickNavTimeout.current)
+    setCurrentVisibleIndex(index)
+    virtualizer.scrollToIndex(index, { align: 'center', behavior: 'auto' })
+    clickNavTimeout.current = setTimeout(() => {
+      isClickNavigating.current = false
+    }, 300)
+  }, [virtualizer])
 
-    // Observe all question containers
-    const questionElements = document.querySelectorAll('[id^="test-question-"]')
-    questionElements.forEach(el => observer.observe(el))
-
-    return () => observer.disconnect()
-  }, [testCards, currentVisibleIndex]) // Re-run when cards change or index updates to stay fresh, but callback handles logic
-
-  // Auto-scroll sidebar to current question instantly without animation queueing lag
+  // Clear timeout on unmount
   useEffect(() => {
-    if (navItemRefs.current[currentVisibleIndex]) {
-      navItemRefs.current[currentVisibleIndex]?.scrollIntoView({
-        behavior: 'auto',
-        block: 'center'
-      })
+    return () => {
+      if (clickNavTimeout.current) clearTimeout(clickNavTimeout.current)
     }
-  }, [currentVisibleIndex])
+  }, [])
 
-  // Navigation Blocking logic
+  // Navigation Blocking
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
       viewState === 'test' && currentLocation.pathname !== nextLocation.pathname
   )
-
-  // Keep a live ref to the blocker so the unmount cleanup always calls reset()
-  // on the *current* blocker instance — not a stale closure copy.
   const blockerRef = useRef(blocker)
   useEffect(() => { blockerRef.current = blocker }, [blocker])
-
-  // On unmount, unconditionally reset any lingering blocked state so the
-  // sidebar never gets permanently locked after the user exits a test.
   useEffect(() => {
     return () => {
-      if (blockerRef.current.state === 'blocked') {
-        blockerRef.current.reset()
-      }
+      if (blockerRef.current.state === 'blocked') blockerRef.current.reset()
     }
-  }, []) // intentionally empty — runs only on unmount
+  }, [])
 
-  // Safe exit: reset any active blocker before handing control to parent
   const handleExit = () => {
     if (blocker.state === 'blocked') blocker.reset()
     onExit()
   }
 
-  // Reset the explanation panel when transitioning between views
+  // Reset explanation panel on view change
   useEffect(() => {
-    setOpenExplanationId(null);
-  }, [viewState, testCards]);
-  const [showToast, setShowToast] = useState(false)
+    setOpenExplanationId(null)
+  }, [viewState, testCards])
 
-  // GET CONTEXT helper — formats the question into a structured clipboard prompt
-  const handleGetContext = (mcq: MCQData) => {
+  // GET CONTEXT helper
+  const handleGetContext = useCallback((mcq: MCQData) => {
     const template = `---
 Please explain the correct answer to this multiple choice question:
 
@@ -169,7 +394,7 @@ Please explain:
 4. A memory tip or way to remember this for the board exam
 ---`
     navigator.clipboard.writeText(template).then(() => setShowToast(true))
-  }
+  }, [])
 
   useEffect(() => {
     if (zoomedImage) {
@@ -177,19 +402,13 @@ Please explain:
     } else {
       document.body.style.overflow = 'auto'
     }
-    return () => {
-      document.body.style.overflow = 'auto'
-    }
+    return () => { document.body.style.overflow = 'auto' }
   }, [zoomedImage])
 
   // Initialize test cards
   useEffect(() => {
     let finalCards = [...cards]
-
-    if (settings.shuffleQuestions) {
-      finalCards = shuffle(finalCards)
-    }
-
+    if (settings.shuffleQuestions) finalCards = shuffle(finalCards)
     if (settings.shuffleChoices) {
       finalCards = finalCards.map(card => {
         const mcq = card.data as MCQData
@@ -200,70 +419,23 @@ Please explain:
         return card
       })
     }
-
     setTestCards(finalCards)
   }, [cards, settings])
 
   // Timer
   useEffect(() => {
     if (viewState !== 'test') return
-    const interval = setInterval(() => {
-      setTimeElapsed(prev => prev + 1)
-    }, 1000)
+    const interval = setInterval(() => setTimeElapsed(prev => prev + 1), 1000)
     return () => clearInterval(interval)
   }, [viewState])
 
-  // Highly optimized synchronous scroll tracking to guarantee zero-delay updating
-  const handleContainerScroll = () => {
-    // Scroll-Spy is now handled by IntersectionObserver for cleaner state management
-    if (isClickNavigating.current || !scrollContainerRef.current) return
-
-    const container = scrollContainerRef.current
-    // Fix: Force active rail to final item when at absolute bottom
-    const isAtBottom = Math.abs(container.scrollHeight - container.scrollTop - container.clientHeight) < 2
-    if (isAtBottom) {
-      setCurrentVisibleIndex(testCards.length - 1)
-    }
-  }
-
-  // Clear pending click-nav timeout on unmount to avoid stale timer callbacks
-  useEffect(() => {
-    return () => {
-      if (clickNavTimeout.current) clearTimeout(clickNavTimeout.current)
-    }
-  }, [])
-
-  const scrollToQuestion = (index: number) => {
-    isClickNavigating.current = true
-    if (clickNavTimeout.current) clearTimeout(clickNavTimeout.current)
-    
-    // Immediate state update
-    setCurrentVisibleIndex(index)
-
-    const targetElement = document.getElementById(`test-question-${index}`);
-    if (targetElement) {
-      targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-
-    clickNavTimeout.current = setTimeout(() => {
-      isClickNavigating.current = false
-    }, 800)
-  }
-
-  const handleSelectChoice = (cardId: string, choiceIndex: number) => {
+  const handleSelectChoice = useCallback((cardId: string, choiceIndex: number) => {
     if (viewState !== 'test') return
-
-    // If instant checking is on, lock the answer once submitted?
-    // Often instant checking just shows green/red as you click, allowing changes or locking it.
-    // Let's assume it locks the first answer if instant check is true.
-    if (settings.instantChecking && answers[cardId] !== undefined) {
-      return // Already answered, locked.
-    }
-
+    if (settings.instantChecking && answers[cardId] !== undefined) return
     setAnswers(prev => ({ ...prev, [cardId]: choiceIndex }))
-  }
+  }, [viewState, settings.instantChecking, answers])
 
-  const toggleBookmark = (cardId: string) => {
+  const toggleBookmark = useCallback((cardId: string) => {
     setBookmarkedIds(prev => {
       const next = new Set(prev)
       if (next.has(cardId)) next.delete(cardId)
@@ -271,32 +443,26 @@ Please explain:
       localStorage.setItem('bookmarkedIds', JSON.stringify(Array.from(next)))
       return next
     })
-  }
+  }, [])
 
   const handleSubmit = async () => {
     setShowSubmitConfirm(false)
-    // Score test
     let correct = 0
     testCards.forEach(card => {
       const mcq = card.data as MCQData
-      if (answers[card.id] === mcq.answer) {
-        correct++
-      }
+      if (answers[card.id] === mcq.answer) correct++
     })
-
-    // Record progress for all cards in session
     for (const card of testCards) {
       const mcq = card.data as MCQData
       const isCorrect = answers[card.id] === mcq.answer
       await dbService.recordCardResult(card.id, isCorrect)
     }
-
     setScore({ correct, total: testCards.length })
     setViewState('summary')
     const correctIds = testCards.filter(card => {
-      const mcq = card.data as MCQData;
-      return answers[card.id] === mcq.answer;
-    }).map(card => card.id);
+      const mcq = card.data as MCQData
+      return answers[card.id] === mcq.answer
+    }).map(card => card.id)
     onComplete({ score: correct, total: testCards.length, bookmarked: bookmarkedIds.size, correctIds })
   }
 
@@ -310,15 +476,25 @@ Please explain:
   const passThreshold = 0.75
   const isPassed = score.total > 0 && (score.correct / score.total) >= passThreshold
 
-  // Render top bar
+  // Derive a Set<number> of answered positional indices for the nav rail
+  const answeredIndices = useMemo(() => {
+    const s = new Set<number>()
+    testCards.forEach((card, idx) => {
+      if (answers[card.id] !== undefined) s.add(idx)
+    })
+    return s
+  }, [answers, testCards])
+
+  const handleToggleExplanation = useCallback((index: number) => {
+    setOpenExplanationId(prev => prev === index ? null : index)
+  }, [])
+
+  // ── Top Bar ─────────────────────────────────────────────────────────────────
   const renderTopBar = () => (
     <div className="sticky top-0 left-0 w-full bg-[var(--bg-secondary)] border-b border-[var(--bg-card)] shadow-lg z-50 px-6 py-4 flex items-center justify-between shrink-0">
       <div className="flex items-center gap-6">
         <button
-          onClick={() => {
-            if (viewState === 'test') setShowExitConfirm(true)
-            else handleExit()
-          }}
+          onClick={() => { if (viewState === 'test') setShowExitConfirm(true); else handleExit() }}
           className="text-[#888] hover:text-[var(--text-primary)] transition-colors flex items-center justify-center p-2 rounded hover:bg-[#222]"
           title="Exit Test"
         >
@@ -366,6 +542,7 @@ Please explain:
     </div>
   )
 
+  // ── Summary View ─────────────────────────────────────────────────────────────
   if (viewState === 'summary') {
     const percentage = score.total > 0 ? Math.round((score.correct / score.total) * 100) : 0
 
@@ -379,7 +556,6 @@ Please explain:
             animate={{ scale: 1, opacity: 1 }}
             className="bg-[var(--bg-card)] border border-[#333] rounded-xl p-10 max-w-2xl w-full flex flex-col items-center text-center shadow-2xl relative overflow-hidden"
           >
-            {/* Background Glow */}
             <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 blur-[100px] opacity-20 pointer-events-none transition-colors duration-1000 ${isPassed ? 'bg-[#00FF41]' : 'bg-[#FF003C]'}`} />
 
             <div className="z-10 flex flex-col items-center w-full">
@@ -420,11 +596,9 @@ Please explain:
               </div>
 
               <div className="flex items-center gap-4 w-full">
-                {/* Retry Wrong Items */}
                 {score.correct < score.total && (
                   <button
                     onClick={() => {
-                      // Filter cards to only wrong ones and restart
                       const wrongCards = testCards.filter(c => {
                         const mcq = c.data as MCQData
                         return answers[c.id] !== mcq.answer
@@ -456,7 +630,9 @@ Please explain:
     )
   }
 
-  // Common Question Rendering
+  // ── Test / Review Render ─────────────────────────────────────────────────────
+  const virtualItems = virtualizer.getVirtualItems()
+
   return (
     <div className="h-full bg-[var(--bg-primary)] flex flex-col relative overflow-hidden">
       {renderTopBar()}
@@ -480,238 +656,63 @@ Please explain:
         }}
       />
 
-      {/* Main Content Wrapper */}
-      <div className="flex-1 flex overflow-hidden relative">
-        {/* Right Scrollable Questions Container */}
+      {/* Main Content Wrapper — independent scroll columns, no shared scroll container */}
+      <div className="flex-1 flex overflow-hidden pl-2 lg:pl-4 gap-5 pt-4 lg:pt-8">
+        {/* Left Column: Navigation Rail (self-contained scroll) */}
+        <div className="shrink-0 flex flex-col">
+          <TestNavRail
+            totalItems={testCards.length}
+            currentIndex={currentVisibleIndex}
+            answeredIndices={answeredIndices}
+            onNavigate={scrollToQuestion}
+          />
+        </div>
+
+        {/* Right Column: Question list — sole scroll owner for the virtualizer */}
         <div
           ref={scrollContainerRef}
           onScroll={handleContainerScroll}
-          className="flex-1 overflow-y-auto p-6 lg:p-12 pb-32 scroll-smooth"
+          className="flex-1 min-w-0 overflow-y-auto pb-32"
         >
-          <div className="w-full max-w-4xl mx-auto flex flex-col gap-8">
-            {testCards.map((card, index) => {
-              const mcq = card.data as MCQData
-              if (!mcq || typeof mcq === 'string' || !Array.isArray(mcq.choices) || mcq.choices.length !== 4) {
-                console.warn('[ECEngine] Card data parse error — card may have been saved with double-escaped LaTeX. Please re-save this card in Edit Deck.', card.id, card.data)
-                return (
-                  <div
-                    key={card.id}
-                    className="rounded-xl p-6 border"
-                    style={{
-                      color: 'var(--color-wrong)',
-                      background: 'var(--bg-card)',
-                      borderColor: 'var(--color-wrong)',
-                    }}
-                  >
-                    <p className="font-['Rajdhani'] font-bold uppercase tracking-widest text-sm mb-1">Card Load Error</p>
-                    <p className="font-['Rajdhani'] text-sm opacity-80">Card data could not be loaded. Check import format.</p>
-                  </div>
-                )
-              }
-
-              const userAnswer = answers[card.id]
-              const isAnswered = userAnswer !== undefined
-              const isCorrect = isAnswered && userAnswer === mcq.answer
-              const isBookmarked = bookmarkedIds.has(card.id)
-              const isCurrent = currentVisibleIndex === index
-
-              // Evaluate state logic
-              // If in test state:
-              //   if instantChecking == true && answered: show colors
-              //   else: show normal selection color
-              // If in review state:
-              //   always show colors, mark correct, mark wrong 
-
-              const showFeedback = viewState === 'review' || (settings.instantChecking && isAnswered)
-
-              return (
+          <div className="max-w-4xl mx-auto px-6 w-full">
+            {/* Total height sentinel — tells the browser how tall the full list is */}
+            <div
+              className="w-full relative"
+              style={{ height: virtualizer.getTotalSize() }}
+            >
+              {virtualItems.map(virtualRow => (
                 <div
-                  key={card.id}
-                  id={`test-question-${index}`}
-                  ref={el => questionRefs.current[index] = el}
-                  onClick={() => scrollToQuestion(index)}
-                  className={`flex-shrink-0 bg-[var(--bg-card)] border rounded-xl overflow-hidden shadow-lg transition-colors duration-300 relative cursor-pointer scroll-mt-20
-                ${showFeedback
-                      ? (isCorrect ? 'border-[#00FF41]/30 bg-[#00FF41]/5' : (isAnswered ? 'border-[#FF003C]/30 bg-[#FF003C]/5' : 'border-[#333]'))
-                      : (isAnswered ? 'border-[#555]' : 'border-[#222]')
-                    }`}
+                  key={virtualRow.key}
+                  data-index={virtualRow.index}
+                  ref={virtualizer.measureElement}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${virtualRow.start}px)`,
+                    paddingBottom: '2rem', // gap between cards
+                  }}
                 >
-                  <div className="p-6 border-b border-[#333] flex items-start gap-4">
-
-                    <div className="flex-1 flex flex-col max-h-[50vh] overflow-y-auto pr-2">
-                      <h3
-                        className="font-['Rajdhani'] font-semibold text-[var(--text-primary)] whitespace-pre-wrap flex items-start gap-3"
-                        style={{
-                          fontSize: getQuestionFontSize(mcq.question),
-                          lineHeight: 1.4
-                        }}
-                      >
-                        <span 
-                          className="text-[var(--accent-primary)] font-bold shrink-0"
-                          style={{ fontSize: '1.25rem', lineHeight: 1.4 }}
-                        >
-                          {index + 1}.
-                        </span>
-                        <span
-                          className="flex-1 mt-[2px]"
-                          dangerouslySetInnerHTML={{ __html: renderMath(mcq.question) }}
-                        />
-                      </h3>
-
-                      {mcq.imagePath && (
-                        <div className="mt-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
-                          <img
-                            src={`ece-app://${mcq.imagePath}`}
-                            alt="Question diagram"
-                            className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setZoomedImage(mcq.imagePath!);
-                            }}
-                          />
-                        </div>
-                      )}
-                    </div>
-
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleBookmark(card.id);
-                      }}
-                      className={`p-2 rounded transition-colors ${isBookmarked
-                          ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/10'
-                          : 'text-[#555] hover:bg-[#222] hover:text-[#888]'
-                        }`}
-                      title={isBookmarked ? 'Remove Bookmark' : 'Bookmark Question'}
-                    >
-                      <Bookmark className="w-5 h-5 fill-current" />
-                    </button>
-                  </div>
-
-                  <div className="p-6 grid grid-cols-2 gap-3 items-start">
-                    {[0, 2, 1, 3].map((cIdx) => {
-                      const choice = mcq.choices[cIdx]
-                      if (choice === undefined) return null
-
-                      const isSelected = userAnswer === cIdx
-
-                      let stateStyles = 'border-[#333] hover:border-[#00FF41] hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] bg-[#111] text-[#E8E8E8]'
-                      let iconElement = null
-                      let prefixStyles = 'text-[#666]'
-
-                      if (showFeedback) {
-                        const isChoiceCorrect = cIdx === mcq.answer
-
-                        if (isChoiceCorrect) {
-                          stateStyles = 'border-[#00FF41] bg-[rgba(0,255,65,0.1)] text-[#00FF41] shadow-[0_0_15px_rgba(0,255,65,0.15)]'
-                          iconElement = <div className="text-[#00FF41] font-bold">✓</div>
-                          prefixStyles = 'text-[#00FF41] font-bold'
-                        } else if (isSelected && !isChoiceCorrect) {
-                          stateStyles = 'border-[#FF003C] bg-[rgba(255,0,60,0.1)] text-[#FF003C]'
-                          iconElement = <div className="text-[#FF003C] font-bold">✗</div>
-                          prefixStyles = 'text-[#FF003C] font-bold'
-                        } else {
-                          stateStyles = 'border-[#222] bg-[#111] text-[#666] opacity-60'
-                          prefixStyles = 'text-[#555]'
-                        }
-                      } else {
-                        if (isSelected) {
-                          stateStyles = 'border-[var(--accent-primary)] bg-[rgba(0,255,65,0.1)] text-[var(--accent-primary)]'
-                          prefixStyles = 'text-[var(--accent-primary)] font-bold'
-                        }
-                      }
-
-                      const choiceLabel = String.fromCharCode(65 + cIdx) // A, B, C, D
-
-                      return (
-                        <button
-                          key={cIdx}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectChoice(card.id, cIdx);
-                          }}
-                          disabled={viewState === 'review' || (settings.instantChecking && isAnswered)}
-                          className={`flex items-center text-left p-[16px_20px] min-h-[56px] rounded-lg border transition-all duration-200 font-['Rajdhani'] ${stateStyles} ${viewState === 'review' || (settings.instantChecking && isAnswered) ? 'cursor-default' : 'cursor-pointer'
-                            }`}
-                        >
-                          <div className={`flex-shrink-0 mr-3 font-['IBM_Plex_Mono'] ${prefixStyles}`}>
-                            {choiceLabel}.
-                          </div>
-                          <span
-                            className="flex-1 break-words font-['Rajdhani'] font-medium"
-                            style={{ fontSize: getChoiceFontSize(choice), lineHeight: 1.4 }}
-                            dangerouslySetInnerHTML={{ __html: renderMath(choice) }}
-                          />
-
-                          {iconElement && (
-                            <div className="ml-4 flex-shrink-0">
-                              {iconElement}
-                            </div>
-                          )}
-                        </button>
-                      )
-                    })}
-                  </div>
-
-                  {/* Optional Explanation Display logic can fit here when showFeedback == true */}
-                  {showFeedback && mcq.explanation && (
-                    <div className="px-6 pb-6 pt-2">
-                      <div className="p-4 bg-[#111] rounded border border-[#222]">
-                        <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888] mb-1 block">Explanation</span>
-                        <p className="text-sm text-[#CCC] font-['Rajdhani'] font-medium whitespace-pre-wrap leading-relaxed" dangerouslySetInnerHTML={{ __html: renderMath(mcq.explanation) }} />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* AI Action Buttons — only visible in review phase */}
-                  {viewState === 'review' && (
-                    <div className="px-6 pb-6 pt-1 flex items-center gap-3">
-                      <Tooltip content="Copy context to paste into GPT/Gemini/Claude for a better AI explanation.">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleGetContext(mcq);
-                          }}
-                          className="flex items-center gap-1.5 px-3 py-1.5 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-[#888] transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem]"
-                        >
-                          <Copy size={12} />
-                          Get Context
-                        </button>
-                      </Tooltip>
-
-                      <Tooltip position="right" content="Explain using Grok Llama-3.3-70B">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setOpenExplanationId(openExplanationId === index ? null : index);
-                          }}
-                          className={`flex items-center gap-1.5 px-3 py-1.5 border rounded transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem] ${openExplanationId === index
-                              ? 'border-[#00FF41] bg-[rgba(0,255,65,0.08)] text-[#00FF41]'
-                              : 'border-[rgba(0,255,65,0.3)] text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41]'
-                            }`}
-                        >
-                          <Sparkles size={12} />
-                          {openExplanationId === index ? 'Hide Explanation' : 'Explain'}
-                        </button>
-                      </Tooltip>
-
-                    </div>
-                  )}
-
-                  {/* ExplanationPanel — mounts inline below this card's choices when its index is active */}
-                  {viewState === 'review' && openExplanationId === index && (
-                    <div onClick={(e) => e.stopPropagation()}>
-                      <ExplanationPanel
-                        question={mcq.question}
-                        choices={mcq.choices}
-                        answerIndex={mcq.answer}
-                        onClose={() => setOpenExplanationId(null)}
-                      />
-                    </div>
-                  )}
+                  <TestQuestionCard
+                    card={testCards[virtualRow.index]}
+                    index={virtualRow.index}
+                    viewState={viewState}
+                    answers={answers}
+                    bookmarkedIds={bookmarkedIds}
+                    currentVisibleIndex={currentVisibleIndex}
+                    settings={settings}
+                    openExplanationId={openExplanationId}
+                    onSelectChoice={handleSelectChoice}
+                    onToggleBookmark={toggleBookmark}
+                    onScrollTo={scrollToQuestion}
+                    onToggleExplanation={handleToggleExplanation}
+                    onGetContext={handleGetContext}
+                    onSetZoomedImage={setZoomedImage}
+                  />
                 </div>
-              )
-            })}
+              ))}
+            </div>
 
             {testCards.length === 0 && (
               <div className="text-center text-[#888] mt-20 font-['Rajdhani'] uppercase tracking-widest">
@@ -773,7 +774,7 @@ Please explain:
         )}
       </AnimatePresence>
 
-      {/* Toast Notification for clipboard copy */}
+      {/* Toast */}
       <AnimatePresence>
         {showToast && (
           <Toast
@@ -783,7 +784,7 @@ Please explain:
         )}
       </AnimatePresence>
 
-      {/* Lightbox Modal */}
+      {/* Lightbox */}
       <AnimatePresence>
         {zoomedImage && (
           <motion.div

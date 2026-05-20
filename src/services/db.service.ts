@@ -25,6 +25,7 @@ declare global {
         getDueCardsForSession: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
         addDeckWithCards: (payload: any) => Promise<{ success: boolean; error?: string }>
         deleteTopic: (topicId: string) => Promise<{ success: boolean; error?: string }>
+        exportToText: (topicId: number | string, topicName: string) => Promise<{ success: boolean; error?: string }>
       }
       file: {
         import: (filePath?: string) => Promise<{ success: boolean; data?: string; canceled?: boolean; error?: string }>

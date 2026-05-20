@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, Save, ChevronDown, ChevronUp, Trash2, GripVertical, Plus,
   CheckCircle2, AlertCircle, RotateCcw, ImageIcon, X, Sigma,
-  Calculator, FlaskConical, Zap, Cpu
+  Calculator, FlaskConical, Zap, Cpu, FileText
 } from 'lucide-react'
 import { renderMath, isRawLatex } from '../lib/latex'
 import { getSubjectFilterClasses } from '../lib/subjectColors'
@@ -552,8 +552,32 @@ export default function EditDeck() {
   const [cards, setCards] = useState<EditCard[]>([])
   const [loading, setLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
   const [originalCardIds, setOriginalCardIds] = useState<Set<string>>(new Set())
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+
+  const handleExportToText = async () => {
+    if (!deckId || isExporting) return
+    setIsExporting(true)
+    try {
+      const res = await window.electron.decks.exportToText(deckId, deckMeta.title)
+      if (res.success) {
+        setToast({ type: 'success', msg: 'Deck exported to text successfully!' })
+        setTimeout(() => setToast(null), 3000)
+      } else {
+        if (res.error !== 'Export canceled') {
+          setToast({ type: 'error', msg: `Export failed: ${res.error}` })
+          setTimeout(() => setToast(null), 4000)
+        }
+      }
+    } catch (err) {
+      console.error('[Export to Text Error]', err)
+      setToast({ type: 'error', msg: 'An unexpected error occurred during export.' })
+      setTimeout(() => setToast(null), 4000)
+    } finally {
+      setIsExporting(false)
+    }
+  }
   const [existingFolders, setExistingFolders] = useState<string[]>([])
   const [showFolderDropdown, setShowFolderDropdown] = useState(false)
   const folderDropdownRef = React.useRef<HTMLDivElement>(null)
@@ -1069,6 +1093,22 @@ export default function EditDeck() {
                 <Plus size={18} />
               </button>
             </div>
+          </div>
+
+          <div className="border-t border-zinc-800 pt-5 mt-2">
+            <button
+              type="button"
+              onClick={handleExportToText}
+              disabled={isExporting}
+              className={`w-full flex items-center justify-center gap-2 px-5 py-3 rounded-lg border font-['Rajdhani'] font-bold uppercase tracking-widest text-xs transition-all duration-200 ${
+                isExporting
+                  ? 'bg-zinc-900 border-zinc-800 text-zinc-600 cursor-not-allowed'
+                  : 'bg-[#111] hover:bg-[#00FF41]/5 border-zinc-800 hover:border-[#00FF41]/40 text-[#888] hover:text-[#00FF41] shadow-md hover:shadow-[0_0_15px_rgba(0,255,65,0.1)]'
+              }`}
+            >
+              <FileText className="w-4 h-4" />
+              {isExporting ? 'Exporting...' : 'Export to Text'}
+            </button>
           </div>
         </div>
 

@@ -1,5 +1,6 @@
-import { ipcMain } from 'electron'
+import { ipcMain, dialog, BrowserWindow } from 'electron'
 import { initDB, queryAll, execute } from '../db/database'
+import * as fs from 'fs'
 
 let dbReady: Promise<void> | null = null
 
@@ -140,6 +141,121 @@ export function registerDBHandlers() {
       return { success: true, data: rows }
     } catch (error) {
       console.error('[Decks getDueCardsForSession Error]', error)
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('decks:exportToText', async (_, topicId: string | number, topicName: string) => {
+    try {
+      await dbReady
+
+      // ── 1. Sanitize input ─────────────────────────────────────────────────
+      // topic_id is a UUID string in the DB schema. parseInt() would silently
+      // produce NaN for UUID strings and return 0 rows, so we coerce to string.
+      const cleanTopicId = String(topicId ?? '').trim()
+      if (!cleanTopicId) {
+        return { success: false, error: 'Invalid deck ID provided.' }
+      }
+
+      // ── 2. Fetch rows with null-safe fallback ─────────────────────────────
+      const rawRows = queryAll(
+        'SELECT type, data FROM cards WHERE topic_id = ? ORDER BY rowid ASC',
+        [cleanTopicId]
+      )
+      const rows: any[] = Array.isArray(rawRows) ? rawRows : []
+
+      if (rows.length === 0) {
+        return { success: false, error: 'No cards found for this deck. The deck may be empty or the ID is incorrect.' }
+      }
+
+      const mcqCards = rows.filter((r: any) => r.type === 'mcq')
+      if (mcqCards.length === 0) {
+        return { success: false, error: 'No MCQ questions found in this deck to export.' }
+      }
+
+      // ── 3. Serialization loop with per-card isolation ─────────────────────
+      const LETTER_MAP: Record<number, string> = { 0: 'A', 1: 'B', 2: 'C', 3: 'D' }
+      const blocks: string[] = []
+
+      for (const card of mcqCards) {
+        try {
+          // Guard: skip rows with missing or non-string data column
+          if (!card.data || typeof card.data !== 'string' || card.data.trim() === '') continue
+
+          let parsed: any
+          try {
+            parsed = JSON.parse(card.data)
+          } catch {
+            console.warn('[exportToText] Skipping card with unparseable JSON.')
+            continue
+          }
+
+          if (!parsed || typeof parsed !== 'object') continue
+
+          const question = (parsed.question != null ? String(parsed.question) : '').trim()
+          if (!question) continue // skip blank-question cards
+
+          // Normalize choices to a safe 4-element string array
+          const rawChoices: any[] = Array.isArray(parsed.choices) ? parsed.choices : []
+          const choices: string[] = [0, 1, 2, 3].map(i =>
+            rawChoices[i] != null ? String(rawChoices[i]) : ''
+          )
+
+          // ── 4. Answer key resolution ──────────────────────────────────────
+          const ansVal = parsed.answer
+          let ansLetter = 'A'
+
+          if (typeof ansVal === 'number' && Number.isFinite(ansVal)) {
+            ansLetter = LETTER_MAP[ansVal] ?? 'A'
+          } else if (typeof ansVal === 'string') {
+            const clean = ansVal.trim().toUpperCase()
+            if (clean === 'A' || clean === 'B' || clean === 'C' || clean === 'D') {
+              ansLetter = clean
+            } else {
+              // Fallback: match answer text against the choices array
+              const matchedIdx = choices.findIndex(c => c.trim() === ansVal.trim())
+              ansLetter = LETTER_MAP[matchedIdx] ?? 'A'
+            }
+          }
+
+          blocks.push(
+            `Q: ${question}\nA: ${choices[0]}\nB: ${choices[1]}\nC: ${choices[2]}\nD: ${choices[3]}\nANS: ${ansLetter}`
+          )
+        } catch (cardErr) {
+          console.warn('[exportToText] Skipping card due to unexpected error:', cardErr)
+        }
+      }
+
+      if (blocks.length === 0) {
+        return { success: false, error: 'No valid MCQ cards could be serialized. Cards may be missing question or choice data.' }
+      }
+
+      const payload = blocks.join('\n\n')
+
+      // ── 5. Native save dialog ─────────────────────────────────────────────
+      // Strip characters that are illegal in Windows/macOS filenames
+      const safeName = String(topicName ?? 'Deck').replace(/[\\/:*?"<>|]/g, '_')
+      const win = BrowserWindow.getFocusedWindow()
+      const dialogOptions = {
+        title: 'Export Deck to Text',
+        defaultPath: `${safeName}_TOS_Export.txt`,
+        filters: [
+          { name: 'Text Files', extensions: ['txt'] },
+          { name: 'All Files', extensions: ['*'] }
+        ]
+      }
+      const result = win
+        ? await dialog.showSaveDialog(win, dialogOptions)
+        : await dialog.showSaveDialog(dialogOptions)
+
+      if (result.canceled || !result.filePath) {
+        return { success: false, error: 'Export canceled' }
+      }
+
+      fs.writeFileSync(result.filePath, payload, 'utf-8')
+      return { success: true }
+    } catch (error) {
+      console.error('[Decks exportToText Error]', error)
       return { success: false, error: (error as Error).message }
     }
   })
