@@ -673,19 +673,21 @@ export default function PrintView() {
   // Render — full-screen white layout (no AppShell chrome)
   // -------------------------------------------------------------------------
   return (
-    <>
+    <div className="h-screen w-full flex flex-col overflow-hidden bg-[#0D0D0D]">
       <style>{`
         @media print {
-          .print\\:hidden { display: none !important; }
+          .print\:hidden { display: none !important; }
         }
         @keyframes spin { to { transform: rotate(360deg); } }
         .animate-spin { animation: spin 1s linear infinite; }
       `}</style>
       {titleBar}
       {toolbar}
-      <div style={{ background: '#fff', minHeight: '100vh', padding: '40px 60px' }}>
-        {paperContent}
+      <div className="flex-1 overflow-y-auto" style={{ background: '#fff', padding: '40px 60px' }}>
+        <div className="max-w-screen-xl mx-auto">
+          {paperContent}
+        </div>
       </div>
-    </>
+    </div>
   )
 }

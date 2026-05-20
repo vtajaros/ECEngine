@@ -69,6 +69,40 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
   const clickNavTimeout = useRef<NodeJS.Timeout | null>(null)
   const [currentVisibleIndex, setCurrentVisibleIndex] = useState(0)
 
+  // IntersectionObserver Scroll-Spy logic to sync sidebar with manual scrolling
+  useEffect(() => {
+    if (isClickNavigating.current || !scrollContainerRef.current) return
+
+    const observerOptions = {
+      root: scrollContainerRef.current,
+      rootMargin: '-30% 0px -30% 0px', // Focus on the middle 40% of the viewport
+      threshold: 0
+    }
+
+    const observerCallback = (entries: IntersectionObserverEntry[]) => {
+      // If we are currently animating a click-scroll, ignore observer updates
+      if (isClickNavigating.current) return
+
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id
+          const index = parseInt(id.split('-').pop() || '0', 10)
+          if (!isNaN(index) && index !== currentVisibleIndex) {
+            setCurrentVisibleIndex(index)
+          }
+        }
+      })
+    }
+
+    const observer = new IntersectionObserver(observerCallback, observerOptions)
+
+    // Observe all question containers
+    const questionElements = document.querySelectorAll('[id^="test-question-"]')
+    questionElements.forEach(el => observer.observe(el))
+
+    return () => observer.disconnect()
+  }, [testCards, currentVisibleIndex]) // Re-run when cards change or index updates to stay fresh, but callback handles logic
+
   // Auto-scroll sidebar to current question instantly without animation queueing lag
   useEffect(() => {
     if (navItemRefs.current[currentVisibleIndex]) {
@@ -181,26 +215,14 @@ Please explain:
 
   // Highly optimized synchronous scroll tracking to guarantee zero-delay updating
   const handleContainerScroll = () => {
+    // Scroll-Spy is now handled by IntersectionObserver for cleaner state management
     if (isClickNavigating.current || !scrollContainerRef.current) return
 
-    const containerRect = scrollContainerRef.current.getBoundingClientRect()
-    const targetY = containerRect.top + 180 // Scanline slightly below container top padding
-    const refs = questionRefs.current
-    let foundIdx = -1
-
-    for (let i = 0; i < refs.length; i++) {
-      const el = refs[i]
-      if (!el) continue
-      const rect = el.getBoundingClientRect()
-      // If the top of the question is above/near scanline and bottom is below scanline
-      if (rect.top <= targetY && rect.bottom > targetY) {
-        foundIdx = i
-        break
-      }
-    }
-
-    if (foundIdx !== -1 && foundIdx !== currentVisibleIndex) {
-      setCurrentVisibleIndex(foundIdx)
+    const container = scrollContainerRef.current
+    // Fix: Force active rail to final item when at absolute bottom
+    const isAtBottom = Math.abs(container.scrollHeight - container.scrollTop - container.clientHeight) < 2
+    if (isAtBottom) {
+      setCurrentVisibleIndex(testCards.length - 1)
     }
   }
 
@@ -214,20 +236,18 @@ Please explain:
   const scrollToQuestion = (index: number) => {
     isClickNavigating.current = true
     if (clickNavTimeout.current) clearTimeout(clickNavTimeout.current)
+    
+    // Immediate state update
+    setCurrentVisibleIndex(index)
+
+    const targetElement = document.getElementById(`test-question-${index}`);
+    if (targetElement) {
+      targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     clickNavTimeout.current = setTimeout(() => {
       isClickNavigating.current = false
     }, 800)
-
-    setCurrentVisibleIndex(index)
-
-    const container = scrollContainerRef.current
-    const el = questionRefs.current[index]
-    if (container && el) {
-      const containerTop = container.getBoundingClientRect().top
-      const elTop = el.getBoundingClientRect().top
-      const offset = container.scrollTop + (elTop - containerTop) - 32 // 32px top padding offset
-      container.scrollTo({ top: offset, behavior: 'smooth' })
-    }
   }
 
   const handleSelectChoice = (cardId: string, choiceIndex: number) => {
@@ -460,58 +480,8 @@ Please explain:
         }}
       />
 
-      {/* Main Content Wrapper: Left Vertical Rail + Right Scrollable Content */}
+      {/* Main Content Wrapper */}
       <div className="flex-1 flex overflow-hidden relative">
-        {/* Left Vertical Exam Map Rail */}
-        {viewState === 'test' && (
-          <div className="w-16 shrink-0 bg-[#111] border-r border-[#222] flex flex-col items-center pt-8 pb-6 overflow-y-auto overflow-x-hidden scrollbar-hide select-none z-30">
-            <div className="flex flex-col items-center gap-3 w-full px-2">
-              {testCards.map((card, idx) => {
-                const isAnswered = answers[card.id] !== undefined
-                const isCurrent = currentVisibleIndex === idx
-
-                return (
-                  <button
-                    key={card.id}
-                    ref={el => navItemRefs.current[idx] = el}
-                    onClick={() => scrollToQuestion(idx)}
-                    className="relative group p-1 flex items-center justify-center w-full"
-                  >
-                    <div
-                      className={`
-                        relative w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold font-['IBM_Plex_Mono'] transition-all border z-10
-                        ${isCurrent
-                          ? 'bg-[#00FF41] border-[#00FF41] text-black shadow-[0_0_12px_rgba(0,255,65,0.4)] scale-110'
-                          : isAnswered
-                            ? 'bg-[var(--accent-primary)]/20 border-[var(--accent-primary)] text-[#00FF41]'
-                            : 'bg-transparent border-[#333] text-[#666] hover:border-[#555] hover:text-[#aaa]'
-                        }
-                      `}
-                    >
-                      {idx + 1}
-
-                      {/* Pulsing ring for current question */}
-                      {isCurrent && (
-                        <motion.div
-                          initial={{ scale: 0.8, opacity: 0.6 }}
-                          animate={{ scale: 1.4, opacity: 0 }}
-                          transition={{ repeat: Infinity, duration: 1.5, ease: "easeOut" }}
-                          className="absolute inset-0 border-2 border-[#00FF41] rounded-full z-[-1]"
-                        />
-                      )}
-                    </div>
-
-                    {/* Tooltip hint on hover - Positioned right to avoid clipping */}
-                    <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 bg-[#222] text-white text-[10px] px-2.5 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 uppercase tracking-widest border border-[#444] font-['Rajdhani'] font-bold shadow-lg">
-                      Question {idx + 1}
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        )}
-
         {/* Right Scrollable Questions Container */}
         <div
           ref={scrollContainerRef}
@@ -543,6 +513,7 @@ Please explain:
               const isAnswered = userAnswer !== undefined
               const isCorrect = isAnswered && userAnswer === mcq.answer
               const isBookmarked = bookmarkedIds.has(card.id)
+              const isCurrent = currentVisibleIndex === index
 
               // Evaluate state logic
               // If in test state:
@@ -556,8 +527,10 @@ Please explain:
               return (
                 <div
                   key={card.id}
+                  id={`test-question-${index}`}
                   ref={el => questionRefs.current[index] = el}
-                  className={`flex-shrink-0 bg-[var(--bg-card)] border rounded-xl overflow-hidden shadow-lg transition-colors duration-300 relative
+                  onClick={() => scrollToQuestion(index)}
+                  className={`flex-shrink-0 bg-[var(--bg-card)] border rounded-xl overflow-hidden shadow-lg transition-colors duration-300 relative cursor-pointer scroll-mt-20
                 ${showFeedback
                       ? (isCorrect ? 'border-[#00FF41]/30 bg-[#00FF41]/5' : (isAnswered ? 'border-[#FF003C]/30 bg-[#FF003C]/5' : 'border-[#333]'))
                       : (isAnswered ? 'border-[#555]' : 'border-[#222]')
@@ -566,16 +539,6 @@ Please explain:
                   <div className="p-6 border-b border-[#333] flex items-start gap-4">
 
                     <div className="flex-1 flex flex-col max-h-[50vh] overflow-y-auto pr-2">
-                      {mcq.imagePath && (
-                        <div className="mb-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
-                          <img
-                            src={`ece-app://${mcq.imagePath}`}
-                            alt="Question diagram"
-                            className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
-                            onClick={() => setZoomedImage(mcq.imagePath!)}
-                          />
-                        </div>
-                      )}
                       <h3
                         className="font-['Rajdhani'] font-semibold text-[var(--text-primary)] whitespace-pre-wrap flex items-start gap-3"
                         style={{
@@ -594,10 +557,27 @@ Please explain:
                           dangerouslySetInnerHTML={{ __html: renderMath(mcq.question) }}
                         />
                       </h3>
+
+                      {mcq.imagePath && (
+                        <div className="mt-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
+                          <img
+                            src={`ece-app://${mcq.imagePath}`}
+                            alt="Question diagram"
+                            className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setZoomedImage(mcq.imagePath!);
+                            }}
+                          />
+                        </div>
+                      )}
                     </div>
 
                     <button
-                      onClick={() => toggleBookmark(card.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleBookmark(card.id);
+                      }}
                       className={`p-2 rounded transition-colors ${isBookmarked
                           ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/10'
                           : 'text-[#555] hover:bg-[#222] hover:text-[#888]'
@@ -646,7 +626,10 @@ Please explain:
                       return (
                         <button
                           key={cIdx}
-                          onClick={() => handleSelectChoice(card.id, cIdx)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectChoice(card.id, cIdx);
+                          }}
                           disabled={viewState === 'review' || (settings.instantChecking && isAnswered)}
                           className={`flex items-center text-left p-[16px_20px] min-h-[56px] rounded-lg border transition-all duration-200 font-['Rajdhani'] ${stateStyles} ${viewState === 'review' || (settings.instantChecking && isAnswered) ? 'cursor-default' : 'cursor-pointer'
                             }`}
@@ -685,7 +668,10 @@ Please explain:
                     <div className="px-6 pb-6 pt-1 flex items-center gap-3">
                       <Tooltip content="Copy context to paste into GPT/Gemini/Claude for a better AI explanation.">
                         <button
-                          onClick={() => handleGetContext(mcq)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleGetContext(mcq);
+                          }}
                           className="flex items-center gap-1.5 px-3 py-1.5 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-[#888] transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem]"
                         >
                           <Copy size={12} />
@@ -695,7 +681,10 @@ Please explain:
 
                       <Tooltip position="right" content="Explain using Grok Llama-3.3-70B">
                         <button
-                          onClick={() => setOpenExplanationId(openExplanationId === index ? null : index)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenExplanationId(openExplanationId === index ? null : index);
+                          }}
                           className={`flex items-center gap-1.5 px-3 py-1.5 border rounded transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem] ${openExplanationId === index
                               ? 'border-[#00FF41] bg-[rgba(0,255,65,0.08)] text-[#00FF41]'
                               : 'border-[rgba(0,255,65,0.3)] text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41]'
@@ -711,12 +700,14 @@ Please explain:
 
                   {/* ExplanationPanel — mounts inline below this card's choices when its index is active */}
                   {viewState === 'review' && openExplanationId === index && (
-                    <ExplanationPanel
-                      question={mcq.question}
-                      choices={mcq.choices}
-                      answerIndex={mcq.answer}
-                      onClose={() => setOpenExplanationId(null)}
-                    />
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <ExplanationPanel
+                        question={mcq.question}
+                        choices={mcq.choices}
+                        answerIndex={mcq.answer}
+                        onClose={() => setOpenExplanationId(null)}
+                      />
+                    </div>
                   )}
                 </div>
               )

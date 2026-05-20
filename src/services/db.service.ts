@@ -18,6 +18,14 @@ declare global {
         query: (sql: string, params?: unknown[]) => Promise<{ success: boolean; data?: any; error?: string }>
         run: (sql: string, params?: unknown[]) => Promise<{ success: boolean; data?: any; error?: string }>
       }
+      decks: {
+        getTopics: () => Promise<{ success: boolean; data?: any; error?: string }>
+        getCardsByTopic: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
+        getDueCounts: () => Promise<{ success: boolean; data?: any; error?: string }>
+        getDueCardsForSession: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
+        addDeckWithCards: (payload: any) => Promise<{ success: boolean; error?: string }>
+        deleteTopic: (topicId: string) => Promise<{ success: boolean; error?: string }>
+      }
       file: {
         import: (filePath?: string) => Promise<{ success: boolean; data?: string; canceled?: boolean; error?: string }>
         export: (data: unknown, savePath?: string) => Promise<{ success: boolean; canceled?: boolean; error?: string }>
@@ -491,6 +499,38 @@ export const dbService = {
       type: row.type as Card['type'],
       data: JSON.parse(row.data),
       difficulty: row.difficulty as Card['difficulty'],
+      tags: JSON.parse(row.tags || '[]'),
+      isCustom: Boolean(row.is_custom),
+      createdAt: row.created_at,
+    }))
+  },
+
+  getCardsPrioritized: async (topicId: string): Promise<Card[]> => {
+    const sql = `
+      SELECT c.id, c.type, c.data, c.tags, c.difficulty, c.is_custom, c.created_at,
+             p.next_review
+      FROM cards c
+      LEFT JOIN progress p ON c.id = p.card_id
+      WHERE c.topic_id = ?
+      ORDER BY
+        CASE
+          WHEN p.next_review IS NULL THEN 0
+          WHEN p.next_review <= datetime('now') THEN 0
+          ELSE 1
+        END ASC,
+        c.created_at ASC
+    `
+    const result = await window.electron.db.query(sql, [topicId])
+    if (!result.success) {
+      console.error('getCardsPrioritized failed', result.error)
+      return []
+    }
+    return (result.data || []).map((row: any) => ({
+      id: row.id,
+      topicId: topicId,
+      type: row.type,
+      data: JSON.parse(row.data),
+      difficulty: row.difficulty,
       tags: JSON.parse(row.tags || '[]'),
       isCustom: Boolean(row.is_custom),
       createdAt: row.created_at,

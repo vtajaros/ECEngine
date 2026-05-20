@@ -15,6 +15,10 @@ import { useSessionStore } from '../store/useSessionStore'
 import { motion, AnimatePresence } from 'framer-motion'
 import { shuffle, shuffleChoices } from '../lib/scrambler'
 
+import { StudyHeader } from '../components/study/StudyHeader'
+import { StudySessionStats } from '../components/study/StudySessionStats'
+import { dbService } from '../services/db.service'
+
 type StudyMode = 'flashcard' | 'mcq' | 'learn' | 'test'
 type Subject = 'ALL' | 'MATH' | 'GEAS' | 'ELECS' | 'EST'
 
@@ -39,6 +43,7 @@ interface StudySet {
   tags?: string[]
   createdAt?: number
   folderName?: string
+  dueCount?: number
 }
 
 // Removed Mock Sets
@@ -67,6 +72,17 @@ export default function FlashcardStudy() {
     async function loadDBSets() {
       try {
         if (!window.electron?.db) return
+
+        let dueCountsMap = new Map<string, number>()
+        if (window.electron.decks) {
+          const dueRes = await window.electron.decks.getDueCounts()
+          if (dueRes.success && dueRes.data) {
+            dueRes.data.forEach((row: any) => {
+              dueCountsMap.set(row.topic_id, row.dueCount)
+            })
+          }
+        }
+
         const topicsResult = await window.electron.db.query(
           `SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags, t.folder_name,
                   COUNT(c.id) as card_count,
@@ -86,6 +102,7 @@ export default function FlashcardStudy() {
             else if (types.includes('flashcard')) deckType = 'flashcard'
 
             const mastery = 0; // DB-based progress handles mastery calculation in the service layer
+            const dueCount = dueCountsMap.get(row.id) || 0
 
             let parsedTags: string[] = []
             try {
@@ -100,6 +117,7 @@ export default function FlashcardStudy() {
               count: row.card_count || 0,
               mastery,
               deckType,
+              dueCount,
               tags: parsedTags,
               createdAt: row.created_at || Date.now(),
               folderName: row.folder_name || 'Uncategorized'
@@ -192,9 +210,8 @@ export default function FlashcardStudy() {
   const handleConfirmDelete = async () => {
     if (!setToDelete) return
     try {
-      if (window.electron?.db && setToDelete.id.startsWith('topic_')) {
-        await window.electron.db.run(`DELETE FROM cards WHERE topic_id = ?`, [setToDelete.id])
-        await window.electron.db.run(`DELETE FROM topics WHERE id = ?`, [setToDelete.id])
+      if ((window as any).electron?.decks && setToDelete.id.startsWith('topic_')) {
+        await (window as any).electron.decks.deleteTopic(setToDelete.id)
       }
       setAllSets(prev => prev.filter(s => s.id !== setToDelete.id))
       setSetToDelete(null)
@@ -210,7 +227,7 @@ export default function FlashcardStudy() {
   const [activeSessionSetId, setActiveSessionSetId] = useState('')
   const [showExitConfirm, setShowExitConfirm] = useState(false)
   const startSession = useSessionStore(state => state.startSession)
-  const { currentDeck, currentIndex, isFinished } = useSessionStore()
+  const { currentDeck, currentIndex, isFinished, sessionStats } = useSessionStore()
 
   // Navigation Blocking logic
   const blocker = useBlocker(
@@ -266,11 +283,23 @@ export default function FlashcardStudy() {
 
   // Helper to build MCQs out of flashcards dynamically for the Learn/Test view
   const generateMCQs = (flashcards: any[]) => {
+    const total = flashcards.length;
     return flashcards.map((fc, i) => {
-      const allOtherDefs = flashcards.filter((_, idx) => idx !== i).map(c => c.back)
-      // Pick up to 3 random distractors
-      const shuffledOthers = shuffle(allOtherDefs).slice(0, 3)
-      const { choices, answer: answerIndex } = shuffleChoices([fc.back, ...shuffledOthers], 0)
+      const distractorIndices = new Set<number>();
+      let attempts = 0;
+      const targetDistractors = Math.min(3, total - 1);
+      
+      while (distractorIndices.size < targetDistractors && attempts < 30) {
+        const randIdx = Math.floor(Math.random() * total);
+        if (randIdx !== i && flashcards[randIdx].back !== fc.back) {
+          distractorIndices.add(randIdx);
+        }
+        attempts++;
+      }
+      
+      const shuffledOthers = Array.from(distractorIndices).map(idx => flashcards[idx].back);
+      const { choices, answer: answerIndex } = shuffleChoices([fc.back, ...shuffledOthers], 0);
+
       return {
         id: fc.id || `card_${i}`,
         topicId: 'custom',
@@ -304,19 +333,21 @@ export default function FlashcardStudy() {
 
     if (setId.startsWith('topic_')) {
       // Load real cards from DB
-      const res = await window.electron.db.query(`SELECT data, type, id FROM cards WHERE topic_id = ?`, [setId])
-      if (res.success && res.data) {
-        const rawCards = res.data.map((r: any) => ({ data: JSON.parse(r.data), type: r.type, id: r.id }))
+      const prioritizedCards = await dbService.getCardsPrioritized(setId)
+      const rawCards = prioritizedCards.map(card => ({
+        data: card.data,
+        type: card.type,
+        id: card.id
+      }))
 
-        const mcqs = rawCards.filter((r: any) => r.type === 'mcq').map((r: any) => ({
-          id: r.id, topicId: 'custom', type: 'mcq', difficulty: 'medium', tags: [], isCustom: true, data: r.data
-        }))
+      const mcqs = rawCards.filter((r: any) => r.type === 'mcq').map((r: any) => ({
+        id: r.id, topicId: 'custom', type: 'mcq', difficulty: 'medium', tags: [], isCustom: true, data: r.data
+      }))
 
-        const flashcards = rawCards.filter((r: any) => r.type !== 'mcq').map((r: any) => ({ ...r.data, id: r.id }))
-        const generated = generateMCQs(flashcards)
+      const flashcards = rawCards.filter((r: any) => r.type !== 'mcq').map((r: any) => ({ ...r.data, id: r.id }))
+      const generated = generateMCQs(flashcards)
 
-        filteredData = [...mcqs, ...generated]
-      }
+      filteredData = [...mcqs, ...generated]
     } else {
       // Mock flow
       filteredData = MOCK_MCQS;
@@ -378,19 +409,21 @@ export default function FlashcardStudy() {
 
     if (setId.startsWith('topic_')) {
       // Load real cards from DB
-      const res = await window.electron.db.query(`SELECT data, type, id FROM cards WHERE topic_id = ?`, [setId])
-      if (res.success && res.data) {
-        const rawCards = res.data.map((r: any) => ({ data: JSON.parse(r.data), type: r.type, id: r.id }))
+      const prioritizedCards = await dbService.getCardsPrioritized(setId)
+      const rawCards = prioritizedCards.map(card => ({
+        data: card.data,
+        type: card.type,
+        id: card.id
+      }))
 
-        const mcqs = rawCards.filter((r: any) => r.type === 'mcq').map((r: any) => ({
-          id: r.id, topicId: 'custom', type: 'mcq', difficulty: 'medium', tags: [], isCustom: true, data: r.data
-        }))
+      const mcqs = rawCards.filter((r: any) => r.type === 'mcq').map((r: any) => ({
+        id: r.id, topicId: 'custom', type: 'mcq', difficulty: 'medium', tags: [], isCustom: true, data: r.data
+      }))
 
-        const flashcards = rawCards.filter((r: any) => r.type !== 'mcq').map((r: any) => ({ ...r.data, id: r.id }))
-        const generated = generateMCQs(flashcards)
+      const flashcards = rawCards.filter((r: any) => r.type !== 'mcq').map((r: any) => ({ ...r.data, id: r.id }))
+      const generated = generateMCQs(flashcards)
 
-        filteredData = [...mcqs, ...generated]
-      }
+      filteredData = [...mcqs, ...generated]
     } else {
       // Mock flow
       filteredData = MOCK_MCQS;
@@ -490,24 +523,21 @@ export default function FlashcardStudy() {
             }
           }}
         />
-        <button
-          onClick={() => setShowExitConfirm(true)}
-          className="absolute top-6 right-6 px-4 py-2 bg-[var(--bg-secondary)] text-[var(--text-secondary)] rounded border border-[var(--bg-card)] hover:text-[var(--text-primary)] hover:border-[var(--accent-border)] transition-colors font-['Rajdhani'] uppercase tracking-wider z-50"
-        >
-          Exit Session
-        </button>
 
-        {/* Global Progress Bar */}
-        {!isFinished && (
-          <div className="fixed top-0 left-0 w-full bg-[var(--bg-secondary)] h-1.5 z-50 shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
-            <motion.div
-              className="bg-[var(--accent-primary)] h-full shadow-[0_0_12px_rgba(0,255,65,0.8)]"
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.3 }}
+          <StudyHeader
+            topicName={activeSessionTitle || 'Active Session'}
+            currentCardIndex={currentIndex}
+            totalCards={currentDeck.length}
+            onBackClick={() => setShowExitConfirm(true)}
+          />
+
+          {!isFinished && (
+            <StudySessionStats
+              correctCount={(sessionStats?.good || 0) + (sessionStats?.easy || 0)}
+              totalReviewed={currentIndex}
+              streakDays={0}
             />
-          </div>
-        )}
+          )}
 
         {mode === 'flashcard' && <FlashDeck cards={currentDeck} onComplete={handleComplete} />}
         {mode === 'mcq' && <MCQDeck cards={currentDeck} onComplete={handleComplete} />}
@@ -719,6 +749,12 @@ export default function FlashcardStudy() {
                           <span className="w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] text-[#E8E8E8] font-rajdhani font-bold tracking-widest text-[10px] shrink-0 uppercase whitespace-nowrap">
                             {set.count} ITEMS
                           </span>
+                          {/* Due Today Tag */}
+                          {(set.dueCount ?? 0) > 0 && (
+                            <span className="w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] text-[#E8E8E8] font-rajdhani font-bold tracking-widest text-[10px] shrink-0 uppercase whitespace-nowrap">
+                              {set.dueCount} DUE
+                            </span>
+                          )}
                           {/* Date String */}
                           <span className="text-[10px] text-gray-500 uppercase font-['IBM_Plex_Mono'] tracking-widest">
                             {set.createdAt ? new Date(set.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}

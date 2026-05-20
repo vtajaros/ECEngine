@@ -5,6 +5,14 @@ contextBridge.exposeInMainWorld('electron', {
     query: (sql: string, params?: unknown[]) => ipcRenderer.invoke('db:query', sql, params),
     run: (sql: string, params?: unknown[]) => ipcRenderer.invoke('db:run', sql, params),
   },
+  decks: {
+    getTopics: () => ipcRenderer.invoke('decks:getTopics'),
+    getCardsByTopic: (topicId: string) => ipcRenderer.invoke('decks:getCardsByTopic', topicId),
+    getDueCounts: () => ipcRenderer.invoke('decks:getDueCounts'),
+    getDueCardsForSession: (topicId: string) => ipcRenderer.invoke('decks:getDueCardsForSession', topicId),
+    addDeckWithCards: (payload: any) => ipcRenderer.invoke('decks:addDeckWithCards', payload),
+    deleteTopic: (topicId: string) => ipcRenderer.invoke('decks:deleteTopic', topicId),
+  },
   file: {
     import: (filePath?: string) => ipcRenderer.invoke('file:import', filePath),
     export: (data: unknown, savePath?: string) => ipcRenderer.invoke('file:export', data, savePath),

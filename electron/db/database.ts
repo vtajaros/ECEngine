@@ -96,6 +96,7 @@ function runTableMigrations() {
     // Migration for existing progress table
     try { db.run("ALTER TABLE progress ADD COLUMN correct_count INTEGER DEFAULT 0"); } catch (e) {}
     try { db.run("ALTER TABLE progress ADD COLUMN total_count INTEGER DEFAULT 0"); } catch (e) {}
+    try { db.run("ALTER TABLE progress ADD COLUMN last_result TEXT"); } catch (e) {}
   } catch (e) {}
 
   try {

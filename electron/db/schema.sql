@@ -28,8 +28,8 @@ CREATE TABLE IF NOT EXISTS progress (
   ease_factor REAL DEFAULT 2.5,
   interval INTEGER DEFAULT 0,
   repetitions INTEGER DEFAULT 0,
-  next_review INTEGER,
-  last_reviewed INTEGER,
+  next_review TEXT,
+  last_reviewed TEXT,
   FOREIGN KEY(card_id) REFERENCES cards(id)
 );
 

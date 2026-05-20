@@ -1580,31 +1580,33 @@ export default function AddDeck() {
     }
 
     try {
-      await run('BEGIN TRANSACTION')
-
       const topicId = 'topic_' + Date.now().toString(36)
-      await run(
-        `INSERT INTO topics (id, name, subject, description, tags, folder_name) VALUES (?, ?, ?, ?, ?, ?)`,
-        [topicId, title.trim(), subject, description.trim(), JSON.stringify(Array.from(deckTags)), folderName.trim()]
-      )
+      
+      const payload = {
+        topicId,
+        name: title.trim(),
+        subject: subject,
+        description: description.trim(),
+        tags: JSON.stringify(Array.from(deckTags)),
+        folderName: folderName.trim(),
+        cards: validCards.map(card => {
+          const cardId = 'card_' + Math.random().toString(36).substr(2, 9)
+          const cleanedData = stripPlaceholders(card.data)
+          return {
+            id: cardId,
+            type: card.type,
+            data: serializeCardData(cleanedData),
+            is_custom: 1
+          }
+        })
+      };
 
-      for (const card of validCards) {
-        const cardId = 'card_' + Math.random().toString(36).substr(2, 9)
-        const cleanedData = stripPlaceholders(card.data)
+      const res = await (window as any).electron.decks.addDeckWithCards(payload)
+      if (!res.success) throw new Error(res.error)
 
-        const dataJson = serializeCardData(cleanedData)
-
-        await run(
-          `INSERT INTO cards (id, topic_id, type, data, is_custom) VALUES (?, ?, ?, ?, ?)`,
-          [cardId, topicId, card.type, dataJson, 1]
-        )
-      }
-
-      await run('COMMIT')
       navigate('/study')
     } catch (err: any) {
       console.error('Save failed', err)
-      try { await run('ROLLBACK') } catch { }
       alert('Failed to save: ' + err.message)
     } finally {
       setSaving(false)
