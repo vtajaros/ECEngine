@@ -15,14 +15,19 @@ export function registerPrintHandlers(): void {
 
       const encodedTitle = encodeURIComponent(title)
 
+      // Resolve icon — works both in dev (project root) and packaged (resources/)
+      const iconPath = app.isPackaged
+        ? join(process.resourcesPath, 'ecengine_icon.ico')
+        : join(__dirname, '../../resources/ecengine_icon.ico')
+
       printWindow = new BrowserWindow({
         width: 900,
         height: 800,
-        frame: true,
+        frame: false,
         backgroundColor: '#FFFFFF',
-        title: `Test Paper — ${title}`,
+        title: `Test Paper View — ${title}`,
         autoHideMenuBar: true,
-        icon: join(__dirname, '../../resources/ecengine_icon.ico'),
+        icon: iconPath,
         webPreferences: {
           preload: join(__dirname, '../preload/index.js'),
           contextIsolation: true,
@@ -32,6 +37,13 @@ export function registerPrintHandlers(): void {
 
       printWindow.on('closed', () => {
         printWindow = null
+      })
+
+      // Override title AFTER did-finish-load — Chromium applies <title>ECEngine</title>
+      // from the HTML after navigation, which overwrites the BrowserWindow constructor title.
+      // Hooking did-finish-load guarantees our title wins every time.
+      printWindow.webContents.on('did-finish-load', () => {
+        printWindow?.setTitle(`Test Paper View — ${title}`)
       })
 
       if (process.env['ELECTRON_RENDERER_URL']) {

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FileText, Table2, List, BookOpen, Bold, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { FileText, Table2, List, BookOpen, Bold, Loader2, CheckCircle2, AlertCircle, Minus, Square, X } from 'lucide-react'
 import { dbService } from '../services/db.service'
 import { Card, MCQData, FlashcardData, FormulaData } from '../types'
 import { renderMath } from '../lib/latex'
@@ -133,24 +133,21 @@ function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) 
       </p>
       <ol style={{ listStyle: 'none', padding: 0, margin: 0 }}>
         {choices.map((choice, ci) => (
-          <li
-            key={ci}
-            style={{
-              display: 'flex',
-              gap: '6px',
-              marginBottom: '3px',
-              color: ci === answer ? '#92400e' : '#374151',
-              fontWeight: ci === answer ? 700 : 400,
-            }}
-          >
-            <span style={{ minWidth: '18px', fontWeight: 700 }}>{CHOICE_LABELS[ci]}.</span>
-            <span>
-              <MathText text={choice} />
-              {/* Issue 2 fix: only show ✓, no [answer text] bracket */}
-              {ci === answer && (
-                <span style={{ color: '#b45309', fontWeight: 700 }}> ✓</span>
-              )}
-            </span>
+          <li key={ci} style={{ marginBottom: '4px', listStyle: 'none' }}>
+            <div
+              style={{
+                padding: '4px 8px',
+                backgroundColor: ci === answer ? '#fef3c7' : 'transparent',
+                color: ci === answer ? '#92400e' : '#374151',
+                fontWeight: ci === answer ? 700 : 400,
+                borderRadius: '3px',
+                display: 'flex',
+                gap: '6px',
+              }}
+            >
+              <span style={{ minWidth: '18px', fontWeight: 700 }}>{CHOICE_LABELS[ci]}.</span>
+              <span><MathText text={choice} /></span>
+            </div>
           </li>
         ))}
       </ol>
@@ -207,6 +204,7 @@ function FormulaItem({ index, card }: FormulaItemProps) {
 // ---------------------------------------------------------------------------
 
 export default function PrintView() {
+  const controls = (window as any).electron?.windowControls
   const [searchParams] = useSearchParams()
   const topicId = searchParams.get('topicId') ?? ''
   const title = decodeURIComponent(searchParams.get('title') ?? 'Test Paper')
@@ -261,6 +259,50 @@ export default function PrintView() {
   const dateStr = new Date().toLocaleDateString('en-US', {
     year: 'numeric', month: 'long', day: 'numeric',
   })
+
+  // -------------------------------------------------------------------------
+  // Titlebar (custom centered, matching main window, not printed)
+  // -------------------------------------------------------------------------
+  const titleBar = (
+    <div className="print:hidden w-full h-8 bg-[#1A1A1A] text-gray-400 flex items-center justify-between select-none [-webkit-app-region:drag] relative shrink-0 px-0">
+      {/* Left side spacer to balance the right controls or put logo */}
+      <div className="flex items-center [-webkit-app-region:no-drag] pl-3">
+        <img src="/ecengine_icon.png" alt="Logo" className="w-4 h-4 object-contain" />
+      </div>
+
+      {/* Centered Title */}
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2">
+        <span className="font-rajdhani font-bold tracking-wider text-white text-xs whitespace-nowrap">
+          <span className="text-[#00FF41]">TEST PAPER VIEW</span> — {title}
+        </span>
+      </div>
+
+      {/* Right Side: Window Controls */}
+      <div className="flex h-full ml-auto [-webkit-app-region:no-drag]">
+        <button
+          onClick={() => controls?.minimize()}
+          className="px-3 h-full hover:bg-[#333] hover:text-white transition-colors flex items-center justify-center"
+          title="Minimize"
+        >
+          <Minus size={12} />
+        </button>
+        <button
+          onClick={() => controls?.maximize()}
+          className="px-3 h-full hover:bg-[#333] hover:text-white transition-colors flex items-center justify-center"
+          title="Maximize"
+        >
+          <Square size={10} />
+        </button>
+        <button
+          onClick={() => controls?.close()}
+          className="px-3 h-full hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center"
+          title="Close"
+        >
+          <X size={14} />
+        </button>
+      </div>
+    </div>
+  )
 
   // -------------------------------------------------------------------------
   // Toolbar (not printed)
@@ -639,6 +681,7 @@ export default function PrintView() {
         @keyframes spin { to { transform: rotate(360deg); } }
         .animate-spin { animation: spin 1s linear infinite; }
       `}</style>
+      {titleBar}
       {toolbar}
       <div style={{ background: '#fff', minHeight: '100vh', padding: '40px 60px' }}>
         {paperContent}
