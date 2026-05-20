@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Play, Clock, FileText, Settings2, SkipForward } from 'lucide-react'
 import { useSessionStore } from '../store/useSessionStore'
 import { useExamTimer } from '../hooks/useExamTimer'
+import { renderMath } from '../lib/latex'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MOCK_MCQS } from '../lib/mockData'
 

@@ -3,8 +3,11 @@
 ***CHOICES***
 - images in choices
 
-***ADD A QUIZLET PARSER***
-- add a tab where you can paste a text from quizlet (quizlet import text) and then convert it to our ecengine ( i will add the .py)
+***ADD A TEST PAPER VIEW MODE (MCQ, FLASHCARDS)***
+- makes a new window where the deck would be displayed in a paper style like
+with the questions and then the multiple choice with the correct answer highlighted
+- to simulate how to review using testpaper with highlights
+- have an export pdf function
 
 ***Test mode gestures***
 - when clicking to the area of the question it auto centers to that question and the item navigation circle on the left positions to that question

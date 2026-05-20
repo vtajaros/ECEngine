@@ -5,6 +5,7 @@ import {
 import { getSubjectFilterClasses } from '../lib/subjectColors'
 import { useNavigate, Link } from 'react-router-dom'
 import { parseImportedMCQs, parseImportedFlashcards } from '../lib/parser'
+import { detectQuizletFormat, tryConvertQuizlet } from '../lib/quizletParser'
 import { renderMath } from '../lib/latex'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -149,6 +150,8 @@ function ImportModal({ onImportCards, onClose }: { onImportCards: (cards: { term
   const [showErrors, setShowErrors] = useState(false)
   const [showGuide, setShowGuide] = useState(false)
   const [autoFixMessage, setAutoFixMessage] = useState('')
+  const [quizletDetected, setQuizletDetected] = useState(false)
+  const [quizletConverting, setQuizletConverting] = useState(false)
 
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
   const gutterRef = React.useRef<HTMLDivElement>(null)
@@ -169,13 +172,36 @@ function ImportModal({ onImportCards, onClose }: { onImportCards: (cards: { term
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!inputText.trim()) { setPreviewData([]); setPreviewWarnings([]); return }
+      if (!inputText.trim()) {
+        setPreviewData([])
+        setPreviewWarnings([])
+        setQuizletDetected(false)
+        return
+      }
+      const fmt = detectQuizletFormat(inputText)
+      setQuizletDetected(fmt === 'mcq')
       const { cards, warnings } = parseImportedMCQs(inputText)
       setPreviewData(cards)
       setPreviewWarnings(warnings)
     }, 300)
     return () => clearTimeout(timer)
   }, [inputText])
+
+  const handleQuizletConvert = () => {
+    setQuizletConverting(true)
+    const result = tryConvertQuizlet(inputText)
+    if (result && result.format === 'mcq') {
+      setInputText(result.ecEngineText)
+      setQuizletDetected(false)
+      const fixCount = result.symbolFixes + result.spellingFixes
+      const fixMsg = fixCount > 0
+        ? `Converted ${result.converted} questions · ${fixCount} fixes applied`
+        : `Converted ${result.converted} questions`
+      setAutoFixMessage(fixMsg)
+      setTimeout(() => setAutoFixMessage(''), 3000)
+    }
+    setQuizletConverting(false)
+  }
 
   const handleImport = () => {
     if (previewData.length === 0) return
@@ -281,6 +307,39 @@ function ImportModal({ onImportCards, onClose }: { onImportCards: (cards: { term
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+
+          {/* Quizlet Detection Banner */}
+          <AnimatePresence>
+            {quizletDetected && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+                className="bg-[#0D1A0D] border border-[#00FF41]/30 rounded-lg p-4 flex items-center justify-between gap-4 shrink-0"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-md bg-[#00FF41]/10 border border-[#00FF41]/20 flex items-center justify-center shrink-0">
+                    <Wand2 size={14} className="text-[#00FF41]" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[#00FF41] text-xs font-['Rajdhani'] font-bold uppercase tracking-widest">Quizlet Format Detected</p>
+                    <p className="text-[#888] text-[11px] font-['IBM_Plex_Mono'] truncate">
+                      This looks like Quizlet MCQ export — convert it to ECEngine format?
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleQuizletConvert}
+                  disabled={quizletConverting}
+                  className="shrink-0 flex items-center gap-2 px-4 py-2 rounded bg-[#00FF41] text-black font-['Rajdhani'] font-bold uppercase tracking-widest text-xs hover:bg-[#00CC33] transition-colors shadow-[0_0_12px_rgba(0,255,65,0.25)] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Wand2 size={12} />
+                  {quizletConverting ? 'Converting...' : 'Convert'}
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Format Guide */}
           <div className="bg-[#0D0D0D] border-l-4 border-l-[#00FF41] shrink-0 relative overflow-hidden transition-all duration-300">
@@ -434,6 +493,8 @@ function ImportFlashcardsModal({ onImportCards, onClose }: { onImportCards: (car
   const [showErrors, setShowErrors] = useState(false)
   const [showGuide, setShowGuide] = useState(false)
   const [autoFixMessage, setAutoFixMessage] = useState('')
+  const [quizletDetected, setQuizletDetected] = useState(false)
+  const [quizletConverting, setQuizletConverting] = useState(false)
 
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
   const gutterRef = React.useRef<HTMLDivElement>(null)
@@ -454,13 +515,36 @@ function ImportFlashcardsModal({ onImportCards, onClose }: { onImportCards: (car
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!inputText.trim()) { setPreviewData([]); setPreviewWarnings([]); return }
+      if (!inputText.trim()) {
+        setPreviewData([])
+        setPreviewWarnings([])
+        setQuizletDetected(false)
+        return
+      }
+      const fmt = detectQuizletFormat(inputText)
+      setQuizletDetected(fmt === 'flashcard')
       const { cards, warnings } = parseImportedFlashcards(inputText)
       setPreviewData(cards)
       setPreviewWarnings(warnings)
     }, 300)
     return () => clearTimeout(timer)
   }, [inputText])
+
+  const handleQuizletConvert = () => {
+    setQuizletConverting(true)
+    const result = tryConvertQuizlet(inputText)
+    if (result && result.format === 'flashcard') {
+      setInputText(result.ecEngineText)
+      setQuizletDetected(false)
+      const fixCount = result.symbolFixes + result.spellingFixes
+      const fixMsg = fixCount > 0
+        ? `Converted ${result.converted} flashcards · ${fixCount} fixes applied`
+        : `Converted ${result.converted} flashcards`
+      setAutoFixMessage(fixMsg)
+      setTimeout(() => setAutoFixMessage(''), 3000)
+    }
+    setQuizletConverting(false)
+  }
 
   const handleImport = () => {
     if (previewData.length === 0) return
@@ -558,6 +642,39 @@ function ImportFlashcardsModal({ onImportCards, onClose }: { onImportCards: (car
 
         {/* Body */}
         <div className="flex-1 overflow-y-auto p-6 flex flex-col gap-6">
+
+          {/* Quizlet Detection Banner */}
+          <AnimatePresence>
+            {quizletDetected && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+                className="bg-[#0D1A0D] border border-[#00FF41]/30 rounded-lg p-4 flex items-center justify-between gap-4 shrink-0"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-md bg-[#00FF41]/10 border border-[#00FF41]/20 flex items-center justify-center shrink-0">
+                    <Wand2 size={14} className="text-[#00FF41]" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[#00FF41] text-xs font-['Rajdhani'] font-bold uppercase tracking-widest">Quizlet Format Detected</p>
+                    <p className="text-[#888] text-[11px] font-['IBM_Plex_Mono'] truncate">
+                      This looks like Quizlet flashcard export — convert it to ECEngine format?
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleQuizletConvert}
+                  disabled={quizletConverting}
+                  className="shrink-0 flex items-center gap-2 px-4 py-2 rounded bg-[#00FF41] text-black font-['Rajdhani'] font-bold uppercase tracking-widest text-xs hover:bg-[#00CC33] transition-colors shadow-[0_0_12px_rgba(0,255,65,0.25)] disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Wand2 size={12} />
+                  {quizletConverting ? 'Converting...' : 'Convert'}
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Format Guide */}
           <div className="bg-[#0D0D0D] border-l-4 border-l-[#00FF41] shrink-0 relative overflow-hidden transition-all duration-300">
