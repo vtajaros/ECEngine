@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import FolderPanel from '@/components/ui/FolderPanel'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate, useBlocker } from 'react-router-dom'
-import { Sigma, Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle, SlidersHorizontal, Pencil, Play, Trash2, AlertTriangle, Trophy } from 'lucide-react'
+import { Sigma, Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle, SlidersHorizontal, Pencil, Play, Trash2, AlertTriangle, Trophy, ScrollText } from 'lucide-react'
 import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
 import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
 import { Card, MCQData, FlashcardData } from '../types'
@@ -976,6 +976,15 @@ export default function Formulas() {
 
                     {/* Right Side: Action Buttons */}
                     <div className="flex items-center gap-2 shrink-0">
+                      {deck.id.startsWith('topic_') && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); window.electron.print.open(deck.id, deck.title) }}
+                          className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
+                          title="Test Paper View"
+                        >
+                          <ScrollText className="w-4 h-4" />
+                        </button>
+                      )}
                       <button
                         onClick={(e) => { e.stopPropagation(); navigate(`/edit-deck/${deck.id}`) }}
                         className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"

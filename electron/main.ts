@@ -5,6 +5,7 @@ import { registerImageHandlers, registerImageProtocolScheme, handleImageProtocol
 import { registerAIHandlers } from './ipc/ai.ipc'
 import { registerFileHandlers } from './ipc/file.ipc'
 import { registerConfigHandlers } from './ipc/config.ipc'
+import { registerPrintHandlers } from './ipc/print.ipc'
 import { flushDB } from './db/database'
 
 // Register custom protocol BEFORE app is ready (Electron requirement)
@@ -76,6 +77,7 @@ app.whenReady().then(() => {
   registerAIHandlers()
   registerFileHandlers()
   registerConfigHandlers()
+  registerPrintHandlers()
   handleImageProtocol()
   
   // Window Control Handlers

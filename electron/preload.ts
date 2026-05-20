@@ -31,4 +31,10 @@ contextBridge.exposeInMainWorld('electron', {
     maximize: () => ipcRenderer.send('window-maximize'),
     close: () => ipcRenderer.send('window-close'),
   },
+  print: {
+    open: (topicId: string, title: string): Promise<{ success: boolean; error?: string }> =>
+      ipcRenderer.invoke('print:open', topicId, title),
+    toPDF: (suggestedName: string): Promise<{ success: boolean; canceled?: boolean; error?: string }> =>
+      ipcRenderer.invoke('print:toPDF', suggestedName),
+  },
 })

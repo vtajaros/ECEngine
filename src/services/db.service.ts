@@ -37,6 +37,10 @@ declare global {
         maximize: () => void
         close: () => void
       }
+      print: {
+        open: (topicId: string, title: string) => Promise<{ success: boolean; error?: string }>
+        toPDF: (suggestedName: string) => Promise<{ success: boolean; canceled?: boolean; error?: string }>
+      }
     }
   }
 }
@@ -461,10 +465,37 @@ export const dbService = {
       }
 
       return { success: true, message: 'Decks and progress imported successfully' }
-    } catch (e: any) {
-      return { success: false, message: e.message || 'Failed to parse backup file' }
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Failed to parse backup file'
+      return { success: false, message }
     }
-  }
+  },
+
+  getAllCardsByTopic: async (topicId: string): Promise<Card[]> => {
+    const sql = `
+      SELECT id, type, data, tags, difficulty, is_custom, created_at
+      FROM cards
+      WHERE topic_id = ?
+      ORDER BY created_at ASC
+    `
+    const result = await window.electron.db.query(sql, [topicId])
+
+    if (!result.success) {
+      console.error('Failed to get cards for print', result.error)
+      return []
+    }
+
+    return (result.data || []).map((row: { id: string; type: string; data: string; tags: string; difficulty: string; is_custom: number; created_at: string }) => ({
+      id: row.id,
+      topicId,
+      type: row.type as Card['type'],
+      data: JSON.parse(row.data),
+      difficulty: row.difficulty as Card['difficulty'],
+      tags: JSON.parse(row.tags || '[]'),
+      isCustom: Boolean(row.is_custom),
+      createdAt: row.created_at,
+    }))
+  },
 }
 
 

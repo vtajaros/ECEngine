@@ -1,0 +1,648 @@
+import React, { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { FileText, Table2, List, BookOpen, Bold, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { dbService } from '../services/db.service'
+import { Card, MCQData, FlashcardData, FormulaData } from '../types'
+import { renderMath } from '../lib/latex'
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+type LayoutMode = 'table' | 'glossary' | 'qa'
+type BoldSide = 'term' | 'definition' | 'none'
+type ExportState = 'idle' | 'loading' | 'success' | 'error'
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+const CHOICE_LABELS = ['A', 'B', 'C', 'D', 'E', 'F']
+
+function isMCQ(card: Card): card is Card & { data: MCQData } {
+  return card.type === 'mcq'
+}
+function isFlashcard(card: Card): card is Card & { data: FlashcardData } {
+  return card.type === 'flashcard'
+}
+function isFormula(card: Card): card is Card & { data: FormulaData } {
+  return card.type === 'formula'
+}
+
+/** Renders text that may contain LaTeX via dangerouslySetInnerHTML. */
+function MathText({ text, style }: { text: string; style?: React.CSSProperties }) {
+  return (
+    <span
+      style={style}
+      dangerouslySetInnerHTML={{ __html: renderMath(text) }}
+    />
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Sub-renderers — Paper content (print-safe black/white)
+// ---------------------------------------------------------------------------
+
+interface MCQTableRowProps {
+  index: number
+  card: Card & { data: MCQData }
+}
+function MCQTableRow({ index, card }: MCQTableRowProps) {
+  const { question, choices, answer } = card.data
+  return (
+    <tr style={{ borderBottom: '1px solid #d1d5db', pageBreakInside: 'avoid' }}>
+      <td style={{ padding: '10px 12px', verticalAlign: 'top', width: '65%', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <span style={{ fontWeight: 700, minWidth: '24px', color: '#111827' }}>{index}.</span>
+          <div style={{ flex: 1 }}>
+            <p style={{ fontWeight: 600, color: '#111827', marginBottom: '6px', lineHeight: 1.5 }}>
+              <MathText text={question} />
+            </p>
+            {/* question imagePath */}
+            {(card.data as MCQData & { imagePath?: string }).imagePath && (
+              <img
+                src={`ece-app://${(card.data as MCQData & { imagePath?: string }).imagePath}`}
+                alt="Question diagram"
+                style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
+              />
+            )}
+            <ol style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+              {choices.map((choice, ci) => (
+                <li key={ci} style={{ marginBottom: '4px', listStyle: 'none' }}>
+                  <div
+                    style={{
+                      padding: '4px 8px',
+                      backgroundColor: ci === answer ? '#fef3c7' : 'transparent',
+                      color: ci === answer ? '#92400e' : '#374151',
+                      fontWeight: ci === answer ? 700 : 400,
+                      borderRadius: '3px',
+                      display: 'flex',
+                      gap: '6px',
+                    }}
+                  >
+                    <span style={{ minWidth: '18px', fontWeight: 700 }}>{CHOICE_LABELS[ci]}.</span>
+                    <span><MathText text={choice} /></span>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </div>
+      </td>
+      <td
+        style={{
+          padding: '10px 12px',
+          verticalAlign: 'top',
+          width: '35%',
+          borderLeft: '1px solid #d1d5db',
+          color: '#6b7280',
+          fontSize: '13px',
+        }}
+      >
+        <span style={{ fontWeight: 600, color: '#374151' }}>Ans: </span>
+        {CHOICE_LABELS[answer]}. <MathText text={choices[answer] ?? '—'} />
+      </td>
+    </tr>
+  )
+}
+
+interface MCQGlossaryItemProps {
+  index: number
+  card: Card & { data: MCQData }
+  qaMode?: boolean
+}
+function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) {
+  const { question, choices, answer } = card.data
+  if (qaMode) {
+    return (
+      <div style={{ marginBottom: '14px', pageBreakInside: 'avoid', borderBottom: '1px solid #e5e7eb', paddingBottom: '10px' }}>
+        <p style={{ fontWeight: 400, color: '#111827', marginBottom: '4px' }}>
+          {index}. <MathText text={question} />
+        </p>
+        <p style={{ fontWeight: 700, color: '#374151', margin: 0, paddingLeft: '16px' }}>
+          <MathText text={choices[answer] ?? '—'} />
+        </p>
+      </div>
+    )
+  }
+  return (
+    <div style={{ marginBottom: '16px', pageBreakInside: 'avoid' }}>
+      <p style={{ fontWeight: 600, color: '#111827', marginBottom: '6px' }}>
+        {index}. <MathText text={question} />
+      </p>
+      <ol style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+        {choices.map((choice, ci) => (
+          <li
+            key={ci}
+            style={{
+              display: 'flex',
+              gap: '6px',
+              marginBottom: '3px',
+              color: ci === answer ? '#92400e' : '#374151',
+              fontWeight: ci === answer ? 700 : 400,
+            }}
+          >
+            <span style={{ minWidth: '18px', fontWeight: 700 }}>{CHOICE_LABELS[ci]}.</span>
+            <span>
+              <MathText text={choice} />
+              {/* Issue 2 fix: only show ✓, no [answer text] bracket */}
+              {ci === answer && (
+                <span style={{ color: '#b45309', fontWeight: 700 }}> ✓</span>
+              )}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
+interface FormulaItemProps {
+  index: number
+  card: Card & { data: FormulaData }
+}
+function FormulaItem({ index, card }: FormulaItemProps) {
+  const { name, latex, variables } = card.data
+  const vars = variables as unknown
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', pageBreakInside: 'avoid', borderBottom: '1px solid #e5e7eb', paddingBottom: '12px' }}>
+      <div style={{ width: '35%', minWidth: '120px' }}>
+        <p style={{ fontWeight: 700, color: '#111827', margin: 0 }}>
+          {index}. <MathText text={name} />
+        </p>
+        {/* variables below name if present */}
+        {vars ? (
+          <div style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.8, marginTop: '4px' }}>
+            {typeof vars === 'string' ? (
+              vars.split('\n').map((line, idx) => (
+                <span key={idx} style={{ display: 'block', marginBottom: '2px' }}>
+                  <MathText text={line} />
+                </span>
+              ))
+            ) : typeof vars === 'object' && vars !== null && Object.keys(vars as Record<string, string>).length > 0 ? (
+              Object.entries(vars as Record<string, string>).map(([k, v]) => (
+                <span key={k} style={{ display: 'inline-block', marginRight: '16px' }}>
+                  <strong><MathText text={k} /></strong>: <MathText text={String(v)} />
+                </span>
+              ))
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+      <div style={{ flex: 1 }}>
+        {latex ? (
+          <div
+            style={{ fontFamily: 'monospace', backgroundColor: '#f3f4f6', padding: '6px 8px', borderRadius: '4px', color: '#1e40af', marginBottom: '0px', overflowX: 'auto' }}
+            dangerouslySetInnerHTML={{ __html: renderMath(`$$${latex}$$`) }}
+          />
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Main Component
+// ---------------------------------------------------------------------------
+
+export default function PrintView() {
+  const [searchParams] = useSearchParams()
+  const topicId = searchParams.get('topicId') ?? ''
+  const title = decodeURIComponent(searchParams.get('title') ?? 'Test Paper')
+
+  const [cards, setCards] = useState<Card[]>([])
+  const [loading, setLoading] = useState(true)
+  const [layout, setLayout] = useState<LayoutMode>('table')
+  const [boldSide, setBoldSide] = useState<BoldSide>('term')
+  const [exportState, setExportState] = useState<ExportState>('idle')
+  const [exportError, setExportError] = useState('')
+
+  useEffect(() => {
+    if (!topicId) { setLoading(false); return }
+    dbService.getAllCardsByTopic(topicId).then((result) => {
+      setCards(result)
+      setLoading(false)
+    })
+  }, [topicId])
+
+  const handleExportPDF = async () => {
+    setExportState('loading')
+    setExportError('')
+    try {
+      const result = await window.electron.print.toPDF(title)
+      if (result.canceled) {
+        setExportState('idle')
+      } else if (result.success) {
+        setExportState('success')
+        setTimeout(() => setExportState('idle'), 2500)
+      } else {
+        setExportError(result.error ?? 'Unknown error')
+        setExportState('error')
+      }
+    } catch (err: unknown) {
+      setExportError(err instanceof Error ? err.message : 'Unexpected error')
+      setExportState('error')
+    }
+  }
+
+  const mcqCards = cards.filter(isMCQ)
+  const flashcardCards = cards.filter(isFlashcard)
+  const formulaCards = cards.filter(isFormula)
+
+  const isFlashcardOnly = flashcardCards.length > 0 && mcqCards.length === 0
+
+  useEffect(() => {
+    if (isFlashcardOnly && layout === 'qa') {
+      setLayout('glossary')
+    }
+  }, [isFlashcardOnly, layout])
+
+  const dateStr = new Date().toLocaleDateString('en-US', {
+    year: 'numeric', month: 'long', day: 'numeric',
+  })
+
+  // -------------------------------------------------------------------------
+  // Toolbar (not printed)
+  // -------------------------------------------------------------------------
+  const toolbar = (
+    <div
+      className="print:hidden"
+      style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 10,
+        background: 'var(--bg-secondary)',
+        borderBottom: '1px solid var(--bg-card)',
+        padding: '12px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        flexWrap: 'wrap',
+      }}
+    >
+      {/* Title */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: '200px' }}>
+        <FileText size={18} color="var(--accent-primary)" />
+        <span
+          style={{
+            fontFamily: 'var(--font-ui)',
+            fontWeight: 700,
+            fontSize: '14px',
+            color: 'var(--text-primary)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.1em',
+          }}
+        >
+          {title}
+        </span>
+        <span
+          style={{
+            fontSize: '11px',
+            color: 'var(--text-secondary)',
+            fontFamily: 'var(--font-body)',
+          }}
+        >
+          — {cards.length} card{cards.length !== 1 ? 's' : ''}
+        </span>
+      </div>
+
+      {/* Layout toggle */}
+      <div
+        style={{
+          display: 'flex',
+          gap: '4px',
+          background: 'var(--bg-card)',
+          padding: '4px',
+          borderRadius: 'var(--radius-md)',
+          border: '1px solid var(--bg-elevated)',
+        }}
+      >
+        {([['table', Table2, 'Table'], ['glossary', List, 'Glossary'], ['qa', BookOpen, 'Q&A']] as const).map(
+          ([mode, Icon, label]) => {
+            const isDisabled = mode === 'qa' && isFlashcardOnly
+            return (
+              <motion.button
+                key={mode}
+                id={`print-layout-${mode}`}
+                disabled={isDisabled}
+                onClick={() => { if (!isDisabled) setLayout(mode) }}
+                whileTap={{ scale: isDisabled ? 1 : 0.95 }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 14px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: 'none',
+                  cursor: isDisabled ? 'not-allowed' : 'pointer',
+                  fontFamily: 'var(--font-ui)',
+                  fontWeight: 700,
+                  fontSize: '12px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  transition: 'all 0.15s',
+                  background: layout === mode ? 'var(--accent-primary)' : 'transparent',
+                  color: isDisabled ? 'var(--text-secondary)' : (layout === mode ? '#000' : 'var(--text-secondary)'),
+                  opacity: isDisabled ? 0.35 : 1,
+                }}
+              >
+                <Icon size={14} />
+                {label}
+              </motion.button>
+            )
+          }
+        )}
+      </div>
+
+      {/* Bold side toggle — only shown for flashcard/mixed decks in table or glossary layout */}
+      {flashcardCards.length > 0 && layout !== 'qa' && (
+        <div
+          style={{
+            display: 'flex',
+            gap: '4px',
+            background: 'var(--bg-card)',
+            padding: '4px',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--bg-elevated)',
+          }}
+        >
+          {([['term', 'Bold Term'], ['definition', 'Bold Def'], ['none', 'No Bold']] as const).map(
+            ([side, label]) => (
+              <motion.button
+                key={side}
+                onClick={() => setBoldSide(side)}
+                whileTap={{ scale: 0.95 }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  padding: '5px 10px',
+                  borderRadius: 'var(--radius-sm)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-ui)',
+                  fontWeight: 700,
+                  fontSize: '11px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  transition: 'all 0.15s',
+                  background: boldSide === side ? 'var(--accent-primary)' : 'transparent',
+                  color: boldSide === side ? '#000' : 'var(--text-secondary)',
+                }}
+              >
+                {side !== 'none' && <Bold size={12} />}
+                {label}
+              </motion.button>
+            )
+          )}
+        </div>
+      )}
+
+      {/* Export PDF button */}
+      <motion.button
+        id="print-export-pdf"
+        onClick={handleExportPDF}
+        disabled={exportState === 'loading'}
+        whileTap={{ scale: 0.96 }}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '8px 20px',
+          background: exportState === 'success' ? 'var(--color-correct)' : 'var(--accent-primary)',
+          color: '#000',
+          border: 'none',
+          borderRadius: 'var(--radius-md)',
+          fontFamily: 'var(--font-ui)',
+          fontWeight: 700,
+          fontSize: '13px',
+          textTransform: 'uppercase',
+          letterSpacing: '0.1em',
+          cursor: exportState === 'loading' ? 'not-allowed' : 'pointer',
+          opacity: exportState === 'loading' ? 0.7 : 1,
+          transition: 'all 0.15s',
+        }}
+      >
+        {exportState === 'loading' ? (
+          <>
+            <Loader2 size={15} className="animate-spin" />
+            Generating…
+          </>
+        ) : exportState === 'success' ? (
+          <>
+            <CheckCircle2 size={15} />
+            Saved!
+          </>
+        ) : (
+          <>
+            <FileText size={15} />
+            Export PDF
+          </>
+        )}
+      </motion.button>
+
+      {/* Error message */}
+      {exportState === 'error' && exportError && (
+        <motion.span
+          initial={{ opacity: 0, x: -6 }}
+          animate={{ opacity: 1, x: 0 }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            fontSize: '12px',
+            color: 'var(--color-wrong)',
+            fontFamily: 'var(--font-body)',
+          }}
+        >
+          <AlertCircle size={13} />
+          {exportError}
+        </motion.span>
+      )}
+    </div>
+  )
+
+  // -------------------------------------------------------------------------
+  // Loading state
+  // -------------------------------------------------------------------------
+  if (loading) {
+    return (
+      <div style={{ background: '#fff', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Loader2 size={32} className="animate-spin" style={{ color: 'var(--accent-primary)' }} />
+      </div>
+    )
+  }
+
+  // -------------------------------------------------------------------------
+  // Paper content
+  // -------------------------------------------------------------------------
+  const paperContent = (
+    <div
+      style={{
+        fontFamily: 'Georgia, "Times New Roman", serif',
+        color: '#111827',
+        maxWidth: '800px',
+        margin: '0 auto',
+      }}
+    >
+      {/* Header */}
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#111827', margin: '0 0 6px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+          {title}
+        </h1>
+        <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 12px 0' }}>
+          {cards.length} item{cards.length !== 1 ? 's' : ''} &nbsp;·&nbsp; Generated {dateStr}
+        </p>
+        <hr style={{ border: 'none', borderTop: '2px solid #111827', margin: '0' }} />
+      </div>
+
+      {/* MCQ Section */}
+      {mcqCards.length > 0 && (
+        <section style={{ marginBottom: '32px' }}>
+          {cards.some(c => !isMCQ(c)) && (
+            <h2 style={{ fontSize: '14px', fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px', borderBottom: '1px solid #e5e7eb', paddingBottom: '4px' }}>
+              Multiple Choice
+            </h2>
+          )}
+          {layout === 'table' ? (
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #d1d5db', tableLayout: 'fixed' }}>
+              <thead>
+                <tr style={{ background: '#f9fafb', borderBottom: '2px solid #d1d5db' }}>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#374151', width: '65%' }}>Question &amp; Choices</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#374151', borderLeft: '1px solid #d1d5db', width: '35%' }}>Answer</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mcqCards.map((card, i) => (
+                  <MCQTableRow key={card.id} index={i + 1} card={card} />
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div>
+              {mcqCards.map((card, i) => (
+                <MCQGlossaryItem key={card.id} index={i + 1} card={card} qaMode={layout === 'qa'} />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Flashcard Section */}
+      {flashcardCards.length > 0 && (
+        <section style={{ marginBottom: '32px' }}>
+          {cards.some(c => !isFlashcard(c)) && (
+            <h2 style={{ fontSize: '14px', fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px', borderBottom: '1px solid #e5e7eb', paddingBottom: '4px' }}>
+              Flashcards
+            </h2>
+          )}
+          {layout === 'table' ? (
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #d1d5db', tableLayout: 'fixed' }}>
+              <thead>
+                <tr style={{ background: '#f9fafb', borderBottom: '2px solid #d1d5db' }}>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#374151', width: '50%' }}>TERM</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#374151', borderLeft: '1px solid #d1d5db', width: '50%' }}>DEFINITION</th>
+                </tr>
+              </thead>
+              <tbody>
+                {flashcardCards.map((card) => {
+                  const { front, back, imageFront, imageBack } = card.data
+                  return (
+                    <tr key={card.id} style={{ borderBottom: '1px solid #d1d5db', pageBreakInside: 'avoid' }}>
+                      <td style={{ padding: '10px 12px', verticalAlign: 'top', width: '50%', overflow: 'hidden' }}>
+                        {imageFront && (
+                          <img
+                            src={`ece-app://${imageFront}`}
+                            alt="Front diagram"
+                            style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
+                          />
+                        )}
+                        <p style={{ color: '#111827', margin: 0, fontWeight: boldSide === 'term' ? 700 : 400 }}><MathText text={front} /></p>
+                      </td>
+                      <td style={{ padding: '10px 12px', verticalAlign: 'top', width: '50%', borderLeft: '1px solid #d1d5db', overflow: 'hidden' }}>
+                        {imageBack && (
+                          <img
+                            src={`ece-app://${imageBack}`}
+                            alt="Back diagram"
+                            style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
+                          />
+                        )}
+                        <p style={{ color: '#374151', margin: 0, fontWeight: boldSide === 'definition' ? 700 : 400 }}><MathText text={back} /></p>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          ) : (
+            <div>
+              {flashcardCards.map((card) => {
+                const { front, back, imageFront, imageBack } = card.data
+                return (
+                  <div key={card.id} style={{ marginBottom: '16px', pageBreakInside: 'avoid' }}>
+                    <p style={{ fontWeight: boldSide === 'term' ? 700 : 400, color: '#111827', marginBottom: '4px' }}>
+                      <MathText text={front} />
+                    </p>
+                    {imageFront && (
+                      <img
+                        src={`ece-app://${imageFront}`}
+                        alt="Front diagram"
+                        style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginLeft: '20px', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
+                      />
+                    )}
+                    <div style={{ paddingLeft: '20px', color: '#374151' }}>
+                      {imageBack && (
+                        <img
+                          src={`ece-app://${imageBack}`}
+                          alt="Back diagram"
+                          style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
+                        />
+                      )}
+                      <p style={{ margin: 0, fontWeight: boldSide === 'definition' ? 700 : 400 }}><MathText text={back} /></p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Formula Section */}
+      {formulaCards.length > 0 && (
+        <section style={{ marginBottom: '32px' }}>
+          <h2 style={{ fontSize: '14px', fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px', borderBottom: '1px solid #e5e7eb', paddingBottom: '4px' }}>
+            Formulas
+          </h2>
+          {formulaCards.map((card, i) => (
+            <FormulaItem key={card.id} index={i + 1} card={card} />
+          ))}
+        </section>
+      )}
+
+      {cards.length === 0 && (
+        <p style={{ color: '#9ca3af', textAlign: 'center', padding: '48px 0' }}>No cards found for this deck.</p>
+      )}
+    </div>
+  )
+
+  // -------------------------------------------------------------------------
+  // Render — full-screen white layout (no AppShell chrome)
+  // -------------------------------------------------------------------------
+  return (
+    <>
+      <style>{`
+        @media print {
+          .print\\:hidden { display: none !important; }
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .animate-spin { animation: spin 1s linear infinite; }
+      `}</style>
+      {toolbar}
+      <div style={{ background: '#fff', minHeight: '100vh', padding: '40px 60px' }}>
+        {paperContent}
+      </div>
+    </>
+  )
+}

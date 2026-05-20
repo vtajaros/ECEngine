@@ -7,11 +7,17 @@ import Formulas from './pages/Formulas'
 import AddDeck from './pages/AddDeck'
 import EditDeck from './pages/EditDeck'
 import Settings from './pages/Settings'
+import PrintView from './pages/PrintView'
 
 import { AppShell } from './components/layout/AppShell'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
 
 export const router = createHashRouter([
+  // Top-level print route — no AppShell wrapper, full white layout
+  {
+    path: '/print',
+    element: <ErrorBoundary><PrintView /></ErrorBoundary>,
+  },
   {
     path: '/',
     element: <ErrorBoundary><AppShell /></ErrorBoundary>,
@@ -27,4 +33,3 @@ export const router = createHashRouter([
     ]
   }
 ])
-

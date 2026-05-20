@@ -9,7 +9,7 @@ import { LearnSettingsModal, LearnSettings } from '../components/mcq/LearnSettin
 import { TestSettingsModal, TestSettings } from '../components/mcq/TestSettingsModal'
 import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
 import { MOCK_FLASHCARDS, MOCK_MCQS } from '../lib/mockData'
-import { Play, Bookmark, X, Trash2, AlertTriangle, ClipboardList, SlidersHorizontal, Check, Pencil, Brain, Trophy } from 'lucide-react'
+import { Play, Bookmark, X, Trash2, AlertTriangle, ClipboardList, SlidersHorizontal, Check, Pencil, Brain, Trophy, ScrollText } from 'lucide-react'
 import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
 import { useSessionStore } from '../store/useSessionStore'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -766,6 +766,15 @@ export default function FlashcardStudy() {
                           title="Delete Set"
                         >
                           <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                      {set.id.startsWith('topic_') && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); window.electron.print.open(set.id, set.title) }}
+                          className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
+                          title="Test Paper View"
+                        >
+                          <ScrollText className="w-4 h-4" />
                         </button>
                       )}
                       <button
