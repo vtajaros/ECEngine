@@ -1,7 +1,14 @@
 *For IMPROVEMENT TODO LIST
 
-***LEARN AND QUESTION UI***
-- explore changing of font to a more simpler and bold font for better readability
+***CHOICES***
+- images in choices
+
+***ADD A QUIZLET PARSER***
+- add a tab where you can paste a text from quizlet (quizlet import text) and then convert it to our ecengine ( i will add the .py)
+
+***Test mode gestures***
+- when clicking to the area of the question it auto centers to that question and the item navigation circle on the left positions to that question
+- put image after the question instead of before if a question has an image
 
 ***DECK EDITOR TAB***
 - export function to export flashcard content in text
@@ -9,20 +16,16 @@
 ***EQUATION DISPLAY***
 - some symbols may not be displaying properly (more testing needed)
 
+***RESIZING***
+some parts of the app contents look weird when i resize it
+
 ***Revamp Dashboard Tab***
 - revamp dashboard make improvements
 - update dashboard with real data
 - data insights
 
-***LEARN ALGORITHM***
-- learn questions where user is struggling, if a question is being incorrectly answered wrong, we save it to a still learning array or set that we can revisit later on. Build an algorithm on how to determine if a user actually knows the content.
-
-***Exam Tab***
-- Flashcards here are separate as i plan to have only decks that are problem solving here
-- Exam feature would have a prompt the same as test in looksfam, option to have timer and number of items same as test in looksfam, option to show correct answer after question or after exam, after the exam is finished show your score
-
-***Notes Tab***
-- I think a handout style article per subject where the formulas can be located is a better alternative than the Formula Tab of before
+***Review Topics Checklist***
+- add a tab for a checklist of review progress for the board exam
 
 ***Add Quizlet Format Detector in import mcq/import flashcard***
 - add the quizlet to engine python function in auto detection of the quizlet format and conversion
@@ -33,7 +36,4 @@
 
 ***ANDROID/IOS/LINUX/WEB PORT***
 - able to run on android and ios
-
-***ONE PROMPT DESIGN***
-- make the prompts and buttons look the same (delete prompt)
 

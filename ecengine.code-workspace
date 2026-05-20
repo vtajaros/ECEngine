@@ -2,8 +2,8 @@
   "folders": [
     {
       "name": "⚡ ECEngine",
-      "path": "."
-    }
+      "path": ".",
+    },
   ],
   "settings": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
@@ -16,40 +16,40 @@
     "editor.cursorBlinking": "smooth",
     "editor.bracketPairColorization.enabled": true,
     "editor.guides.bracketPairs": "active",
-    "workbench.colorTheme": "One Dark Pro",
+    "workbench.colorTheme": "One Dark Pro Night Flat",
     "workbench.iconTheme": "material-icon-theme",
     "typescript.preferences.importModuleSpecifier": "relative",
     "typescript.updateImportsOnFileMove.enabled": "always",
     "tailwindCSS.experimental.classRegex": [
       ["cn\\(([^)]*)\\)", "'([^']*)'"],
-      ["clsx\\(([^)]*)\\)", "'([^']*)'"]
+      ["clsx\\(([^)]*)\\)", "'([^']*)'"],
     ],
     "files.associations": {
       "*.css": "css",
-      "*.json": "jsonc"
+      "*.json": "jsonc",
     },
     "emmet.includeLanguages": {
       "typescript": "html",
-      "typescriptreact": "html"
+      "typescriptreact": "html",
     },
     "[typescript]": {
-      "editor.defaultFormatter": "esbenp.prettier-vscode"
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
     },
     "[typescriptreact]": {
-      "editor.defaultFormatter": "esbenp.prettier-vscode"
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
     },
     "search.exclude": {
       "**/node_modules": true,
       "**/out": true,
       "**/dist": true,
-      "**/.git": true
+      "**/.git": true,
     },
     "explorer.fileNesting.enabled": true,
     "explorer.fileNesting.patterns": {
       "*.ts": "${capture}.js, ${capture}.d.ts",
       "tsconfig.json": "tsconfig.*.json",
-      "package.json": "package-lock.json, .eslintrc*, .prettierrc*, electron-builder*, tailwind.config*"
-    }
+      "package.json": "package-lock.json, .eslintrc*, .prettierrc*, electron-builder*, tailwind.config*",
+    },
   },
   "extensions": {
     "recommendations": [
@@ -66,8 +66,8 @@
       "christian-kohler.path-intellisense",
       "mikestead.dotenv",
       "kisstkondoros.vscode-gutter-preview",
-      "ms-playwright.playwright"
-    ]
+      "ms-playwright.playwright",
+    ],
   },
   "launch": {
     "version": "0.2.0",
@@ -80,17 +80,17 @@
         "args": ["dev"],
         "console": "integratedTerminal",
         "env": {
-          "NODE_ENV": "development"
-        }
+          "NODE_ENV": "development",
+        },
       },
       {
         "name": "🌐 Web Dev",
         "type": "chrome",
         "request": "launch",
         "url": "http://localhost:5173",
-        "preLaunchTask": "dev:web"
-      }
-    ]
+        "preLaunchTask": "dev:web",
+      },
+    ],
   },
   "tasks": {
     "version": "2.0.0",
@@ -100,33 +100,33 @@
         "type": "shell",
         "command": "npm run dev",
         "group": "build",
-        "presentation": { "reveal": "always", "panel": "new" }
+        "presentation": { "reveal": "always", "panel": "new" },
       },
       {
         "label": "dev:web",
         "type": "shell",
         "command": "npm run dev:web",
         "group": "build",
-        "presentation": { "reveal": "always", "panel": "new" }
+        "presentation": { "reveal": "always", "panel": "new" },
       },
       {
         "label": "seed",
         "type": "shell",
         "command": "npm run seed",
-        "group": "none"
+        "group": "none",
       },
       {
         "label": "build",
         "type": "shell",
         "command": "npm run build",
-        "group": { "kind": "build", "isDefault": true }
+        "group": { "kind": "build", "isDefault": true },
       },
       {
         "label": "test",
         "type": "shell",
         "command": "npm test",
-        "group": { "kind": "test", "isDefault": true }
-      }
-    ]
-  }
+        "group": { "kind": "test", "isDefault": true },
+      },
+    ],
+  },
 }

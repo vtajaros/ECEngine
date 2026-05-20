@@ -174,7 +174,7 @@ export default function FlashcardViewer() {
   // ── Countdown for delete ──
   useEffect(() => {
     if (setToDelete) {
-      setDeleteCountdown(3)
+      setDeleteCountdown(2)
       const timer = setInterval(() => {
         setDeleteCountdown(prev => {
           if (prev <= 1) {
@@ -934,60 +934,55 @@ export default function FlashcardViewer() {
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {setToDelete && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-          >
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
             <motion.div
-              initial={{ scale: 0.95, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 20 }}
-              className="bg-[#111] border border-[#FF3333] rounded-lg shadow-[0_0_30px_rgba(255,51,51,0.15)] w-full max-w-md overflow-hidden flex flex-col"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSetToDelete(null)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-md bg-[#111] border border-[#333] rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden"
             >
-              <div className="p-6 border-b border-[#222] flex items-center gap-3 bg-[#161616]">
-                <AlertTriangle className="w-6 h-6 text-[#FF3333]" />
-                <h2 className="text-xl font-bold text-[#E8E8E8] font-['Orbitron'] uppercase tracking-wider">
-                  DELETE {setToDelete.deckType === 'mcq' ? 'MCQ SET' : 'FLASHCARD SET'}
-                </h2>
-              </div>
-              <div className="p-6">
-                <p className="text-[#CCCCCC] font-['Rajdhani'] tracking-wider mb-4 leading-relaxed text-base">
-                  Are you absolutely sure you want to delete <strong className="text-[#E8E8E8] font-bold">{setToDelete.title}</strong>?
-                  This action cannot be undone and will permanently remove all {setToDelete.cardCount} {setToDelete.deckType === 'mcq' ? 'questions' : 'cards'} inside this set.
+              <div className="h-1 w-full bg-gradient-to-r from-transparent via-[#FF003C] to-transparent" />
+              <div className="p-8 flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-full bg-[#FF003C]/10 border border-[#FF003C]/30 flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(255,0,60,0.1)]">
+                  <AlertTriangle className="w-8 h-8 text-[#FF003C]" />
+                </div>
+                <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-4 tracking-widest uppercase">
+                  DELETE DECK?
+                </h3>
+                <p className="text-[#888] font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
+                  Are you absolutely sure you want to delete <strong className="text-white">{setToDelete.title}</strong>? This action cannot be undone and will permanently remove all {setToDelete.cardCount} items in this set.
                 </p>
+                <div className="flex flex-col gap-3 w-full">
+                  <button
+                    onClick={handleConfirmDelete}
+                    disabled={deleteCountdown > 0}
+                    className="w-full py-4 bg-[#FF003C] hover:bg-[#D00030] disabled:bg-[#1A1A1A] disabled:text-[#444] disabled:cursor-not-allowed text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,0,60,0.2)] hover:shadow-[0_0_25px_rgba(255,0,60,0.4)]"
+                  >
+                    Confirm Delete
+                  </button>
+                  <button
+                    onClick={() => setSetToDelete(null)}
+                    className="w-full py-4 bg-[#1A1A1A] border border-[#333] hover:border-[#555] text-[#888] hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
-              <div className="p-6 border-t border-[#222] bg-[#161616] flex justify-end gap-3">
-                <button
-                  onClick={handleConfirmDelete}
-                  disabled={deleteCountdown > 0}
-                  className={`min-w-[150px] py-2 rounded font-bold transition-all font-['Rajdhani'] uppercase tracking-wider text-sm shadow-lg ${deleteCountdown > 0
-                      ? 'bg-[#1a1a1a] text-[#444] border border-[#222] cursor-not-allowed shadow-none opacity-50'
-                      : 'bg-[#FF3333] text-white hover:bg-[#CC0000] shadow-[0_0_15px_rgba(255,51,51,0.3)]'
-                    }`}
-                >
-                  {deleteCountdown > 0 ? (
-                    <span className="inline-flex items-baseline gap-0.5 font-['Rajdhani']">
-                      <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#666666', lineHeight: 1 }}>{deleteCountdown}</span>
-                      <span style={{ fontSize: '0.8rem', fontWeight: 400, color: '#444444', lineHeight: 1 }}>s</span>
-                    </span>
-                  ) : (
-                    'Confirm Delete'
-                  )}
-                </button>
-                <button
-                  onClick={() => setSetToDelete(null)}
-                  className={`px-5 py-2 rounded transition-all font-['Rajdhani'] uppercase tracking-wider text-sm border ${deleteCountdown > 0
-                      ? 'bg-transparent border-[#00FF41]/50 text-[#E8E8E8] font-bold'
-                      : 'bg-transparent border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555]'
-                    }`}
-                >
-                  Cancel
-                </button>
-              </div>
+              <button
+                onClick={() => setSetToDelete(null)}
+                className="absolute top-4 right-4 text-[#444] hover:text-white transition-colors p-1"
+              >
+                <X size={20} />
+              </button>
             </motion.div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
         </div>

@@ -17,8 +17,8 @@ html, body, #root {
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -29,7 +29,6 @@ html, body, #root {
 ::-webkit-scrollbar-thumb {
   background: #00FF41; /* Signature ECEngine Green */
   border-radius: 4px;
-  border: 2px solid #0D0D0D; /* Creates a slight padding effect */
 }
 
 ::-webkit-scrollbar-thumb:hover {

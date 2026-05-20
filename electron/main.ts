@@ -10,6 +10,11 @@ import { flushDB } from './db/database'
 // Register custom protocol BEFORE app is ready (Electron requirement)
 registerImageProtocolScheme()
 
+// Force Chromium to use classic (non-overlay) scrollbars so that
+// CSS ::-webkit-scrollbar pseudo-elements are respected on Windows.
+// Without this, Electron 31+ on Windows ignores scrollbar width/styling.
+app.commandLine.appendSwitch('disable-features', 'OverlayScrollbar')
+
 function createWindow() {
   const win = new BrowserWindow({
     width: 1280,
@@ -45,11 +50,24 @@ function createWindow() {
   });
 
   if (process.env['ELECTRON_RENDERER_URL']) {
-
     win.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
     win.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  // Inject scrollbar styles after every page load.
+  // webContents.insertCSS() has the highest priority and cannot be
+  // overridden by any renderer-side CSS, solving the Electron/Chromium
+  // overlay-scrollbar issue where ::-webkit-scrollbar CSS is ignored.
+  win.webContents.on('did-finish-load', () => {
+    win.webContents.insertCSS(`
+      ::-webkit-scrollbar { width: 4px !important; height: 4px !important; }
+      ::-webkit-scrollbar-track { background: #0D0D0D !important; border-radius: 4px !important; }
+      ::-webkit-scrollbar-thumb { background: #00FF41 !important; border-radius: 4px !important; }
+      ::-webkit-scrollbar-thumb:hover { background: #00CC33 !important; }
+      ::-webkit-scrollbar-corner { background: #0D0D0D !important; }
+    `)
+  })
 }
 
 app.whenReady().then(() => {

@@ -271,8 +271,14 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
       <div className="flex items-start gap-4">
         <div className="flex-1">
           <Label>Question</Label>
-          <textarea rows={6} className={textareaCls} value={data.question}
-            onChange={e => set({ question: e.target.value })} placeholder="Enter question text..." />
+          <MathInputField
+            value={data.question}
+            onChange={val => set({ question: val })}
+            placeholder="Enter question text..."
+            rows={6}
+            multiline={true}
+            defaultMathMode={isRawLatex(data.question)}
+          />
         </div>
         <div className="shrink-0 flex flex-col items-center justify-start mt-5">
           {data.imagePath ? (
@@ -299,17 +305,21 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
         {data.choices.map((choice, i) => (
           <div key={i}>
             <Label>Choice {labels[i]}</Label>
-            <div className="flex items-center gap-2">
+            <div className="flex items-start gap-2">
               <input
                 type="radio"
                 name={`ans-${data.question.slice(0, 8)}`}
                 checked={data.answer === i}
                 onChange={() => set({ answer: i })}
-                className="accent-[#00FF41] w-4 h-4 flex-shrink-0 cursor-pointer"
+                className="accent-[#00FF41] w-4 h-4 mt-3 flex-shrink-0 cursor-pointer"
               />
-              <input type="text" className={inputCls} value={choice}
-                onChange={e => setChoice(i, e.target.value)}
-                placeholder={`Choice ${labels[i]}...`} />
+              <MathInputField
+                value={choice}
+                onChange={val => setChoice(i, val)}
+                placeholder={`Choice ${labels[i]}...`}
+                multiline={false}
+                defaultMathMode={isRawLatex(choice)}
+              />
             </div>
           </div>
         ))}
@@ -317,8 +327,14 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
 
       <div>
         <Label>Explanation (optional)</Label>
-        <textarea rows={2} className={textareaCls} value={data.explanation}
-          onChange={e => set({ explanation: e.target.value })} placeholder="Explanation for the correct answer..." />
+        <MathInputField
+          value={data.explanation}
+          onChange={val => set({ explanation: val })}
+          placeholder="Explanation for the correct answer..."
+          rows={2}
+          multiline={true}
+          defaultMathMode={isRawLatex(data.explanation || '')}
+        />
       </div>
     </div>
   )

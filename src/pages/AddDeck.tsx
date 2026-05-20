@@ -915,8 +915,13 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
 
       <div className="w-full">
         <Label>Explanation (optional)</Label>
-        <textarea rows={2} className={textareaCls} value={data.explanation}
-          onChange={e => set({ explanation: e.target.value })} placeholder="Explanation for the correct answer..." />
+        <MathInputField
+          value={data.explanation}
+          onChange={val => set({ explanation: val })}
+          placeholder="Explanation for the correct answer..."
+          rows={2}
+          multiline={true}
+        />
       </div>
     </div>
   )

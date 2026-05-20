@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
-import { Settings as SettingsIcon, Monitor, Bell, Database, Shield, CheckCircle, AlertTriangle } from 'lucide-react'
+import { Settings as SettingsIcon, Monitor, Bell, Database, Shield, CheckCircle, AlertTriangle, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { dbService } from '../services/db.service'
 
 export default function Settings() {
   const [resetResetMenuOpen, setResetResetMenuOpen] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
+  const [deleteCountdown, setDeleteCountdown] = useState(0);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [advancedSyncEnabled, setAdvancedSyncEnabled] = useState(false);
 
@@ -20,6 +21,23 @@ export default function Settings() {
     };
     check();
   }, []);
+
+  // ── Countdown for delete ──
+  useEffect(() => {
+    if (showClearModal) {
+      setDeleteCountdown(2)
+      const timer = setInterval(() => {
+        setDeleteCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(timer)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+      return () => clearInterval(timer)
+    }
+  }, [showClearModal])
 
   const handleSaveApiKey = async () => {
     const result = await window.electron.config.setApiKey(apiKeyInput);
@@ -276,90 +294,109 @@ export default function Settings() {
       {/* Reset Progress Modal */}
       <AnimatePresence>
         {resetResetMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-          >
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
             <motion.div
-              initial={{ scale: 0.95, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 20 }}
-              className="bg-[#111] border border-[#00FF41] rounded-lg shadow-[0_0_30px_rgba(0,255,65,0.15)] w-full max-w-md overflow-hidden flex flex-col"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setResetResetMenuOpen(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-md bg-[#111] border border-[#333] rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden"
             >
-              <div className="p-6 border-b border-[#222] bg-[#161616]">
-                <h2 className="text-xl font-bold text-[#E8E8E8] font-['Orbitron'] uppercase tracking-wider">
+              <div className="h-1 w-full bg-gradient-to-r from-transparent via-[#FF8800] to-transparent" />
+              <div className="p-8 flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-full bg-[#FF8800]/10 border border-[#FF8800]/30 flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(255,136,0,0.1)]">
+                  <AlertTriangle className="w-8 h-8 text-[#FF8800]" />
+                </div>
+                <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-4 tracking-widest uppercase">
                   Reset Mastery Progress
-                </h2>
-              </div>
-              <div className="p-6">
-                <p className="text-[#888] font-['Outfit'] mb-4">
-                  Are you sure you want to reset all mastery and progress data across all decks?
-                  This will clear your studied status but keep your decks intact.
+                </h3>
+                <p className="text-[#888] font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
+                  Are you sure you want to reset all mastery and progress data across all decks? This will clear your studied status but keep your decks intact.
                 </p>
+                <div className="flex flex-col gap-3 w-full">
+                  <button
+                    onClick={handleResetProgress}
+                    className="w-full py-4 bg-[#FF8800] hover:bg-[#CC6600] text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,136,0,0.2)] hover:shadow-[0_0_25px_rgba(255,136,0,0.4)]"
+                  >
+                    Confirm Reset
+                  </button>
+                  <button
+                    onClick={() => setResetResetMenuOpen(false)}
+                    className="w-full py-4 bg-[#1A1A1A] border border-[#333] hover:border-[#555] text-[#888] hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
-              <div className="p-6 border-t border-[#222] bg-[#161616] flex justify-end gap-3">
-                <button
-                  onClick={() => setResetResetMenuOpen(false)}
-                  className="px-5 py-2 rounded bg-transparent border border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-wider text-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleResetProgress}
-                  className="px-6 py-2 rounded font-bold transition-all font-['Rajdhani'] uppercase tracking-wider text-sm bg-transparent border border-[#00FF41] text-[#00FF41] hover:bg-[rgba(0,255,65,0.1)] shadow-[0_0_15px_rgba(0,255,65,0.3)]"
-                >
-                  Confirm Reset
-                </button>
-              </div>
+              <button
+                onClick={() => setResetResetMenuOpen(false)}
+                className="absolute top-4 right-4 text-[#444] hover:text-white transition-colors p-1"
+              >
+                <X size={20} />
+              </button>
             </motion.div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
       {/* Clear All Decks Modal */}
       <AnimatePresence>
         {showClearModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
-          >
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
             <motion.div
-              initial={{ scale: 0.95, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 20 }}
-              className="bg-[#111] border border-[var(--color-wrong,#FF3333)] rounded-lg shadow-[0_0_30px_rgba(255,51,51,0.15)] w-full max-w-md overflow-hidden flex flex-col"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowClearModal(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-md bg-[#111] border border-[#333] rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden"
             >
-              <div className="p-6 border-b border-[#222] bg-[#161616] flex items-center gap-3">
-                <AlertTriangle size={22} className="text-[var(--color-wrong,#FF3333)] shrink-0" />
-                <h2 className="text-xl font-bold text-[#E8E8E8] font-['Orbitron'] uppercase tracking-wider">
+              <div className="h-1 w-full bg-gradient-to-r from-transparent via-[#FF003C] to-transparent" />
+              <div className="p-8 flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-full bg-[#FF003C]/10 border border-[#FF003C]/30 flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(255,0,60,0.1)]">
+                  <AlertTriangle className="w-8 h-8 text-[#FF003C]" />
+                </div>
+                <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-4 tracking-widest uppercase">
                   Clear All Decks
-                </h2>
-              </div>
-              <div className="p-6">
-                <p className="text-[#888] font-['Outfit'] mb-4">
-                  This will permanently delete <strong className="text-[#E8E8E8]">ALL decks, cards, and progress</strong> from the database. This cannot be undone.
+                </h3>
+                <p className="text-[#888] font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
+                  This will permanently delete <strong className="text-white">ALL decks, cards, and progress</strong> from the database. This cannot be undone.
                 </p>
+                <div className="flex flex-col gap-3 w-full">
+                  <button
+                    onClick={handleClearAllDecks}
+                    disabled={deleteCountdown > 0}
+                    className="w-full py-4 bg-[#FF003C] hover:bg-[#D00030] disabled:bg-[#1A1A1A] disabled:text-[#444] disabled:cursor-not-allowed text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,0,60,0.2)] hover:shadow-[0_0_25px_rgba(255,0,60,0.4)]"
+                  >
+                    Confirm Delete
+                  </button>
+                  <button
+                    onClick={() => setShowClearModal(false)}
+                    className="w-full py-4 bg-[#1A1A1A] border border-[#333] hover:border-[#555] text-[#888] hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
-              <div className="p-6 border-t border-[#222] bg-[#161616] flex justify-end gap-3">
-                <button
-                  onClick={() => setShowClearModal(false)}
-                  className="px-5 py-2 rounded bg-transparent border border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-wider text-sm"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleClearAllDecks}
-                  className="px-6 py-2 rounded font-bold transition-all font-['Rajdhani'] uppercase tracking-wider text-sm bg-transparent border border-[#FF3333] text-[#FF3333] hover:bg-[rgba(255,51,51,0.1)] shadow-[0_0_15px_rgba(255,51,51,0.3)]"
-                >
-                  Confirm Delete
-                </button>
-              </div>
+              <button
+                onClick={() => setShowClearModal(false)}
+                className="absolute top-4 right-4 text-[#444] hover:text-white transition-colors p-1"
+              >
+                <X size={20} />
+              </button>
             </motion.div>
-          </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>

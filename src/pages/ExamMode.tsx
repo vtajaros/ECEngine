@@ -135,7 +135,7 @@ export default function ExamMode() {
                          <span className={prefixClass}>
                            {String.fromCharCode(65 + idx)}.
                          </span>
-                         {choice}
+                         <span dangerouslySetInnerHTML={{ __html: renderMath(choice) }} className="flex-1 text-left" />
                        </button>
                      )
                    })}

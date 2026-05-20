@@ -657,9 +657,8 @@ Please explain:
                           <span
                             className="flex-1 break-words font-['Rajdhani'] font-medium"
                             style={{ fontSize: getChoiceFontSize(choice), lineHeight: 1.4 }}
-                          >
-                            {choice}
-                          </span>
+                            dangerouslySetInnerHTML={{ __html: renderMath(choice) }}
+                          />
 
                           {iconElement && (
                             <div className="ml-4 flex-shrink-0">
