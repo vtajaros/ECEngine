@@ -76,7 +76,10 @@ export const AppShell: React.FC = () => {
             </div>
           )}
 
-          <nav className="flex-1 flex flex-row sm:flex-col gap-2 overflow-x-auto sm:overflow-y-auto overflow-y-hidden sm:overflow-x-hidden px-2 sm:px-0 pt-0 sm:pt-2 items-center sm:items-stretch">
+          <nav 
+            className="flex-1 flex flex-row sm:flex-col gap-2 overflow-x-auto sm:overflow-y-auto overflow-y-hidden sm:overflow-x-hidden no-scrollbar items-center sm:items-stretch px-2 sm:px-0 pt-0 sm:pt-2"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
             {(navItems as NavItem[])
               .filter(item => {
                 if (isWeb && item.webHidden) return false
@@ -94,17 +97,21 @@ export const AppShell: React.FC = () => {
                     : 'text-gray-400 hover:bg-[#222] hover:text-gray-300'
                   }
                 `}
-                title={isCollapsed ? item.label : undefined}
+                title={item.label}
               >
                 {({ isActive }) => (
                   <>
                     {isActive && (
                       <div className="absolute left-0 right-0 bottom-0 h-[3px] sm:h-auto sm:w-[3px] sm:top-0 sm:bottom-0 bg-[#00FF41] shadow-[0_0_10px_#00FF41]" />
                     )}
-                    <div className={`${isCollapsed ? 'w-16' : 'w-12'} flex justify-center shrink-0`}>
+                    <div className={`${isCollapsed ? 'sm:w-16' : 'sm:w-12'} w-10 flex justify-center shrink-0`}>
                       <item.icon size={18} />
                     </div>
-                    {!isCollapsed && <span className="font-['Rajdhani'] text-sm font-medium tracking-wide">{item.label}</span>}
+                    {!isCollapsed && (
+                      <span className="hidden sm:inline font-['Rajdhani'] text-sm font-medium tracking-wide">
+                        {item.label}
+                      </span>
+                    )}
                   </>
                 )}
               </NavLink>
