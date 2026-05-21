@@ -96,7 +96,7 @@ const TestQuestionCard = memo(({
         }`}
     >
       <div className="p-6 border-b border-[#333] flex items-start gap-4">
-        <div className="flex-1 flex flex-col max-h-[50vh] overflow-y-auto pr-2">
+        <div className="flex-1 flex flex-col h-auto pr-2">
           <h3
             className="font-['Rajdhani'] font-semibold text-[var(--text-primary)] whitespace-pre-wrap flex items-start gap-3 text-base sm:text-lg leading-relaxed"
           >

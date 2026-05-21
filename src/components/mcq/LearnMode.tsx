@@ -567,7 +567,7 @@ Please explain:
             <Bookmark className={`w-6 h-6 ${isBookmarked ? 'fill-[#FFB800] text-[#FFB800]' : ''}`} />
           </button>
 
-          <div className="mb-10 pr-4 max-h-[50vh] overflow-y-auto custom-scrollbar">
+          <div className="mb-10 pr-4 h-auto flex-none">
             <span className="text-[var(--accent-primary)] font-['IBM_Plex_Mono'] text-sm font-bold tracking-widest mb-3 block">Question {overallCurrentQuestion}</span>
             <div 
               className="text-white font-['Rajdhani'] font-semibold mb-6 text-base sm:text-lg leading-relaxed whitespace-pre-wrap"
