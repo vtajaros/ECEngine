@@ -56,7 +56,7 @@ export const TestNavRail = memo(({
 
   return (
     <aside
-      className="w-full overflow-x-auto flex flex-row py-2 mb-4 border-b border-zinc-800 bg-[#0a0a0a] select-none shrink-0 h-auto sm:w-48 sm:shrink-0 sm:flex-col sm:border-r sm:border-zinc-800 sm:border-y sm:border-l sm:border-[#222]/30 sm:rounded-xl sm:shadow-xl sm:overflow-hidden sm:h-[calc(100vh-120px)] sm:py-0 sm:mb-0 sm:border-b-0"
+      className="w-full overflow-x-auto flex flex-row py-2 mb-4 border-b border-zinc-800 bg-[#0a0a0a] select-none shrink-0 h-auto sm:w-48 sm:shrink-0 sm:flex-col sm:border-r sm:border-zinc-800 sm:border-y sm:border-l sm:border-[#222]/30 sm:rounded-xl sm:shadow-xl sm:overflow-hidden sm:h-[calc(100vh-120px)] sm:py-0 sm:mb-0 sm:border-b-0 max-sm:[&::-webkit-scrollbar]:hidden max-sm:[scrollbar-width:none]"
       aria-label="Question Navigator"
     >
       {/* ── Header ──────────────────────────────────────────────────────────── */}

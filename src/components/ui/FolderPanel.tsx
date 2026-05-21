@@ -25,8 +25,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
 
   return (
     <div
-      className="flex-shrink-0 bg-[var(--bg-primary)] overflow-x-auto sm:overflow-y-auto sm:overflow-x-hidden flex flex-row sm:flex-col sm:w-[240px] sm:h-full sm:border-r border-b sm:border-b-0 border-[var(--bg-card)] w-full py-2 sm:py-4 px-3 sm:px-2"
-      style={{ scrollbarWidth: 'none' }}
+      className="flex-shrink-0 bg-[var(--bg-primary)] overflow-x-auto sm:overflow-y-auto sm:overflow-x-hidden flex flex-row sm:flex-col sm:w-[240px] sm:h-full sm:border-r border-b sm:border-b-0 border-[var(--bg-card)] w-full py-2 sm:py-4 px-3 sm:px-2 max-sm:[&::-webkit-scrollbar]:hidden max-sm:[scrollbar-width:none]"
     >
       <div className="flex flex-row sm:flex-col items-center sm:items-stretch gap-2 sm:gap-0 min-w-max sm:min-w-0 sm:px-4">
         <h2 className="hidden sm:block text-[var(--text-secondary)] text-[10px] uppercase tracking-[0.15em] font-bold mb-6">
