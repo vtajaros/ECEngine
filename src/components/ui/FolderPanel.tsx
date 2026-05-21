@@ -25,8 +25,8 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
 
   return (
     <div
-      className="flex-shrink-0 bg-[var(--bg-primary)] overflow-x-auto sm:overflow-y-auto sm:overflow-x-hidden flex flex-row sm:flex-col sm:w-[240px] sm:h-full sm:border-r border-b sm:border-b-0 border-[var(--bg-card)] w-full"
-      style={{ padding: '8px 12px', scrollbarWidth: 'none' }}
+      className="flex-shrink-0 bg-[var(--bg-primary)] overflow-x-auto sm:overflow-y-auto sm:overflow-x-hidden flex flex-row sm:flex-col sm:w-[240px] sm:h-full sm:border-r border-b sm:border-b-0 border-[var(--bg-card)] w-full py-2 sm:py-4 px-3 sm:px-2"
+      style={{ scrollbarWidth: 'none' }}
     >
       <div className="flex flex-row sm:flex-col items-center sm:items-stretch gap-2 sm:gap-0 min-w-max sm:min-w-0 sm:px-4">
         <h2 className="hidden sm:block text-[var(--text-secondary)] text-[10px] uppercase tracking-[0.15em] font-bold mb-6">
@@ -39,10 +39,10 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
             whileHover={{ scale: 1.01 }}
             onClick={() => onSelect('all')}
             title="All Folders"
-            className={`flex items-center gap-2 px-3 py-1.5 sm:py-2.5 rounded-full sm:rounded-r-md sm:w-full sm:justify-between sm:gap-3 border sm:border-l-[3px] sm:border-t-0 sm:border-r-0 sm:border-b-0 whitespace-nowrap group ${
+            className={`flex items-center gap-2 px-3 py-1.5 sm:py-2.5 rounded-full sm:rounded-r-md sm:w-full sm:justify-between sm:gap-3 border border-transparent sm:border-l-[3px] sm:border-t-0 sm:border-r-0 sm:border-b-0 whitespace-nowrap group ${
               selected === 'all'
-                ? 'bg-[var(--bg-card)] border-[var(--accent-primary)]'
-                : 'bg-transparent border-[var(--bg-card)] hover:bg-[var(--bg-secondary)]'
+                ? 'bg-[#00FF41]/10 text-[#00FF41] border-transparent sm:bg-[var(--bg-card)] sm:text-[var(--text-primary)] sm:border-[var(--accent-primary)]'
+                : 'bg-slate-800/50 text-slate-400 border-transparent sm:bg-transparent sm:text-[var(--text-secondary)] sm:border-[var(--bg-card)] sm:hover:bg-[var(--bg-secondary)]'
             }`}
           >
             <div className="flex items-center gap-3 min-w-0">
@@ -51,7 +51,10 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                 className={`hidden sm:block ${selected === 'all' ? 'text-[var(--accent-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors'}`}
               />
               <span 
-                className={`text-[13px] truncate font-bold font-['Rajdhani'] uppercase tracking-wider ${selected === 'all' ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'
+                className={`text-[13px] truncate font-bold font-['Rajdhani'] uppercase tracking-wider ${
+                  selected === 'all' 
+                    ? 'text-[#00FF41] sm:text-[var(--text-primary)]' 
+                    : 'text-slate-400 sm:text-[var(--text-secondary)] sm:group-hover:text-[var(--text-primary)]'
                 }`}
                 title="All Folders"
               >
@@ -74,10 +77,10 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                 whileHover={{ scale: 1.01 }}
                 onClick={() => onSelect(folder)}
                 title={folder}
-                className={`flex items-center gap-2 px-3 py-1.5 sm:py-2.5 rounded-full sm:rounded-r-md sm:w-full sm:justify-between sm:gap-3 border sm:border-l-[3px] sm:border-t-0 sm:border-r-0 sm:border-b-0 whitespace-nowrap group ${
+                className={`flex items-center gap-2 px-3 py-1.5 sm:py-2.5 rounded-full sm:rounded-r-md sm:w-full sm:justify-between sm:gap-3 border border-transparent sm:border-l-[3px] sm:border-t-0 sm:border-r-0 sm:border-b-0 whitespace-nowrap group ${
                   isSelected
-                    ? 'bg-[var(--bg-card)] border-[var(--accent-primary)]'
-                    : 'bg-transparent border-[var(--bg-card)] hover:bg-[var(--bg-secondary)]'
+                    ? 'bg-[#00FF41]/10 text-[#00FF41] border-transparent sm:bg-[var(--bg-card)] sm:text-[var(--text-primary)] sm:border-[var(--accent-primary)]'
+                    : 'bg-slate-800/50 text-slate-400 border-transparent sm:bg-transparent sm:text-[var(--text-secondary)] sm:border-[var(--bg-card)] sm:hover:bg-[var(--bg-secondary)]'
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
@@ -86,7 +89,10 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                     className={`hidden sm:block ${isSelected ? 'text-[var(--accent-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors'}`}
                   />
                   <span 
-                    className={`text-[13px] truncate font-bold font-['Rajdhani'] uppercase tracking-wider ${isSelected ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'
+                    className={`text-[13px] truncate font-bold font-['Rajdhani'] uppercase tracking-wider ${
+                      isSelected 
+                        ? 'text-[#00FF41] sm:text-[var(--text-primary)]' 
+                        : 'text-slate-400 sm:text-[var(--text-secondary)] sm:group-hover:text-[var(--text-primary)]'
                     }`}
                     title={folder}
                   >
