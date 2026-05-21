@@ -89,7 +89,7 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
       </div>
 
       {/* Choices */}
-      <div className="w-full grid grid-cols-1 gap-3 select-none">
+      <div className="w-full grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 select-none">
         {data.choices.map((choice, index) => {
           const isSelected = selectedChoice === index
           const isCorrectAnswer = index === data.answer
@@ -113,7 +113,7 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
               onClick={() => handleSelect(index)}
               disabled={showResult}
               whileTap={!showResult ? { scale: 0.98 } : {}}
-              className={`w-full text-left p-3 rounded-lg flex items-center transition-all duration-300 ${btnClass}`}
+              className={`w-full text-left py-3 sm:py-4 px-4 rounded-lg flex items-center transition-all duration-300 ${btnClass}`}
             >
               <div className={`w-6 h-6 flex items-center justify-center rounded border font-['Rajdhani'] font-bold text-sm mr-3 flex-shrink-0 ${
                 showResult && isCorrectAnswer ? 'bg-[#00FF41] text-[#0D0D0D] border-[#00FF41]' :
