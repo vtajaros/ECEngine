@@ -56,12 +56,12 @@ export const TestNavRail = memo(({
 
   return (
     <aside
-      className="w-full overflow-x-auto flex flex-row py-2 mb-4 border-b border-zinc-800 bg-[#0a0a0a] select-none shrink-0 h-auto sm:w-48 sm:shrink-0 sm:flex-col sm:border-r sm:border-zinc-800 sm:border-y sm:border-l sm:border-[#222]/30 sm:rounded-xl sm:shadow-xl sm:overflow-hidden sm:h-[calc(100vh-120px)] sm:py-0 sm:mb-0 sm:border-b-0 max-sm:[&::-webkit-scrollbar]:hidden max-sm:[scrollbar-width:none]"
+      className="w-full overflow-x-auto flex flex-row py-2 mb-4 border-b border-zinc-800 bg-[#0a0a0a] select-none shrink-0 h-auto sm:w-48 sm:shrink-0 sm:flex-col sm:items-stretch sm:border-r sm:border-zinc-800 sm:border-y sm:border-l sm:border-[#222]/30 sm:rounded-xl sm:shadow-xl sm:overflow-hidden sm:h-[calc(100vh-120px)] sm:py-0 sm:mb-0 sm:border-b-0 max-sm:[&::-webkit-scrollbar]:hidden max-sm:[scrollbar-width:none]"
       aria-label="Question Navigator"
     >
       {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <div className="px-5 py-3 border-b border-[#1e1e1e] shrink-0 hidden sm:block">
-        <span className="font-['Rajdhani'] font-semibold tracking-wider text-zinc-300 text-[10px] uppercase block leading-tight">
+      <div className="px-5 py-3 border-b border-[#1e1e1e] shrink-0 hidden sm:flex sm:flex-col sm:gap-2 sm:mb-4">
+        <span className="font-['Rajdhani'] font-semibold tracking-wider text-zinc-300 text-[10px] uppercase block leading-tight whitespace-nowrap">
           Question Navigator
         </span>
         <div className="flex items-center gap-1.5 mt-1">
