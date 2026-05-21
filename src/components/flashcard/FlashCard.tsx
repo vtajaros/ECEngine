@@ -97,7 +97,11 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting
                 {data.imagePath && (
                   <div className="mb-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
                     <img 
-                      src={`ece-app://${data.imagePath}`} 
+                      src={
+                        (window as any).electron
+                          ? `ece-app://${data.imagePath}`
+                          : `/ece-images/${data.imagePath}`
+                      } 
                       alt="Flashcard diagram"
                       className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
                       onClick={(e) => { e.stopPropagation(); setZoomedImage(data.imagePath!); }}
@@ -207,7 +211,11 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting
             <motion.img
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              src={`ece-app://${zoomedImage}`}
+              src={
+                (window as any).electron
+                  ? `ece-app://${zoomedImage}`
+                  : `/ece-images/${zoomedImage}`
+              }
               alt="Zoomed diagram"
               className="max-w-[90vw] max-h-[90vh] object-contain shadow-2xl rounded-lg"
               onClick={(e) => e.stopPropagation()}

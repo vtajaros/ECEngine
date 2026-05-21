@@ -991,7 +991,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
           <div className="flex items-center gap-2 mr-10 z-10 relative">
             {data.imagePath ? (
               <div className="relative group flex items-center justify-center">
-                <img src={`ece-app://${data.imagePath}`} alt="Question image" className="w-6 h-6 object-cover rounded border border-[#333]" />
+                <img src={(window as any).electron ? `ece-app://${data.imagePath}` : `/ece-images/${data.imagePath}`} alt="Question image" className="w-6 h-6 object-cover rounded border border-[#333]" />
                 <button
                   onClick={() => set({ imagePath: undefined })}
                   className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
@@ -1097,7 +1097,7 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
           <div className="flex items-center gap-2 mr-10 z-10 relative">
             {data.imagePath ? (
               <div className="relative group flex items-center justify-center">
-                <img src={`ece-app://${data.imagePath}`} alt="Flashcard image" className="w-6 h-6 object-cover rounded border border-[#333]" />
+                 <img src={(window as any).electron ? `ece-app://${data.imagePath}` : `/ece-images/${data.imagePath}`} alt="Flashcard image" className="w-6 h-6 object-cover rounded border border-[#333]" />
                 <button
                   onClick={() => onChange({ ...data, imagePath: undefined })}
                   className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"

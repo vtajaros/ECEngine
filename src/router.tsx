@@ -43,9 +43,7 @@ export const router = createHashRouter([
     path: '/print',
     element: (
       <ErrorBoundary>
-        <WebGuard>
-          <Lazy><PrintView /></Lazy>
-        </WebGuard>
+        <Lazy><PrintView /></Lazy>
       </ErrorBoundary>
     ),
   },
@@ -93,9 +91,7 @@ export const router = createHashRouter([
         path: 'settings',
         element: (
           <ErrorBoundary>
-            <WebGuard>
-              <Lazy><Settings /></Lazy>
-            </WebGuard>
+            <Lazy><Settings /></Lazy>
           </ErrorBoundary>
         )
       },

@@ -850,6 +850,22 @@ export default function FlashcardStudy() {
 
                     {/* Right Side: Action Buttons */}
                     <div className="flex items-center gap-2 shrink-0">
+                      {set.id.startsWith('topic_') && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if ((window as any).electron?.print) {
+                              window.electron.print.open(set.id, set.title)
+                            } else {
+                              window.open(`/#/print?id=${set.id}&title=${encodeURIComponent(set.title)}`, '_blank')
+                            }
+                          }}
+                          className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
+                          title="Test Paper View"
+                        >
+                          <ScrollText className="w-4 h-4" />
+                        </button>
+                      )}
                       <button
                         onClick={(e) => { e.stopPropagation(); navigate(`/edit-deck/${set.id}`) }}
                         className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
@@ -864,20 +880,6 @@ export default function FlashcardStudy() {
                           title="Delete Set"
                         >
                           <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                      {set.id.startsWith('topic_') && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if ((window as any).electron?.print) {
-                              window.electron.print.open(set.id, set.title)
-                            }
-                          }}
-                          className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
-                          title="Test Paper View"
-                        >
-                          <ScrollText className="w-4 h-4" />
                         </button>
                       )}
                       <button

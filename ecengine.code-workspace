@@ -6,6 +6,10 @@
     },
   ],
   "settings": {
+    "cSpell.words": [
+      "GEAS",
+      "ELECS"
+    ],
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true,
     "editor.tabSize": 2,

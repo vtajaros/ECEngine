@@ -507,7 +507,7 @@ export default function Formulas() {
       const text = settings.swapTermDef ? mcq.question : mcq.choices[mcq.answer]
       return (
         <div
-          className="text-xl lg:text-2xl leading-relaxed font-[var(--font-card-body)] text-[var(--text-accent)] font-medium"
+          className="text-xl lg:text-2xl leading-relaxed font-rajdhani text-[var(--text-accent)] font-medium"
           dangerouslySetInnerHTML={{ __html: renderMath(text) }}
         />
       )
@@ -534,7 +534,7 @@ export default function Formulas() {
       const text = settings.swapTermDef ? frontStr : backStr
       return (
         <div
-          className={`leading-relaxed ${settings.swapTermDef ? 'text-xl text-left font-[var(--font-card-body)]' : 'text-4xl text-center font-[var(--font-card-body)] text-[var(--text-primary)] font-medium'}`}
+          className={`leading-relaxed ${settings.swapTermDef ? 'text-xl text-left font-rajdhani' : 'text-4xl text-center font-rajdhani text-[var(--text-primary)] font-medium'}`}
           dangerouslySetInnerHTML={{ __html: renderMath(text) }}
         />
       )
@@ -828,7 +828,11 @@ export default function Formulas() {
                         {currentCard.data.imagePath && (
                           <div className="mb-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
                             <img
-                              src={`ece-app://${currentCard.data.imagePath}`}
+                              src={
+                                (window as any).electron
+                                  ? `ece-app://${currentCard.data.imagePath}`
+                                  : `/ece-images/${currentCard.data.imagePath}`
+                              }
                               alt="Card diagram"
                               className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
                               onClick={(e) => {
@@ -853,7 +857,7 @@ export default function Formulas() {
                           </div>
                         ) : (
                           <div
-                            className="text-xl lg:text-2xl font-medium leading-relaxed font-[var(--font-card-body)]"
+                            className="text-xl lg:text-2xl font-medium leading-relaxed font-rajdhani"
                             style={{ color: 'var(--text-primary)' }}
                             dangerouslySetInnerHTML={{
                               __html: renderMath(getFrontText(currentCard)),
@@ -980,11 +984,15 @@ export default function Formulas() {
               >
                 <X size={24} />
               </button>
-              <motion.img
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                src={`ece-app://${zoomedImage}`}
-                alt="Zoomed diagram"
+               <motion.img
+                 initial={{ scale: 0.9, opacity: 0 }}
+                 animate={{ scale: 1, opacity: 1 }}
+                 src={
+                   (window as any).electron
+                     ? `ece-app://${zoomedImage}`
+                     : `/ece-images/${zoomedImage}`
+                 }
+                 alt="Zoomed diagram"
                 className="max-w-[90vw] max-h-[90vh] object-contain shadow-2xl rounded-lg"
                 onClick={(e) => e.stopPropagation()}
               />
@@ -1313,6 +1321,8 @@ export default function Formulas() {
                                 e.stopPropagation()
                                 if ((window as any).electron?.print) {
                                   window.electron.print.open(deck.id, deck.title)
+                                } else {
+                                  window.open(`/#/print?id=${deck.id}&title=${encodeURIComponent(deck.title)}`, '_blank')
                                 }
                               }}
                               className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"

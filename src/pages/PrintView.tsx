@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { FileText, Table2, List, BookOpen, Bold, Loader2, CheckCircle2, AlertCircle, Minus, Square, X } from 'lucide-react'
-import { dbService } from '../services/db.service'
+import { activeDBService } from '../services/db.service'
 import { Card, MCQData, FlashcardData, FormulaData } from '../types'
 import { renderMath } from '../lib/latex'
 
@@ -62,8 +62,13 @@ function MCQTableRow({ index, card }: MCQTableRowProps) {
             {/* question imagePath */}
             {(card.data as MCQData & { imagePath?: string }).imagePath && (
               <img
-                src={`ece-app://${(card.data as MCQData & { imagePath?: string }).imagePath}`}
+                src={
+                  (window as any).electron
+                    ? `ece-app://${(card.data as MCQData & { imagePath?: string }).imagePath}`
+                    : `/ece-images/${(card.data as MCQData & { imagePath?: string }).imagePath}`
+                }
                 alt="Question diagram"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                 style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
               />
             )}
@@ -122,8 +127,13 @@ function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) 
         </p>
         {imagePath && (
           <img
-            src={`ece-app://${imagePath}`}
+            src={
+              (window as any).electron
+                ? `ece-app://${imagePath}`
+                : `/ece-images/${imagePath}`
+            }
             alt="Question diagram"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
             style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', marginLeft: '16px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
           />
         )}
@@ -140,8 +150,13 @@ function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) 
       </p>
       {imagePath && (
         <img
-          src={`ece-app://${imagePath}`}
+          src={
+            (window as any).electron
+              ? `ece-app://${imagePath}`
+              : `/ece-images/${imagePath}`
+          }
           alt="Question diagram"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
           style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
         />
       )}
@@ -210,8 +225,13 @@ function FormulaItem({ index, card }: FormulaItemProps) {
         ) : null}
         {imagePath && (
           <img
-            src={`ece-app://${imagePath}`}
+            src={
+              (window as any).electron
+                ? `ece-app://${imagePath}`
+                : `/ece-images/${imagePath}`
+            }
             alt="Formula diagram"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
             style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', borderRadius: '4px', border: '1px solid #e5e7eb' }}
           />
         )}
@@ -225,9 +245,10 @@ function FormulaItem({ index, card }: FormulaItemProps) {
 // ---------------------------------------------------------------------------
 
 export default function PrintView() {
+  const isWeb = !(window as any).electron
   const controls = (window as any).electron?.windowControls
   const [searchParams] = useSearchParams()
-  const topicId = searchParams.get('topicId') ?? ''
+  const topicId = searchParams.get('id') ?? searchParams.get('topicId') ?? ''
   const title = decodeURIComponent(searchParams.get('title') ?? 'Test Paper')
 
   const [cards, setCards] = useState<Card[]>([])
@@ -239,7 +260,7 @@ export default function PrintView() {
 
   useEffect(() => {
     if (!topicId) { setLoading(false); return }
-    dbService.getAllCardsByTopic(topicId).then((result) => {
+    activeDBService.getAllCardsByTopic(topicId).then((result) => {
       setCards(result)
       setLoading(false)
     })
@@ -249,15 +270,71 @@ export default function PrintView() {
     setExportState('loading')
     setExportError('')
     try {
-      const result = await window.electron.print.toPDF(title)
-      if (result.canceled) {
-        setExportState('idle')
-      } else if (result.success) {
+      if (isWeb) {
+        // Serialize the paper content to HTML and open in a clean new window
+        const paperEl = document.getElementById('print-paper-area')
+        if (!paperEl) return
+
+        const printWindow = window.open('', '_blank', 'width=900,height=700')
+        if (!printWindow) return
+
+        printWindow.document.write(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>${title}</title>
+  <style>
+    @page { margin: 1.5cm; size: A4 portrait; }
+    * { box-sizing: border-box; }
+    body {
+      font-family: Georgia, "Times New Roman", serif;
+      color: #111827;
+      margin: 0;
+      padding: 0;
+      background: white;
+    }
+    h1 { font-size: 24px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 6px 0; }
+    p { font-size: 13px; color: #6b7280; margin: 0 0 12px 0; }
+    hr { border: none; border-top: 2px solid #111827; margin-bottom: 20px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase;
+         letter-spacing: 0.08em; color: #374151; padding: 8px 12px;
+         border-top: 2px solid #111827; border-bottom: 1px solid #d1d5db; }
+    td { padding: 10px 12px; vertical-align: top; border-bottom: 1px solid #d1d5db; font-size: 13px; }
+    tr { page-break-inside: avoid; }
+    .answer { font-size: 12px; color: #374151; }
+    .correct { color: #b45309; font-weight: 700; }
+    .choice { margin: 3px 0; font-size: 13px; }
+    .question-num { font-weight: 700; }
+    .glossary-item { margin-bottom: 14px; page-break-inside: avoid;
+                     border-bottom: 1px solid #e5e7eb; padding-bottom: 10px; }
+    .qa-item { margin-bottom: 16px; page-break-inside: avoid; }
+    img { max-width: 100%; height: auto; margin: 6px 0; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  ${paperEl.innerHTML}
+</body>
+</html>`)
+        printWindow.document.close()
+        printWindow.focus()
+        // Small delay to ensure content renders before print dialog opens
+        setTimeout(() => {
+          printWindow.print()
+        }, 500)
         setExportState('success')
         setTimeout(() => setExportState('idle'), 2500)
       } else {
-        setExportError(result.error ?? 'Unknown error')
-        setExportState('error')
+        const result = await window.electron.print.toPDF(title)
+        if (result.canceled) {
+          setExportState('idle')
+        } else if (result.success) {
+          setExportState('success')
+          setTimeout(() => setExportState('idle'), 2500)
+        } else {
+          setExportError(result.error ?? 'Unknown error')
+          setExportState('error')
+        }
       }
     } catch (err: unknown) {
       setExportError(err instanceof Error ? err.message : 'Unexpected error')
@@ -306,29 +383,31 @@ export default function PrintView() {
       </div>
 
       {/* Right Side: Window Controls */}
-      <div className="flex h-full ml-auto [-webkit-app-region:no-drag]">
-        <button
-          onClick={() => controls?.minimize()}
-          className="px-3 h-full hover:bg-[#333] hover:text-white transition-colors flex items-center justify-center"
-          title="Minimize"
-        >
-          <Minus size={12} />
-        </button>
-        <button
-          onClick={() => controls?.maximize()}
-          className="px-3 h-full hover:bg-[#333] hover:text-white transition-colors flex items-center justify-center"
-          title="Maximize"
-        >
-          <Square size={10} />
-        </button>
-        <button
-          onClick={() => controls?.close()}
-          className="px-3 h-full hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center"
-          title="Close"
-        >
-          <X size={14} />
-        </button>
-      </div>
+      {!isWeb && controls && (
+        <div className="flex h-full ml-auto [-webkit-app-region:no-drag]">
+          <button
+            onClick={() => controls?.minimize()}
+            className="px-3 h-full hover:bg-[#333] hover:text-white transition-colors flex items-center justify-center"
+            title="Minimize"
+          >
+            <Minus size={12} />
+          </button>
+          <button
+            onClick={() => controls?.maximize()}
+            className="px-3 h-full hover:bg-[#333] hover:text-white transition-colors flex items-center justify-center"
+            title="Maximize"
+          >
+            <Square size={10} />
+          </button>
+          <button
+            onClick={() => controls?.close()}
+            className="px-3 h-full hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center"
+            title="Close"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
     </div>
   )
 
@@ -623,15 +702,25 @@ export default function PrintView() {
                       <td style={{ padding: '10px 12px', verticalAlign: 'top', width: '50%', overflow: 'hidden' }}>
                         {imageFront && (
                           <img
-                            src={`ece-app://${imageFront}`}
+                            src={
+                              (window as any).electron
+                                ? `ece-app://${imageFront}`
+                                : `/ece-images/${imageFront}`
+                            }
                             alt="Front diagram"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                             style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
                           />
                         )}
                         {imagePath && (
                           <img
-                            src={`ece-app://${imagePath}`}
+                            src={
+                              (window as any).electron
+                                ? `ece-app://${imagePath}`
+                                : `/ece-images/${imagePath}`
+                            }
                             alt="Flashcard diagram"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                             style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
                           />
                         )}
@@ -640,8 +729,13 @@ export default function PrintView() {
                       <td style={{ padding: '10px 12px', verticalAlign: 'top', width: '50%', borderLeft: '1px solid #d1d5db', overflow: 'hidden' }}>
                         {imageBack && (
                           <img
-                            src={`ece-app://${imageBack}`}
+                            src={
+                              (window as any).electron
+                                ? `ece-app://${imageBack}`
+                                : `/ece-images/${imageBack}`
+                            }
                             alt="Back diagram"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                             style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
                           />
                         )}
@@ -663,23 +757,38 @@ export default function PrintView() {
                     </p>
                     {imageFront && (
                       <img
-                        src={`ece-app://${imageFront}`}
+                        src={
+                          (window as any).electron
+                            ? `ece-app://${imageFront}`
+                            : `/ece-images/${imageFront}`
+                        }
                         alt="Front diagram"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                         style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginLeft: '20px', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
                       />
                     )}
                     {imagePath && (
                       <img
-                        src={`ece-app://${imagePath}`}
+                        src={
+                          (window as any).electron
+                            ? `ece-app://${imagePath}`
+                            : `/ece-images/${imagePath}`
+                        }
                         alt="Flashcard diagram"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                         style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginLeft: '20px', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
                       />
                     )}
                     <div style={{ paddingLeft: '20px', color: '#374151' }}>
                       {imageBack && (
                         <img
-                          src={`ece-app://${imageBack}`}
+                          src={
+                            (window as any).electron
+                              ? `ece-app://${imageBack}`
+                              : `/ece-images/${imageBack}`
+                          }
                           alt="Back diagram"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                           style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
                         />
                       )}
@@ -715,18 +824,47 @@ export default function PrintView() {
   // Render — full-screen white layout (no AppShell chrome)
   // -------------------------------------------------------------------------
   return (
-    <div className="h-screen w-full flex flex-col overflow-hidden bg-[#0D0D0D]">
+    <div className="h-screen w-full flex flex-col overflow-hidden bg-[#0D0D0D] print:bg-white">
       <style>{`
-        @media print {
-          .print\:hidden { display: none !important; }
-        }
         @keyframes spin { to { transform: rotate(360deg); } }
         .animate-spin { animation: spin 1s linear infinite; }
+
+        @media print {
+          /* Remove browser-added URL, date, and page number headers/footers */
+          @page {
+            margin: 1cm 1.5cm;
+            size: A4 portrait;
+          }
+
+          /* Hide all UI chrome */
+          .print\\:hidden { display: none !important; }
+
+          /* Hide the dark outer shell, show only white paper area */
+          body > * { visibility: hidden; }
+          #print-paper-area,
+          #print-paper-area * { visibility: visible; }
+
+          /* Position paper area to fill the page */
+          #print-paper-area {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: white !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+
+          /* Ensure page breaks work correctly */
+          table { border-collapse: collapse; width: 100%; }
+          tr { page-break-inside: avoid; }
+          .page-break-inside-avoid { page-break-inside: avoid; }
+        }
       `}</style>
       {titleBar}
       {toolbar}
-      <div className="flex-1 overflow-y-auto" style={{ background: '#fff', padding: '40px 60px' }}>
-        <div className="max-w-screen-xl mx-auto">
+      <div className="flex-1 overflow-y-auto" style={{ background: '#e5e7eb', padding: '40px 0' }}>
+        <div id="print-paper-area" style={{ maxWidth: '800px', margin: '0 auto', background: 'white', padding: '60px 70px', boxShadow: '0 2px 16px rgba(0,0,0,0.13)', minHeight: '1100px' }}>
           {paperContent}
         </div>
       </div>

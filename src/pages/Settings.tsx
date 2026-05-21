@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { Settings as SettingsIcon, Monitor, Bell, Database, Shield, CheckCircle, AlertTriangle, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { dbService } from '../services/db.service'
+import { dbService, activeDBService } from '../services/db.service'
+import { webDB } from '@/services/web/schema'
 
 export default function Settings() {
+  const isWeb = !(window as any).electron
   const [resetResetMenuOpen, setResetResetMenuOpen] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
   const [deleteCountdown, setDeleteCountdown] = useState(0);
@@ -15,12 +17,19 @@ export default function Settings() {
   const [apiKeyConfigured, setApiKeyConfigured] = useState(false);
 
   useEffect(() => {
+    if (isWeb) {
+      const localKey = localStorage.getItem('web_groq_api_key')?.trim()
+      const envKey = (import.meta.env.VITE_GROQ_API_KEY as string | undefined)?.trim()
+      const isConfigured = !!(localKey || envKey)
+      setApiKeyConfigured(isConfigured)
+      return
+    }
     const check = async () => {
       const result = await window.electron.config.getApiKeyStatus();
       setApiKeyConfigured(result?.configured ?? false);
     };
     check();
-  }, []);
+  }, [isWeb]);
 
   // ── Countdown for delete ──
   useEffect(() => {
@@ -40,6 +49,14 @@ export default function Settings() {
   }, [showClearModal])
 
   const handleSaveApiKey = async () => {
+    if (isWeb) {
+      localStorage.setItem('web_groq_api_key', apiKeyInput.trim())
+      setApiKeyConfigured(apiKeyInput.trim().length > 0 || !!(import.meta.env.VITE_GROQ_API_KEY as string | undefined)?.trim())
+      setApiKeyInput('');
+      setToastMessage('API Key saved successfully!');
+      setTimeout(() => setToastMessage(null), 3000);
+      return
+    }
     const result = await window.electron.config.setApiKey(apiKeyInput);
     if (result?.success) {
       setApiKeyConfigured(apiKeyInput.trim().length > 0);
@@ -68,8 +85,20 @@ export default function Settings() {
   };
 
   const handleClearAllDecks = async () => {
-    // Delete from SQL DB (FK-safe order via db.service)
-    await dbService.clearAllData();
+    // Delete from SQL/Web DB (FK-safe order)
+    if (isWeb) {
+      await webDB.transaction('rw', [webDB.topics, webDB.cards, webDB.progress, webDB.study_activity, webDB.meta], async () => {
+        await webDB.topics.clear()
+        await webDB.cards.clear()
+        await webDB.progress.clear()
+        await webDB.study_activity.clear()
+        await webDB.meta.clear()
+      })
+      // After clear, reset the seeded flag so next reload re-seeds
+      await webDB.meta.put({ key: 'seeded', value: 'false' })
+    } else {
+      await dbService.clearAllData();
+    }
 
     // Also clear any localStorage remnants
     const keysToRemove: string[] = [];
@@ -84,18 +113,35 @@ export default function Settings() {
     setShowClearModal(false);
     setToastMessage('All decks and progress cleared successfully!');
     setTimeout(() => setToastMessage(null), 3000);
+    if (isWeb) {
+      setTimeout(() => window.location.reload(), 1500)
+    }
   };
 
   const handleExportDecks = async () => {
     try {
-      const dataStr = await dbService.exportDecks();
-      const res = await window.electron.file.export(dataStr);
-      if (res.success) {
+      if (isWeb) {
+        const dataStr = await activeDBService.exportDecks()
+        // Trigger browser download
+        const blob = new Blob([dataStr], { type: 'application/json' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `ecengine-backup-${new Date().toISOString().slice(0,10)}.json`
+        a.click()
+        URL.revokeObjectURL(url)
         setToastMessage('Database exported successfully!');
         setTimeout(() => setToastMessage(null), 3000);
-      } else if (!res.canceled) {
-        setToastMessage(res.error || 'Export failed.');
-        setTimeout(() => setToastMessage(null), 3000);
+      } else {
+        const dataStr = await dbService.exportDecks();
+        const res = await window.electron.file.export(dataStr);
+        if (res.success) {
+          setToastMessage('Database exported successfully!');
+          setTimeout(() => setToastMessage(null), 3000);
+        } else if (!res.canceled) {
+          setToastMessage(res.error || 'Export failed.');
+          setTimeout(() => setToastMessage(null), 3000);
+        }
       }
     } catch (e) {
       console.error(e);
@@ -106,17 +152,42 @@ export default function Settings() {
 
   const handleImportDecks = async () => {
     try {
-      const res = await window.electron.file.import();
-      if (res.success && res.data) {
-        const result = await dbService.importDecks(res.data);
-        setToastMessage(result.message);
-        setTimeout(() => setToastMessage(null), 3000);
-        if (result.success) {
-          setTimeout(() => window.location.reload(), 1500);
+      if (isWeb) {
+        // Trigger file picker
+        const input = document.createElement('input')
+        input.type = 'file'
+        input.accept = '.json'
+        input.onchange = async (e) => {
+          try {
+            const file = (e.target as HTMLInputElement).files?.[0]
+            if (!file) return
+            const text = await file.text()
+            const result = await activeDBService.importDecks(text)
+            setToastMessage(result.message);
+            setTimeout(() => setToastMessage(null), 3000);
+            if (result.success) {
+              setTimeout(() => window.location.reload(), 1500)
+            }
+          } catch (err) {
+            console.error(err);
+            setToastMessage('Import failed.');
+            setTimeout(() => setToastMessage(null), 3000);
+          }
         }
-      } else if (!res.canceled) {
-        setToastMessage(res.error || 'Import failed.');
-        setTimeout(() => setToastMessage(null), 3000);
+        input.click()
+      } else {
+        const res = await window.electron.file.import();
+        if (res.success && res.data) {
+          const result = await dbService.importDecks(res.data);
+          setToastMessage(result.message);
+          setTimeout(() => setToastMessage(null), 3000);
+          if (result.success) {
+            setTimeout(() => window.location.reload(), 1500);
+          }
+        } else if (!res.canceled) {
+          setToastMessage(res.error || 'Import failed.');
+          setTimeout(() => setToastMessage(null), 3000);
+        }
       }
     } catch (err) {
       console.error(err);

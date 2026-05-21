@@ -604,14 +604,18 @@ export default function FlashcardViewer() {
                   </div>
 
                   {/* Card Content */}
-                  <div className="flex-1 flex items-center justify-center px-8 pb-8 cursor-pointer" onClick={() => !settings.writtenMode && setIsFlipped(f => !f)}>
+<div className="flex-1 flex items-center justify-center px-8 pb-8 cursor-pointer" onClick={() => !settings.writtenMode && setIsFlipped(f => !f)}>
                     {!isFlipped ? (
                       <div className="text-center w-full">
                         {currentCard.data.imagePath && (
                           <div className="mb-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
                             <img
-                              src={`ece-app://${currentCard.data.imagePath}`}
-                              alt="Card diagram"
+                               src={
+                                 (window as any).electron
+                                   ? `ece-app://${currentCard.data.imagePath}`
+                                   : `/ece-images/${currentCard.data.imagePath}`
+                               }
+                               alt="Card diagram"
                               className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
                               onClick={(e) => { e.stopPropagation(); setZoomedImage(currentCard.data.imagePath!); }}
                             />
@@ -697,11 +701,15 @@ export default function FlashcardViewer() {
               >
                 <X size={24} />
               </button>
-              <motion.img
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                src={`ece-app://${zoomedImage}`}
-                alt="Zoomed diagram"
+               <motion.img
+                 initial={{ scale: 0.9, opacity: 0 }}
+                 animate={{ scale: 1, opacity: 1 }}
+                 src={
+                   (window as any).electron
+                     ? `ece-app://${zoomedImage}`
+                     : `/ece-images/${zoomedImage}`
+                 }
+                 alt="Zoomed diagram"
                 className="max-w-[90vw] max-h-[90vh] object-contain shadow-2xl rounded-lg"
                 onClick={(e) => e.stopPropagation()}
               />
@@ -966,6 +974,8 @@ export default function FlashcardViewer() {
                             e.stopPropagation()
                             if ((window as any).electron?.print) {
                               window.electron.print.open(deck.id, deck.title)
+                            } else {
+                              window.open(`/#/print?id=${deck.id}&title=${encodeURIComponent(deck.title)}`, '_blank')
                             }
                           }}
                           className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"

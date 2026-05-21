@@ -43,7 +43,7 @@ export const AppShell: React.FC = () => {
     { to: '/topics',    label: 'EELE ToS',        icon: BookOpen },
     { to: '/checklist', label: 'Review Checklist',icon: ClipboardList },
     { to: '/add-decks', label: 'Add Decks',       icon: PlusCircle },
-    { to: '/settings',  label: 'Settings',        icon: Settings,   webHidden: true },
+    { to: '/settings',  label: 'Settings',        icon: Settings },
   ]
 
   return (
