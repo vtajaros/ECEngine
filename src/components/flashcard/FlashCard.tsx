@@ -63,9 +63,9 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting
   }, [card.id])
 
   return (
-    <div className="flex flex-col items-center justify-center w-full max-w-2xl mx-auto h-[500px]">
+    <div className="flex flex-col items-center justify-center w-full max-w-2xl mx-auto min-h-[250px] sm:min-h-[350px]">
       <div 
-        className="relative w-full h-[380px] cursor-pointer"
+        className="relative w-full h-[250px] sm:h-[350px] cursor-pointer"
         style={{ perspective: 1000 }}
         onClick={() => setIsFlipped(!isFlipped)}
       >
@@ -77,7 +77,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting
         >
           {/* Front */}
           <div 
-            className="absolute w-full h-full bg-[#161616] border border-[rgba(0,255,65,0.3)] shadow-[0_0_15px_rgba(0,255,65,0.1)] rounded-lg p-8 flex flex-col"
+            className="absolute w-full h-full bg-[#161616] border border-[rgba(0,255,65,0.3)] shadow-[0_0_15px_rgba(0,255,65,0.1)] rounded-lg px-4 py-8 sm:p-12 flex flex-col"
             style={{ backfaceVisibility: 'hidden' }}
           >
             <div className="flex justify-between items-start mb-4">
@@ -93,7 +93,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting
                </span>
             </div>
             
-              <div className="flex-1 flex flex-col items-center justify-center text-center">
+              <div className="flex-1 flex flex-col items-center justify-center text-center w-full">
                 {data.imagePath && (
                   <div className="mb-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
                     <img 
@@ -109,7 +109,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting
                   </div>
                 )}
                 <h2 
-                  className="text-2xl font-['Rajdhani'] font-semibold leading-snug" 
+                  className="text-lg sm:text-2xl font-['Rajdhani'] font-semibold leading-snug text-center break-words w-full" 
                   dangerouslySetInnerHTML={{ __html: renderMath(data.front) }}
                 />
               </div>
@@ -121,15 +121,15 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting
 
           {/* Back */}
           <div 
-            className="absolute w-full h-full bg-[#161616] border border-[#00FF41] shadow-[0_0_20px_rgba(0,255,65,0.2)] rounded-lg p-8 flex flex-col"
+            className="absolute w-full h-full bg-[#161616] border border-[#00FF41] shadow-[0_0_20px_rgba(0,255,65,0.2)] rounded-lg px-4 py-8 sm:p-12 flex flex-col"
             style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
           >
              <div className="text-center text-[#888888] text-sm mb-4 font-['Rajdhani'] uppercase tracking-widest border-b border-[#111111] pb-2">
                Answer
              </div>
-             <div className="flex-1 flex items-center justify-center text-center overflow-y-auto">
+             <div className="flex-1 flex items-center justify-center text-center overflow-y-auto w-full">
                 <div 
-                  className="text-xl font-['Rajdhani'] font-medium leading-snug whitespace-pre-wrap"
+                  className="text-lg sm:text-2xl font-['Rajdhani'] font-medium leading-snug whitespace-pre-wrap text-center break-words w-full"
                   dangerouslySetInnerHTML={{ __html: renderMath(data.back) }}
                 />
              </div>
