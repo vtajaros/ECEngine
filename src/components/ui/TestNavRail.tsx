@@ -60,7 +60,7 @@ export const TestNavRail = memo(({
       aria-label="Question Navigator"
     >
       {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <div className="px-5 py-3 border-b border-[#1e1e1e] shrink-0 hidden sm:flex sm:flex-col sm:gap-2 sm:mb-4">
+      <div className="px-5 py-3 shrink-0 hidden sm:flex sm:flex-col sm:gap-2">
         <span className="font-['Rajdhani'] font-semibold tracking-wider text-zinc-300 text-[10px] uppercase block leading-tight whitespace-nowrap">
           Question Navigator
         </span>
@@ -87,22 +87,6 @@ export const TestNavRail = memo(({
                 : '0%',
             }}
           />
-        </div>
-      </div>
-
-      {/* ── Legend ──────────────────────────────────────────────────────────── */}
-      <div className="px-5 py-2 flex items-center gap-4 border-b border-[#111] shrink-0 hidden sm:block">
-        <div className="flex items-center gap-1.5">
-          <div className="w-2 h-2 rounded-full bg-zinc-400" />
-          <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-zinc-400">
-            Unanswered
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <Check className="w-2.5 h-2.5 text-green-400" />
-          <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-zinc-400">
-            Answered
-          </span>
         </div>
       </div>
 
