@@ -48,7 +48,7 @@ export const AppShell: React.FC = () => {
   ]
 
   return (
-    <div className="flex flex-col h-screen bg-[#0D0D0D] text-[var(--text-primary)] font-['IBM_Plex_Mono'] overflow-hidden w-screen">
+    <div className="flex flex-col min-h-screen sm:h-screen bg-[#0D0D0D] text-[var(--text-primary)] font-['IBM_Plex_Mono'] overflow-y-auto sm:overflow-hidden overflow-x-hidden w-screen">
       {!isWeb && (
         <TitleBar
           isCollapsed={isCollapsed}
@@ -56,12 +56,12 @@ export const AppShell: React.FC = () => {
         />
       )}
 
-      <div className="flex flex-col sm:flex-row flex-1 overflow-hidden">
+      <div className="flex flex-col sm:flex-row flex-1 overflow-visible sm:overflow-hidden">
         {/* Sidebar */}
         <aside
           className={`${
             isCollapsed ? 'w-full h-12 sm:w-16 sm:h-full' : 'w-full h-12 sm:w-[170px] sm:h-full'
-          } bg-[#1A1A1A] border-b sm:border-b-0 sm:border-r border-[#222] flex flex-row sm:flex-col transition-all duration-300 relative z-20 shrink-0`}
+          } bg-[#1A1A1A] border-b sm:border-b-0 sm:border-r border-[#222] flex flex-row sm:flex-col transition-all duration-300 absolute sm:relative top-0 left-0 sm:top-auto sm:left-auto z-20 shrink-0`}
         >
           {/* Hamburger button — web only, lives at top of sidebar */}
           {isWeb && (
@@ -125,7 +125,7 @@ export const AppShell: React.FC = () => {
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 w-full min-w-0 relative overflow-y-auto overflow-x-hidden bg-[#111111]">
+        <main className="flex-1 w-full min-w-0 relative overflow-visible sm:overflow-y-auto overflow-x-hidden bg-[#111111] pt-12 sm:pt-0">
           <Outlet />
         </main>
       </div>
