@@ -286,7 +286,7 @@ export default function PrintView() {
   <link rel="icon" type="image/png" href="/favicon.png" />
   <style>
     @page { margin: 1.5cm; size: A4 portrait; }
-    * { box-sizing: border-box; }
+    * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     body {
       font-family: Georgia, "Times New Roman", serif;
       color: #111827;
@@ -373,7 +373,7 @@ export default function PrintView() {
     <div className="print:hidden w-full h-8 bg-[#1A1A1A] text-gray-400 flex items-center justify-between select-none [-webkit-app-region:drag] relative shrink-0 px-0">
       {/* Left side spacer to balance the right controls or put logo */}
       <div className="flex items-center [-webkit-app-region:no-drag] pl-3">
-        <img src="/ecengine_icon.png" alt="Logo" className="w-4 h-4 object-contain" />
+        <img src="/favicon.png" alt="Logo" className="w-4 h-4 object-contain" />
       </div>
 
       {/* Centered Title */}
