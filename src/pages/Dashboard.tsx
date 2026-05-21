@@ -86,12 +86,8 @@ const ReviewHeatmap = ({ history, examDate }: { history: Record<string, { count:
     return 'bg-[#00FF41] border-[#00FF41] shadow-[0_0_20px_rgba(0,255,65,0.7)]'
   }
 
-  // Increased sizes: w-4 (16px), gap-2 (8px)
-  const CELL = 10
-  const GAP  = 4
-
   return (
-    <div className="w-full max-w-full">
+    <div className="w-full max-w-full [--cell-size:10px] [--gap-size:4px] sm:[--cell-size:16px] sm:[--gap-size:8px]">
       <div className="overflow-x-auto pb-2 -mx-1 px-1">
         <div className="flex flex-col" style={{ minWidth: 'max-content' }}>
           {/* Month Labels */}
@@ -100,28 +96,27 @@ const ReviewHeatmap = ({ history, examDate }: { history: Record<string, { count:
               <span
                 key={i}
                 className="absolute text-[9px] sm:text-[11px] font-['Orbitron'] text-[#E8E8E8] opacity-70 font-bold uppercase tracking-[0.2em]"
-                style={{ left: `calc(2.2rem + ${label.weekIndex * (CELL + GAP)}px)` }}
+                style={{ left: `calc(2.2rem + ${label.weekIndex} * (var(--cell-size) + var(--gap-size)))` }}
               >
                 {label.name}
               </span>
             ))}
           </div>
 
-          <div className="flex items-start" style={{ gap: GAP }}>
+          <div className="flex items-start gap-[4px] sm:gap-2">
             {/* Day Labels */}
             <div
-              className="flex flex-col text-[8px] sm:text-[10px] font-['Rajdhani'] text-[#666] font-bold uppercase tracking-widest leading-none"
-              style={{ gap: GAP, width: '1.8rem', paddingRight: 4 }}
+              className="flex flex-col text-[8px] sm:text-[10px] font-['Rajdhani'] text-[#666] font-bold uppercase tracking-widest leading-none gap-[4px] sm:gap-2 w-[1.8rem] pr-1"
             >
               {dayNames.map(d => (
-                <span key={d} style={{ height: CELL, display: 'flex', alignItems: 'center' }}>{d}</span>
+                <span key={d} className="h-[10px] sm:h-4 flex items-center">{d}</span>
               ))}
             </div>
 
             {/* Activity Grid */}
-            <div className="flex" style={{ gap: GAP }}>
+            <div className="flex gap-[4px] sm:gap-2">
               {grid.map((week, wi) => (
-                <div key={wi} className="flex flex-col" style={{ gap: GAP, width: CELL }}>
+                <div key={wi} className="flex flex-col gap-[4px] sm:gap-2 w-[10px] sm:w-4">
                   {week.map(day => {
                     const data = history[day] || { count: 0, timeSpent: 0 }
                     const timeH = Math.floor(data.timeSpent / 60)
@@ -132,8 +127,7 @@ const ReviewHeatmap = ({ history, examDate }: { history: Record<string, { count:
                     return (
                       <div
                         key={day}
-                        className={`rounded-[2px] ${getLevel(data.timeSpent)} transition-all hover:scale-125 cursor-help border shadow-sm ${isOutRange ? 'opacity-5' : ''}`}
-                        style={{ width: CELL, height: CELL }}
+                        className={`w-[10px] h-[10px] sm:w-4 sm:h-4 rounded-[2px] ${getLevel(data.timeSpent)} transition-all hover:scale-125 cursor-help border shadow-sm ${isOutRange ? 'opacity-5' : ''}`}
                         title={isOutRange ? undefined : `${day}: ${timeH}h ${timeM}m study time`}
                       />
                     )
