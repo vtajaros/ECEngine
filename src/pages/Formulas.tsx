@@ -2,7 +2,27 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import FolderPanel from '@/components/ui/FolderPanel'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate, useBlocker } from 'react-router-dom'
-import { Sigma, Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle, SlidersHorizontal, Pencil, Play, Trash2, AlertTriangle, Trophy, ScrollText } from 'lucide-react'
+import {
+  Sigma,
+  Layers,
+  Bookmark,
+  Settings2,
+  X,
+  ArrowLeft,
+  ArrowRight,
+  RotateCcw,
+  Shuffle,
+  PenLine,
+  Check,
+  XCircle,
+  SlidersHorizontal,
+  Pencil,
+  Play,
+  Trash2,
+  AlertTriangle,
+  Trophy,
+  ScrollText,
+} from 'lucide-react'
 import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
 import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
 import { Card, MCQData, FlashcardData } from '../types'
@@ -15,7 +35,7 @@ type FilterSubject = 'ALL' | Subject
 const SUBJECTS: FilterSubject[] = ['ALL', 'MATH', 'GEAS', 'ELECS', 'EST']
 
 const SUBJECT_MAP: Record<string, Subject> = {
-  'Mathematics': 'MATH',
+  Mathematics: 'MATH',
   'General Engineering & Applied Sciences': 'GEAS',
   'Electronics Engineering': 'ELECS',
   'Electronics Systems & Technologies': 'EST',
@@ -46,7 +66,9 @@ function loadFCBookmarks(): Set<string> {
   try {
     const raw = localStorage.getItem('fc_bookmarks')
     return raw ? new Set(JSON.parse(raw)) : new Set()
-  } catch { return new Set() }
+  } catch {
+    return new Set()
+  }
 }
 function saveFCBookmarks(set: Set<string>) {
   localStorage.setItem('fc_bookmarks', JSON.stringify([...set]))
@@ -71,17 +93,24 @@ export default function Formulas() {
 
   const availableTags = useMemo(() => {
     const tags = new Set<string>()
-    decks.forEach(d => d.tags?.forEach(t => tags.add(t)))
+    decks.forEach((d) => d.tags?.forEach((t) => tags.add(t)))
     return Array.from(tags).sort()
   }, [decks])
 
   // ── Active session state ──
-  const [activeDeck, setActiveDeck] = useState<{ id: string; title: string; cards: Card[] } | null>(null)
+  const [activeDeck, setActiveDeck] = useState<{ id: string; title: string; cards: Card[] } | null>(
+    null
+  )
   const [sessionCards, setSessionCards] = useState<Card[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isFlipped, setIsFlipped] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
-  const [settings, setSettings] = useState<FCSettings>({ shuffle: false, bookmarkedOnly: false, swapTermDef: false, writtenMode: false })
+  const [settings, setSettings] = useState<FCSettings>({
+    shuffle: false,
+    bookmarkedOnly: false,
+    swapTermDef: false,
+    writtenMode: false,
+  })
   const [bookmarks, setBookmarks] = useState<Set<string>>(loadFCBookmarks)
 
   // ── Written mode state ──
@@ -141,39 +170,45 @@ export default function Formulas() {
            ORDER BY t.name`
         )
         if (r.success && r.data) {
-          setDecks(r.data.map((row: any) => {
-            const types = (row.types || '').split(',')
-            let deckType: 'mcq' | 'flashcard' | 'formula' | 'mixed' = 'formula'
-            if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
-            else if (types.includes('mcq')) deckType = 'mcq'
-            else if (types.includes('flashcard')) deckType = 'flashcard'
-            else if (types.includes('formula')) deckType = 'formula'
+          setDecks(
+            r.data.map((row: any) => {
+              const types = (row.types || '').split(',')
+              let deckType: 'mcq' | 'flashcard' | 'formula' | 'mixed' = 'formula'
+              if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
+              else if (types.includes('mcq')) deckType = 'mcq'
+              else if (types.includes('flashcard')) deckType = 'flashcard'
+              else if (types.includes('formula')) deckType = 'formula'
 
-            let parsedTags: string[] = []
-            try {
-              if (row.tags) parsedTags = JSON.parse(row.tags)
-            } catch (e) { }
+              let parsedTags: string[] = []
+              try {
+                if (row.tags) parsedTags = JSON.parse(row.tags)
+              } catch (e) {}
 
-            const mastery = (() => {
-              const savedKeys = JSON.parse(localStorage.getItem(`progress_${row.id}`) || '[]');
-              return row.card_count > 0 ? Math.round((savedKeys.length / row.card_count) * 100) : 0;
-            })();
+              const mastery = (() => {
+                const savedKeys = JSON.parse(localStorage.getItem(`progress_${row.id}`) || '[]')
+                return row.card_count > 0
+                  ? Math.round((savedKeys.length / row.card_count) * 100)
+                  : 0
+              })()
 
-            return {
-              id: row.id,
-              title: row.name,
-              subject: SUBJECT_MAP[row.subject] || 'ELECS',
-              cardCount: row.card_count || 0,
-              deckType,
-              description: row.description || '',
-              mastery,
-              tags: parsedTags,
-              createdAt: row.created_at || Date.now(),
-              folderName: row.folder_name || 'Uncategorized'
-            }
-          }))
+              return {
+                id: row.id,
+                title: row.name,
+                subject: SUBJECT_MAP[row.subject] || 'ELECS',
+                cardCount: row.card_count || 0,
+                deckType,
+                description: row.description || '',
+                mastery,
+                tags: parsedTags,
+                createdAt: row.created_at || Date.now(),
+                folderName: row.folder_name || 'Uncategorized',
+              }
+            })
+          )
         }
-      } catch (e) { console.error('Failed to load decks', e) }
+      } catch (e) {
+        console.error('Failed to load decks', e)
+      }
     }
     load()
   }, [])
@@ -183,7 +218,7 @@ export default function Formulas() {
     if (setToDelete) {
       setDeleteCountdown(2)
       const timer = setInterval(() => {
-        setDeleteCountdown(prev => {
+        setDeleteCountdown((prev) => {
           if (prev <= 1) {
             clearInterval(timer)
             return 0
@@ -202,7 +237,7 @@ export default function Formulas() {
         await window.electron.db.run(`DELETE FROM cards WHERE topic_id = ?`, [setToDelete.id])
         await window.electron.db.run(`DELETE FROM topics WHERE id = ?`, [setToDelete.id])
       }
-      setDecks(prev => prev.filter(s => s.id !== setToDelete.id))
+      setDecks((prev) => prev.filter((s) => s.id !== setToDelete.id))
       setSetToDelete(null)
     } catch (err) {
       console.error('Failed to delete set', err)
@@ -213,9 +248,7 @@ export default function Formulas() {
   const openDeck = async (deck: DeckInfo) => {
     try {
       if (!window.electron?.db) return
-      const r = await window.electron.db.query(
-        `SELECT * FROM cards WHERE topic_id = ?`, [deck.id]
-      )
+      const r = await window.electron.db.query(`SELECT * FROM cards WHERE topic_id = ?`, [deck.id])
       if (r.success && r.data) {
         const cards: Card[] = r.data.map((row: any) => ({
           id: row.id,
@@ -223,30 +256,35 @@ export default function Formulas() {
           type: row.type,
           data: typeof row.data === 'string' ? JSON.parse(row.data) : row.data,
           difficulty: row.difficulty || 'medium',
-          tags: typeof row.tags === 'string' ? JSON.parse(row.tags) : (row.tags || []),
+          tags: typeof row.tags === 'string' ? JSON.parse(row.tags) : row.tags || [],
           isCustom: !!row.is_custom,
           createdAt: row.created_at || '',
         }))
         setActiveDeck({ id: deck.id, title: deck.title, cards })
         applySettings(cards, settings)
       }
-    } catch (e) { console.error('Failed to load cards', e) }
+    } catch (e) {
+      console.error('Failed to load cards', e)
+    }
   }
 
   // ── Apply settings to card list ──
-  const applySettings = useCallback((cards: Card[], s: FCSettings) => {
-    let filtered = [...cards]
-    if (s.bookmarkedOnly) {
-      filtered = filtered.filter(c => bookmarks.has(`fc_bookmark_${c.id}`))
-    }
-    if (s.shuffle) filtered = shuffleArray(filtered)
-    setSessionCards(filtered)
-    setCurrentIndex(0)
-    setIsFlipped(false)
-    setWrittenAnswer('')
-    setWrittenSubmitted(false)
-    setWrittenCorrect(null)
-  }, [bookmarks])
+  const applySettings = useCallback(
+    (cards: Card[], s: FCSettings) => {
+      let filtered = [...cards]
+      if (s.bookmarkedOnly) {
+        filtered = filtered.filter((c) => bookmarks.has(`fc_bookmark_${c.id}`))
+      }
+      if (s.shuffle) filtered = shuffleArray(filtered)
+      setSessionCards(filtered)
+      setCurrentIndex(0)
+      setIsFlipped(false)
+      setWrittenAnswer('')
+      setWrittenSubmitted(false)
+      setWrittenCorrect(null)
+    },
+    [bookmarks]
+  )
 
   // Re-apply when settings change
   useEffect(() => {
@@ -256,7 +294,7 @@ export default function Formulas() {
   // ── Navigation ──
   const goNext = () => {
     if (currentIndex < sessionCards.length - 1) {
-      setCurrentIndex(i => i + 1)
+      setCurrentIndex((i) => i + 1)
       setIsFlipped(false)
       setWrittenAnswer('')
       setWrittenSubmitted(false)
@@ -265,7 +303,7 @@ export default function Formulas() {
   }
   const goPrev = () => {
     if (currentIndex > 0) {
-      setCurrentIndex(i => i - 1)
+      setCurrentIndex((i) => i - 1)
       setIsFlipped(false)
       setWrittenAnswer('')
       setWrittenSubmitted(false)
@@ -278,12 +316,15 @@ export default function Formulas() {
     if (!activeDeck) return
     const handler = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-      if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); setIsFlipped(f => !f) }
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault()
+        setIsFlipped((f) => !f)
+      }
       if (e.key === 'ArrowRight') goNext()
       if (e.key === 'ArrowLeft') goPrev()
       if (e.key === 'f' || e.key === 'F') {
         // Toggle swap term/def and reset flip so front face shows first
-        setSettings(s => ({ ...s, swapTermDef: !s.swapTermDef }))
+        setSettings((s) => ({ ...s, swapTermDef: !s.swapTermDef }))
         setIsFlipped(false)
       }
     }
@@ -294,9 +335,10 @@ export default function Formulas() {
   // ── Bookmark toggle ──
   const toggleBookmark = (cardId: string) => {
     const key = `fc_bookmark_${cardId}`
-    setBookmarks(prev => {
+    setBookmarks((prev) => {
       const next = new Set(prev)
-      if (next.has(key)) next.delete(key); else next.add(key)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
       saveFCBookmarks(next)
       return next
     })
@@ -309,7 +351,10 @@ export default function Formulas() {
     const isCorrect = writtenAnswer.trim().toLowerCase() === correct.trim().toLowerCase()
     setWrittenCorrect(isCorrect)
     setWrittenSubmitted(true)
-    setWrittenStats(prev => ({ correct: prev.correct + (isCorrect ? 1 : 0), total: prev.total + 1 }))
+    setWrittenStats((prev) => ({
+      correct: prev.correct + (isCorrect ? 1 : 0),
+      total: prev.total + 1,
+    }))
   }
 
   // ── Exit session ──
@@ -319,7 +364,7 @@ export default function Formulas() {
     setCurrentIndex(0)
     setIsFlipped(false)
     setShowSettings(false)
-    setSettings(s => ({ ...s, bookmarkedOnly: false })) // Reset bookmark filter on exit
+    setSettings((s) => ({ ...s, bookmarkedOnly: false })) // Reset bookmark filter on exit
     setWrittenStats({ correct: 0, total: 0 })
   }
 
@@ -328,7 +373,11 @@ export default function Formulas() {
 
   function getFrontText(card: Card): string {
     if (typeof card.data === 'string') {
-      console.warn('[ECEngine] Card data parse error — card may have been saved with double-escaped LaTeX. Please re-save this card in Edit Deck.', card.id, card.data)
+      console.warn(
+        '[ECEngine] Card data parse error — card may have been saved with double-escaped LaTeX. Please re-save this card in Edit Deck.',
+        card.id,
+        card.data
+      )
       return 'Error: Corrupted card data'
     }
     if (card.type === 'mcq') {
@@ -356,7 +405,9 @@ export default function Formulas() {
       const backStr = [f.latex ? `$$${f.latex}$$` : '', descVars].filter(Boolean).join('\n\n')
       return settings.swapTermDef ? backStr : frontStr
     }
-    return settings.swapTermDef ? (card.data as FlashcardData).back : (card.data as FlashcardData).front
+    return settings.swapTermDef
+      ? (card.data as FlashcardData).back
+      : (card.data as FlashcardData).front
   }
 
   function getBackContent(card: Card): React.ReactNode {
@@ -366,7 +417,12 @@ export default function Formulas() {
     if (card.type === 'mcq') {
       const mcq = card.data as MCQData
       const text = settings.swapTermDef ? mcq.question : mcq.choices[mcq.answer]
-      return <div className="text-xl lg:text-2xl leading-relaxed font-[var(--font-card-body)] text-[var(--text-accent)] font-medium" dangerouslySetInnerHTML={{ __html: renderMath(text) }} />
+      return (
+        <div
+          className="text-xl lg:text-2xl leading-relaxed font-[var(--font-card-body)] text-[var(--text-accent)] font-medium"
+          dangerouslySetInnerHTML={{ __html: renderMath(text) }}
+        />
+      )
     }
     if (card.type === 'formula') {
       const f = card.data as any
@@ -388,11 +444,21 @@ export default function Formulas() {
 
       const backStr = [f.latex ? `$$${f.latex}$$` : '', descVars].filter(Boolean).join('\n\n')
       const text = settings.swapTermDef ? frontStr : backStr
-      return <div className={`leading-relaxed ${settings.swapTermDef ? "text-xl text-left font-[var(--font-card-body)]" : "text-4xl text-center font-[var(--font-card-body)] text-[var(--text-primary)] font-medium"}`} dangerouslySetInnerHTML={{ __html: renderMath(text) }} />
+      return (
+        <div
+          className={`leading-relaxed ${settings.swapTermDef ? 'text-xl text-left font-[var(--font-card-body)]' : 'text-4xl text-center font-[var(--font-card-body)] text-[var(--text-primary)] font-medium'}`}
+          dangerouslySetInnerHTML={{ __html: renderMath(text) }}
+        />
+      )
     }
     const fc = card.data as FlashcardData
     const text = settings.swapTermDef ? fc.front : fc.back
-    return <div className="text-xl leading-relaxed" dangerouslySetInnerHTML={{ __html: renderMath(text) }} />
+    return (
+      <div
+        className="text-xl leading-relaxed"
+        dangerouslySetInnerHTML={{ __html: renderMath(text) }}
+      />
+    )
   }
 
   function getCorrectAnswer(card: Card): string {
@@ -436,38 +502,45 @@ export default function Formulas() {
   }, [])
 
   const folders = useMemo(() => {
-    const names = [...new Set(
-      decks.map(d => d.folderName || 'Uncategorized')
-    )].sort()
+    const names = [...new Set(decks.map((d) => d.folderName || 'Uncategorized'))].sort()
     const idx = names.indexOf('Uncategorized')
-    if (idx > -1) { names.splice(idx, 1); names.push('Uncategorized') }
+    if (idx > -1) {
+      names.splice(idx, 1)
+      names.push('Uncategorized')
+    }
     return names
   }, [decks])
 
-  const deckCountByFolder = useMemo(() =>
-    folders.reduce((acc, f) => ({
-      ...acc,
-      [f]: decks.filter(d =>
-        (d.folderName || 'Uncategorized') === f
-      ).length
-    }), {} as Record<string, number>)
-    , [decks, folders])
+  const deckCountByFolder = useMemo(
+    () =>
+      folders.reduce(
+        (acc, f) => ({
+          ...acc,
+          [f]: decks.filter((d) => (d.folderName || 'Uncategorized') === f).length,
+        }),
+        {} as Record<string, number>
+      ),
+    [decks, folders]
+  )
 
   const filteredDecks = useMemo(() => {
     // Formula type filter is already applied at DB level (HAVING clause)
     // Folder filter → subject filter → type filter → tag filter → sort
-    const folderFiltered = activeFolder === 'all'
-      ? decks
-      : decks.filter(d => (d.folderName || 'Uncategorized') === activeFolder)
+    const folderFiltered =
+      activeFolder === 'all'
+        ? decks
+        : decks.filter((d) => (d.folderName || 'Uncategorized') === activeFolder)
 
-    let result = folderFiltered.filter(d => activeSubject === 'ALL' || d.subject === activeSubject)
+    let result = folderFiltered.filter(
+      (d) => activeSubject === 'ALL' || d.subject === activeSubject
+    )
 
     if (filterType !== 'all') {
-      result = result.filter(d => d.deckType === filterType)
+      result = result.filter((d) => d.deckType === filterType)
     }
 
     if (filterTags.length > 0) {
-      result = result.filter(d => filterTags.every(tag => d.tags?.includes(tag)))
+      result = result.filter((d) => filterTags.every((tag) => d.tags?.includes(tag)))
     }
 
     result.sort((a, b) => {
@@ -490,7 +563,7 @@ export default function Formulas() {
       <div className="h-full bg-[#0D0D0D] flex flex-col overflow-hidden">
         {/* Top Bar */}
         <div className="shrink-0 bg-[#111] border-b border-[#222] px-6 py-4 flex items-center justify-between z-20">
-          <LeaveConfirmModal 
+          <LeaveConfirmModal
             isOpen={blocker.state === 'blocked' || showExitConfirm}
             onConfirm={() => {
               if (blocker.state === 'blocked') {
@@ -509,33 +582,54 @@ export default function Formulas() {
             }}
           />
           <div className="flex items-center gap-4">
-            <button onClick={() => setShowExitConfirm(true)} className="text-[#888] hover:text-white transition-colors p-2 rounded hover:bg-[#222]" title="Exit">
+            <button
+              onClick={() => setShowExitConfirm(true)}
+              className="text-[#888] hover:text-white transition-colors p-2 rounded hover:bg-[#222]"
+              title="Exit"
+            >
               <X className="w-5 h-5" />
             </button>
             <div className="flex flex-col">
-              <span className="text-[var(--accent-primary)] font-['Orbitron'] font-bold tracking-widest text-sm uppercase">{activeDeck.title}</span>
-              <span className="text-[#888] text-xs font-['Rajdhani'] uppercase tracking-widest">Card {currentIndex + 1} of {sessionCards.length}</span>
+              <span className="text-[var(--accent-primary)] font-['Orbitron'] font-bold tracking-widest text-sm uppercase">
+                {activeDeck.title}
+              </span>
+              <span className="text-[#888] text-xs font-['Rajdhani'] uppercase tracking-widest">
+                Card {currentIndex + 1} of {sessionCards.length}
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-3">
             {settings.writtenMode && (
               <span className="text-xs font-['IBM_Plex_Mono'] text-[#888] bg-[#1a1a1a] px-3 py-1 rounded border border-[#333]">
-                Accuracy: <span className="text-[var(--accent-primary)]">{writtenStats.total > 0 ? Math.round((writtenStats.correct / writtenStats.total) * 100) : 0}%</span>
+                Accuracy:{' '}
+                <span className="text-[var(--accent-primary)]">
+                  {writtenStats.total > 0
+                    ? Math.round((writtenStats.correct / writtenStats.total) * 100)
+                    : 0}
+                  %
+                </span>
               </span>
             )}
             {/* Swap Term/Def toggle button — always visible */}
             <button
-              onClick={() => { setSettings(s => ({ ...s, swapTermDef: !s.swapTermDef })); setIsFlipped(false); }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${settings.swapTermDef
-                ? 'bg-[#00FF41]/20 text-[#00FF41] border-[#00FF41]'
-                : 'bg-[#1a1a1a] text-[#888] border-[#333] hover:border-[#555] hover:text-[#E8E8E8]'
-                }`}
+              onClick={() => {
+                setSettings((s) => ({ ...s, swapTermDef: !s.swapTermDef }))
+                setIsFlipped(false)
+              }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${
+                settings.swapTermDef
+                  ? 'bg-[#00FF41]/20 text-[#00FF41] border-[#00FF41]'
+                  : 'bg-[#1a1a1a] text-[#888] border-[#333] hover:border-[#555] hover:text-[#E8E8E8]'
+              }`}
               title="Swap Term / Definition (Shortcut: F)"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               {settings.swapTermDef ? 'SWAPPED' : 'SWAP'}
             </button>
-            <button onClick={() => setShowSettings(!showSettings)} className="text-[#888] hover:text-[var(--accent-primary)] transition-colors p-2 rounded hover:bg-[#222]">
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="text-[#888] hover:text-[var(--accent-primary)] transition-colors p-2 rounded hover:bg-[#222]"
+            >
               <Settings2 className="w-5 h-5" />
             </button>
           </div>
@@ -543,25 +637,37 @@ export default function Formulas() {
 
         {/* Progress Bar */}
         <div className="shrink-0 w-full bg-[#1a1a1a] h-[4px]">
-          <motion.div className="h-full bg-[var(--accent-primary)] shadow-[0_0_8px_rgba(0,255,65,0.6)]" animate={{ width: `${progress}%` }} transition={{ duration: 0.3 }} />
+          <motion.div
+            className="h-full bg-[var(--accent-primary)] shadow-[0_0_8px_rgba(0,255,65,0.6)]"
+            animate={{ width: `${progress}%` }}
+            transition={{ duration: 0.3 }}
+          />
         </div>
 
         {/* Settings Panel */}
         <AnimatePresence>
           {showSettings && (
-            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="shrink-0 bg-[#111] border-b border-[#333] overflow-hidden">
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="shrink-0 bg-[#111] border-b border-[#333] overflow-hidden"
+            >
               <div className="p-4 flex flex-wrap gap-6 items-center justify-center">
                 {[
                   { key: 'shuffle' as const, label: 'Shuffle' },
                   { key: 'bookmarkedOnly' as const, label: 'Bookmarked Only' },
                   { key: 'swapTermDef' as const, label: 'Swap Term/Def' },
                   { key: 'writtenMode' as const, label: 'Written Mode' },
-                ].map(opt => (
-                  <button key={opt.key} onClick={() => setSettings(s => ({ ...s, [opt.key]: !s[opt.key] }))}
-                    className={`px-4 py-2 rounded-lg text-sm font-['Rajdhani'] font-bold tracking-widest uppercase transition-all border ${settings[opt.key]
-                      ? 'bg-[var(--accent-primary)] text-black border-[var(--accent-primary)] shadow-[0_0_10px_rgba(0,255,65,0.3)]'
-                      : 'bg-[#1a1a1a] text-[#888] border-[#333] hover:text-white hover:border-[#555]'
-                      }`}
+                ].map((opt) => (
+                  <button
+                    key={opt.key}
+                    onClick={() => setSettings((s) => ({ ...s, [opt.key]: !s[opt.key] }))}
+                    className={`px-4 py-2 rounded-lg text-sm font-['Rajdhani'] font-bold tracking-widest uppercase transition-all border ${
+                      settings[opt.key]
+                        ? 'bg-[var(--accent-primary)] text-black border-[var(--accent-primary)] shadow-[0_0_10px_rgba(0,255,65,0.3)]'
+                        : 'bg-[#1a1a1a] text-[#888] border-[#333] hover:text-white hover:border-[#555]'
+                    }`}
                   >
                     {opt.label}
                   </button>
@@ -575,25 +681,60 @@ export default function Formulas() {
         <div className="flex-1 flex items-center justify-center p-6 lg:p-10">
           <div className="w-full max-w-3xl">
             <AnimatePresence mode="wait">
-              <motion.div key={`${currentCard.id}-${currentIndex}`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.25 }}>
+              <motion.div
+                key={`${currentCard.id}-${currentIndex}`}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.25 }}
+              >
                 {/* The Card */}
                 <div className="relative bg-[#161616] border border-[#222] rounded-xl shadow-2xl min-h-[350px] flex flex-col">
                   {/* Bookmark */}
-                  <button onClick={() => toggleBookmark(currentCard.id)} className="absolute top-5 right-5 z-10 text-[#666] hover:text-[#FFB800] transition-colors" title="Bookmark">
-                    <Bookmark className={`w-6 h-6 ${isBookmarked ? 'fill-[#FFB800] text-[#FFB800]' : ''}`} />
+                  <button
+                    onClick={() => toggleBookmark(currentCard.id)}
+                    className="absolute top-5 right-5 z-10 text-[#666] hover:text-[#FFB800] transition-colors"
+                    title="Bookmark"
+                  >
+                    <Bookmark
+                      className={`w-6 h-6 ${isBookmarked ? 'fill-[#FFB800] text-[#FFB800]' : ''}`}
+                    />
                   </button>
 
                   {/* Card Label */}
                   <div className="px-8 pt-6 pb-2">
                     <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888]">
                       {isFlipped
-                        ? (currentCard.type === 'mcq' ? (settings.swapTermDef ? 'Question' : 'Answer') : currentCard.type === 'formula' ? (settings.swapTermDef ? 'Front' : 'Back') : (settings.swapTermDef ? 'Term' : 'Definition'))
-                        : (currentCard.type === 'mcq' ? (settings.swapTermDef ? 'Answer' : 'Question') : currentCard.type === 'formula' ? (settings.swapTermDef ? 'Back' : 'Front') : (settings.swapTermDef ? 'Definition' : 'Term'))}
+                        ? currentCard.type === 'mcq'
+                          ? settings.swapTermDef
+                            ? 'Question'
+                            : 'Answer'
+                          : currentCard.type === 'formula'
+                            ? settings.swapTermDef
+                              ? 'Front'
+                              : 'Back'
+                            : settings.swapTermDef
+                              ? 'Term'
+                              : 'Definition'
+                        : currentCard.type === 'mcq'
+                          ? settings.swapTermDef
+                            ? 'Answer'
+                            : 'Question'
+                          : currentCard.type === 'formula'
+                            ? settings.swapTermDef
+                              ? 'Back'
+                              : 'Front'
+                            : settings.swapTermDef
+                              ? 'Definition'
+                              : 'Term'}
                     </span>
                   </div>
 
                   {/* Card Content */}
-                  <div className="flex-1 flex items-center justify-center px-8 pb-8 cursor-pointer" onClick={() => !settings.writtenMode && setIsFlipped(f => !f)}>
+                  <div
+                    className="flex-1 flex items-center justify-center px-8 pb-8 cursor-pointer"
+                    onClick={() => !settings.writtenMode && setIsFlipped((f) => !f)}
+                  >
                     {!isFlipped ? (
                       <div className="text-center w-full">
                         {currentCard.data.imagePath && (
@@ -602,21 +743,48 @@ export default function Formulas() {
                               src={`ece-app://${currentCard.data.imagePath}`}
                               alt="Card diagram"
                               className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
-                              onClick={(e) => { e.stopPropagation(); setZoomedImage(currentCard.data.imagePath!); }}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setZoomedImage(currentCard.data.imagePath!)
+                              }}
                             />
                           </div>
                         )}
                         {currentCard.type === 'formula' ? (
-                          <div className="flex flex-col items-center justify-center w-full gap-4" style={{ minHeight: '200px' }}>
-                            <div className="text-4xl font-medium leading-relaxed" style={{ color: 'var(--text-primary)' }} dangerouslySetInnerHTML={{ __html: renderMath(getFrontText(currentCard)) }} />
+                          <div
+                            className="flex flex-col items-center justify-center w-full gap-4"
+                            style={{ minHeight: '200px' }}
+                          >
+                            <div
+                              className="text-4xl font-medium leading-relaxed"
+                              style={{ color: 'var(--text-primary)' }}
+                              dangerouslySetInnerHTML={{
+                                __html: renderMath(getFrontText(currentCard)),
+                              }}
+                            />
                           </div>
                         ) : (
-                          <div className="text-xl lg:text-2xl font-medium leading-relaxed font-[var(--font-card-body)]" style={{ color: 'var(--text-primary)' }} dangerouslySetInnerHTML={{ __html: renderMath(getFrontText(currentCard)) }} />
+                          <div
+                            className="text-xl lg:text-2xl font-medium leading-relaxed font-[var(--font-card-body)]"
+                            style={{ color: 'var(--text-primary)' }}
+                            dangerouslySetInnerHTML={{
+                              __html: renderMath(getFrontText(currentCard)),
+                            }}
+                          />
                         )}
-                        {!settings.writtenMode && currentCard?.type !== 'formula' && <p className="text-sm mt-6 font-['Rajdhani']" style={{ color: 'var(--text-muted)' }}>Click or press Space to flip</p>}
+                        {!settings.writtenMode && currentCard?.type !== 'formula' && (
+                          <p
+                            className="text-sm mt-6 font-['Rajdhani']"
+                            style={{ color: 'var(--text-muted)' }}
+                          >
+                            Click or press Space to flip
+                          </p>
+                        )}
                       </div>
                     ) : (
-                      <div className="text-center w-full text-[#E8E8E8]">{getBackContent(currentCard)}</div>
+                      <div className="text-center w-full text-[#E8E8E8]">
+                        {getBackContent(currentCard)}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -625,31 +793,57 @@ export default function Formulas() {
                 {settings.writtenMode && !isFlipped && (
                   <div className="mt-4 flex flex-col gap-3">
                     <input
-                      type="text" value={writtenAnswer}
-                      onChange={e => setWrittenAnswer(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') handleWrittenSubmit() }}
+                      type="text"
+                      value={writtenAnswer}
+                      onChange={(e) => setWrittenAnswer(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleWrittenSubmit()
+                      }}
                       disabled={writtenSubmitted}
                       placeholder="Type your answer..."
                       className="w-full bg-[#111] border border-[#333] focus:border-[var(--accent-primary)] text-[#E8E8E8] placeholder-[#555] py-4 px-6 rounded-lg font-['IBM_Plex_Mono'] outline-none transition-colors"
                     />
                     {!writtenSubmitted ? (
-                      <button onClick={handleWrittenSubmit} className="w-full py-3 bg-[var(--accent-primary)] text-black rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-colors">Submit</button>
+                      <button
+                        onClick={handleWrittenSubmit}
+                        className="w-full py-3 bg-[var(--accent-primary)] text-black rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-colors"
+                      >
+                        Submit
+                      </button>
                     ) : (
-                      <div className="flex items-center gap-3 p-4 rounded-lg border bg-[#111]" style={{ borderColor: writtenCorrect ? '#00FF41' : '#FF3333' }}>
-                        {writtenCorrect
-                          ? <Check className="w-6 h-6 text-[#00FF41] shrink-0" />
-                          : <XCircle className="w-6 h-6 text-[#FF3333] shrink-0" />}
+                      <div
+                        className="flex items-center gap-3 p-4 rounded-lg border bg-[#111]"
+                        style={{ borderColor: writtenCorrect ? '#00FF41' : '#FF3333' }}
+                      >
+                        {writtenCorrect ? (
+                          <Check className="w-6 h-6 text-[#00FF41] shrink-0" />
+                        ) : (
+                          <XCircle className="w-6 h-6 text-[#FF3333] shrink-0" />
+                        )}
                         <div className="flex-1">
-                          <span className={`font-['Rajdhani'] font-bold uppercase tracking-widest text-sm ${writtenCorrect ? 'text-[#00FF41]' : 'text-[#FF3333]'}`}>
+                          <span
+                            className={`font-['Rajdhani'] font-bold uppercase tracking-widest text-sm ${writtenCorrect ? 'text-[#00FF41]' : 'text-[#FF3333]'}`}
+                          >
                             {writtenCorrect ? 'Correct!' : 'Incorrect'}
                           </span>
                           {!writtenCorrect && (
                             <div className="text-[#888] text-sm font-['IBM_Plex_Mono'] mt-1">
-                              Correct: <span className="text-[#00FF41]" dangerouslySetInnerHTML={{ __html: renderMath(getCorrectAnswer(currentCard)) }} />
+                              Correct:{' '}
+                              <span
+                                className="text-[#00FF41]"
+                                dangerouslySetInnerHTML={{
+                                  __html: renderMath(getCorrectAnswer(currentCard)),
+                                }}
+                              />
                             </div>
                           )}
                         </div>
-                        <button onClick={() => { setIsFlipped(true) }} className="px-4 py-2 text-sm bg-[#222] text-[#E8E8E8] rounded font-['Rajdhani'] uppercase tracking-widest hover:bg-[#333] transition-colors">
+                        <button
+                          onClick={() => {
+                            setIsFlipped(true)
+                          }}
+                          className="px-4 py-2 text-sm bg-[#222] text-[#E8E8E8] rounded font-['Rajdhani'] uppercase tracking-widest hover:bg-[#333] transition-colors"
+                        >
                           View Card
                         </button>
                       </div>
@@ -660,12 +854,18 @@ export default function Formulas() {
                 {/* Navigation Buttons */}
                 {(isFlipped || (settings.writtenMode && writtenSubmitted)) && (
                   <div className="mt-6 flex justify-between items-center">
-                    <button onClick={goPrev} disabled={currentIndex === 0}
-                      className="flex items-center gap-2 px-6 py-3 bg-[#111] border border-[#333] rounded-lg text-[#E8E8E8] font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[#222] hover:border-[#555] transition-all disabled:opacity-30 disabled:cursor-default">
+                    <button
+                      onClick={goPrev}
+                      disabled={currentIndex === 0}
+                      className="flex items-center gap-2 px-6 py-3 bg-[#111] border border-[#333] rounded-lg text-[#E8E8E8] font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[#222] hover:border-[#555] transition-all disabled:opacity-30 disabled:cursor-default"
+                    >
                       <ArrowLeft className="w-4 h-4" /> Prev
                     </button>
-                    <button onClick={goNext} disabled={currentIndex === sessionCards.length - 1}
-                      className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-primary)] text-black rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-all shadow-[0_0_15px_rgba(0,255,65,0.2)] disabled:opacity-30 disabled:cursor-default">
+                    <button
+                      onClick={goNext}
+                      disabled={currentIndex === sessionCards.length - 1}
+                      className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-primary)] text-black rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-all shadow-[0_0_15px_rgba(0,255,65,0.2)] disabled:opacity-30 disabled:cursor-default"
+                    >
                       Next <ArrowRight className="w-4 h-4" />
                     </button>
                   </div>
@@ -713,7 +913,9 @@ export default function Formulas() {
       <div className="h-full bg-[#0D0D0D] flex flex-col items-center justify-center gap-6 p-10 text-center">
         <div className="flex flex-col items-center gap-2">
           <Bookmark className="w-12 h-12 text-[#FFB800] opacity-50 mb-2" />
-          <p className="text-[#888] font-['IBM_Plex_Mono'] text-lg">No cards match your current filters.</p>
+          <p className="text-[#888] font-['IBM_Plex_Mono'] text-lg">
+            No cards match your current filters.
+          </p>
           <p className="text-[#555] font-['Rajdhani'] uppercase tracking-widest text-sm">
             (You might have 'Bookmarked Only' enabled with no bookmarks in this deck)
           </p>
@@ -721,7 +923,7 @@ export default function Formulas() {
 
         <div className="flex gap-4">
           <button
-            onClick={() => setSettings(s => ({ ...s, bookmarkedOnly: false }))}
+            onClick={() => setSettings((s) => ({ ...s, bookmarkedOnly: false }))}
             className="px-6 py-3 bg-[var(--accent-primary)] text-black rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-colors shadow-[0_0_15px_rgba(0,255,65,0.2)]"
           >
             Show All Cards
@@ -764,10 +966,14 @@ export default function Formulas() {
                 <div className="relative" ref={filterPopoverRef}>
                   <button
                     onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                    className={`p-2 rounded-lg border transition-all ${showAdvancedFilters || filterTags.length > 0 || filterType !== 'all' || sortBy !== 'date'
+                    className={`p-2 rounded-lg border transition-all ${
+                      showAdvancedFilters ||
+                      filterTags.length > 0 ||
+                      filterType !== 'all' ||
+                      sortBy !== 'date'
                         ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
                         : 'bg-[var(--bg-secondary)] border-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                      }`}
+                    }`}
                   >
                     <SlidersHorizontal size={20} />
                   </button>
@@ -782,22 +988,32 @@ export default function Formulas() {
                         className="absolute right-0 top-full mt-2 w-72 bg-[#111] border border-[#333] rounded-lg shadow-2xl p-4 z-50 flex flex-col gap-4"
                       >
                         <div className="flex justify-between items-center pb-2 border-b border-[#333]">
-                          <span className="font-['Rajdhani'] font-bold text-sm tracking-widest uppercase text-[#00FF41]">Filters & Sort</span>
-                          <button onClick={() => setShowAdvancedFilters(false)} className="text-[#888] hover:text-[#E8E8E8]">
+                          <span className="font-['Rajdhani'] font-bold text-sm tracking-widest uppercase text-[#00FF41]">
+                            Filters & Sort
+                          </span>
+                          <button
+                            onClick={() => setShowAdvancedFilters(false)}
+                            className="text-[#888] hover:text-[#E8E8E8]"
+                          >
                             <X size={16} />
                           </button>
                         </div>
 
                         {/* Sort Selection */}
                         <div className="flex flex-col gap-2">
-                          <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Sort By</label>
+                          <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">
+                            Sort By
+                          </label>
                           <div className="grid grid-cols-2 gap-1">
-                            {(['date', 'title'] as const).map(opt => (
+                            {(['date', 'title'] as const).map((opt) => (
                               <button
                                 key={opt}
                                 onClick={() => setSortBy(opt)}
-                                className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${sortBy === opt ? 'bg-[#00FF41]/20 text-[#00FF41] font-bold' : 'bg-[#1A1A1A] text-[#888] hover:bg-[#222]'
-                                  }`}
+                                className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${
+                                  sortBy === opt
+                                    ? 'bg-[#00FF41]/20 text-[#00FF41] font-bold'
+                                    : 'bg-[#1A1A1A] text-[#888] hover:bg-[#222]'
+                                }`}
                               >
                                 {opt}
                               </button>
@@ -807,14 +1023,19 @@ export default function Formulas() {
 
                         {/* Type Filter */}
                         <div className="flex flex-col gap-2">
-                          <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Type</label>
+                          <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">
+                            Type
+                          </label>
                           <div className="grid grid-cols-4 gap-1">
-                            {(['all', 'mcq', 'formula', 'mixed'] as const).map(opt => (
+                            {(['all', 'mcq', 'formula', 'mixed'] as const).map((opt) => (
                               <button
                                 key={opt}
                                 onClick={() => setFilterType(opt)}
-                                className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${filterType === opt ? 'bg-[#00FF41]/20 text-[#00FF41] font-bold' : 'bg-[#1A1A1A] text-[#888] hover:bg-[#222]'
-                                  }`}
+                                className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${
+                                  filterType === opt
+                                    ? 'bg-[#00FF41]/20 text-[#00FF41] font-bold'
+                                    : 'bg-[#1A1A1A] text-[#888] hover:bg-[#222]'
+                                }`}
                               >
                                 {opt === 'formula' ? 'F1' : opt}
                               </button>
@@ -825,22 +1046,25 @@ export default function Formulas() {
                         {/* Tag Filters */}
                         {availableTags.length > 0 && (
                           <div className="flex flex-col gap-2">
-                            <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Tags (AND)</label>
+                            <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">
+                              Tags (AND)
+                            </label>
                             <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
-                              {availableTags.map(tag => {
+                              {availableTags.map((tag) => {
                                 const isActive = filterTags.includes(tag)
                                 return (
                                   <button
                                     key={tag}
                                     onClick={() => {
-                                      setFilterTags(prev =>
-                                        isActive ? prev.filter(t => t !== tag) : [...prev, tag]
+                                      setFilterTags((prev) =>
+                                        isActive ? prev.filter((t) => t !== tag) : [...prev, tag]
                                       )
                                     }}
-                                    className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-['Rajdhani'] uppercase tracking-wider border transition-all ${isActive
+                                    className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-['Rajdhani'] uppercase tracking-wider border transition-all ${
+                                      isActive
                                         ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
                                         : 'bg-[#1A1A1A] border-[#333] text-[#888] hover:border-[#555] hover:text-[#E8E8E8]'
-                                      }`}
+                                    }`}
                                   >
                                     {tag}
                                     {isActive && <Check size={10} />}
@@ -854,14 +1078,19 @@ export default function Formulas() {
                         {/* Clear Button */}
                         {/* Sort Selection */}
                         <div className="flex flex-col gap-2">
-                          <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Sort By</label>
+                          <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">
+                            Sort By
+                          </label>
                           <div className="grid grid-cols-3 gap-1">
-                            {(['date', 'title', 'mastery'] as const).map(opt => (
+                            {(['date', 'title', 'mastery'] as const).map((opt) => (
                               <button
                                 key={opt}
                                 onClick={() => setSortBy(opt)}
-                                className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${sortBy === opt ? 'bg-[#00FF41]/20 text-[#00FF41] font-bold' : 'bg-[#1A1A1A] text-[#888] hover:bg-[#222]'
-                                  }`}
+                                className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${
+                                  sortBy === opt
+                                    ? 'bg-[#00FF41]/20 text-[#00FF41] font-bold'
+                                    : 'bg-[#1A1A1A] text-[#888] hover:bg-[#222]'
+                                }`}
                               >
                                 {opt}
                               </button>
@@ -887,8 +1116,10 @@ export default function Formulas() {
                 </div>
 
                 <div className="flex gap-2 bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)]">
-                  {SUBJECTS.map(s => (
-                    <button key={s} onClick={() => setActiveSubject(s)}
+                  {SUBJECTS.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setActiveSubject(s)}
                       className={`px-4 py-2 rounded-md font-['Rajdhani'] tracking-widest text-sm font-bold transition-all ${getSubjectFilterClasses(s, activeSubject === s)}`}
                     >
                       {s}
@@ -903,178 +1134,208 @@ export default function Formulas() {
             <div className="flex flex-col items-center">
               <div className="w-full max-w-5xl">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-2 pb-4">
-                  {filteredDecks.map(deck => (
-                <div
-                  key={deck.id}
-                  className="relative isolate group transition-all duration-300 border border-[#333] bg-[#1a1a1a] p-5 flex flex-col w-full min-h-[180px] justify-between hover:-translate-x-[6px] hover:-translate-y-[6px] rounded-xl before:absolute before:w-full before:h-full before:top-0 before:left-0 before:bg-[#1a1a1a] before:border before:border-[#333] before:rounded-xl before:translate-x-[6px] before:translate-y-[6px] before:z-[-1] before:transition-transform before:duration-300 group-hover:before:translate-x-[12px] group-hover:before:translate-y-[12px] after:absolute after:w-full after:h-full after:top-0 after:left-0 after:bg-[#1a1a1a] after:border after:border-[#333] after:rounded-xl after:translate-x-[12px] after:translate-y-[12px] after:z-[-2] after:transition-transform after:duration-300 group-hover:after:translate-x-[18px] group-hover:after:translate-y-[18px]"
-                >
-                  {/* Top Section: Title & Stats Stack */}
-                  <div className="flex justify-between items-start gap-4">
-                    {/* Left Column: Title & Tags */}
-                    <div className="flex-1 min-w-0 flex flex-col gap-3">
-                      {/* Title Row */}
-                      <div className="flex items-center gap-3">
-                        <span className={`w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] uppercase font-rajdhani font-bold tracking-widest text-[10px] shrink-0 ${getSubjectBadgeClasses(deck.subject)}`}>
-                          {deck.subject}
-                        </span>
-                        <h3 className="text-lg font-bold font-rajdhani tracking-wide text-[#E8E8E8] uppercase truncate flex-1">
-                          {deck.title}
-                        </h3>
-                      </div>
-                      {/* Tag Row: Type & Custom Tags (Aligned with Date) */}
-                      <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                        <span className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]">
-                          FM
-                        </span>
-                        {deck.tags && deck.tags.length > 0 && deck.tags.map(tag => (
-                          <span
-                            key={tag}
-                            className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]"
-                          >
-                            {tag}
+                  {filteredDecks.map((deck) => (
+                    <div
+                      key={deck.id}
+                      className="relative isolate group transition-all duration-300 border border-[#333] bg-[#1a1a1a] p-5 flex flex-col w-full min-h-[180px] justify-between hover:-translate-x-[6px] hover:-translate-y-[6px] rounded-xl before:absolute before:w-full before:h-full before:top-0 before:left-0 before:bg-[#1a1a1a] before:border before:border-[#333] before:rounded-xl before:translate-x-[6px] before:translate-y-[6px] before:z-[-1] before:transition-transform before:duration-300 group-hover:before:translate-x-[12px] group-hover:before:translate-y-[12px] after:absolute after:w-full after:h-full after:top-0 after:left-0 after:bg-[#1a1a1a] after:border after:border-[#333] after:rounded-xl after:translate-x-[12px] after:translate-y-[12px] after:z-[-2] after:transition-transform after:duration-300 group-hover:after:translate-x-[18px] group-hover:after:translate-y-[18px]"
+                    >
+                      {/* Top Section: Title & Stats Stack */}
+                      <div className="flex justify-between items-start gap-4">
+                        {/* Left Column: Title & Tags */}
+                        <div className="flex-1 min-w-0 flex flex-col gap-3">
+                          {/* Title Row */}
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={`w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] uppercase font-rajdhani font-bold tracking-widest text-[10px] shrink-0 ${getSubjectBadgeClasses(deck.subject)}`}
+                            >
+                              {deck.subject}
+                            </span>
+                            <h3 className="text-lg font-bold font-rajdhani tracking-wide text-[#E8E8E8] uppercase truncate flex-1">
+                              {deck.title}
+                            </h3>
+                          </div>
+                          {/* Tag Row: Type & Custom Tags (Aligned with Date) */}
+                          <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                            <span className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]">
+                              FM
+                            </span>
+                            {deck.tags &&
+                              deck.tags.length > 0 &&
+                              deck.tags.map((tag) => (
+                                <span
+                                  key={tag}
+                                  className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                          </div>
+                        </div>
+
+                        {/* Right Column: Administrative Info */}
+                        <div className="flex flex-col items-end gap-1.5 shrink-0">
+                          {/* Items Tag */}
+                          <span className="w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] text-[#E8E8E8] font-rajdhani font-bold tracking-widest text-[10px] shrink-0 uppercase whitespace-nowrap">
+                            {deck.cardCount} ITEMS
                           </span>
-                        ))}
+                          {/* Date String */}
+                          <span className="text-[10px] text-gray-500 uppercase font-['IBM_Plex_Mono'] tracking-widest">
+                            {deck.createdAt
+                              ? new Date(deck.createdAt * 1000)
+                                  .toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: '2-digit',
+                                    year: 'numeric',
+                                  })
+                                  .toUpperCase()
+                              : 'N/A'}
+                          </span>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Right Column: Administrative Info */}
-                    <div className="flex flex-col items-end gap-1.5 shrink-0">
-                      {/* Items Tag */}
-                      <span className="w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] text-[#E8E8E8] font-rajdhani font-bold tracking-widest text-[10px] shrink-0 uppercase whitespace-nowrap">
-                        {deck.cardCount} ITEMS
-                      </span>
-                      {/* Date String */}
-                      <span className="text-[10px] text-gray-500 uppercase font-['IBM_Plex_Mono'] tracking-widest">
-                        {deck.createdAt ? new Date(deck.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Deck Description */}
-                  {deck.description && deck.description.trim() !== "" && (
-                    <p className="text-[11px] text-gray-400 font-['IBM_Plex_Mono'] leading-relaxed mt-2 line-clamp-2 uppercase pr-4">
-                      {deck.description}
-                    </p>
-                  )}
-
-                  {/* Bottom Row: Progress and Actions */}
-                  <div className="flex justify-between items-end mt-4 gap-4">
-                    {/* Left Side: Progress Bar (Expanded to Maximize Space) */}
-                    <div className="flex-1">
-                      <div className="flex justify-between text-[10px] font-rajdhani tracking-widest mb-1 uppercase text-gray-500">
-                        <span>MASTERY</span>
-                        <span className="text-[#00FF41] font-bold">{deck.mastery}%</span>
-                      </div>
-                      <div className="w-full bg-[#111] h-1 rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${deck.mastery}%` }}
-                          className="h-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.4)]"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Right Side: Action Buttons */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      {deck.id.startsWith('topic_') && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); window.electron.print.open(deck.id, deck.title) }}
-                          className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
-                          title="Test Paper View"
-                        >
-                          <ScrollText className="w-4 h-4" />
-                        </button>
+                      {/* Deck Description */}
+                      {deck.description && deck.description.trim() !== '' && (
+                        <p className="text-[11px] text-gray-400 font-['IBM_Plex_Mono'] leading-relaxed mt-2 line-clamp-2 uppercase pr-4">
+                          {deck.description}
+                        </p>
                       )}
+
+                      {/* Bottom Row: Progress and Actions */}
+                      <div className="flex justify-between items-end mt-4 gap-4">
+                        {/* Left Side: Progress Bar (Expanded to Maximize Space) */}
+                        <div className="flex-1">
+                          <div className="flex justify-between text-[10px] font-rajdhani tracking-widest mb-1 uppercase text-gray-500">
+                            <span>MASTERY</span>
+                            <span className="text-[#00FF41] font-bold">{deck.mastery}%</span>
+                          </div>
+                          <div className="w-full bg-[#111] h-1 rounded-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${deck.mastery}%` }}
+                              className="h-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.4)]"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Right Side: Action Buttons */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          {deck.id.startsWith('topic_') && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                window.electron.print.open(deck.id, deck.title)
+                              }}
+                              className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
+                              title="Test Paper View"
+                            >
+                              <ScrollText className="w-4 h-4" />
+                            </button>
+                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              navigate(`/edit-deck/${deck.id}`)
+                            }}
+                            className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
+                            title="Edit Deck"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setSetToDelete(deck)
+                            }}
+                            className="p-2 bg-[#111] border border-[#333] hover:border-red-500/50 text-gray-500 hover:text-red-500 rounded transition-colors"
+                            title="Delete Deck"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              openDeck(deck)
+                            }}
+                            className="py-2 px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                            title="Learn this deck"
+                            aria-label="Learn"
+                          >
+                            <Play className="w-3 h-3" />
+                            <span className="hidden xl:inline">Learn</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {filteredDecks.length === 0 && (
+                  <div className="text-center py-20 text-[#888] font-rajdhani uppercase tracking-widest text-lg">
+                    No decks found{activeSubject !== 'ALL' ? ` for ${activeSubject}` : ''}. Import
+                    some from Add Decks.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Delete Confirmation Modal */}
+          <AnimatePresence>
+            {setToDelete && (
+              <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setSetToDelete(null)}
+                  className="absolute inset-0 bg-black/80 backdrop-blur-md"
+                />
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                  className="relative w-full max-w-md bg-[#111] border border-[#333] rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden"
+                >
+                  <div className="h-1 w-full bg-gradient-to-r from-transparent via-[#FF003C] to-transparent" />
+                  <div className="p-8 flex flex-col items-center text-center">
+                    <div className="w-16 h-16 rounded-full bg-[#FF003C]/10 border border-[#FF003C]/30 flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(255,0,60,0.1)]">
+                      <AlertTriangle className="w-8 h-8 text-[#FF003C]" />
+                    </div>
+                    <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-4 tracking-widest uppercase">
+                      DELETE DECK?
+                    </h3>
+                    <p className="text-[#888] font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
+                      Are you absolutely sure you want to delete{' '}
+                      <strong className="text-white">{setToDelete.title}</strong>? This action
+                      cannot be undone and will permanently remove all {setToDelete.cardCount} items
+                      in this set.
+                    </p>
+                    <div className="flex flex-col gap-3 w-full">
                       <button
-                        onClick={(e) => { e.stopPropagation(); navigate(`/edit-deck/${deck.id}`) }}
-                        className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
-                        title="Edit Deck"
+                        onClick={handleConfirmDelete}
+                        disabled={deleteCountdown > 0}
+                        className="w-full py-4 bg-[#FF003C] hover:bg-[#D00030] disabled:bg-[#1A1A1A] disabled:text-[#444] disabled:cursor-not-allowed text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,0,60,0.2)] hover:shadow-[0_0_25px_rgba(255,0,60,0.4)]"
                       >
-                        <Pencil className="w-4 h-4" />
+                        Confirm Delete
                       </button>
                       <button
-                        onClick={(e) => { e.stopPropagation(); setSetToDelete(deck); }}
-                        className="p-2 bg-[#111] border border-[#333] hover:border-red-500/50 text-gray-500 hover:text-red-500 rounded transition-colors"
-                        title="Delete Deck"
+                        onClick={() => setSetToDelete(null)}
+                        className="w-full py-4 bg-[#1A1A1A] border border-[#333] hover:border-[#555] text-[#888] hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
                       >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); openDeck(deck); }}
-                        className="w-[120px] py-2 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
-                      >
-                        <Play className="w-3 h-3" />
-                        Learn
+                        Cancel
                       </button>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-
-            {filteredDecks.length === 0 && (
-              <div className="text-center py-20 text-[#888] font-rajdhani uppercase tracking-widest text-lg">
-                No decks found{activeSubject !== 'ALL' ? ` for ${activeSubject}` : ''}. Import some from Add Decks.
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Delete Confirmation Modal */}
-      <AnimatePresence>
-        {setToDelete && (
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSetToDelete(null)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-md"
-            />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-md bg-[#111] border border-[#333] rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden"
-            >
-              <div className="h-1 w-full bg-gradient-to-r from-transparent via-[#FF003C] to-transparent" />
-              <div className="p-8 flex flex-col items-center text-center">
-                <div className="w-16 h-16 rounded-full bg-[#FF003C]/10 border border-[#FF003C]/30 flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(255,0,60,0.1)]">
-                  <AlertTriangle className="w-8 h-8 text-[#FF003C]" />
-                </div>
-                <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-4 tracking-widest uppercase">
-                  DELETE DECK?
-                </h3>
-                <p className="text-[#888] font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
-                  Are you absolutely sure you want to delete <strong className="text-white">{setToDelete.title}</strong>? This action cannot be undone and will permanently remove all {setToDelete.cardCount} items in this set.
-                </p>
-                <div className="flex flex-col gap-3 w-full">
-                  <button
-                    onClick={handleConfirmDelete}
-                    disabled={deleteCountdown > 0}
-                    className="w-full py-4 bg-[#FF003C] hover:bg-[#D00030] disabled:bg-[#1A1A1A] disabled:text-[#444] disabled:cursor-not-allowed text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,0,60,0.2)] hover:shadow-[0_0_25px_rgba(255,0,60,0.4)]"
-                  >
-                    Confirm Delete
-                  </button>
                   <button
                     onClick={() => setSetToDelete(null)}
-                    className="w-full py-4 bg-[#1A1A1A] border border-[#333] hover:border-[#555] text-[#888] hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
+                    className="absolute top-4 right-4 text-[#444] hover:text-white transition-colors p-1"
                   >
-                    Cancel
+                    <X size={20} />
                   </button>
-                </div>
+                </motion.div>
               </div>
-              <button
-                onClick={() => setSetToDelete(null)}
-                className="absolute top-4 right-4 text-[#444] hover:text-white transition-colors p-1"
-              >
-                <X size={20} />
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>

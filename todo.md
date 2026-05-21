@@ -1,7 +1,8 @@
 \*For IMPROVEMENT TODO LIST
 
 **_RESIZING_**
-some parts of the app contents look weird when i resize it
+
+- some parts of the app contents look weird when i resize it
 
 **_CHOICES_**
 

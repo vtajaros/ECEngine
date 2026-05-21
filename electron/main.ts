@@ -20,8 +20,8 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1280,
     height: 800,
-    minWidth: 900,
-    minHeight: 600,
+    minWidth: 1280,
+    minHeight: 800,
     backgroundColor: '#0D0D0D', // Instant black background
     show: false, // Don't show until ready
     title: 'ECEngine',

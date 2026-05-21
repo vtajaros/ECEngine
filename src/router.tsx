@@ -25,7 +25,7 @@ export const router = createHashRouter([
     element: <ErrorBoundary><AppShell /></ErrorBoundary>,
     children: [
       { path: '',            element: <ErrorBoundary><Dashboard /></ErrorBoundary> },
-      { path: 'topics',      element: <ErrorBoundary><TableOfContents /></ErrorBoundary> }, // REELE ToS
+      { path: 'topics',      element: <ErrorBoundary><TableOfContents /></ErrorBoundary> }, // EELE ToS
       { path: 'study',       element: <ErrorBoundary><FlashcardStudy /></ErrorBoundary> },
       { path: 'flashcards',  element: <ErrorBoundary><FlashcardViewer /></ErrorBoundary> },
       { path: 'formulas',    element: <ErrorBoundary><Formulas /></ErrorBoundary> },

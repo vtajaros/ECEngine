@@ -13,44 +13,47 @@ export default function TableOfContents() {
           <div className="flex flex-col gap-2">
             <h1 className="font-['Orbitron'] text-3xl lg:text-4xl font-bold text-[var(--text-primary)] tracking-wider flex items-center">
               <FolderTree className="text-[var(--accent-primary)] mr-4" size={36} />
-              REELE <span className="text-[var(--accent-primary)] ml-2">ToS</span>
+              EELE <span className="text-[var(--accent-primary)] ml-2">ToS</span>
             </h1>
             <p className="text-[var(--text-secondary)] font-['Rajdhani'] text-lg uppercase tracking-widest">
               PRC ECE TABLE OF SPECIFICATIONS (2022 TOS)
             </p>
           </div>
-          
+
           <div className="relative w-full md:w-80">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search size={18} className="text-[#666]" />
             </div>
-            <input 
-              type="text" 
-              placeholder="Search topics..." 
+            <input
+              type="text"
+              placeholder="Search topics..."
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-[#111] border border-[#333] focus:border-[var(--accent-primary)] rounded-lg pl-10 pr-4 py-3 text-[var(--text-primary)] font-['IBM_Plex_Mono'] text-sm outline-none transition-colors shadow-inner"
             />
           </div>
         </header>
 
         <div className="flex flex-col gap-6 pb-12 flex-1">
-          {TOC_DATA.map(subject => (
-            <SubjectCard 
-              key={subject.id} 
-              subject={subject} 
-              searchQuery={searchQuery} 
-            />
+          {TOC_DATA.map((subject) => (
+            <SubjectCard key={subject.id} subject={subject} searchQuery={searchQuery} />
           ))}
-          
-          {searchQuery && !TOC_DATA.some(s => {
-            const hasTopic = s.topics.some(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()) || t.subtopics.some(st => st.name.toLowerCase().includes(searchQuery.toLowerCase())))
-            return s.name.toLowerCase().includes(searchQuery.toLowerCase()) || hasTopic
-          }) && (
-            <div className="text-center py-20 text-[var(--text-secondary)] font-['Rajdhani'] uppercase tracking-widest text-lg">
-              No matching topics found for "{searchQuery}"
-            </div>
-          )}
+
+          {searchQuery &&
+            !TOC_DATA.some((s) => {
+              const hasTopic = s.topics.some(
+                (t) =>
+                  t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                  t.subtopics.some((st) =>
+                    st.name.toLowerCase().includes(searchQuery.toLowerCase())
+                  )
+              )
+              return s.name.toLowerCase().includes(searchQuery.toLowerCase()) || hasTopic
+            }) && (
+              <div className="text-center py-20 text-[var(--text-secondary)] font-['Rajdhani'] uppercase tracking-widest text-lg">
+                No matching topics found for "{searchQuery}"
+              </div>
+            )}
         </div>
       </div>
     </div>

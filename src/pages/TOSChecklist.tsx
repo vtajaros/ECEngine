@@ -13,7 +13,7 @@ export default function TOSChecklist() {
               REVIEW <span className="text-[#00FF41] ml-2">CHECKLIST</span>
             </h1>
             <p className="text-[var(--text-secondary)] font-['Rajdhani'] text-sm sm:text-base uppercase tracking-widest">
-              BOARD EXAM TABLE OF SPECIFICATIONS REVIEW TRACKER
+              EELE Board Exam Review Tracker
             </p>
           </div>
         </header>

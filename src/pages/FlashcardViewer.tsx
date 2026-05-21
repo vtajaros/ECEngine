@@ -920,10 +920,12 @@ export default function FlashcardViewer() {
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); openDeck(deck); }}
-                        className="flex-1 py-2 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                        className="py-2 px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                        title="Learn this deck"
+                        aria-label="Learn"
                       >
                         <Play className="w-3 h-3" />
-                        Learn
+                        <span className="hidden xl:inline">Learn</span>
                       </button>
                     </div>
                   </div>

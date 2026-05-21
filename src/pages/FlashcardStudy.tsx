@@ -809,17 +809,21 @@ export default function FlashcardStudy() {
                       )}
                       <button
                         onClick={(e) => { e.stopPropagation(); handleOpenLearn(set.id); }}
-                        className="w-[105px] py-2 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                        className="py-2 px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                        title="Learn this deck"
+                        aria-label="Learn"
                       >
                         <Play className="w-3 h-3" />
-                        Learn
+                        <span className="hidden xl:inline">Learn</span>
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleOpenTest(set.id); }}
-                        className="w-[105px] py-2 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                        className="py-2 px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                        title="Test this deck"
+                        aria-label="Test"
                       >
                         <Trophy className="w-3 h-3" />
-                        Test
+                        <span className="hidden xl:inline">Test</span>
                       </button>
                     </div>
                   </div>

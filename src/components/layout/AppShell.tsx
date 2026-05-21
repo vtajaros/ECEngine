@@ -30,7 +30,7 @@ export const AppShell: React.FC = () => {
     { to: '/study', label: 'LooksFam', icon: Brain },
     { to: '/flashcards', label: 'Flashcards', icon: Layers },
     { to: '/formulas', label: 'Formulas', icon: Sigma },
-    { to: '/topics', label: 'REELE ToS', icon: BookOpen },
+    { to: '/topics', label: 'EELE ToS', icon: BookOpen },
     { to: '/checklist', label: 'Review Checklist', icon: ClipboardList },
     { to: '/add-decks', label: 'Add Decks', icon: PlusCircle },
     { to: '/settings', label: 'Settings', icon: Settings },
