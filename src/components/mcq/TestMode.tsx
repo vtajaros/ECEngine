@@ -29,20 +29,6 @@ interface TestModeProps {
 
 type ViewState = 'test' | 'summary' | 'review'
 
-const getQuestionFontSize = (text: string): string => {
-  if (text.length < 80) return '1.5rem'
-  if (text.length < 150) return '1.2rem'
-  if (text.length < 250) return '1rem'
-  return '0.9rem'
-}
-
-const getChoiceFontSize = (text: string): string => {
-  if (text.length < 40) return '1rem'
-  if (text.length < 80) return '0.9rem'
-  if (text.length < 120) return '0.82rem'
-  return '0.75rem'
-}
-
 // ─── Memoised Question Card ───────────────────────────────────────────────────
 interface TestQuestionCardProps {
   card: Card
@@ -112,12 +98,10 @@ const TestQuestionCard = memo(({
       <div className="p-6 border-b border-[#333] flex items-start gap-4">
         <div className="flex-1 flex flex-col max-h-[50vh] overflow-y-auto pr-2">
           <h3
-            className="font-['Rajdhani'] font-semibold text-[var(--text-primary)] whitespace-pre-wrap flex items-start gap-3"
-            style={{ fontSize: getQuestionFontSize(mcq.question), lineHeight: 1.4 }}
+            className="font-['Rajdhani'] font-semibold text-[var(--text-primary)] whitespace-pre-wrap flex items-start gap-3 text-base sm:text-lg leading-relaxed"
           >
             <span
-              className="text-[var(--accent-primary)] font-bold shrink-0"
-              style={{ fontSize: '1.25rem', lineHeight: 1.4 }}
+              className="text-[var(--accent-primary)] font-bold shrink-0 text-sm sm:text-base"
             >
               {index + 1}.
             </span>
@@ -145,13 +129,13 @@ const TestQuestionCard = memo(({
 
         <button
           onClick={(e) => { e.stopPropagation(); onToggleBookmark(card.id) }}
-          className={`p-2 rounded transition-colors ${isBookmarked
+          className={`p-1 sm:p-2 rounded transition-colors ${isBookmarked
             ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/10'
             : 'text-[#555] hover:bg-[#222] hover:text-[#888]'
           }`}
           title={isBookmarked ? 'Remove Bookmark' : 'Bookmark Question'}
         >
-          <Bookmark className="w-5 h-5 fill-current" />
+          <Bookmark className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
         </button>
       </div>
 
@@ -202,8 +186,7 @@ const TestQuestionCard = memo(({
                 {choiceLabel}.
               </div>
               <span
-                className="flex-1 break-words font-['Rajdhani'] font-medium"
-                style={{ fontSize: getChoiceFontSize(choice), lineHeight: 1.4 }}
+                className="flex-1 break-words font-['Rajdhani'] font-medium text-sm sm:text-base leading-normal"
                 dangerouslySetInnerHTML={{ __html: renderMath(choice) }}
               />
               {iconElement && <div className="ml-4 flex-shrink-0">{iconElement}</div>}

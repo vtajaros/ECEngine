@@ -22,20 +22,6 @@ interface LearnModeProps {
 type QuestionStatus = 'unanswered' | 'correct' | 'wrong'
 type ViewState = 'question' | 'feedback' | 'partition-complete' | 'summary'
 
-const getQuestionFontSize = (text: string): string => {
-  if (text.length < 80)  return '1.8rem'
-  if (text.length < 150) return '1.5rem'
-  if (text.length < 250) return '1.25rem'
-  return '1.1rem'
-}
-
-const getChoiceFontSize = (text: string): string => {
-  if (text.length < 40)  return '1.2rem'
-  if (text.length < 80)  return '1.1rem'
-  if (text.length < 120) return '1rem'
-  return '0.9rem'
-}
-
 export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, onExit }) => {
   // Partitioning logic
   const PARTITION_SIZE = 5
@@ -582,12 +568,7 @@ Please explain:
           <div className="mb-10 pr-4 max-h-[50vh] overflow-y-auto custom-scrollbar">
             <span className="text-[var(--accent-primary)] font-['IBM_Plex_Mono'] text-sm font-bold tracking-widest mb-3 block">Question {overallCurrentQuestion}</span>
             <div 
-              className="text-white font-['Rajdhani'] font-semibold mb-6"
-              style={{
-                fontSize: getQuestionFontSize(mcqData.question),
-                lineHeight: 1.4,
-                whiteSpace: 'pre-wrap'
-              }}
+              className="text-white font-['Rajdhani'] font-semibold mb-6 text-base sm:text-lg leading-relaxed whitespace-pre-wrap"
               dangerouslySetInnerHTML={{ __html: renderMath(mcqData.question) }}
             />
 
@@ -638,12 +619,11 @@ Please explain:
                   disabled={viewState === 'feedback'}
                   className={`py-3 sm:py-4 px-4 min-h-[80px] rounded-lg border text-left flex items-center transition-all font-['Rajdhani'] ${btnClass}`}
                 >
-                  <span className={`font-['IBM_Plex_Mono'] mr-4 w-8 text-xl flex-shrink-0 ${prefixClass}`} style={{ fontSize: getChoiceFontSize(choice) }}>
+                  <span className={`font-['IBM_Plex_Mono'] mr-4 w-8 text-sm sm:text-base flex-shrink-0 ${prefixClass}`}>
                     {String.fromCharCode(65 + idx)}.
                   </span>
                   <div 
-                    className={`flex-1 break-words font-['Rajdhani'] font-medium ${textClass}`} 
-                    style={{ fontSize: getChoiceFontSize(choice), lineHeight: 1.4 }}
+                    className={`flex-1 break-words font-['Rajdhani'] font-medium text-sm sm:text-base leading-normal ${textClass}`} 
                     dangerouslySetInnerHTML={{ __html: renderMath(choice) }} 
                   />
                 </button>
