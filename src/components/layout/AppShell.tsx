@@ -9,6 +9,7 @@ import {
   Settings,
   Layers,
   ClipboardList,
+  Menu,
 } from 'lucide-react'
 import { TitleBar } from './TitleBar'
 
@@ -58,14 +59,28 @@ export const AppShell: React.FC = () => {
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <aside
-          className={`${isCollapsed ? 'w-16' : 'w-[170px]'
-            } bg-[#1A1A1A] border-r border-[#222] flex flex-col transition-all duration-300 relative z-20 shrink-0`}
+          className={`${
+            isCollapsed ? 'w-16' : 'w-[170px]'
+          } bg-[#1A1A1A] border-r border-[#222] flex flex-col transition-all duration-300 relative z-20 shrink-0`}
         >
-          <nav className="flex-1 flex flex-col gap-2 overflow-y-auto overflow-x-hidden px-0 pt-4">
+          {/* Hamburger button — web only, lives at top of sidebar */}
+          {isWeb && (
+            <div className={`flex ${isCollapsed ? 'justify-center' : 'justify-start px-3'} pt-3 pb-1 shrink-0`}>
+              <button
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="p-1.5 hover:bg-[#222] border border-[#333]/40 rounded-md text-gray-400 hover:text-[#00FF41] transition-all flex items-center justify-center"
+                title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              >
+                <Menu size={18} />
+              </button>
+            </div>
+          )}
+
+          <nav className="flex-1 flex flex-col gap-2 overflow-y-auto overflow-x-hidden px-0 pt-2">
             {(navItems as NavItem[])
               .filter(item => {
-                if (isWeb && item.webHidden) return false  // hide desktop-only on web
-                if (!isWeb && item.webOnly) return false   // hide web-only on desktop
+                if (isWeb && item.webHidden) return false
+                if (!isWeb && item.webOnly) return false
                 return true
               })
               .map((item) => (

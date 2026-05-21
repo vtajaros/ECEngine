@@ -283,6 +283,7 @@ export default function PrintView() {
 <head>
   <meta charset="utf-8" />
   <title>${title}</title>
+  <link rel="icon" type="image/png" href="/favicon.png" />
   <style>
     @page { margin: 1.5cm; size: A4 portrait; }
     * { box-sizing: border-box; }
