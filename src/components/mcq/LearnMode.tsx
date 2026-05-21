@@ -502,7 +502,7 @@ Please explain:
   const totalWrongInPartition = partitionWrongIds.size
 
   return (
-    <div className="flex flex-col h-full bg-[#0D0D0D] p-6 lg:p-10 relative">
+    <div className="flex flex-col h-full bg-[#0D0D0D] p-4 sm:p-8 relative">
       <LeaveConfirmModal 
         isOpen={blocker.state === 'blocked' || showExitConfirm}
         onConfirm={() => {
@@ -522,7 +522,7 @@ Please explain:
         }}
       />
       
-      <div className="max-w-4xl w-full mx-auto flex flex-wrap items-center justify-between gap-2 mb-4">
+      <div className="max-w-3xl w-full mx-auto flex flex-wrap items-center justify-between gap-2 mb-4">
         <div className="flex flex-col flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-4 text-[#E8E8E8] font-['IBM_Plex_Mono'] font-bold text-sm tracking-wider uppercase mb-3">
             <span>Question {overallCurrentQuestion} of {cards.length}</span>
@@ -551,12 +551,12 @@ Please explain:
         </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center w-full">
         <motion.div 
           key={currentCard.id}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-5xl bg-[#161616] border border-[#222] rounded-xl shadow-2xl p-10 relative flex flex-col"
+          className="w-full max-w-3xl mx-auto bg-[#161616] border border-[#222] rounded-xl shadow-2xl p-6 sm:p-10 relative flex flex-col max-h-[75vh] sm:max-h-none overflow-y-auto"
         >
           {/* Bookmark Togggle */}
           <button 
