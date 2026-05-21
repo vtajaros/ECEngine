@@ -661,9 +661,9 @@ Please explain:
       />
 
       {/* Main Content Wrapper — independent scroll columns, no shared scroll container */}
-      <div className="flex-1 flex overflow-hidden pl-2 lg:pl-4 gap-5 pt-4 lg:pt-8">
+      <div className="flex-1 flex flex-col sm:flex-row overflow-hidden pl-2 lg:pl-4 gap-5 pt-4 lg:pt-8">
         {/* Left Column: Navigation Rail (self-contained scroll) */}
-        <div className="shrink-0 flex flex-col">
+        <div className="shrink-0 flex flex-col w-full sm:w-auto">
           <TestNavRail
             totalItems={testCards.length}
             currentIndex={currentVisibleIndex}

@@ -56,11 +56,11 @@ export const TestNavRail = memo(({
 
   return (
     <aside
-      className="w-48 shrink-0 flex flex-col border-r border-zinc-800 border-y border-l border-[#222]/30 bg-[#0a0a0a] rounded-xl select-none shadow-xl overflow-hidden h-[calc(100vh-120px)]"
+      className="w-full overflow-x-auto flex flex-row py-2 mb-4 border-b border-zinc-800 bg-[#0a0a0a] select-none shrink-0 h-auto sm:w-48 sm:shrink-0 sm:flex-col sm:border-r sm:border-zinc-800 sm:border-y sm:border-l sm:border-[#222]/30 sm:rounded-xl sm:shadow-xl sm:overflow-hidden sm:h-[calc(100vh-120px)] sm:py-0 sm:mb-0 sm:border-b-0"
       aria-label="Question Navigator"
     >
       {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <div className="px-5 py-3 border-b border-[#1e1e1e] shrink-0">
+      <div className="px-5 py-3 border-b border-[#1e1e1e] shrink-0 hidden sm:block">
         <span className="font-['Rajdhani'] font-semibold tracking-wider text-zinc-300 text-[10px] uppercase block leading-tight">
           Question Navigator
         </span>
@@ -91,7 +91,7 @@ export const TestNavRail = memo(({
       </div>
 
       {/* ── Legend ──────────────────────────────────────────────────────────── */}
-      <div className="px-5 py-2 flex items-center gap-4 border-b border-[#111] shrink-0">
+      <div className="px-5 py-2 flex items-center gap-4 border-b border-[#111] shrink-0 hidden sm:block">
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-zinc-400" />
           <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-zinc-400">
@@ -109,9 +109,9 @@ export const TestNavRail = memo(({
       {/* ── Question List (Single Column, Scrollable) ─────────────────────── */}
       <div
         ref={railBodyRef}
-        className="flex-1 overflow-y-auto px-5 py-4 scroll-py-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className="flex-1 sm:overflow-y-auto px-4 sm:px-5 py-1 sm:py-4 scroll-py-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
-        <div className="flex flex-col gap-4 pl-2">
+        <div className="flex flex-row sm:flex-col gap-3 sm:gap-4 pl-0 sm:pl-2 items-center sm:items-stretch">
           {Array.from({ length: totalItems }, (_, i) => {
             const answered = isAnswered(answeredIndices, i)
             const isActive = i === currentIndex
@@ -123,15 +123,18 @@ export const TestNavRail = memo(({
                 onClick={() => onNavigate(i)}
                 title={`Question ${i + 1}${answered ? ' (Answered)' : ''}`}
                 className={[
-                  'font-["Rajdhani"] text-left select-none transition-all duration-150 ease-in-out flex items-center justify-between w-full py-1 pr-2',
+                  'font-["Rajdhani"] text-center sm:text-left select-none transition-all duration-150 ease-in-out flex items-center justify-between gap-1.5 shrink-0 w-auto sm:w-full py-1 pr-2',
                   isActive
-                    ? 'text-white font-bold text-lg border-l-2 border-white pl-2 -ml-[10px]'
+                    ? 'text-white font-bold text-lg border-b-2 sm:border-b-0 sm:border-l-2 border-white pb-0.5 sm:pb-0 pl-0 sm:pl-2 sm:-ml-[10px]'
                     : answered
                       ? 'text-green-400 font-medium hover:text-green-300'
                       : 'text-zinc-300 font-medium hover:text-white'
                 ].join(' ')}
               >
-                <span>Question {i + 1}</span>
+                <span className="flex items-center gap-1">
+                  <span className="hidden sm:inline">Question </span>
+                  <span>{i + 1}</span>
+                </span>
                 {answered && (
                   <Check className="w-3.5 h-3.5 text-green-400 shrink-0" />
                 )}
