@@ -522,17 +522,17 @@ Please explain:
         }}
       />
       
-      <div className="max-w-4xl w-full mx-auto flex justify-between items-start mb-6 relative">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-4 text-[#E8E8E8] font-['IBM_Plex_Mono'] font-bold text-sm tracking-wider uppercase mb-3">
+      <div className="max-w-4xl w-full mx-auto flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div className="flex flex-col flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-4 text-[#E8E8E8] font-['IBM_Plex_Mono'] font-bold text-sm tracking-wider uppercase mb-3">
             <span>Question {overallCurrentQuestion} of {cards.length}</span>
             {title && (
-              <div className="absolute left-1/2 -translate-x-1/2 top-[-2px] text-[#00FF41] font-['Orbitron'] font-bold text-lg tracking-[0.1em] uppercase whitespace-nowrap">
+              <span className="text-[#00FF41] font-['Orbitron'] font-bold text-lg tracking-[0.1em] uppercase whitespace-nowrap flex-shrink-0">
                 {title}
-              </div>
+              </span>
             )}
           </div>
-          <div className="w-64 bg-[#1a1a1a] h-[6px] rounded-full overflow-hidden mb-3">
+          <div className="w-64 max-w-full bg-[#1a1a1a] h-[6px] rounded-full overflow-hidden mb-3">
             <div 
               className="h-full bg-[#00FF41] transition-all duration-300 ease-in-out shadow-[0_0_8px_rgba(0,255,65,0.6)]" 
               style={{ width: `${(overallCurrentQuestion / cards.length) * 100}%` }} 
@@ -544,9 +544,11 @@ Please explain:
           </div>
         </div>
         
-        <button onClick={() => setShowExitConfirm(true)} className="px-4 py-2 border border-[#333] text-[#888] rounded hover:text-white hover:border-[#666] transition-colors font-['Rajdhani'] uppercase tracking-widest text-sm">
-          Exit Learn Mode
-        </button>
+        <div className="w-full sm:w-auto flex justify-end">
+          <button onClick={() => setShowExitConfirm(true)} className="px-4 py-2 border border-[#333] text-[#888] rounded hover:text-white hover:border-[#666] transition-colors font-['Rajdhani'] uppercase tracking-widest text-sm">
+            Exit Learn Mode
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 flex items-center justify-center">
