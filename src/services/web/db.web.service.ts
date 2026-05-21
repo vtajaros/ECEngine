@@ -317,7 +317,9 @@ export const webDBService = {
       isCustom: Boolean(card.is_custom),
       createdAt: card.created_at
     }))
-    return mapped.sort((a, b) => Number(a.createdAt) - Number(b.createdAt))
+    // created_at may be a Unix-ms number string ("1716...") or an ISO-8601 string
+    // ("2026-01-01T..."). localeCompare works correctly for both forms.
+    return mapped.sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)))
   },
 
   async getAccuracyTrend(

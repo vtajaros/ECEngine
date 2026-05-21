@@ -189,18 +189,18 @@ const FormulaForm: React.FC<{ data: FormulaEdit; onChange: (d: FormulaEdit) => v
       <div className="relative w-full">
         <Label>Front / Term (formula name)</Label>
         <MathInputField
-          value={data.name}
+          value={data.name || ''}
           onChange={val => onChange({ ...data, name: val })}
           placeholder="Formula name, e.g. Inverse Sine..."
           rows={3}
           multiline={true}
-          defaultMathMode={isRawLatex(data.name) || data.name.includes('\\')}
+          defaultMathMode={isRawLatex(data.name || '') || (data.name || '').includes('\\')}
         />
       </div>
       <div className="relative w-full">
         <Label>Back / LaTeX (equation)</Label>
         <MathInputField
-          value={data.latex}
+          value={data.latex || ''}
           onChange={val => onChange({ ...data, latex: val })}
           placeholder="LaTeX equation, e.g. \\sin^{-1}u..."
           rows={5}
@@ -211,13 +211,13 @@ const FormulaForm: React.FC<{ data: FormulaEdit; onChange: (d: FormulaEdit) => v
       <div className="grid grid-cols-2 gap-4">
         <div>
           <Label>Description (optional)</Label>
-          <textarea rows={2} className={textareaCls} value={data.description}
+          <textarea rows={2} className={textareaCls} value={data.description || ''}
             onChange={e => onChange({ ...data, description: e.target.value })}
             placeholder="Brief description..." />
         </div>
         <div>
           <Label>Variables (optional)</Label>
-          <textarea rows={2} className={textareaCls} value={data.variables}
+          <textarea rows={2} className={textareaCls} value={data.variables || ''}
             onChange={e => onChange({ ...data, variables: e.target.value })}
             placeholder="e.g. u = angle in radians" />
         </div>
@@ -704,14 +704,37 @@ export default function EditDeck() {
               if (parsed.imagePath) d.imagePath = parsed.imagePath
               return { id: row.id, type: 'mcq', data: d } as EditCard
             } else if (row.type === 'formula') {
-              const varsRaw = parsed.variables
+              // Normalise field names: support camelCase canonical form AND any
+              // snake_case aliases that may appear in exported/imported data.
+              const rawName =
+                parsed.name ??
+                parsed.front_formula ??
+                parsed.frontFormula ??
+                parsed.term ??
+                ''
+              const rawLatex =
+                parsed.latex ??
+                parsed.latex_content ??
+                parsed.latexContent ??
+                parsed.back_equation ??
+                parsed.backEquation ??
+                parsed.equation ??
+                ''
+              const rawDescription =
+                parsed.description ??
+                parsed.desc ??
+                ''
+              const varsRaw =
+                parsed.variables ??
+                parsed.vars ??
+                ''
               const varsStr = typeof varsRaw === 'object' && varsRaw !== null
                 ? Object.entries(varsRaw).map(([k, v]) => `${k}: ${v}`).join('\n')
-                : (varsRaw ?? '')
+                : String(varsRaw ?? '')
               const d: FormulaEdit = {
-                name: parsed.name ?? '',
-                latex: parsed.latex ?? '',
-                description: parsed.description ?? '',
+                name: String(rawName),
+                latex: String(rawLatex),
+                description: String(rawDescription),
                 variables: varsStr,
               }
               return { id: row.id, type: 'formula', data: d } as EditCard
@@ -768,14 +791,37 @@ export default function EditDeck() {
                 if (parsed.imagePath) d.imagePath = parsed.imagePath
                 return { id: row.id, type: 'mcq', data: d } as EditCard
               } else if (row.type === 'formula') {
-                const varsRaw = parsed.variables
+                // Normalise field names: support canonical camelCase AND any
+                // snake_case aliases that may appear in exported/imported data.
+                const rawName =
+                  parsed.name ??
+                  parsed.front_formula ??
+                  parsed.frontFormula ??
+                  parsed.term ??
+                  ''
+                const rawLatex =
+                  parsed.latex ??
+                  parsed.latex_content ??
+                  parsed.latexContent ??
+                  parsed.back_equation ??
+                  parsed.backEquation ??
+                  parsed.equation ??
+                  ''
+                const rawDescription =
+                  parsed.description ??
+                  parsed.desc ??
+                  ''
+                const varsRaw =
+                  parsed.variables ??
+                  parsed.vars ??
+                  ''
                 const varsStr = typeof varsRaw === 'object' && varsRaw !== null
                   ? Object.entries(varsRaw).map(([k, v]) => `${k}: ${v}`).join('\n')
-                  : (varsRaw ?? '')
+                  : String(varsRaw ?? '')
                 const d: FormulaEdit = {
-                  name: parsed.name ?? '',
-                  latex: parsed.latex ?? '',
-                  description: parsed.description ?? '',
+                  name: String(rawName),
+                  latex: String(rawLatex),
+                  description: String(rawDescription),
                   variables: varsStr,
                 }
                 return { id: row.id, type: 'formula', data: d } as EditCard
