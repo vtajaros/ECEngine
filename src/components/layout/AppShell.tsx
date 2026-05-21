@@ -65,7 +65,7 @@ export const AppShell: React.FC = () => {
         >
           {/* Hamburger button — web only, lives at top of sidebar */}
           {isWeb && (
-            <div className={`flex ${isCollapsed ? 'justify-center' : 'justify-start sm:px-3'} sm:pt-3 sm:pb-1 px-3 shrink-0 items-center justify-center`}>
+            <div className={`hidden sm:flex ${isCollapsed ? 'justify-center' : 'justify-start sm:px-3'} sm:pt-3 sm:pb-1 px-3 shrink-0 items-center justify-center`}>
               <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
                 className="p-1.5 hover:bg-[#222] border border-[#333]/40 rounded-md text-gray-400 hover:text-[#00FF41] transition-all flex items-center justify-center"
