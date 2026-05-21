@@ -16,6 +16,8 @@ interface SessionStore {
   isFlipped: boolean
   sessionStats: SessionStats
   isFinished: boolean
+  /** True while a DB write is in-flight; blocks concurrent rateCard calls. */
+  isSubmitting: boolean
   startSession: (cards: Card[]) => void
   flipCard: () => void
   rateCard: (quality: number) => Promise<void>
@@ -27,6 +29,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   isFlipped: false,
   sessionStats: { again: 0, hard: 0, good: 0, easy: 0 },
   isFinished: false,
+  isSubmitting: false,
 
   startSession: (cards) => {
     set({
@@ -42,52 +45,63 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
 
   rateCard: async (quality) => {
     const state = get()
-    if (state.isFinished || state.currentIndex >= state.currentDeck.length) return
 
-    const currentCard = state.currentDeck[state.currentIndex]
+    // Strict submission lock: reject any concurrent rating while a DB write is in-flight.
+    if (state.isSubmitting || state.isFinished || state.currentIndex >= state.currentDeck.length) return
 
-    // Load prior SM2 state from DB; fall back to defaults on first review
-    const prior = await dbService.getProgress(currentCard.id)
-    const previousRepetitions = prior?.repetitions ?? 0
-    const previousInterval    = prior?.interval    ?? 1
-    const previousEaseFactor  = prior?.easeFactor  ?? 2.5
+    set({ isSubmitting: true })
 
-    const { interval, repetitions, easeFactor } = calculateSM2(
-      quality,
-      previousRepetitions,
-      previousInterval,
-      previousEaseFactor
-    )
+    try {
+      const currentCard = state.currentDeck[state.currentIndex]
 
-    const nextReview = new Date()
-    nextReview.setDate(nextReview.getDate() + interval)
+      // Load prior SM2 state from DB; fall back to defaults on first review
+      const prior = await dbService.getProgress(currentCard.id)
+      const previousRepetitions = prior?.repetitions ?? 0
+      const previousInterval    = prior?.interval    ?? 1
+      const previousEaseFactor  = prior?.easeFactor  ?? 2.5
 
-    // quality 3 (Good) or 4 (Easy) = correct answer; 1 (Again) or 2 (Hard) = incorrect
-    const isCorrect = quality >= 3
+      const { interval, repetitions, easeFactor } = calculateSM2(
+        quality,
+        previousRepetitions,
+        previousInterval,
+        previousEaseFactor
+      )
 
-    await dbService.saveProgress(currentCard.id, {
-      easeFactor,
-      interval,
-      repetitions,
-      nextReview: nextReview.toISOString(),
-      lastReviewed: new Date().toISOString()
-    }, isCorrect)
+      const nextReview = new Date()
+      nextReview.setDate(nextReview.getDate() + interval)
 
-    const newStats = { ...state.sessionStats }
-    if (quality === 1) newStats.again++
-    else if (quality === 2) newStats.hard++
-    else if (quality === 3) newStats.good++
-    else if (quality === 4) newStats.easy++
+      // quality 3 (Good) or 4 (Easy) = correct answer; 1 (Again) or 2 (Hard) = incorrect
+      const isCorrect = quality >= 3
 
-    const nextIndex = state.currentIndex + 1
-    const isFinished = nextIndex >= state.currentDeck.length
+      await dbService.saveProgress(currentCard.id, {
+        easeFactor,
+        interval,
+        repetitions,
+        nextReview: nextReview.toISOString(),
+        lastReviewed: new Date().toISOString()
+      }, isCorrect)
 
-    set({
-      sessionStats: newStats,
-      currentIndex: nextIndex,
-      isFlipped: false,
-      isFinished
-    })
+      // Re-read state after the await — index may not have changed but sessionStats
+      // must be computed from the snapshot captured before the await.
+      const newStats = { ...get().sessionStats }
+      if (quality === 1) newStats.again++
+      else if (quality === 2) newStats.hard++
+      else if (quality === 3) newStats.good++
+      else if (quality === 4) newStats.easy++
+
+      const nextIndex = state.currentIndex + 1
+      const isFinished = nextIndex >= state.currentDeck.length
+
+      set({
+        sessionStats: newStats,
+        currentIndex: nextIndex,
+        isFlipped: false,
+        isFinished,
+      })
+    } finally {
+      // Always release the lock — even if the DB write throws (ErrorBoundary handles the throw).
+      set({ isSubmitting: false })
+    }
   }
 }))
 

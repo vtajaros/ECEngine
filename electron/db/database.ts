@@ -125,6 +125,15 @@ function runTableMigrations() {
     try { db.run("ALTER TABLE study_activity ADD COLUMN correct_count INTEGER DEFAULT 0"); } catch (e) {}
     try { db.run("ALTER TABLE study_activity ADD COLUMN total_count INTEGER DEFAULT 0"); } catch (e) {}
   } catch (e) {}
+
+  // Apply performance optimization indexes
+  try {
+    db.run("CREATE INDEX IF NOT EXISTS idx_next_review ON progress(next_review)");
+    db.run("CREATE INDEX IF NOT EXISTS idx_last_reviewed ON progress(last_reviewed)");
+    db.run("CREATE INDEX IF NOT EXISTS idx_cards_topic_id ON cards(topic_id)");
+  } catch (e) {
+    console.error("Failed to create performance indexes", e);
+  }
 }
 
 export function queryAll(sql: string, params: any[] = []): any[] {

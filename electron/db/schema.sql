@@ -44,3 +44,8 @@ CREATE TABLE IF NOT EXISTS exam_sessions (
   answers TEXT, -- JSON string
   FOREIGN KEY(topic_id) REFERENCES topics(id)
 );
+
+-- Optimization Indexes
+CREATE INDEX IF NOT EXISTS idx_next_review ON progress(next_review);
+CREATE INDEX IF NOT EXISTS idx_last_reviewed ON progress(last_reviewed);
+CREATE INDEX IF NOT EXISTS idx_cards_topic_id ON cards(topic_id);

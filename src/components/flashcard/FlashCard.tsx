@@ -7,6 +7,8 @@ import { renderMath } from '../../lib/latex'
 interface FlashCardProps {
   card: Card
   onRate: (rating: number) => void // 1: Again, 2: Hard, 3: Good, 4: Easy
+  /** When true, a DB write is in-flight — disable all rating controls. */
+  isSubmitting?: boolean
 }
 
 const getContextColor = (difficulty: string) => {
@@ -18,7 +20,7 @@ const getContextColor = (difficulty: string) => {
   }
 }
 
-export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate }) => {
+export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting = false }) => {
   const [isFlipped, setIsFlipped] = useState(false)
   const [zoomedImage, setZoomedImage] = useState<string | null>(null)
 
@@ -47,7 +49,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate }) => {
       
       if (isFlipped && e.key >= '1' && e.key <= '4') {
         e.preventDefault()
-        onRate(parseInt(e.key, 10))
+        if (!isSubmitting) onRate(parseInt(e.key, 10))
       }
     }
     
@@ -133,22 +135,56 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate }) => {
 
       {/* Action Buttons */}
       <div className={`mt-8 flex gap-4 transition-opacity duration-300 ${isFlipped ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-        <button onClick={() => onRate(1)} className="px-6 py-2 bg-[#111111] border border-[#FF3333] text-[#FF3333] rounded hover:bg-[#161616] transition-colors flex flex-col items-center group">
+        <button
+          onClick={() => onRate(1)}
+          disabled={isSubmitting}
+          className={`px-6 py-2 bg-[#111111] border border-[#FF3333] text-[#FF3333] rounded transition-colors flex flex-col items-center group ${
+            isSubmitting ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#161616]'
+          }`}
+        >
           <span className="font-['Rajdhani'] font-bold text-lg mb-1 group-hover:drop-shadow-[0_0_5px_rgba(255,51,51,0.5)]">Again</span>
           <span className="text-xs text-[#888888]">(1) &lt; 1m</span>
         </button>
-        <button onClick={() => onRate(2)} className="px-6 py-2 bg-[#111111] border border-[#FFB800] text-[#FFB800] rounded hover:bg-[#161616] transition-colors flex flex-col items-center group">
+        <button
+          onClick={() => onRate(2)}
+          disabled={isSubmitting}
+          className={`px-6 py-2 bg-[#111111] border border-[#FFB800] text-[#FFB800] rounded transition-colors flex flex-col items-center group ${
+            isSubmitting ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#161616]'
+          }`}
+        >
           <span className="font-['Rajdhani'] font-bold text-lg mb-1 group-hover:drop-shadow-[0_0_5px_rgba(255,184,0,0.5)]">Hard</span>
           <span className="text-xs text-[#888888]">(2) 5m</span>
         </button>
-        <button onClick={() => onRate(3)} className="px-6 py-2 bg-[#111111] border border-[#00FF41] text-[#00FF41] rounded hover:bg-[#161616] transition-colors flex flex-col items-center group">
+        <button
+          onClick={() => onRate(3)}
+          disabled={isSubmitting}
+          className={`px-6 py-2 bg-[#111111] border border-[#00FF41] text-[#00FF41] rounded transition-colors flex flex-col items-center group ${
+            isSubmitting ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#161616]'
+          }`}
+        >
           <span className="font-['Rajdhani'] font-bold text-lg mb-1 group-hover:drop-shadow-[0_0_5px_rgba(0,255,65,0.5)]">Good</span>
           <span className="text-xs text-[#888888]">(3) 10m</span>
         </button>
-        <button onClick={() => onRate(4)} className="px-6 py-2 bg-[#111111] border border-[#00BFFF] text-[#00BFFF] rounded hover:bg-[#161616] transition-colors flex flex-col items-center group">
+        <button
+          onClick={() => onRate(4)}
+          disabled={isSubmitting}
+          className={`px-6 py-2 bg-[#111111] border border-[#00BFFF] text-[#00BFFF] rounded transition-colors flex flex-col items-center group ${
+            isSubmitting ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#161616]'
+          }`}
+        >
           <span className="font-['Rajdhani'] font-bold text-lg mb-1 group-hover:drop-shadow-[0_0_5px_rgba(0,191,255,0.5)]">Easy</span>
           <span className="text-xs text-[#888888]">(4) 4d</span>
         </button>
+
+        {/* Saving indicator — shown only while the DB write is in-flight */}
+        {isSubmitting && (
+          <div className="self-center ml-2 flex items-center gap-2 text-[#888888] text-xs font-['Rajdhani'] animate-pulse">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
+              <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+            </svg>
+            Saving…
+          </div>
+        )}
       </div>
 
       {/* Lightbox Modal */}

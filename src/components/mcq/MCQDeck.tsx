@@ -15,16 +15,24 @@ export const MCQDeck: React.FC<MCQDeckProps> = ({ cards, onComplete }) => {
   const [score, setScore] = useState(0)
   const [isDone, setIsDone] = useState(false)
   const [wrongItems, setWrongItems] = useState<Card[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleAnswer = (isCorrect: boolean) => {
-    if (isCorrect) {
-      setScore(prev => prev + 1)
-    } else {
-      setWrongItems(prev => [...prev, activeCards[currentIndex]])
+    if (isSubmitting) return
+    setIsSubmitting(true)
+    try {
+      if (isCorrect) {
+        setScore(prev => prev + 1)
+      } else {
+        setWrongItems(prev => [...prev, activeCards[currentIndex]])
+      }
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
   const handleNext = () => {
+    if (isSubmitting) return
     if (currentIndex < activeCards.length - 1) {
       setCurrentIndex(prev => prev + 1)
     } else {

@@ -147,14 +147,12 @@ export function detectQuizletFormat(text: string): QuizletFormat {
   }
 
   const colonRatio = colonLines.length / lines.length
-  const afterLengths = colonLines.map(l => l.split(': ', 2)[1]?.length ?? 0)
-  const avgAfter = afterLengths.reduce((a, b) => a + b, 0) / afterLengths.length
 
-  // High colon ratio + long definitions → flashcard
-  if (colonRatio > 0.70 && avgAfter > 40) return 'flashcard'
+  // High colon ratio → flashcard (removed avgAfter > 40 heuristic to support short definitions)
+  if (colonRatio > 0.70) return 'flashcard'
 
   // Low colon ratio → MCQ (answers are choices, only the last line per block has ': ')
-  if (colonRatio < 0.35 && lines.length >= 5) return 'mcq'
+  if (colonRatio < 0.35 && lines.length >= 3) return 'mcq'
 
   // Medium range — look for "Correct Choice:" style lines
   const correctChoiceLines = lines.filter(l => /^[^:]+:\s*.{3,}$/.test(l))
@@ -168,20 +166,33 @@ export function detectQuizletFormat(text: string): QuizletFormat {
 // ─────────────────────────────────────────────────────────────
 
 function parseQuizletFlashcards(text: string): { cards: QuizletFlashcard[]; detected: number } {
-  const lines = text
-    .replace(/\r\n/g, '\n')
-    .split('\n')
-    .map(l => l.trim())
-    .filter(l => l.length > 0)
+  const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
 
-  const detected = lines.length
+  // Split on blank lines to get per-card blocks; each block has
+  // "Term: Definition" where the definition may span additional lines.
+  const rawBlocks = normalized
+    .split(/\n\s*\n/)
+    .map(b => b.trim())
+    .filter(b => b.length > 0)
+
+  const detected = rawBlocks.length
   const cards: QuizletFlashcard[] = []
 
-  for (const line of lines) {
-    if (!line.includes(': ')) continue
-    const [termPart, ...defParts] = line.split(': ')
-    const term = termPart.trim()
-    const definition = defParts.join(': ').trim()
+  for (const block of rawBlocks) {
+    const blockLines = block.split('\n').map(l => l.trim()).filter(l => l.length > 0)
+    if (blockLines.length === 0) continue
+
+    // The first line must contain ': ' which splits term from start of definition.
+    const firstLine = blockLines[0]
+    const colonIdx = firstLine.indexOf(': ')
+    if (colonIdx === -1) continue
+
+    const term = firstLine.slice(0, colonIdx).trim()
+    // Definition = rest of first line + any continuation lines
+    const defStart = firstLine.slice(colonIdx + 2).trim()
+    const defContinuation = blockLines.slice(1).join('\n').trim()
+    const definition = defContinuation ? `${defStart}\n${defContinuation}`.trim() : defStart
+
     if (term && definition) {
       cards.push({ term, definition })
     }
@@ -194,20 +205,50 @@ function parseQuizletFlashcards(text: string): { cards: QuizletFlashcard[]; dete
 //  MCQ PARSER
 // ─────────────────────────────────────────────────────────────
 
+/** Labels for up to 5 choices (A–E). */
+const MCQ_LABELS = ['A', 'B', 'C', 'D', 'E']
+
 function findCorrectLetter(choices: string[], answerName: string): string {
   const an = answerName.trim().toLowerCase()
-  const labels = ['A', 'B', 'C', 'D']
   for (let i = 0; i < choices.length; i++) {
     if (choices[i].trim().toLowerCase() === an) {
-      return labels[i] ?? 'D'
+      return MCQ_LABELS[i] ?? MCQ_LABELS[choices.length - 1]
     }
   }
-  return 'D'
+  // Default to the last available label rather than always 'D'
+  return MCQ_LABELS[choices.length - 1] ?? 'A'
 }
 
+/**
+ * Regex that recognises the "Correct Choice: Answer Text" marker line
+ * which Quizlet always places at the end of an MCQ block.
+ * Group 1: the choice text (same as one of the choices above).
+ * Group 2: the correct answer name.
+ *
+ * Pattern breakdown:
+ *   ^(.+?)          – non-greedy capture of the choice label (choice D / last choice text)
+ *   :\s+            – literal colon + whitespace separator used by Quizlet
+ *   (.+)$           – the correct answer text
+ */
+const QUIZLET_MARKER_RE = /^(.+?):\s+(.+)$/
+
+/**
+ * Split raw Quizlet text into per-question blocks.
+ *
+ * Each block ends at the line containing the "Correct Choice: Answer" marker.
+ * We detect that marker as a line matching QUIZLET_MARKER_RE that comes AFTER
+ * at least one plain (non-marker) line – i.e., the previous lines were choices.
+ *
+ * Strategy:
+ *  1. Normalise & split into non-empty lines.
+ *  2. Accumulate lines into `current`.
+ *  3. When we detect a marker line AND current already has ≥2 lines (question
+ *     + at least one choice), flush current as a block.
+ */
 function splitIntoRawBlocks(text: string): string[][] {
   const lines = text
     .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
     .split('\n')
     .map(l => l.trim())
     .filter(l => l.length > 0)
@@ -217,15 +258,15 @@ function splitIntoRawBlocks(text: string): string[][] {
 
   for (const line of lines) {
     current.push(line)
-    if (line.includes(': ')) {
-      const parts = line.split(': ')
-      if (parts[0].trim().length > 0) {
-        blocks.push([...current])
-        current = []
-      }
+    // A marker line is one that matches "SomeText: CorrectAnswerText" AND is
+    // not the very first line of the accumulator (i.e., it is not the question).
+    if (current.length >= 3 && QUIZLET_MARKER_RE.test(line)) {
+      blocks.push([...current])
+      current = []
     }
   }
 
+  // Any trailing lines that did not end with a marker are discarded (incomplete block).
   return blocks
 }
 
@@ -234,21 +275,29 @@ function parseQuizletMCQ(text: string): { questions: QuizletMCQ[]; detected: num
   const detected = rawBlocks.length
   const questions: QuizletMCQ[] = []
 
-  for (let block of rawBlocks) {
-    if (block.length < 5) continue
-    // If block is longer than 5, take the last 5 lines (question + 4 choices with last having ': ')
-    if (block.length > 5) {
-      block = block.slice(-5)
-    }
+  for (const block of rawBlocks) {
+    // Minimum viable block: question + 1 choice + marker = 3 lines
+    if (block.length < 3) continue
 
+    // The last line is always the marker: "LastChoiceText: CorrectAnswerText"
+    const markerLine = block[block.length - 1]
+    const markerMatch = markerLine.match(QUIZLET_MARKER_RE)
+    if (!markerMatch) continue
+
+    const lastChoiceText = markerMatch[1].trim()
+    const correctName = markerMatch[2].trim()
+
+    // The question is the first line.
     const questionText = block[0]
-    const markerLine = block[4]
 
-    const parts = markerLine.split(': ')
-    const choiceD = parts[0].trim()
-    const correctName = parts.length > 1 ? parts.slice(1).join(': ').trim() : ''
+    // Middle lines (between question and marker) are intermediate choices.
+    // The last choice text comes from the marker's first capture group.
+    const middleChoices = block.slice(1, block.length - 1)
+    const choices = [...middleChoices, lastChoiceText]
 
-    const choices = [block[1], block[2], block[3], choiceD]
+    // Must have at least 2 choices (True/False) and at most 5 (A–E).
+    if (choices.length < 2 || choices.length > 5) continue
+
     const correctLetter = findCorrectLetter(choices, correctName)
 
     questions.push({

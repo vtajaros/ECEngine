@@ -11,7 +11,7 @@ interface FlashDeckProps {
 }
 
 export const FlashDeck: React.FC<FlashDeckProps> = ({ cards, onComplete }) => {
-  const { currentIndex, isFinished, rateCard, startSession } = useSessionStore()
+  const { currentIndex, isFinished, isSubmitting, rateCard, startSession } = useSessionStore()
   const [isSwapped, setIsSwapped] = useState(false)
   const [swapResetKey, setSwapResetKey] = useState(0) // Forces FlashCard to re-mount or reset when swapped
 
@@ -99,7 +99,7 @@ export const FlashDeck: React.FC<FlashDeckProps> = ({ cards, onComplete }) => {
               transition={{ duration: 0.2 }}
               className="w-full"
             >
-              {displayCard && <FlashCard key={`${displayCard.id}_${swapResetKey}`} card={displayCard} onRate={rateCard} />}
+              {displayCard && <FlashCard key={`${displayCard.id}_${swapResetKey}`} card={displayCard} onRate={rateCard} isSubmitting={isSubmitting} />}
             </motion.div>
           ) : (
             <motion.div

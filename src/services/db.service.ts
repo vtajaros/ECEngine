@@ -98,8 +98,7 @@ export const dbService = {
     const result = await window.electron.db.query(sql, params)
     
     if (!result.success) {
-      console.error('Failed to get cards', result.error)
-      return []
+      throw new Error(`Database Operation Failed: ${result.error || 'Failed to get cards'}`)
     }
 
     return (result.data || []).map((row: any) => ({
@@ -119,7 +118,10 @@ export const dbService = {
       `SELECT repetitions, interval, ease_factor FROM progress WHERE card_id = ?`,
       [cardId]
     )
-    if (!result.success || !result.data || result.data.length === 0) return null
+    if (!result.success) {
+      throw new Error(`Database Operation Failed: ${result.error || 'Failed to get progress'}`)
+    }
+    if (!result.data || result.data.length === 0) return null
     const row = result.data[0]
     return {
       repetitions: row.repetitions ?? 0,
@@ -168,7 +170,7 @@ export const dbService = {
     const result = await window.electron.db.run(sql, params)
 
     if (!result.success) {
-      console.error('Failed to update progress', result.error)
+      throw new Error(`Database Operation Failed: ${result.error || 'Failed to update progress'}`)
     }
 
     // Also record activity for today
@@ -187,13 +189,19 @@ export const dbService = {
         correct_count = correct_count + ?,
         total_count = total_count + ?
     `
-    await window.electron.db.run(sql, [today, correctInc, totalInc, correctInc, totalInc])
+    const result = await window.electron.db.run(sql, [today, correctInc, totalInc, correctInc, totalInc])
+    if (!result.success) {
+      throw new Error(`Database Operation Failed: ${result.error || 'Failed to record activity'}`)
+    }
   },
 
   getActivityHistory: async (): Promise<Record<string, { count: number, timeSpent: number }>> => {
     const res = await window.electron.db.query('SELECT day, count, time_spent FROM study_activity')
+    if (!res.success) {
+      throw new Error(`Database Operation Failed: ${res.error || 'Failed to get study activity history'}`)
+    }
     const history: Record<string, { count: number, timeSpent: number }> = {}
-    if (res.success && res.data) {
+    if (res.data) {
       res.data.forEach((row: any) => {
         history[row.day] = { 
           count: row.count, 
@@ -271,7 +279,10 @@ export const dbService = {
          ORDER  BY day ASC`,
         [startStr]
       )
-      if (res.success && res.data) {
+      if (!res.success) {
+        throw new Error(`Database Operation Failed: ${res.error || 'Failed to get accuracy trend'}`)
+      }
+      if (res.data) {
         rawRows = res.data.map((r: any) => ({
           day:     String(r.day),
           correct: Number(r.correct) || 0,
@@ -293,7 +304,10 @@ export const dbService = {
          ORDER  BY day ASC`,
         [fullSubject, startStr]
       )
-      if (res.success && res.data) {
+      if (!res.success) {
+        throw new Error(`Database Operation Failed: ${res.error || 'Failed to get subject accuracy trend'}`)
+      }
+      if (res.data) {
         rawRows = res.data
           .filter((r: any) => r.day != null)
           .map((r: any) => ({
@@ -332,25 +346,40 @@ export const dbService = {
       VALUES (?, 0, ?) 
       ON CONFLICT(day) DO UPDATE SET time_spent = time_spent + excluded.time_spent
     `
-    await window.electron.db.run(sql, [today, minutes])
+    const result = await window.electron.db.run(sql, [today, minutes])
+    if (!result.success) {
+      throw new Error(`Database Operation Failed: ${result.error || 'Failed to update time spent'}`)
+    }
   },
 
   getDashboardStats: async () => {
     // 1. Total cards studied (at least one repetition)
     const studiedResult = await window.electron.db.query('SELECT COUNT(card_id) as count FROM progress WHERE repetitions > 0')
+    if (!studiedResult.success) {
+      throw new Error(`Database Operation Failed: ${studiedResult.error || 'Failed to get studied count'}`)
+    }
     const totalStudied = studiedResult.data?.[0]?.count || 0
 
     // 2. Cards due today
     const dueResult = await window.electron.db.query("SELECT COUNT(id) as count FROM cards c LEFT JOIN progress p ON c.id = p.card_id WHERE p.next_review <= datetime('now') OR p.next_review IS NULL")
+    if (!dueResult.success) {
+      throw new Error(`Database Operation Failed: ${dueResult.error || 'Failed to get due counts'}`)
+    }
     const dueToday = dueResult.data?.[0]?.count || 0
 
     // 3. Accuracy Rate
     const accResult = await window.electron.db.query('SELECT CAST(SUM(correct_count) AS REAL) / NULLIF(SUM(total_count), 0) as accuracy FROM progress')
+    if (!accResult.success) {
+      throw new Error(`Database Operation Failed: ${accResult.error || 'Failed to get accuracy rate'}`)
+    }
     const accuracyVal = accResult.data?.[0]?.accuracy
     const accuracy = accuracyVal != null ? Math.round(accuracyVal * 100) : 0
 
     // 4. Streak — read from study_activity for consistency with the activity grid
     const datesResult = await window.electron.db.query("SELECT day FROM study_activity WHERE time_spent > 0 ORDER BY day DESC")
+    if (!datesResult.success) {
+      throw new Error(`Database Operation Failed: ${datesResult.error || 'Failed to get study dates'}`)
+    }
     const dates = (datesResult.data || []).map((r: { day: string }) => r.day)
 
     let streak = 0
@@ -388,6 +417,9 @@ export const dbService = {
       GROUP BY subject
     `
     const result = await window.electron.db.query(sql)
+    if (!result.success) {
+      throw new Error(`Database Operation Failed: ${result.error || 'Failed to get subject breakdown'}`)
+    }
     return result.data || []
   },
 
@@ -402,13 +434,25 @@ export const dbService = {
       GROUP BY t.subject
     `
     const result = await window.electron.db.query(sql)
+    if (!result.success) {
+      throw new Error(`Database Operation Failed: ${result.error || 'Failed to get subject progress'}`)
+    }
     return result.data || []
   },
 
   getGlobalStats: async () => {
     const decks = await window.electron.db.query('SELECT COUNT(id) as count FROM topics')
+    if (!decks.success) {
+      throw new Error(`Database Operation Failed: ${decks.error || 'Failed to get decks count'}`)
+    }
     const cards = await window.electron.db.query('SELECT COUNT(id) as count FROM cards')
+    if (!cards.success) {
+      throw new Error(`Database Operation Failed: ${cards.error || 'Failed to get cards count'}`)
+    }
     const internalized = await window.electron.db.query('SELECT COUNT(card_id) as count FROM progress WHERE repetitions >= 5')
+    if (!internalized.success) {
+      throw new Error(`Database Operation Failed: ${internalized.error || 'Failed to get internalized count'}`)
+    }
     
     return {
       totalDecks: decks.data?.[0]?.count || 0,
@@ -419,17 +463,25 @@ export const dbService = {
 
   clearAllData: async (): Promise<void> => {
     // Delete in FK-safe order: progress → cards → topics
-    await window.electron.db.run('DELETE FROM progress')
-    await window.electron.db.run('DELETE FROM study_activity')
-    await window.electron.db.run('DELETE FROM exam_sessions')
-    await window.electron.db.run('DELETE FROM cards')
-    await window.electron.db.run('DELETE FROM topics')
+    const r1 = await window.electron.db.run('DELETE FROM progress')
+    if (!r1.success) throw new Error(`Database Operation Failed: ${r1.error || 'Failed to delete progress'}`)
+    const r2 = await window.electron.db.run('DELETE FROM study_activity')
+    if (!r2.success) throw new Error(`Database Operation Failed: ${r2.error || 'Failed to delete study activity'}`)
+    const r3 = await window.electron.db.run('DELETE FROM exam_sessions')
+    if (!r3.success) throw new Error(`Database Operation Failed: ${r3.error || 'Failed to delete exam sessions'}`)
+    const r4 = await window.electron.db.run('DELETE FROM cards')
+    if (!r4.success) throw new Error(`Database Operation Failed: ${r4.error || 'Failed to delete cards'}`)
+    const r5 = await window.electron.db.run('DELETE FROM topics')
+    if (!r5.success) throw new Error(`Database Operation Failed: ${r5.error || 'Failed to delete topics'}`)
   },
 
   exportDecks: async (): Promise<string> => {
     const topicsRes = await window.electron.db.query('SELECT * FROM topics')
+    if (!topicsRes.success) throw new Error(`Database Operation Failed: ${topicsRes.error || 'Failed to export topics'}`)
     const cardsRes = await window.electron.db.query('SELECT * FROM cards')
+    if (!cardsRes.success) throw new Error(`Database Operation Failed: ${cardsRes.error || 'Failed to export cards'}`)
     const progressRes = await window.electron.db.query('SELECT * FROM progress')
+    if (!progressRes.success) throw new Error(`Database Operation Failed: ${progressRes.error || 'Failed to export progress'}`)
     
     const exportData = {
       version: 1,
@@ -448,28 +500,31 @@ export const dbService = {
       }
 
       for (const t of parsed.topics) {
-        await window.electron.db.run(
+        const r = await window.electron.db.run(
           `INSERT OR REPLACE INTO topics (id, name, subject, created_at, description, folder_name, tags) 
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
           [t.id, t.name, t.subject, t.created_at || Date.now()/1000, t.description || '', t.folder_name || 'Uncategorized', t.tags || '[]']
         )
+        if (!r.success) throw new Error(`Database Operation Failed: ${r.error || 'Failed to import topic'}`)
       }
 
       for (const c of parsed.cards) {
-        await window.electron.db.run(
+        const r = await window.electron.db.run(
           `INSERT OR REPLACE INTO cards (id, topic_id, type, data, difficulty, tags, is_custom, created_at) 
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
           [c.id, c.topic_id, c.type, c.data, c.difficulty || 'medium', c.tags || '[]', c.is_custom ? 1 : 0, c.created_at || Date.now()/1000]
         )
+        if (!r.success) throw new Error(`Database Operation Failed: ${r.error || 'Failed to import card'}`)
       }
 
       if (parsed.progress) {
         for (const p of parsed.progress) {
-          await window.electron.db.run(
+          const r = await window.electron.db.run(
             `INSERT OR REPLACE INTO progress (card_id, ease_factor, interval, repetitions, next_review, last_reviewed, correct_count, total_count) 
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
             [p.card_id, p.ease_factor || 2.5, p.interval || 1, p.repetitions || 0, p.next_review, p.last_reviewed, p.correct_count || 0, p.total_count || 0]
           )
+          if (!r.success) throw new Error(`Database Operation Failed: ${r.error || 'Failed to import progress'}`)
         }
       }
 
@@ -490,8 +545,7 @@ export const dbService = {
     const result = await window.electron.db.query(sql, [topicId])
 
     if (!result.success) {
-      console.error('Failed to get cards for print', result.error)
-      return []
+      throw new Error(`Database Operation Failed: ${result.error || 'Failed to get cards'}`)
     }
 
     return (result.data || []).map((row: { id: string; type: string; data: string; tags: string; difficulty: string; is_custom: number; created_at: string }) => ({
@@ -523,8 +577,7 @@ export const dbService = {
     `
     const result = await window.electron.db.query(sql, [topicId])
     if (!result.success) {
-      console.error('getCardsPrioritized failed', result.error)
-      return []
+      throw new Error(`Database Operation Failed: ${result.error || 'Failed to get prioritized cards'}`)
     }
     return (result.data || []).map((row: any) => ({
       id: row.id,
