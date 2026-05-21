@@ -495,34 +495,34 @@ Please explain:
 
   // ── Top Bar ─────────────────────────────────────────────────────────────────
   const renderTopBar = () => (
-    <div className="sticky top-0 left-0 w-full bg-[var(--bg-secondary)] border-b border-[var(--bg-card)] shadow-lg z-50 px-6 py-4 flex items-center justify-between shrink-0">
-      <div className="flex items-center gap-6">
+    <div className="sticky top-0 left-0 w-full bg-[var(--bg-secondary)] border-b border-[var(--bg-card)] shadow-lg z-50 flex flex-row items-center justify-between gap-2 px-2 py-2 sm:px-6 sm:py-4 shrink-0">
+      <div className="flex items-center gap-2 sm:gap-6 flex-1 min-w-0">
         <button
           onClick={() => { if (viewState === 'test') setShowExitConfirm(true); else handleExit() }}
-          className="text-[#888] hover:text-[var(--text-primary)] transition-colors flex items-center justify-center p-2 rounded hover:bg-[#222]"
+          className="text-[#888] hover:text-[var(--text-primary)] transition-colors flex items-center justify-center p-2 rounded hover:bg-[#222] shrink-0"
           title="Exit Test"
         >
           <X className="w-5 h-5" />
         </button>
-        <div className="flex flex-col">
-          <span className="text-[var(--text-primary)] font-['Orbitron'] tracking-widest font-bold text-lg uppercase flex items-center">
+        <div className="flex flex-col flex-1 min-w-0">
+          <span className="text-[var(--text-primary)] font-['Orbitron'] tracking-widest font-bold text-base truncate sm:text-2xl uppercase flex items-center min-w-0">
             {title ? (
               <>
-                <span className="text-[#888] mr-2">TEST:</span>
-                <span className="text-[var(--accent-primary)]">{title}</span>
+                <span className="text-[#888] mr-2 shrink-0">TEST:</span>
+                <span className="text-[var(--accent-primary)] truncate">{title}</span>
               </>
             ) : 'Test Mode'}
           </span>
           {viewState === 'test' && (
-            <span className="text-[#888] text-xs font-['Rajdhani'] uppercase tracking-widest mt-0.5">
+            <span className="text-[#888] text-xs font-['Rajdhani'] uppercase tracking-widest mt-0.5 hidden sm:block">
               {answeredCount} of {testCards.length} Answered
             </span>
           )}
         </div>
       </div>
 
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2 text-[#E8E8E8] font-['Rajdhani'] text-lg font-bold tracking-widest bg-[#111] px-4 py-1.5 rounded border border-[#333]">
+      <div className="flex-shrink-0 flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 text-[#E8E8E8] font-['Rajdhani'] text-xs sm:text-lg font-bold tracking-widest bg-[#111] px-2 py-1 sm:px-4 sm:py-1.5 rounded border border-[#333] shrink-0">
           <Clock className="w-4 h-4 text-[var(--accent-primary)]" />
           {formatTime(timeElapsed)}
         </div>
@@ -530,14 +530,14 @@ Please explain:
         {viewState === 'test' ? (
           <button
             onClick={() => setShowSubmitConfirm(true)}
-            className="bg-[var(--accent-primary)] text-black px-6 py-2 rounded font-['Rajdhani'] font-bold tracking-widest uppercase hover:bg-[var(--accent-dim)] transition-colors"
+            className="bg-[var(--accent-primary)] text-black px-2 py-1 text-xs sm:px-4 sm:py-2 sm:text-base rounded font-['Rajdhani'] font-bold tracking-widest uppercase hover:bg-[var(--accent-dim)] transition-colors whitespace-nowrap"
           >
             Submit Test
           </button>
         ) : (
           <button
             onClick={handleExit}
-            className="bg-[#222] text-[#E8E8E8] px-6 py-2 rounded font-['Rajdhani'] font-bold tracking-widest uppercase hover:bg-[#333] border border-[#444] transition-colors"
+            className="bg-[#222] text-[#E8E8E8] px-2 py-1 text-xs sm:px-4 sm:py-2 sm:text-base rounded font-['Rajdhani'] font-bold tracking-widest uppercase hover:bg-[#333] border border-[#444] transition-colors whitespace-nowrap"
           >
             Finish Review
           </button>
