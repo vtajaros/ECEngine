@@ -556,7 +556,7 @@ Please explain:
           key={currentCard.id}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-3xl mx-auto bg-[#161616] border border-[#222] rounded-xl shadow-2xl p-6 sm:p-10 relative flex flex-col max-h-[75vh] sm:max-h-none overflow-y-auto"
+          className="w-full max-w-3xl mx-auto bg-[#161616] border border-[#222] rounded-xl shadow-2xl p-6 sm:p-10 relative flex flex-col max-h-[75vh] sm:max-h-none overflow-y-auto max-sm:[&::-webkit-scrollbar]:hidden max-sm:[scrollbar-width:none]"
         >
           {/* Bookmark Togggle */}
           <button 

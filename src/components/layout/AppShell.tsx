@@ -48,7 +48,7 @@ export const AppShell: React.FC = () => {
   ]
 
   return (
-    <div className="flex flex-col min-h-screen sm:h-screen bg-[#0D0D0D] text-[var(--text-primary)] font-['IBM_Plex_Mono'] overflow-y-auto sm:overflow-hidden overflow-x-hidden w-screen">
+    <div className="flex flex-col min-h-screen sm:h-screen bg-[#0D0D0D] text-[var(--text-primary)] font-['IBM_Plex_Mono'] overflow-y-auto sm:overflow-hidden overflow-x-hidden w-screen max-sm:[&::-webkit-scrollbar]:hidden max-sm:[scrollbar-width:none]">
       {!isWeb && (
         <TitleBar
           isCollapsed={isCollapsed}
