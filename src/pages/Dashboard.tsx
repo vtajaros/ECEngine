@@ -87,51 +87,60 @@ const ReviewHeatmap = ({ history, examDate }: { history: Record<string, { count:
   }
 
   // Increased sizes: w-4 (16px), gap-2 (8px)
+  const CELL = 10
+  const GAP  = 4
+
   return (
-    <div className="flex flex-col gap-4 items-center w-full max-w-full">
-      <div className="flex flex-col min-w-max">
-        {/* Month Labels aligned to grid columns */}
-        <div className="relative h-6 w-full mb-2">
-          {monthLabels.map((label, i) => (
-            <span 
-              key={i} 
-              className="absolute text-[11px] font-['Orbitron'] text-[#E8E8E8] opacity-70 font-bold uppercase tracking-[0.2em]"
-              style={{ left: `calc(3.5rem + ${label.weekIndex * 1.5}rem)` }} // 1.5rem = w-4 (1rem) + gap-2 (0.5rem)
-            >
-              {label.name}
-            </span>
-          ))}
-        </div>
-        
-        <div className="flex gap-4 items-start">
-          {/* Day Labels — gap-2 matches the square grid's row gap so labels align naturally */}
-          <div className="flex flex-col gap-2 text-[10px] font-['Rajdhani'] text-[#666] font-bold pr-2 uppercase tracking-widest leading-none w-10">
-            {dayNames.map(d => (
-              <span key={d} className="h-4 flex items-center">{d}</span>
+    <div className="w-full max-w-full">
+      <div className="overflow-x-auto pb-2 -mx-1 px-1">
+        <div className="flex flex-col" style={{ minWidth: 'max-content' }}>
+          {/* Month Labels */}
+          <div className="relative h-5 mb-1">
+            {monthLabels.map((label, i) => (
+              <span
+                key={i}
+                className="absolute text-[9px] sm:text-[11px] font-['Orbitron'] text-[#E8E8E8] opacity-70 font-bold uppercase tracking-[0.2em]"
+                style={{ left: `calc(2.2rem + ${label.weekIndex * (CELL + GAP)}px)` }}
+              >
+                {label.name}
+              </span>
             ))}
           </div>
 
-          {/* Activity Grid */}
-          <div className="flex gap-2">
-            {grid.map((week, wi) => (
-              <div key={wi} className="flex flex-col gap-2 w-4">
-                {week.map(day => {
-                  const data = history[day] || { count: 0, timeSpent: 0 }
-                  const timeH = Math.floor(data.timeSpent / 60)
-                  const timeM = data.timeSpent % 60
-                  const dateObj = new Date(day)
-                  const isOutRange = dateObj < gridStartDate || dateObj > gridEndDate
+          <div className="flex items-start" style={{ gap: GAP }}>
+            {/* Day Labels */}
+            <div
+              className="flex flex-col text-[8px] sm:text-[10px] font-['Rajdhani'] text-[#666] font-bold uppercase tracking-widest leading-none"
+              style={{ gap: GAP, width: '1.8rem', paddingRight: 4 }}
+            >
+              {dayNames.map(d => (
+                <span key={d} style={{ height: CELL, display: 'flex', alignItems: 'center' }}>{d}</span>
+              ))}
+            </div>
 
-                  return (
-                    <div
-                      key={day}
-                      className={`w-4 h-4 rounded-[3px] ${getLevel(data.timeSpent)} transition-all hover:scale-125 cursor-help border shadow-sm ${isOutRange ? 'opacity-5' : ''}`}
-                      title={isOutRange ? undefined : `${day}: ${timeH}h ${timeM}m study time`}
-                    />
-                  )
-                })}
-              </div>
-            ))}
+            {/* Activity Grid */}
+            <div className="flex" style={{ gap: GAP }}>
+              {grid.map((week, wi) => (
+                <div key={wi} className="flex flex-col" style={{ gap: GAP, width: CELL }}>
+                  {week.map(day => {
+                    const data = history[day] || { count: 0, timeSpent: 0 }
+                    const timeH = Math.floor(data.timeSpent / 60)
+                    const timeM = data.timeSpent % 60
+                    const dateObj = new Date(day)
+                    const isOutRange = dateObj < gridStartDate || dateObj > gridEndDate
+
+                    return (
+                      <div
+                        key={day}
+                        className={`rounded-[2px] ${getLevel(data.timeSpent)} transition-all hover:scale-125 cursor-help border shadow-sm ${isOutRange ? 'opacity-5' : ''}`}
+                        style={{ width: CELL, height: CELL }}
+                        title={isOutRange ? undefined : `${day}: ${timeH}h ${timeM}m study time`}
+                      />
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -302,7 +311,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="h-full bg-[#0D0D0D] px-8 pb-8 pt-4 lg:px-12 lg:pb-12 lg:pt-4 overflow-y-auto scrollbar-hide">
+    <div className="h-full bg-[#0D0D0D] px-3 pb-6 pt-4 sm:px-8 sm:pb-8 lg:px-12 lg:pb-12 lg:pt-4 overflow-y-auto scrollbar-hide">
       {/* Header */}
       <header className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
@@ -315,7 +324,7 @@ export default function Dashboard() {
         </div>
 
         {/* Board Exam Countdown */}
-        <div className="bg-[#111] border border-[#00FF41]/10 rounded-lg px-4 py-2 flex items-center gap-6 shadow-xl relative group">
+        <div className="bg-[#111] border border-[#00FF41]/10 rounded-lg px-3 py-2 sm:px-4 flex items-center gap-3 sm:gap-6 shadow-xl relative group">
           <button
             onClick={openDateModal}
             className="absolute -top-2 -right-2 p-1.5 bg-[#1A1A1A] border border-[#333] rounded-full text-[#666] hover:text-[#00FF41] opacity-70 hover:opacity-100 transition-all z-10 shadow-lg"
@@ -402,8 +411,8 @@ export default function Dashboard() {
         </div>
 
         {/* ACTIVITY HEATMAP (Swapped to Top) */}
-        <div className="lg:col-span-3 p-8 bg-[#161616] rounded-xl border border-[rgba(0,255,65,0.05)] shadow-2xl flex flex-col items-center">
-            <div className="flex items-center justify-between mb-8 w-full">
+        <div className="lg:col-span-3 p-4 sm:p-8 bg-[#161616] rounded-xl border border-[rgba(0,255,65,0.05)] shadow-2xl flex flex-col items-center">
+            <div className="flex items-center justify-between mb-4 sm:mb-8 w-full">
               <h2 className="font-['Rajdhani'] font-bold text-sm text-[#E8E8E8] uppercase tracking-widest flex items-center">
                 <Clock className="mr-2 text-[#00FF41]" size={16} />
                 Activity Monitoring
@@ -450,12 +459,12 @@ export default function Dashboard() {
             </h2>
 
             <div className="flex items-center gap-2 flex-wrap justify-end">
-              <div className="flex gap-1 bg-[#111] p-1 rounded-lg border border-[#222]">
+              <div className="flex flex-wrap gap-1 bg-[#111] p-1 rounded-lg border border-[#222]">
                 {(['ALL', 'MATH', 'GEAS', 'ELECS', 'EST'] as const).map(subj => (
                   <button
                     key={subj}
                     onClick={() => setSelectedSubject(subj)}
-                    className={`px-3 py-1 text-[10px] font-bold font-['Rajdhani'] uppercase tracking-widest rounded transition-all duration-200 ${
+                    className={`px-2 sm:px-3 py-1 text-[10px] font-bold font-['Rajdhani'] uppercase tracking-widest rounded transition-all duration-200 ${
                       selectedSubject === subj ? 'text-black' : 'text-[#888] hover:text-[#E8E8E8] hover:bg-[#222]'
                     }`}
                     style={selectedSubject === subj ? { backgroundColor: SUBJECT_LINE_COLOR[subj] } : {}}
