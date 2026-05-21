@@ -590,7 +590,7 @@ Please explain:
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-8">
             {[0, 1, 2, 3].map((idx) => {
               const choice = mcqData.choices[idx];
               if (choice === undefined) return null;
@@ -619,13 +619,13 @@ Please explain:
                   key={idx}
                   onClick={() => viewState === 'question' && submitAnswer(idx)}
                   disabled={viewState === 'feedback'}
-                  className={`py-2 px-3 sm:py-4 sm:px-4 text-xs sm:text-base min-h-[60px] sm:min-h-[80px] rounded-lg border text-left flex items-center transition-all font-['Rajdhani'] ${btnClass}`}
+                  className={`py-3 px-4 sm:py-4 sm:px-4 text-xs sm:text-base rounded-lg border text-left flex items-center transition-all font-['Rajdhani'] ${btnClass}`}
                 >
                   <span className={`font-['IBM_Plex_Mono'] mr-2 sm:mr-4 w-6 sm:w-8 text-xs sm:text-base flex-shrink-0 ${prefixClass}`}>
                     {String.fromCharCode(65 + idx)}.
                   </span>
                   <div 
-                    className={`flex-1 break-words font-['Rajdhani'] font-medium text-xs sm:text-base leading-normal ${textClass}`} 
+                    className={`flex-1 text-left break-words font-['Rajdhani'] font-medium text-xs sm:text-base leading-normal ${textClass}`} 
                     dangerouslySetInnerHTML={{ __html: renderMath(choice) }} 
                   />
                 </button>
