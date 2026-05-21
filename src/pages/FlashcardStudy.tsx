@@ -635,7 +635,7 @@ export default function FlashcardStudy() {
         onClose={() => setShowTestModal({ isOpen: false, setId: null })}
       />
 
-      <div className="flex flex-1 w-full overflow-hidden">
+      <div className="flex flex-col sm:flex-row flex-1 w-full overflow-hidden">
         <FolderPanel
           folders={folders}
           deckCountByFolder={deckCountByFolder}

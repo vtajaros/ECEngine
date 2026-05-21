@@ -56,16 +56,16 @@ export const AppShell: React.FC = () => {
         />
       )}
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col sm:flex-row flex-1 overflow-hidden">
         {/* Sidebar */}
         <aside
           className={`${
-            isCollapsed ? 'w-16' : 'w-[170px]'
-          } bg-[#1A1A1A] border-r border-[#222] flex flex-col transition-all duration-300 relative z-20 shrink-0`}
+            isCollapsed ? 'w-full h-12 sm:w-16 sm:h-full' : 'w-full h-12 sm:w-[170px] sm:h-full'
+          } bg-[#1A1A1A] border-b sm:border-b-0 sm:border-r border-[#222] flex flex-row sm:flex-col transition-all duration-300 relative z-20 shrink-0`}
         >
           {/* Hamburger button — web only, lives at top of sidebar */}
           {isWeb && (
-            <div className={`flex ${isCollapsed ? 'justify-center' : 'justify-start px-3'} pt-3 pb-1 shrink-0`}>
+            <div className={`flex ${isCollapsed ? 'justify-center' : 'justify-start sm:px-3'} sm:pt-3 sm:pb-1 px-3 shrink-0 items-center justify-center`}>
               <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
                 className="p-1.5 hover:bg-[#222] border border-[#333]/40 rounded-md text-gray-400 hover:text-[#00FF41] transition-all flex items-center justify-center"
@@ -76,7 +76,7 @@ export const AppShell: React.FC = () => {
             </div>
           )}
 
-          <nav className="flex-1 flex flex-col gap-2 overflow-y-auto overflow-x-hidden px-0 pt-2">
+          <nav className="flex-1 flex flex-row sm:flex-col gap-2 overflow-x-auto sm:overflow-y-auto overflow-y-hidden sm:overflow-x-hidden px-2 sm:px-0 pt-0 sm:pt-2 items-center sm:items-stretch">
             {(navItems as NavItem[])
               .filter(item => {
                 if (isWeb && item.webHidden) return false
@@ -99,7 +99,7 @@ export const AppShell: React.FC = () => {
                 {({ isActive }) => (
                   <>
                     {isActive && (
-                      <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#00FF41] shadow-[0_0_10px_#00FF41]" />
+                      <div className="absolute left-0 right-0 bottom-0 h-[3px] sm:h-auto sm:w-[3px] sm:top-0 sm:bottom-0 bg-[#00FF41] shadow-[0_0_10px_#00FF41]" />
                     )}
                     <div className={`${isCollapsed ? 'w-16' : 'w-12'} flex justify-center shrink-0`}>
                       <item.icon size={18} />
@@ -112,14 +112,14 @@ export const AppShell: React.FC = () => {
           </nav>
 
           {!isCollapsed && (
-            <div className="text-[10px] text-gray-400 text-center pb-4 w-full font-rajdhani tracking-widest opacity-60">
+            <div className="hidden sm:block text-[10px] text-gray-400 text-center pb-4 w-full font-rajdhani tracking-widest opacity-60">
               V1.0.0
             </div>
           )}
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 relative overflow-y-auto overflow-x-hidden bg-[#111111]">
+        <main className="flex-1 w-full min-w-0 relative overflow-y-auto overflow-x-hidden bg-[#111111]">
           <Outlet />
         </main>
       </div>

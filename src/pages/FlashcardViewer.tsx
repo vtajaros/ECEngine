@@ -755,7 +755,7 @@ export default function FlashcardViewer() {
   // ══════════════════════════════════════════════
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="flex flex-1 w-full overflow-hidden">
+      <div className="flex flex-col sm:flex-row flex-1 w-full overflow-hidden">
         <FolderPanel
           folders={folders}
           deckCountByFolder={deckCountByFolder}

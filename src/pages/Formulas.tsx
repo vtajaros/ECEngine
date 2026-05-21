@@ -1041,7 +1041,7 @@ export default function Formulas() {
   return (
     <div className="flex flex-col h-full w-full">
       {/* Folder Panel + Deck Grid */}
-      <div className="flex flex-1 w-full overflow-hidden">
+      <div className="flex flex-col sm:flex-row flex-1 w-full overflow-hidden">
         <FolderPanel
           folders={folders}
           deckCountByFolder={deckCountByFolder}
