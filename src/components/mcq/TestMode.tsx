@@ -156,7 +156,7 @@ const TestQuestionCard = memo(({
       </div>
 
       <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 items-start">
-        {[0, 2, 1, 3].map((cIdx) => {
+        {[0, 1, 2, 3].map((cIdx) => {
           const choice = mcq.choices[cIdx]
           if (choice === undefined) return null
 

@@ -608,7 +608,7 @@ Please explain:
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-8">
-            {[0, 2, 1, 3].map((idx) => {
+            {[0, 1, 2, 3].map((idx) => {
               const choice = mcqData.choices[idx];
               if (choice === undefined) return null;
               
