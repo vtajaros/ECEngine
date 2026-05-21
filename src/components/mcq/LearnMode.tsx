@@ -607,7 +607,7 @@ Please explain:
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-8">
             {[0, 2, 1, 3].map((idx) => {
               const choice = mcqData.choices[idx];
               if (choice === undefined) return null;
@@ -636,7 +636,7 @@ Please explain:
                   key={idx}
                   onClick={() => viewState === 'question' && submitAnswer(idx)}
                   disabled={viewState === 'feedback'}
-                  className={`p-[24px_28px] min-h-[80px] rounded-lg border text-left flex items-center transition-all font-['Rajdhani'] ${btnClass}`}
+                  className={`py-3 sm:py-4 px-4 min-h-[80px] rounded-lg border text-left flex items-center transition-all font-['Rajdhani'] ${btnClass}`}
                 >
                   <span className={`font-['IBM_Plex_Mono'] mr-4 w-8 text-xl flex-shrink-0 ${prefixClass}`} style={{ fontSize: getChoiceFontSize(choice) }}>
                     {String.fromCharCode(65 + idx)}.
