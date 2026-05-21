@@ -26,6 +26,18 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import 'mathlive'
+import type { MathfieldElement } from 'mathlive'
+
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'math-field': React.DetailedHTMLProps<
+        React.HTMLAttributes<MathfieldElement>, MathfieldElement
+      > & { [key: string]: any }
+    }
+  }
+}
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -105,7 +117,25 @@ const MathInputField: React.FC<MathInputFieldProps> = ({
   useEffect(() => {
     const el = mathfieldRef.current
     if (!el || !mathMode) return
-    if (el.value !== value) el.value = value
+
+    const syncValue = () => {
+      if (typeof el.setValue === 'function') {
+        if (el.value !== value) el.value = value
+      } else {
+        el.setAttribute('value', value)
+        el.value = value
+      }
+    }
+
+    syncValue()
+
+    if (typeof customElements !== 'undefined' && customElements.whenDefined) {
+      customElements.whenDefined('math-field').then(() => {
+        if (mathfieldRef.current === el) {
+          syncValue()
+        }
+      })
+    }
   }, [mathMode, value])
 
   useEffect(() => {

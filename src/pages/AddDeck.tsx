@@ -857,7 +857,25 @@ const MathInputField: React.FC<MathInputFieldProps> = ({
   useEffect(() => {
     const el = mathfieldRef.current
     if (!el || !mathMode) return
-    if (el.value !== value) el.value = value
+
+    const syncValue = () => {
+      if (typeof el.setValue === 'function') {
+        if (el.value !== value) el.value = value
+      } else {
+        el.setAttribute('value', value)
+        el.value = value
+      }
+    }
+
+    syncValue()
+
+    if (typeof customElements !== 'undefined' && customElements.whenDefined) {
+      customElements.whenDefined('math-field').then(() => {
+        if (mathfieldRef.current === el) {
+          syncValue()
+        }
+      })
+    }
   }, [mathMode, value])
 
   // Wire input event listener
