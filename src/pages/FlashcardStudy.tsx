@@ -645,9 +645,9 @@ export default function FlashcardStudy() {
         />
         <div className="flex flex-col flex-1 min-w-0 overflow-y-auto">
           {/* Header centered above decks */}
-          <div className="flex flex-col items-center w-full pt-6 pb-2 px-6">
-            <div className="w-full max-w-5xl mb-10 flex flex-col md:flex-row items-center justify-between gap-6 border-b border-[var(--bg-card)] pb-6 relative z-30 pt-4">
-              <h1 className="text-3xl lg:text-4xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4 uppercase">
+          <div className="flex flex-col items-center w-full pt-6 pb-2 px-3 sm:px-6">
+            <div className="w-full max-w-5xl mb-4 sm:mb-10 flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-6 border-b border-[var(--bg-card)] pb-6 relative z-30 pt-4">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4 uppercase">
                 <Brain className="text-[var(--accent-primary)]" size={36} />
                 LOOKS<span className="text-[var(--accent-primary)]">FAM</span>
               </h1>
@@ -761,10 +761,10 @@ export default function FlashcardStudy() {
                   </AnimatePresence>
                 </div>
 
-                <div className="flex gap-2 bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)]">
+                <div className="flex gap-2 bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)] overflow-x-auto max-w-full">
                   {SUBJECTS.map(s => (
                     <button key={s} onClick={() => setActiveSubject(s)}
-                      className={`px-4 py-2 rounded-md font-['Rajdhani'] tracking-widest text-sm font-bold transition-all ${getSubjectFilterClasses(s, activeSubject === s)}`}
+                      className={`px-2 py-1.5 sm:px-4 sm:py-2 rounded-md font-['Rajdhani'] tracking-widest text-xs sm:text-sm font-bold transition-all ${getSubjectFilterClasses(s, activeSubject === s)}`}
                     >
                       {s}
                     </button>
@@ -774,10 +774,10 @@ export default function FlashcardStudy() {
             </div>
           </div>
 
-          <div className="flex-1 px-6 pb-6">
+          <div className="flex-1 px-3 sm:px-6 pb-6">
             <div className="flex flex-col items-center">
               <div className="w-full max-w-5xl">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-2 pb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-12 pt-2 pb-4">
                   {filteredAndSortedSets.map(set => (
                     <div
                       key={set.id}
@@ -849,7 +849,7 @@ export default function FlashcardStudy() {
                     </div>
 
                     {/* Right Side: Action Buttons */}
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
                       {set.id.startsWith('topic_') && (
                         <button
                           onClick={(e) => {
@@ -860,7 +860,7 @@ export default function FlashcardStudy() {
                               window.open(`/#/print?id=${set.id}&title=${encodeURIComponent(set.title)}`, '_blank')
                             }
                           }}
-                          className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
+                          className="p-1.5 sm:p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
                           title="Test Paper View"
                         >
                           <ScrollText className="w-4 h-4" />
@@ -868,7 +868,7 @@ export default function FlashcardStudy() {
                       )}
                       <button
                         onClick={(e) => { e.stopPropagation(); navigate(`/edit-deck/${set.id}`) }}
-                        className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
+                        className="p-1.5 sm:p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
                         title="Edit Deck"
                       >
                         <Pencil className="w-4 h-4" />
@@ -876,7 +876,7 @@ export default function FlashcardStudy() {
                       {set.id !== 'set-1' && (
                         <button
                           onClick={(e) => { e.stopPropagation(); setSetToDelete(set); }}
-                          className="p-2 bg-[#111] border border-[#333] hover:border-red-500/50 text-gray-500 hover:text-red-500 rounded transition-colors"
+                          className="p-1.5 sm:p-2 bg-[#111] border border-[#333] hover:border-red-500/50 text-gray-500 hover:text-red-500 rounded transition-colors"
                           title="Delete Set"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -884,7 +884,7 @@ export default function FlashcardStudy() {
                       )}
                       <button
                         onClick={(e) => { e.stopPropagation(); handleOpenLearn(set.id); }}
-                        className="py-2 px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                        className="py-1.5 px-2 sm:py-2 sm:px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
                         title="Learn this deck"
                         aria-label="Learn"
                       >
@@ -893,7 +893,7 @@ export default function FlashcardStudy() {
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleOpenTest(set.id); }}
-                        className="py-2 px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                        className="py-1.5 px-2 sm:py-2 sm:px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
                         title="Test this deck"
                         aria-label="Test"
                       >
