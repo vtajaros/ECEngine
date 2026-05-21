@@ -8,6 +8,8 @@ import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectC
 import { Card, MCQData, FlashcardData } from '../types'
 import { renderMath } from '../lib/latex'
 import { shuffleArray } from '../lib/utils'
+import { webDB } from '@/services/web/schema'
+
 
 type Subject = 'MATH' | 'GEAS' | 'ELECS' | 'EST'
 type FilterSubject = 'ALL' | Subject
@@ -53,6 +55,8 @@ function saveFCBookmarks(set: Set<string>) {
 
 export default function FlashcardViewer() {
   const navigate = useNavigate()
+  const isWeb = !(window as any).electron
+
 
   // ── Deck listing state ──
   const [activeSubject, setActiveSubject] = useState<FilterSubject>('ALL')
@@ -127,17 +131,23 @@ export default function FlashcardViewer() {
   useEffect(() => {
     async function load() {
       try {
-        if (!window.electron?.db) return
-        const r = await window.electron.db.query(
-          `SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags, t.folder_name,
-                  COUNT(c.id) as card_count,
-                  GROUP_CONCAT(DISTINCT c.type) as types
-           FROM topics t LEFT JOIN cards c ON c.topic_id = t.id
-           GROUP BY t.id ORDER BY t.name`
-        )
-        if (r.success && r.data) {
-          const processedDecks = r.data.map((row: any) => {
-            const types = (row.types || '').split(',')
+        let processedDecks: any[] = []
+        if (isWeb) {
+          const rawTopics = await webDB.topics.toArray()
+          const rawCards = await webDB.cards.toArray()
+          const cardsByTopic = new Map<string, { cardCount: number, types: Set<string> }>()
+          for (const card of rawCards) {
+            if (!cardsByTopic.has(card.topic_id)) {
+              cardsByTopic.set(card.topic_id, { cardCount: 0, types: new Set() })
+            }
+            const entry = cardsByTopic.get(card.topic_id)!
+            entry.cardCount++
+            entry.types.add(card.type)
+          }
+
+          processedDecks = rawTopics.map((row: any) => {
+            const entry = cardsByTopic.get(row.id) || { cardCount: 0, types: new Set<string>() }
+            const types = Array.from(entry.types)
 
             // Skip formula-only decks
             if (types.length === 1 && types[0] === 'formula') return null
@@ -155,16 +165,57 @@ export default function FlashcardViewer() {
               id: row.id,
               title: row.name,
               subject: SUBJECT_MAP[row.subject] || 'ELECS',
-              cardCount: row.card_count || 0,
+              cardCount: entry.cardCount,
               deckType,
               description: row.description || '',
               tags: parsedTags,
-              createdAt: row.created_at || Date.now(),
+              createdAt: Number(row.created_at) || Date.now(),
               folderName: row.folder_name || 'Uncategorized'
             }
-          })
+          }).filter((d: DeckInfo | null): d is DeckInfo => d !== null)
 
-          setDecks(processedDecks.filter((d: DeckInfo | null): d is DeckInfo => d !== null))
+          // Sort by name as in DB query: ORDER BY t.name
+          processedDecks.sort((a, b) => a.title.localeCompare(b.title))
+          setDecks(processedDecks)
+        } else {
+          if (!window.electron?.db) return
+          const r = await window.electron.db.query(
+            `SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags, t.folder_name,
+                    COUNT(c.id) as card_count,
+                    GROUP_CONCAT(DISTINCT c.type) as types
+             FROM topics t LEFT JOIN cards c ON c.topic_id = t.id
+             GROUP BY t.id ORDER BY t.name`
+          )
+          if (r.success && r.data) {
+            processedDecks = r.data.map((row: any) => {
+              const types = (row.types || '').split(',')
+
+              // Skip formula-only decks
+              if (types.length === 1 && types[0] === 'formula') return null
+
+              let deckType: 'mcq' | 'flashcard' | 'mixed' = 'flashcard'
+              if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
+              else if (types.includes('mcq')) deckType = 'mcq'
+
+              let parsedTags: string[] = []
+              try {
+                if (row.tags) parsedTags = JSON.parse(row.tags)
+              } catch (e) { }
+
+              return {
+                id: row.id,
+                title: row.name,
+                subject: SUBJECT_MAP[row.subject] || 'ELECS',
+                cardCount: row.card_count || 0,
+                deckType,
+                description: row.description || '',
+                tags: parsedTags,
+                createdAt: row.created_at || Date.now(),
+                folderName: row.folder_name || 'Uncategorized'
+              }
+            }).filter((d: DeckInfo | null): d is DeckInfo => d !== null)
+            setDecks(processedDecks)
+          }
         }
       } catch (e) { console.error('Failed to load decks', e) }
     }
@@ -191,9 +242,16 @@ export default function FlashcardViewer() {
   const handleConfirmDelete = async () => {
     if (!setToDelete) return
     try {
-      if (window.electron?.db) {
-        await window.electron.db.run(`DELETE FROM cards WHERE topic_id = ?`, [setToDelete.id])
-        await window.electron.db.run(`DELETE FROM topics WHERE id = ?`, [setToDelete.id])
+      if (isWeb) {
+        await webDB.transaction('rw', webDB.topics, webDB.cards, webDB.progress, async () => {
+          await webDB.cards.where('topic_id').equals(setToDelete.id).delete()
+          await webDB.topics.delete(setToDelete.id)
+        })
+      } else {
+        if (window.electron?.db) {
+          await window.electron.db.run(`DELETE FROM cards WHERE topic_id = ?`, [setToDelete.id])
+          await window.electron.db.run(`DELETE FROM topics WHERE id = ?`, [setToDelete.id])
+        }
       }
       setDecks(prev => prev.filter(s => s.id !== setToDelete.id))
       setSetToDelete(null)
@@ -205,24 +263,31 @@ export default function FlashcardViewer() {
   // ── Open a deck ──
   const openDeck = async (deck: DeckInfo) => {
     try {
-      if (!window.electron?.db) return
-      const r = await window.electron.db.query(
-        `SELECT * FROM cards WHERE topic_id = ?`, [deck.id]
-      )
-      if (r.success && r.data) {
-        const cards: Card[] = r.data.map((row: any) => ({
-          id: row.id,
-          topicId: row.topic_id,
-          type: row.type,
-          data: typeof row.data === 'string' ? JSON.parse(row.data) : row.data,
-          difficulty: row.difficulty || 'medium',
-          tags: typeof row.tags === 'string' ? JSON.parse(row.tags) : (row.tags || []),
-          isCustom: !!row.is_custom,
-          createdAt: row.created_at || '',
-        }))
-        setActiveDeck({ id: deck.id, title: deck.title, cards })
-        applySettings(cards, settings)
+      let rawCards: any[] = []
+      if (isWeb) {
+        rawCards = await webDB.cards.where('topic_id').equals(deck.id).toArray()
+      } else {
+        if (!window.electron?.db) return
+        const r = await window.electron.db.query(
+          `SELECT * FROM cards WHERE topic_id = ?`, [deck.id]
+        )
+        if (r.success && r.data) {
+          rawCards = r.data
+        }
       }
+
+      const cards: Card[] = rawCards.map((row: any) => ({
+        id: row.id,
+        topicId: row.topic_id,
+        type: row.type,
+        data: typeof row.data === 'string' ? JSON.parse(row.data) : row.data,
+        difficulty: row.difficulty || 'medium',
+        tags: typeof row.tags === 'string' ? JSON.parse(row.tags) : (row.tags || []),
+        isCustom: !!row.is_custom,
+        createdAt: row.created_at || '',
+      }))
+      setActiveDeck({ id: deck.id, title: deck.title, cards })
+      applySettings(cards, settings)
     } catch (e) { console.error('Failed to load cards', e) }
   }
 
@@ -897,7 +962,12 @@ export default function FlashcardViewer() {
                     <div className="flex items-center gap-2 flex-1 justify-end">
                       {deck.id.startsWith('topic_') && (
                         <button
-                          onClick={(e) => { e.stopPropagation(); window.electron.print.open(deck.id, deck.title) }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if ((window as any).electron?.print) {
+                              window.electron.print.open(deck.id, deck.title)
+                            }
+                          }}
                           className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
                           title="Test Paper View"
                         >

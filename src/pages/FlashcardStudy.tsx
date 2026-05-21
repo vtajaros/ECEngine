@@ -17,7 +17,9 @@ import { shuffle, shuffleChoices } from '../lib/scrambler'
 
 import { StudyHeader } from '../components/study/StudyHeader'
 import { StudySessionStats } from '../components/study/StudySessionStats'
-import { dbService } from '../services/db.service'
+import { activeDBService } from '../services/db.service'
+import { webDB } from '@/services/web/schema'
+
 
 type StudyMode = 'flashcard' | 'mcq' | 'learn' | 'test'
 type Subject = 'ALL' | 'MATH' | 'GEAS' | 'ELECS' | 'EST'
@@ -50,6 +52,8 @@ interface StudySet {
 
 export default function FlashcardStudy() {
   const navigate = useNavigate()
+  const isWeb = !(window as any).electron
+
   const [allSets, setAllSets] = useState<StudySet[]>([])
   const [setToDelete, setSetToDelete] = useState<StudySet | null>(null)
   const [deleteCountdown, setDeleteCountdown] = useState(0)
@@ -71,38 +75,41 @@ export default function FlashcardStudy() {
   useEffect(() => {
     async function loadDBSets() {
       try {
-        if (!window.electron?.db) return
+        let dbSets: StudySet[] = []
+        if (isWeb) {
+          const rawTopics = await webDB.topics.toArray()
+          const rawCards = await webDB.cards.toArray()
+          const rawProgress = await webDB.progress.toArray()
+          const progressMap = new Map(rawProgress.map(p => [p.card_id, p]))
 
-        let dueCountsMap = new Map<string, number>()
-        if (window.electron.decks) {
-          const dueRes = await window.electron.decks.getDueCounts()
-          if (dueRes.success && dueRes.data) {
-            dueRes.data.forEach((row: any) => {
-              dueCountsMap.set(row.topic_id, row.dueCount)
-            })
+          const cardsByTopic = new Map<string, { cardCount: number, types: Set<string>, dueCount: number }>()
+          const now = new Date().toISOString()
+
+          for (const card of rawCards) {
+            if (!cardsByTopic.has(card.topic_id)) {
+              cardsByTopic.set(card.topic_id, { cardCount: 0, types: new Set(), dueCount: 0 })
+            }
+            const entry = cardsByTopic.get(card.topic_id)!
+            entry.cardCount++
+            entry.types.add(card.type)
+
+            const prog = progressMap.get(card.id)
+            const isDue = !prog || !prog.next_review || prog.next_review <= now
+            if (isDue) {
+              entry.dueCount++
+            }
           }
-        }
 
-        const topicsResult = await window.electron.db.query(
-          `SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags, t.folder_name,
-                  COUNT(c.id) as card_count,
-                  GROUP_CONCAT(DISTINCT c.type) as types
-           FROM topics t LEFT JOIN cards c ON c.topic_id = t.id
-           GROUP BY t.id`
-        )
-        if (topicsResult.success && topicsResult.data) {
-          const dbSets: StudySet[] = topicsResult.data.map((row: any) => {
-            const types = (row.types || '').split(',').filter(Boolean)
+          dbSets = rawTopics.map((row: any): StudySet | null => {
+            const entry = cardsByTopic.get(row.id) || { cardCount: 0, types: new Set<string>(), dueCount: 0 }
+            const types = Array.from(entry.types)
 
             // Skip formula-only decks or empty decks
-            if (types.length === 0 || (types.length === 1 && types[0] === 'formula')) return null
+            if (entry.cardCount === 0 || (types.length === 1 && types[0] === 'formula')) return null
 
             let deckType: 'mcq' | 'flashcard' | 'mixed' = 'mcq'
             if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
             else if (types.includes('flashcard')) deckType = 'flashcard'
-
-            const mastery = 0; // DB-based progress handles mastery calculation in the service layer
-            const dueCount = dueCountsMap.get(row.id) || 0
 
             let parsedTags: string[] = []
             try {
@@ -114,20 +121,74 @@ export default function FlashcardStudy() {
               title: row.name,
               description: row.description || '',
               subject: SUBJECT_MAP[row.subject] || 'ELECS',
-              count: row.card_count || 0,
-              mastery,
+              count: entry.cardCount,
+              mastery: 0,
               deckType,
-              dueCount,
+              dueCount: entry.dueCount,
               tags: parsedTags,
-              createdAt: row.created_at || Date.now(),
+              createdAt: Number(row.created_at) || Date.now(),
               folderName: row.folder_name || 'Uncategorized'
             }
           }).filter((s: StudySet | null): s is StudySet => s !== null)
-          setAllSets(prev => {
-            const nonDb = prev.filter(s => !s.id.startsWith('topic_'));
-            return [...nonDb, ...dbSets];
-          })
+        } else {
+          if (!window.electron?.db) return
+
+          let dueCountsMap = new Map<string, number>()
+          if (window.electron.decks) {
+            const dueRes = await window.electron.decks.getDueCounts()
+            if (dueRes.success && dueRes.data) {
+              dueRes.data.forEach((row: any) => {
+                dueCountsMap.set(row.topic_id, row.dueCount)
+              })
+            }
+          }
+
+          const topicsResult = await window.electron.db.query(
+            `SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags, t.folder_name,
+                    COUNT(c.id) as card_count,
+                    GROUP_CONCAT(DISTINCT c.type) as types
+             FROM topics t LEFT JOIN cards c ON c.topic_id = t.id
+             GROUP BY t.id`
+          )
+          if (topicsResult.success && topicsResult.data) {
+            dbSets = topicsResult.data.map((row: any) => {
+              const types = (row.types || '').split(',').filter(Boolean)
+
+              // Skip formula-only decks or empty decks
+              if (types.length === 0 || (types.length === 1 && types[0] === 'formula')) return null
+
+              let deckType: 'mcq' | 'flashcard' | 'mixed' = 'mcq'
+              if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
+              else if (types.includes('flashcard')) deckType = 'flashcard'
+
+              const mastery = 0; // DB-based progress handles mastery calculation in the service layer
+              const dueCount = dueCountsMap.get(row.id) || 0
+
+              let parsedTags: string[] = []
+              try {
+                if (row.tags) parsedTags = JSON.parse(row.tags)
+              } catch (e) { }
+
+              return {
+                id: row.id,
+                title: row.name,
+                description: row.description || '',
+                subject: SUBJECT_MAP[row.subject] || 'ELECS',
+                count: row.card_count || 0,
+                mastery,
+                deckType,
+                dueCount,
+                tags: parsedTags,
+                createdAt: row.created_at || Date.now(),
+                folderName: row.folder_name || 'Uncategorized'
+              }
+            }).filter((s: StudySet | null): s is StudySet => s !== null)
+          }
         }
+        setAllSets(prev => {
+          const nonDb = prev.filter(s => !s.id.startsWith('topic_'));
+          return [...nonDb, ...dbSets];
+        })
       } catch (err) {
         console.error('Failed to load DB sets', err)
       }
@@ -210,8 +271,15 @@ export default function FlashcardStudy() {
   const handleConfirmDelete = async () => {
     if (!setToDelete) return
     try {
-      if ((window as any).electron?.decks && setToDelete.id.startsWith('topic_')) {
-        await (window as any).electron.decks.deleteTopic(setToDelete.id)
+      if (isWeb) {
+        await webDB.transaction('rw', webDB.topics, webDB.cards, webDB.progress, async () => {
+          await webDB.cards.where('topic_id').equals(setToDelete.id).delete()
+          await webDB.topics.delete(setToDelete.id)
+        })
+      } else {
+        if ((window as any).electron?.decks && setToDelete.id.startsWith('topic_')) {
+          await (window as any).electron.decks.deleteTopic(setToDelete.id)
+        }
       }
       setAllSets(prev => prev.filter(s => s.id !== setToDelete.id))
       setSetToDelete(null)
@@ -333,7 +401,7 @@ export default function FlashcardStudy() {
 
     if (setId.startsWith('topic_')) {
       // Load real cards from DB
-      const prioritizedCards = await dbService.getCardsPrioritized(setId)
+      const prioritizedCards = await activeDBService.getCardsPrioritized(setId)
       const rawCards = prioritizedCards.map(card => ({
         data: card.data,
         type: card.type,
@@ -409,7 +477,7 @@ export default function FlashcardStudy() {
 
     if (setId.startsWith('topic_')) {
       // Load real cards from DB
-      const prioritizedCards = await dbService.getCardsPrioritized(setId)
+      const prioritizedCards = await activeDBService.getCardsPrioritized(setId)
       const rawCards = prioritizedCards.map(card => ({
         data: card.data,
         type: card.type,
@@ -800,7 +868,12 @@ export default function FlashcardStudy() {
                       )}
                       {set.id.startsWith('topic_') && (
                         <button
-                          onClick={(e) => { e.stopPropagation(); window.electron.print.open(set.id, set.title) }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if ((window as any).electron?.print) {
+                              window.electron.print.open(set.id, set.title)
+                            }
+                          }}
                           className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
                           title="Test Paper View"
                         >

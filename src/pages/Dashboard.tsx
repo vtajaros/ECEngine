@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { BookOpen, Library, Sigma, Download, Zap, BookMarked, BarChart2, TrendingUp, Check, Calendar, Edit2, Activity, Clock, X, AlertCircle } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { getSubjectBadgeClasses } from '../lib/subjectColors'
-import { dbService, AccuracyGranularity, AccuracySubject } from '../services/db.service'
+import { activeDBService, AccuracyGranularity, AccuracySubject } from '../services/db.service'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const SUBJECT_MAP: Record<string, string> = {
@@ -195,7 +195,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     setTrendLoading(true)
-    dbService.getAccuracyTrend(selectedSubject, granularity)
+    activeDBService.getAccuracyTrend(selectedSubject, granularity)
       .then(data => setAccuracyTrend(data))
       .catch(err => console.error('AccuracyTrend fetch failed:', err))
       .finally(() => setTrendLoading(false))
@@ -207,11 +207,11 @@ export default function Dashboard() {
 
   const loadDashboardData = async () => {
     try {
-      const dbStats = await dbService.getDashboardStats()
-      const rawSubjectCounts = await dbService.getSubjectBreakdown()
-      const globalStats = await dbService.getGlobalStats()
-      const rawSubjectProgress = await dbService.getSubjectProgress()
-      const activityHistory = await dbService.getActivityHistory()
+      const dbStats = await activeDBService.getDashboardStats()
+      const rawSubjectCounts = await activeDBService.getSubjectBreakdown()
+      const globalStats = await activeDBService.getGlobalStats()
+      const rawSubjectProgress = await activeDBService.getSubjectProgress()
+      const activityHistory = await activeDBService.getActivityHistory()
       
       // Use real history for heatmap
       setHistory(activityHistory)

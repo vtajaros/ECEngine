@@ -8,9 +8,19 @@ import {
   PlusCircle,
   Settings,
   Layers,
-  ClipboardList
+  ClipboardList,
 } from 'lucide-react'
 import { TitleBar } from './TitleBar'
+
+const isWeb = typeof window !== 'undefined' && !(window as any).electron
+
+type NavItem = {
+  to: string
+  label: string
+  icon: React.ElementType
+  webHidden?: boolean
+  webOnly?: boolean
+}
 
 export const AppShell: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false)
@@ -18,30 +28,32 @@ export const AppShell: React.FC = () => {
   // Track time spent in the app (every minute)
   useEffect(() => {
     const interval = setInterval(() => {
-      import('../../services/db.service').then(({ dbService }) => {
-        dbService.updateTimeSpent(1)
+      import('../../services/db.service').then(({ activeDBService }) => {
+        activeDBService.updateTimeSpent(1)
       })
     }, 60000)
     return () => clearInterval(interval)
   }, [])
 
   const navItems = [
-    { to: '/', label: 'Dashboard', icon: Home },
-    { to: '/study', label: 'LooksFam', icon: Brain },
-    { to: '/flashcards', label: 'Flashcards', icon: Layers },
-    { to: '/formulas', label: 'Formulas', icon: Sigma },
-    { to: '/topics', label: 'EELE ToS', icon: BookOpen },
-    { to: '/checklist', label: 'Review Checklist', icon: ClipboardList },
-    { to: '/add-decks', label: 'Add Decks', icon: PlusCircle },
-    { to: '/settings', label: 'Settings', icon: Settings },
+    { to: '/',          label: 'Dashboard',       icon: Home },
+    { to: '/study',     label: 'LooksFam',        icon: Brain },
+    { to: '/flashcards',label: 'Flashcards',      icon: Layers },
+    { to: '/formulas',  label: 'Formulas',        icon: Sigma },
+    { to: '/topics',    label: 'EELE ToS',        icon: BookOpen },
+    { to: '/checklist', label: 'Review Checklist',icon: ClipboardList },
+    { to: '/add-decks', label: 'Add Decks',       icon: PlusCircle },
+    { to: '/settings',  label: 'Settings',        icon: Settings,   webHidden: true },
   ]
 
   return (
     <div className="flex flex-col h-screen bg-[#0D0D0D] text-[var(--text-primary)] font-['IBM_Plex_Mono'] overflow-hidden w-screen">
-      <TitleBar
-        isCollapsed={isCollapsed}
-        onToggleSidebar={() => setIsCollapsed(!isCollapsed)}
-      />
+      {!isWeb && (
+        <TitleBar
+          isCollapsed={isCollapsed}
+          onToggleSidebar={() => setIsCollapsed(!isCollapsed)}
+        />
+      )}
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
@@ -50,7 +62,13 @@ export const AppShell: React.FC = () => {
             } bg-[#1A1A1A] border-r border-[#222] flex flex-col transition-all duration-300 relative z-20 shrink-0`}
         >
           <nav className="flex-1 flex flex-col gap-2 overflow-y-auto overflow-x-hidden px-0 pt-4">
-            {navItems.map((item) => (
+            {(navItems as NavItem[])
+              .filter(item => {
+                if (isWeb && item.webHidden) return false  // hide desktop-only on web
+                if (!isWeb && item.webOnly) return false   // hide web-only on desktop
+                return true
+              })
+              .map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
