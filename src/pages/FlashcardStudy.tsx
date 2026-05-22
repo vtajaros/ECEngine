@@ -652,8 +652,8 @@ export default function FlashcardStudy() {
                 LOOKS<span className="text-[var(--accent-primary)]">FAM</span>
               </h1>
 
-              <div className="flex gap-2 items-center w-full justify-center">
-                <div className="relative" ref={filterPopoverRef}>
+              <div className="flex items-center gap-2 w-full bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)] max-sm:overflow-x-auto max-sm:justify-start sm:justify-center no-scrollbar px-1">
+                <div className="relative shrink-0" ref={filterPopoverRef}>
                   <button
                     onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                     className={`p-2 rounded-lg border transition-all ${showAdvancedFilters || filterTags.length > 0 || filterType !== 'all' || sortBy !== 'date'
@@ -671,7 +671,7 @@ export default function FlashcardStudy() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute right-0 top-full mt-2 w-72 bg-[#111] border border-[#333] rounded-lg shadow-2xl p-4 z-50 flex flex-col gap-4"
+                        className="absolute left-0 mt-2 w-72 bg-[#111] border border-[#333] rounded-lg shadow-2xl p-4 z-50 flex flex-col gap-4"
                       >
                         <div className="flex justify-between items-center pb-2 border-b border-[#333]">
                           <span className="font-['Rajdhani'] font-bold text-sm tracking-widest uppercase text-[#00FF41]">Filters & Sort</span>
@@ -761,15 +761,13 @@ export default function FlashcardStudy() {
                   </AnimatePresence>
                 </div>
 
-                <div className="flex items-center gap-2 w-full bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)] max-sm:overflow-x-auto max-sm:justify-start sm:justify-center no-scrollbar px-1">
-                  {SUBJECTS.map(s => (
-                    <button key={s} onClick={() => setActiveSubject(s)}
-                      className={`px-2 py-1.5 sm:px-4 sm:py-2 rounded-md font-['Rajdhani'] tracking-widest text-xs sm:text-sm font-bold transition-all ${getSubjectFilterClasses(s, activeSubject === s)}`}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
+                {SUBJECTS.map(s => (
+                  <button key={s} onClick={() => setActiveSubject(s)}
+                    className={`px-2 py-1.5 sm:px-4 sm:py-2 rounded-md font-['Rajdhani'] tracking-widest text-xs sm:text-sm font-bold transition-all ${getSubjectFilterClasses(s, activeSubject === s)}`}
+                  >
+                    {s}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
