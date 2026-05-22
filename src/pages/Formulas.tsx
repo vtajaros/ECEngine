@@ -1052,7 +1052,7 @@ export default function Formulas() {
         <div className="flex flex-col flex-1 min-w-0 overflow-y-auto">
           {/* Header centered above decks */}
           <div className="flex flex-col items-center w-full pt-6 pb-2 px-3 sm:px-6">
-            <div className="w-full max-w-5xl flex flex-col items-center justify-center gap-4 sm:gap-6 mb-6 sm:mb-8 border-b border-[var(--bg-card)] pb-6 pt-4 relative z-30">
+            <div className="w-full max-w-5xl flex flex-col items-center justify-center gap-4 sm:gap-6 mb-2 sm:mb-4 border-b border-[var(--bg-card)] pb-6 pt-4 relative z-30">
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4 uppercase">
                 <Sigma className="text-[var(--accent-primary)]" size={28} />
                 FORMULAS
@@ -1227,7 +1227,7 @@ export default function Formulas() {
           <div className="flex-1 px-6 pb-6">
             <div className="flex flex-col items-center">
               <div className="w-full max-w-5xl">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-2 pb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-0 pb-4">
                   {filteredDecks.map((deck) => (
                     <div
                       key={deck.id}
