@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { LayoutGrid, Folder, Trash2, GripVertical } from 'lucide-react';
+import { LayoutGrid, Folder, Trash2, GripVertical, Pencil, Check } from 'lucide-react';
 
 interface FolderPanelProps {
   folders: string[];
@@ -37,9 +37,10 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
           </h2>
           <button
             onClick={() => setIsEditing(!isEditing)}
-            className="text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors uppercase tracking-wider outline-none focus:outline-none focus-visible:ring-0 focus-visible:text-slate-200"
+            className="text-slate-400 hover:text-green-500 transition-colors p-1 rounded hover:bg-slate-800/50 outline-none focus:outline-none focus-visible:ring-0 focus-visible:text-green-500"
+            title={isEditing ? 'Done' : 'Edit'}
           >
-            {isEditing ? 'Done' : 'Edit'}
+            {isEditing ? <Check className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
           </button>
         </div>
 
@@ -84,7 +85,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
             return isEditing ? (
               <div
                 key={folder}
-                className="flex items-center gap-2 w-full px-2 py-1.5 bg-slate-900/50 rounded-md border border-transparent hover:bg-slate-800/50 transition-colors"
+                className="flex items-center gap-2 w-full px-3 py-1.5 rounded-md text-sm border border-transparent hover:bg-slate-800/50"
               >
                 {/* Left (Rearrange Handle) */}
                 {folder === 'all' || folder === 'ALL' ? (
@@ -98,7 +99,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                   type="text"
                   defaultValue={folder}
                   readOnly={folder === 'all' || folder === 'ALL' || folder === 'Uncategorized'}
-                  className="flex-1 min-w-0 bg-transparent border border-slate-700 rounded px-2 py-0.5 text-xs text-white outline-none focus:outline-none focus:ring-0 focus:border-green-500 font-['Rajdhani'] font-bold uppercase tracking-wider"
+                  className="flex-1 min-w-0 bg-transparent text-slate-300 font-medium border-b border-transparent focus:border-green-500 focus:outline-none focus:ring-0 p-0 m-0 transition-colors"
                 />
 
                 {/* Right (Trash Icon / Delete button) */}
@@ -110,7 +111,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                       e.stopPropagation();
                       onDeleteFolder?.(folder);
                     }}
-                    className="text-slate-500 hover:text-red-400 p-0.5 shrink-0 flex items-center justify-center bg-transparent border-0 cursor-pointer"
+                    className="text-slate-500 hover:text-red-500 p-0.5 shrink-0 flex items-center justify-center bg-transparent border-0 cursor-pointer"
                     title="Delete Folder"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
