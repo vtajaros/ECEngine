@@ -40,7 +40,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
             className="text-slate-400 hover:text-green-500 transition-colors p-1 rounded hover:bg-slate-800/50 outline-none focus:outline-none focus-visible:ring-0 focus-visible:text-green-500"
             title={isEditing ? 'Done' : 'Edit'}
           >
-            {isEditing ? <Check className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
+            {isEditing ? <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
           </button>
         </div>
 
@@ -91,7 +91,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                 {folder === 'all' || folder === 'ALL' ? (
                   <div className="w-3.5" />
                 ) : (
-                  <GripVertical className="w-3.5 h-3.5 text-slate-500 cursor-grab shrink-0" />
+                  <GripVertical className="w-4 h-4 text-slate-500 cursor-grab shrink-0" />
                 )}
 
                 {/* Center (Rename Input) */}
@@ -99,7 +99,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                   type="text"
                   defaultValue={folder}
                   readOnly={folder === 'all' || folder === 'ALL' || folder === 'Uncategorized'}
-                  className="flex-1 min-w-0 bg-transparent text-slate-300 font-medium border-b border-transparent focus:border-green-500 focus:outline-none focus:ring-0 p-0 m-0 transition-colors"
+                  className="flex-1 min-w-0 w-full bg-transparent text-[13px] font-bold font-['Rajdhani'] uppercase tracking-wider text-slate-400 sm:text-[var(--text-secondary)] border-b border-transparent focus:border-green-500 focus:outline-none focus:ring-0 p-0 m-0 transition-colors"
                 />
 
                 {/* Right (Trash Icon / Delete button) */}
@@ -114,7 +114,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                     className="text-slate-500 hover:text-red-500 p-0.5 shrink-0 flex items-center justify-center bg-transparent border-0 cursor-pointer"
                     title="Delete Folder"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 )}
               </div>
@@ -167,7 +167,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                       className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-red-400 p-0.5 cursor-pointer flex items-center justify-center"
                       title="Delete Folder"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-4 h-4" />
                     </span>
                   )}
                   <span className="flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-mono border border-[var(--bg-elevated)]">
