@@ -417,7 +417,7 @@ export default function PrintView() {
   // -------------------------------------------------------------------------
   const toolbar = (
     <div
-      className="print:hidden"
+      className="print:hidden flex flex-wrap items-center gap-2 w-full"
       style={{
         position: 'sticky',
         top: 0,
@@ -425,10 +425,6 @@ export default function PrintView() {
         background: 'var(--bg-secondary)',
         borderBottom: '1px solid var(--bg-card)',
         padding: '12px 24px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        flexWrap: 'wrap',
       }}
     >
       {/* Title */}
@@ -478,17 +474,16 @@ export default function PrintView() {
                 disabled={isDisabled}
                 onClick={() => { if (!isDisabled) setLayout(mode) }}
                 whileTap={{ scale: isDisabled ? 1 : 0.95 }}
+                className="text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  padding: '6px 14px',
                   borderRadius: 'var(--radius-sm)',
                   border: 'none',
                   cursor: isDisabled ? 'not-allowed' : 'pointer',
                   fontFamily: 'var(--font-ui)',
                   fontWeight: 700,
-                  fontSize: '12px',
                   textTransform: 'uppercase',
                   letterSpacing: '0.08em',
                   transition: 'all 0.15s',
@@ -555,18 +550,17 @@ export default function PrintView() {
         onClick={handleExportPDF}
         disabled={exportState === 'loading'}
         whileTap={{ scale: 0.96 }}
+        className="text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2"
         style={{
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          padding: '8px 20px',
           background: exportState === 'success' ? 'var(--color-correct)' : 'var(--accent-primary)',
           color: '#000',
           border: 'none',
           borderRadius: 'var(--radius-md)',
           fontFamily: 'var(--font-ui)',
           fontWeight: 700,
-          fontSize: '13px',
           textTransform: 'uppercase',
           letterSpacing: '0.1em',
           cursor: exportState === 'loading' ? 'not-allowed' : 'pointer',
@@ -830,6 +824,14 @@ export default function PrintView() {
         @keyframes spin { to { transform: rotate(360deg); } }
         .animate-spin { animation: spin 1s linear infinite; }
 
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+
         @media print {
           /* Remove browser-added URL, date, and page number headers/footers */
           @page {
@@ -865,8 +867,14 @@ export default function PrintView() {
       {titleBar}
       {toolbar}
       <div className="flex-1 overflow-y-auto" style={{ background: '#e5e7eb', padding: '40px 0' }}>
-        <div id="print-paper-area" style={{ maxWidth: '800px', margin: '0 auto', background: 'white', padding: '60px 70px', boxShadow: '0 2px 16px rgba(0,0,0,0.13)', minHeight: '1100px' }}>
-          {paperContent}
+        <div className="w-full overflow-x-auto no-scrollbar pb-4">
+          <div
+            id="print-paper-area"
+            className="min-w-[800px] sm:min-w-full max-w-4xl mx-auto"
+            style={{ maxWidth: '800px', margin: '0 auto', background: 'white', padding: '60px 70px', boxShadow: '0 2px 16px rgba(0,0,0,0.13)', minHeight: '1100px' }}
+          >
+            {paperContent}
+          </div>
         </div>
       </div>
     </div>

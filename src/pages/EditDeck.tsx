@@ -796,7 +796,7 @@ export default function EditDeck() {
             })
           }
 
-          const cardsRes = await window.electron.data.getAllCardsByTopic(deckId)
+          const cardsRes = await window.electron.data.getAllCardsByTopic(deckId!)
           if (cardsRes.success && cardsRes.data) {
             const loaded: EditCard[] = cardsRes.data.map((row: any) => {
               let parsed: any = {}
