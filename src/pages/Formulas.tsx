@@ -1295,9 +1295,9 @@ export default function Formulas() {
                       )}
 
                       {/* Bottom Row: Progress and Actions */}
-                      <div className="flex justify-between items-end mt-4 gap-4">
-                        {/* Left Side: Progress Bar (Expanded to Maximize Space) */}
-                        <div className="flex-1">
+                      <div className="flex items-center w-full gap-4 mt-4">
+                        {/* Mastery Progress Bar Zone */}
+                        <div className="w-1/3 max-w-[150px]">
                           <div className="flex justify-between text-[10px] font-rajdhani tracking-widest mb-1 uppercase text-gray-500">
                             <span>MASTERY</span>
                             <span className="text-[#00FF41] font-bold">{deck.mastery}%</span>
@@ -1311,8 +1311,27 @@ export default function Formulas() {
                           </div>
                         </div>
 
-                        {/* Right Side: Action Buttons */}
-                        <div className="flex items-center gap-2 shrink-0">
+                        {/* Primary Actions Zone */}
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              openDeck(deck)
+                            }}
+                            className="py-2 px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                            title="Learn this deck"
+                            aria-label="Learn"
+                          >
+                            <Play className="w-3 h-3" />
+                            <span className="hidden xl:inline">Learn</span>
+                          </button>
+                        </div>
+
+                        {/* Spacer */}
+                        <div className="flex-1"></div>
+
+                        {/* Secondary Actions Zone */}
+                        <div className="flex items-center gap-1 sm:gap-2">
                           {deck.id.startsWith('topic_') && (
                             <button
                               onClick={(e) => {
@@ -1348,18 +1367,6 @@ export default function Formulas() {
                             title="Delete Deck"
                           >
                             <Trash2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              openDeck(deck)
-                            }}
-                            className="py-2 px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
-                            title="Learn this deck"
-                            aria-label="Learn"
-                          >
-                            <Play className="w-3 h-3" />
-                            <span className="hidden xl:inline">Learn</span>
                           </button>
                         </div>
                       </div>

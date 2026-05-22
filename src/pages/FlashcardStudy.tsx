@@ -830,76 +830,83 @@ export default function FlashcardStudy() {
                       )}
 
                       {/* Bottom Row: Progress and Actions */}
-                      <div className="flex justify-between items-end mt-4 gap-4">
+                      <div className="flex items-center w-full gap-4 mt-4">
                         {/* Left Side: Progress Bar (Condensed Width) */}
-                        <div className="flex-1 max-w-[200px]">
+                        <div className="w-1/3 max-w-[150px]">
                           <div className="flex justify-between text-[10px] font-rajdhani tracking-widest mb-1 uppercase text-gray-500">
                             <span>MASTERY</span>
                             <span className="text-[#00FF41] font-bold">{set.mastery}%</span>
                           </div>
-                      <div className="w-full bg-[#111] h-1 rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${set.mastery}%` }}
-                          className="h-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.4)]"
-                        />
-                      </div>
-                    </div>
+                          <div className="w-full bg-[#111] h-1 rounded-full overflow-hidden">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${set.mastery}%` }}
+                              className="h-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.4)]"
+                            />
+                          </div>
+                        </div>
 
-                    {/* Right Side: Action Buttons */}
-                    <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-                      {set.id.startsWith('topic_') && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if ((window as any).electron?.print) {
-                              window.electron.print.open(set.id, set.title)
-                            } else {
-                              window.open(`/#/print?id=${set.id}&title=${encodeURIComponent(set.title)}`, '_blank')
-                            }
-                          }}
-                          className="p-1.5 sm:p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
-                          title="Test Paper View"
-                        >
-                          <ScrollText className="w-4 h-4" />
-                        </button>
-                      )}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); navigate(`/edit-deck/${set.id}`) }}
-                        className="p-1.5 sm:p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
-                        title="Edit Deck"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      {set.id !== 'set-1' && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setSetToDelete(set); }}
-                          className="p-1.5 sm:p-2 bg-[#111] border border-[#333] hover:border-red-500/50 text-gray-500 hover:text-red-500 rounded transition-colors"
-                          title="Delete Set"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleOpenLearn(set.id); }}
-                        className="py-1.5 px-2 sm:py-2 sm:px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
-                        title="Learn this deck"
-                        aria-label="Learn"
-                      >
-                        <Play className="w-3 h-3" />
-                        <span className="hidden xl:inline">Learn</span>
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleOpenTest(set.id); }}
-                        className="py-1.5 px-2 sm:py-2 sm:px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
-                        title="Test this deck"
-                        aria-label="Test"
-                      >
-                        <Trophy className="w-3 h-3" />
-                        <span className="hidden xl:inline">Test</span>
-                      </button>
-                    </div>
-                  </div>
+                        {/* Primary Action Buttons */}
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleOpenLearn(set.id); }}
+                            className="py-1.5 px-2 sm:py-2 sm:px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                            title="Learn this deck"
+                            aria-label="Learn"
+                          >
+                            <Play className="w-3 h-3" />
+                            <span className="hidden xl:inline">Learn</span>
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleOpenTest(set.id); }}
+                            className="py-1.5 px-2 sm:py-2 sm:px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                            title="Test this deck"
+                            aria-label="Test"
+                          >
+                            <Trophy className="w-3 h-3" />
+                            <span className="hidden xl:inline">Test</span>
+                          </button>
+                        </div>
+
+                        {/* Spacer */}
+                        <div className="flex-1"></div>
+
+                        {/* Secondary Action Icons */}
+                        <div className="flex items-center gap-1 sm:gap-2">
+                          {set.id.startsWith('topic_') && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if ((window as any).electron?.print) {
+                                  window.electron.print.open(set.id, set.title)
+                                } else {
+                                  window.open(`/#/print?id=${set.id}&title=${encodeURIComponent(set.title)}`, '_blank')
+                                }
+                              }}
+                              className="p-1.5 sm:p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
+                              title="Test Paper View"
+                            >
+                              <ScrollText className="w-4 h-4" />
+                            </button>
+                          )}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); navigate(`/edit-deck/${set.id}`) }}
+                            className="p-1.5 sm:p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
+                            title="Edit Deck"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          {set.id !== 'set-1' && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setSetToDelete(set); }}
+                              className="p-1.5 sm:p-2 bg-[#111] border border-[#333] hover:border-red-500/50 text-gray-500 hover:text-red-500 rounded transition-colors"
+                              title="Delete Set"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
                 </div>
               ))}
             </div>
