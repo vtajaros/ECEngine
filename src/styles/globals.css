@@ -15,34 +15,14 @@ html, body, #root {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+/* Hide scrollbars globally but keep functionality */
+*::-webkit-scrollbar {
+  display: none !important;
 }
 
-::-webkit-scrollbar-track {
-  background: #0D0D0D; /* Matches the main app background */
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: #00FF41; /* Signature ECEngine Green */
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #00CC33; /* Slightly darker green on hover */
-}
-
-::-webkit-scrollbar-corner {
-  background: #0D0D0D;
-}
-
-/* Firefox Fallback */
 * {
-  scrollbar-width: thin;
-  scrollbar-color: #00FF41 #0D0D0D;
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
 }
 
 .page-stub {
@@ -56,25 +36,12 @@ html, body, #root {
   gap: 1rem;
 }
 
-/* Hide scrollbar for Chrome, Safari and Opera */
+/* Hide scrollbar utility class (for legacy reference) */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
 
-/* Hide scrollbar for IE, Edge and Firefox */
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
-}
-
-@media (max-width: 640px) {
-  /* Hide scrollbar for Chrome, Safari and Opera */
-  *::-webkit-scrollbar {
-    display: none !important;
-  }
-  /* Hide scrollbar for IE, Edge and Firefox */
-  * {
-    -ms-overflow-style: none !important;
-    scrollbar-width: none !important;
-  }
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

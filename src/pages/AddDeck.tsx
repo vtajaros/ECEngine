@@ -1734,25 +1734,20 @@ export default function AddDeck() {
       <div className="sticky top-0 z-30 bg-[#0D0D0D]/90 backdrop-blur-md border-b border-[#1a1a1a] shrink-0">
         <div className="w-full px-6 py-4 flex items-center justify-between">
           <div className="flex flex-col">
-            <h1 className="font-['Orbitron'] text-2xl font-bold tracking-wider mb-1">
+            <h1 className="font-['Orbitron'] text-2xl font-bold tracking-wider">
               <span className="text-[var(--accent-primary)]">ADD</span> <span className="text-white">DECKS</span>
             </h1>
-            <div className="text-[#888] font-['IBM_Plex_Mono'] text-xs uppercase tracking-widest flex items-center gap-2">
-              <Link to="/study" className="hover:text-[#E8E8E8] transition-colors">Study</Link>
-              <span className="text-[#444]">›</span>
-              <span className="text-[#E8E8E8]">Add Decks</span>
-            </div>
           </div>
           <div className="flex items-center gap-4">
             <button onClick={() => navigate(-1)}
-              className="px-6 py-2.5 rounded border border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-widest font-bold text-sm">
+              className="px-4 sm:px-6 py-2 sm:py-2.5 h-[38px] sm:h-auto flex items-center justify-center rounded border border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-widest font-bold text-xs sm:text-sm whitespace-nowrap">
               Cancel
             </button>
             <div className="relative group">
               <button
                 onClick={handleSave}
                 disabled={!canSave || saving}
-                className={`px-8 py-2.5 rounded font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all flex items-center gap-2 ${canSave && !saving
+                className={`px-4 sm:px-8 py-2 sm:py-2.5 h-[38px] sm:h-auto font-['Rajdhani'] uppercase tracking-widest font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap ${canSave && !saving
                   ? 'bg-[var(--accent-primary)] text-black hover:bg-[var(--accent-dim)] shadow-[0_0_15px_rgba(0,255,65,0.25)]'
                   : 'bg-[#222] text-[#555] cursor-not-allowed'
                   }`}
@@ -1760,7 +1755,7 @@ export default function AddDeck() {
                 <Save size={16} /> {saving ? 'Saving...' : 'Save Deck'}
               </button>
               {!canSave && (
-                <div className="absolute top-full right-0 mt-2 w-48 p-2 bg-[#161616] border border-[#333] rounded shadow-xl text-center text-xs font-['IBM_Plex_Mono'] text-[#888] pointer-events-none transition-opacity z-50">
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 absolute top-full right-0 mt-2 w-48 p-2 bg-[#161616] border border-[#333] rounded shadow-xl text-center text-xs font-['IBM_Plex_Mono'] text-[#888] pointer-events-none z-50">
                   Add a title and at least one complete card to save
                 </div>
               )}
@@ -1769,10 +1764,10 @@ export default function AddDeck() {
         </div>
       </div>
 
-      <div className="w-full px-6 py-8 xl:grid xl:grid-cols-3 xl:gap-6 flex flex-col gap-8 pb-32 items-start">
+      <div className="w-full px-6 py-8 xl:grid xl:grid-cols-3 xl:gap-6 flex flex-col gap-8 pb-32 items-center xl:items-start">
 
         {/* 1. Metadata & Tags — Pane 1 (sticky left) */}
-        <section className="xl:col-span-1 xl:sticky xl:top-20 flex flex-col gap-6 bg-[#111] border border-zinc-800 p-6 rounded-xl">
+        <section className="w-full max-w-4xl xl:max-w-none xl:col-span-1 xl:sticky xl:top-20 flex flex-col gap-6 bg-[#111] border border-zinc-800 p-6 rounded-xl">
           <div className="flex flex-col gap-4">
             <div className="relative">
               <input
@@ -1978,13 +1973,13 @@ export default function AddDeck() {
         </section>
 
         {/* 2 & 3. Cards Pane — Pane 2 (right, 2/3 wide) */}
-        <div className="xl:col-span-2 flex flex-col gap-6">
+        <div className="w-full max-w-4xl xl:max-w-none xl:col-span-2 flex flex-col gap-6">
           <section className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
             {/* Deck Type Toggle */}
-            <div className="flex shrink-0 flex-wrap bg-[#111] border border-[#222] p-1 rounded-lg gap-1">
+            <div className="flex flex-col sm:flex-row w-full sm:w-auto bg-[#111] border border-[#222] p-1 rounded-lg gap-1">
               <button
                 onClick={() => handleDeckTypeChange('mcq')}
-                className={`px-6 py-2 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${deckType === 'mcq'
+                className={`w-full sm:w-auto px-6 py-2.5 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${deckType === 'mcq'
                   ? 'bg-[#222] text-[#00FF41] shadow-sm'
                   : 'text-[#888] hover:text-[#ccc]'
                   }`}
@@ -1993,7 +1988,7 @@ export default function AddDeck() {
               </button>
               <button
                 onClick={() => handleDeckTypeChange('flashcard')}
-                className={`px-6 py-2 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${deckType === 'flashcard'
+                className={`w-full sm:w-auto px-6 py-2.5 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${deckType === 'flashcard'
                   ? 'bg-[#222] text-[#00FF41] shadow-sm'
                   : 'text-[#888] hover:text-[#ccc]'
                   }`}
@@ -2002,7 +1997,7 @@ export default function AddDeck() {
               </button>
               <button
                 onClick={() => handleDeckTypeChange('formula')}
-                className={`px-6 py-2 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${deckType === 'formula'
+                className={`w-full sm:w-auto px-6 py-2.5 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${deckType === 'formula'
                   ? 'bg-[#222] text-[#00FF41] shadow-sm'
                   : 'text-[#888] hover:text-[#ccc]'
                   }`}

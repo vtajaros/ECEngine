@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { FileText, Table2, List, BookOpen, Bold, Loader2, CheckCircle2, AlertCircle, Minus, Square, X } from 'lucide-react'
@@ -257,6 +257,29 @@ export default function PrintView() {
   const [boldSide, setBoldSide] = useState<BoldSide>('term')
   const [exportState, setExportState] = useState<ExportState>('idle')
   const [exportError, setExportError] = useState('')
+  const [scale, setScale] = useState(1)
+  const [pinchScale, setPinchScale] = useState(1)
+  const initialDistance = useRef<number | null>(null)
+  const initialPinchScale = useRef<number>(1)
+
+  useEffect(() => {
+    const handleResize = () => {
+      const PAPER_WIDTH = 800; // Fixed paper width in pixels
+      const PADDING = 32; // Account for mobile side padding
+      const availableWidth = window.innerWidth - PADDING;
+      
+      if (availableWidth < PAPER_WIDTH) {
+        setScale(availableWidth / PAPER_WIDTH);
+      } else {
+        setScale(1);
+      }
+    };
+    
+    // Initial check and event listener
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     if (!topicId) { setLoading(false); return }
@@ -265,6 +288,32 @@ export default function PrintView() {
       setLoading(false)
     })
   }, [topicId])
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX
+      const dy = e.touches[0].clientY - e.touches[1].clientY
+      initialDistance.current = Math.hypot(dx, dy)
+      initialPinchScale.current = pinchScale
+    }
+  }
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2 && initialDistance.current !== null) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX
+      const dy = e.touches[0].clientY - e.touches[1].clientY
+      const distance = Math.hypot(dx, dy)
+      
+      const newScale = initialPinchScale.current * (distance / initialDistance.current)
+      setPinchScale(Math.min(Math.max(1, newScale), 3))
+    }
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (e.touches.length < 2) {
+      initialDistance.current = null
+    }
+  }
 
   const handleExportPDF = async () => {
     setExportState('loading')
@@ -370,7 +419,7 @@ export default function PrintView() {
   // Titlebar (custom centered, matching main window, not printed)
   // -------------------------------------------------------------------------
   const titleBar = (
-    <div className="print:hidden w-full h-8 bg-[#1A1A1A] text-gray-400 flex items-center justify-between select-none [-webkit-app-region:drag] relative shrink-0 px-0">
+    <div className={`print:hidden max-sm:hidden w-full h-8 bg-[#1A1A1A] text-gray-400 flex items-center justify-between select-none [-webkit-app-region:drag] relative shrink-0 px-0 ${pinchScale > 1.05 ? 'hidden' : ''}`}>
       {/* Left side spacer to balance the right controls or put logo */}
       <div className="flex items-center [-webkit-app-region:no-drag] pl-3">
         <img src="/favicon.png" alt="Logo" className="w-4 h-4 object-contain" />
@@ -417,18 +466,26 @@ export default function PrintView() {
   // -------------------------------------------------------------------------
   const toolbar = (
     <div
-      className="print:hidden flex flex-wrap items-center gap-2 w-full"
+      className={`print:hidden w-full flex flex-col px-4 sm:px-6 py-2 sm:py-3 ${pinchScale > 1.05 ? 'hidden' : ''}`}
       style={{
         position: 'sticky',
         top: 0,
         zIndex: 10,
         background: 'var(--bg-secondary)',
         borderBottom: '1px solid var(--bg-card)',
-        padding: '12px 24px',
       }}
     >
+      <div className="flex sm:hidden items-center justify-between w-full bg-[#1A1A1A] rounded px-3 py-2 mb-2">
+        <span className="font-rajdhani font-bold tracking-wider text-white text-xs truncate pr-2">
+          <span className="text-[#00FF41]">TEST PAPER</span> — {title}
+        </span>
+        <span className="font-rajdhani font-bold tracking-wider text-white text-[10px] whitespace-nowrap uppercase">
+          {cards.length} CARDS
+        </span>
+      </div>
+      <div className="flex flex-nowrap items-center gap-1 sm:gap-2 w-full max-sm:justify-center overflow-x-auto no-scrollbar pb-1">
       {/* Title */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minWidth: '200px' }}>
+      <div className="hidden sm:flex" style={{ alignItems: 'center', gap: '8px', flex: 1, minWidth: '200px' }}>
         <FileText size={18} color="var(--accent-primary)" />
         <span
           style={{
@@ -455,6 +512,7 @@ export default function PrintView() {
 
       {/* Layout toggle */}
       <div
+        className="flex-shrink-0"
         style={{
           display: 'flex',
           gap: '4px',
@@ -474,7 +532,7 @@ export default function PrintView() {
                 disabled={isDisabled}
                 onClick={() => { if (!isDisabled) setLayout(mode) }}
                 whileTap={{ scale: isDisabled ? 1 : 0.95 }}
-                className="text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2"
+                className="whitespace-nowrap flex-shrink-0 text-[10px] px-2 py-1.5 sm:text-[12px] sm:px-[14px] sm:py-[6px]"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -503,6 +561,7 @@ export default function PrintView() {
       {/* Bold side toggle — only shown for flashcard/mixed decks in table or glossary layout */}
       {flashcardCards.length > 0 && layout !== 'qa' && (
         <div
+          className="flex-shrink-0"
           style={{
             display: 'flex',
             gap: '4px',
@@ -518,17 +577,16 @@ export default function PrintView() {
                 key={side}
                 onClick={() => setBoldSide(side)}
                 whileTap={{ scale: 0.95 }}
+                className="whitespace-nowrap flex-shrink-0 text-[10px] px-2 py-1.5 sm:text-[11px] sm:px-[10px] sm:py-[5px]"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '5px',
-                  padding: '5px 10px',
                   borderRadius: 'var(--radius-sm)',
                   border: 'none',
                   cursor: 'pointer',
                   fontFamily: 'var(--font-ui)',
                   fontWeight: 700,
-                  fontSize: '11px',
                   textTransform: 'uppercase',
                   letterSpacing: '0.06em',
                   transition: 'all 0.15s',
@@ -550,7 +608,7 @@ export default function PrintView() {
         onClick={handleExportPDF}
         disabled={exportState === 'loading'}
         whileTap={{ scale: 0.96 }}
-        className="text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2"
+        className="whitespace-nowrap flex-shrink-0 text-[10px] px-2 py-1.5 sm:text-[13px] sm:px-[20px] sm:py-[8px]"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -604,6 +662,7 @@ export default function PrintView() {
           {exportError}
         </motion.span>
       )}
+      </div>
     </div>
   )
 
@@ -824,14 +883,6 @@ export default function PrintView() {
         @keyframes spin { to { transform: rotate(360deg); } }
         .animate-spin { animation: spin 1s linear infinite; }
 
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-
         @media print {
           /* Remove browser-added URL, date, and page number headers/footers */
           @page {
@@ -867,11 +918,22 @@ export default function PrintView() {
       {titleBar}
       {toolbar}
       <div className="flex-1 overflow-y-auto" style={{ background: '#e5e7eb', padding: '40px 0' }}>
-        <div className="w-full overflow-x-auto no-scrollbar pb-4">
+        <div className="w-full flex justify-center pb-8 sm:pb-12 overflow-x-auto">
           <div
             id="print-paper-area"
-            className="min-w-[800px] sm:min-w-full max-w-4xl mx-auto"
-            style={{ maxWidth: '800px', margin: '0 auto', background: 'white', padding: '60px 70px', boxShadow: '0 2px 16px rgba(0,0,0,0.13)', minHeight: '1100px' }}
+            className="w-[800px] max-w-none touch-pan-x touch-pan-y"
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            style={{
+              maxWidth: '800px',
+              margin: '0 auto',
+              background: 'white',
+              padding: '60px 70px',
+              boxShadow: '0 2px 16px rgba(0,0,0,0.13)',
+              minHeight: '1100px',
+              zoom: scale * pinchScale
+            } as any}
           >
             {paperContent}
           </div>

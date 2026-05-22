@@ -9,7 +9,7 @@ import { LearnSettingsModal, LearnSettings } from '../components/mcq/LearnSettin
 import { TestSettingsModal, TestSettings } from '../components/mcq/TestSettingsModal'
 import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
 import { MOCK_FLASHCARDS, MOCK_MCQS } from '../lib/mockData'
-import { Play, Bookmark, X, Trash2, AlertTriangle, ClipboardList, SlidersHorizontal, Check, Pencil, Brain, Trophy, ScrollText } from 'lucide-react'
+import { Play, Bookmark, X, Trash2, AlertTriangle, ClipboardList, SlidersHorizontal, Check, Pencil, Brain, Trophy, ScrollText, Search } from 'lucide-react'
 import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
 import { useSessionStore } from '../store/useSessionStore'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -62,6 +62,8 @@ export default function FlashcardStudy() {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const [filterTags, setFilterTags] = useState<string[]>([])
   const [sortBy, setSortBy] = useState<'date' | 'title' | 'mastery'>('date')
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
+  const [searchQuery, setSearchQuery] = useState('')
   const [filterType, setFilterType] = useState<'all' | 'mcq' | 'flashcard' | 'mixed'>('all')
   const filterPopoverRef = useRef<HTMLDivElement>(null)
 
@@ -228,6 +230,11 @@ export default function FlashcardStudy() {
 
     let result = folderFiltered.filter(s => activeSubject === 'ALL' || s.subject === activeSubject)
 
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      result = result.filter(s => s.title.toLowerCase().includes(q))
+    }
+
     if (filterType !== 'all') {
       result = result.filter(s => s.deckType === filterType)
     }
@@ -237,14 +244,16 @@ export default function FlashcardStudy() {
     }
 
     result.sort((a, b) => {
-      if (sortBy === 'date') return (b.createdAt || 0) - (a.createdAt || 0)
-      if (sortBy === 'mastery') return b.mastery - a.mastery
-      if (sortBy === 'title') return a.title.localeCompare(b.title)
-      return 0
+      let comparison = 0
+      if (sortBy === 'date') comparison = (a.createdAt || 0) - (b.createdAt || 0)
+      else if (sortBy === 'mastery') comparison = a.mastery - b.mastery
+      else if (sortBy === 'title') comparison = a.title.localeCompare(b.title)
+      
+      return sortOrder === 'desc' ? -comparison : comparison
     })
 
     return result
-  }, [allSets, activeFolder, activeSubject, filterType, filterTags, sortBy])
+  }, [allSets, activeFolder, activeSubject, filterType, filterTags, sortBy, sortOrder, searchQuery])
 
   useEffect(() => {
     if (setToDelete) {
@@ -638,9 +647,8 @@ export default function FlashcardStudy() {
           onSelect={setActiveFolder}
         />
         <div className="flex flex-col flex-1 min-w-0 overflow-y-auto">
-          {/* Header centered above decks */}
-          <div className="flex flex-col items-center w-full pt-6 pb-2 px-3 sm:px-6">
-            <div className="w-full max-w-5xl flex flex-col items-center justify-center gap-4 sm:gap-6 mb-2 sm:mb-4 border-b border-[var(--bg-card)] pb-6 relative z-30 pt-4">
+          <div className="flex flex-col items-center w-full pt-6 pb-0 px-3 sm:px-6">
+            <div className="w-full max-w-5xl flex flex-col items-center justify-center gap-4 sm:gap-6 mb-1 sm:mb-2 border-b border-[var(--bg-card)] pb-4 relative z-30 pt-4">
               <h1 className="text-xl sm:text-2xl lg:text-3xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4 uppercase">
                 <Brain className="text-[var(--accent-primary)]" size={28} />
                 LOOKS<span className="text-[var(--accent-primary)]">FAM</span>
@@ -650,7 +658,7 @@ export default function FlashcardStudy() {
                 <div className="relative shrink-0" ref={filterPopoverRef}>
                   <button
                     onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                    className={`p-2 rounded-lg border transition-all ${showAdvancedFilters || filterTags.length > 0 || filterType !== 'all' || sortBy !== 'date'
+                    className={`p-2 rounded-lg border transition-all ${showAdvancedFilters || filterTags.length > 0 || filterType !== 'all' || sortBy !== 'date' || sortOrder !== 'desc' || searchQuery
                         ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
                         : 'bg-[var(--bg-secondary)] border-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                       }`}
@@ -674,9 +682,34 @@ export default function FlashcardStudy() {
                           </button>
                         </div>
 
+                        {/* Search Input */}
+                        <div className="relative w-full">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#555] w-4 h-4" />
+                          <input
+                            type="text"
+                            placeholder="Search decks..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full bg-[#1A1A1A] border border-[#333] focus:border-[#00FF41] rounded-lg py-2 pl-9 pr-3 text-sm text-[#E8E8E8] placeholder-[#555] outline-none transition-colors font-['IBM_Plex_Mono']"
+                          />
+                        </div>
+
                         {/* Sort Selection */}
                         <div className="flex flex-col gap-2">
-                          <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Sort By</label>
+                          <div className="flex justify-between items-center">
+                            <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Sort By</label>
+                            <div className="flex bg-[#1A1A1A] rounded overflow-hidden border border-[#333]">
+                              {(['asc', 'desc'] as const).map(order => (
+                                <button
+                                  key={order}
+                                  onClick={() => setSortOrder(order)}
+                                  className={`px-2 py-0.5 text-[10px] font-['Rajdhani'] uppercase tracking-widest transition-colors ${sortOrder === order ? 'bg-[#00FF41] text-black font-bold' : 'text-[#888] hover:text-[#E8E8E8]'}`}
+                                >
+                                  {order}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
                           <div className="grid grid-cols-3 gap-1">
                             {(['date', 'title', 'mastery'] as const).map(opt => (
                               <button
@@ -738,12 +771,14 @@ export default function FlashcardStudy() {
                         )}
 
                         {/* Clear Button */}
-                        {(filterTags.length > 0 || filterType !== 'all' || sortBy !== 'date') && (
+                        {(filterTags.length > 0 || filterType !== 'all' || sortBy !== 'date' || sortOrder !== 'desc' || searchQuery) && (
                           <button
                             onClick={() => {
                               setFilterTags([])
                               setFilterType('all')
                               setSortBy('date')
+                              setSortOrder('desc')
+                              setSearchQuery('')
                             }}
                             className="mt-2 text-xs font-['Rajdhani'] uppercase tracking-widest text-red-400 hover:text-red-300 text-center py-1 transition-colors"
                           >
@@ -765,7 +800,7 @@ export default function FlashcardStudy() {
               </div>
 
               <div
-                className="flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-2 w-full text-[10px] sm:text-xs text-slate-500 font-medium uppercase tracking-wider mb-4 sm:mb-6"
+                className="flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-2 w-full text-[10px] sm:text-xs text-slate-500 font-medium uppercase tracking-wider mb-0"
                 style={{ color: 'rgba(255,255,255,0.45)' }}
               >
                 <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>

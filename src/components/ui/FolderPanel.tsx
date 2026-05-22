@@ -41,9 +41,9 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
             title={isEditing ? 'Done' : 'Edit'}
           >
             {isEditing ? (
-              <Check className="w-4 h-4 text-slate-500" />
+              <Check className="w-3 h-3 text-slate-500" />
             ) : (
-              <Pencil className="w-4 h-4 text-slate-500" />
+              <Pencil className="w-3 h-3 text-slate-500" />
             )}
           </button>
         </div>

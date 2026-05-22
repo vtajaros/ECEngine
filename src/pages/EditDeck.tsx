@@ -276,7 +276,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    
+
     // 10MB limit guardrail
     if (file.size > 10 * 1024 * 1024) {
       if (onError) onError('Image exceeds 10MB limit.')
@@ -323,7 +323,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
           {data.imagePath ? (
             <div className="relative group">
               <img src={(window as any).electron ? `ece-app://${data.imagePath}` : `/ece-images/${data.imagePath}`} alt="Question image" className="w-24 h-24 object-cover rounded border border-[#333]" />
-              <button 
+              <button
                 onClick={() => set({ imagePath: undefined })}
                 className="absolute -top-2 -right-2 bg-[#FF4B4B] text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
               >
@@ -333,7 +333,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
           ) : (
             <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#888] rounded transition-colors bg-[#0a0a0a]">
               <ImageIcon size={24} />
-              <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest mt-2 font-bold text-center leading-tight">Add<br/>Image</span>
+              <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest mt-2 font-bold text-center leading-tight">Add<br />Image</span>
               <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
             </label>
           )}
@@ -383,7 +383,7 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    
+
     // 10MB limit guardrail
     if (file.size > 10 * 1024 * 1024) {
       if (onError) onError('Image exceeds 10MB limit.')
@@ -431,7 +431,7 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
           {data.imagePath ? (
             <div className="relative group">
               <img src={(window as any).electron ? `ece-app://${data.imagePath}` : `/ece-images/${data.imagePath}`} alt="Flashcard image" className="w-24 h-24 object-cover rounded border border-[#333]" />
-              <button 
+              <button
                 onClick={() => onChange({ ...data, imagePath: undefined })}
                 className="absolute -top-2 -right-2 bg-[#FF4B4B] text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
               >
@@ -441,7 +441,7 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
           ) : (
             <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#888] rounded transition-colors bg-[#0a0a0a]">
               <ImageIcon size={24} />
-              <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest mt-2 font-bold text-center leading-tight">Add<br/>Image</span>
+              <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest mt-2 font-bold text-center leading-tight">Add<br />Image</span>
               <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
             </label>
           )}
@@ -489,13 +489,12 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
             truncated
           )}
         </span>
-        <span className={`text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded border uppercase flex-shrink-0 ${
-          card.type === 'mcq'
+        <span className={`text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded border uppercase flex-shrink-0 ${card.type === 'mcq'
             ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
             : card.type === 'formula'
               ? 'text-[#A855F7] border-[#A855F7]/30 bg-[#A855F7]/10'
               : 'text-[#00FF41] border-[#00FF41]/30 bg-[#00FF41]/10'
-        }`}>
+          }`}>
           {card.type === 'mcq' ? 'MCQ' : card.type === 'formula' ? 'FM' : 'FC'}
         </span>
         <button
@@ -706,7 +705,7 @@ export default function EditDeck() {
           const topic = await webDB.topics.get(deckId)
           if (topic) {
             let parsedTags = ''
-            try { parsedTags = JSON.parse((topic as any).tags || '[]').join(', ') } catch {}
+            try { parsedTags = JSON.parse((topic as any).tags || '[]').join(', ') } catch { }
             setDeckMeta({
               title: (topic as any).name || '',
               description: (topic as any).description || '',
@@ -718,7 +717,7 @@ export default function EditDeck() {
           const rawCards = await webDB.cards.where('topic_id').equals(deckId!).toArray()
           const loaded: EditCard[] = rawCards.map((row: any) => {
             let parsed: any = {}
-            try { parsed = typeof row.data === 'string' ? JSON.parse(row.data) : row.data } catch {}
+            try { parsed = typeof row.data === 'string' ? JSON.parse(row.data) : row.data } catch { }
             if (row.type === 'mcq') {
               const d: MCQEdit = {
                 question: parsed.question ?? '',
@@ -786,7 +785,7 @@ export default function EditDeck() {
           if (topicRow) {
             const t = topicRow
             let parsedTags = ''
-            try { parsedTags = JSON.parse(t.tags || '[]').join(', ') } catch {}
+            try { parsedTags = JSON.parse(t.tags || '[]').join(', ') } catch { }
             setDeckMeta({
               title: t.name || '',
               description: t.description || '',
@@ -800,7 +799,7 @@ export default function EditDeck() {
           if (cardsRes.success && cardsRes.data) {
             const loaded: EditCard[] = cardsRes.data.map((row: any) => {
               let parsed: any = {}
-              try { parsed = JSON.parse(row.data) } catch {}
+              try { parsed = JSON.parse(row.data) } catch { }
               if (row.type === 'mcq') {
                 const d: MCQEdit = {
                   question: parsed.question ?? '',
@@ -1001,11 +1000,10 @@ export default function EditDeck() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className={`fixed top-4 right-4 z-[200] flex items-center gap-3 px-5 py-3 rounded-lg border shadow-2xl font-['Rajdhani'] tracking-wider text-sm ${
-              toast.type === 'success'
+            className={`fixed top-4 right-4 z-[200] flex items-center gap-3 px-5 py-3 rounded-lg border shadow-2xl font-['Rajdhani'] tracking-wider text-sm ${toast.type === 'success'
                 ? 'bg-[#0a1a0a] border-[#00FF41]/40 text-[#00FF41]'
                 : 'bg-[#1a0a0a] border-[#FF4444]/40 text-[#FF4444]'
-            }`}
+              }`}
           >
             {toast.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
             {toast.msg}
@@ -1032,11 +1030,10 @@ export default function EditDeck() {
         <button
           onClick={handleSave}
           disabled={isSaving}
-          className={`flex items-center gap-2 px-5 py-2 font-['Rajdhani'] font-bold uppercase tracking-widest text-sm rounded transition-all ${
-            isSaving
+          className={`flex items-center gap-2 px-5 py-2 font-['Rajdhani'] font-bold uppercase tracking-widest text-sm rounded transition-all ${isSaving
               ? 'bg-[#00FF41]/40 text-black/60 cursor-not-allowed'
               : 'bg-[#00FF41] text-black hover:bg-[rgba(0,255,65,0.85)] shadow-[0_0_12px_rgba(0,255,65,0.25)]'
-          }`}
+            }`}
         >
           <Save className="w-4 h-4" />
           {isSaving ? 'Saving...' : 'Save Changes'}
@@ -1045,186 +1042,198 @@ export default function EditDeck() {
 
       {/* ── Scrollable Body ── */}
       <div className="flex-1 overflow-y-auto w-full">
-        <div className="w-full px-6 lg:px-10 xl:grid xl:grid-cols-3 xl:gap-6 flex flex-col gap-6 py-6 lg:py-8 items-start">
+        <div className="w-full px-6 lg:px-10 xl:grid xl:grid-cols-3 xl:gap-6 flex flex-col gap-6 py-6 lg:py-8 items-center xl:items-start">
 
-        {/* ── Metadata Section — Pane 1 (sticky left 1/3) */}
-        <div className="xl:col-span-1 xl:sticky xl:top-6 bg-[#111] border border-zinc-800 rounded-xl p-6 flex flex-col gap-5">
-          <h2 className="font-['Rajdhani'] font-bold uppercase tracking-widest text-[#888] text-xs">Deck Info</h2>
+          {/* ── Metadata Section — Pane 1 (sticky left 1/3) */}
+          <div className="w-full max-w-4xl xl:max-w-none xl:col-span-1 xl:sticky xl:top-6 bg-[#111] border border-zinc-800 rounded-xl p-6 flex flex-col gap-5">
+            <h2 className="font-['Rajdhani'] font-bold uppercase tracking-widest text-[#888] text-xs">Deck Info</h2>
 
-          <div>
-            <div className="relative">
-              <input
-                type="text"
-                className="w-full bg-transparent text-[#E8E8E8] text-[1.15rem] font-['Orbitron'] border-b-2 border-[#333] focus:border-[#00FF41] pb-3 focus:outline-none placeholder:text-[#555] transition-colors tracking-wide pr-16"
-                value={deckMeta.title}
-                onChange={e => setDeckMeta(m => ({ ...m, title: e.target.value }))}
-                placeholder="Deck title..."
-                maxLength={80}
-              />
-              <span className="absolute right-0 bottom-4 text-xs font-['IBM_Plex_Mono'] text-[#666]">
-                {deckMeta.title.length} / 80
-              </span>
-            </div>
-          </div>
-
-          <div>
-            <Label>Description</Label>
-            <input
-              type="text"
-              className={inputCls}
-              value={deckMeta.description}
-              onChange={e => setDeckMeta(m => ({ ...m, description: e.target.value }))}
-              placeholder="Short description..."
-            />
-          </div>
- 
-          <div>
-            <Label>Folder / Category</Label>
-            <div className="relative" ref={folderDropdownRef}>
-              <div className="relative flex items-center">
+            <div>
+              <div className="relative">
                 <input
                   type="text"
-                  className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-[#E8E8E8] font-['IBM_Plex_Mono'] text-sm focus:border-[#00FF41] focus:bg-[#111] outline-none transition-colors pr-16 placeholder-[#555]"
-                  value={deckMeta.folderName}
-                  onChange={e => {
-                    setDeckMeta(m => ({ ...m, folderName: e.target.value }))
-                    setShowFolderDropdown(true)
-                  }}
-                  onFocus={() => setShowFolderDropdown(true)}
-                  placeholder="e.g. Select or type folder name..."
+                  className="w-full bg-transparent text-[#E8E8E8] text-[1.15rem] font-['Orbitron'] border-b-2 border-[#333] focus:border-[#00FF41] pb-3 focus:outline-none placeholder:text-[#555] transition-colors tracking-wide pr-16"
+                  value={deckMeta.title}
+                  onChange={e => setDeckMeta(m => ({ ...m, title: e.target.value }))}
+                  placeholder="Deck title..."
+                  maxLength={80}
                 />
-                <div className="absolute right-2 flex items-center gap-1">
-                  {deckMeta.folderName && (
-                    <button 
-                      type="button"
-                      onClick={() => {
-                        setDeckMeta(m => ({ ...m, folderName: '' }))
-                        setShowFolderDropdown(true)
-                      }}
-                      className="p-1 text-[#444] hover:text-[#00FF41] transition-colors"
-                      title="Clear folder"
-                    >
-                      <X size={14} />
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setShowFolderDropdown(prev => !prev)}
-                    className="p-1 text-[#666] hover:text-[#00FF41] transition-colors"
-                    title="Toggle folder list"
-                  >
-                    <ChevronDown size={14} className={`transform transition-transform ${showFolderDropdown ? 'rotate-180' : ''}`} />
-                  </button>
-                </div>
+                <span className="absolute right-0 bottom-4 text-xs font-['IBM_Plex_Mono'] text-[#666]">
+                  {deckMeta.title.length} / 80
+                </span>
               </div>
-              
-              <AnimatePresence>
-                {showFolderDropdown && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -5 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-[#161616] border border-[#333] rounded-lg shadow-2xl max-h-48 overflow-y-auto custom-scrollbar"
-                  >
-                    {existingFolders.length === 0 ? (
-                      <div className="p-3 text-xs text-[#666] font-['IBM_Plex_Mono'] text-center">
-                        No folders created yet. Type above to create one.
-                      </div>
-                    ) : (
-                      <div className="flex flex-col py-1">
-                        {existingFolders
-                          .filter(f => f.toLowerCase().includes(deckMeta.folderName.toLowerCase()))
-                          .map(f => (
-                            <button
-                              key={f}
-                              type="button"
-                              onClick={() => {
-                                setDeckMeta(m => ({ ...m, folderName: f }))
-                                setShowFolderDropdown(false)
-                              }}
-                              className="w-full text-left px-3 py-2 text-xs font-['IBM_Plex_Mono'] text-[#ccc] hover:bg-[#222] hover:text-[#00FF41] transition-colors flex items-center justify-between"
-                            >
-                              <span>{f}</span>
-                              {deckMeta.folderName.toLowerCase() === f.toLowerCase() && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#00FF41]" />
-                              )}
-                            </button>
-                          ))}
-                        {existingFolders.filter(f => f.toLowerCase().includes(deckMeta.folderName.toLowerCase())).length === 0 && (
-                          <div className="p-3 text-xs text-[#666] font-['IBM_Plex_Mono'] text-center">
-                            Press save to create folder "{deckMeta.folderName}"
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </div>
-          </div>
 
-          <div>
-            <Label>Subject</Label>
-            <div className="flex gap-2 flex-wrap">
-              {SUBJECTS.map(s => {
-                const Icon = s.icon
-                const isSelected = deckMeta.subject === s.value
-                const colorClasses = getSubjectFilterClasses(s.short, isSelected)
-
-                return (
-                  <button
-                    key={s.value}
-                    onClick={() => setDeckMeta(m => ({ ...m, subject: s.value }))}
-                    className={`px-4 py-2 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-[11px] flex items-center gap-2 transition-all duration-200 ${colorClasses} ${
-                      !isSelected ? 'bg-[#111] hover:bg-[#1A1A1A] border-[#222] text-[#888]' : ''
-                    }`}
-                  >
-                    <Icon size={14} className={isSelected ? 'text-inherit' : 'text-[#888]'} />
-                    {s.short}
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-
-          <div>
-            <label className="text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest mb-3 block">
-              Source Tags
-            </label>
-            <div className="flex flex-wrap gap-2 mb-3">
-              {['Excel','Edge','TOP','Indiabix','Pinoybix','EST Superbook','Cuervo'].map(tag => {
-                const currentTags = deckMeta.tags.split(',').map(t => t.trim()).filter(Boolean)
-                const isSelected = currentTags.includes(tag)
-                return (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => {
-                      const arr = deckMeta.tags.split(',').map(t => t.trim()).filter(Boolean)
-                      const next = isSelected ? arr.filter(t => t !== tag) : [...arr, tag]
-                      setDeckMeta(m => ({ ...m, tags: next.join(', ') }))
-                    }}
-                    className={`px-4 py-2 rounded-full font-['Rajdhani'] uppercase tracking-wider text-xs font-bold transition-all border ${
-                      isSelected
-                        ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
-                        : 'bg-[#161616] border-[#333] text-[#888] hover:border-[#555] hover:text-[#E8E8E8]'
-                    }`}
-                  >
-                    {tag}
-                  </button>
-                )
-              })}
-            </div>
-            <div className="flex items-center gap-2 w-full">
+            <div>
+              <Label>Description</Label>
               <input
                 type="text"
-                placeholder="Add custom tag..."
-                value={customTagInput}
-                onChange={e => setCustomTagInput(e.target.value)}
-                onKeyDown={e => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
+                className={inputCls}
+                value={deckMeta.description}
+                onChange={e => setDeckMeta(m => ({ ...m, description: e.target.value }))}
+                placeholder="Short description..."
+              />
+            </div>
+
+            <div>
+              <Label>Folder / Category</Label>
+              <div className="relative" ref={folderDropdownRef}>
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-[#E8E8E8] font-['IBM_Plex_Mono'] text-sm focus:border-[#00FF41] focus:bg-[#111] outline-none transition-colors pr-16 placeholder-[#555]"
+                    value={deckMeta.folderName}
+                    onChange={e => {
+                      setDeckMeta(m => ({ ...m, folderName: e.target.value }))
+                      setShowFolderDropdown(true)
+                    }}
+                    onFocus={() => setShowFolderDropdown(true)}
+                    placeholder="e.g. Select or type folder name..."
+                  />
+                  <div className="absolute right-2 flex items-center gap-1">
+                    {deckMeta.folderName && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeckMeta(m => ({ ...m, folderName: '' }))
+                          setShowFolderDropdown(true)
+                        }}
+                        className="p-1 text-[#444] hover:text-[#00FF41] transition-colors"
+                        title="Clear folder"
+                      >
+                        <X size={14} />
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setShowFolderDropdown(prev => !prev)}
+                      className="p-1 text-[#666] hover:text-[#00FF41] transition-colors"
+                      title="Toggle folder list"
+                    >
+                      <ChevronDown size={14} className={`transform transition-transform ${showFolderDropdown ? 'rotate-180' : ''}`} />
+                    </button>
+                  </div>
+                </div>
+
+                <AnimatePresence>
+                  {showFolderDropdown && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-[#161616] border border-[#333] rounded-lg shadow-2xl max-h-48 overflow-y-auto custom-scrollbar"
+                    >
+                      {existingFolders.length === 0 ? (
+                        <div className="p-3 text-xs text-[#666] font-['IBM_Plex_Mono'] text-center">
+                          No folders created yet. Type above to create one.
+                        </div>
+                      ) : (
+                        <div className="flex flex-col py-1">
+                          {existingFolders
+                            .filter(f => f.toLowerCase().includes(deckMeta.folderName.toLowerCase()))
+                            .map(f => (
+                              <button
+                                key={f}
+                                type="button"
+                                onClick={() => {
+                                  setDeckMeta(m => ({ ...m, folderName: f }))
+                                  setShowFolderDropdown(false)
+                                }}
+                                className="w-full text-left px-3 py-2 text-xs font-['IBM_Plex_Mono'] text-[#ccc] hover:bg-[#222] hover:text-[#00FF41] transition-colors flex items-center justify-between"
+                              >
+                                <span>{f}</span>
+                                {deckMeta.folderName.toLowerCase() === f.toLowerCase() && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[#00FF41]" />
+                                )}
+                              </button>
+                            ))}
+                          {existingFolders.filter(f => f.toLowerCase().includes(deckMeta.folderName.toLowerCase())).length === 0 && (
+                            <div className="p-3 text-xs text-[#666] font-['IBM_Plex_Mono'] text-center">
+                              Press save to create folder "{deckMeta.folderName}"
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            <div>
+              <Label>Subject</Label>
+              <div className="flex gap-2 flex-wrap">
+                {SUBJECTS.map(s => {
+                  const Icon = s.icon
+                  const isSelected = deckMeta.subject === s.value
+                  const colorClasses = getSubjectFilterClasses(s.short, isSelected)
+
+                  return (
+                    <button
+                      key={s.value}
+                      onClick={() => setDeckMeta(m => ({ ...m, subject: s.value }))}
+                      className={`px-4 py-2 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-[11px] flex items-center gap-2 transition-all duration-200 ${colorClasses} ${!isSelected ? 'bg-[#111] hover:bg-[#1A1A1A] border-[#222] text-[#888]' : ''
+                        }`}
+                    >
+                      <Icon size={14} className={isSelected ? 'text-inherit' : 'text-[#888]'} />
+                      {s.short}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest mb-3 block">
+                Source Tags
+              </label>
+              <div className="flex flex-wrap gap-2 mb-3">
+                {['Excel', 'Edge', 'TOP', 'Indiabix', 'Pinoybix', 'EST Superbook', 'Cuervo'].map(tag => {
+                  const currentTags = deckMeta.tags.split(',').map(t => t.trim()).filter(Boolean)
+                  const isSelected = currentTags.includes(tag)
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => {
+                        const arr = deckMeta.tags.split(',').map(t => t.trim()).filter(Boolean)
+                        const next = isSelected ? arr.filter(t => t !== tag) : [...arr, tag]
+                        setDeckMeta(m => ({ ...m, tags: next.join(', ') }))
+                      }}
+                      className={`px-4 py-2 rounded-full font-['Rajdhani'] uppercase tracking-wider text-xs font-bold transition-all border ${isSelected
+                          ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
+                          : 'bg-[#161616] border-[#333] text-[#888] hover:border-[#555] hover:text-[#E8E8E8]'
+                        }`}
+                    >
+                      {tag}
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="flex items-center gap-2 w-full">
+                <input
+                  type="text"
+                  placeholder="Add custom tag..."
+                  value={customTagInput}
+                  onChange={e => setCustomTagInput(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (customTagInput.trim()) {
+                        const currentTags = deckMeta.tags.split(',').map(t => t.trim()).filter(Boolean);
+                        if (!currentTags.includes(customTagInput.trim())) {
+                          setDeckMeta(m => ({ ...m, tags: [...currentTags, customTagInput.trim()].join(', ') }));
+                        }
+                        setCustomTagInput('');
+                      }
+                    }
+                  }}
+                  className="flex-1 bg-[#111] border border-[#333] rounded px-3 py-2 text-sm text-[#E8E8E8] placeholder-[#555] focus:border-[#00FF41] focus:outline-none font-['Rajdhani'] uppercase tracking-wider transition-colors h-[38px]"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
                     if (customTagInput.trim()) {
                       const currentTags = deckMeta.tags.split(',').map(t => t.trim()).filter(Boolean);
                       if (!currentTags.includes(customTagInput.trim())) {
@@ -1232,128 +1241,113 @@ export default function EditDeck() {
                       }
                       setCustomTagInput('');
                     }
-                  }
-                }}
-                className="flex-1 bg-[#111] border border-[#333] rounded px-3 py-2 text-sm text-[#E8E8E8] placeholder-[#555] focus:border-[#00FF41] focus:outline-none font-['Rajdhani'] uppercase tracking-wider transition-colors h-[38px]"
-              />
-              <button 
-                type="button"
-                onClick={() => {
-                  if (customTagInput.trim()) {
-                    const currentTags = deckMeta.tags.split(',').map(t => t.trim()).filter(Boolean);
-                    if (!currentTags.includes(customTagInput.trim())) {
-                      setDeckMeta(m => ({ ...m, tags: [...currentTags, customTagInput.trim()].join(', ') }));
-                    }
-                    setCustomTagInput('');
-                  }
-                }}
-                className="w-[38px] h-[38px] bg-[#111] border border-[#333] text-[#888] flex items-center justify-center rounded hover:text-[#00FF41] hover:border-[#00FF41] transition-colors shrink-0"
-              >
-                <Plus size={18} />
-              </button>
+                  }}
+                  className="w-[38px] h-[38px] bg-[#111] border border-[#333] text-[#888] flex items-center justify-center rounded hover:text-[#00FF41] hover:border-[#00FF41] transition-colors shrink-0"
+                >
+                  <Plus size={18} />
+                </button>
+              </div>
             </div>
-          </div>
 
-          <div className="border-t border-zinc-800 pt-5 mt-2">
-            <button
-              type="button"
-              onClick={handleExportToText}
-              disabled={isExporting}
-              className={`w-full flex items-center justify-center gap-2 px-5 py-3 rounded-lg border font-['Rajdhani'] font-bold uppercase tracking-widest text-xs transition-all duration-200 ${
-                isExporting
-                  ? 'bg-zinc-900 border-zinc-800 text-zinc-600 cursor-not-allowed'
-                  : 'bg-[#111] hover:bg-[#00FF41]/5 border-zinc-800 hover:border-[#00FF41]/40 text-[#888] hover:text-[#00FF41] shadow-md hover:shadow-[0_0_15px_rgba(0,255,65,0.1)]'
-              }`}
-            >
-              <FileText className="w-4 h-4" />
-              {isExporting ? 'Exporting...' : 'Export to Text'}
-            </button>
-          </div>
-        </div>
-
-        {/* ── Cards Pane — Pane 2 (right 2/3) */}
-        <div className="xl:col-span-2 flex flex-col gap-4">
-          <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <h2 className="font-['Rajdhani'] font-bold uppercase tracking-widest text-[#888] text-xs">
-              Questions
-            </h2>
-            <span className="text-[#555] font-['IBM_Plex_Mono'] text-xs">
-              {cards.length} {cards.length === 1 ? 'item' : 'items'} total
-            </span>
-          </div>
-
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext items={cards.map(c => c.id)} strategy={verticalListSortingStrategy}>
-              <AnimatePresence mode="popLayout">
-                {cards.map((card, i) => (
-                  <SortableQuestionRow
-                    key={card.id}
-                    card={card}
-                    index={i}
-                    onUpdate={updateCard}
-                    onDelete={deleteCard}
-                    onError={(msg) => {
-                      setToast({ type: 'error', msg })
-                      setTimeout(() => setToast(null), 3000)
-                    }}
-                  />
-                ))}
-              </AnimatePresence>
-            </SortableContext>
-          </DndContext>
-
-          {cards.length === 0 && (
-            <div className="text-center py-16 text-[#444] font-['IBM_Plex_Mono'] text-sm">
-              No questions yet. Add one below.
-            </div>
-          )}
-          </div>{/* end question list */}
-
-        {/* ── Bottom Bar ── */}
-        <div className="flex items-center justify-between bg-[#111] border border-[#1e1e1e] rounded-xl px-6 py-4 gap-4">
-          <span className="text-[#555] font-['IBM_Plex_Mono'] text-xs">
-            {cards.length} question{cards.length !== 1 ? 's' : ''} total
-          </span>
-          <div className="flex items-center gap-3">
-            {historyStack.length > 0 && (
+            <div className="border-t border-zinc-800 pt-5 mt-2">
               <button
-                onClick={undo}
-                className="flex items-center justify-center p-2 rounded border border-[#666] text-[#666] hover:text-[#00FF41] hover:border-[#00FF41] transition-colors"
-                title="Undo (Ctrl+Z)"
+                type="button"
+                onClick={handleExportToText}
+                disabled={isExporting}
+                className={`w-full flex items-center justify-center gap-2 px-5 py-3 rounded-lg border font-['Rajdhani'] font-bold uppercase tracking-widest text-xs transition-all duration-200 ${isExporting
+                    ? 'bg-zinc-900 border-zinc-800 text-zinc-600 cursor-not-allowed'
+                    : 'bg-[#111] hover:bg-[#00FF41]/5 border-zinc-800 hover:border-[#00FF41]/40 text-[#888] hover:text-[#00FF41] shadow-md hover:shadow-[0_0_15px_rgba(0,255,65,0.1)]'
+                  }`}
               >
-                <RotateCcw className="w-4 h-4" />
+                <FileText className="w-4 h-4" />
+                {isExporting ? 'Exporting...' : 'Export to Text'}
               </button>
-            )}
-            <button
-              onClick={() => addCard('flashcard')}
-              className="flex items-center gap-2 px-4 py-2 rounded border border-[#333] bg-[#161616] text-[#888] hover:text-[#00FF41] hover:border-[#00FF41]/50 font-['Rajdhani'] uppercase tracking-widest text-sm transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              Add Flashcard
-            </button>
-            <button
-              onClick={() => addCard('formula')}
-              className="flex items-center gap-2 px-4 py-2 rounded border border-[#A855F7]/40 bg-[#A855F7]/5 text-[#A855F7] hover:bg-[#A855F7]/10 font-['Rajdhani'] uppercase tracking-widest text-sm transition-all"
-            >
-              <Sigma className="w-4 h-4" />
-              Add Formula
-            </button>
-            <button
-              onClick={() => addCard('mcq')}
-              className="flex items-center gap-2 px-4 py-2 rounded border border-[#00FF41]/40 bg-[#00FF41]/5 text-[#00FF41] hover:bg-[#00FF41]/10 font-['Rajdhani'] uppercase tracking-widest text-sm transition-all"
-            >
-              <Plus className="w-4 h-4" />
-              Add MCQ
-            </button>
+            </div>
           </div>
-        </div>
 
-        </div>{/* end Pane 2 */}
+          {/* ── Cards Pane — Pane 2 (right 2/3) */}
+          <div className="w-full max-w-4xl xl:max-w-none xl:col-span-2 flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <h2 className="font-['Rajdhani'] font-bold uppercase tracking-widest text-[#888] text-xs">
+                  Questions
+                </h2>
+                <span className="text-[#555] font-['IBM_Plex_Mono'] text-xs">
+                  {cards.length} {cards.length === 1 ? 'item' : 'items'} total
+                </span>
+              </div>
+
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext items={cards.map(c => c.id)} strategy={verticalListSortingStrategy}>
+                  <AnimatePresence mode="popLayout">
+                    {cards.map((card, i) => (
+                      <SortableQuestionRow
+                        key={card.id}
+                        card={card}
+                        index={i}
+                        onUpdate={updateCard}
+                        onDelete={deleteCard}
+                        onError={(msg) => {
+                          setToast({ type: 'error', msg })
+                          setTimeout(() => setToast(null), 3000)
+                        }}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </SortableContext>
+              </DndContext>
+
+              {cards.length === 0 && (
+                <div className="text-center py-16 text-[#444] font-['IBM_Plex_Mono'] text-sm">
+                  No questions yet. Add one below.
+                </div>
+              )}
+            </div>{/* end question list */}
+
+            {/* ── Bottom Bar ── */}
+            <div className="flex items-center justify-between bg-[#111] border border-[#1e1e1e] rounded-xl px-6 py-4 gap-4">
+              <span className="text-[#555] font-['IBM_Plex_Mono'] text-xs">
+                {cards.length} question{cards.length !== 1 ? 's' : ''} total
+              </span>
+              <div className="flex items-center gap-3">
+                {historyStack.length > 0 && (
+                  <button
+                    onClick={undo}
+                    className="flex items-center justify-center p-2 rounded border border-[#666] text-[#666] hover:text-[#00FF41] hover:border-[#00FF41] transition-colors"
+                    title="Undo (Ctrl+Z)"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                  </button>
+                )}
+                <button
+                  onClick={() => addCard('flashcard')}
+                  className="flex items-center gap-2 px-4 py-2 rounded border border-[#333] bg-[#161616] text-[#888] hover:text-[#00FF41] hover:border-[#00FF41]/50 font-['Rajdhani'] uppercase tracking-widest text-sm transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add Flashcard
+                </button>
+                <button
+                  onClick={() => addCard('formula')}
+                  className="flex items-center gap-2 px-4 py-2 rounded border border-[#A855F7]/40 bg-[#A855F7]/5 text-[#A855F7] hover:bg-[#A855F7]/10 font-['Rajdhani'] uppercase tracking-widest text-sm transition-all"
+                >
+                  <Sigma className="w-4 h-4" />
+                  Add Formula
+                </button>
+                <button
+                  onClick={() => addCard('mcq')}
+                  className="flex items-center gap-2 px-4 py-2 rounded border border-[#00FF41]/40 bg-[#00FF41]/5 text-[#00FF41] hover:bg-[#00FF41]/10 font-['Rajdhani'] uppercase tracking-widest text-sm transition-all"
+                >
+                  <Plus className="w-4 h-4" />
+                  Add MCQ
+                </button>
+              </div>
+            </div>
+
+          </div>{/* end Pane 2 */}
 
         </div>
       </div>

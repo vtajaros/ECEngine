@@ -140,7 +140,7 @@ export const AppShell: React.FC = () => {
             </div>
           )}
 
-          <nav className="flex-1 flex max-sm:items-center max-sm:justify-center w-full gap-1 sm:gap-0 px-2 sm:flex-col sm:justify-start sm:items-stretch sm:px-0 sm:overflow-y-auto sm:overflow-x-hidden overflow-x-auto overflow-y-hidden no-scrollbar max-sm:[&::-webkit-scrollbar]:hidden max-sm:[scrollbar-width:none]">
+          <nav className="flex-1 flex max-sm:items-center max-sm:justify-center w-full gap-1 sm:gap-1.5 px-2 sm:flex-col sm:justify-start sm:items-stretch sm:px-0 sm:overflow-y-auto sm:overflow-x-hidden overflow-x-auto overflow-y-hidden no-scrollbar max-sm:[&::-webkit-scrollbar]:hidden max-sm:[scrollbar-width:none]">
             {navItems
               .filter(item => {
                 if (isWeb && item.webHidden) return false
