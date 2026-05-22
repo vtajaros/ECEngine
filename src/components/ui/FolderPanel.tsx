@@ -37,7 +37,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
           </h2>
           <button
             onClick={() => setIsEditing(!isEditing)}
-            className="text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors uppercase tracking-wider"
+            className="text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors uppercase tracking-wider outline-none focus:outline-none focus-visible:ring-0 focus-visible:text-slate-200"
           >
             {isEditing ? 'Done' : 'Edit'}
           </button>
@@ -84,7 +84,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
             return isEditing ? (
               <div
                 key={folder}
-                className="flex items-center gap-2 w-full px-2 py-1.5 bg-slate-900/50 rounded-md border border-slate-800"
+                className="flex items-center gap-2 w-full px-2 py-1.5 bg-slate-900/50 rounded-md border border-transparent hover:bg-slate-800/50 transition-colors"
               >
                 {/* Left (Rearrange Handle) */}
                 {folder === 'all' || folder === 'ALL' ? (
@@ -98,7 +98,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                   type="text"
                   defaultValue={folder}
                   readOnly={folder === 'all' || folder === 'ALL' || folder === 'Uncategorized'}
-                  className="flex-1 min-w-0 bg-transparent border border-slate-700 rounded px-2 py-0.5 text-xs text-white focus:outline-none focus:border-green-500 font-['Rajdhani'] font-bold uppercase tracking-wider"
+                  className="flex-1 min-w-0 bg-transparent border border-slate-700 rounded px-2 py-0.5 text-xs text-white outline-none focus:outline-none focus:ring-0 focus:border-green-500 font-['Rajdhani'] font-bold uppercase tracking-wider"
                 />
 
                 {/* Right (Trash Icon / Delete button) */}
