@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { LayoutGrid, Folder, Trash2 } from 'lucide-react';
+import { LayoutGrid, Folder, Trash2, GripVertical } from 'lucide-react';
 
 interface FolderPanelProps {
   folders: string[];
@@ -19,6 +19,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
   onSelect,
   onDeleteFolder,
 }) => {
+  const [isEditing, setIsEditing] = useState(false);
   const sortedFolders = [...folders].sort((a, b) => {
     if (a === 'Uncategorized') return 1;
     if (b === 'Uncategorized') return -1;
@@ -30,9 +31,17 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
       className="flex-shrink-0 bg-[var(--bg-primary)] overflow-x-auto sm:overflow-y-auto sm:overflow-x-hidden flex flex-row sm:flex-col sm:w-[200px] sm:h-full sm:border-r border-b sm:border-b-0 border-[var(--bg-card)] w-full py-2 sm:py-4 px-3 sm:px-2 max-sm:[&::-webkit-scrollbar]:hidden max-sm:[scrollbar-width:none]"
     >
       <div className="flex flex-row sm:flex-col items-center sm:items-stretch gap-2 sm:gap-0 min-w-max sm:min-w-0 sm:px-4">
-        <h2 className="hidden sm:block text-[var(--text-secondary)] text-[10px] uppercase tracking-[0.15em] font-bold mb-6">
-          Your folders
-        </h2>
+        <div className="hidden sm:flex justify-between items-center mb-4 px-1">
+          <h2 className="text-[var(--text-secondary)] text-[10px] uppercase tracking-[0.15em] font-bold">
+            FOLDERS
+          </h2>
+          <button
+            onClick={() => setIsEditing(!isEditing)}
+            className="text-xs font-semibold text-slate-500 hover:text-slate-300 transition-colors uppercase tracking-wider"
+          >
+            {isEditing ? 'Done' : 'Edit'}
+          </button>
+        </div>
 
         <motion.div className="flex flex-row sm:flex-col gap-2 sm:gap-1">
           {/* All Row */}
@@ -72,7 +81,43 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
             const isSelected = selected === folder;
             const count = deckCountByFolder[folder] || 0;
 
-            return (
+            return isEditing ? (
+              <div
+                key={folder}
+                className="flex items-center gap-2 w-full px-2 py-1.5 bg-slate-800/30 rounded-md border border-slate-700/50"
+              >
+                {/* Left (Rearrange Handle) */}
+                {folder === 'all' || folder === 'ALL' ? (
+                  <div className="w-3.5" />
+                ) : (
+                  <GripVertical className="w-3.5 h-3.5 text-slate-500 cursor-grab shrink-0" />
+                )}
+
+                {/* Center (Rename Input) */}
+                <input
+                  type="text"
+                  defaultValue={folder}
+                  readOnly={folder === 'all' || folder === 'ALL' || folder === 'Uncategorized'}
+                  className="flex-1 min-w-0 bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-xs text-white focus:outline-none focus:border-[#00FF41]/40 font-['Rajdhani'] font-bold uppercase tracking-wider"
+                />
+
+                {/* Right (Trash Icon / Delete button) */}
+                {folder === 'all' || folder === 'ALL' || folder === 'Uncategorized' ? (
+                  <div className="w-3.5" />
+                ) : (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDeleteFolder?.(folder);
+                    }}
+                    className="text-slate-500 hover:text-red-400 p-0.5 shrink-0 flex items-center justify-center bg-transparent border-0 cursor-pointer"
+                    title="Delete Folder"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            ) : (
               <motion.button
                 key={folder}
                 whileHover={{ scale: 1.01 }}
