@@ -769,6 +769,12 @@ export default function FlashcardStudy() {
                   </button>
                 ))}
               </div>
+
+              <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 w-full text-[10px] sm:text-xs text-slate-500 font-medium uppercase tracking-wider mb-4 sm:mb-6">
+                <span className="flex items-center gap-1.5"><ScrollText className="w-3.5 h-3.5" /> View Items</span>
+                <span className="flex items-center gap-1.5"><Pencil className="w-3.5 h-3.5" /> Edit Details</span>
+                <span className="flex items-center gap-1.5"><Trash2 className="w-3.5 h-3.5" /> Delete</span>
+              </div>
             </div>
           </div>
 
