@@ -891,10 +891,12 @@ export default function FlashcardViewer() {
                 ))}
               </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 w-full text-[10px] sm:text-xs text-slate-500 font-medium uppercase tracking-wider mb-4 sm:mb-6">
-                <span className="flex items-center gap-1.5"><ScrollText className="w-3.5 h-3.5" /> View Items</span>
-                <span className="flex items-center gap-1.5"><Pencil className="w-3.5 h-3.5" /> Edit Details</span>
-                <span className="flex items-center gap-1.5"><Trash2 className="w-3.5 h-3.5" /> Delete</span>
+              <div className="flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-2 w-full text-[10px] sm:text-xs text-slate-500 font-medium uppercase tracking-wider mb-4 sm:mb-6">
+                <span className="flex items-center gap-1.5"><Play className="w-3.5 h-3.5 text-slate-500" /> Learn Mode</span>
+                <span className="flex items-center gap-1.5"><Trophy className="w-3.5 h-3.5 text-slate-500" /> Test Mode</span>
+                <span className="flex items-center gap-1.5"><ScrollText className="w-3.5 h-3.5 text-slate-500" /> Test Paper View</span>
+                <span className="flex items-center gap-1.5"><Pencil className="w-3.5 h-3.5 text-slate-500" /> Edit Deck</span>
+                <span className="flex items-center gap-1.5"><Trash2 className="w-3.5 h-3.5 text-slate-500" /> Delete Deck</span>
               </div>
             </div>
           </div>
@@ -958,33 +960,32 @@ export default function FlashcardViewer() {
                   )}
 
                   {/* Bottom Row: Progress and Actions */}
-                  <div className="flex items-center w-full gap-4 mt-4">
-                    {/* Mastery Progress Bar Zone */}
-                    <div className="w-1/3 max-w-[150px]">
-                      <div className="flex justify-between text-[10px] font-rajdhani tracking-widest mb-1 uppercase text-gray-500">
-                        <span>MASTERY</span>
-                        <span className="text-[#00FF41] font-bold">0%</span>
+                  <div className="flex items-center justify-between w-full mt-4">
+                    <div className="flex items-center gap-4 sm:gap-6">
+                      {/* Mastery Progress Bar Zone */}
+                      <div className="w-24 sm:w-32">
+                        <div className="flex justify-between text-[10px] font-rajdhani tracking-widest mb-1 uppercase text-gray-500">
+                          <span>MASTERY</span>
+                          <span className="text-[#00FF41] font-bold">0%</span>
+                        </div>
+                        <div className="w-full bg-[#111] h-1 rounded-full overflow-hidden">
+                          <div className="h-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.4)] w-0" />
+                        </div>
                       </div>
-                      <div className="w-full bg-[#111] h-1 rounded-full overflow-hidden">
-                        <div className="h-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.4)] w-0" />
+
+                      {/* Primary Actions Zone */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); openDeck(deck); }}
+                          className="py-2 px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                          title="Learn this deck"
+                          aria-label="Learn"
+                        >
+                          <Play className="w-3 h-3" />
+                          <span className="hidden xl:inline">Learn</span>
+                        </button>
                       </div>
                     </div>
-
-                    {/* Primary Actions Zone */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); openDeck(deck); }}
-                        className="py-2 px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
-                        title="Learn this deck"
-                        aria-label="Learn"
-                      >
-                        <Play className="w-3 h-3" />
-                        <span className="hidden xl:inline">Learn</span>
-                      </button>
-                    </div>
-
-                    {/* Spacer */}
-                    <div className="flex-1"></div>
 
                     {/* Secondary Actions Zone */}
                     <div className="flex items-center gap-1 sm:gap-2">
