@@ -25,7 +25,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
 
   return (
     <div
-      className="flex-shrink-0 bg-[var(--bg-primary)] overflow-x-auto sm:overflow-y-auto sm:overflow-x-hidden flex flex-row sm:flex-col sm:w-[240px] sm:h-full sm:border-r border-b sm:border-b-0 border-[var(--bg-card)] w-full py-2 sm:py-4 px-3 sm:px-2 max-sm:[&::-webkit-scrollbar]:hidden max-sm:[scrollbar-width:none]"
+      className="flex-shrink-0 bg-[var(--bg-primary)] overflow-x-auto sm:overflow-y-auto sm:overflow-x-hidden flex flex-row sm:flex-col sm:w-[200px] sm:h-full sm:border-r border-b sm:border-b-0 border-[var(--bg-card)] w-full py-2 sm:py-4 px-3 sm:px-2 max-sm:[&::-webkit-scrollbar]:hidden max-sm:[scrollbar-width:none]"
     >
       <div className="flex flex-row sm:flex-col items-center sm:items-stretch gap-2 sm:gap-0 min-w-max sm:min-w-0 sm:px-4">
         <h2 className="hidden sm:block text-[var(--text-secondary)] text-[10px] uppercase tracking-[0.15em] font-bold mb-6">
@@ -38,7 +38,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
             whileHover={{ scale: 1.01 }}
             onClick={() => onSelect('all')}
             title="All Folders"
-            className={`flex items-center gap-2 px-3 py-1.5 sm:py-2.5 rounded-full sm:rounded-r-md sm:w-full sm:justify-between sm:gap-3 border border-transparent sm:border-l-[3px] sm:border-t-0 sm:border-r-0 sm:border-b-0 whitespace-nowrap group ${
+            className={`min-w-0 flex items-center gap-2 px-3 py-1.5 sm:py-2.5 rounded-full sm:rounded-r-md sm:w-full sm:justify-between sm:gap-3 border border-transparent sm:border-l-[3px] sm:border-t-0 sm:border-r-0 sm:border-b-0 whitespace-nowrap group ${
               selected === 'all'
                 ? 'bg-[#00FF41]/10 text-[#00FF41] border-transparent sm:bg-[var(--bg-card)] sm:text-[var(--text-primary)] sm:border-[var(--accent-primary)]'
                 : 'bg-slate-800/50 text-slate-400 border-transparent sm:bg-transparent sm:text-[var(--text-secondary)] sm:border-[var(--bg-card)] sm:hover:bg-[var(--bg-secondary)]'
@@ -60,9 +60,9 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                 All
               </span>
             </div>
-            <div className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-mono border border-[var(--bg-elevated)]">
+            <span className="flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-mono border border-[var(--bg-elevated)]">
               {totalDeckCount}
-            </div>
+            </span>
           </motion.button>
 
           {/* Folder Rows */}
@@ -76,7 +76,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                 whileHover={{ scale: 1.01 }}
                 onClick={() => onSelect(folder)}
                 title={folder}
-                className={`flex items-center gap-2 px-3 py-1.5 sm:py-2.5 rounded-full sm:rounded-r-md sm:w-full sm:justify-between sm:gap-3 border border-transparent sm:border-l-[3px] sm:border-t-0 sm:border-r-0 sm:border-b-0 whitespace-nowrap group ${
+                className={`min-w-0 flex items-center gap-2 px-3 py-1.5 sm:py-2.5 rounded-full sm:rounded-r-md sm:w-full sm:justify-between sm:gap-3 border border-transparent sm:border-l-[3px] sm:border-t-0 sm:border-r-0 sm:border-b-0 whitespace-nowrap group ${
                   isSelected
                     ? 'bg-[#00FF41]/10 text-[#00FF41] border-transparent sm:bg-[var(--bg-card)] sm:text-[var(--text-primary)] sm:border-[var(--accent-primary)]'
                     : 'bg-slate-800/50 text-slate-400 border-transparent sm:bg-transparent sm:text-[var(--text-secondary)] sm:border-[var(--bg-card)] sm:hover:bg-[var(--bg-secondary)]'
@@ -98,9 +98,9 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                     {folder}
                   </span>
                 </div>
-                <div className="text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-mono border border-[var(--bg-elevated)]">
+                <span className="flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-mono border border-[var(--bg-elevated)]">
                   {count}
-                </div>
+                </span>
               </motion.button>
             );
           })}
