@@ -37,10 +37,14 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
           </h2>
           <button
             onClick={() => setIsEditing(!isEditing)}
-            className="text-slate-400 hover:text-green-500 transition-colors p-1 rounded hover:bg-slate-800/50 outline-none focus:outline-none focus-visible:ring-0 focus-visible:text-green-500"
+            className="group text-slate-400 hover:text-green-500 transition-colors p-1 rounded hover:bg-slate-800/50 outline-none focus:outline-none focus-visible:ring-0 focus-visible:text-green-500"
             title={isEditing ? 'Done' : 'Edit'}
           >
-            {isEditing ? <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+            {isEditing ? (
+              <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 group-hover:text-green-500 transition-colors" />
+            ) : (
+              <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 group-hover:text-green-500 transition-colors" />
+            )}
           </button>
         </div>
 
@@ -91,7 +95,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                 {folder === 'all' || folder === 'ALL' ? (
                   <div className="w-3.5" />
                 ) : (
-                  <GripVertical className="w-4 h-4 text-slate-500 cursor-grab shrink-0" />
+                  <GripVertical className="w-4 h-4 text-slate-400 cursor-grab shrink-0" />
                 )}
 
                 {/* Center (Rename Input) */}
@@ -111,10 +115,10 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                       e.stopPropagation();
                       onDeleteFolder?.(folder);
                     }}
-                    className="text-slate-500 hover:text-red-500 p-0.5 shrink-0 flex items-center justify-center bg-transparent border-0 cursor-pointer"
+                    className="p-0.5 shrink-0 flex items-center justify-center bg-transparent border-0 cursor-pointer"
                     title="Delete Folder"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4 text-slate-400 hover:text-slate-200 transition-colors" />
                   </button>
                 )}
               </div>
