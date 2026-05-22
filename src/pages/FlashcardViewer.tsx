@@ -178,14 +178,8 @@ export default function FlashcardViewer() {
           processedDecks.sort((a, b) => a.title.localeCompare(b.title))
           setDecks(processedDecks)
         } else {
-          if (!window.electron?.db) return
-          const r = await window.electron.db.query(
-            `SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags, t.folder_name,
-                    COUNT(c.id) as card_count,
-                    GROUP_CONCAT(DISTINCT c.type) as types
-             FROM topics t LEFT JOIN cards c ON c.topic_id = t.id
-             GROUP BY t.id ORDER BY t.name`
-          )
+          if (!window.electron?.decks) return
+          const r = await window.electron.decks.getTopicsWithCardCounts()
           if (r.success && r.data) {
             processedDecks = r.data.map((row: any) => {
               const types = (row.types || '').split(',')
@@ -248,9 +242,8 @@ export default function FlashcardViewer() {
           await webDB.topics.delete(setToDelete.id)
         })
       } else {
-        if (window.electron?.db) {
-          await window.electron.db.run(`DELETE FROM cards WHERE topic_id = ?`, [setToDelete.id])
-          await window.electron.db.run(`DELETE FROM topics WHERE id = ?`, [setToDelete.id])
+        if (window.electron?.decks) {
+          await window.electron.decks.deleteTopic(setToDelete.id)
         }
       }
       setDecks(prev => prev.filter(s => s.id !== setToDelete.id))
@@ -267,10 +260,8 @@ export default function FlashcardViewer() {
       if (isWeb) {
         rawCards = await webDB.cards.where('topic_id').equals(deck.id).toArray()
       } else {
-        if (!window.electron?.db) return
-        const r = await window.electron.db.query(
-          `SELECT * FROM cards WHERE topic_id = ?`, [deck.id]
-        )
+        if (!window.electron?.decks) return
+        const r = await window.electron.decks.getCardsByTopic(deck.id)
         if (r.success && r.data) {
           rawCards = r.data
         }

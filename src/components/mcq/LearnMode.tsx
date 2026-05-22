@@ -343,20 +343,17 @@ Please explain:
           className="bg-[#111] border border-[#222] rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col max-w-3xl w-full h-[80vh] max-h-[800px] overflow-hidden"
         >
           {/* Header */}
-          <div className="p-8 border-b border-[#222] text-center bg-[#161616] shrink-0">
-            <h2 className="text-4xl font-['Orbitron'] font-bold text-[#00FF41] mb-1 tracking-widest uppercase">
+          <div className="p-3 border-b border-[#222] text-center bg-[#161616] shrink-0">
+            <h2 className="text-xl font-['Orbitron'] font-bold text-[#00FF41] mb-0 tracking-widest uppercase">
               {isLastPartition ? 'Set Complete! 🎉' : 'Round Complete'}
             </h2>
             {title && (
-              <div className="text-[#00FF41] font-['Orbitron'] font-bold text-xl tracking-[0.2em] uppercase mb-4">
+              <div className="text-white font-['Orbitron'] font-bold text-sm tracking-[0.2em] uppercase mb-1">
                 {title}
               </div>
             )}
-            <p className="text-[#888] font-['IBM_Plex_Mono'] mb-6">
-              {isLastPartition ? `You've reviewed all ${cards.length} questions` : "Here's what you just studied"}
-            </p>
-            <div className="inline-block bg-[#0D0D0D] border border-[#333] px-6 py-3 rounded-lg">
-              <span className="text-[#E8E8E8] font-['Rajdhani'] text-lg font-bold tracking-wider">
+            <div className="inline-block bg-[#0D0D0D] border border-[#333] px-4 py-1.5 rounded-lg">
+              <span className="text-[#E8E8E8] font-['Rajdhani'] text-sm font-bold tracking-wider">
                 {isLastPartition 
                   ? `${overallCorrectFirstTryCount} / ${cards.length} flawless answers` 
                   : `${partitionCorrectFirstTryCount} / ${currentPartitionCards.length} flawless answers`}
@@ -444,10 +441,10 @@ Please explain:
           </div>
 
           {/* Footer Buttons */}
-          <div className="p-6 border-t border-[#222] bg-[#161616] flex justify-between gap-4 shrink-0">
+          <div className="p-3 border-t border-[#222] bg-[#161616] flex justify-between gap-4 shrink-0">
             <button 
               onClick={handleRestartRound}
-              className="px-6 py-3 bg-[#111] border border-[#00FF41] text-[#00FF41] rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[rgba(0,255,65,0.1)] transition-colors"
+              className="px-4 py-2 text-sm bg-[#111] border border-[#00FF41] text-[#00FF41] rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[rgba(0,255,65,0.1)] transition-colors"
             >
               Restart Round
             </button>
@@ -455,13 +452,13 @@ Please explain:
               <div className="flex gap-4">
                 <button 
                   onClick={handleExit}
-                  className="px-6 py-3 bg-[#222] text-[#E8E8E8] rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[#333] transition-colors"
+                  className="px-4 py-2 text-sm bg-[#222] text-[#E8E8E8] rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[#333] transition-colors"
                 >
                   Exit
                 </button>
                 <button 
                   onClick={handleStudyAgain}
-                  className="px-8 py-3 bg-[#00FF41] text-black rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[rgba(0,255,65,0.8)] shadow-[0_0_15px_rgba(0,255,65,0.2)] transition-all"
+                  className="px-5 py-2 text-sm bg-[#00FF41] text-black rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[rgba(0,255,65,0.8)] shadow-[0_0_15px_rgba(0,255,65,0.2)] transition-all"
                 >
                   Study Again
                 </button>
@@ -469,7 +466,7 @@ Please explain:
             ) : (
               <button 
                 onClick={startNextPartitionPhase}
-                className="px-8 py-3 bg-[#00FF41] text-black rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[rgba(0,255,65,0.8)] shadow-[0_0_15px_rgba(0,255,65,0.2)] transition-all flex items-center"
+                className="px-5 py-2 text-sm bg-[#00FF41] text-black rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[rgba(0,255,65,0.8)] shadow-[0_0_15px_rgba(0,255,65,0.2)] transition-all flex items-center"
               >
                 Continue <ArrowRight className="w-5 h-5 ml-2" />
               </button>

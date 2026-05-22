@@ -131,7 +131,7 @@ export default function FlashcardStudy() {
             }
           }).filter((s: StudySet | null): s is StudySet => s !== null)
         } else {
-          if (!window.electron?.db) return
+          if (!window.electron?.decks) return
 
           let dueCountsMap = new Map<string, number>()
           if (window.electron.decks) {
@@ -143,13 +143,7 @@ export default function FlashcardStudy() {
             }
           }
 
-          const topicsResult = await window.electron.db.query(
-            `SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags, t.folder_name,
-                    COUNT(c.id) as card_count,
-                    GROUP_CONCAT(DISTINCT c.type) as types
-             FROM topics t LEFT JOIN cards c ON c.topic_id = t.id
-             GROUP BY t.id`
-          )
+          const topicsResult = await window.electron.decks.getTopicsWithCardCounts()
           if (topicsResult.success && topicsResult.data) {
             dbSets = topicsResult.data.map((row: any) => {
               const types = (row.types || '').split(',').filter(Boolean)

@@ -9,7 +9,6 @@ import {
   Settings,
   Layers,
   ClipboardList,
-  Menu,
 } from 'lucide-react'
 import { TitleBar } from './TitleBar'
 
@@ -26,7 +25,6 @@ type NavItem = {
 export const AppShell: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false)
 
-  // Track time spent in the app (every minute)
   useEffect(() => {
     const interval = setInterval(() => {
       import('../../services/db.service').then(({ activeDBService }) => {
@@ -36,15 +34,15 @@ export const AppShell: React.FC = () => {
     return () => clearInterval(interval)
   }, [])
 
-  const navItems = [
-    { to: '/',          label: 'Dashboard',       icon: Home },
-    { to: '/study',     label: 'LooksFam',        icon: Brain },
-    { to: '/flashcards',label: 'Flashcards',      icon: Layers },
-    { to: '/formulas',  label: 'Formulas',        icon: Sigma },
-    { to: '/topics',    label: 'EELE ToS',        icon: BookOpen },
-    { to: '/checklist', label: 'Checklist',       icon: ClipboardList },
-    { to: '/add-decks', label: 'Add Decks',       icon: PlusCircle },
-    { to: '/settings',  label: 'Settings',        icon: Settings },
+  const navItems: NavItem[] = [
+    { to: '/',           label: 'Dashboard',  icon: Home },
+    { to: '/study',      label: 'LooksFam',   icon: Brain },
+    { to: '/flashcards', label: 'Flashcards', icon: Layers },
+    { to: '/formulas',   label: 'Formulas',   icon: Sigma },
+    { to: '/topics',     label: 'EELE ToS',   icon: BookOpen },
+    { to: '/checklist',  label: 'Checklist',  icon: ClipboardList },
+    { to: '/add-decks',  label: 'Add Decks',  icon: PlusCircle },
+    { to: '/settings',   label: 'Settings',   icon: Settings },
   ]
 
   return (
@@ -63,58 +61,123 @@ export const AppShell: React.FC = () => {
             isCollapsed ? 'w-full h-12 sm:w-16 sm:h-full' : 'w-full h-12 sm:w-[140px] sm:h-full'
           } bg-[#1A1A1A] border-b sm:border-b-0 sm:border-r border-[#222] flex flex-row sm:flex-col transition-all duration-300 absolute sm:relative top-0 left-0 sm:top-auto sm:left-auto z-20 shrink-0`}
         >
-          {/* Hamburger button — web only, lives at top of sidebar */}
-          {isWeb && (
-            <div className={`hidden sm:flex ${isCollapsed ? 'sm:justify-center' : 'sm:justify-start sm:px-4'} sm:pt-3 sm:pb-1 px-3 shrink-0 items-center`}>
+          {/* ── Hamburger row (desktop / Electron only, sm breakpoint and up) ── */}
+          {!isWeb && (
+            <div className="hidden sm:flex h-10 w-full shrink-0 items-center justify-between px-2">
+              {!isCollapsed && (
+                <div className="flex items-center gap-2 pl-1">
+                  <img
+                    src="/ecengine_icon.png"
+                    alt="ECEngine"
+                    className="w-4 h-4 object-contain"
+                    onError={(e) => {
+                      const img = e.currentTarget
+                      if (!img.src.includes('resources')) {
+                        img.src = 'resources/ecengine_icon.png'
+                      }
+                    }}
+                  />
+                  <span className="font-['Rajdhani'] font-bold tracking-wider text-white text-sm">
+                    <span className="text-[#00FF41]">ECE</span>ngine
+                  </span>
+                </div>
+              )}
               <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
-                className="p-1.5 hover:bg-[#222] border border-[#333]/40 rounded-md text-gray-400 hover:text-[#00FF41] transition-all flex items-center justify-center"
+                className={`${isCollapsed ? 'mx-auto' : 'ml-auto'} w-7 h-7 flex items-center justify-center hover:bg-[#222] rounded-md text-gray-500 hover:text-[#00FF41] transition-colors`}
                 title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               >
-                <Menu size={18} />
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <line x1="9" y1="3" x2="9" y2="21" />
+                </svg>
               </button>
             </div>
           )}
 
-          <nav 
-            className="flex-1 flex max-sm:items-center max-sm:justify-center w-full gap-1 sm:gap-2 px-2 sm:flex-col sm:justify-start sm:items-stretch sm:px-0 sm:pt-2 sm:overflow-y-auto sm:overflow-x-hidden overflow-x-auto overflow-y-hidden no-scrollbar max-sm:[&::-webkit-scrollbar]:hidden max-sm:[scrollbar-width:none]"
-          >
-            {(navItems as NavItem[])
+          {/* ── Hamburger row (web only, sm breakpoint and up) ── */}
+          {isWeb && (
+            <div className="hidden sm:flex h-10 w-full shrink-0 items-center justify-between px-2">
+              {!isCollapsed && (
+                <div className="flex items-center gap-2 pl-1">
+                  <img src="/ecengine_icon.png" alt="ECEngine" className="w-4 h-4 object-contain" />
+                  <span className="font-['Rajdhani'] font-bold tracking-wider text-white text-sm">
+                    <span className="text-[#00FF41]">ECE</span>ngine
+                  </span>
+                </div>
+              )}
+              <button
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className={`${isCollapsed ? 'mx-auto' : 'ml-auto'} w-7 h-7 flex items-center justify-center hover:bg-[#222] rounded-md text-gray-500 hover:text-[#00FF41] transition-colors`}
+                title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              >
+                {/* Claude/Gemini-style sidebar toggle icon */}
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <line x1="9" y1="3" x2="9" y2="21" />
+                </svg>
+              </button>
+            </div>
+          )}
+
+          <nav className="flex-1 flex max-sm:items-center max-sm:justify-center w-full gap-1 sm:gap-0 px-2 sm:flex-col sm:justify-start sm:items-stretch sm:px-0 sm:overflow-y-auto sm:overflow-x-hidden overflow-x-auto overflow-y-hidden no-scrollbar max-sm:[&::-webkit-scrollbar]:hidden max-sm:[scrollbar-width:none]">
+            {navItems
               .filter(item => {
                 if (isWeb && item.webHidden) return false
                 if (!isWeb && item.webOnly) return false
                 return true
               })
               .map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) => `
-                  flex items-center h-10 transition-all duration-200 min-w-max group relative
-                  ${isActive
-                    ? 'bg-gradient-to-r from-[#00FF41]/10 to-transparent text-white'
-                    : 'text-gray-400 hover:bg-[#222] hover:text-gray-300'
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `flex items-center h-10 transition-all duration-200 min-w-max group relative
+                    ${isActive
+                      ? 'bg-gradient-to-r from-[#00FF41]/10 to-transparent text-white'
+                      : 'text-gray-400 hover:bg-[#222] hover:text-gray-300'
+                    }`
                   }
-                `}
-                title={item.label}
-              >
-                {({ isActive }) => (
-                  <>
-                    {isActive && (
-                      <div className="absolute left-0 right-0 bottom-0 h-[3px] sm:h-auto sm:w-[3px] sm:top-0 sm:bottom-0 bg-[#00FF41] shadow-[0_0_10px_#00FF41]" />
-                    )}
-                    <div className={`${isCollapsed ? 'sm:w-16' : 'sm:w-12'} w-10 flex justify-center shrink-0`}>
-                      <item.icon size={18} />
-                    </div>
-                    {!isCollapsed && (
-                      <span className="hidden sm:inline font-['Rajdhani'] text-sm font-medium tracking-wide">
-                        {item.label}
-                      </span>
-                    )}
-                  </>
-                )}
-              </NavLink>
-            ))}
+                  title={item.label}
+                >
+                  {({ isActive }) => (
+                    <>
+                      {isActive && (
+                        <div className="absolute left-0 right-0 bottom-0 h-[3px] sm:h-auto sm:w-[3px] sm:top-0 sm:bottom-0 bg-[#00FF41] shadow-[0_0_10px_#00FF41]" />
+                      )}
+                      {/* Icon column — always w-16 when collapsed, w-12 when expanded */}
+                      <div className={`${isCollapsed ? 'sm:w-16' : 'sm:w-12'} w-10 flex justify-center shrink-0`}>
+                        <item.icon size={18} />
+                      </div>
+                      {!isCollapsed && (
+                        <span className="hidden sm:inline font-['Rajdhani'] text-sm font-medium tracking-wide">
+                          {item.label}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </NavLink>
+              ))}
           </nav>
 
           {!isCollapsed && (
@@ -124,7 +187,7 @@ export const AppShell: React.FC = () => {
           )}
         </aside>
 
-        {/* Main Content Area */}
+        {/* Main Content */}
         <main className="flex-1 w-full min-w-0 relative overflow-visible sm:overflow-y-auto overflow-x-hidden bg-[#111111] pt-12 sm:pt-0">
           <Outlet />
         </main>

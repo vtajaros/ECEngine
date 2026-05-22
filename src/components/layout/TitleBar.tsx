@@ -1,5 +1,5 @@
-import { Zap, Minus, Square, X, Menu, ChevronLeft, ChevronRight } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { Zap, Minus, Square, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useNavigate, useLocation } from 'react-router-dom'
 
 interface TitleBarProps {
   isCollapsed?: boolean;
@@ -9,35 +9,35 @@ interface TitleBarProps {
 export const TitleBar: React.FC<TitleBarProps> = ({ isCollapsed, onToggleSidebar }) => {
   const controls = (window as any).electron?.windowControls
   const navigate = useNavigate()
+  const location = useLocation()
+
+  const routeLabels: Record<string, string> = {
+    '/':           'Dashboard',
+    '/study':      'LooksFam',
+    '/flashcards': 'Flashcards',
+    '/formulas':   'Formulas',
+    '/topics':     'EELE ToS',
+    '/checklist':  'Checklist',
+    '/add-decks':  'Add Decks',
+    '/settings':   'Settings',
+  }
+
+  const pageTitle = routeLabels[location.pathname] ?? 'ECEngine'
 
   return (
     <div className="w-full h-8 bg-[#1A1A1A] text-gray-400 flex items-center justify-between select-none [-webkit-app-region:drag] relative shrink-0 px-0">
       {/* Left Side: Navigation (Anchored to Sidebar Width) */}
-      <div className="flex items-center [-webkit-app-region:no-drag]">
-        {/* Hamburger Container (Fixed width to align with sidebar icons) */}
-        <div className="w-16 flex justify-center shrink-0">
-          <button 
-            onClick={onToggleSidebar}
-            className="p-1 rounded-md hover:bg-[#222] text-gray-400 hover:text-white transition-colors"
-            title="Toggle Sidebar"
-          >
-            <Menu size={18} />
-          </button>
-        </div>
-
-        {/* Arrows Container (Flows naturally next to the fixed toggle) */}
-        <div className="flex items-center gap-1 ml-1">
-          <button 
-            onClick={() => navigate(-1)}
-            className="p-1 text-gray-400 hover:text-white hover:bg-[#333] rounded transition-colors"
-            title="Go Back"
-          >
-            <ChevronLeft size={16} />
-          </button>
-          <button className="p-1 text-[#333] cursor-not-allowed rounded">
-            <ChevronRight size={16} />
-          </button>
-        </div>
+      <div className="flex items-center gap-1 ml-2 [-webkit-app-region:no-drag]">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-1 text-gray-400 hover:text-white hover:bg-[#333] rounded transition-colors"
+          title="Go Back"
+        >
+          <ChevronLeft size={16} />
+        </button>
+        <button className="p-1 text-[#333] cursor-not-allowed rounded">
+          <ChevronRight size={16} />
+        </button>
       </div>
 
       {/* Centered Brand */}
@@ -45,6 +45,8 @@ export const TitleBar: React.FC<TitleBarProps> = ({ isCollapsed, onToggleSidebar
         <img src="/ecengine_icon.png" alt="Logo" className="w-4 h-4 object-contain" />
         <span className="font-rajdhani font-bold tracking-wider text-white text-xs">
           <span className="text-[#00FF41]">ECE</span>ngine
+          <span className="text-gray-400 font-normal"> · </span>
+          <span className="text-white">{pageTitle}</span>
         </span>
       </div>
 

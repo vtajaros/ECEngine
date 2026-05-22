@@ -684,11 +684,11 @@ export default function EditDeck() {
           topics.map((t: any) => t.folder_name).filter(Boolean)
         )].sort() as string[]
       } else {
-        if (!window.electron?.db) return
-        const r = await window.electron.db.query('SELECT DISTINCT folder_name FROM topics ORDER BY folder_name')
-        if (r.success && r.data) {
-          folderNames = r.data.map((row: any) => row.folder_name).filter(Boolean)
-        }
+        if (!window.electron?.decks) return
+        const r = await window.electron.decks.getTopics()
+        folderNames = [...new Set(
+          (r.data || []).map((row: any) => row.folder_name).filter(Boolean)
+        )].sort() as string[]
       }
       setExistingFolders(folderNames)
     }
@@ -781,12 +781,10 @@ export default function EditDeck() {
           setOriginalCardIds(new Set(loaded.map(c => c.id)))
         } else {
           // ── Electron: load via IPC ──
-          const topicRes = await window.electron.db.query(
-            'SELECT id, name, subject, description, tags, folder_name FROM topics WHERE id = ?',
-            [deckId]
-          )
-          if (topicRes.success && topicRes.data?.[0]) {
-            const t = topicRes.data[0]
+          const topicsRes = await window.electron.decks.getTopics()
+          const topicRow = (topicsRes.data || []).find((t: any) => t.id === deckId)
+          if (topicRow) {
+            const t = topicRow
             let parsedTags = ''
             try { parsedTags = JSON.parse(t.tags || '[]').join(', ') } catch {}
             setDeckMeta({
@@ -798,10 +796,7 @@ export default function EditDeck() {
             })
           }
 
-          const cardsRes = await window.electron.db.query(
-            'SELECT id, type, data FROM cards WHERE topic_id = ? ORDER BY rowid ASC',
-            [deckId]
-          )
+          const cardsRes = await window.electron.data.getAllCardsByTopic(deckId)
           if (cardsRes.success && cardsRes.data) {
             const loaded: EditCard[] = cardsRes.data.map((row: any) => {
               let parsed: any = {}
@@ -956,65 +951,30 @@ export default function EditDeck() {
         setToast({ type: 'success', msg: 'Deck saved successfully!' })
         setTimeout(() => setToast(null), 3000)
       } else {
-        // ── Electron: raw SQL transaction ──
-        const run = (sql: string, params: unknown[] = []) =>
-          window.electron.db.run(sql, params)
-
-        await run('BEGIN TRANSACTION')
-
-        // 1. Update topic metadata
-        const tagsArr = deckMeta.tags
-          .split(',')
-          .map(t => t.trim())
-          .filter(Boolean)
-        
-        await run(
-          `UPDATE topics SET name = ?, subject = ?, description = ?, tags = ?, folder_name = ? WHERE id = ?`,
-          [deckMeta.title.trim(), deckMeta.subject, deckMeta.description.trim(), JSON.stringify(tagsArr), deckMeta.folderName.trim(), deckId]
-        )
-
-        // 2. Partition cards into updates vs inserts
+        const tagsArr = deckMeta.tags.split(',').map(t => t.trim()).filter(Boolean)
         const currentIds = new Set(cards.filter(c => !c.id.startsWith('new_')).map(c => c.id))
-
-        for (const card of cards) {
-          const dataJson = typeof card.data === 'string' ? card.data : JSON.stringify(card.data)
-          if (card.id.startsWith('new_')) {
-            // INSERT
-            await run(
-              'INSERT INTO cards (id, topic_id, type, data, difficulty, tags) VALUES (?, ?, ?, ?, ?, ?)',
-              [
-                `card_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-                deckId,
-                card.type,
-                dataJson,
-                'medium',
-                '[]',
-              ]
-            )
-          } else {
-            // UPDATE
-            await run(
-              'UPDATE cards SET type = ?, data = ? WHERE id = ?',
-              [card.type, dataJson, card.id]
-            )
-          }
-        }
-
-        // 3. DELETE cards removed during this session
-        for (const originalId of originalCardIds) {
-          if (!currentIds.has(originalId)) {
-            await run('DELETE FROM cards WHERE id = ?', [originalId])
-          }
-        }
-
-        await run('COMMIT')
-
+        const deletedCardIds = [...originalCardIds].filter(id => !currentIds.has(id))
+        const res = await window.electron.decks.updateDeckWithCards({
+          deckId,
+          title: deckMeta.title.trim(),
+          subject: deckMeta.subject,
+          description: deckMeta.description.trim(),
+          tags: JSON.stringify(tagsArr),
+          folderName: deckMeta.folderName.trim(),
+          cards: cards.map(card => ({
+            id: card.id,
+            type: card.type,
+            data: typeof card.data === 'string' ? card.data : JSON.stringify(card.data)
+          })),
+          deletedCardIds
+        })
+        if (!res.success) throw new Error(res.error)
         setToast({ type: 'success', msg: 'Deck saved successfully!' })
         setTimeout(() => setToast(null), 3000)
       }
     } catch (err) {
       console.error('[EditDeck] Save failed', err)
-      try { if (!isWeb) window.electron.db.run('ROLLBACK') } catch {}
+      // no ROLLBACK needed — handled server-side
       setToast({ type: 'error', msg: 'Save failed. Changes were rolled back.' })
       setTimeout(() => setToast(null), 4000)
     } finally {

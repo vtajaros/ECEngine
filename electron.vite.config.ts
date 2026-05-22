@@ -4,10 +4,10 @@ import { resolve } from 'path'
 
 export default defineConfig({
   main: {
-    build: { rollupOptions: { external: ['sql.js', 'sharp'], input: { index: resolve(__dirname, 'electron/main.ts') } } }
+    build: { rollupOptions: { external: ['better-sqlite3', 'sharp'], input: { index: resolve(__dirname, 'electron/main.ts') } } }
   },
   preload: {
-    build: { rollupOptions: { external: ['sql.js'], input: { index: resolve(__dirname, 'electron/preload.ts') } } }
+    build: { rollupOptions: { external: [], input: { index: resolve(__dirname, 'electron/preload.ts') } } }
   },
   renderer: {
     root: 'src',

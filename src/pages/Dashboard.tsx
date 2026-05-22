@@ -594,7 +594,7 @@ export default function Dashboard() {
                           )
                         }}
                         activeDot={{ r: 5, fill: SUBJECT_LINE_COLOR[selectedSubject], stroke: '#0D0D0D', strokeWidth: 2 }}
-                        connectNulls={false}
+                        connectNulls={true}
                         animationDuration={500}
                         animationEasing="ease-out"
                       />

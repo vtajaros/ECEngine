@@ -94,7 +94,7 @@ const SUBJECT_KEYWORDS: Record<Subject, string[]> = {
 }
 
 const PREDEFINED_TAGS = [
-  'Excel', 'Edge', 'TOP', 'Indiabix', 'Pinoybix',
+  'Excel', 'Edge', 'TOP', 'Pinoybix', 'Indiabix',
   'EST Superbook', 'Cuervo'
 ]
 
@@ -159,6 +159,13 @@ function ImportModal({ onImportCards, onClose }: { onImportCards: (cards: { term
 
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
   const gutterRef = React.useRef<HTMLDivElement>(null)
+  const autoFixTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (autoFixTimerRef.current) clearTimeout(autoFixTimerRef.current)
+    }
+  }, [])
 
   const handleScroll = () => {
     if (textareaRef.current && gutterRef.current) {
@@ -202,7 +209,8 @@ function ImportModal({ onImportCards, onClose }: { onImportCards: (cards: { term
         ? `Converted ${result.converted} questions · ${fixCount} fixes applied`
         : `Converted ${result.converted} questions`
       setAutoFixMessage(fixMsg)
-      setTimeout(() => setAutoFixMessage(''), 3000)
+      if (autoFixTimerRef.current) clearTimeout(autoFixTimerRef.current)
+      autoFixTimerRef.current = setTimeout(() => setAutoFixMessage(''), 3000)
     }
     setQuizletConverting(false)
   }
@@ -257,7 +265,8 @@ function ImportModal({ onImportCards, onClose }: { onImportCards: (cards: { term
 
     setInputText(result)
     setAutoFixMessage('Auto-fix applied!')
-    setTimeout(() => setAutoFixMessage(''), 2000)
+    if (autoFixTimerRef.current) clearTimeout(autoFixTimerRef.current)
+    autoFixTimerRef.current = setTimeout(() => setAutoFixMessage(''), 2000)
   }
 
   const scrollToBlock = (warningIndex: number) => {
@@ -372,8 +381,6 @@ B: Second choice
 C: Third choice
 D: Fourth choice
 ANS: B
-
-← blank line between questions →
 
 Q: Second question here
 A: ...
@@ -502,6 +509,13 @@ function ImportFlashcardsModal({ onImportCards, onClose }: { onImportCards: (car
 
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
   const gutterRef = React.useRef<HTMLDivElement>(null)
+  const autoFixTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (autoFixTimerRef.current) clearTimeout(autoFixTimerRef.current)
+    }
+  }, [])
 
   const handleScroll = () => {
     if (textareaRef.current && gutterRef.current) {
@@ -545,7 +559,8 @@ function ImportFlashcardsModal({ onImportCards, onClose }: { onImportCards: (car
         ? `Converted ${result.converted} flashcards · ${fixCount} fixes applied`
         : `Converted ${result.converted} flashcards`
       setAutoFixMessage(fixMsg)
-      setTimeout(() => setAutoFixMessage(''), 3000)
+      if (autoFixTimerRef.current) clearTimeout(autoFixTimerRef.current)
+      autoFixTimerRef.current = setTimeout(() => setAutoFixMessage(''), 3000)
     }
     setQuizletConverting(false)
   }
@@ -592,7 +607,8 @@ function ImportFlashcardsModal({ onImportCards, onClose }: { onImportCards: (car
 
     setInputText(result)
     setAutoFixMessage('Auto-fix applied!')
-    setTimeout(() => setAutoFixMessage(''), 2000)
+    if (autoFixTimerRef.current) clearTimeout(autoFixTimerRef.current)
+    autoFixTimerRef.current = setTimeout(() => setAutoFixMessage(''), 2000)
   }
 
   const scrollToBlock = (warningIndex: number) => {
@@ -703,8 +719,6 @@ function ImportFlashcardsModal({ onImportCards, onClose }: { onImportCards: (car
                   <pre className="p-[0_16px_16px_16px] text-[#E8E8E8] text-[13px] font-['IBM_Plex_Mono'] leading-relaxed whitespace-pre">
                     {`Q: Term here
 A: Definition here
-
-← blank line between flashcards →
 
 Q: Another term
 A: Another definition`}
@@ -1005,25 +1019,27 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
       {/* QUESTION (full width) */}
       <div className="relative w-full">
         <div className="flex items-center justify-between mb-1">
-          <Label>Question</Label>
-          <div className="flex items-center gap-2 mr-10 z-10 relative">
-            {data.imagePath ? (
-              <div className="relative group flex items-center justify-center">
-                <img src={(window as any).electron ? `ece-app://${data.imagePath}` : `/ece-images/${data.imagePath}`} alt="Question image" className="w-6 h-6 object-cover rounded border border-[#333]" />
-                <button
-                  onClick={() => set({ imagePath: undefined })}
-                  className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Remove image"
-                >
-                  <X size={10} />
-                </button>
-              </div>
-            ) : (
-              <label className="cursor-pointer text-[#888] hover:text-[#00FF41] transition-colors" title="Add Image">
-                <ImageIcon size={18} />
-                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-              </label>
-            )}
+          <div className="flex items-center justify-between mb-1">
+            <Label>Question</Label>
+            <div className="flex items-center gap-2 mr-10 z-10 relative">
+              {data.imagePath ? (
+                <div className="relative group flex items-center justify-center">
+                  <img src={(window as any).electron ? `ece-app://${data.imagePath}` : `/ece-images/${data.imagePath}`} alt="Question image" className="w-6 h-6 object-cover rounded border border-[#333]" />
+                  <button
+                    onClick={() => set({ imagePath: undefined })}
+                    className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Remove image"
+                  >
+                    <X size={10} />
+                  </button>
+                </div>
+              ) : (
+                <label className="cursor-pointer text-[#888] hover:text-[#00FF41] transition-colors" title="Add Image">
+                  <ImageIcon size={18} />
+                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                </label>
+              )}
+            </div>
           </div>
         </div>
         <MathInputField
@@ -1314,6 +1330,13 @@ export default function AddDeck() {
   const [existingFolders, setExistingFolders] = useState<string[]>([])
   const [showFolderDropdown, setShowFolderDropdown] = useState(false)
   const folderDropdownRef = React.useRef<HTMLDivElement>(null)
+  const toastTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -1352,9 +1375,11 @@ export default function AddDeck() {
           topics.map((t: any) => t.folder_name).filter(Boolean)
         )].sort() as string[]
       } else {
-        if (!window.electron?.db) return
-        const r = await window.electron.db.query('SELECT DISTINCT folder_name FROM topics ORDER BY folder_name')
-        folderNames = r.data?.map((row: any) => row.folder_name).filter(Boolean) || []
+        if (!window.electron?.decks) return
+        const r = await window.electron.decks.getTopics()
+        folderNames = [...new Set(
+          (r.data || []).map((row: any) => row.folder_name).filter(Boolean)
+        )].sort() as string[]
       }
       setExistingFolders(folderNames)
     }
@@ -1376,8 +1401,15 @@ export default function AddDeck() {
     setHistoryStack(newStack)
     setCards(lastSnapshot)
     setToast({ type: 'success', msg: 'Action Undone' })
-    setTimeout(() => setToast(null), 2000)
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    toastTimerRef.current = setTimeout(() => setToast(null), 2000)
   }, [historyStack])
+
+  const handleCardError = useCallback((msg: string) => {
+    setToast({ type: 'error', msg })
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+    toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+  }, [])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1728,7 +1760,7 @@ export default function AddDeck() {
                 <Save size={16} /> {saving ? 'Saving...' : 'Save Deck'}
               </button>
               {!canSave && (
-                <div className="absolute top-full right-0 mt-2 w-48 p-2 bg-[#161616] border border-[#333] rounded shadow-xl text-center text-xs font-['IBM_Plex_Mono'] text-[#888] opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+                <div className="absolute top-full right-0 mt-2 w-48 p-2 bg-[#161616] border border-[#333] rounded shadow-xl text-center text-xs font-['IBM_Plex_Mono'] text-[#888] pointer-events-none transition-opacity z-50">
                   Add a title and at least one complete card to save
                 </div>
               )}
@@ -2012,10 +2044,7 @@ export default function AddDeck() {
                       index={i}
                       onUpdate={updateCard}
                       onDelete={deleteCard}
-                      onError={(msg) => {
-                        setToast({ type: 'error', msg })
-                        setTimeout(() => setToast(null), 3000)
-                      }}
+                      onError={handleCardError}
                     />
                   ))}
                 </AnimatePresence>

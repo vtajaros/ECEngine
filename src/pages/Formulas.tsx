@@ -221,18 +221,8 @@ export default function Formulas() {
           dbDecks.sort((a, b) => a.title.localeCompare(b.title))
           setDecks(dbDecks)
         } else {
-          if (!window.electron?.db) return
-          const r = await window.electron.db.query(
-            `SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags, t.folder_name,
-                    COUNT(c.id) as card_count,
-                    GROUP_CONCAT(DISTINCT c.type) as types
-             FROM topics t
-             INNER JOIN cards c ON c.topic_id = t.id
-             GROUP BY t.id
-             HAVING COUNT(c.id) > 0
-                AND SUM(CASE WHEN c.type = 'formula' THEN 1 ELSE 0 END) = COUNT(c.id)
-             ORDER BY t.name`
-          )
+          if (!window.electron?.decks) return
+          const r = await window.electron.decks.getFormulaTopics()
           if (r.success && r.data) {
             setDecks(
               r.data.map((row: any) => {
@@ -304,9 +294,8 @@ export default function Formulas() {
           await webDB.topics.delete(setToDelete.id)
         })
       } else {
-        if (window.electron?.db) {
-          await window.electron.db.run(`DELETE FROM cards WHERE topic_id = ?`, [setToDelete.id])
-          await window.electron.db.run(`DELETE FROM topics WHERE id = ?`, [setToDelete.id])
+        if (window.electron?.decks) {
+          await window.electron.decks.deleteTopic(setToDelete.id)
         }
       }
       setDecks((prev) => prev.filter((s) => s.id !== setToDelete.id))
@@ -334,8 +323,8 @@ export default function Formulas() {
         setActiveDeck({ id: deck.id, title: deck.title, cards })
         applySettings(cards, settings)
       } else {
-        if (!window.electron?.db) return
-        const r = await window.electron.db.query(`SELECT * FROM cards WHERE topic_id = ?`, [deck.id])
+        if (!window.electron?.decks) return
+        const r = await window.electron.decks.getCardsByTopic(deck.id)
         if (r.success && r.data) {
           const cards: Card[] = r.data.map((row: any) => ({
             id: row.id,
