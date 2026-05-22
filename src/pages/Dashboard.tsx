@@ -88,7 +88,7 @@ const ReviewHeatmap = ({ history, examDate }: { history: Record<string, { count:
 
   return (
     <div className="w-full max-w-full [--cell-size:10px] [--gap-size:4px] sm:[--cell-size:16px] sm:[--gap-size:8px]">
-      <div className="overflow-x-auto pb-2 -mx-1 px-1">
+      <div className="overflow-x-auto pb-2 -mx-1 px-1 sm:flex sm:justify-center">
         <div className="flex flex-col" style={{ minWidth: 'max-content' }}>
           {/* Month Labels */}
           <div className="relative h-5 mb-1">
