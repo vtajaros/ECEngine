@@ -1058,7 +1058,7 @@ export default function Formulas() {
                 FORMULAS
               </h1>
 
-              <div className="flex items-center gap-2 w-full bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)] max-sm:overflow-x-auto max-sm:justify-start sm:justify-center no-scrollbar px-1">
+              <div className="flex items-center justify-center flex-wrap gap-2 w-full bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)] no-scrollbar px-1">
                 <div className="relative shrink-0" ref={filterPopoverRef}>
                   <button
                     onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
@@ -1222,12 +1222,25 @@ export default function Formulas() {
                 ))}
               </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-2 w-full text-[10px] sm:text-xs text-slate-500 font-medium uppercase tracking-wider mb-4 sm:mb-6">
-                <span className="flex items-center gap-1.5"><Play className="w-3.5 h-3.5 text-slate-500" /> Learn Mode</span>
-                <span className="flex items-center gap-1.5"><Trophy className="w-3.5 h-3.5 text-slate-500" /> Test Mode</span>
-                <span className="flex items-center gap-1.5"><ScrollText className="w-3.5 h-3.5 text-slate-500" /> Test Paper View</span>
-                <span className="flex items-center gap-1.5"><Pencil className="w-3.5 h-3.5 text-slate-500" /> Edit Deck</span>
-                <span className="flex items-center gap-1.5"><Trash2 className="w-3.5 h-3.5 text-slate-500" /> Delete Deck</span>
+              <div
+                className="flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-2 w-full text-[10px] sm:text-xs text-slate-500 font-medium uppercase tracking-wider mb-4 sm:mb-6"
+                style={{ color: 'rgba(255,255,255,0.45)' }}
+              >
+                <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  <Play className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Learn Mode
+                </span>
+                <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  <Trophy className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Test Mode
+                </span>
+                <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  <ScrollText className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Test Paper View
+                </span>
+                <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  <Pencil className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Edit Deck
+                </span>
+                <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  <Trash2 className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Delete Deck
+                </span>
               </div>
             </div>
           </div>
@@ -1303,42 +1316,45 @@ export default function Formulas() {
                       )}
 
                       {/* Bottom Row: Progress and Actions */}
-                      <div className="flex items-center justify-between w-full mt-4">
-                        <div className="flex items-center gap-4 sm:gap-6">
-                          {/* Mastery Progress Bar Zone */}
-                          <div className="w-24 sm:w-32">
-                            <div className="flex justify-between text-[10px] font-rajdhani tracking-widest mb-1 uppercase text-gray-500">
-                              <span>MASTERY</span>
-                              <span className="text-[#00FF41] font-bold">{deck.mastery}%</span>
-                            </div>
-                            <div className="w-full bg-[#111] h-1 rounded-full overflow-hidden">
-                              <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${deck.mastery}%` }}
-                                className="h-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.4)]"
-                              />
-                            </div>
-                          </div>
+                      <div className="flex items-center gap-4 sm:gap-6 w-full mt-4">
+                        {/* MASTERY label — fixed, does not grow */}
+                        <span className="text-[10px] font-rajdhani tracking-widest uppercase text-gray-500 shrink-0">
+                          Mastery
+                        </span>
 
-                          {/* Primary Actions Zone */}
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                openDeck(deck)
-                              }}
-                              className="py-2 px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
-                              title="Learn this deck"
-                              aria-label="Learn"
-                            >
-                              <Play className="w-3 h-3" />
-                              <span className="hidden xl:inline">Learn</span>
-                            </button>
-                          </div>
+                        {/* Mastery bar — flex-1 so it fills all remaining space */}
+                        <div className="flex-1 bg-[#111] h-1 rounded-full overflow-hidden min-w-[40px]">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${deck.mastery}%` }}
+                            className="h-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.4)]"
+                          />
                         </div>
 
+                        {/* Mastery percentage — fixed, does not grow */}
+                        <span className="text-[#00FF41] font-bold text-[10px] font-rajdhani shrink-0">
+                          {deck.mastery}%
+                        </span>
+
+                        {/* Divider */}
+                        <div className="h-4 w-px bg-slate-800 shrink-0" />
+
                         {/* Secondary Actions Zone */}
-                        <div className="flex items-center gap-1 sm:gap-2">
+                        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                          {/* LEARN button — sits right after the percentage, no gap */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              openDeck(deck)
+                            }}
+                            className="py-2 px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                            title="Learn this deck"
+                            aria-label="Learn"
+                          >
+                            <Play className="w-3 h-3" />
+                            <span className="hidden xl:inline">Learn</span>
+                          </button>
+
                           {deck.id.startsWith('topic_') && (
                             <button
                               onClick={(e) => {

@@ -652,7 +652,7 @@ export default function FlashcardStudy() {
                 LOOKS<span className="text-[var(--accent-primary)]">FAM</span>
               </h1>
 
-              <div className="flex items-center gap-2 w-full bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)] max-sm:overflow-x-auto max-sm:justify-start sm:justify-center no-scrollbar px-1">
+              <div className="flex items-center justify-center flex-wrap gap-2 w-full bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)] no-scrollbar px-1">
                 <div className="relative shrink-0" ref={filterPopoverRef}>
                   <button
                     onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
@@ -770,12 +770,25 @@ export default function FlashcardStudy() {
                 ))}
               </div>
 
-              <div className="flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-2 w-full text-[10px] sm:text-xs text-slate-500 font-medium uppercase tracking-wider mb-4 sm:mb-6">
-                <span className="flex items-center gap-1.5"><Play className="w-3.5 h-3.5 text-slate-500" /> Learn Mode</span>
-                <span className="flex items-center gap-1.5"><Trophy className="w-3.5 h-3.5 text-slate-500" /> Test Mode</span>
-                <span className="flex items-center gap-1.5"><ScrollText className="w-3.5 h-3.5 text-slate-500" /> Test Paper View</span>
-                <span className="flex items-center gap-1.5"><Pencil className="w-3.5 h-3.5 text-slate-500" /> Edit Deck</span>
-                <span className="flex items-center gap-1.5"><Trash2 className="w-3.5 h-3.5 text-slate-500" /> Delete Deck</span>
+              <div
+                className="flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-2 w-full text-[10px] sm:text-xs text-slate-500 font-medium uppercase tracking-wider mb-4 sm:mb-6"
+                style={{ color: 'rgba(255,255,255,0.45)' }}
+              >
+                <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  <Play className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Learn Mode
+                </span>
+                <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  <Trophy className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Test Mode
+                </span>
+                <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  <ScrollText className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Test Paper View
+                </span>
+                <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  <Pencil className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Edit Deck
+                </span>
+                <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  <Trash2 className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Delete Deck
+                </span>
               </div>
             </div>
           </div>

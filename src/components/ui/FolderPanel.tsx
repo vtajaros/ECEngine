@@ -41,9 +41,9 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
             title={isEditing ? 'Done' : 'Edit'}
           >
             {isEditing ? (
-              <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 group-hover:text-green-500 transition-colors" />
+              <Check className="w-4 h-4 text-slate-500" />
             ) : (
-              <Pencil className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 group-hover:text-green-500 transition-colors" />
+              <Pencil className="w-4 h-4 text-slate-500" />
             )}
           </button>
         </div>
@@ -54,16 +54,16 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
             whileHover={{ scale: 1.01 }}
             onClick={() => onSelect('all')}
             title="All Folders"
-            className={`min-w-0 flex items-center gap-2 px-3 py-1.5 sm:py-2.5 rounded-full sm:rounded-md sm:w-full sm:justify-between sm:gap-3 border border-transparent sm:border-l-[3px] sm:border-t-0 sm:border-r-0 sm:border-b-0 whitespace-nowrap group ${
+            className={`min-w-0 flex items-center justify-between w-full gap-3 px-3 py-1.5 sm:py-2.5 rounded-full sm:rounded-md border border-transparent sm:border-l-[3px] sm:border-t-0 sm:border-r-0 sm:border-b-0 whitespace-nowrap group ${
               selected === 'all'
                 ? 'bg-[#00FF41]/10 text-[#00FF41] border-transparent sm:bg-[var(--bg-card)] sm:text-[var(--text-primary)] sm:border-[var(--accent-primary)]'
                 : 'bg-slate-800/50 text-slate-400 border-transparent sm:bg-transparent sm:text-[var(--text-secondary)] sm:border-l-transparent sm:hover:bg-[var(--bg-secondary)]'
             }`}
           >
-            <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
               <LayoutGrid
-                size={16}
-                className={`hidden sm:block ${selected === 'all' ? 'text-[var(--accent-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors'}`}
+                size={15}
+                className={`shrink-0 ${selected === 'all' ? 'text-[var(--accent-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors'}`}
               />
               <span 
                 className={`text-[13px] truncate font-bold font-['Rajdhani'] uppercase tracking-wider ${
@@ -95,7 +95,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                 {folder === 'all' || folder === 'ALL' ? (
                   <div className="w-3.5" />
                 ) : (
-                  <GripVertical className="w-4 h-4 text-slate-400 cursor-grab shrink-0" />
+                  <GripVertical className="w-4 h-4 text-slate-500 cursor-grab active:cursor-grabbing shrink-0" />
                 )}
 
                 {/* Center (Rename Input) */}
@@ -118,7 +118,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                     className="p-0.5 shrink-0 flex items-center justify-center bg-transparent border-0 cursor-pointer"
                     title="Delete Folder"
                   >
-                    <Trash2 className="w-4 h-4 text-slate-400 hover:text-slate-200 transition-colors" />
+                    <Trash2 className="w-4 h-4 text-red-500/80 hover:text-red-500 transition-colors shrink-0" />
                   </button>
                 )}
               </div>
@@ -136,10 +136,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
               >
                 {/* Wrapper 1 (Left - Icon & Name) */}
                 <div className="flex items-center gap-2 flex-1 min-w-0">
-                  <Folder
-                    size={16}
-                    className={`hidden sm:block ${isSelected ? 'text-[var(--accent-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors'}`}
-                  />
+                  <Folder className="shrink-0" size={15} />
                   <span 
                     className={`text-[13px] truncate font-bold font-['Rajdhani'] uppercase tracking-wider ${
                       isSelected 

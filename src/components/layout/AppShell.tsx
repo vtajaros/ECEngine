@@ -77,7 +77,7 @@ export const AppShell: React.FC = () => {
           )}
 
           <nav 
-            className="flex-1 flex flex-row sm:flex-col gap-2 overflow-x-auto sm:overflow-y-auto overflow-y-hidden sm:overflow-x-hidden no-scrollbar items-center sm:items-stretch px-2 sm:px-0 pt-0 sm:pt-2 max-sm:[&::-webkit-scrollbar]:hidden max-sm:[scrollbar-width:none]"
+            className="flex-1 flex max-sm:items-center max-sm:justify-center w-full gap-1 sm:gap-2 px-2 sm:flex-col sm:justify-start sm:items-stretch sm:px-0 sm:pt-2 sm:overflow-y-auto sm:overflow-x-hidden overflow-x-auto overflow-y-hidden no-scrollbar max-sm:[&::-webkit-scrollbar]:hidden max-sm:[scrollbar-width:none]"
           >
             {(navItems as NavItem[])
               .filter(item => {
