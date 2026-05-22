@@ -42,7 +42,7 @@ export const AppShell: React.FC = () => {
     { to: '/flashcards',label: 'Flashcards',      icon: Layers },
     { to: '/formulas',  label: 'Formulas',        icon: Sigma },
     { to: '/topics',    label: 'EELE ToS',        icon: BookOpen },
-    { to: '/checklist', label: 'Review Checklist',icon: ClipboardList },
+    { to: '/checklist', label: 'Checklist',       icon: ClipboardList },
     { to: '/add-decks', label: 'Add Decks',       icon: PlusCircle },
     { to: '/settings',  label: 'Settings',        icon: Settings },
   ]
@@ -60,7 +60,7 @@ export const AppShell: React.FC = () => {
         {/* Sidebar */}
         <aside
           className={`${
-            isCollapsed ? 'w-full h-12 sm:w-16 sm:h-full' : 'w-full h-12 sm:w-[170px] sm:h-full'
+            isCollapsed ? 'w-full h-12 sm:w-16 sm:h-full' : 'w-full h-12 sm:w-[140px] sm:h-full'
           } bg-[#1A1A1A] border-b sm:border-b-0 sm:border-r border-[#222] flex flex-row sm:flex-col transition-all duration-300 absolute sm:relative top-0 left-0 sm:top-auto sm:left-auto z-20 shrink-0`}
         >
           {/* Hamburger button — web only, lives at top of sidebar */}
