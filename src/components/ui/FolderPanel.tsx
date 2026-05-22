@@ -78,13 +78,14 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                 whileHover={{ scale: 1.01 }}
                 onClick={() => onSelect(folder)}
                 title={folder}
-                className={`min-w-0 flex items-center gap-2 px-3 py-1.5 sm:py-2.5 rounded-full sm:rounded-md sm:w-full sm:justify-between sm:gap-3 border border-transparent sm:border-l-[3px] sm:border-t-0 sm:border-r-0 sm:border-b-0 whitespace-nowrap group ${
+                className={`min-w-0 flex items-center justify-between w-full gap-3 px-3 py-1.5 sm:py-2.5 rounded-full sm:rounded-md border border-transparent sm:border-l-[3px] sm:border-t-0 sm:border-r-0 sm:border-b-0 whitespace-nowrap group ${
                   isSelected
                     ? 'bg-[#00FF41]/10 text-[#00FF41] border-transparent sm:bg-[var(--bg-card)] sm:text-[var(--text-primary)] sm:border-[var(--accent-primary)]'
                     : 'bg-slate-800/50 text-slate-400 border-transparent sm:bg-transparent sm:text-[var(--text-secondary)] sm:border-l-transparent sm:hover:bg-[var(--bg-secondary)]'
                 }`}
               >
-                <div className="flex items-center gap-3 min-w-0">
+                {/* Wrapper 1 (Left - Icon & Name) */}
+                <div className="flex items-center gap-2 flex-1 min-w-0">
                   <Folder
                     size={16}
                     className={`hidden sm:block ${isSelected ? 'text-[var(--accent-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors'}`}
@@ -100,7 +101,9 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                     {folder}
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0">
+
+                {/* Wrapper 2 (Right - Actions & Count) */}
+                <div className="flex items-center gap-2 flex-shrink-0">
                   {onDeleteFolder && folder !== 'Uncategorized' && (
                     <span
                       role="button"
@@ -115,8 +118,8 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                           onDeleteFolder?.(folder);
                         }
                       }}
-                      className="p-1 hover:bg-[#222] hover:text-red-500 rounded text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
-                      title={`Delete folder ${folder}`}
+                      className="opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-red-400 p-0.5 cursor-pointer flex items-center justify-center"
+                      title="Delete Folder"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </span>
