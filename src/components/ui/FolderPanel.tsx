@@ -40,10 +40,10 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
             whileHover={{ scale: 1.01 }}
             onClick={() => onSelect('all')}
             title="All Folders"
-            className={`min-w-0 flex items-center gap-2 px-3 py-1.5 sm:py-2.5 rounded-full sm:rounded-r-md sm:w-full sm:justify-between sm:gap-3 border border-transparent sm:border-l-[3px] sm:border-t-0 sm:border-r-0 sm:border-b-0 whitespace-nowrap group ${
+            className={`min-w-0 flex items-center gap-2 px-3 py-1.5 sm:py-2.5 rounded-full sm:rounded-md sm:w-full sm:justify-between sm:gap-3 border border-transparent sm:border-l-[3px] sm:border-t-0 sm:border-r-0 sm:border-b-0 whitespace-nowrap group ${
               selected === 'all'
                 ? 'bg-[#00FF41]/10 text-[#00FF41] border-transparent sm:bg-[var(--bg-card)] sm:text-[var(--text-primary)] sm:border-[var(--accent-primary)]'
-                : 'bg-slate-800/50 text-slate-400 border-transparent sm:bg-transparent sm:text-[var(--text-secondary)] sm:border-[var(--bg-card)] sm:hover:bg-[var(--bg-secondary)]'
+                : 'bg-slate-800/50 text-slate-400 border-transparent sm:bg-transparent sm:text-[var(--text-secondary)] sm:border-l-transparent sm:hover:bg-[var(--bg-secondary)]'
             }`}
           >
             <div className="flex items-center gap-3 min-w-0">
@@ -78,10 +78,10 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                 whileHover={{ scale: 1.01 }}
                 onClick={() => onSelect(folder)}
                 title={folder}
-                className={`min-w-0 flex items-center gap-2 px-3 py-1.5 sm:py-2.5 rounded-full sm:rounded-r-md sm:w-full sm:justify-between sm:gap-3 border border-transparent sm:border-l-[3px] sm:border-t-0 sm:border-r-0 sm:border-b-0 whitespace-nowrap group ${
+                className={`min-w-0 flex items-center gap-2 px-3 py-1.5 sm:py-2.5 rounded-full sm:rounded-md sm:w-full sm:justify-between sm:gap-3 border border-transparent sm:border-l-[3px] sm:border-t-0 sm:border-r-0 sm:border-b-0 whitespace-nowrap group ${
                   isSelected
                     ? 'bg-[#00FF41]/10 text-[#00FF41] border-transparent sm:bg-[var(--bg-card)] sm:text-[var(--text-primary)] sm:border-[var(--accent-primary)]'
-                    : 'bg-slate-800/50 text-slate-400 border-transparent sm:bg-transparent sm:text-[var(--text-secondary)] sm:border-[var(--bg-card)] sm:hover:bg-[var(--bg-secondary)]'
+                    : 'bg-slate-800/50 text-slate-400 border-transparent sm:bg-transparent sm:text-[var(--text-secondary)] sm:border-l-transparent sm:hover:bg-[var(--bg-secondary)]'
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
