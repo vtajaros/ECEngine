@@ -1051,14 +1051,14 @@ export default function Formulas() {
         />
         <div className="flex flex-col flex-1 min-w-0 overflow-y-auto">
           {/* Header centered above decks */}
-          <div className="flex flex-col items-center w-full pt-6 pb-2 px-6">
-            <div className="w-full max-w-5xl mb-10 flex flex-col md:flex-row items-center justify-between gap-6 border-b border-[var(--bg-card)] pb-6 pt-4 relative z-30">
-              <h1 className="text-3xl lg:text-4xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4">
-                <Sigma className="text-[var(--accent-primary)]" size={36} />
+          <div className="flex flex-col items-center w-full pt-6 pb-2 px-3 sm:px-6">
+            <div className="w-full max-w-5xl flex flex-col items-center justify-center gap-4 sm:gap-6 mb-6 sm:mb-8 border-b border-[var(--bg-card)] pb-6 pt-4 relative z-30">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4 uppercase">
+                <Sigma className="text-[var(--accent-primary)]" size={28} />
                 FORMULAS
               </h1>
 
-              <div className="flex gap-2 items-center">
+              <div className="flex gap-2 items-center w-full justify-center">
                 <div className="relative" ref={filterPopoverRef}>
                   <button
                     onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
@@ -1211,12 +1211,12 @@ export default function Formulas() {
                   </AnimatePresence>
                 </div>
 
-                <div className="flex gap-2 bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)]">
+                <div className="flex items-center gap-2 w-full bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)] max-sm:overflow-x-auto max-sm:justify-start sm:justify-center no-scrollbar px-1">
                   {SUBJECTS.map((s) => (
                     <button
                       key={s}
                       onClick={() => setActiveSubject(s)}
-                      className={`px-4 py-2 rounded-md font-['Rajdhani'] tracking-widest text-sm font-bold transition-all ${getSubjectFilterClasses(s, activeSubject === s)}`}
+                      className={`px-2 py-1.5 sm:px-4 sm:py-2 rounded-md font-['Rajdhani'] tracking-widest text-xs sm:text-sm font-bold transition-all ${getSubjectFilterClasses(s, activeSubject === s)}`}
                     >
                       {s}
                     </button>
