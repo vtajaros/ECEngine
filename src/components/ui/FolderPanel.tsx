@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { LayoutGrid, Folder } from 'lucide-react';
+import { LayoutGrid, Folder, Trash2 } from 'lucide-react';
 
 interface FolderPanelProps {
   folders: string[];
@@ -8,6 +8,7 @@ interface FolderPanelProps {
   totalDeckCount: number;
   selected: string | 'all';
   onSelect: (folder: string | 'all') => void;
+  onDeleteFolder?: (folderId: string) => void;
 }
 
 const FolderPanel: React.FC<FolderPanelProps> = ({
@@ -16,6 +17,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
   totalDeckCount,
   selected,
   onSelect,
+  onDeleteFolder,
 }) => {
   const sortedFolders = [...folders].sort((a, b) => {
     if (a === 'Uncategorized') return 1;
@@ -98,9 +100,31 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                     {folder}
                   </span>
                 </div>
-                <span className="flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-mono border border-[var(--bg-elevated)]">
-                  {count}
-                </span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {onDeleteFolder && folder !== 'Uncategorized' && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteFolder?.(folder);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.stopPropagation();
+                          onDeleteFolder?.(folder);
+                        }
+                      }}
+                      className="p-1 hover:bg-[#222] hover:text-red-500 rounded text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                      title={`Delete folder ${folder}`}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </span>
+                  )}
+                  <span className="flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-mono border border-[var(--bg-elevated)]">
+                    {count}
+                  </span>
+                </div>
               </motion.button>
             );
           })}
