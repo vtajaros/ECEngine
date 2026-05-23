@@ -16,6 +16,10 @@ contextBridge.exposeInMainWorld('electron', {
     getTopicsWithCardCounts: () => ipcRenderer.invoke('decks:getTopicsWithCardCounts'),
     getFormulaTopics: () => ipcRenderer.invoke('decks:getFormulaTopics'),
     updateDeckWithCards: (payload: any) => ipcRenderer.invoke('decks:updateDeckWithCards', payload),
+    updateDecksFolder: (fromFolder: string, toFolder: string) =>
+      ipcRenderer.invoke('decks:updateDecksFolder', { fromFolder, toFolder }),
+    updateFolderOrder: (folderOrders: Array<{ folderName: string, orderIndex: number }>) =>
+      ipcRenderer.invoke('decks:updateFolderOrder', { folderOrders }),
   },
   data: {
     getCards: (topicId?: string) => ipcRenderer.invoke('data:getCards', topicId),

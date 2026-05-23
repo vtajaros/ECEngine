@@ -54,6 +54,7 @@ interface DeckInfo {
   tags?: string[]
   createdAt?: number
   folderName?: string
+  order_index?: number
 }
 
 interface FCSettings {
@@ -159,116 +160,117 @@ export default function Formulas() {
   }, [zoomedImage])
 
   // ── Load decks from DB ──
-  useEffect(() => {
-    async function load() {
-      try {
-        let dbDecks: DeckInfo[] = []
-        if (isWeb) {
-          const rawTopics = await webDB.topics.toArray()
-          const rawCards = await webDB.cards.toArray()
+  const loadDecks = async () => {
+    try {
+      let dbDecks: DeckInfo[] = []
+      if (isWeb) {
+        const rawTopics = await webDB.topics.toArray()
+        const rawCards = await webDB.cards.toArray()
 
-          // Group cards by topic_id
-          const cardsByTopic = new Map<string, { cardCount: number, formulaCount: number, types: Set<string> }>()
-          for (const card of rawCards) {
-            if (!cardsByTopic.has(card.topic_id)) {
-              cardsByTopic.set(card.topic_id, { cardCount: 0, formulaCount: 0, types: new Set() })
-            }
-            const entry = cardsByTopic.get(card.topic_id)!
-            entry.cardCount++
-            entry.types.add(card.type)
-            if (card.type === 'formula') {
-              entry.formulaCount++
-            }
+        // Group cards by topic_id
+        const cardsByTopic = new Map<string, { cardCount: number, formulaCount: number, types: Set<string> }>()
+        for (const card of rawCards) {
+          if (!cardsByTopic.has(card.topic_id)) {
+            cardsByTopic.set(card.topic_id, { cardCount: 0, formulaCount: 0, types: new Set() })
           }
-
-          dbDecks = rawTopics.map((row: any): DeckInfo | null => {
-            const entry = cardsByTopic.get(row.id)
-            if (!entry || entry.cardCount === 0 || entry.formulaCount !== entry.cardCount) {
-              return null // Skip empty or non-formula-only decks
-            }
-
-            const types = Array.from(entry.types)
-            let deckType: 'mcq' | 'flashcard' | 'formula' | 'mixed' = 'formula'
-            if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
-            else if (types.includes('mcq')) deckType = 'mcq'
-            else if (types.includes('flashcard')) deckType = 'flashcard'
-            else if (types.includes('formula')) deckType = 'formula'
-
-            let parsedTags: string[] = []
-            try {
-              if (row.tags) parsedTags = JSON.parse(row.tags)
-            } catch (e) {}
-
-            const mastery = (() => {
-              const savedKeys = JSON.parse(localStorage.getItem(`progress_${row.id}`) || '[]')
-              return entry.cardCount > 0
-                ? Math.round((savedKeys.length / entry.cardCount) * 100)
-                : 0
-            })()
-
-            return {
-              id: row.id,
-              title: row.name,
-              subject: SUBJECT_MAP[row.subject] || 'ELECS',
-              cardCount: entry.cardCount,
-              deckType,
-              description: row.description || '',
-              mastery,
-              tags: parsedTags,
-              createdAt: Number(row.created_at) || Date.now(),
-              folderName: row.folder_name || 'Uncategorized',
-            }
-          }).filter((d: DeckInfo | null): d is DeckInfo => d !== null)
-
-          // Sort by name by default like in SQLite (ORDER BY t.name)
-          dbDecks.sort((a, b) => a.title.localeCompare(b.title))
-          setDecks(dbDecks)
-        } else {
-          if (!window.electron?.decks) return
-          const r = await window.electron.decks.getFormulaTopics()
-          if (r.success && r.data) {
-            setDecks(
-              r.data.map((row: any) => {
-                const types = (row.types || '').split(',')
-                let deckType: 'mcq' | 'flashcard' | 'formula' | 'mixed' = 'formula'
-                if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
-                else if (types.includes('mcq')) deckType = 'mcq'
-                else if (types.includes('flashcard')) deckType = 'flashcard'
-                else if (types.includes('formula')) deckType = 'formula'
-
-                let parsedTags: string[] = []
-                try {
-                  if (row.tags) parsedTags = JSON.parse(row.tags)
-                } catch (e) {}
-
-                const mastery = (() => {
-                  const savedKeys = JSON.parse(localStorage.getItem(`progress_${row.id}`) || '[]')
-                  return row.card_count > 0
-                    ? Math.round((savedKeys.length / row.card_count) * 100)
-                    : 0
-                })()
-
-                return {
-                  id: row.id,
-                  title: row.name,
-                  subject: SUBJECT_MAP[row.subject] || 'ELECS',
-                  cardCount: row.card_count || 0,
-                  deckType,
-                  description: row.description || '',
-                  mastery,
-                  tags: parsedTags,
-                  createdAt: row.created_at || Date.now(),
-                  folderName: row.folder_name || 'Uncategorized',
-                }
-              })
-            )
+          const entry = cardsByTopic.get(card.topic_id)!
+          entry.cardCount++
+          entry.types.add(card.type)
+          if (card.type === 'formula') {
+            entry.formulaCount++
           }
         }
-      } catch (e) {
-        console.error('Failed to load decks', e)
+
+        dbDecks = rawTopics.map((row: any): DeckInfo | null => {
+          const entry = cardsByTopic.get(row.id)
+          if (!entry || entry.cardCount === 0 || entry.formulaCount !== entry.cardCount) {
+            return null // Skip empty or non-formula-only decks
+          }
+
+          const types = Array.from(entry.types)
+          let deckType: 'mcq' | 'flashcard' | 'formula' | 'mixed' = 'formula'
+          if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
+          else if (types.includes('mcq')) deckType = 'mcq'
+          else if (types.includes('flashcard')) deckType = 'flashcard'
+          else if (types.includes('formula')) deckType = 'formula'
+
+          let parsedTags: string[] = []
+          try {
+            if (row.tags) parsedTags = JSON.parse(row.tags)
+          } catch (e) {}
+
+          const mastery = (() => {
+            const savedKeys = JSON.parse(localStorage.getItem(`progress_${row.id}`) || '[]')
+            return entry.cardCount > 0
+              ? Math.round((savedKeys.length / entry.cardCount) * 100)
+              : 0
+          })()
+
+          return {
+            id: row.id,
+            title: row.name,
+            subject: SUBJECT_MAP[row.subject] || 'ELECS',
+            cardCount: entry.cardCount,
+            deckType,
+            description: row.description || '',
+            mastery,
+            tags: parsedTags,
+            createdAt: Number(row.created_at) || Date.now(),
+            folderName: row.folder_name || 'Uncategorized',
+            order_index: row.order_index,
+          }
+        }).filter((d: DeckInfo | null): d is DeckInfo => d !== null)
+
+        // Sort by name by default like in SQLite (ORDER BY t.name)
+        dbDecks.sort((a, b) => a.title.localeCompare(b.title))
+        setDecks(dbDecks)
+      } else {
+        if (!window.electron?.decks) return
+        const r = await window.electron.decks.getFormulaTopics()
+        if (r.success && r.data) {
+          setDecks(
+            r.data.map((row: any) => {
+              const types = (row.types || '').split(',')
+              let deckType: 'mcq' | 'flashcard' | 'formula' | 'mixed' = 'formula'
+              if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
+              else if (types.includes('mcq')) deckType = 'mcq'
+              else if (types.includes('flashcard')) deckType = 'flashcard'
+              else if (types.includes('formula')) deckType = 'formula'
+
+              let parsedTags: string[] = []
+              try {
+                if (row.tags) parsedTags = JSON.parse(row.tags)
+              } catch (e) {}
+
+              const mastery = (() => {
+                const savedKeys = JSON.parse(localStorage.getItem(`progress_${row.id}`) || '[]')
+                return row.card_count > 0
+                  ? Math.round((savedKeys.length / row.card_count) * 100)
+                  : 0
+              })()
+
+              return {
+                id: row.id,
+                title: row.name,
+                subject: SUBJECT_MAP[row.subject] || 'ELECS',
+                cardCount: row.card_count || 0,
+                deckType,
+                description: row.description || '',
+                mastery,
+                tags: parsedTags,
+                createdAt: row.created_at || Date.now(),
+                folderName: row.folder_name || 'Uncategorized',
+                order_index: row.order_index,
+              }
+            })
+          )
+        }
       }
-    }
-    load()
+    } catch (e) { console.error('Failed to load decks', e) }
+  }
+
+  useEffect(() => {
+    loadDecks()
   }, [])
 
   // ── Countdown for delete ──
@@ -582,12 +584,17 @@ export default function Formulas() {
   }, [])
 
   const folders = useMemo(() => {
-    const names = [...new Set(decks.map((d) => d.folderName || 'Uncategorized'))].sort()
-    const idx = names.indexOf('Uncategorized')
-    if (idx > -1) {
-      names.splice(idx, 1)
-      names.push('Uncategorized')
-    }
+    const folderMap = new Map<string, number>()
+    decks.forEach((d) => {
+      const name = d.folderName || 'Uncategorized'
+      const existing = folderMap.get(name) ?? Infinity
+      const idx = d.order_index ?? Infinity
+      folderMap.set(name, Math.min(existing, idx))
+    })
+    const names = [...folderMap.keys()]
+      .filter((n) => n !== 'Uncategorized')
+      .sort((a, b) => folderMap.get(a)! - folderMap.get(b)!)
+    names.push('Uncategorized')
     return names
   }, [decks])
 
@@ -1037,6 +1044,24 @@ export default function Formulas() {
   // ══════════════════════════════════════════════
   // RENDER — Deck Listing
   // ══════════════════════════════════════════════
+  const handleDeleteFolder = async (folderName: string) => {
+    const result = await activeDBService.updateDecksFolder(folderName, 'Uncategorized')
+    if (result.success) {
+      await loadDecks()
+    }
+  }
+
+  const handleReorderFolders = async (newOrder: string[]) => {
+    const folderOrders = newOrder.map((folderName, index) => ({
+      folderName,
+      orderIndex: index,
+    }))
+    const result = await activeDBService.updateFolderOrder(folderOrders)
+    if (result.success) {
+      await loadDecks()
+    }
+  }
+
   return (
     <div className="flex flex-col h-full w-full">
       {/* Folder Panel + Deck Grid */}
@@ -1047,6 +1072,8 @@ export default function Formulas() {
           totalDeckCount={decks.length}
           selected={activeFolder}
           onSelect={setActiveFolder}
+          onDeleteFolder={handleDeleteFolder}
+          onReorderFolders={handleReorderFolders}
         />
         <div className="flex flex-col flex-1 min-w-0 overflow-y-auto">
           {/* Header centered above decks */}

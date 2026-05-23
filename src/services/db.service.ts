@@ -30,6 +30,8 @@ declare global {
           cards: Array<{ id: string, type: string, data: string }>,
           deletedCardIds: string[]
         }) => Promise<{ success: boolean; error?: string }>
+        updateDecksFolder: (fromFolder: string, toFolder: string) => Promise<{ success: boolean; error?: string }>
+        updateFolderOrder: (folderOrders: Array<{ folderName: string, orderIndex: number }>) => Promise<{ success: boolean; error?: string }>
       }
       data: {
         getCards: (topicId?: string) => Promise<{ success: boolean; data?: any; error?: string }>
@@ -422,6 +424,16 @@ export const dbService = {
       isCustom: Boolean(row.is_custom),
       createdAt: row.created_at,
     }))
+  },
+
+  updateDecksFolder: async (fromFolder: string, toFolder: string): Promise<{ success: boolean; error?: string }> => {
+    return window.electron.decks.updateDecksFolder(fromFolder, toFolder)
+  },
+
+  updateFolderOrder: async (
+    folderOrders: Array<{ folderName: string; orderIndex: number }>
+  ): Promise<{ success: boolean; error?: string }> => {
+    return window.electron.decks.updateFolderOrder(folderOrders)
   },
 }
 

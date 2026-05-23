@@ -46,6 +46,7 @@ interface StudySet {
   createdAt?: number
   folderName?: string
   dueCount?: number
+  order_index?: number
 }
 
 // Removed Mock Sets
@@ -73,45 +74,92 @@ export default function FlashcardStudy() {
     return Array.from(tags).sort()
   }, [allSets])
 
-  // Load user-created sets from DB on mount
-  useEffect(() => {
-    async function loadDBSets() {
-      try {
-        let dbSets: StudySet[] = []
-        if (isWeb) {
-          const rawTopics = await webDB.topics.toArray()
-          const rawCards = await webDB.cards.toArray()
-          const rawProgress = await webDB.progress.toArray()
-          const progressMap = new Map(rawProgress.map(p => [p.card_id, p]))
+  // Load user-created sets from DB
+  const loadDBSets = async () => {
+    try {
+      let dbSets: StudySet[] = []
+      if (isWeb) {
+        const rawTopics = await webDB.topics.toArray()
+        const rawCards = await webDB.cards.toArray()
+        const rawProgress = await webDB.progress.toArray()
+        const progressMap = new Map(rawProgress.map(p => [p.card_id, p]))
 
-          const cardsByTopic = new Map<string, { cardCount: number, types: Set<string>, dueCount: number }>()
-          const now = new Date().toISOString()
+        const cardsByTopic = new Map<string, { cardCount: number, types: Set<string>, dueCount: number }>()
+        const now = new Date().toISOString()
 
-          for (const card of rawCards) {
-            if (!cardsByTopic.has(card.topic_id)) {
-              cardsByTopic.set(card.topic_id, { cardCount: 0, types: new Set(), dueCount: 0 })
-            }
-            const entry = cardsByTopic.get(card.topic_id)!
-            entry.cardCount++
-            entry.types.add(card.type)
-
-            const prog = progressMap.get(card.id)
-            const isDue = !prog || !prog.next_review || prog.next_review <= now
-            if (isDue) {
-              entry.dueCount++
-            }
+        for (const card of rawCards) {
+          if (!cardsByTopic.has(card.topic_id)) {
+            cardsByTopic.set(card.topic_id, { cardCount: 0, types: new Set(), dueCount: 0 })
           }
+          const entry = cardsByTopic.get(card.topic_id)!
+          entry.cardCount++
+          entry.types.add(card.type)
 
-          dbSets = rawTopics.map((row: any): StudySet | null => {
-            const entry = cardsByTopic.get(row.id) || { cardCount: 0, types: new Set<string>(), dueCount: 0 }
-            const types = Array.from(entry.types)
+          const prog = progressMap.get(card.id)
+          const isDue = !prog || !prog.next_review || prog.next_review <= now
+          if (isDue) {
+            entry.dueCount++
+          }
+        }
+
+        dbSets = rawTopics.map((row: any): StudySet | null => {
+          const entry = cardsByTopic.get(row.id) || { cardCount: 0, types: new Set<string>(), dueCount: 0 }
+          const types = Array.from(entry.types)
+
+          // Skip formula-only decks or empty decks
+          if (entry.cardCount === 0 || (types.length === 1 && types[0] === 'formula')) return null
+
+          let deckType: 'mcq' | 'flashcard' | 'mixed' = 'mcq'
+          if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
+          else if (types.includes('flashcard')) deckType = 'flashcard'
+
+          let parsedTags: string[] = []
+          try {
+            if (row.tags) parsedTags = JSON.parse(row.tags)
+          } catch (e) { }
+
+          return {
+            id: row.id,
+            title: row.name,
+            description: row.description || '',
+            subject: SUBJECT_MAP[row.subject] || 'ELECS',
+            count: entry.cardCount,
+            mastery: 0,
+            deckType,
+            dueCount: entry.dueCount,
+            tags: parsedTags,
+            createdAt: Number(row.created_at) || Date.now(),
+            folderName: row.folder_name || 'Uncategorized',
+            order_index: row.order_index
+          }
+        }).filter((s: StudySet | null): s is StudySet => s !== null)
+      } else {
+        if (!window.electron?.decks) return
+
+        let dueCountsMap = new Map<string, number>()
+        if (window.electron.decks) {
+          const dueRes = await window.electron.decks.getDueCounts()
+          if (dueRes.success && dueRes.data) {
+            dueRes.data.forEach((row: any) => {
+              dueCountsMap.set(row.topic_id, row.dueCount)
+            })
+          }
+        }
+
+        const topicsResult = await window.electron.decks.getTopicsWithCardCounts()
+        if (topicsResult.success && topicsResult.data) {
+          dbSets = topicsResult.data.map((row: any) => {
+            const types = (row.types || '').split(',').filter(Boolean)
 
             // Skip formula-only decks or empty decks
-            if (entry.cardCount === 0 || (types.length === 1 && types[0] === 'formula')) return null
+            if (types.length === 0 || (types.length === 1 && types[0] === 'formula')) return null
 
             let deckType: 'mcq' | 'flashcard' | 'mixed' = 'mcq'
             if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
             else if (types.includes('flashcard')) deckType = 'flashcard'
+
+            const mastery = 0; // DB-based progress handles mastery calculation in the service layer
+            const dueCount = dueCountsMap.get(row.id) || 0
 
             let parsedTags: string[] = []
             try {
@@ -123,72 +171,28 @@ export default function FlashcardStudy() {
               title: row.name,
               description: row.description || '',
               subject: SUBJECT_MAP[row.subject] || 'ELECS',
-              count: entry.cardCount,
-              mastery: 0,
+              count: row.card_count || 0,
+              mastery,
               deckType,
-              dueCount: entry.dueCount,
+              dueCount,
               tags: parsedTags,
-              createdAt: Number(row.created_at) || Date.now(),
-              folderName: row.folder_name || 'Uncategorized'
+              createdAt: row.created_at || Date.now(),
+              folderName: row.folder_name || 'Uncategorized',
+              order_index: row.order_index
             }
           }).filter((s: StudySet | null): s is StudySet => s !== null)
-        } else {
-          if (!window.electron?.decks) return
-
-          let dueCountsMap = new Map<string, number>()
-          if (window.electron.decks) {
-            const dueRes = await window.electron.decks.getDueCounts()
-            if (dueRes.success && dueRes.data) {
-              dueRes.data.forEach((row: any) => {
-                dueCountsMap.set(row.topic_id, row.dueCount)
-              })
-            }
-          }
-
-          const topicsResult = await window.electron.decks.getTopicsWithCardCounts()
-          if (topicsResult.success && topicsResult.data) {
-            dbSets = topicsResult.data.map((row: any) => {
-              const types = (row.types || '').split(',').filter(Boolean)
-
-              // Skip formula-only decks or empty decks
-              if (types.length === 0 || (types.length === 1 && types[0] === 'formula')) return null
-
-              let deckType: 'mcq' | 'flashcard' | 'mixed' = 'mcq'
-              if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
-              else if (types.includes('flashcard')) deckType = 'flashcard'
-
-              const mastery = 0; // DB-based progress handles mastery calculation in the service layer
-              const dueCount = dueCountsMap.get(row.id) || 0
-
-              let parsedTags: string[] = []
-              try {
-                if (row.tags) parsedTags = JSON.parse(row.tags)
-              } catch (e) { }
-
-              return {
-                id: row.id,
-                title: row.name,
-                description: row.description || '',
-                subject: SUBJECT_MAP[row.subject] || 'ELECS',
-                count: row.card_count || 0,
-                mastery,
-                deckType,
-                dueCount,
-                tags: parsedTags,
-                createdAt: row.created_at || Date.now(),
-                folderName: row.folder_name || 'Uncategorized'
-              }
-            }).filter((s: StudySet | null): s is StudySet => s !== null)
-          }
         }
-        setAllSets(prev => {
-          const nonDb = prev.filter(s => !s.id.startsWith('topic_'));
-          return [...nonDb, ...dbSets];
-        })
-      } catch (err) {
-        console.error('Failed to load DB sets', err)
       }
+      setAllSets(prev => {
+        const nonDb = prev.filter(s => !s.id.startsWith('topic_'));
+        return [...nonDb, ...dbSets];
+      })
+    } catch (err) {
+      console.error('Failed to load DB sets', err)
     }
+  }
+
+  useEffect(() => {
     loadDBSets()
   }, [])
 
@@ -206,11 +210,17 @@ export default function FlashcardStudy() {
   const [activeFolder, setActiveFolder] = useState<string | 'all'>('all')
 
   const folders = useMemo(() => {
-    const names = [...new Set(
-      allSets.map(d => d.folderName || 'Uncategorized')
-    )].sort()
-    const idx = names.indexOf('Uncategorized')
-    if (idx > -1) { names.splice(idx, 1); names.push('Uncategorized') }
+    const folderMap = new Map<string, number>()
+    allSets.forEach(d => {
+      const name = d.folderName || 'Uncategorized'
+      const existing = folderMap.get(name) ?? Infinity
+      const idx = d.order_index ?? Infinity
+      folderMap.set(name, Math.min(existing, idx))
+    })
+    const names = [...folderMap.keys()]
+      .filter(n => n !== 'Uncategorized')
+      .sort((a, b) => (folderMap.get(a)! - folderMap.get(b)!))
+    names.push('Uncategorized')
     return names
   }, [allSets])
 
@@ -546,6 +556,24 @@ export default function FlashcardStudy() {
 
   const progress = currentDeck.length > 0 ? (currentIndex / currentDeck.length) * 100 : 0
 
+  const handleDeleteFolder = async (folderName: string) => {
+    const result = await activeDBService.updateDecksFolder(folderName, 'Uncategorized')
+    if (result.success) {
+      await loadDBSets()
+    }
+  }
+
+  const handleReorderFolders = async (newOrder: string[]) => {
+    const folderOrders = newOrder.map((folderName, index) => ({
+      folderName,
+      orderIndex: index,
+    }))
+    const result = await activeDBService.updateFolderOrder(folderOrders)
+    if (result.success) {
+      await loadDBSets()
+    }
+  }
+
   if (isSessionActive) {
     if (mode === 'learn') {
       return (
@@ -645,6 +673,8 @@ export default function FlashcardStudy() {
           totalDeckCount={allSets.length}
           selected={activeFolder}
           onSelect={setActiveFolder}
+          onDeleteFolder={handleDeleteFolder}
+          onReorderFolders={handleReorderFolders}
         />
         <div className="flex flex-col flex-1 min-w-0 overflow-y-auto">
           <div className="flex flex-col items-center w-full pt-6 pb-0 px-3 sm:px-6">

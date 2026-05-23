@@ -537,5 +537,41 @@ export const webDBService = {
       console.error('[importBackup] failed:', err)
       throw err
     }
+  },
+
+  async updateDecksFolder(fromFolder: string, toFolder: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const topics = await webDB.topics
+        .filter(t => (t as any).folder_name === fromFolder)
+        .toArray()
+      await webDB.transaction('rw', webDB.topics, async () => {
+        for (const topic of topics) {
+          await webDB.topics.update(topic.id, { folder_name: toFolder })
+        }
+      })
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  },
+
+  async updateFolderOrder(
+    folderOrders: Array<{ folderName: string; orderIndex: number }>
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      await webDB.transaction('rw', webDB.topics, async () => {
+        for (const { folderName, orderIndex } of folderOrders) {
+          const topics = await webDB.topics
+            .filter(t => (t as any).folder_name === folderName)
+            .toArray()
+          for (const topic of topics) {
+            await webDB.topics.update(topic.id, { order_index: orderIndex })
+          }
+        }
+      })
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
   }
 }

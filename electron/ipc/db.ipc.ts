@@ -555,7 +555,7 @@ export function registerDBHandlers() {
   ipcMain.handle('decks:getTopicsWithCardCounts', async () => {
     try {
       const rows = queryAll(`
-        SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags, t.folder_name,
+        SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags, t.folder_name, t.order_index,
                COUNT(c.id) as card_count,
                GROUP_CONCAT(DISTINCT c.type) as types
         FROM topics t LEFT JOIN cards c ON c.topic_id = t.id
@@ -570,7 +570,7 @@ export function registerDBHandlers() {
   ipcMain.handle('decks:getFormulaTopics', async () => {
     try {
       const rows = queryAll(`
-        SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags, t.folder_name,
+        SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags, t.folder_name, t.order_index,
                COUNT(c.id) as card_count,
                GROUP_CONCAT(DISTINCT c.type) as types
         FROM topics t
@@ -614,6 +614,40 @@ export function registerDBHandlers() {
       }
       for (const cardId of payload.deletedCardIds) {
         execute('DELETE FROM cards WHERE id = ?', [cardId])
+      }
+      execute('COMMIT')
+      return { success: true }
+    } catch (error) {
+      try { execute('ROLLBACK') } catch {}
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('decks:updateDecksFolder', async (_, payload: {
+    fromFolder: string,
+    toFolder: string
+  }) => {
+    try {
+      execute(
+        `UPDATE topics SET folder_name = ? WHERE folder_name = ?`,
+        [payload.toFolder, payload.fromFolder]
+      )
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('decks:updateFolderOrder', async (_, payload: {
+    folderOrders: Array<{ folderName: string, orderIndex: number }>
+  }) => {
+    try {
+      execute('BEGIN TRANSACTION')
+      for (const { folderName, orderIndex } of payload.folderOrders) {
+        execute(
+          `UPDATE topics SET order_index = ? WHERE folder_name = ?`,
+          [orderIndex, folderName]
+        )
       }
       execute('COMMIT')
       return { success: true }

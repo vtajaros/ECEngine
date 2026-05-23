@@ -33,6 +33,7 @@ interface DeckInfo {
   tags?: string[]
   createdAt?: number
   folderName?: string
+  order_index?: number
 }
 
 interface FCSettings {
@@ -130,26 +131,61 @@ export default function FlashcardViewer() {
   }, [zoomedImage])
 
   // ── Load decks from DB ──
-  useEffect(() => {
-    async function load() {
-      try {
-        let processedDecks: any[] = []
-        if (isWeb) {
-          const rawTopics = await webDB.topics.toArray()
-          const rawCards = await webDB.cards.toArray()
-          const cardsByTopic = new Map<string, { cardCount: number, types: Set<string> }>()
-          for (const card of rawCards) {
-            if (!cardsByTopic.has(card.topic_id)) {
-              cardsByTopic.set(card.topic_id, { cardCount: 0, types: new Set() })
-            }
-            const entry = cardsByTopic.get(card.topic_id)!
-            entry.cardCount++
-            entry.types.add(card.type)
+  const loadDecks = async () => {
+    try {
+      let processedDecks: any[] = []
+      if (isWeb) {
+        const rawTopics = await webDB.topics.toArray()
+        const rawCards = await webDB.cards.toArray()
+        const cardsByTopic = new Map<string, { cardCount: number, types: Set<string> }>()
+        for (const card of rawCards) {
+          if (!cardsByTopic.has(card.topic_id)) {
+            cardsByTopic.set(card.topic_id, { cardCount: 0, types: new Set() })
           }
+          const entry = cardsByTopic.get(card.topic_id)!
+          entry.cardCount++
+          entry.types.add(card.type)
+        }
 
-          processedDecks = rawTopics.map((row: any) => {
-            const entry = cardsByTopic.get(row.id) || { cardCount: 0, types: new Set<string>() }
-            const types = Array.from(entry.types)
+        processedDecks = rawTopics.map((row: any) => {
+          const entry = cardsByTopic.get(row.id) || { cardCount: 0, types: new Set<string>() }
+          const types = Array.from(entry.types)
+
+          // Skip formula-only decks
+          if (types.length === 1 && types[0] === 'formula') return null
+
+          let deckType: 'mcq' | 'flashcard' | 'mixed' = 'flashcard'
+          if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
+          else if (types.includes('mcq')) deckType = 'mcq'
+
+          let parsedTags: string[] = []
+          try {
+            if (row.tags) parsedTags = JSON.parse(row.tags)
+          } catch (e) { }
+
+          return {
+            id: row.id,
+            title: row.name,
+            subject: SUBJECT_MAP[row.subject] || 'ELECS',
+            cardCount: entry.cardCount,
+            deckType,
+            description: row.description || '',
+            tags: parsedTags,
+            createdAt: Number(row.created_at) || Date.now(),
+            folderName: row.folder_name || 'Uncategorized',
+            order_index: row.order_index
+          }
+        }).filter((d: DeckInfo | null): d is DeckInfo => d !== null)
+
+        // Sort by name as in DB query: ORDER BY t.name
+        processedDecks.sort((a, b) => a.title.localeCompare(b.title))
+        setDecks(processedDecks)
+      } else {
+        if (!window.electron?.decks) return
+        const r = await window.electron.decks.getTopicsWithCardCounts()
+        if (r.success && r.data) {
+          processedDecks = r.data.map((row: any) => {
+            const types = (row.types || '').split(',')
 
             // Skip formula-only decks
             if (types.length === 1 && types[0] === 'formula') return null
@@ -167,55 +203,23 @@ export default function FlashcardViewer() {
               id: row.id,
               title: row.name,
               subject: SUBJECT_MAP[row.subject] || 'ELECS',
-              cardCount: entry.cardCount,
+              cardCount: row.card_count || 0,
               deckType,
               description: row.description || '',
               tags: parsedTags,
-              createdAt: Number(row.created_at) || Date.now(),
-              folderName: row.folder_name || 'Uncategorized'
+              createdAt: row.created_at || Date.now(),
+              folderName: row.folder_name || 'Uncategorized',
+              order_index: row.order_index
             }
           }).filter((d: DeckInfo | null): d is DeckInfo => d !== null)
-
-          // Sort by name as in DB query: ORDER BY t.name
-          processedDecks.sort((a, b) => a.title.localeCompare(b.title))
           setDecks(processedDecks)
-        } else {
-          if (!window.electron?.decks) return
-          const r = await window.electron.decks.getTopicsWithCardCounts()
-          if (r.success && r.data) {
-            processedDecks = r.data.map((row: any) => {
-              const types = (row.types || '').split(',')
-
-              // Skip formula-only decks
-              if (types.length === 1 && types[0] === 'formula') return null
-
-              let deckType: 'mcq' | 'flashcard' | 'mixed' = 'flashcard'
-              if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
-              else if (types.includes('mcq')) deckType = 'mcq'
-
-              let parsedTags: string[] = []
-              try {
-                if (row.tags) parsedTags = JSON.parse(row.tags)
-              } catch (e) { }
-
-              return {
-                id: row.id,
-                title: row.name,
-                subject: SUBJECT_MAP[row.subject] || 'ELECS',
-                cardCount: row.card_count || 0,
-                deckType,
-                description: row.description || '',
-                tags: parsedTags,
-                createdAt: row.created_at || Date.now(),
-                folderName: row.folder_name || 'Uncategorized'
-              }
-            }).filter((d: DeckInfo | null): d is DeckInfo => d !== null)
-            setDecks(processedDecks)
-          }
         }
-      } catch (e) { console.error('Failed to load decks', e) }
-    }
-    load()
+      }
+    } catch (e) { console.error('Failed to load decks', e) }
+  }
+
+  useEffect(() => {
+    loadDecks()
   }, [])
 
   // ── Countdown for delete ──
@@ -442,11 +446,17 @@ export default function FlashcardViewer() {
   }, [])
 
   const folders = useMemo(() => {
-    const names = [...new Set(
-      decks.map(d => d.folderName || 'Uncategorized')
-    )].sort()
-    const idx = names.indexOf('Uncategorized')
-    if (idx > -1) { names.splice(idx, 1); names.push('Uncategorized') }
+    const folderMap = new Map<string, number>()
+    decks.forEach(d => {
+      const name = d.folderName || 'Uncategorized'
+      const existing = folderMap.get(name) ?? Infinity
+      const idx = d.order_index ?? Infinity
+      folderMap.set(name, Math.min(existing, idx))
+    })
+    const names = [...folderMap.keys()]
+      .filter(n => n !== 'Uncategorized')
+      .sort((a, b) => (folderMap.get(a)! - folderMap.get(b)!))
+    names.push('Uncategorized')
     return names
   }, [decks])
 
@@ -753,6 +763,24 @@ export default function FlashcardViewer() {
   // ══════════════════════════════════════════════
   // RENDER — Deck Listing
   // ══════════════════════════════════════════════
+  const handleDeleteFolder = async (folderName: string) => {
+    const result = await activeDBService.updateDecksFolder(folderName, 'Uncategorized')
+    if (result.success) {
+      await loadDecks()
+    }
+  }
+
+  const handleReorderFolders = async (newOrder: string[]) => {
+    const folderOrders = newOrder.map((folderName, index) => ({
+      folderName,
+      orderIndex: index,
+    }))
+    const result = await activeDBService.updateFolderOrder(folderOrders)
+    if (result.success) {
+      await loadDecks()
+    }
+  }
+
   return (
     <div className="flex flex-col h-full w-full">
       <div className="flex flex-col sm:flex-row flex-1 w-full overflow-hidden">
@@ -762,6 +790,8 @@ export default function FlashcardViewer() {
           totalDeckCount={decks.length}
           selected={activeFolder}
           onSelect={setActiveFolder}
+          onDeleteFolder={handleDeleteFolder}
+          onReorderFolders={handleReorderFolders}
         />
 
         <div className="flex flex-col flex-1 min-w-0 overflow-y-auto">

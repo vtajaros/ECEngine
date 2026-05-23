@@ -8,6 +8,7 @@ export interface WebTopic {
   folder_name: string
   tags: string
   created_at: string
+  order_index?: number
 }
 
 export interface WebCard {
