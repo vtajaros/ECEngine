@@ -1,6 +1,7 @@
 import { ipcMain, dialog, BrowserWindow } from 'electron'
 import { initDB, queryAll, execute } from '../db/database'
 import * as fs from 'fs'
+import { z } from 'zod'
 
 export function registerDBHandlers() {
   // Initialize the database eagerly
@@ -474,40 +475,78 @@ export function registerDBHandlers() {
     }
   })
 
-  ipcMain.handle('data:importDecks', async (_, parsed: any) => {
+  const TopicSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    subject: z.string(),
+    created_at: z.number().optional(),
+    description: z.string().optional(),
+    folder_name: z.string().optional(),
+    tags: z.string().optional(),
+  })
+
+  const CardSchema = z.object({
+    id: z.string(),
+    topic_id: z.string(),
+    type: z.enum(['flashcard', 'mcq', 'formula']),
+    data: z.string(),
+    difficulty: z.enum(['easy', 'medium', 'hard']).optional(),
+    tags: z.string().optional(),
+    is_custom: z.boolean().optional(),
+    created_at: z.number().optional(),
+  })
+
+  const ProgressSchema = z.object({
+    card_id: z.string(),
+    ease_factor: z.number().optional(),
+    interval: z.number().optional(),
+    repetitions: z.number().optional(),
+    next_review: z.string(),
+    last_reviewed: z.string(),
+    correct_count: z.number().optional(),
+    total_count: z.number().optional(),
+  })
+
+  const ImportPayloadSchema = z.object({
+    topics: z.array(TopicSchema),
+    cards: z.array(CardSchema),
+    progress: z.array(ProgressSchema).optional(),
+  })
+
+  ipcMain.handle('data:importDecks', async (_, parsed: unknown) => {
     try {
-      if (!parsed || !Array.isArray(parsed.topics) || !Array.isArray(parsed.cards)) {
-        return { success: false, error: 'Invalid backup file format' }
+      const result = ImportPayloadSchema.safeParse(parsed)
+      if (!result.success) {
+        const message = result.error.issues
+          .map(i => `${i.path.join('.')}: ${i.message}`)
+          .join('; ')
+        return { success: false, error: `Invalid backup format — ${message}` }
       }
-      
+      const { topics, cards, progress } = result.data
       execute('BEGIN TRANSACTION')
-      
-      for (const t of parsed.topics) {
+      for (const t of topics) {
         execute(
-          `INSERT OR REPLACE INTO topics (id, name, subject, created_at, description, folder_name, tags) 
+          `INSERT OR REPLACE INTO topics (id, name, subject, created_at, description, folder_name, tags)
            VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [t.id, t.name, t.subject, t.created_at || Date.now()/1000, t.description || '', t.folder_name || 'Uncategorized', t.tags || '[]']
+          [t.id, t.name, t.subject, t.created_at ?? Date.now()/1000, t.description ?? '', t.folder_name ?? 'Uncategorized', t.tags ?? '[]']
         )
       }
-
-      for (const c of parsed.cards) {
+      for (const c of cards) {
         execute(
-          `INSERT OR REPLACE INTO cards (id, topic_id, type, data, difficulty, tags, is_custom, created_at) 
+          `INSERT OR REPLACE INTO cards (id, topic_id, type, data, difficulty, tags, is_custom, created_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [c.id, c.topic_id, c.type, c.data, c.difficulty || 'medium', c.tags || '[]', c.is_custom ? 1 : 0, c.created_at || Date.now()/1000]
+          [c.id, c.topic_id, c.type, c.data, c.difficulty ?? 'medium', c.tags ?? '[]', c.is_custom ? 1 : 0, c.created_at ?? Date.now()/1000]
         )
       }
-
-      if (Array.isArray(parsed.progress)) {
-        for (const p of parsed.progress) {
+      if (progress) {
+        for (const p of progress) {
           execute(
-            `INSERT OR REPLACE INTO progress (card_id, ease_factor, interval, repetitions, next_review, last_reviewed, correct_count, total_count) 
+            `INSERT OR REPLACE INTO progress (card_id, ease_factor, interval, repetitions, next_review, last_reviewed, correct_count, total_count)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [p.card_id, p.ease_factor || 2.5, p.interval || 1, p.repetitions || 0, p.next_review, p.last_reviewed, p.correct_count || 0, p.total_count || 0]
+            [p.card_id, p.ease_factor ?? 2.5, p.interval ?? 1, p.repetitions ?? 0, p.next_review, p.last_reviewed, p.correct_count ?? 0, p.total_count ?? 0]
           )
         }
       }
-      
       execute('COMMIT')
       return { success: true, data: 'Decks and progress imported successfully' }
     } catch (error) {

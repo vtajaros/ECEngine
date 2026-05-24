@@ -19,7 +19,15 @@ declare global {
         getCardsByTopic: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
         getDueCounts: () => Promise<{ success: boolean; data?: any; error?: string }>
         getDueCardsForSession: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
-        addDeckWithCards: (payload: any) => Promise<{ success: boolean; error?: string }>
+        addDeckWithCards: (payload: {
+          topicId: string
+          name: string
+          subject: string
+          description: string
+          tags: string
+          folderName: string
+          cards: Array<{ id: string; type: string; data: string; is_custom: number }>
+        }) => Promise<{ success: boolean; error?: string }>
         deleteTopic: (topicId: string) => Promise<{ success: boolean; error?: string }>
         exportToText: (topicId: number | string, topicName: string) => Promise<{ success: boolean; error?: string }>
         getTopicsWithCardCounts: () => Promise<{ success: boolean; data?: any; error?: string }>
@@ -49,7 +57,7 @@ declare global {
         getGlobalStats: () => Promise<{ success: boolean; data?: any; error?: string }>
         clearAllData: () => Promise<{ success: boolean; error?: string }>
         exportDecks: () => Promise<{ success: boolean; data?: string; error?: string }>
-        importDecks: (parsed: any) => Promise<{ success: boolean; data?: string; error?: string }>
+        importDecks: (parsed: unknown) => Promise<{ success: boolean; data?: string; error?: string }>
         getAllCardsByTopic: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
         getCardsPrioritized: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
       }
