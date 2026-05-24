@@ -58,8 +58,8 @@ export default function ImportBackup() {
       console.log('[import] payload keys:', Object.keys(pendingData))
       console.log('[import] topics count:', pendingData.topics?.length)
       console.log('[import] cards count:', pendingData.cards?.length)
-      const { webDBService } = await import('../services/web/db.web.service')
-      await webDBService.importBackup(pendingData)
+      const result = await window.electron.data.importDecks(pendingData)
+      if (!result.success) throw new Error(result.error || 'Import failed')
       setStatus('success')
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Import failed.')

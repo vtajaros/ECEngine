@@ -13,6 +13,8 @@ export function initDB() {
   const dbExists = fs.existsSync(dbPath);
 
   db = new Database(dbPath);
+  db.pragma('journal_mode = WAL');
+  db.pragma('synchronous = NORMAL');
 
   if (dbExists) {
     // Apply migrations for new columns silently if they don't exist

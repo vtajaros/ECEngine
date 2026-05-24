@@ -8,7 +8,6 @@ import {
 } from 'lucide-react'
 import { renderMath, isRawLatex } from '../lib/latex'
 import { getSubjectFilterClasses } from '../lib/subjectColors'
-import { webDB } from '@/services/web/schema'
 import {
   DndContext,
   closestCenter,
@@ -42,7 +41,7 @@ declare global {
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 // Module-level web detection (needed by sub-components MCQForm/FlashcardForm)
-const isWebEnv = !(window as any).electron
+
 
 type Subject = 'Mathematics' | 'General Engineering & Applied Sciences' | 'Electronics Engineering' | 'Electronics Systems & Technologies'
 
@@ -285,13 +284,8 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
     }
 
     const path = (file as any).path
-    if (!isWebEnv && !path) return
+    if (!path) return
     try {
-      if (isWebEnv) {
-        if (onError) onError('Image upload is not supported in the web version.')
-        e.target.value = ''
-        return
-      }
       const result = await (window as any).electron.saveImage(path)
       if (result.success && result.filename) {
         set({ imagePath: result.filename })
@@ -392,13 +386,8 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
     }
 
     const path = (file as any).path
-    if (!isWebEnv && !path) return
+    if (!path) return
     try {
-      if (isWebEnv) {
-        if (onError) onError('Image upload is not supported in the web version.')
-        e.target.value = ''
-        return
-      }
       const result = await (window as any).electron.saveImage(path)
       if (result.success && result.filename) {
         onChange({ ...data, imagePath: result.filename })
@@ -579,7 +568,7 @@ const SortableQuestionRow: React.FC<CardRowProps> = (props) => {
 export default function EditDeck() {
   const { deckId } = useParams<{ deckId: string }>()
   const navigate = useNavigate()
-  const isWeb = !(window as any).electron
+
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -602,7 +591,7 @@ export default function EditDeck() {
 
   const handleExportToText = async () => {
     if (!deckId || isExporting) return
-    if (isWeb) return // export to text is desktop-only
+
     setIsExporting(true)
     try {
       const res = await window.electron.decks.exportToText(deckId, deckMeta.title)
@@ -677,18 +666,11 @@ export default function EditDeck() {
   useEffect(() => {
     async function fetchFolders() {
       let folderNames: string[] = []
-      if (isWeb) {
-        const topics = await webDB.topics.toArray()
-        folderNames = [...new Set(
-          topics.map((t: any) => t.folder_name).filter(Boolean)
-        )].sort() as string[]
-      } else {
-        if (!window.electron?.decks) return
-        const r = await window.electron.decks.getTopics()
-        folderNames = [...new Set(
-          (r.data || []).map((row: any) => row.folder_name).filter(Boolean)
-        )].sort() as string[]
-      }
+      if (!window.electron?.decks) return
+      const r = await window.electron.decks.getTopics()
+      folderNames = [...new Set(
+        (r.data || []).map((row: any) => row.folder_name).filter(Boolean)
+      )].sort() as string[]
       setExistingFolders(folderNames)
     }
     fetchFolders()
@@ -700,87 +682,8 @@ export default function EditDeck() {
     async function load() {
       try {
         setLoading(true)
-        if (isWeb) {
-          // ── Web: load from Dexie ──
-          const topic = await webDB.topics.get(deckId)
-          if (topic) {
-            let parsedTags = ''
-            try { parsedTags = JSON.parse((topic as any).tags || '[]').join(', ') } catch { }
-            setDeckMeta({
-              title: (topic as any).name || '',
-              description: (topic as any).description || '',
-              subject: (topic as any).subject as Subject || 'Electronics Engineering',
-              tags: parsedTags,
-              folderName: (!(topic as any).folder_name || (topic as any).folder_name === 'Uncategorized') ? '' : (topic as any).folder_name
-            })
-          }
-          const rawCards = await webDB.cards.where('topic_id').equals(deckId!).toArray()
-          const loaded: EditCard[] = rawCards.map((row: any) => {
-            let parsed: any = {}
-            try { parsed = typeof row.data === 'string' ? JSON.parse(row.data) : row.data } catch { }
-            if (row.type === 'mcq') {
-              const d: MCQEdit = {
-                question: parsed.question ?? '',
-                choices: [
-                  parsed.choices?.[0] ?? '',
-                  parsed.choices?.[1] ?? '',
-                  parsed.choices?.[2] ?? '',
-                  parsed.choices?.[3] ?? '',
-                ],
-                answer: parsed.answer ?? 0,
-                explanation: parsed.explanation ?? '',
-              }
-              if (parsed.imagePath) d.imagePath = parsed.imagePath
-              return { id: row.id, type: 'mcq', data: d } as EditCard
-            } else if (row.type === 'formula') {
-              // Normalise field names: support camelCase canonical form AND any
-              // snake_case aliases that may appear in exported/imported data.
-              const rawName =
-                parsed.name ??
-                parsed.front_formula ??
-                parsed.frontFormula ??
-                parsed.term ??
-                ''
-              const rawLatex =
-                parsed.latex ??
-                parsed.latex_content ??
-                parsed.latexContent ??
-                parsed.back_equation ??
-                parsed.backEquation ??
-                parsed.equation ??
-                ''
-              const rawDescription =
-                parsed.description ??
-                parsed.desc ??
-                ''
-              const varsRaw =
-                parsed.variables ??
-                parsed.vars ??
-                ''
-              const varsStr = typeof varsRaw === 'object' && varsRaw !== null
-                ? Object.entries(varsRaw).map(([k, v]) => `${k}: ${v}`).join('\n')
-                : String(varsRaw ?? '')
-              const d: FormulaEdit = {
-                name: String(rawName),
-                latex: String(rawLatex),
-                description: String(rawDescription),
-                variables: varsStr,
-              }
-              return { id: row.id, type: 'formula', data: d } as EditCard
-            } else {
-              const d: FlashcardEdit = {
-                front: parsed.front ?? '',
-                back: parsed.back ?? '',
-              }
-              if (parsed.imagePath) d.imagePath = parsed.imagePath
-              return { id: row.id, type: 'flashcard', data: d } as EditCard
-            }
-          })
-          setCards(loaded)
-          setOriginalCardIds(new Set(loaded.map(c => c.id)))
-        } else {
-          // ── Electron: load via IPC ──
-          const topicsRes = await window.electron.decks.getTopics()
+        // ── Electron: load via IPC ──
+        const topicsRes = await window.electron.decks.getTopics()
           const topicRow = (topicsRes.data || []).find((t: any) => t.id === deckId)
           if (topicRow) {
             const t = topicRow
@@ -860,7 +763,6 @@ export default function EditDeck() {
             })
             setCards(loaded)
             setOriginalCardIds(new Set(loaded.map(c => c.id)))
-          }
         }
       } catch (err) {
         console.error('[EditDeck] Load error', err)
@@ -909,68 +811,26 @@ export default function EditDeck() {
     setIsSaving(true)
 
     try {
-      if (isWeb) {
-        // ── Web: update via Dexie ──
-        const tagsArr = deckMeta.tags
-          .split(',')
-          .map(t => t.trim())
-          .filter(Boolean)
-
-        await webDB.transaction('rw', webDB.topics, webDB.cards, async () => {
-          await webDB.topics.update(deckId, {
-            name: deckMeta.title.trim(),
-            subject: deckMeta.subject,
-            description: deckMeta.description.trim(),
-            tags: JSON.stringify(tagsArr),
-            folder_name: deckMeta.folderName.trim() || 'Custom',
-          })
-
-          // Delete all existing cards then re-insert current state
-          await webDB.cards.where('topic_id').equals(deckId).delete()
-
-          const now = new Date().toISOString()
-          for (const card of cards) {
-            const dataJson = typeof card.data === 'string' ? card.data : JSON.stringify(card.data)
-            const cardId = card.id.startsWith('new_')
-              ? `card_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`
-              : card.id
-            await webDB.cards.put({
-              id: cardId,
-              topic_id: deckId,
-              type: card.type,
-              data: dataJson,
-              difficulty: '',
-              tags: '[]',
-              is_custom: 1,
-              created_at: now,
-            })
-          }
-        })
-
-        setToast({ type: 'success', msg: 'Deck saved successfully!' })
-        setTimeout(() => setToast(null), 3000)
-      } else {
-        const tagsArr = deckMeta.tags.split(',').map(t => t.trim()).filter(Boolean)
+      const tagsArr = deckMeta.tags.split(',').map(t => t.trim()).filter(Boolean)
         const currentIds = new Set(cards.filter(c => !c.id.startsWith('new_')).map(c => c.id))
         const deletedCardIds = [...originalCardIds].filter(id => !currentIds.has(id))
-        const res = await window.electron.decks.updateDeckWithCards({
-          deckId,
-          title: deckMeta.title.trim(),
-          subject: deckMeta.subject,
-          description: deckMeta.description.trim(),
-          tags: JSON.stringify(tagsArr),
-          folderName: deckMeta.folderName.trim(),
-          cards: cards.map(card => ({
-            id: card.id,
-            type: card.type,
-            data: typeof card.data === 'string' ? card.data : JSON.stringify(card.data)
-          })),
-          deletedCardIds
-        })
-        if (!res.success) throw new Error(res.error)
-        setToast({ type: 'success', msg: 'Deck saved successfully!' })
-        setTimeout(() => setToast(null), 3000)
-      }
+      const res = await window.electron.decks.updateDeckWithCards({
+        deckId,
+        title: deckMeta.title.trim(),
+        subject: deckMeta.subject,
+        description: deckMeta.description.trim(),
+        tags: JSON.stringify(tagsArr),
+        folderName: deckMeta.folderName.trim(),
+        cards: cards.map(card => ({
+          id: card.id,
+          type: card.type,
+          data: typeof card.data === 'string' ? card.data : JSON.stringify(card.data)
+        })),
+        deletedCardIds
+      })
+      if (!res.success) throw new Error(res.error)
+      setToast({ type: 'success', msg: 'Deck saved successfully!' })
+      setTimeout(() => setToast(null), 3000)
     } catch (err) {
       console.error('[EditDeck] Save failed', err)
       // no ROLLBACK needed — handled server-side

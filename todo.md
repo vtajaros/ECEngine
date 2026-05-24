@@ -1,5 +1,6 @@
 \*For IMPROVEMENT TODO LIST
 
-**WEB_PORT**
+***CLEAN APP FOR DESKTOP OPTIMIZATION***
 
-- PORT THE 1.0 version in to the web for android and ios access
+***UI FIXES***
+

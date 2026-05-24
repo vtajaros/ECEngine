@@ -24,7 +24,6 @@
     "better-sqlite3": "^12.10.0",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
-    "dexie": "^4.4.2",
     "dompurify": "^3.4.2",
     "framer-motion": "^11.3.0",
     "katex": "^0.16.10",

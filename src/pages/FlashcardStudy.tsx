@@ -17,8 +17,8 @@ import { shuffle, shuffleChoices } from '../lib/scrambler'
 
 import { StudyHeader } from '../components/study/StudyHeader'
 import { StudySessionStats } from '../components/study/StudySessionStats'
-import { activeDBService } from '../services/db.service'
-import { webDB } from '@/services/web/schema'
+import { dbService } from '../services/db.service'
+
 
 
 type StudyMode = 'flashcard' | 'mcq' | 'learn' | 'test'
@@ -53,7 +53,7 @@ interface StudySet {
 
 export default function FlashcardStudy() {
   const navigate = useNavigate()
-  const isWeb = !(window as any).electron
+
 
   const [allSets, setAllSets] = useState<StudySet[]>([])
   const [setToDelete, setSetToDelete] = useState<StudySet | null>(null)
@@ -78,63 +78,7 @@ export default function FlashcardStudy() {
   const loadDBSets = async () => {
     try {
       let dbSets: StudySet[] = []
-      if (isWeb) {
-        const rawTopics = await webDB.topics.toArray()
-        const rawCards = await webDB.cards.toArray()
-        const rawProgress = await webDB.progress.toArray()
-        const progressMap = new Map(rawProgress.map(p => [p.card_id, p]))
-
-        const cardsByTopic = new Map<string, { cardCount: number, types: Set<string>, dueCount: number }>()
-        const now = new Date().toISOString()
-
-        for (const card of rawCards) {
-          if (!cardsByTopic.has(card.topic_id)) {
-            cardsByTopic.set(card.topic_id, { cardCount: 0, types: new Set(), dueCount: 0 })
-          }
-          const entry = cardsByTopic.get(card.topic_id)!
-          entry.cardCount++
-          entry.types.add(card.type)
-
-          const prog = progressMap.get(card.id)
-          const isDue = !prog || !prog.next_review || prog.next_review <= now
-          if (isDue) {
-            entry.dueCount++
-          }
-        }
-
-        dbSets = rawTopics.map((row: any): StudySet | null => {
-          const entry = cardsByTopic.get(row.id) || { cardCount: 0, types: new Set<string>(), dueCount: 0 }
-          const types = Array.from(entry.types)
-
-          // Skip formula-only decks or empty decks
-          if (entry.cardCount === 0 || (types.length === 1 && types[0] === 'formula')) return null
-
-          let deckType: 'mcq' | 'flashcard' | 'mixed' = 'mcq'
-          if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
-          else if (types.includes('flashcard')) deckType = 'flashcard'
-
-          let parsedTags: string[] = []
-          try {
-            if (row.tags) parsedTags = JSON.parse(row.tags)
-          } catch (e) { }
-
-          return {
-            id: row.id,
-            title: row.name,
-            description: row.description || '',
-            subject: SUBJECT_MAP[row.subject] || 'ELECS',
-            count: entry.cardCount,
-            mastery: 0,
-            deckType,
-            dueCount: entry.dueCount,
-            tags: parsedTags,
-            createdAt: Number(row.created_at) || Date.now(),
-            folderName: row.folder_name || 'Uncategorized',
-            order_index: row.order_index
-          }
-        }).filter((s: StudySet | null): s is StudySet => s !== null)
-      } else {
-        if (!window.electron?.decks) return
+      if (!window.electron?.decks) return
 
         let dueCountsMap = new Map<string, number>()
         if (window.electron.decks) {
@@ -182,7 +126,6 @@ export default function FlashcardStudy() {
             }
           }).filter((s: StudySet | null): s is StudySet => s !== null)
         }
-      }
       setAllSets(prev => {
         const nonDb = prev.filter(s => !s.id.startsWith('topic_'));
         return [...nonDb, ...dbSets];
@@ -284,15 +227,8 @@ export default function FlashcardStudy() {
   const handleConfirmDelete = async () => {
     if (!setToDelete) return
     try {
-      if (isWeb) {
-        await webDB.transaction('rw', webDB.topics, webDB.cards, webDB.progress, async () => {
-          await webDB.cards.where('topic_id').equals(setToDelete.id).delete()
-          await webDB.topics.delete(setToDelete.id)
-        })
-      } else {
-        if ((window as any).electron?.decks && setToDelete.id.startsWith('topic_')) {
-          await (window as any).electron.decks.deleteTopic(setToDelete.id)
-        }
+      if ((window as any).electron?.decks && setToDelete.id.startsWith('topic_')) {
+        await (window as any).electron.decks.deleteTopic(setToDelete.id)
       }
       setAllSets(prev => prev.filter(s => s.id !== setToDelete.id))
       setSetToDelete(null)
@@ -414,7 +350,7 @@ export default function FlashcardStudy() {
 
     if (setId.startsWith('topic_')) {
       // Load real cards from DB
-      const prioritizedCards = await activeDBService.getCardsPrioritized(setId)
+      const prioritizedCards = await dbService.getCardsPrioritized(setId)
       const rawCards = prioritizedCards.map(card => ({
         data: card.data,
         type: card.type,
@@ -490,7 +426,7 @@ export default function FlashcardStudy() {
 
     if (setId.startsWith('topic_')) {
       // Load real cards from DB
-      const prioritizedCards = await activeDBService.getCardsPrioritized(setId)
+      const prioritizedCards = await dbService.getCardsPrioritized(setId)
       const rawCards = prioritizedCards.map(card => ({
         data: card.data,
         type: card.type,
@@ -557,7 +493,7 @@ export default function FlashcardStudy() {
   const progress = currentDeck.length > 0 ? (currentIndex / currentDeck.length) * 100 : 0
 
   const handleDeleteFolder = async (folderName: string) => {
-    const result = await activeDBService.updateDecksFolder(folderName, 'Uncategorized')
+    const result = await dbService.updateDecksFolder(folderName, 'Uncategorized')
     if (result.success) {
       await loadDBSets()
     }
@@ -568,7 +504,7 @@ export default function FlashcardStudy() {
       folderName,
       orderIndex: index,
     }))
-    const result = await activeDBService.updateFolderOrder(folderOrders)
+    const result = await dbService.updateFolderOrder(folderOrders)
     if (result.success) {
       await loadDBSets()
     }

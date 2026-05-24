@@ -15,13 +15,6 @@ const Settings       = lazy(() => import('./pages/Settings'))
 const PrintView      = lazy(() => import('./pages/PrintView'))
 const TOSChecklist   = lazy(() => import('./pages/TOSChecklist'))
 
-const isWeb = typeof window !== 'undefined' && !(window as any).electron
-
-// Blocks routes that require Electron (file system, IPC, creation tools)
-function WebGuard({ children }: { children: React.ReactNode }) {
-  if (isWeb) return <Navigate to="/study" replace />
-  return <>{children}</>
-}
 
 function Lazy({ children }: { children: React.ReactNode }) {
   return (

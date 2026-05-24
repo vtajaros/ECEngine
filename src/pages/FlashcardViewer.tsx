@@ -8,7 +8,7 @@ import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectC
 import { Card, MCQData, FlashcardData } from '../types'
 import { renderMath } from '../lib/latex'
 import { shuffleArray } from '../lib/utils'
-import { webDB } from '@/services/web/schema'
+
 
 
 type Subject = 'MATH' | 'GEAS' | 'ELECS' | 'EST'
@@ -56,7 +56,7 @@ function saveFCBookmarks(set: Set<string>) {
 
 export default function FlashcardViewer() {
   const navigate = useNavigate()
-  const isWeb = !(window as any).electron
+
 
 
   // ── Deck listing state ──
@@ -134,54 +134,7 @@ export default function FlashcardViewer() {
   const loadDecks = async () => {
     try {
       let processedDecks: any[] = []
-      if (isWeb) {
-        const rawTopics = await webDB.topics.toArray()
-        const rawCards = await webDB.cards.toArray()
-        const cardsByTopic = new Map<string, { cardCount: number, types: Set<string> }>()
-        for (const card of rawCards) {
-          if (!cardsByTopic.has(card.topic_id)) {
-            cardsByTopic.set(card.topic_id, { cardCount: 0, types: new Set() })
-          }
-          const entry = cardsByTopic.get(card.topic_id)!
-          entry.cardCount++
-          entry.types.add(card.type)
-        }
-
-        processedDecks = rawTopics.map((row: any) => {
-          const entry = cardsByTopic.get(row.id) || { cardCount: 0, types: new Set<string>() }
-          const types = Array.from(entry.types)
-
-          // Skip formula-only decks
-          if (types.length === 1 && types[0] === 'formula') return null
-
-          let deckType: 'mcq' | 'flashcard' | 'mixed' = 'flashcard'
-          if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
-          else if (types.includes('mcq')) deckType = 'mcq'
-
-          let parsedTags: string[] = []
-          try {
-            if (row.tags) parsedTags = JSON.parse(row.tags)
-          } catch (e) { }
-
-          return {
-            id: row.id,
-            title: row.name,
-            subject: SUBJECT_MAP[row.subject] || 'ELECS',
-            cardCount: entry.cardCount,
-            deckType,
-            description: row.description || '',
-            tags: parsedTags,
-            createdAt: Number(row.created_at) || Date.now(),
-            folderName: row.folder_name || 'Uncategorized',
-            order_index: row.order_index
-          }
-        }).filter((d: DeckInfo | null): d is DeckInfo => d !== null)
-
-        // Sort by name as in DB query: ORDER BY t.name
-        processedDecks.sort((a, b) => a.title.localeCompare(b.title))
-        setDecks(processedDecks)
-      } else {
-        if (!window.electron?.decks) return
+      if (!window.electron?.decks) return
         const r = await window.electron.decks.getTopicsWithCardCounts()
         if (r.success && r.data) {
           processedDecks = r.data.map((row: any) => {
@@ -214,7 +167,6 @@ export default function FlashcardViewer() {
           }).filter((d: DeckInfo | null): d is DeckInfo => d !== null)
           setDecks(processedDecks)
         }
-      }
     } catch (e) { console.error('Failed to load decks', e) }
   }
 
@@ -242,15 +194,8 @@ export default function FlashcardViewer() {
   const handleConfirmDelete = async () => {
     if (!setToDelete) return
     try {
-      if (isWeb) {
-        await webDB.transaction('rw', webDB.topics, webDB.cards, webDB.progress, async () => {
-          await webDB.cards.where('topic_id').equals(setToDelete.id).delete()
-          await webDB.topics.delete(setToDelete.id)
-        })
-      } else {
-        if (window.electron?.decks) {
-          await window.electron.decks.deleteTopic(setToDelete.id)
-        }
+      if (window.electron?.decks) {
+        await window.electron.decks.deleteTopic(setToDelete.id)
       }
       setDecks(prev => prev.filter(s => s.id !== setToDelete.id))
       setSetToDelete(null)
@@ -263,14 +208,10 @@ export default function FlashcardViewer() {
   const openDeck = async (deck: DeckInfo) => {
     try {
       let rawCards: any[] = []
-      if (isWeb) {
-        rawCards = await webDB.cards.where('topic_id').equals(deck.id).toArray()
-      } else {
-        if (!window.electron?.decks) return
+      if (!window.electron?.decks) return
         const r = await window.electron.decks.getCardsByTopic(deck.id)
         if (r.success && r.data) {
           rawCards = r.data
-        }
       }
 
       const cards: Card[] = rawCards.map((row: any) => ({
@@ -764,7 +705,7 @@ export default function FlashcardViewer() {
   // RENDER — Deck Listing
   // ══════════════════════════════════════════════
   const handleDeleteFolder = async (folderName: string) => {
-    const result = await activeDBService.updateDecksFolder(folderName, 'Uncategorized')
+    const result = await dbService.updateDecksFolder(folderName, 'Uncategorized')
     if (result.success) {
       await loadDecks()
     }
@@ -775,7 +716,7 @@ export default function FlashcardViewer() {
       folderName,
       orderIndex: index,
     }))
-    const result = await activeDBService.updateFolderOrder(folderOrders)
+    const result = await dbService.updateFolderOrder(folderOrders)
     if (result.success) {
       await loadDecks()
     }

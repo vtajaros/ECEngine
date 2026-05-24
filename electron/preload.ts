@@ -1,10 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
 contextBridge.exposeInMainWorld('electron', {
-  db: {
-    query: (sql: string, params?: unknown[]) => ipcRenderer.invoke('db:query', sql, params),
-    run: (sql: string, params?: unknown[]) => ipcRenderer.invoke('db:run', sql, params),
-  },
+
   decks: {
     getTopics: () => ipcRenderer.invoke('decks:getTopics'),
     getCardsByTopic: (topicId: string) => ipcRenderer.invoke('decks:getCardsByTopic', topicId),

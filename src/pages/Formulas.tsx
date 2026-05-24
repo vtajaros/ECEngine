@@ -29,7 +29,7 @@ import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectC
 import { Card, MCQData, FlashcardData } from '../types'
 import { renderMath } from '../lib/latex'
 import { shuffleArray } from '../lib/utils'
-import { webDB } from '@/services/web/schema'
+
 
 type Subject = 'MATH' | 'GEAS' | 'ELECS' | 'EST'
 type FilterSubject = 'ALL' | Subject
@@ -79,7 +79,7 @@ function saveFCBookmarks(set: Set<string>) {
 
 export default function Formulas() {
   const navigate = useNavigate()
-  const isWeb = !(window as any).electron
+
 
   // ── Deck listing state ──
   const [activeSubject, setActiveSubject] = useState<FilterSubject>('ALL')
@@ -162,70 +162,7 @@ export default function Formulas() {
   // ── Load decks from DB ──
   const loadDecks = async () => {
     try {
-      let dbDecks: DeckInfo[] = []
-      if (isWeb) {
-        const rawTopics = await webDB.topics.toArray()
-        const rawCards = await webDB.cards.toArray()
-
-        // Group cards by topic_id
-        const cardsByTopic = new Map<string, { cardCount: number, formulaCount: number, types: Set<string> }>()
-        for (const card of rawCards) {
-          if (!cardsByTopic.has(card.topic_id)) {
-            cardsByTopic.set(card.topic_id, { cardCount: 0, formulaCount: 0, types: new Set() })
-          }
-          const entry = cardsByTopic.get(card.topic_id)!
-          entry.cardCount++
-          entry.types.add(card.type)
-          if (card.type === 'formula') {
-            entry.formulaCount++
-          }
-        }
-
-        dbDecks = rawTopics.map((row: any): DeckInfo | null => {
-          const entry = cardsByTopic.get(row.id)
-          if (!entry || entry.cardCount === 0 || entry.formulaCount !== entry.cardCount) {
-            return null // Skip empty or non-formula-only decks
-          }
-
-          const types = Array.from(entry.types)
-          let deckType: 'mcq' | 'flashcard' | 'formula' | 'mixed' = 'formula'
-          if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
-          else if (types.includes('mcq')) deckType = 'mcq'
-          else if (types.includes('flashcard')) deckType = 'flashcard'
-          else if (types.includes('formula')) deckType = 'formula'
-
-          let parsedTags: string[] = []
-          try {
-            if (row.tags) parsedTags = JSON.parse(row.tags)
-          } catch (e) {}
-
-          const mastery = (() => {
-            const savedKeys = JSON.parse(localStorage.getItem(`progress_${row.id}`) || '[]')
-            return entry.cardCount > 0
-              ? Math.round((savedKeys.length / entry.cardCount) * 100)
-              : 0
-          })()
-
-          return {
-            id: row.id,
-            title: row.name,
-            subject: SUBJECT_MAP[row.subject] || 'ELECS',
-            cardCount: entry.cardCount,
-            deckType,
-            description: row.description || '',
-            mastery,
-            tags: parsedTags,
-            createdAt: Number(row.created_at) || Date.now(),
-            folderName: row.folder_name || 'Uncategorized',
-            order_index: row.order_index,
-          }
-        }).filter((d: DeckInfo | null): d is DeckInfo => d !== null)
-
-        // Sort by name by default like in SQLite (ORDER BY t.name)
-        dbDecks.sort((a, b) => a.title.localeCompare(b.title))
-        setDecks(dbDecks)
-      } else {
-        if (!window.electron?.decks) return
+      if (!window.electron?.decks) return
         const r = await window.electron.decks.getFormulaTopics()
         if (r.success && r.data) {
           setDecks(
@@ -265,7 +202,6 @@ export default function Formulas() {
             })
           )
         }
-      }
     } catch (e) { console.error('Failed to load decks', e) }
   }
 
@@ -293,15 +229,8 @@ export default function Formulas() {
   const handleConfirmDelete = async () => {
     if (!setToDelete) return
     try {
-      if (isWeb) {
-        await webDB.transaction('rw', webDB.topics, webDB.cards, webDB.progress, async () => {
-          await webDB.cards.where('topic_id').equals(setToDelete.id).delete()
-          await webDB.topics.delete(setToDelete.id)
-        })
-      } else {
-        if (window.electron?.decks) {
-          await window.electron.decks.deleteTopic(setToDelete.id)
-        }
+      if (window.electron?.decks) {
+        await window.electron.decks.deleteTopic(setToDelete.id)
       }
       setDecks((prev) => prev.filter((s) => s.id !== setToDelete.id))
       setSetToDelete(null)
@@ -313,22 +242,7 @@ export default function Formulas() {
   // ── Open a deck ──
   const openDeck = async (deck: DeckInfo) => {
     try {
-      if (isWeb) {
-        const rawCards = await webDB.cards.where('topic_id').equals(deck.id).toArray()
-        const cards: Card[] = rawCards.map((row: any) => ({
-          id: row.id,
-          topicId: row.topic_id,
-          type: row.type,
-          data: typeof row.data === 'string' ? JSON.parse(row.data) : row.data,
-          difficulty: row.difficulty || 'medium',
-          tags: typeof row.tags === 'string' ? JSON.parse(row.tags) : row.tags || [],
-          isCustom: !!row.is_custom,
-          createdAt: row.created_at || '',
-        }))
-        setActiveDeck({ id: deck.id, title: deck.title, cards })
-        applySettings(cards, settings)
-      } else {
-        if (!window.electron?.decks) return
+      if (!window.electron?.decks) return
         const r = await window.electron.decks.getCardsByTopic(deck.id)
         if (r.success && r.data) {
           const cards: Card[] = r.data.map((row: any) => ({
@@ -344,7 +258,6 @@ export default function Formulas() {
           setActiveDeck({ id: deck.id, title: deck.title, cards })
           applySettings(cards, settings)
         }
-      }
     } catch (e) {
       console.error('Failed to load cards', e)
     }
@@ -1045,7 +958,7 @@ export default function Formulas() {
   // RENDER — Deck Listing
   // ══════════════════════════════════════════════
   const handleDeleteFolder = async (folderName: string) => {
-    const result = await activeDBService.updateDecksFolder(folderName, 'Uncategorized')
+    const result = await dbService.updateDecksFolder(folderName, 'Uncategorized')
     if (result.success) {
       await loadDecks()
     }
@@ -1056,7 +969,7 @@ export default function Formulas() {
       folderName,
       orderIndex: index,
     }))
-    const result = await activeDBService.updateFolderOrder(folderOrders)
+    const result = await dbService.updateFolderOrder(folderOrders)
     if (result.success) {
       await loadDecks()
     }

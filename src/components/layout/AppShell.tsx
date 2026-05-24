@@ -11,8 +11,7 @@ import {
   ClipboardList,
 } from 'lucide-react'
 import { TitleBar } from './TitleBar'
-
-const isWeb = typeof window !== 'undefined' && !(window as any).electron
+import { dbService } from '../../services/db.service'
 
 type NavItem = {
   to: string
@@ -27,9 +26,7 @@ export const AppShell: React.FC = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      import('../../services/db.service').then(({ activeDBService }) => {
-        activeDBService.updateTimeSpent(1)
-      })
+      dbService.updateTimeSpent(1)
     }, 60000)
     return () => clearInterval(interval)
   }, [])
@@ -47,12 +44,10 @@ export const AppShell: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen sm:h-screen bg-[#0D0D0D] text-[var(--text-primary)] font-['IBM_Plex_Mono'] overflow-y-auto sm:overflow-hidden overflow-x-hidden w-screen max-sm:[&::-webkit-scrollbar]:hidden max-sm:[scrollbar-width:none]">
-      {!isWeb && (
-        <TitleBar
-          isCollapsed={isCollapsed}
-          onToggleSidebar={() => setIsCollapsed(!isCollapsed)}
-        />
-      )}
+      <TitleBar
+        isCollapsed={isCollapsed}
+        onToggleSidebar={() => setIsCollapsed(!isCollapsed)}
+      />
 
       <div className="flex flex-col sm:flex-row flex-1 overflow-visible sm:overflow-hidden">
         {/* Sidebar */}
@@ -61,93 +56,50 @@ export const AppShell: React.FC = () => {
             isCollapsed ? 'w-full h-12 sm:w-16 sm:h-full' : 'w-full h-12 sm:w-[140px] sm:h-full'
           } bg-[#1A1A1A] border-b sm:border-b-0 sm:border-r border-[#222] flex flex-row sm:flex-col transition-all duration-300 absolute sm:relative top-0 left-0 sm:top-auto sm:left-auto z-20 shrink-0`}
         >
-          {/* ── Hamburger row (desktop / Electron only, sm breakpoint and up) ── */}
-          {!isWeb && (
-            <div className="hidden sm:flex h-10 w-full shrink-0 items-center justify-between px-2">
-              {!isCollapsed && (
-                <div className="flex items-center gap-2 pl-1">
-                  <img
-                    src="/ecengine_icon.png"
-                    alt="ECEngine"
-                    className="w-4 h-4 object-contain"
-                    onError={(e) => {
-                      const img = e.currentTarget
-                      if (!img.src.includes('resources')) {
-                        img.src = 'resources/ecengine_icon.png'
-                      }
-                    }}
-                  />
-                  <span className="font-['Rajdhani'] font-bold tracking-wider text-white text-sm">
-                    <span className="text-[#00FF41]">ECE</span>ngine
-                  </span>
-                </div>
-              )}
-              <button
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                className={`${isCollapsed ? 'mx-auto' : 'ml-auto'} w-7 h-7 flex items-center justify-center hover:bg-[#222] rounded-md text-gray-500 hover:text-[#00FF41] transition-colors`}
-                title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          {/* ── Hamburger row ── */}
+          <div className="hidden sm:flex h-10 w-full shrink-0 items-center justify-between px-2">
+            {!isCollapsed && (
+              <div className="flex items-center gap-2 pl-1">
+                <img
+                  src="/ecengine_icon.png"
+                  alt="ECEngine"
+                  className="w-4 h-4 object-contain"
+                  onError={(e) => {
+                    const img = e.currentTarget
+                    if (!img.src.includes('resources')) {
+                      img.src = 'resources/ecengine_icon.png'
+                    }
+                  }}
+                />
+                <span className="font-['Rajdhani'] font-bold tracking-wider text-white text-sm">
+                  <span className="text-[#00FF41]">ECE</span>ngine
+                </span>
+              </div>
+            )}
+            <button
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className={`${isCollapsed ? 'mx-auto' : 'ml-auto'} w-7 h-7 flex items-center justify-center hover:bg-[#222] rounded-md text-gray-500 hover:text-[#00FF41] transition-colors`}
+              title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <line x1="9" y1="3" x2="9" y2="21" />
-                </svg>
-              </button>
-            </div>
-          )}
-
-          {/* ── Hamburger row (web only, sm breakpoint and up) ── */}
-          {isWeb && (
-            <div className="hidden sm:flex h-10 w-full shrink-0 items-center justify-between px-2">
-              {!isCollapsed && (
-                <div className="flex items-center gap-2 pl-1">
-                  <img src="/ecengine_icon.png" alt="ECEngine" className="w-4 h-4 object-contain" />
-                  <span className="font-['Rajdhani'] font-bold tracking-wider text-white text-sm">
-                    <span className="text-[#00FF41]">ECE</span>ngine
-                  </span>
-                </div>
-              )}
-              <button
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                className={`${isCollapsed ? 'mx-auto' : 'ml-auto'} w-7 h-7 flex items-center justify-center hover:bg-[#222] rounded-md text-gray-500 hover:text-[#00FF41] transition-colors`}
-                title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              >
-                {/* Claude/Gemini-style sidebar toggle icon */}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <line x1="9" y1="3" x2="9" y2="21" />
-                </svg>
-              </button>
-            </div>
-          )}
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <line x1="9" y1="3" x2="9" y2="21" />
+              </svg>
+            </button>
+          </div>
 
           <nav className="flex-1 flex max-sm:items-center max-sm:justify-center w-full gap-1 sm:gap-0 px-2 sm:flex-col sm:justify-start sm:items-stretch sm:px-0 sm:overflow-y-auto sm:overflow-x-hidden overflow-x-auto overflow-y-hidden no-scrollbar max-sm:[&::-webkit-scrollbar]:hidden max-sm:[scrollbar-width:none]">
-            {navItems
-              .filter(item => {
-                if (isWeb && item.webHidden) return false
-                if (!isWeb && item.webOnly) return false
-                return true
-              })
-              .map((item) => (
+            {navItems.map((item) => (
                 <NavLink
                   key={item.to}
                   to={item.to}

@@ -437,8 +437,3 @@ export const dbService = {
   },
 }
 
-import { webDBService } from './web/db.web.service'
-
-export const activeDBService = (typeof window !== 'undefined' && (window as any).electron)
-  ? dbService
-  : webDBService

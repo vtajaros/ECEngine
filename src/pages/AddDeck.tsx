@@ -8,7 +8,6 @@ import { parseImportedMCQs, parseImportedFlashcards } from '../lib/parser'
 import { detectQuizletFormat, tryConvertQuizlet } from '../lib/quizletParser'
 import { renderMath } from '../lib/latex'
 import { motion, AnimatePresence } from 'framer-motion'
-import { webDB } from '@/services/web/schema'
 import {
   DndContext,
   closestCenter,
@@ -47,7 +46,6 @@ let _uid = 0
 const uid = () => `row_${Date.now()}_${++_uid}`
 
 // Module-level web detection (needed by sub-components like MCQForm/FlashcardForm)
-const isWeb = !(window as any).electron
 
 type Subject = 'Mathematics' | 'General Engineering & Applied Sciences' | 'Electronics Engineering' | 'Electronics Systems & Technologies'
 
@@ -993,14 +991,8 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
     }
 
     const path = (file as any).path
-    if (!isWeb && !path) return
+    if (!path) return
     try {
-      if (isWeb) {
-        // On web, images cannot be saved to disk — skip silently
-        if (onError) onError('Image upload is not supported in the web version.')
-        e.target.value = ''
-        return
-      }
       const result = await (window as any).electron.saveImage(path)
       if (result.success && result.filename) {
         set({ imagePath: result.filename })
@@ -1101,14 +1093,8 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
     }
 
     const path = (file as any).path
-    if (!isWeb && !path) return
+    if (!path) return
     try {
-      if (isWeb) {
-        // On web, images cannot be saved to disk — skip silently
-        if (onError) onError('Image upload is not supported in the web version.')
-        e.target.value = ''
-        return
-      }
       const result = await (window as any).electron.saveImage(path)
       if (result.success && result.filename) {
         onChange({ ...data, imagePath: result.filename })
@@ -1369,18 +1355,11 @@ export default function AddDeck() {
   useEffect(() => {
     async function fetchFolders() {
       let folderNames: string[] = []
-      if (isWeb) {
-        const topics = await webDB.topics.toArray()
-        folderNames = [...new Set(
-          topics.map((t: any) => t.folder_name).filter(Boolean)
-        )].sort() as string[]
-      } else {
-        if (!window.electron?.decks) return
-        const r = await window.electron.decks.getTopics()
-        folderNames = [...new Set(
-          (r.data || []).map((row: any) => row.folder_name).filter(Boolean)
-        )].sort() as string[]
-      }
+      if (!window.electron?.decks) return
+      const r = await window.electron.decks.getTopics()
+      folderNames = [...new Set(
+        (r.data || []).map((row: any) => row.folder_name).filter(Boolean)
+      )].sort() as string[]
       setExistingFolders(folderNames)
     }
     fetchFolders()
@@ -1653,35 +1632,7 @@ export default function AddDeck() {
     try {
       const topicId = 'topic_' + Date.now().toString(36)
 
-      if (isWeb) {
-        const now = new Date().toISOString()
-        await webDB.transaction('rw', webDB.topics, webDB.cards, async () => {
-          await webDB.topics.add({
-            id: topicId,
-            name: title.trim(),
-            subject: subject,
-            description: description.trim(),
-            tags: JSON.stringify(Array.from(deckTags)),
-            created_at: now,
-            folder_name: folderName.trim() || 'Custom'
-          })
-          for (const card of validCards) {
-            const cleanedData = stripPlaceholders(card.data)
-            await webDB.cards.add({
-              id: `card_${Math.random().toString(36).slice(2, 12)}`,
-              topic_id: topicId,
-              type: card.type,
-              data: serializeCardData(cleanedData),
-              difficulty: '',
-              tags: '[]',
-              is_custom: 1,
-              created_at: now
-            })
-          }
-        })
-        navigate('/study')
-      } else {
-        const payload = {
+      const payload = {
           topicId,
           name: title.trim(),
           subject: subject,
@@ -1703,7 +1654,6 @@ export default function AddDeck() {
         const res = await (window as any).electron.decks.addDeckWithCards(payload)
         if (!res.success) throw new Error(res.error)
         navigate('/study')
-      }
     } catch (err: any) {
       console.error('Save failed', err)
       alert('Failed to save: ' + err.message)
