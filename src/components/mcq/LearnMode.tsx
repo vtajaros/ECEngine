@@ -499,7 +499,7 @@ Please explain:
   const totalWrongInPartition = partitionWrongIds.size
 
   return (
-    <div className="flex flex-col h-full bg-[#0D0D0D] p-4 sm:p-8 relative">
+    <div className="flex flex-col h-full bg-[#0D0D0D] p-8 relative">
       <LeaveConfirmModal 
         isOpen={blocker.state === 'blocked' || showExitConfirm}
         onConfirm={() => {
@@ -541,7 +541,7 @@ Please explain:
           </div>
         </div>
         
-        <div className="w-full sm:w-auto flex justify-end">
+        <div className="flex justify-end">
           <button onClick={() => setShowExitConfirm(true)} className="px-4 py-2 border border-[#333] text-[#888] rounded hover:text-white hover:border-[#666] transition-colors font-['Rajdhani'] uppercase tracking-widest text-sm">
             Exit Learn Mode
           </button>
@@ -553,7 +553,7 @@ Please explain:
           key={currentCard.id}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-3xl mx-auto bg-[#161616] border border-[#222] rounded-xl shadow-2xl p-6 sm:p-10 relative flex flex-col max-h-[75vh] sm:max-h-none overflow-y-auto max-sm:[&::-webkit-scrollbar]:hidden max-sm:[scrollbar-width:none]"
+          className="w-full max-w-3xl mx-auto bg-[#161616] border border-[#222] rounded-xl shadow-2xl p-10 relative flex flex-col overflow-y-auto"
         >
           {/* Bookmark Togggle */}
           <button 
@@ -567,18 +567,14 @@ Please explain:
           <div className="mb-10 pr-4 h-auto flex-none">
             <span className="text-[var(--accent-primary)] font-['IBM_Plex_Mono'] text-sm font-bold tracking-widest mb-3 block">Question {overallCurrentQuestion}</span>
             <div 
-              className="text-white font-['Rajdhani'] font-semibold mb-6 text-base sm:text-lg leading-relaxed whitespace-pre-wrap"
+              className="text-white font-['Rajdhani'] font-semibold mb-6 text-lg leading-relaxed whitespace-pre-wrap"
               dangerouslySetInnerHTML={{ __html: renderMath(mcqData.question) }}
             />
 
             {mcqData.imagePath && (
               <div className="mb-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
                 <img 
-                  src={
-                    (window as any).electron
-                      ? `ece-app://${mcqData.imagePath}`
-                      : `/ece-images/${mcqData.imagePath}`
-                  } 
+                  src={`ece-app://${mcqData.imagePath}`} 
                   alt="Circuit diagram"
                   className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
                   onClick={() => setZoomedImage(mcqData.imagePath!)}
@@ -587,7 +583,7 @@ Please explain:
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-8">
+          <div className="grid grid-cols-2 gap-4 mb-8">
             {[0, 1, 2, 3].map((idx) => {
               const choice = mcqData.choices[idx];
               if (choice === undefined) return null;
@@ -616,13 +612,13 @@ Please explain:
                   key={idx}
                   onClick={() => viewState === 'question' && submitAnswer(idx)}
                   disabled={viewState === 'feedback'}
-                  className={`py-3 px-4 sm:py-4 sm:px-4 text-xs sm:text-base rounded-lg border text-left flex items-center transition-all font-['Rajdhani'] ${btnClass}`}
+                  className={`py-4 px-4 text-base rounded-lg border text-left flex items-center transition-all font-['Rajdhani'] ${btnClass}`}
                 >
-                  <span className={`font-['IBM_Plex_Mono'] mr-2 sm:mr-4 w-6 sm:w-8 text-xs sm:text-base flex-shrink-0 ${prefixClass}`}>
+                  <span className={`font-['IBM_Plex_Mono'] mr-4 w-8 text-base flex-shrink-0 ${prefixClass}`}>
                     {String.fromCharCode(65 + idx)}.
                   </span>
                   <div 
-                    className={`flex-1 text-left break-words font-['Rajdhani'] font-medium text-xs sm:text-base leading-normal ${textClass}`} 
+                    className={`flex-1 text-left break-words font-['Rajdhani'] font-medium text-base leading-normal ${textClass}`} 
                     dangerouslySetInnerHTML={{ __html: renderMath(choice) }} 
                   />
                 </button>
@@ -665,9 +661,9 @@ Please explain:
                )}
                 <button 
                   onClick={handleNext}
-                  className="w-[80%] sm:w-full max-w-sm mx-auto py-2 sm:py-3 text-sm sm:text-base rounded bg-[var(--accent-primary)] text-black font-bold font-['Orbitron'] tracking-widest uppercase hover:bg-[var(--accent-dim)] transition-colors shadow-[0_0_20px_rgba(0,255,65,0.3)] hover:shadow-[0_0_30px_rgba(0,255,65,0.5)] mb-4"
+                  className="w-full max-w-sm mx-auto py-3 text-base rounded bg-[var(--accent-primary)] text-black font-bold font-['Orbitron'] tracking-widest uppercase hover:bg-[var(--accent-dim)] transition-colors shadow-[0_0_20px_rgba(0,255,65,0.3)] hover:shadow-[0_0_30px_rgba(0,255,65,0.5)] mb-4"
                 >
-                  Next <span className="hidden sm:inline font-['IBM_Plex_Mono'] text-xs ml-2 opacity-60">(Space)</span>
+                  Next <span className="font-['IBM_Plex_Mono'] text-xs ml-2 opacity-60">(Space)</span>
                 </button>
 
                {/* Secondary action buttons: GET CONTEXT and EXPLAIN */}
@@ -729,11 +725,7 @@ Please explain:
             <motion.img
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              src={
-                (window as any).electron
-                  ? `ece-app://${zoomedImage}`
-                  : `/ece-images/${zoomedImage}`
-              }
+              src={`ece-app://${zoomedImage}`}
               alt="Zoomed diagram"
               className="max-w-[90vw] max-h-[90vh] object-contain shadow-2xl rounded-lg"
               onClick={(e) => e.stopPropagation()}

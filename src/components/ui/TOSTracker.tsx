@@ -81,7 +81,7 @@ const TopicAccordion: React.FC<TopicAccordionProps> = ({
             <span className="text-gray-400 shrink-0">
               {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </span>
-            <span className="font-['Rajdhani'] text-lg sm:text-xl font-bold tracking-wide text-gray-200">
+            <span className="font-['Rajdhani'] text-xl font-bold tracking-wide text-gray-200">
               {topic.name}
             </span>
           </div>
@@ -100,9 +100,9 @@ const TopicAccordion: React.FC<TopicAccordionProps> = ({
             className="border-b border-white/5 hover:bg-white/[0.02] transition-colors"
           >
             {/* Subtopic Title (Left) */}
-            <td className="px-8 py-3.5 sm:py-4 pl-10 sm:pl-12">
+            <td className="px-8 py-4 pl-12">
               <span 
-                className="font-['IBM_Plex_Mono'] text-sm sm:text-base leading-relaxed transition-colors"
+                className="font-['IBM_Plex_Mono'] text-base leading-relaxed transition-colors"
                 style={{ color: isReviewed ? '#00FF41' : '#a3a3a3' }}
               >
                 {sub.name}
@@ -110,7 +110,7 @@ const TopicAccordion: React.FC<TopicAccordionProps> = ({
             </td>
 
             {/* Review Checkbox (Center) */}
-            <td className="px-4 py-3.5 sm:py-4 text-center w-28 sm:w-36">
+            <td className="px-4 py-4 text-center w-36">
               <button
                 onClick={() => onToggleReview(key)}
                 className="inline-flex items-center justify-center p-2 rounded hover:bg-white/5 transition-colors"
@@ -125,7 +125,7 @@ const TopicAccordion: React.FC<TopicAccordionProps> = ({
             </td>
 
             {/* Refresher Checkbox (Center) */}
-            <td className="px-4 py-3.5 sm:py-4 text-center w-28 sm:w-36">
+            <td className="px-4 py-4 text-center w-36">
               <button
                 onClick={() => onToggleRefresher(key)}
                 className="inline-flex items-center justify-center p-2 rounded hover:bg-white/5 transition-colors"
@@ -191,7 +191,7 @@ const SubjectPanel: React.FC<SubjectPanelProps> = ({
         {/* Info Stack */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2.5 flex-wrap">
-            <span className="font-['Rajdhani'] font-bold text-lg sm:text-xl tracking-wide text-gray-100 uppercase leading-none">
+            <span className="font-['Rajdhani'] font-bold text-xl tracking-wide text-gray-100 uppercase leading-none">
               {subject.label}
             </span>
             <span
@@ -224,8 +224,8 @@ const SubjectPanel: React.FC<SubjectPanelProps> = ({
               <thead>
                 <tr className="border-b border-[#222] bg-[#050505] font-['Rajdhani'] text-xs font-bold text-gray-400 uppercase tracking-widest select-none">
                   <th className="px-6 py-3.5">TOPICS & SYLLABUS</th>
-                  <th className="px-4 py-3.5 text-center w-28 sm:w-36">REVIEW</th>
-                  <th className="px-4 py-3.5 text-center w-28 sm:w-36">REFRESHER</th>
+                  <th className="px-4 py-3.5 text-center w-36">REVIEW</th>
+                  <th className="px-4 py-3.5 text-center w-36">REFRESHER</th>
                 </tr>
               </thead>
               <tbody>
@@ -361,7 +361,7 @@ export const TOSTracker: React.FC = () => {
         {/* Progress Bar & Reset Button */}
         <div className="flex items-center gap-5 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-36 sm:w-52 h-2.5 rounded-full bg-[#1e1e1e] overflow-hidden">
+            <div className="w-52 h-2.5 rounded-full bg-[#1e1e1e] overflow-hidden">
               <motion.div
                 className="h-full rounded-full"
                 animate={{ width: `${globalStats.pct}%` }}

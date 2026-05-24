@@ -56,10 +56,10 @@ export const TestNavRail = memo(({
 
   return (
     <aside
-      className="w-full overflow-x-auto flex flex-row py-2 mb-4 border-b border-zinc-800 bg-[#0a0a0a] select-none shrink-0 h-auto sm:w-36 sm:shrink-0 sm:flex-col sm:items-stretch sm:border-r sm:border-zinc-800 sm:border-y sm:border-l sm:border-[#222]/30 sm:rounded-xl sm:shadow-xl sm:overflow-hidden sm:h-[calc(100vh-120px)] sm:py-0 sm:mb-0 sm:border-b-0 max-sm:[&::-webkit-scrollbar]:hidden max-sm:[scrollbar-width:none]"
+      className="w-36 shrink-0 flex flex-col items-stretch border-r border-zinc-800 border-y border-l border-[#222]/30 rounded-xl shadow-xl overflow-hidden h-[calc(100vh-120px)] py-0 mb-0 bg-[#0a0a0a] select-none"
       aria-label="Question Navigator"
     >
-      <div className="px-4 py-3 shrink-0 hidden sm:flex sm:flex-col sm:items-center sm:gap-1 border-b border-[#1a1a1a]">
+      <div className="px-4 py-3 shrink-0 flex flex-col items-center gap-1 border-b border-[#1a1a1a]">
         <span className="font-['Rajdhani'] font-semibold tracking-widest text-zinc-400 text-[10px] uppercase leading-tight">
           Item Navigator
         </span>
@@ -90,9 +90,9 @@ export const TestNavRail = memo(({
       {/* ── Question List (Single Column, Scrollable) ─────────────────────── */}
       <div
         ref={railBodyRef}
-        className="flex-1 sm:overflow-y-auto px-4 sm:px-5 py-1 sm:py-4 scroll-py-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className="flex-1 overflow-y-auto px-5 py-4 scroll-py-8 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
       >
-        <div className="flex flex-row sm:flex-col gap-3 sm:gap-1 items-center sm:items-stretch">
+        <div className="flex flex-col gap-1 items-stretch">
           {Array.from({ length: totalItems }, (_, i) => {
             const answered = isAnswered(answeredIndices, i)
             const isActive = i === currentIndex
@@ -105,7 +105,7 @@ export const TestNavRail = memo(({
                 title={`Question ${i + 1}${answered ? ' (Answered)' : ''}`}
                 className={[
                   'font-["Rajdhani"] text-sm select-none transition-all duration-150 ease-in-out',
-                  'flex items-center justify-start gap-2 shrink-0 w-auto sm:w-full',
+                  'flex items-center justify-start gap-2 w-full',
                   'py-1.5 px-3 rounded-md',
                   isActive
                     ? 'text-white font-bold bg-white/5 border-l-2 border-[#00FF41] pl-2.5'
@@ -115,7 +115,7 @@ export const TestNavRail = memo(({
                 ].join(' ')}
               >
                 <span className="flex items-center gap-1">
-                  <span className="hidden sm:inline">Question </span>
+                  <span>Question </span>
                   <span>{i + 1}</span>
                 </span>
                 {answered && (

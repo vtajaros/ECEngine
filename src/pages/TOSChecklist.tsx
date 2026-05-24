@@ -14,13 +14,13 @@ export default function TOSChecklist() {
             </div>
 
             {/* Title — stack the two words on mobile, inline on larger screens */}
-            <h1 className="font-['Orbitron'] text-3xl sm:text-4xl font-bold text-[var(--text-primary)] tracking-wider flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2">
+            <h1 className="font-['Orbitron'] text-4xl font-bold text-[var(--text-primary)] tracking-wider flex flex-row items-center justify-center gap-2">
               REVIEW 
               <span className="text-[#00FF41]">CHECKLIST</span>
             </h1>
 
             {/* Subtitle */}
-            <p className="text-[var(--text-secondary)] font-['Rajdhani'] text-sm sm:text-base uppercase tracking-widest">
+            <p className="text-[var(--text-secondary)] font-['Rajdhani'] text-base uppercase tracking-widest">
               EELE Board Exam Review Tracker
             </p>
           </div>

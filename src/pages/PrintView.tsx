@@ -62,11 +62,7 @@ function MCQTableRow({ index, card }: MCQTableRowProps) {
             {/* question imagePath */}
             {(card.data as MCQData & { imagePath?: string }).imagePath && (
               <img
-                src={
-                  (window as any).electron
-                    ? `ece-app://${(card.data as MCQData & { imagePath?: string }).imagePath}`
-                    : `/ece-images/${(card.data as MCQData & { imagePath?: string }).imagePath}`
-                }
+                src={`ece-app://${(card.data as MCQData & { imagePath?: string }).imagePath}`}
                 alt="Question diagram"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                 style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
@@ -127,11 +123,7 @@ function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) 
         </p>
         {imagePath && (
           <img
-            src={
-              (window as any).electron
-                ? `ece-app://${imagePath}`
-                : `/ece-images/${imagePath}`
-            }
+            src={`ece-app://${imagePath}`}
             alt="Question diagram"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
             style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', marginLeft: '16px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
@@ -150,11 +142,7 @@ function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) 
       </p>
       {imagePath && (
         <img
-          src={
-            (window as any).electron
-              ? `ece-app://${imagePath}`
-              : `/ece-images/${imagePath}`
-          }
+          src={`ece-app://${imagePath}`}
           alt="Question diagram"
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
           style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
@@ -225,11 +213,7 @@ function FormulaItem({ index, card }: FormulaItemProps) {
         ) : null}
         {imagePath && (
           <img
-            src={
-              (window as any).electron
-                ? `ece-app://${imagePath}`
-                : `/ece-images/${imagePath}`
-            }
+            src={`ece-app://${imagePath}`}
             alt="Formula diagram"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
             style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', borderRadius: '4px', border: '1px solid #e5e7eb' }}
@@ -246,7 +230,7 @@ function FormulaItem({ index, card }: FormulaItemProps) {
 
 export default function PrintView() {
 
-  const controls = (window as any).electron?.windowControls
+  const controls = window.electron?.windowControls
   const [searchParams] = useSearchParams()
   const topicId = searchParams.get('id') ?? searchParams.get('topicId') ?? ''
   const title = decodeURIComponent(searchParams.get('title') ?? 'Test Paper')
@@ -258,15 +242,11 @@ export default function PrintView() {
   const [exportState, setExportState] = useState<ExportState>('idle')
   const [exportError, setExportError] = useState('')
   const [scale, setScale] = useState(1)
-  const [pinchScale, setPinchScale] = useState(1)
-  const initialDistance = useRef<number | null>(null)
-  const initialPinchScale = useRef<number>(1)
 
   useEffect(() => {
     const handleResize = () => {
       const PAPER_WIDTH = 800; // Fixed paper width in pixels
-      const PADDING = 32; // Account for mobile side padding
-      const availableWidth = window.innerWidth - PADDING;
+      const availableWidth = window.innerWidth;
       
       if (availableWidth < PAPER_WIDTH) {
         setScale(availableWidth / PAPER_WIDTH);
@@ -289,31 +269,7 @@ export default function PrintView() {
     })
   }, [topicId])
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 2) {
-      const dx = e.touches[0].clientX - e.touches[1].clientX
-      const dy = e.touches[0].clientY - e.touches[1].clientY
-      initialDistance.current = Math.hypot(dx, dy)
-      initialPinchScale.current = pinchScale
-    }
-  }
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (e.touches.length === 2 && initialDistance.current !== null) {
-      const dx = e.touches[0].clientX - e.touches[1].clientX
-      const dy = e.touches[0].clientY - e.touches[1].clientY
-      const distance = Math.hypot(dx, dy)
-      
-      const newScale = initialPinchScale.current * (distance / initialDistance.current)
-      setPinchScale(Math.min(Math.max(1, newScale), 3))
-    }
-  }
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (e.touches.length < 2) {
-      initialDistance.current = null
-    }
-  }
 
   const handleExportPDF = async () => {
     setExportState('loading')
@@ -362,7 +318,7 @@ export default function PrintView() {
   // Titlebar (custom centered, matching main window, not printed)
   // -------------------------------------------------------------------------
   const titleBar = (
-    <div className={`print:hidden max-sm:hidden w-full h-8 bg-[#1A1A1A] text-gray-400 flex items-center justify-between select-none [-webkit-app-region:drag] relative shrink-0 px-0 ${pinchScale > 1.05 ? 'hidden' : ''}`}>
+    <div className="print:hidden w-full h-8 bg-[#1A1A1A] text-gray-400 flex items-center justify-between select-none [-webkit-app-region:drag] relative shrink-0 px-0">
       {/* Left side spacer to balance the right controls or put logo */}
       <div className="flex items-center [-webkit-app-region:no-drag] pl-3">
         <img src="/favicon.png" alt="Logo" className="w-4 h-4 object-contain" />
@@ -409,7 +365,7 @@ export default function PrintView() {
   // -------------------------------------------------------------------------
   const toolbar = (
     <div
-      className={`print:hidden w-full flex flex-col px-4 sm:px-6 py-2 sm:py-3 ${pinchScale > 1.05 ? 'hidden' : ''}`}
+      className="print:hidden w-full flex flex-col px-6 py-3"
       style={{
         position: 'sticky',
         top: 0,
@@ -418,17 +374,9 @@ export default function PrintView() {
         borderBottom: '1px solid var(--bg-card)',
       }}
     >
-      <div className="flex sm:hidden items-center justify-between w-full bg-[#1A1A1A] rounded px-3 py-2 mb-2">
-        <span className="font-rajdhani font-bold tracking-wider text-white text-xs truncate pr-2">
-          <span className="text-[#00FF41]">TEST PAPER</span> — {title}
-        </span>
-        <span className="font-rajdhani font-bold tracking-wider text-white text-[10px] whitespace-nowrap uppercase">
-          {cards.length} CARDS
-        </span>
-      </div>
-      <div className="flex flex-nowrap items-center gap-1 sm:gap-2 w-full max-sm:justify-center overflow-x-auto no-scrollbar pb-1">
+      <div className="flex flex-nowrap items-center gap-2 w-full overflow-x-auto no-scrollbar pb-1">
       {/* Title */}
-      <div className="hidden sm:flex" style={{ alignItems: 'center', gap: '8px', flex: 1, minWidth: '200px' }}>
+      <div className="flex" style={{ alignItems: 'center', gap: '8px', flex: 1, minWidth: '200px' }}>
         <FileText size={18} color="var(--accent-primary)" />
         <span
           style={{
@@ -475,7 +423,7 @@ export default function PrintView() {
                 disabled={isDisabled}
                 onClick={() => { if (!isDisabled) setLayout(mode) }}
                 whileTap={{ scale: isDisabled ? 1 : 0.95 }}
-                className="whitespace-nowrap flex-shrink-0 text-[10px] px-2 py-1.5 sm:text-[12px] sm:px-[14px] sm:py-[6px]"
+                className="whitespace-nowrap flex-shrink-0 text-[12px] px-[14px] py-[6px]"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -520,7 +468,7 @@ export default function PrintView() {
                 key={side}
                 onClick={() => setBoldSide(side)}
                 whileTap={{ scale: 0.95 }}
-                className="whitespace-nowrap flex-shrink-0 text-[10px] px-2 py-1.5 sm:text-[11px] sm:px-[10px] sm:py-[5px]"
+                className="whitespace-nowrap flex-shrink-0 text-[11px] px-[10px] py-[5px]"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -551,7 +499,7 @@ export default function PrintView() {
         onClick={handleExportPDF}
         disabled={exportState === 'loading'}
         whileTap={{ scale: 0.96 }}
-        className="whitespace-nowrap flex-shrink-0 text-[10px] px-2 py-1.5 sm:text-[13px] sm:px-[20px] sm:py-[8px]"
+        className="whitespace-nowrap flex-shrink-0 text-[13px] px-[20px] py-[8px]"
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -699,11 +647,7 @@ export default function PrintView() {
                       <td style={{ padding: '10px 12px', verticalAlign: 'top', width: '50%', overflow: 'hidden' }}>
                         {imageFront && (
                           <img
-                            src={
-                              (window as any).electron
-                                ? `ece-app://${imageFront}`
-                                : `/ece-images/${imageFront}`
-                            }
+                            src={`ece-app://${imageFront}`}
                             alt="Front diagram"
                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                             style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
@@ -711,11 +655,7 @@ export default function PrintView() {
                         )}
                         {imagePath && (
                           <img
-                            src={
-                              (window as any).electron
-                                ? `ece-app://${imagePath}`
-                                : `/ece-images/${imagePath}`
-                            }
+                            src={`ece-app://${imagePath}`}
                             alt="Flashcard diagram"
                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                             style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
@@ -726,11 +666,7 @@ export default function PrintView() {
                       <td style={{ padding: '10px 12px', verticalAlign: 'top', width: '50%', borderLeft: '1px solid #d1d5db', overflow: 'hidden' }}>
                         {imageBack && (
                           <img
-                            src={
-                              (window as any).electron
-                                ? `ece-app://${imageBack}`
-                                : `/ece-images/${imageBack}`
-                            }
+                            src={`ece-app://${imageBack}`}
                             alt="Back diagram"
                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                             style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
@@ -754,11 +690,7 @@ export default function PrintView() {
                     </p>
                     {imageFront && (
                       <img
-                        src={
-                          (window as any).electron
-                            ? `ece-app://${imageFront}`
-                            : `/ece-images/${imageFront}`
-                        }
+                        src={`ece-app://${imageFront}`}
                         alt="Front diagram"
                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                         style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginLeft: '20px', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
@@ -766,11 +698,7 @@ export default function PrintView() {
                     )}
                     {imagePath && (
                       <img
-                        src={
-                          (window as any).electron
-                            ? `ece-app://${imagePath}`
-                            : `/ece-images/${imagePath}`
-                        }
+                        src={`ece-app://${imagePath}`}
                         alt="Flashcard diagram"
                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                         style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginLeft: '20px', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
@@ -779,11 +707,7 @@ export default function PrintView() {
                     <div style={{ paddingLeft: '20px', color: '#374151' }}>
                       {imageBack && (
                         <img
-                          src={
-                            (window as any).electron
-                              ? `ece-app://${imageBack}`
-                              : `/ece-images/${imageBack}`
-                          }
+                          src={`ece-app://${imageBack}`}
                           alt="Back diagram"
                           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                           style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
@@ -861,13 +785,10 @@ export default function PrintView() {
       {titleBar}
       {toolbar}
       <div className="flex-1 overflow-y-auto" style={{ background: '#e5e7eb', padding: '40px 0' }}>
-        <div className="w-full flex justify-center pb-8 sm:pb-12 overflow-x-auto">
+        <div className="w-full flex justify-center pb-12 overflow-x-auto">
           <div
             id="print-paper-area"
-            className="w-[800px] max-w-none touch-pan-x touch-pan-y"
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
+            className="w-[800px] max-w-none"
             style={{
               maxWidth: '800px',
               margin: '0 auto',
@@ -875,7 +796,7 @@ export default function PrintView() {
               padding: '60px 70px',
               boxShadow: '0 2px 16px rgba(0,0,0,0.13)',
               minHeight: '1100px',
-              zoom: scale * pinchScale
+              zoom: scale
             } as any}
           >
             {paperContent}

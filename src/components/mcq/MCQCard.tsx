@@ -77,7 +77,7 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
         </div>
 
         <div 
-          className="font-['Rajdhani'] font-semibold text-[var(--text-primary)] text-base sm:text-lg leading-relaxed"
+          className="font-['Rajdhani'] font-semibold text-[var(--text-primary)] text-lg leading-relaxed"
           dangerouslySetInnerHTML={{ __html: renderMath(data.question) }}
         />
         
@@ -89,7 +89,7 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
       </div>
 
       {/* Choices */}
-      <div className="w-full grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 select-none">
+      <div className="w-full grid grid-cols-2 gap-4 select-none">
         {data.choices.map((choice, index) => {
           const isSelected = selectedChoice === index
           const isCorrectAnswer = index === data.answer
@@ -113,7 +113,7 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
               onClick={() => handleSelect(index)}
               disabled={showResult}
               whileTap={!showResult ? { scale: 0.98 } : {}}
-              className={`w-full text-left py-3 sm:py-4 px-4 rounded-lg flex items-center transition-all duration-300 ${btnClass}`}
+              className={`w-full text-left py-4 px-4 rounded-lg flex items-center transition-all duration-300 ${btnClass}`}
             >
               <div className={`w-6 h-6 flex items-center justify-center rounded border font-['Rajdhani'] font-bold text-sm mr-3 flex-shrink-0 ${
                 showResult && isCorrectAnswer ? 'bg-[#00FF41] text-[#0D0D0D] border-[#00FF41]' :
@@ -123,7 +123,7 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
                 {letters[index]}
               </div>
               <div 
-                className="flex-1 text-sm sm:text-base font-['Rajdhani'] font-semibold tracking-wide"
+                className="flex-1 text-base font-['Rajdhani'] font-semibold tracking-wide"
                 dangerouslySetInnerHTML={{ __html: renderMath(choice) }}
               />
               {showResult && isCorrectAnswer && <CheckCircle2 className="text-[#00FF41] ml-3 flex-shrink-0" size={20} />}

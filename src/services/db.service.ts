@@ -24,6 +24,7 @@ declare global {
         exportToText: (topicId: number | string, topicName: string) => Promise<{ success: boolean; error?: string }>
         getTopicsWithCardCounts: () => Promise<{ success: boolean; data?: any; error?: string }>
         getFormulaTopics: () => Promise<{ success: boolean; data?: any; error?: string }>
+        getFormulaMastery: () => Promise<{ success: boolean; data?: any; error?: string }>
         updateDeckWithCards: (payload: {
           deckId: string, title: string, subject: string, description: string,
           tags: string, folderName: string,
@@ -434,6 +435,12 @@ export const dbService = {
     folderOrders: Array<{ folderName: string; orderIndex: number }>
   ): Promise<{ success: boolean; error?: string }> => {
     return window.electron.decks.updateFolderOrder(folderOrders)
+  },
+
+  decks: {
+    getFormulaMastery: async () => {
+      return window.electron.decks.getFormulaMastery()
+    }
   },
 }
 

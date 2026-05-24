@@ -229,7 +229,7 @@ export default function Settings() {
                   const isDisabled = isAdvanced && section.title === 'Data & Sync' && !advancedSyncEnabled;
 
                   return (
-                    <div key={idy} className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all duration-300 ${isDisabled ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
+                    <div key={idy} className={`flex flex-row items-center justify-between gap-4 transition-all duration-300 ${isDisabled ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
                     <div className="font-['IBM_Plex_Mono'] text-[#E8E8E8] text-sm md:text-base">
                       {opt.label}
                     </div>

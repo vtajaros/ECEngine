@@ -586,6 +586,21 @@ export function registerDBHandlers() {
     }
   })
 
+  ipcMain.handle('decks:getFormulaMastery', async () => {
+    try {
+      const rows = queryAll(`
+        SELECT c.topic_id,
+               CAST(SUM(p.correct_count) AS REAL) / NULLIF(SUM(p.total_count), 0) AS mastery
+        FROM cards c
+        LEFT JOIN progress p ON c.id = p.card_id
+        GROUP BY c.topic_id
+      `)
+      return { success: true, data: rows }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
   ipcMain.handle('decks:updateDeckWithCards', async (_, payload: {
     deckId: string,
     title: string,

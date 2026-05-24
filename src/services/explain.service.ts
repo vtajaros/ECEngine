@@ -14,7 +14,7 @@ export interface ExplainParams {
 export async function getExplanation(params: ExplainParams): Promise<string> {
 
   // Route through Electron main process IPC — key is resolved server-side only
-  const result = await (window as any).electron.explainQuestion({
+  const result = await window.electron.explainQuestion({
     question: params.question,
     choices: params.choices,
     correctAnswerIndex: params.correctAnswerIndex,

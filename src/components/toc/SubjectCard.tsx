@@ -110,22 +110,22 @@ export function SubjectCard({ subject, searchQuery }: SubjectCardProps) {
   return (
     <div className={`flex flex-col bg-[var(--bg-card)] border rounded-xl overflow-hidden transition-all ${isExpanded ? 'border-[#333] border-l-[4px] border-l-[var(--accent-primary)] shadow-[0_0_20px_rgba(0,255,65,0.05)]' : 'border-[#222] hover:border-[#333]'}`}>
       <div 
-        className="flex items-center justify-between p-4 sm:p-6 cursor-pointer hover:bg-[var(--bg-elevated)] transition-colors"
+        className="flex items-center justify-between p-6 cursor-pointer hover:bg-[var(--bg-elevated)] transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
-        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-[var(--accent-glow)] border border-[rgba(0,255,65,0.1)] flex items-center justify-center shrink-0">
-            <subject.icon size={20} className="text-[var(--accent-primary)] sm:w-6 sm:h-6" />
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="w-12 h-12 rounded-lg bg-[var(--accent-glow)] border border-[rgba(0,255,65,0.1)] flex items-center justify-center shrink-0">
+            <subject.icon size={20} className="text-[var(--accent-primary)]" />
           </div>
-          <h2 className="font-['Orbitron'] text-base sm:text-xl font-bold text-[var(--text-primary)] tracking-wider uppercase leading-tight">
+          <h2 className="font-['Orbitron'] text-xl font-bold text-[var(--text-primary)] tracking-wider uppercase leading-tight">
             {subjectMatches && searchQuery ? highlightText(subject.name, searchQuery) : subject.name}
           </h2>
         </div>
-        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 ml-4">
-          <span className="text-xs sm:text-sm font-['Rajdhani'] uppercase tracking-widest font-bold text-[var(--accent-primary)] bg-[var(--accent-glow)] border border-[rgba(0,255,65,0.2)] px-2 py-1 sm:px-3 sm:py-1.5 rounded flex-shrink-0 whitespace-nowrap">
+        <div className="flex items-center gap-4 flex-shrink-0 ml-4">
+          <span className="text-sm font-['Rajdhani'] uppercase tracking-widest font-bold text-[var(--accent-primary)] bg-[var(--accent-glow)] border border-[rgba(0,255,65,0.2)] px-3 py-1.5 rounded flex-shrink-0 whitespace-nowrap">
             {subject.topics.length} topics
           </span>
-          {isExpanded ? <ChevronDown className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--accent-primary)]" /> : <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--text-secondary)]" />}
+          {isExpanded ? <ChevronDown className="w-5 h-5 text-[var(--accent-primary)]" /> : <ChevronRight className="w-5 h-5 text-[var(--text-secondary)]" />}
         </div>
       </div>
 

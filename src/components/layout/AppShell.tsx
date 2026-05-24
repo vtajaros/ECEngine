@@ -17,8 +17,6 @@ type NavItem = {
   to: string
   label: string
   icon: React.ElementType
-  webHidden?: boolean
-  webOnly?: boolean
 }
 
 export const AppShell: React.FC = () => {
@@ -43,21 +41,21 @@ export const AppShell: React.FC = () => {
   ]
 
   return (
-    <div className="flex flex-col min-h-screen sm:h-screen bg-[#0D0D0D] text-[var(--text-primary)] font-['IBM_Plex_Mono'] overflow-y-auto sm:overflow-hidden overflow-x-hidden w-screen max-sm:[&::-webkit-scrollbar]:hidden max-sm:[scrollbar-width:none]">
+    <div className="flex flex-col h-screen overflow-hidden bg-[#0D0D0D] text-[var(--text-primary)] font-['IBM_Plex_Mono']">
       <TitleBar
         isCollapsed={isCollapsed}
         onToggleSidebar={() => setIsCollapsed(!isCollapsed)}
       />
 
-      <div className="flex flex-col sm:flex-row flex-1 overflow-visible sm:overflow-hidden">
+      <div className="flex flex-row flex-1 overflow-hidden">
         {/* Sidebar */}
         <aside
           className={`${
-            isCollapsed ? 'w-full h-12 sm:w-16 sm:h-full' : 'w-full h-12 sm:w-[140px] sm:h-full'
-          } bg-[#1A1A1A] border-b sm:border-b-0 sm:border-r border-[#222] flex flex-row sm:flex-col transition-all duration-300 absolute sm:relative top-0 left-0 sm:top-auto sm:left-auto z-20 shrink-0`}
+            isCollapsed ? 'w-16' : 'w-[140px]'
+          } h-full bg-[#1A1A1A] border-r border-[#222] flex flex-col transition-all duration-300 shrink-0`}
         >
-          {/* ── Hamburger row ── */}
-          <div className="hidden sm:flex h-10 w-full shrink-0 items-center justify-between px-2">
+          {/* Logo + collapse toggle */}
+          <div className="h-10 w-full shrink-0 flex items-center justify-between px-2">
             {!isCollapsed && (
               <div className="flex items-center gap-2 pl-1">
                 <img
@@ -98,52 +96,52 @@ export const AppShell: React.FC = () => {
             </button>
           </div>
 
-          <nav className="flex-1 flex max-sm:items-center max-sm:justify-center w-full gap-1 sm:gap-0 px-2 sm:flex-col sm:justify-start sm:items-stretch sm:px-0 sm:overflow-y-auto sm:overflow-x-hidden overflow-x-auto overflow-y-hidden no-scrollbar max-sm:[&::-webkit-scrollbar]:hidden max-sm:[scrollbar-width:none]">
+          {/* Nav items */}
+          <nav className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden">
             {navItems.map((item) => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    `flex items-center h-10 transition-all duration-200 min-w-max group relative
-                    ${isActive
-                      ? 'bg-gradient-to-r from-[#00FF41]/10 to-transparent text-white'
-                      : 'text-gray-400 hover:bg-[#222] hover:text-gray-300'
-                    }`
-                  }
-                  title={item.label}
-                >
-                  {({ isActive }) => (
-                    <>
-                      {isActive && (
-                        <div className="absolute left-0 right-0 bottom-0 h-[3px] sm:h-auto sm:w-[3px] sm:top-0 sm:bottom-0 bg-[#00FF41] shadow-[0_0_10px_#00FF41]" />
-                      )}
-                      {/* Icon column — always w-16 when collapsed, w-12 when expanded */}
-                      <div className={`${isCollapsed ? 'sm:w-16' : 'sm:w-12'} w-10 flex justify-center shrink-0`}>
-                        <item.icon size={18} />
-                      </div>
-                      {!isCollapsed && (
-                        <span className="hidden sm:inline font-['Rajdhani'] text-sm font-medium tracking-wide">
-                          {item.label}
-                        </span>
-                      )}
-                    </>
-                  )}
-                </NavLink>
-              ))}
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  `flex items-center h-10 transition-all duration-200 group relative
+                  ${isActive
+                    ? 'bg-gradient-to-r from-[#00FF41]/10 to-transparent text-white'
+                    : 'text-gray-400 hover:bg-[#222] hover:text-gray-300'
+                  }`
+                }
+                title={item.label}
+              >
+                {({ isActive }) => (
+                  <>
+                    {isActive && (
+                      <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#00FF41] shadow-[0_0_10px_#00FF41]" />
+                    )}
+                    <div className={`${isCollapsed ? 'w-16' : 'w-12'} flex justify-center shrink-0`}>
+                      <item.icon size={18} />
+                    </div>
+                    {!isCollapsed && (
+                      <span className="font-['Rajdhani'] text-sm font-medium tracking-wide">
+                        {item.label}
+                      </span>
+                    )}
+                  </>
+                )}
+              </NavLink>
+            ))}
           </nav>
 
           {!isCollapsed && (
-            <div className="hidden sm:block text-[10px] text-gray-400 text-center pb-4 w-full font-rajdhani tracking-widest opacity-60">
+            <div className="text-[10px] text-gray-400 text-center pb-4 w-full font-rajdhani tracking-widest opacity-60">
               V1.0.0
             </div>
           )}
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 w-full min-w-0 relative overflow-visible sm:overflow-y-auto overflow-x-hidden bg-[#111111] pt-12 sm:pt-0">
+        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden bg-[#111111]">
           <Outlet />
         </main>
       </div>
     </div>
   )
-}
+}

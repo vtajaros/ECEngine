@@ -87,15 +87,15 @@ const ReviewHeatmap = ({ history, examDate }: { history: Record<string, { count:
   }
 
   return (
-    <div className="w-full max-w-full [--cell-size:10px] [--gap-size:4px] sm:[--cell-size:16px] sm:[--gap-size:8px]">
-      <div className="overflow-x-auto pb-2 -mx-1 px-1 sm:flex sm:justify-center">
+    <div className="w-full max-w-full [--cell-size:16px] [--gap-size:8px]">
+      <div className="flex justify-center pb-2">
         <div className="flex flex-col" style={{ minWidth: 'max-content' }}>
           {/* Month Labels */}
           <div className="relative h-5 mb-1">
             {monthLabels.map((label, i) => (
               <span
                 key={i}
-                className="absolute text-[9px] sm:text-[11px] font-['Orbitron'] text-[#E8E8E8] opacity-70 font-bold uppercase tracking-[0.2em]"
+                className="absolute text-[11px] font-['Orbitron'] text-[#E8E8E8] opacity-70 font-bold uppercase tracking-[0.2em]"
                 style={{ left: `calc(2.2rem + ${label.weekIndex} * (var(--cell-size) + var(--gap-size)))` }}
               >
                 {label.name}
@@ -103,20 +103,20 @@ const ReviewHeatmap = ({ history, examDate }: { history: Record<string, { count:
             ))}
           </div>
 
-          <div className="flex items-start gap-[4px] sm:gap-2">
+          <div className="flex items-start gap-2">
             {/* Day Labels */}
             <div
-              className="flex flex-col text-[8px] sm:text-[10px] font-['Rajdhani'] text-[#666] font-bold uppercase tracking-widest leading-none gap-[4px] sm:gap-2 w-[1.8rem] pr-1"
+              className="flex flex-col text-[10px] font-['Rajdhani'] text-[#666] font-bold uppercase tracking-widest leading-none gap-2 w-[1.8rem] pr-1"
             >
               {dayNames.map(d => (
-                <span key={d} className="h-[10px] sm:h-4 flex items-center">{d}</span>
+                <span key={d} className="h-4 flex items-center">{d}</span>
               ))}
             </div>
 
             {/* Activity Grid */}
-            <div className="flex gap-[4px] sm:gap-2">
+            <div className="flex gap-2">
               {grid.map((week, wi) => (
-                <div key={wi} className="flex flex-col gap-[4px] sm:gap-2 w-[10px] sm:w-4">
+                <div key={wi} className="flex flex-col gap-2 w-4">
                   {week.map(day => {
                     const data = history[day] || { count: 0, timeSpent: 0 }
                     const timeH = Math.floor(data.timeSpent / 60)
@@ -127,7 +127,7 @@ const ReviewHeatmap = ({ history, examDate }: { history: Record<string, { count:
                     return (
                       <div
                         key={day}
-                        className={`w-[10px] h-[10px] sm:w-4 sm:h-4 rounded-[2px] ${getLevel(data.timeSpent)} transition-all hover:scale-125 cursor-help border shadow-sm ${isOutRange ? 'opacity-5' : ''}`}
+                        className={`w-4 h-4 rounded-[2px] ${getLevel(data.timeSpent)} transition-all hover:scale-125 cursor-help border shadow-sm ${isOutRange ? 'opacity-5' : ''}`}
                         title={isOutRange ? undefined : `${day}: ${timeH}h ${timeM}m study time`}
                       />
                     )
@@ -136,6 +136,77 @@ const ReviewHeatmap = ({ history, examDate }: { history: Record<string, { count:
               ))}
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+interface CountdownTimerProps {
+  examDate: string
+  onEditClick: () => void
+}
+
+function CountdownTimer({ examDate, onEditClick }: CountdownTimerProps) {
+  const calculateTimeLeft = (target: string) => {
+    const targetDate = new Date(`${target}T00:00:00`).getTime()
+    const now = new Date().getTime()
+    const distance = targetDate - now
+
+    if (distance < 0) return { days: 0, hours: 0, mins: 0, secs: 0 }
+
+    return {
+      days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+      mins: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+      secs: Math.floor((distance % (1000 * 60)) / 1000)
+    }
+  }
+
+  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft(examDate))
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft(examDate))
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [examDate])
+
+  return (
+    <div className="bg-[#111] border border-[#00FF41]/10 rounded-lg px-4 py-2 flex items-center gap-6 shadow-xl relative group">
+      <button
+        onClick={onEditClick}
+        className="absolute -top-2 -right-2 p-1.5 bg-[#1A1A1A] border border-[#333] rounded-full text-[#666] hover:text-[#00FF41] opacity-70 hover:opacity-100 transition-all z-10 shadow-lg"
+        title="Change exam date"
+      >
+        <Edit2 size={12} />
+      </button>
+
+      <div className="flex flex-col">
+        <span className="text-[10px] font-['Orbitron'] text-[#00FF41] uppercase tracking-widest opacity-80">
+          Exam Target
+        </span>
+        <span className="text-[11px] font-['Rajdhani'] text-[#888] uppercase tracking-widest font-bold">
+          {new Date(examDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase()}
+        </span>
+      </div>
+
+      <div className="flex gap-4">
+        <div className="flex flex-col items-center">
+          <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{timeLeft.days}</span>
+          <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Days</span>
+        </div>
+        <div className="flex flex-col items-center">
+          <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{timeLeft.hours.toString().padStart(2, '0')}</span>
+          <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Hrs</span>
+        </div>
+        <div className="flex flex-col items-center">
+          <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{timeLeft.mins.toString().padStart(2, '0')}</span>
+          <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Min</span>
+        </div>
+        <div className="flex flex-col items-center">
+          <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#00FF41] leading-none">{timeLeft.secs.toString().padStart(2, '0')}</span>
+          <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Sec</span>
         </div>
       </div>
     </div>
@@ -171,30 +242,6 @@ export default function Dashboard() {
   const [modalOpen, setModalOpen]       = useState(false)
   const [modalDate, setModalDate]       = useState(examDate)
   const [modalError, setModalError]     = useState<string | null>(null)
-  
-  const calculateTimeLeft = (target: string) => {
-    const targetDate = new Date(`${target}T00:00:00`).getTime()
-    const now = new Date().getTime()
-    const distance = targetDate - now
-
-    if (distance < 0) return { days: 0, hours: 0, mins: 0, secs: 0 }
-
-    return {
-      days: Math.floor(distance / (1000 * 60 * 60 * 24)),
-      hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-      mins: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
-      secs: Math.floor((distance % (1000 * 60)) / 1000)
-    }
-  }
-
-  const [timeLeft, setTimeLeft] = useState(calculateTimeLeft(examDate))
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft(examDate))
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [examDate])
 
   useEffect(() => {
     setTrendLoading(true)
@@ -305,7 +352,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="h-full bg-[#0D0D0D] px-3 pb-6 pt-4 sm:px-8 sm:pb-8 lg:px-12 lg:pb-12 lg:pt-4 overflow-y-auto scrollbar-hide">
+    <div className="h-full bg-[#0D0D0D] px-8 pb-8 pt-4 lg:px-12 lg:pb-12 lg:pt-4 overflow-y-auto scrollbar-hide">
       {/* Header */}
       <header className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
@@ -318,43 +365,7 @@ export default function Dashboard() {
         </div>
 
         {/* Board Exam Countdown */}
-        <div className="bg-[#111] border border-[#00FF41]/10 rounded-lg px-3 py-2 sm:px-4 flex items-center gap-3 sm:gap-6 shadow-xl relative group">
-          <button
-            onClick={openDateModal}
-            className="absolute -top-2 -right-2 p-1.5 bg-[#1A1A1A] border border-[#333] rounded-full text-[#666] hover:text-[#00FF41] opacity-70 hover:opacity-100 transition-all z-10 shadow-lg"
-            title="Change exam date"
-          >
-            <Edit2 size={12} />
-          </button>
-
-          <div className="flex flex-col">
-            <span className="text-[10px] font-['Orbitron'] text-[#00FF41] uppercase tracking-widest opacity-80">
-              Exam Target
-            </span>
-            <span className="text-[11px] font-['Rajdhani'] text-[#888] uppercase tracking-widest font-bold">
-              {new Date(examDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase()}
-            </span>
-          </div>
-
-          <div className="flex gap-4">
-            <div className="flex flex-col items-center">
-              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{timeLeft.days}</span>
-              <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Days</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{timeLeft.hours.toString().padStart(2, '0')}</span>
-              <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Hrs</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{timeLeft.mins.toString().padStart(2, '0')}</span>
-              <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Min</span>
-            </div>
-            <div className="flex flex-col items-center">
-              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#00FF41] leading-none">{timeLeft.secs.toString().padStart(2, '0')}</span>
-              <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Sec</span>
-            </div>
-          </div>
-        </div>
+        <CountdownTimer examDate={examDate} onEditClick={openDateModal} />
       </header>
 
       {/* Analytics Row 1 */}
@@ -405,8 +416,8 @@ export default function Dashboard() {
         </div>
 
         {/* ACTIVITY HEATMAP (Swapped to Top) */}
-        <div className="lg:col-span-3 p-4 sm:p-8 bg-[#161616] rounded-xl border border-[rgba(0,255,65,0.05)] shadow-2xl flex flex-col items-center">
-            <div className="flex items-center justify-between mb-4 sm:mb-8 w-full">
+        <div className="lg:col-span-3 p-8 bg-[#161616] rounded-xl border border-[rgba(0,255,65,0.05)] shadow-2xl flex flex-col items-center">
+            <div className="flex items-center justify-between mb-8 w-full">
               <h2 className="font-['Rajdhani'] font-bold text-sm text-[#E8E8E8] uppercase tracking-widest flex items-center">
                 <Clock className="mr-2 text-[#00FF41]" size={16} />
                 Activity Monitoring
@@ -458,7 +469,7 @@ export default function Dashboard() {
                   <button
                     key={subj}
                     onClick={() => setSelectedSubject(subj)}
-                    className={`px-2 sm:px-3 py-1 text-[10px] font-bold font-['Rajdhani'] uppercase tracking-widest rounded transition-all duration-200 ${
+                    className={`px-3 py-1 text-[10px] font-bold font-['Rajdhani'] uppercase tracking-widest rounded transition-all duration-200 ${
                       selectedSubject === subj ? 'text-black' : 'text-[#888] hover:text-[#E8E8E8] hover:bg-[#222]'
                     }`}
                     style={selectedSubject === subj ? { backgroundColor: SUBJECT_LINE_COLOR[subj] } : {}}

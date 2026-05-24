@@ -29,6 +29,8 @@ import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectC
 import { Card, MCQData, FlashcardData } from '../types'
 import { renderMath } from '../lib/latex'
 import { shuffleArray } from '../lib/utils'
+import { dbService } from '../services/db.service'
+
 
 
 type Subject = 'MATH' | 'GEAS' | 'ELECS' | 'EST'
@@ -163,7 +165,20 @@ export default function Formulas() {
   const loadDecks = async () => {
     try {
       if (!window.electron?.decks) return
-        const r = await window.electron.decks.getFormulaTopics()
+        const [r, masteryRes] = await Promise.all([
+          window.electron.decks.getFormulaTopics(),
+          dbService.decks.getFormulaMastery()
+        ])
+
+        const masteryMap: Record<string, number> = {}
+        if (masteryRes.success && Array.isArray(masteryRes.data)) {
+          for (const row of masteryRes.data) {
+            masteryMap[row.topic_id] = row.mastery != null
+              ? Math.round(row.mastery * 100)
+              : 0
+          }
+        }
+
         if (r.success && r.data) {
           setDecks(
             r.data.map((row: any) => {
@@ -179,12 +194,7 @@ export default function Formulas() {
                 if (row.tags) parsedTags = JSON.parse(row.tags)
               } catch (e) {}
 
-              const mastery = (() => {
-                const savedKeys = JSON.parse(localStorage.getItem(`progress_${row.id}`) || '[]')
-                return row.card_count > 0
-                  ? Math.round((savedKeys.length / row.card_count) * 100)
-                  : 0
-              })()
+              const mastery = masteryMap[row.id] ?? 0
 
               return {
                 id: row.id,
@@ -747,11 +757,7 @@ export default function Formulas() {
                         {currentCard.data.imagePath && (
                           <div className="mb-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
                             <img
-                              src={
-                                (window as any).electron
-                                  ? `ece-app://${currentCard.data.imagePath}`
-                                  : `/ece-images/${currentCard.data.imagePath}`
-                              }
+                              src={`ece-app://${currentCard.data.imagePath}`}
                               alt="Card diagram"
                               className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
                               onClick={(e) => {
@@ -906,11 +912,7 @@ export default function Formulas() {
                <motion.img
                  initial={{ scale: 0.9, opacity: 0 }}
                  animate={{ scale: 1, opacity: 1 }}
-                 src={
-                   (window as any).electron
-                     ? `ece-app://${zoomedImage}`
-                     : `/ece-images/${zoomedImage}`
-                 }
+                 src={`ece-app://${zoomedImage}`}
                  alt="Zoomed diagram"
                 className="max-w-[90vw] max-h-[90vh] object-contain shadow-2xl rounded-lg"
                 onClick={(e) => e.stopPropagation()}
@@ -978,7 +980,7 @@ export default function Formulas() {
   return (
     <div className="flex flex-col h-full w-full">
       {/* Folder Panel + Deck Grid */}
-      <div className="flex flex-col sm:flex-row flex-1 w-full overflow-hidden">
+      <div className="flex flex-row flex-1 w-full overflow-hidden">
         <FolderPanel
           folders={folders}
           deckCountByFolder={deckCountByFolder}
@@ -990,9 +992,9 @@ export default function Formulas() {
         />
         <div className="flex flex-col flex-1 min-w-0 overflow-y-auto">
           {/* Header centered above decks */}
-          <div className="flex flex-col items-center w-full pt-6 pb-0 px-3 sm:px-6">
-            <div className="w-full max-w-5xl flex flex-col items-center justify-center gap-4 sm:gap-6 mb-1 sm:mb-2 border-b border-[var(--bg-card)] pb-4 pt-4 relative z-30">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4 uppercase">
+          <div className="flex flex-col items-center w-full pt-6 pb-0 px-6">
+            <div className="w-full max-w-5xl flex flex-col items-center justify-center gap-6 mb-2 border-b border-[var(--bg-card)] pb-4 pt-4 relative z-30">
+              <h1 className="text-2xl lg:text-3xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4 uppercase">
                 <Sigma className="text-[var(--accent-primary)]" size={28} />
                 FORMULAS
               </h1>
@@ -1164,7 +1166,7 @@ export default function Formulas() {
                   <button
                     key={s}
                     onClick={() => setActiveSubject(s)}
-                    className={`px-2 py-1.5 sm:px-4 sm:py-2 rounded-md font-['Rajdhani'] tracking-widest text-xs sm:text-sm font-bold transition-all ${getSubjectFilterClasses(s, activeSubject === s)}`}
+                    className={`px-4 py-2 rounded-md font-['Rajdhani'] tracking-widest text-sm font-bold transition-all ${getSubjectFilterClasses(s, activeSubject === s)}`}
                   >
                     {s}
                   </button>
@@ -1172,7 +1174,7 @@ export default function Formulas() {
               </div>
 
               <div
-                className="flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-2 w-full text-[10px] sm:text-xs text-slate-500 font-medium uppercase tracking-wider mb-0"
+                className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 w-full text-xs text-slate-500 font-medium uppercase tracking-wider mb-0"
                 style={{ color: 'rgba(255,255,255,0.45)' }}
               >
                 <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
@@ -1265,7 +1267,7 @@ export default function Formulas() {
                       )}
 
                       {/* Bottom Row: Progress and Actions */}
-                      <div className="flex items-center gap-4 sm:gap-6 w-full mt-4">
+                      <div className="flex items-center gap-6 w-full mt-4">
                         {/* MASTERY label — fixed, does not grow */}
                         <span className="text-[10px] font-rajdhani tracking-widest uppercase text-gray-500 shrink-0">
                           Mastery
@@ -1289,7 +1291,7 @@ export default function Formulas() {
                         <div className="h-4 w-px bg-slate-800 shrink-0" />
 
                         {/* Secondary Actions Zone */}
-                        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0">
                           {/* LEARN button — sits right after the percentage, no gap */}
                           <button
                             onClick={(e) => {
@@ -1308,11 +1310,7 @@ export default function Formulas() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
-                                if ((window as any).electron?.print) {
-                                  window.electron.print.open(deck.id, deck.title)
-                                } else {
-                                  window.open(`/#/print?id=${deck.id}&title=${encodeURIComponent(deck.title)}`, '_blank')
-                                }
+                                window.electron.print.open(deck.id, deck.title)
                               }}
                               className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
                               title="Test Paper View"

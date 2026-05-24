@@ -561,11 +561,7 @@ export default function FlashcardViewer() {
                         {currentCard.data.imagePath && (
                           <div className="mb-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
                             <img
-                               src={
-                                 (window as any).electron
-                                   ? `ece-app://${currentCard.data.imagePath}`
-                                   : `/ece-images/${currentCard.data.imagePath}`
-                               }
+                               src={`ece-app://${currentCard.data.imagePath}`}
                                alt="Card diagram"
                               className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
                               onClick={(e) => { e.stopPropagation(); setZoomedImage(currentCard.data.imagePath!); }}
@@ -655,11 +651,7 @@ export default function FlashcardViewer() {
                <motion.img
                  initial={{ scale: 0.9, opacity: 0 }}
                  animate={{ scale: 1, opacity: 1 }}
-                 src={
-                   (window as any).electron
-                     ? `ece-app://${zoomedImage}`
-                     : `/ece-images/${zoomedImage}`
-                 }
+                 src={`ece-app://${zoomedImage}`}
                  alt="Zoomed diagram"
                 className="max-w-[90vw] max-h-[90vh] object-contain shadow-2xl rounded-lg"
                 onClick={(e) => e.stopPropagation()}
@@ -724,7 +716,7 @@ export default function FlashcardViewer() {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="flex flex-col sm:flex-row flex-1 w-full overflow-hidden">
+      <div className="flex flex-row flex-1 w-full overflow-hidden">
         <FolderPanel
           folders={folders}
           deckCountByFolder={deckCountByFolder}
@@ -737,9 +729,9 @@ export default function FlashcardViewer() {
 
         <div className="flex flex-col flex-1 min-w-0 overflow-y-auto">
           {/* Header centered above decks */}
-          <div className="flex flex-col items-center w-full pt-6 pb-0 px-3 sm:px-6">
-            <div className="w-full max-w-5xl flex flex-col items-center justify-center gap-4 sm:gap-6 mb-1 sm:mb-2 border-b border-[var(--bg-card)] pb-4 pt-4 relative z-30">
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4 uppercase">
+          <div className="flex flex-col items-center w-full pt-6 pb-0 px-6">
+            <div className="w-full max-w-5xl flex flex-col items-center justify-center gap-6 mb-2 border-b border-[var(--bg-card)] pb-4 pt-4 relative z-30">
+              <h1 className="text-2xl lg:text-3xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4 uppercase">
                 <Layers className="text-[var(--accent-primary)]" size={28} />
                 FLASH<span className="text-[var(--accent-primary)]">CARDS</span>
               </h1>
@@ -880,7 +872,7 @@ export default function FlashcardViewer() {
 
                 {SUBJECTS.map(s => (
                   <button key={s} onClick={() => setActiveSubject(s)}
-                    className={`px-2 py-1.5 sm:px-4 sm:py-2 rounded-md font-['Rajdhani'] tracking-widest text-xs sm:text-sm font-bold transition-all ${getSubjectFilterClasses(s, activeSubject === s)}`}
+                    className={`px-4 py-2 rounded-md font-['Rajdhani'] tracking-widest text-sm font-bold transition-all ${getSubjectFilterClasses(s, activeSubject === s)}`}
                   >
                     {s}
                   </button>
@@ -888,7 +880,7 @@ export default function FlashcardViewer() {
               </div>
 
               <div
-                className="flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-2 w-full text-[10px] sm:text-xs text-slate-500 font-medium uppercase tracking-wider mb-0"
+                className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 w-full text-xs text-slate-500 font-medium uppercase tracking-wider mb-0"
                 style={{ color: 'rgba(255,255,255,0.45)' }}
               >
                 <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
@@ -969,7 +961,7 @@ export default function FlashcardViewer() {
                   )}
 
                   {/* Bottom Row: Progress and Actions */}
-                  <div className="flex items-center gap-4 sm:gap-6 w-full mt-4">
+                  <div className="flex items-center gap-6 w-full mt-4">
                     {/* MASTERY label — fixed, does not grow */}
                     <span className="text-[10px] font-rajdhani tracking-widest uppercase text-gray-500 shrink-0">
                       Mastery
@@ -991,7 +983,7 @@ export default function FlashcardViewer() {
                     <div className="h-4 w-px bg-slate-800 shrink-0" />
 
                     {/* Secondary Action Icons */}
-                    <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                    <div className="flex items-center gap-2 shrink-0">
                       {/* LEARN button — sits right after the percentage, no gap */}
                       <button
                         onClick={(e) => { e.stopPropagation(); openDeck(deck); }}
@@ -1007,11 +999,7 @@ export default function FlashcardViewer() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
-                            if ((window as any).electron?.print) {
-                              window.electron.print.open(deck.id, deck.title)
-                            } else {
-                              window.open(`/#/print?id=${deck.id}&title=${encodeURIComponent(deck.title)}`, '_blank')
-                            }
+                            window.electron.print.open(deck.id, deck.title)
                           }}
                           className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
                           title="Test Paper View"

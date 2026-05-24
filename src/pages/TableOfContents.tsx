@@ -34,7 +34,7 @@ export default function TableOfContents() {
           </div>
         </header>
 
-        <div className="flex flex-col gap-3 sm:gap-6 pb-12 flex-1">
+        <div className="flex flex-col gap-6 pb-12 flex-1">
           {TOC_DATA.map((subject) => (
             <SubjectCard key={subject.id} subject={subject} searchQuery={searchQuery} />
           ))}

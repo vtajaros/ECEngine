@@ -98,10 +98,10 @@ const TestQuestionCard = memo(({
       <div className="p-6 border-b border-[#333] flex items-start gap-4">
         <div className="flex-1 flex flex-col h-auto pr-2">
           <h3
-            className="font-['Rajdhani'] font-semibold text-[var(--text-primary)] whitespace-pre-wrap flex items-start gap-3 text-base sm:text-lg leading-relaxed"
+            className="font-['Rajdhani'] font-semibold text-[var(--text-primary)] whitespace-pre-wrap flex items-start gap-3 text-lg leading-relaxed"
           >
             <span
-              className="text-[var(--accent-primary)] font-bold shrink-0 text-sm sm:text-base"
+              className="text-[var(--accent-primary)] font-bold shrink-0 text-base"
             >
               {index + 1}.
             </span>
@@ -114,11 +114,7 @@ const TestQuestionCard = memo(({
           {mcq.imagePath && (
             <div className="mt-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
               <img
-                src={
-                  (window as any).electron
-                    ? `ece-app://${mcq.imagePath}`
-                    : `/ece-images/${mcq.imagePath}`
-                }
+                src={`ece-app://${mcq.imagePath}`}
                 alt="Question diagram"
                 className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
                 onClick={(e) => { e.stopPropagation(); onSetZoomedImage(mcq.imagePath!) }}
@@ -129,17 +125,17 @@ const TestQuestionCard = memo(({
 
         <button
           onClick={(e) => { e.stopPropagation(); onToggleBookmark(card.id) }}
-          className={`p-1 sm:p-2 rounded transition-colors ${isBookmarked
+          className={`p-2 rounded transition-colors ${isBookmarked
             ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/10'
             : 'text-[#555] hover:bg-[#222] hover:text-[#888]'
           }`}
           title={isBookmarked ? 'Remove Bookmark' : 'Bookmark Question'}
         >
-          <Bookmark className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
+          <Bookmark className="w-5 h-5 fill-current" />
         </button>
       </div>
 
-      <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 items-start">
+      <div className="p-6 grid grid-cols-2 gap-4 items-start">
         {[0, 1, 2, 3].map((cIdx) => {
           const choice = mcq.choices[cIdx]
           if (choice === undefined) return null
@@ -178,7 +174,7 @@ const TestQuestionCard = memo(({
               key={cIdx}
               onClick={(e) => { e.stopPropagation(); onSelectChoice(card.id, cIdx) }}
               disabled={viewState === 'review' || (settings.instantChecking && isAnswered)}
-              className={`flex items-center text-left py-3 sm:py-4 px-4 min-h-[56px] rounded-lg border transition-all duration-200 font-['Rajdhani'] ${stateStyles} ${
+              className={`flex items-center text-left py-4 px-4 min-h-[56px] rounded-lg border transition-all duration-200 font-['Rajdhani'] ${stateStyles} ${
                 viewState === 'review' || (settings.instantChecking && isAnswered) ? 'cursor-default' : 'cursor-pointer'
               }`}
             >
@@ -186,7 +182,7 @@ const TestQuestionCard = memo(({
                 {choiceLabel}.
               </div>
               <span
-                className="flex-1 break-words font-['Rajdhani'] font-medium text-sm sm:text-base leading-normal"
+                className="flex-1 break-words font-['Rajdhani'] font-medium text-base leading-normal"
                 dangerouslySetInnerHTML={{ __html: renderMath(choice) }}
               />
               {iconElement && <div className="ml-4 flex-shrink-0">{iconElement}</div>}
@@ -478,8 +474,8 @@ Please explain:
 
   // ── Top Bar ─────────────────────────────────────────────────────────────────
   const renderTopBar = () => (
-    <div className="sticky top-0 left-0 w-full bg-[var(--bg-secondary)] border-b border-[var(--bg-card)] shadow-lg z-50 flex flex-row items-center justify-between gap-2 px-2 py-2 sm:px-6 sm:py-4 shrink-0">
-      <div className="flex items-center gap-2 sm:gap-6 flex-1 min-w-0">
+    <div className="sticky top-0 left-0 w-full bg-[var(--bg-secondary)] border-b border-[var(--bg-card)] shadow-lg z-50 flex flex-row items-center justify-between gap-2 px-6 py-4 shrink-0">
+      <div className="flex items-center gap-6 flex-1 min-w-0">
         <button
           onClick={() => { if (viewState === 'test') setShowExitConfirm(true); else handleExit() }}
           className="text-[#888] hover:text-[var(--text-primary)] transition-colors flex items-center justify-center p-2 rounded hover:bg-[#222] shrink-0"
@@ -488,7 +484,7 @@ Please explain:
           <X className="w-5 h-5" />
         </button>
         <div className="flex flex-col flex-1 min-w-0">
-          <span className="text-[var(--text-primary)] font-['Orbitron'] tracking-widest font-bold text-base truncate sm:text-2xl uppercase flex items-center min-w-0">
+          <span className="text-[var(--text-primary)] font-['Orbitron'] tracking-widest font-bold text-2xl truncate uppercase flex items-center min-w-0">
             {title ? (
               <>
                 <span className="text-[#888] mr-2 shrink-0">TEST:</span>
@@ -497,7 +493,7 @@ Please explain:
             ) : 'Test Mode'}
           </span>
           {viewState === 'test' && (
-            <span className="text-[#888] text-xs font-['Rajdhani'] uppercase tracking-widest mt-0.5 hidden sm:block">
+            <span className="text-[#888] text-xs font-['Rajdhani'] uppercase tracking-widest mt-0.5 block">
               {answeredCount} of {testCards.length} Answered
             </span>
           )}
@@ -505,7 +501,7 @@ Please explain:
       </div>
 
       <div className="flex-shrink-0 flex items-center gap-2">
-        <div className="flex items-center gap-1 sm:gap-2 text-[#E8E8E8] font-['Rajdhani'] text-xs sm:text-lg font-bold tracking-widest bg-[#111] px-2 py-1 sm:px-4 sm:py-1.5 rounded border border-[#333] shrink-0">
+        <div className="flex items-center gap-2 text-lg font-bold tracking-widest bg-[#111] px-4 py-1.5 rounded border border-[#333] shrink-0">
           <Clock className="w-4 h-4 text-[var(--accent-primary)]" />
           {formatTime(timeElapsed)}
         </div>
@@ -513,14 +509,14 @@ Please explain:
         {viewState === 'test' ? (
           <button
             onClick={() => setShowSubmitConfirm(true)}
-            className="bg-[var(--accent-primary)] text-black px-2 py-1 text-xs sm:px-4 sm:py-2 sm:text-base rounded font-['Rajdhani'] font-bold tracking-widest uppercase hover:bg-[var(--accent-dim)] transition-colors whitespace-nowrap"
+            className="bg-[var(--accent-primary)] text-black px-4 py-2 text-base rounded font-['Rajdhani'] font-bold tracking-widest uppercase hover:bg-[var(--accent-dim)] transition-colors whitespace-nowrap"
           >
             Submit Test
           </button>
         ) : (
           <button
             onClick={handleExit}
-            className="bg-[#222] text-[#E8E8E8] px-2 py-1 text-xs sm:px-4 sm:py-2 sm:text-base rounded font-['Rajdhani'] font-bold tracking-widest uppercase hover:bg-[#333] border border-[#444] transition-colors whitespace-nowrap"
+            className="bg-[#222] text-[#E8E8E8] px-4 py-2 text-base rounded font-['Rajdhani'] font-bold tracking-widest uppercase hover:bg-[#333] border border-[#444] transition-colors whitespace-nowrap"
           >
             Finish Review
           </button>
@@ -644,9 +640,9 @@ Please explain:
       />
 
       {/* Main Content Wrapper — independent scroll columns, no shared scroll container */}
-      <div className="flex-1 flex flex-col sm:flex-row overflow-hidden pl-2 lg:pl-4 gap-5 pt-4 lg:pt-8">
+      <div className="flex-1 flex flex-row overflow-hidden pl-2 lg:pl-4 gap-5 pt-4 lg:pt-8">
         {/* Left Column: Navigation Rail (self-contained scroll) */}
-        <div className="shrink-0 flex flex-col w-full sm:w-auto">
+        <div className="shrink-0 flex flex-col w-auto">
           <TestNavRail
             totalItems={testCards.length}
             currentIndex={currentVisibleIndex}
@@ -791,11 +787,7 @@ Please explain:
             <motion.img
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              src={
-                (window as any).electron
-                  ? `ece-app://${zoomedImage}`
-                  : `/ece-images/${zoomedImage}`
-              }
+              src={`ece-app://${zoomedImage}`}
               alt="Zoomed diagram"
               className="max-w-[90vw] max-h-[90vh] object-contain shadow-2xl rounded-lg"
               onClick={(e) => e.stopPropagation()}

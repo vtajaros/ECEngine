@@ -993,7 +993,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
     const path = (file as any).path
     if (!path) return
     try {
-      const result = await (window as any).electron.saveImage(path)
+      const result = await window.electron.saveImage(path)
       if (result.success && result.filename) {
         set({ imagePath: result.filename })
       } else {
@@ -1016,7 +1016,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
             <div className="flex items-center gap-2 mr-10 z-10 relative">
               {data.imagePath ? (
                 <div className="relative group flex items-center justify-center">
-                  <img src={(window as any).electron ? `ece-app://${data.imagePath}` : `/ece-images/${data.imagePath}`} alt="Question image" className="w-6 h-6 object-cover rounded border border-[#333]" />
+                  <img src={`ece-app://${data.imagePath}`} alt="Question image" className="w-6 h-6 object-cover rounded border border-[#333]" />
                   <button
                     onClick={() => set({ imagePath: undefined })}
                     className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
@@ -1095,7 +1095,7 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
     const path = (file as any).path
     if (!path) return
     try {
-      const result = await (window as any).electron.saveImage(path)
+      const result = await window.electron.saveImage(path)
       if (result.success && result.filename) {
         onChange({ ...data, imagePath: result.filename })
       } else {
@@ -1117,7 +1117,7 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
           <div className="flex items-center gap-2 mr-10 z-10 relative">
             {data.imagePath ? (
               <div className="relative group flex items-center justify-center">
-                 <img src={(window as any).electron ? `ece-app://${data.imagePath}` : `/ece-images/${data.imagePath}`} alt="Flashcard image" className="w-6 h-6 object-cover rounded border border-[#333]" />
+                 <img src={`ece-app://${data.imagePath}`} alt="Flashcard image" className="w-6 h-6 object-cover rounded border border-[#333]" />
                 <button
                   onClick={() => onChange({ ...data, imagePath: undefined })}
                   className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
@@ -1651,7 +1651,7 @@ export default function AddDeck() {
           })
         };
 
-        const res = await (window as any).electron.decks.addDeckWithCards(payload)
+        const res = await window.electron.decks.addDeckWithCards(payload)
         if (!res.success) throw new Error(res.error)
         navigate('/study')
     } catch (err: any) {
@@ -1690,14 +1690,14 @@ export default function AddDeck() {
           </div>
           <div className="flex items-center gap-4">
             <button onClick={() => navigate(-1)}
-              className="px-4 sm:px-6 py-2 sm:py-2.5 h-[38px] sm:h-auto flex items-center justify-center rounded border border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-widest font-bold text-xs sm:text-sm whitespace-nowrap">
+              className="px-6 py-2.5 flex items-center justify-center rounded border border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-widest font-bold text-sm whitespace-nowrap">
               Cancel
             </button>
             <div className="relative group">
               <button
                 onClick={handleSave}
                 disabled={!canSave || saving}
-                className={`px-4 sm:px-8 py-2 sm:py-2.5 h-[38px] sm:h-auto font-['Rajdhani'] uppercase tracking-widest font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 sm:gap-2 whitespace-nowrap ${canSave && !saving
+                className={`px-8 py-2.5 font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all flex items-center justify-center gap-2 whitespace-nowrap ${canSave && !saving
                   ? 'bg-[var(--accent-primary)] text-black hover:bg-[var(--accent-dim)] shadow-[0_0_15px_rgba(0,255,65,0.25)]'
                   : 'bg-[#222] text-[#555] cursor-not-allowed'
                   }`}
@@ -1924,12 +1924,12 @@ export default function AddDeck() {
 
         {/* 2 & 3. Cards Pane — Pane 2 (right, 2/3 wide) */}
         <div className="w-full max-w-4xl xl:max-w-none xl:col-span-2 flex flex-col gap-6">
-          <section className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <section className="flex flex-row flex-wrap items-center justify-between gap-4">
             {/* Deck Type Toggle */}
-            <div className="flex flex-col sm:flex-row w-full sm:w-auto bg-[#111] border border-[#222] p-1 rounded-lg gap-1">
+            <div className="flex flex-row w-auto bg-[#111] border border-[#222] p-1 rounded-lg gap-1">
               <button
                 onClick={() => handleDeckTypeChange('mcq')}
-                className={`w-full sm:w-auto px-6 py-2.5 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${deckType === 'mcq'
+                className={`w-auto px-6 py-2.5 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${deckType === 'mcq'
                   ? 'bg-[#222] text-[#00FF41] shadow-sm'
                   : 'text-[#888] hover:text-[#ccc]'
                   }`}
@@ -1938,7 +1938,7 @@ export default function AddDeck() {
               </button>
               <button
                 onClick={() => handleDeckTypeChange('flashcard')}
-                className={`w-full sm:w-auto px-6 py-2.5 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${deckType === 'flashcard'
+                className={`w-auto px-6 py-2.5 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${deckType === 'flashcard'
                   ? 'bg-[#222] text-[#00FF41] shadow-sm'
                   : 'text-[#888] hover:text-[#ccc]'
                   }`}
@@ -1947,7 +1947,7 @@ export default function AddDeck() {
               </button>
               <button
                 onClick={() => handleDeckTypeChange('formula')}
-                className={`w-full sm:w-auto px-6 py-2.5 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${deckType === 'formula'
+                className={`w-auto px-6 py-2.5 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${deckType === 'formula'
                   ? 'bg-[#222] text-[#00FF41] shadow-sm'
                   : 'text-[#888] hover:text-[#ccc]'
                   }`}
@@ -1957,7 +1957,7 @@ export default function AddDeck() {
             </div>
 
             {/* Import Buttons */}
-            <div className="flex flex-wrap items-center gap-3 sm:justify-end">
+            <div className="flex flex-wrap items-center gap-3 justify-end">
               <button
                 onClick={() => openImportModal('mcq')}
                 className="flex items-center gap-2 px-4 py-2 rounded border border-[#333] bg-[#161616] text-[#888] hover:text-[#00FF41] hover:border-[#00FF41]/50 font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all"

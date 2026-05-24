@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('electron', {
     exportToText: (topicId: number | string, topicName: string) => ipcRenderer.invoke('decks:exportToText', topicId, topicName),
     getTopicsWithCardCounts: () => ipcRenderer.invoke('decks:getTopicsWithCardCounts'),
     getFormulaTopics: () => ipcRenderer.invoke('decks:getFormulaTopics'),
+    getFormulaMastery: () => ipcRenderer.invoke('decks:getFormulaMastery'),
     updateDeckWithCards: (payload: any) => ipcRenderer.invoke('decks:updateDeckWithCards', payload),
     updateDecksFolder: (fromFolder: string, toFolder: string) =>
       ipcRenderer.invoke('decks:updateDecksFolder', { fromFolder, toFolder }),

@@ -75,7 +75,7 @@ const SortableFolderItem: React.FC<{
             type="text"
             defaultValue={folder}
             readOnly={true}
-            className="flex-1 min-w-0 w-full bg-transparent text-[13px] font-bold font-['Rajdhani'] uppercase tracking-wider text-slate-400 sm:text-[var(--text-secondary)] border-b border-transparent focus:outline-none focus:ring-0 p-0 m-0"
+            className="flex-1 min-w-0 w-full bg-transparent text-[13px] font-bold font-['Rajdhani'] uppercase tracking-wider text-[var(--text-secondary)] border-b border-transparent focus:outline-none focus:ring-0 p-0 m-0"
           />
 
           {/* Right (Trash Icon / Delete button) */}
@@ -99,10 +99,10 @@ const SortableFolderItem: React.FC<{
           whileHover={{ scale: 1.01 }}
           onClick={() => onSelect(folder)}
           title={folder}
-          className={`min-w-0 flex items-center justify-between w-full gap-2 px-3 py-1.5 sm:py-2.5 rounded-full sm:rounded-md border border-transparent sm:border-l-[3px] sm:border-t-0 sm:border-r-0 sm:border-b-0 whitespace-nowrap group ${
+          className={`min-w-0 flex items-center justify-between w-full gap-2 px-3 py-2.5 rounded-md border-l-[3px] border-t-0 border-r-0 border-b-0 border-transparent whitespace-nowrap group ${
             isSelected
-              ? 'bg-[#00FF41]/10 text-[#00FF41] border-transparent sm:bg-[var(--bg-card)] sm:text-[var(--text-primary)] sm:border-[var(--accent-primary)]'
-              : 'bg-slate-800/50 text-slate-400 border-transparent sm:bg-transparent sm:text-[var(--text-secondary)] sm:border-l-transparent sm:hover:bg-[var(--bg-secondary)]'
+              ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--accent-primary)]'
+              : 'bg-transparent text-[var(--text-secondary)] border-l-transparent hover:bg-[var(--bg-secondary)]'
           }`}
         >
           {/* Wrapper 1 (Left - Icon & Name) */}
@@ -116,9 +116,7 @@ const SortableFolderItem: React.FC<{
             />
             <span
               className={`text-[13px] truncate block max-w-full font-bold font-['Rajdhani'] uppercase tracking-wider ${
-                isSelected
-                  ? 'text-[#00FF41] sm:text-[var(--text-primary)]'
-                  : 'text-slate-400 sm:text-[var(--text-secondary)] sm:group-hover:text-[var(--text-primary)]'
+                isSelected ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'
               }`}
               title={folder}
             >
@@ -173,10 +171,10 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
 
   return (
     <div
-      className="flex-shrink-0 bg-[var(--bg-primary)] overflow-x-auto sm:overflow-y-auto sm:overflow-x-hidden flex flex-row sm:flex-col sm:w-[200px] sm:h-full sm:border-r border-b sm:border-b-0 border-[var(--bg-card)] w-full py-2 sm:py-4 px-3 sm:px-2 max-sm:[&::-webkit-scrollbar]:hidden max-sm:[scrollbar-width:none]"
+      className="flex-shrink-0 bg-[var(--bg-primary)] overflow-y-auto overflow-x-hidden flex flex-col w-[200px] h-full border-r border-[var(--bg-card)] py-4 px-2"
     >
-      <div className="flex flex-row sm:flex-col items-center sm:items-stretch gap-2 sm:gap-0 min-w-max sm:min-w-0 sm:px-4">
-        <div className="hidden sm:flex justify-between items-center mb-4 px-1">
+      <div className="flex flex-col items-stretch gap-0 px-4">
+        <div className="flex justify-between items-center mb-4 px-1">
           <h2 className="text-[var(--text-secondary)] text-[10px] uppercase tracking-[0.15em] font-bold">
             FOLDERS
           </h2>
@@ -193,16 +191,16 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
           </button>
         </div>
 
-        <motion.div className="flex flex-row sm:flex-col gap-2 sm:gap-1">
+        <motion.div className="flex flex-col gap-1">
           {/* All Row */}
           <motion.button
             whileHover={{ scale: 1.01 }}
             onClick={() => onSelect('all')}
             title="All Folders"
-            className={`min-w-0 flex items-center justify-between w-full gap-3 px-3 py-1.5 sm:py-2.5 rounded-full sm:rounded-md border border-transparent sm:border-l-[3px] sm:border-t-0 sm:border-r-0 sm:border-b-0 whitespace-nowrap group ${
+            className={`min-w-0 flex items-center justify-between w-full gap-3 px-3 py-2.5 rounded-md border-l-[3px] border-t-0 border-r-0 border-b-0 border-transparent whitespace-nowrap group ${
               selected === 'all'
-                ? 'bg-[#00FF41]/10 text-[#00FF41] border-transparent sm:bg-[var(--bg-card)] sm:text-[var(--text-primary)] sm:border-[var(--accent-primary)]'
-                : 'bg-slate-800/50 text-slate-400 border-transparent sm:bg-transparent sm:text-[var(--text-secondary)] sm:border-l-transparent sm:hover:bg-[var(--bg-secondary)]'
+                ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--accent-primary)]'
+                : 'bg-transparent text-[var(--text-secondary)] border-l-transparent hover:bg-[var(--bg-secondary)]'
             }`}
           >
             <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -212,9 +210,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
               />
               <span
                 className={`text-[13px] truncate font-bold font-['Rajdhani'] uppercase tracking-wider ${
-                  selected === 'all'
-                    ? 'text-[#00FF41] sm:text-[var(--text-primary)]'
-                    : 'text-slate-400 sm:text-[var(--text-secondary)] sm:group-hover:text-[var(--text-primary)]'
+                  selected === 'all' ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'
                 }`}
                 title="All Folders"
               >

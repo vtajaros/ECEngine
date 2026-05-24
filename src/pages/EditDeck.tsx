@@ -286,7 +286,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
     const path = (file as any).path
     if (!path) return
     try {
-      const result = await (window as any).electron.saveImage(path)
+      const result = await window.electron.saveImage(path)
       if (result.success && result.filename) {
         set({ imagePath: result.filename })
       } else {
@@ -316,7 +316,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
         <div className="shrink-0 flex flex-col items-center justify-start mt-5">
           {data.imagePath ? (
             <div className="relative group">
-              <img src={(window as any).electron ? `ece-app://${data.imagePath}` : `/ece-images/${data.imagePath}`} alt="Question image" className="w-24 h-24 object-cover rounded border border-[#333]" />
+              <img src={`ece-app://${data.imagePath}`} alt="Question image" className="w-24 h-24 object-cover rounded border border-[#333]" />
               <button
                 onClick={() => set({ imagePath: undefined })}
                 className="absolute -top-2 -right-2 bg-[#FF4B4B] text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
@@ -388,7 +388,7 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
     const path = (file as any).path
     if (!path) return
     try {
-      const result = await (window as any).electron.saveImage(path)
+      const result = await window.electron.saveImage(path)
       if (result.success && result.filename) {
         onChange({ ...data, imagePath: result.filename })
       } else {
@@ -419,7 +419,7 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
         <div className="shrink-0 flex flex-col items-center justify-start mt-5">
           {data.imagePath ? (
             <div className="relative group">
-              <img src={(window as any).electron ? `ece-app://${data.imagePath}` : `/ece-images/${data.imagePath}`} alt="Flashcard image" className="w-24 h-24 object-cover rounded border border-[#333]" />
+              <img src={`ece-app://${data.imagePath}`} alt="Flashcard image" className="w-24 h-24 object-cover rounded border border-[#333]" />
               <button
                 onClick={() => onChange({ ...data, imagePath: undefined })}
                 className="absolute -top-2 -right-2 bg-[#FF4B4B] text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
