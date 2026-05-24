@@ -6,7 +6,7 @@ import {
   CheckCircle2, AlertCircle, RotateCcw, ImageIcon, X, Sigma,
   Calculator, FlaskConical, Zap, Cpu, FileText
 } from 'lucide-react'
-import { renderMath, isRawLatex } from '../lib/latex'
+import { renderMath, isRawLatex, isPureMath } from '../lib/latex'
 import { getSubjectFilterClasses } from '../lib/subjectColors'
 import {
   DndContext,
@@ -310,7 +310,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
             placeholder="Enter question text..."
             rows={6}
             multiline={true}
-            defaultMathMode={isRawLatex(data.question)}
+            defaultMathMode={isPureMath(data.question)}
           />
         </div>
         <div className="shrink-0 flex flex-col items-center justify-start mt-5">
@@ -351,7 +351,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
                 onChange={val => setChoice(i, val)}
                 placeholder={`Choice ${labels[i]}...`}
                 multiline={false}
-                defaultMathMode={isRawLatex(choice)}
+                defaultMathMode={isPureMath(choice)}
               />
             </div>
           </div>
@@ -366,7 +366,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
           placeholder="Explanation for the correct answer..."
           rows={2}
           multiline={true}
-          defaultMathMode={isRawLatex(data.explanation || '')}
+          defaultMathMode={isPureMath(data.explanation || '')}
         />
       </div>
     </div>

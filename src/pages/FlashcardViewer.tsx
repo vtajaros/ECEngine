@@ -8,6 +8,7 @@ import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectC
 import { Card, MCQData, FlashcardData } from '../types'
 import { renderMath } from '../lib/latex'
 import { shuffleArray } from '../lib/utils'
+import { dbService } from '../services/db.service'
 
 
 

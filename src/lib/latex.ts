@@ -51,21 +51,25 @@ export const isRawLatex = (text: string): boolean => {
   return false
 }
 
+// Determines if a string is almost entirely math (no regular English sentences)
+export const isPureMath = (text: string): boolean => {
+  if (!text || typeof text !== 'string') return false
+  if (!isRawLatex(text)) return false
+  if (text.includes('$')) return false // Mixed with text if $ is used
+
+  let stripped = text.replace(/\\(text|mathrm|textbf|textit)\{[^}]*\}/g, '')
+  stripped = stripped.replace(/\\[a-zA-Z]+/g, '')
+  const words = stripped.match(/\b[a-zA-Z]{2,}\b/g) || []
+  const hasSpace = /\s/.test(stripped)
+  const isText = hasSpace && words.length > 0
+
+  return !isText
+}
+
 // Renders a single segment of text that has no $ delimiters.
-// If it looks like raw LaTeX, render it inline; otherwise return as-is.
+// Since users who use $ are explicitly opting into delimiters, we should
+// NOT aggressively auto-detect raw latex in mixed contexts.
 function renderSegment(segment: string): string {
-  const trimmed = segment.trim()
-  if (!trimmed) return segment
-  if (isRawLatex(trimmed)) {
-    try {
-      return katex.renderToString(trimmed, {
-        throwOnError: false,
-        displayMode: false
-      })
-    } catch {
-      return segment
-    }
-  }
   return segment
 }
 
@@ -155,7 +159,9 @@ export const renderMath = (text: string): string => {
   }
 
   // ── Path A: pure raw LaTeX (no $ delimiters) ──
-  if (hasRaw && !hasDollar) {
+  // A string is considered plain text (not pure math) if it contains at least one space
+  // AND contains at least one English word (2+ letters) not part of a LaTeX command.
+  if (isPureMath(t)) {
     try {
       const rendered = katex.renderToString(t, {
         throwOnError: false,
