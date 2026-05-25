@@ -88,6 +88,34 @@ declare global {
   }
 }
 
+function parseCardRow(row: any, topicId?: string): Card {
+  let data: unknown = {}
+  let tags: string[] = []
+
+  try {
+    data = JSON.parse(row.data)
+  } catch {
+    console.warn(`[db] Corrupt JSON in card.data for card id="${row.id}" — using empty object`)
+  }
+
+  try {
+    tags = JSON.parse(row.tags || '[]')
+  } catch {
+    console.warn(`[db] Corrupt JSON in card.tags for card id="${row.id}" — using empty array`)
+  }
+
+  return {
+    id: row.id,
+    topicId: topicId ?? row.topic_id,
+    type: row.type as Card['type'],
+    data,
+    difficulty: row.difficulty as Card['difficulty'],
+    tags,
+    isCustom: Boolean(row.is_custom),
+    createdAt: row.created_at,
+  }
+}
+
 export const dbService = {
   recordCardResult: async (cardId: string, correct: boolean): Promise<void> => {
     const existing = await dbService.getProgress(cardId)
@@ -119,16 +147,7 @@ export const dbService = {
       throw new Error(`Database Operation Failed: ${result.error || 'Failed to get cards'}`)
     }
 
-    return (result.data || []).map((row: any) => ({
-      id: row.id,
-      topicId: row.topic_id,
-      type: row.type,
-      data: JSON.parse(row.data),
-      difficulty: row.difficulty,
-      tags: JSON.parse(row.tags || '[]'),
-      isCustom: Boolean(row.is_custom),
-      createdAt: row.created_at
-    }))
+    return (result.data || []).map((row: any) => parseCardRow(row))
   },
 
   getProgress: async (cardId: string): Promise<{ repetitions: number; interval: number; easeFactor: number } | null> => {
@@ -406,16 +425,7 @@ export const dbService = {
       throw new Error(`Database Operation Failed: ${result.error || 'Failed to get cards'}`)
     }
 
-    return (result.data || []).map((row: { id: string; type: string; data: string; tags: string; difficulty: string; is_custom: number; created_at: string }) => ({
-      id: row.id,
-      topicId,
-      type: row.type as Card['type'],
-      data: JSON.parse(row.data),
-      difficulty: row.difficulty as Card['difficulty'],
-      tags: JSON.parse(row.tags || '[]'),
-      isCustom: Boolean(row.is_custom),
-      createdAt: row.created_at,
-    }))
+    return (result.data || []).map((row: any) => parseCardRow(row, topicId))
   },
 
   getCardsPrioritized: async (topicId: string): Promise<Card[]> => {
@@ -423,16 +433,7 @@ export const dbService = {
     if (!result.success) {
       throw new Error(`Database Operation Failed: ${result.error || 'Failed to get prioritized cards'}`)
     }
-    return (result.data || []).map((row: any) => ({
-      id: row.id,
-      topicId: topicId,
-      type: row.type,
-      data: JSON.parse(row.data),
-      difficulty: row.difficulty,
-      tags: JSON.parse(row.tags || '[]'),
-      isCustom: Boolean(row.is_custom),
-      createdAt: row.created_at,
-    }))
+    return (result.data || []).map((row: any) => parseCardRow(row, topicId))
   },
 
   updateDecksFolder: async (fromFolder: string, toFolder: string): Promise<{ success: boolean; error?: string }> => {
