@@ -354,6 +354,21 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
     }
   }, [])
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        if (viewState === 'test') {
+          setShowExitConfirm(true)
+        } else {
+          handleExit()
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [viewState])
+
   const handleExit = () => {
     if (blocker.state === 'blocked') blocker.reset()
     onExit()

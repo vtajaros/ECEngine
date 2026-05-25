@@ -14,3 +14,4 @@ electron.vite.config.*.mjs
 .env.web
 .env.*.local
 *.pdf
+.env.local

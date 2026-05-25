@@ -275,6 +275,11 @@ export default function FlashcardViewer() {
     if (!activeDeck) return
     const handler = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setShowExitConfirm(true)
+        return
+      }
       if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); setIsFlipped(f => !f) }
       if (e.key === 'ArrowRight') goNext()
       if (e.key === 'ArrowLeft') goPrev()

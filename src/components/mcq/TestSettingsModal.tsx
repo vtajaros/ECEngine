@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Play, X, ClipboardList, Shuffle, Bookmark, Zap } from 'lucide-react'
+import { Play, X, ClipboardList, Shuffle, Bookmark, Zap, Dices } from 'lucide-react'
 
 export interface TestSettings {
   instantChecking: boolean
@@ -8,6 +8,7 @@ export interface TestSettings {
   shuffleChoices: boolean
   bookmarkedOnly: boolean
   itemCount: 'All' | number
+  randomSample: boolean
 }
 
 interface StudySet {
@@ -41,7 +42,7 @@ export const TestSettingsModal: React.FC<TestSettingsModalProps> = ({
   }
 
   const renderToggle = (
-    key: 'instantChecking' | 'shuffleQuestions' | 'shuffleChoices' | 'bookmarkedOnly',
+    key: 'instantChecking' | 'shuffleQuestions' | 'shuffleChoices' | 'bookmarkedOnly' | 'randomSample',
     label: string,
     Icon: React.FC<{ className?: string }>
   ) => (
@@ -144,6 +145,7 @@ export const TestSettingsModal: React.FC<TestSettingsModalProps> = ({
                   {renderToggle('shuffleQuestions', 'Shuffle Questions', ({ className }) => <Shuffle className={className} />)}
                   {renderToggle('shuffleChoices', 'Shuffle Choices', ({ className }) => <Shuffle className={className} />)}
                   {renderToggle('bookmarkedOnly', 'Bookmarked Only', ({ className }) => <Bookmark className={className} />)}
+                  {renderToggle('randomSample', 'Random Sample', ({ className }) => <Dices className={className} />)}
                 </div>
               </div>
             </div>

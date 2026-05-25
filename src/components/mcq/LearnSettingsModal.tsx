@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Play, X, Settings2, Shuffle, Bookmark } from 'lucide-react'
+import { Play, X, Settings2, Shuffle, Bookmark, Dices } from 'lucide-react'
 
 export interface LearnSettings {
   type: string
@@ -8,6 +8,7 @@ export interface LearnSettings {
   shuffleChoices: boolean
   bookmarkedOnly: boolean
   itemCount: 'All' | number
+  randomSample: boolean
 }
 
 interface StudySet {
@@ -41,7 +42,7 @@ export const LearnSettingsModal: React.FC<LearnSettingsModalProps> = ({
   }
 
   const renderToggle = (
-    key: 'shuffleQuestions' | 'shuffleChoices' | 'bookmarkedOnly',
+    key: 'shuffleQuestions' | 'shuffleChoices' | 'bookmarkedOnly' | 'randomSample',
     label: string,
     Icon: React.FC<{ className?: string }>
   ) => (
@@ -143,6 +144,7 @@ export const LearnSettingsModal: React.FC<LearnSettingsModalProps> = ({
                   {renderToggle('shuffleQuestions', 'Shuffle Questions', ({ className }) => <Shuffle className={className} />)}
                   {renderToggle('shuffleChoices', 'Shuffle Choices', ({ className }) => <Shuffle className={className} />)}
                   {renderToggle('bookmarkedOnly', 'Bookmarked Only', ({ className }) => <Bookmark className={className} />)}
+                  {renderToggle('randomSample', 'Random Sample', ({ className }) => <Dices className={className} />)}
                 </div>
               </div>
             </div>

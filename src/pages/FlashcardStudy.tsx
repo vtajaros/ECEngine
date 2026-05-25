@@ -18,6 +18,7 @@ import { shuffle, shuffleChoices } from '../lib/scrambler'
 import { StudyHeader } from '../components/study/StudyHeader'
 import { StudySessionStats } from '../components/study/StudySessionStats'
 import { dbService } from '../services/db.service'
+import { weightedSample } from '../lib/sampling'
 
 
 
@@ -261,6 +262,18 @@ export default function FlashcardStudy() {
     }
   }, [blocker])
 
+  useEffect(() => {
+    if (!isSessionActive) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setShowExitConfirm(true)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isSessionActive])
+
   // Safe exit: reset any active blocker before handing control to parent
   const handleExit = () => {
     if (blocker.state === 'blocked') blocker.reset()
@@ -275,7 +288,8 @@ export default function FlashcardStudy() {
     shuffleQuestions: false,
     shuffleChoices: false,
     bookmarkedOnly: false,
-    itemCount: 'All'
+    itemCount: 'All',
+    randomSample: false
   })
 
   // Pre-Test Settings Modal State
@@ -285,7 +299,8 @@ export default function FlashcardStudy() {
     shuffleQuestions: false,
     shuffleChoices: false,
     bookmarkedOnly: false,
-    itemCount: 'All'
+    itemCount: 'All',
+    randomSample: false
   })
 
   // Open learn settings
@@ -350,15 +365,23 @@ export default function FlashcardStudy() {
 
     if (setId.startsWith('topic_')) {
       // Load real cards from DB
-      const prioritizedCards = await dbService.getCardsPrioritized(setId)
+      const prioritizedCards = await dbService.getCardsWithProgress(setId)
       const rawCards = prioritizedCards.map(card => ({
-        data: card.data,
+        data: typeof card.data === 'string' ? JSON.parse(card.data) : card.data,
         type: card.type,
-        id: card.id
+        id: card.id,
+        ease_factor: (card as any).ease_factor ?? 2.5,
+        correct_count: (card as any).correct_count ?? 0,
+        total_count: (card as any).total_count ?? 0,
+        last_result: (card as any).last_result ?? null,
       }))
 
       const mcqs = rawCards.filter((r: any) => r.type === 'mcq').map((r: any) => ({
-        id: r.id, topicId: 'custom', type: 'mcq', difficulty: 'medium', tags: [], isCustom: true, data: r.data
+        id: r.id, topicId: 'custom', type: 'mcq', difficulty: 'medium', tags: [], isCustom: true, data: r.data,
+        ease_factor: r.ease_factor,
+        correct_count: r.correct_count,
+        total_count: r.total_count,
+        last_result: r.last_result,
       }))
 
       const flashcards = rawCards.filter((r: any) => r.type !== 'mcq').map((r: any) => ({ ...r.data, id: r.id }))
@@ -405,7 +428,11 @@ export default function FlashcardStudy() {
     }
 
     if (learnSettings.itemCount !== 'All' && filteredData.length > learnSettings.itemCount) {
-      filteredData = filteredData.slice(0, learnSettings.itemCount)
+      if (learnSettings.randomSample) {
+        filteredData = weightedSample(filteredData as any, learnSettings.itemCount)
+      } else {
+        filteredData = filteredData.slice(0, learnSettings.itemCount)
+      }
     }
 
     startSession(filteredData as any)
@@ -426,15 +453,23 @@ export default function FlashcardStudy() {
 
     if (setId.startsWith('topic_')) {
       // Load real cards from DB
-      const prioritizedCards = await dbService.getCardsPrioritized(setId)
+      const prioritizedCards = await dbService.getCardsWithProgress(setId)
       const rawCards = prioritizedCards.map(card => ({
-        data: card.data,
+        data: typeof card.data === 'string' ? JSON.parse(card.data) : card.data,
         type: card.type,
-        id: card.id
+        id: card.id,
+        ease_factor: (card as any).ease_factor ?? 2.5,
+        correct_count: (card as any).correct_count ?? 0,
+        total_count: (card as any).total_count ?? 0,
+        last_result: (card as any).last_result ?? null,
       }))
 
       const mcqs = rawCards.filter((r: any) => r.type === 'mcq').map((r: any) => ({
-        id: r.id, topicId: 'custom', type: 'mcq', difficulty: 'medium', tags: [], isCustom: true, data: r.data
+        id: r.id, topicId: 'custom', type: 'mcq', difficulty: 'medium', tags: [], isCustom: true, data: r.data,
+        ease_factor: r.ease_factor,
+        correct_count: r.correct_count,
+        total_count: r.total_count,
+        last_result: r.last_result,
       }))
 
       const flashcards = rawCards.filter((r: any) => r.type !== 'mcq').map((r: any) => ({ ...r.data, id: r.id }))
@@ -480,7 +515,11 @@ export default function FlashcardStudy() {
     }
 
     if (testSettings.itemCount !== 'All' && filteredData.length > testSettings.itemCount) {
-      filteredData = filteredData.slice(0, testSettings.itemCount)
+      if (testSettings.randomSample) {
+        filteredData = weightedSample(filteredData as any, testSettings.itemCount)
+      } else {
+        filteredData = filteredData.slice(0, testSettings.itemCount)
+      }
     }
 
     startSession(filteredData as any)

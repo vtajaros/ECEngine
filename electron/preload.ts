@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('electron', {
   },
   data: {
     getCards: (topicId?: string) => ipcRenderer.invoke('data:getCards', topicId),
+    getCardsWithProgress: (topicId: string) => ipcRenderer.invoke('data:getCardsWithProgress', topicId),
     getProgress: (cardId: string) => ipcRenderer.invoke('data:getProgress', cardId),
     saveProgress: (payload: any) => ipcRenderer.invoke('data:saveProgress', payload),
     recordActivity: (payload: any) => ipcRenderer.invoke('data:recordActivity', payload),

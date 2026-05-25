@@ -89,6 +89,17 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
     }
   }, []) // intentionally empty — runs only on unmount
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        setShowExitConfirm(true)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   // Safe exit: reset any active blocker before handing control to parent
   const handleExit = () => {
     if (blocker.state === 'blocked') blocker.reset()

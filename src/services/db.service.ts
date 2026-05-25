@@ -60,6 +60,7 @@ declare global {
         importDecks: (parsed: unknown) => Promise<{ success: boolean; data?: string; error?: string }>
         getAllCardsByTopic: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
         getCardsPrioritized: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
+        getCardsWithProgress: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
       }
       file: {
         import: (filePath?: string) => Promise<{ success: boolean; data?: string; canceled?: boolean; error?: string }>
@@ -434,6 +435,12 @@ export const dbService = {
       throw new Error(`Database Operation Failed: ${result.error || 'Failed to get prioritized cards'}`)
     }
     return (result.data || []).map((row: any) => parseCardRow(row, topicId))
+  },
+
+  getCardsWithProgress: async (topicId: string): Promise<Card[]> => {
+    const result = await window.electron.data.getCardsWithProgress(topicId)
+    if (!result.success) throw new Error(result.error ?? 'Failed to get cards with progress')
+    return result.data ?? []
   },
 
   updateDecksFolder: async (fromFolder: string, toFolder: string): Promise<{ success: boolean; error?: string }> => {

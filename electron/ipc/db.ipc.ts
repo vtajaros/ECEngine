@@ -591,6 +591,26 @@ export function registerDBHandlers() {
     }
   })
 
+  ipcMain.handle('data:getCardsWithProgress', async (_, topicId: string) => {
+    try {
+      const rows = queryAll(
+        `SELECT c.id, c.type, c.data, c.tags, c.difficulty, c.is_custom, c.created_at,
+                COALESCE(p.ease_factor, 2.5)    AS ease_factor,
+                COALESCE(p.correct_count, 0)    AS correct_count,
+                COALESCE(p.total_count, 0)      AS total_count,
+                p.last_result
+         FROM cards c
+         LEFT JOIN progress p ON c.id = p.card_id
+         WHERE c.topic_id = ?
+         ORDER BY c.created_at ASC`,
+        [topicId]
+      )
+      return { success: true, data: rows }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
   ipcMain.handle('decks:getTopicsWithCardCounts', async () => {
     try {
       const rows = queryAll(`
