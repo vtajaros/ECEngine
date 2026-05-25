@@ -7,3 +7,7 @@ dist/
 .env
 .env.local
 todo.md
+fix.js
+fix.py
+electron.vite.config.*.mjs
+*.code-workspace
