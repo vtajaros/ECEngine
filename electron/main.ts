@@ -41,6 +41,9 @@ function createWindow() {
     win.show()
   })
 
+  // Disable built-in pinch/ctrl+wheel zoom so PrintView can handle it
+  win.webContents.setVisualZoomLevelLimits(1, 1)
+
   // Disable unnecessary permissions for privacy/security
   session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
     const blocked = ['geolocation', 'notifications', 'midiSysex', 'media'];

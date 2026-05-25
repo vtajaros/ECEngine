@@ -35,6 +35,8 @@ export function registerPrintHandlers(): void {
         },
       })
 
+      printWindow.webContents.setVisualZoomLevelLimits(1, 1)
+
       printWindow.on('closed', () => {
         printWindow = null
       })

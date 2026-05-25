@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { FileText, Table2, List, BookOpen, Bold, Loader2, CheckCircle2, AlertCircle, Minus, Square, X } from 'lucide-react'
@@ -339,23 +339,73 @@ export default function PrintView() {
     setLayout((pdfConfig.layout ?? 'table') as LayoutMode)
   }, [pdfConfig])
 
-  useEffect(() => {
-    const handleResize = () => {
-      const PAPER_WIDTH = 800; // Fixed paper width in pixels
-      const availableWidth = window.innerWidth;
-      
-      if (availableWidth < PAPER_WIDTH) {
-        setScale(availableWidth / PAPER_WIDTH);
-      } else {
-        setScale(1);
+  const MIN_SCALE = 0.5
+  const MAX_SCALE = 2.0
+  const SCALE_STEP = 0.1
+
+  // Ref for cleanup on unmount
+  const zoomCleanupRef = useRef<(() => void) | null>(null)
+  useEffect(() => () => { zoomCleanupRef.current?.() }, [])
+
+  // Right-click + wheel zoom (Sumatra PDF style)
+  // useCallback ref: fires the instant the DOM node exists, bypasses early-return null problem
+  const rightMouseDown = useRef(false)
+  const scrollAreaRef = useCallback((el: HTMLDivElement | null) => {
+    if (!el) return
+
+    let didZoom = false
+
+    const onMouseDown = (e: MouseEvent) => {
+      if (e.button === 2) {
+        rightMouseDown.current = true
+        didZoom = false
       }
-    };
-    
-    // Initial check and event listener
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+    }
+    const onMouseUp = (e: MouseEvent) => {
+      if (e.button === 2) rightMouseDown.current = false
+    }
+    const onContextMenu = (e: MouseEvent) => {
+      if (didZoom) {
+        e.preventDefault()
+        didZoom = false
+      }
+    }
+    const onWheel = (e: WheelEvent) => {
+      const isCtrl = e.ctrlKey
+      const isRightHeld = rightMouseDown.current
+      if (!isCtrl && !isRightHeld) return
+
+      e.preventDefault()
+      e.stopPropagation()
+
+      const delta = e.deltaY < 0 ? SCALE_STEP : -SCALE_STEP
+      setScale(prev => Math.min(MAX_SCALE, Math.max(MIN_SCALE, Math.round((prev + delta) * 10) / 10)))
+      if (isRightHeld) didZoom = true
+    }
+
+    el.addEventListener('mousedown', onMouseDown)
+    el.addEventListener('mouseup', onMouseUp)
+    el.addEventListener('contextmenu', onContextMenu)
+    el.addEventListener('wheel', onWheel, { passive: false })
+
+    zoomCleanupRef.current = () => {
+      el.removeEventListener('mousedown', onMouseDown)
+      el.removeEventListener('mouseup', onMouseUp)
+      el.removeEventListener('contextmenu', onContextMenu)
+      el.removeEventListener('wheel', onWheel)
+    }
+  }, [])
+
+  useEffect(() => {
+    const initialScale = () => {
+      const availableWidth = window.innerWidth
+      if (availableWidth < 800) setScale(availableWidth / 800)
+      else setScale(1)
+    }
+    initialScale()
+    window.addEventListener('resize', initialScale)
+    return () => window.removeEventListener('resize', initialScale)
+  }, [])
 
   useEffect(() => {
     if (!topicId) { setLoading(false); return }
@@ -434,6 +484,7 @@ export default function PrintView() {
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2">
         <span className="font-rajdhani font-bold tracking-wider text-white text-xs whitespace-nowrap">
           <span className="text-[#00FF41]">TEST PAPER VIEW</span> — {title}
+          <span className="text-gray-500 font-normal"> · {cards.length} cards</span>
         </span>
       </div>
 
@@ -480,33 +531,7 @@ export default function PrintView() {
         borderBottom: '1px solid var(--bg-card)',
       }}
     >
-      <div className="flex flex-nowrap items-center gap-2 w-full overflow-x-auto no-scrollbar pb-1">
-      {/* Title */}
-      <div className="flex" style={{ alignItems: 'center', gap: '8px', flex: 1, minWidth: '200px' }}>
-        <FileText size={18} color="var(--accent-primary)" />
-        <span
-          style={{
-            fontFamily: 'var(--font-ui)',
-            fontWeight: 700,
-            fontSize: '14px',
-            color: 'var(--text-primary)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.1em',
-          }}
-        >
-          {title}
-        </span>
-        <span
-          style={{
-            fontSize: '11px',
-            color: 'var(--text-secondary)',
-            fontFamily: 'var(--font-body)',
-          }}
-        >
-          — {cards.length} card{cards.length !== 1 ? 's' : ''}
-        </span>
-      </div>
-
+      <div className="flex flex-nowrap items-center justify-center gap-2 w-full overflow-x-auto no-scrollbar pb-1">
       {/* Layout toggle */}
       <div
         className="flex-shrink-0"
@@ -633,6 +658,65 @@ export default function PrintView() {
             {PRINT_THEMES[t].label}
           </motion.button>
         ))}
+      </div>
+
+      {/* Zoom controls */}
+      <div
+        className="flex-shrink-0"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
+          background: 'var(--bg-card)',
+          padding: '4px',
+          borderRadius: 'var(--radius-md)',
+          border: '1px solid var(--bg-elevated)',
+        }}
+      >
+        <motion.button
+          onClick={() => setScale(s => Math.max(MIN_SCALE, Math.round((s - SCALE_STEP) * 10) / 10))}
+          whileTap={{ scale: 0.9 }}
+          title="Zoom Out"
+          style={{
+            width: '28px', height: '28px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            borderRadius: 'var(--radius-sm)',
+            border: 'none', cursor: 'pointer',
+            background: 'transparent',
+            color: 'var(--text-secondary)',
+            fontSize: '16px', fontWeight: 700,
+            transition: 'all 0.15s',
+          }}
+        >−</motion.button>
+        <span
+          onClick={() => setScale(1)}
+          title="Reset zoom"
+          style={{
+            fontSize: '11px', fontWeight: 700,
+            color: 'var(--text-primary)',
+            fontFamily: 'var(--font-ui)',
+            minWidth: '36px', textAlign: 'center',
+            cursor: 'pointer',
+            letterSpacing: '0.04em',
+          }}
+        >
+          {Math.round(scale * 100)}%
+        </span>
+        <motion.button
+          onClick={() => setScale(s => Math.min(MAX_SCALE, Math.round((s + SCALE_STEP) * 10) / 10))}
+          whileTap={{ scale: 0.9 }}
+          title="Zoom In"
+          style={{
+            width: '28px', height: '28px',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            borderRadius: 'var(--radius-sm)',
+            border: 'none', cursor: 'pointer',
+            background: 'transparent',
+            color: 'var(--text-secondary)',
+            fontSize: '16px', fontWeight: 700,
+            transition: 'all 0.15s',
+          }}
+        >+</motion.button>
       </div>
 
       {/* Export PDF button */}
@@ -968,7 +1052,7 @@ export default function PrintView() {
       `}</style>
       {titleBar}
       {toolbar}
-      <div className="flex-1 overflow-y-auto show-scrollbar" style={{ background: PRINT_THEMES[theme].vars['--pt-bg-outer'], padding: '40px 0' }}>
+      <div ref={scrollAreaRef} className="flex-1 overflow-y-auto show-scrollbar" style={{ background: PRINT_THEMES[theme].vars['--pt-bg-outer'], padding: '40px 0' }}>
         <div className="w-full flex justify-center pb-12 overflow-x-auto">
           <div
             id="print-paper-area"
