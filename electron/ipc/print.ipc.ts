@@ -63,40 +63,70 @@ export function registerPrintHandlers(): void {
     }
   })
 
-  ipcMain.handle('print:toPDF', async (_event, suggestedName: string) => {
+  ipcMain.handle('print:toPDF', async (_event, suggestedName: string, themeVars: Record<string, string>, topicId: string, title: string, theme: string, layout: string) => {
+    let pdfWindow: BrowserWindow | null = null
     try {
-      if (!printWindow || printWindow.isDestroyed()) {
-        return { success: false, error: 'Print window is not open' }
-      }
-
-      await printWindow.webContents.insertCSS(`
-        body { background: white !important; margin: 0 !important; }
-        * { box-shadow: none !important; }
-        ::-webkit-scrollbar { display: none !important; }
-      `)
-
-      const buffer = await printWindow.webContents.printToPDF({
-        printBackground: true,
-        pageSize: 'A4',
-        margins: { marginType: 'default' },
-        landscape: false,
-      })
-
-      const { canceled, filePath } = await dialog.showSaveDialog(printWindow, {
+      const { canceled, filePath } = await dialog.showSaveDialog(printWindow!, {
         title: 'Save Test Paper as PDF',
         defaultPath: join(app.getPath('documents'), `${suggestedName}.pdf`),
         filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
       })
+      if (canceled || !filePath) return { success: false, canceled: true }
 
-      if (canceled || !filePath) {
-        return { success: false, canceled: true }
+      const encodedTitle = encodeURIComponent(title)
+
+      // A4 at 96dpi = 794px wide. Match exactly so printToPDF fills the page.
+      pdfWindow = new BrowserWindow({
+        width: 794,
+        height: 1123,
+        show: false,
+        webPreferences: {
+          preload: join(__dirname, '../preload/index.js'),
+          contextIsolation: true,
+          nodeIntegration: false,
+          offscreen: false,
+        },
+      })
+
+      if (process.env['ELECTRON_RENDERER_URL']) {
+        await pdfWindow.loadURL(
+          `${process.env['ELECTRON_RENDERER_URL']}#/print?topicId=${topicId}&title=${encodedTitle}`
+        )
+      } else {
+        await pdfWindow.loadFile(join(__dirname, '../renderer/index.html'), {
+          hash: `/print?topicId=${topicId}&title=${encodedTitle}`,
+        })
       }
+
+      // Inject config immediately when DOM is ready, before React fully mounts
+      await new Promise<void>(resolve => {
+        pdfWindow!.webContents.once('dom-ready', () => resolve())
+      })
+      await pdfWindow.webContents.executeJavaScript(`
+        window.__pdfConfig = {
+          pdfmode: '1',
+          theme: ${JSON.stringify(theme)},
+          layout: ${JSON.stringify(layout)},
+        };
+      `)
+      // Wait for full render: React mount + config effect + fonts + KaTeX
+      await new Promise(resolve => setTimeout(resolve, 3000))
+
+      const buffer = await pdfWindow.webContents.printToPDF({
+        printBackground: true,
+        pageSize: 'A4',
+        marginType: 'none',
+        landscape: false,
+        preferCSSPageSize: false,
+      })
 
       fs.writeFileSync(filePath, buffer)
       return { success: true }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err)
       return { success: false, error: message }
+    } finally {
+      if (pdfWindow && !pdfWindow.isDestroyed()) pdfWindow.destroy()
     }
   })
 }

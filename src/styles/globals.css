@@ -45,3 +45,24 @@ html, body, #root {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Visible scrollbar override — defeats the global * suppression */
+.show-scrollbar::-webkit-scrollbar {
+  display: block !important;
+  width: 8px !important;
+}
+.show-scrollbar::-webkit-scrollbar-track {
+  background: #111 !important;
+}
+.show-scrollbar::-webkit-scrollbar-thumb {
+  background: #00FF41 !important;
+  border-radius: 4px !important;
+}
+.show-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #00cc33 !important;
+}
+.show-scrollbar {
+  -ms-overflow-style: auto !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: #00FF41 #111 !important;
+}

@@ -14,6 +14,73 @@ type LayoutMode = 'table' | 'glossary' | 'qa'
 type BoldSide = 'term' | 'definition' | 'none'
 type ExportState = 'idle' | 'loading' | 'success' | 'error'
 
+type PrintTheme = 'light' | 'sepia' | 'dark'
+
+interface ThemeDef {
+  label: string
+  vars: Record<string, string>
+}
+
+const PRINT_THEMES: Record<PrintTheme, ThemeDef> = {
+  light: {
+    label: 'Light',
+    vars: {
+      '--pt-bg-outer': '#e5e7eb',
+      '--pt-bg-paper': '#ffffff',
+      '--pt-text-primary': '#111827',
+      '--pt-text-secondary': '#6b7280',
+      '--pt-text-body': '#374151',
+      '--pt-text-muted': '#9ca3af',
+      '--pt-border': '#d1d5db',
+      '--pt-border-light': '#e5e7eb',
+      '--pt-thead-bg': '#f9fafb',
+      '--pt-answer-bg': '#fef3c7',
+      '--pt-answer-text': '#92400e',
+      '--pt-formula-bg': '#f3f4f6',
+      '--pt-formula-text': '#1e40af',
+      '--pt-rule': '#111827',
+    },
+  },
+  sepia: {
+    label: 'Sepia',
+    vars: {
+      '--pt-bg-outer': '#c8b89a',
+      '--pt-bg-paper': '#f5ead7',
+      '--pt-text-primary': '#2c1a0e',
+      '--pt-text-secondary': '#7a5c3e',
+      '--pt-text-body': '#3d2b1a',
+      '--pt-text-muted': '#a08060',
+      '--pt-border': '#c4a882',
+      '--pt-border-light': '#ddd0b8',
+      '--pt-thead-bg': '#ede0c4',
+      '--pt-answer-bg': '#e8d5a3',
+      '--pt-answer-text': '#5c3a00',
+      '--pt-formula-bg': '#ede0c4',
+      '--pt-formula-text': '#3a2200',
+      '--pt-rule': '#2c1a0e',
+    },
+  },
+  dark: {
+    label: 'Dark',
+    vars: {
+      '--pt-bg-outer': '#1a1d23',
+      '--pt-bg-paper': '#252931',
+      '--pt-text-primary': '#e8eaf0',
+      '--pt-text-secondary': '#9099a8',
+      '--pt-text-body': '#c8cdd6',
+      '--pt-text-muted': '#5a6070',
+      '--pt-border': '#363b45',
+      '--pt-border-light': '#2e3340',
+      '--pt-thead-bg': '#1e2128',
+      '--pt-answer-bg': 'rgba(100,160,255,0.12)',
+      '--pt-answer-text': '#7eb8f7',
+      '--pt-formula-bg': '#1e2128',
+      '--pt-formula-text': '#7eb8f7',
+      '--pt-rule': '#4a5060',
+    },
+  },
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -51,12 +118,12 @@ interface MCQTableRowProps {
 function MCQTableRow({ index, card }: MCQTableRowProps) {
   const { question, choices, answer } = card.data
   return (
-    <tr style={{ borderBottom: '1px solid #d1d5db', pageBreakInside: 'avoid' }}>
+    <tr style={{ borderBottom: '1px solid var(--pt-border)', pageBreakInside: 'avoid' }}>
       <td style={{ padding: '10px 12px', verticalAlign: 'top', width: '65%', overflow: 'hidden' }}>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <span style={{ fontWeight: 700, minWidth: '24px', color: '#111827' }}>{index}.</span>
+          <span style={{ fontWeight: 700, minWidth: '24px', color: 'var(--pt-text-primary)' }}>{index}.</span>
           <div style={{ flex: 1 }}>
-            <p style={{ fontWeight: 600, color: '#111827', marginBottom: '6px', lineHeight: 1.5 }}>
+            <p style={{ fontWeight: 600, color: 'var(--pt-text-primary)', marginBottom: '6px', lineHeight: 1.5 }}>
               <MathText text={question} />
             </p>
             {/* question imagePath */}
@@ -65,7 +132,7 @@ function MCQTableRow({ index, card }: MCQTableRowProps) {
                 src={`ece-app://${(card.data as MCQData & { imagePath?: string }).imagePath}`}
                 alt="Question diagram"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
+                style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
               />
             )}
             <ol style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -74,8 +141,8 @@ function MCQTableRow({ index, card }: MCQTableRowProps) {
                   <div
                     style={{
                       padding: '4px 8px',
-                      backgroundColor: ci === answer ? '#fef3c7' : 'transparent',
-                      color: ci === answer ? '#92400e' : '#374151',
+                      backgroundColor: ci === answer ? 'var(--pt-answer-bg)' : 'transparent',
+                      color: ci === answer ? 'var(--pt-answer-text)' : 'var(--pt-text-body)',
                       fontWeight: ci === answer ? 700 : 400,
                       borderRadius: '3px',
                       display: 'flex',
@@ -96,13 +163,14 @@ function MCQTableRow({ index, card }: MCQTableRowProps) {
           padding: '10px 12px',
           verticalAlign: 'top',
           width: '35%',
-          borderLeft: '1px solid #d1d5db',
-          color: '#6b7280',
+          borderLeft: '1px solid var(--pt-border)',
           fontSize: '13px',
         }}
       >
-        <span style={{ fontWeight: 600, color: '#374151' }}>Ans: </span>
-        <MathText text={choices[answer] ?? '—'} />
+        <span style={{ fontWeight: 700, color: 'var(--pt-text-secondary)' }}>Ans: </span>
+        <span style={{ fontWeight: 700, color: 'var(--pt-text-primary)' }}>
+          <MathText text={choices[answer] ?? '—'} />
+        </span>
       </td>
     </tr>
   )
@@ -117,8 +185,8 @@ function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) 
   const { question, choices, answer, imagePath } = card.data
   if (qaMode) {
     return (
-      <div style={{ marginBottom: '14px', pageBreakInside: 'avoid', borderBottom: '1px solid #e5e7eb', paddingBottom: '10px' }}>
-        <p style={{ fontWeight: 400, color: '#111827', marginBottom: '4px' }}>
+      <div style={{ marginBottom: '14px', pageBreakInside: 'avoid', borderBottom: '1px solid var(--pt-border-light)', paddingBottom: '10px' }}>
+        <p style={{ fontWeight: 400, color: 'var(--pt-text-primary)', marginBottom: '4px' }}>
           {index}. <MathText text={question} />
         </p>
         {imagePath && (
@@ -126,10 +194,10 @@ function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) 
             src={`ece-app://${imagePath}`}
             alt="Question diagram"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-            style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', marginLeft: '16px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
+            style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', marginLeft: '16px', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
           />
         )}
-        <p style={{ fontWeight: 700, color: '#374151', margin: 0, paddingLeft: '16px' }}>
+        <p style={{ fontWeight: 700, color: 'var(--pt-text-body)', margin: 0, paddingLeft: '16px' }}>
           <MathText text={choices[answer] ?? '—'} />
         </p>
       </div>
@@ -137,7 +205,7 @@ function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) 
   }
   return (
     <div style={{ marginBottom: '16px', pageBreakInside: 'avoid' }}>
-      <p style={{ fontWeight: 600, color: '#111827', marginBottom: '6px' }}>
+      <p style={{ fontWeight: 600, color: 'var(--pt-text-primary)', marginBottom: '6px' }}>
         {index}. <MathText text={question} />
       </p>
       {imagePath && (
@@ -145,7 +213,7 @@ function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) 
           src={`ece-app://${imagePath}`}
           alt="Question diagram"
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-          style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
+          style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
         />
       )}
       <ol style={{ listStyle: 'none', padding: 0, margin: 0 }}>
@@ -154,8 +222,8 @@ function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) 
             <div
               style={{
                 padding: '4px 8px',
-                backgroundColor: ci === answer ? '#fef3c7' : 'transparent',
-                color: ci === answer ? '#92400e' : '#374151',
+                backgroundColor: ci === answer ? 'var(--pt-answer-bg)' : 'transparent',
+                color: ci === answer ? 'var(--pt-answer-text)' : 'var(--pt-text-body)',
                 fontWeight: ci === answer ? 700 : 400,
                 borderRadius: '3px',
                 display: 'flex',
@@ -180,14 +248,14 @@ function FormulaItem({ index, card }: FormulaItemProps) {
   const { name, latex, variables, imagePath } = card.data
   const vars = variables as unknown
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', pageBreakInside: 'avoid', borderBottom: '1px solid #e5e7eb', paddingBottom: '12px' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px', pageBreakInside: 'avoid', borderBottom: '1px solid var(--pt-border-light)', paddingBottom: '12px' }}>
       <div style={{ width: '35%', minWidth: '120px' }}>
-        <p style={{ fontWeight: 700, color: '#111827', margin: 0 }}>
+        <p style={{ fontWeight: 700, color: 'var(--pt-text-primary)', margin: 0 }}>
           {index}. <MathText text={name} />
         </p>
         {/* variables below name if present */}
         {vars ? (
-          <div style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.8, marginTop: '4px' }}>
+          <div style={{ fontSize: '12px', color: 'var(--pt-text-secondary)', lineHeight: 1.8, marginTop: '4px' }}>
             {typeof vars === 'string' ? (
               vars.split('\n').map((line, idx) => (
                 <span key={idx} style={{ display: 'block', marginBottom: '2px' }}>
@@ -207,7 +275,7 @@ function FormulaItem({ index, card }: FormulaItemProps) {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {latex ? (
           <div
-            style={{ fontFamily: 'monospace', backgroundColor: '#f3f4f6', padding: '6px 8px', borderRadius: '4px', color: '#1e40af', marginBottom: '0px', overflowX: 'auto' }}
+            style={{ fontFamily: 'monospace', backgroundColor: 'var(--pt-formula-bg)', padding: '6px 8px', borderRadius: '4px', color: 'var(--pt-formula-text)', marginBottom: '0px', overflowX: 'auto' }}
             dangerouslySetInnerHTML={{ __html: renderMath(`$$${latex}$$`) }}
           />
         ) : null}
@@ -216,7 +284,7 @@ function FormulaItem({ index, card }: FormulaItemProps) {
             src={`ece-app://${imagePath}`}
             alt="Formula diagram"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-            style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', borderRadius: '4px', border: '1px solid #e5e7eb' }}
+            style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
           />
         )}
       </div>
@@ -232,8 +300,28 @@ export default function PrintView() {
 
   const controls = window.electron?.windowControls
   const [searchParams] = useSearchParams()
+
   const topicId = searchParams.get('id') ?? searchParams.get('topicId') ?? ''
   const title = decodeURIComponent(searchParams.get('title') ?? 'Test Paper')
+
+  // pdf config injected by main process via executeJavaScript BEFORE React mounts.
+  // We gate rendering until config is present in pdf mode.
+  const [pdfConfig, setPdfConfig] = useState<{ pdfmode: string; theme: string; layout: string } | null>(
+    () => (window as any).__pdfConfig ?? null
+  )
+  const isPdfMode = pdfConfig?.pdfmode === '1' || (window as any).__pdfConfig?.pdfmode === '1'
+
+  useEffect(() => {
+    if ((window as any).__pdfConfig) {
+      setPdfConfig((window as any).__pdfConfig)
+      return
+    }
+    const handler = () => {
+      setPdfConfig((window as any).__pdfConfig ?? null)
+    }
+    window.addEventListener('pdf-config-ready', handler)
+    return () => window.removeEventListener('pdf-config-ready', handler)
+  }, [])
 
   const [cards, setCards] = useState<Card[]>([])
   const [loading, setLoading] = useState(true)
@@ -242,6 +330,14 @@ export default function PrintView() {
   const [exportState, setExportState] = useState<ExportState>('idle')
   const [exportError, setExportError] = useState('')
   const [scale, setScale] = useState(1)
+  const [theme, setTheme] = useState<PrintTheme>('light')
+
+  // Sync theme+layout from pdfConfig once it arrives
+  useEffect(() => {
+    if (!pdfConfig) return
+    setTheme((pdfConfig.theme ?? 'light') as PrintTheme)
+    setLayout((pdfConfig.layout ?? 'table') as LayoutMode)
+  }, [pdfConfig])
 
   useEffect(() => {
     const handleResize = () => {
@@ -275,7 +371,7 @@ export default function PrintView() {
     setExportState('loading')
     setExportError('')
     try {
-        const result = await window.electron.print.toPDF(title)
+        const result = await window.electron.print.toPDF(title, PRINT_THEMES[theme].vars, topicId, title, theme, layout)
         if (result.canceled) {
           setExportState('idle')
         } else if (result.success) {
@@ -321,7 +417,17 @@ export default function PrintView() {
     <div className="print:hidden w-full h-8 bg-[#1A1A1A] text-gray-400 flex items-center justify-between select-none [-webkit-app-region:drag] relative shrink-0 px-0">
       {/* Left side spacer to balance the right controls or put logo */}
       <div className="flex items-center [-webkit-app-region:no-drag] pl-3">
-        <img src="/favicon.png" alt="Logo" className="w-4 h-4 object-contain" />
+        <img
+          src="favicon.png"
+          alt="Logo"
+          className="w-4 h-4 object-contain"
+          onError={(e) => {
+            const img = e.currentTarget
+            if (img.src.includes('favicon.png')) {
+              img.src = 'ecengine_icon.png'
+            }
+          }}
+        />
       </div>
 
       {/* Centered Title */}
@@ -493,6 +599,42 @@ export default function PrintView() {
         </div>
       )}
 
+      {/* Theme picker */}
+      <div
+        className="flex-shrink-0"
+        style={{
+          display: 'flex',
+          gap: '4px',
+          background: 'var(--bg-card)',
+          padding: '4px',
+          borderRadius: 'var(--radius-md)',
+          border: '1px solid var(--bg-elevated)',
+        }}
+      >
+        {(Object.keys(PRINT_THEMES) as PrintTheme[]).map((t) => (
+          <motion.button
+            key={t}
+            onClick={() => setTheme(t)}
+            whileTap={{ scale: 0.95 }}
+            className="whitespace-nowrap flex-shrink-0 text-[11px] px-[10px] py-[5px]"
+            style={{
+              borderRadius: 'var(--radius-sm)',
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-ui)',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              transition: 'all 0.15s',
+              background: theme === t ? 'var(--accent-primary)' : 'transparent',
+              color: theme === t ? '#000' : 'var(--text-secondary)',
+            }}
+          >
+            {PRINT_THEMES[t].label}
+          </motion.button>
+        ))}
+      </div>
+
       {/* Export PDF button */}
       <motion.button
         id="print-export-pdf"
@@ -562,7 +704,7 @@ export default function PrintView() {
   // -------------------------------------------------------------------------
   if (loading) {
     return (
-      <div style={{ background: '#fff', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ background: '#0D0D0D', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Loader2 size={32} className="animate-spin" style={{ color: 'var(--accent-primary)' }} />
       </div>
     )
@@ -575,36 +717,37 @@ export default function PrintView() {
     <div
       style={{
         fontFamily: 'Georgia, "Times New Roman", serif',
-        color: '#111827',
-        maxWidth: '800px',
-        margin: '0 auto',
+        color: 'var(--pt-text-primary)',
+        maxWidth: isPdfMode ? 'none' : '800px',
+        margin: isPdfMode ? '0' : '0 auto',
+        padding: isPdfMode ? '40px 50px' : '0',
       }}
     >
       {/* Header */}
       <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#111827', margin: '0 0 6px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--pt-text-primary)', margin: '0 0 6px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           {title}
         </h1>
-        <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 12px 0' }}>
+        <p style={{ fontSize: '13px', color: 'var(--pt-text-secondary)', margin: '0 0 12px 0' }}>
           {cards.length} item{cards.length !== 1 ? 's' : ''} &nbsp;·&nbsp; Generated {dateStr}
         </p>
-        <hr style={{ border: 'none', borderTop: '2px solid #111827', margin: '0' }} />
+        <hr style={{ border: 'none', borderTop: '2px solid var(--pt-rule)', margin: '0' }} />
       </div>
 
       {/* MCQ Section */}
       {mcqCards.length > 0 && (
         <section style={{ marginBottom: '32px' }}>
           {cards.some(c => !isMCQ(c)) && (
-            <h2 style={{ fontSize: '14px', fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px', borderBottom: '1px solid #e5e7eb', paddingBottom: '4px' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--pt-text-body)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px', borderBottom: '1px solid var(--pt-border-light)', paddingBottom: '4px' }}>
               Multiple Choice
             </h2>
           )}
           {layout === 'table' ? (
-            <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #d1d5db', tableLayout: 'fixed' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid var(--pt-border)', tableLayout: 'fixed' }}>
               <thead>
-                <tr style={{ background: '#f9fafb', borderBottom: '2px solid #d1d5db' }}>
-                  <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#374151', width: '65%' }}>Question &amp; Choices</th>
-                  <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#374151', borderLeft: '1px solid #d1d5db', width: '35%' }}>Answer</th>
+                <tr style={{ borderBottom: '2px solid var(--pt-border)' }}>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--pt-text-body)', width: '65%', backgroundColor: 'var(--pt-thead-bg)' }}>Question &amp; Choices</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--pt-text-body)', borderLeft: '1px solid var(--pt-border)', width: '35%', backgroundColor: 'var(--pt-thead-bg)' }}>Answer</th>
                 </tr>
               </thead>
               <tbody>
@@ -627,30 +770,30 @@ export default function PrintView() {
       {flashcardCards.length > 0 && (
         <section style={{ marginBottom: '32px' }}>
           {cards.some(c => !isFlashcard(c)) && (
-            <h2 style={{ fontSize: '14px', fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px', borderBottom: '1px solid #e5e7eb', paddingBottom: '4px' }}>
+            <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--pt-text-body)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px', borderBottom: '1px solid var(--pt-border-light)', paddingBottom: '4px' }}>
               Flashcards
             </h2>
           )}
           {layout === 'table' ? (
-            <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid #d1d5db', tableLayout: 'fixed' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', border: '1px solid var(--pt-border)', tableLayout: 'fixed' }}>
               <thead>
-                <tr style={{ background: '#f9fafb', borderBottom: '2px solid #d1d5db' }}>
-                  <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#374151', width: '50%' }}>TERM</th>
-                  <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#374151', borderLeft: '1px solid #d1d5db', width: '50%' }}>DEFINITION</th>
+                <tr style={{ borderBottom: '2px solid var(--pt-border)' }}>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--pt-text-body)', width: '50%', backgroundColor: 'var(--pt-thead-bg)' }}>TERM</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--pt-text-body)', borderLeft: '1px solid var(--pt-border)', width: '50%', backgroundColor: 'var(--pt-thead-bg)' }}>DEFINITION</th>
                 </tr>
               </thead>
               <tbody>
                 {flashcardCards.map((card) => {
                   const { front, back, imageFront, imageBack, imagePath } = card.data
                   return (
-                    <tr key={card.id} style={{ borderBottom: '1px solid #d1d5db', pageBreakInside: 'avoid' }}>
+                    <tr key={card.id} style={{ borderBottom: '1px solid var(--pt-border)', pageBreakInside: 'avoid' }}>
                       <td style={{ padding: '10px 12px', verticalAlign: 'top', width: '50%', overflow: 'hidden' }}>
                         {imageFront && (
                           <img
                             src={`ece-app://${imageFront}`}
                             alt="Front diagram"
                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                            style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
+                            style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
                           />
                         )}
                         {imagePath && (
@@ -658,21 +801,21 @@ export default function PrintView() {
                             src={`ece-app://${imagePath}`}
                             alt="Flashcard diagram"
                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                            style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
+                            style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
                           />
                         )}
-                        <p style={{ color: '#111827', margin: 0, fontWeight: boldSide === 'term' ? 700 : 400 }}><MathText text={front} /></p>
+                        <p style={{ color: 'var(--pt-text-primary)', margin: 0, fontWeight: boldSide === 'term' ? 700 : 400 }}><MathText text={front} /></p>
                       </td>
-                      <td style={{ padding: '10px 12px', verticalAlign: 'top', width: '50%', borderLeft: '1px solid #d1d5db', overflow: 'hidden' }}>
+                      <td style={{ padding: '10px 12px', verticalAlign: 'top', width: '50%', borderLeft: '1px solid var(--pt-border)', overflow: 'hidden' }}>
                         {imageBack && (
                           <img
                             src={`ece-app://${imageBack}`}
                             alt="Back diagram"
                             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                            style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
+                            style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
                           />
                         )}
-                        <p style={{ color: '#374151', margin: 0, fontWeight: boldSide === 'definition' ? 700 : 400 }}><MathText text={back} /></p>
+                        <p style={{ color: 'var(--pt-text-body)', margin: 0, fontWeight: boldSide === 'definition' ? 700 : 400 }}><MathText text={back} /></p>
                       </td>
                     </tr>
                   )
@@ -685,7 +828,7 @@ export default function PrintView() {
                 const { front, back, imageFront, imageBack, imagePath } = card.data
                 return (
                   <div key={card.id} style={{ marginBottom: '16px', pageBreakInside: 'avoid' }}>
-                    <p style={{ fontWeight: boldSide === 'term' ? 700 : 400, color: '#111827', marginBottom: '4px' }}>
+                    <p style={{ fontWeight: boldSide === 'term' ? 700 : 400, color: 'var(--pt-text-primary)', marginBottom: '4px' }}>
                       <MathText text={front} />
                     </p>
                     {imageFront && (
@@ -693,7 +836,7 @@ export default function PrintView() {
                         src={`ece-app://${imageFront}`}
                         alt="Front diagram"
                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                        style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginLeft: '20px', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
+                        style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginLeft: '20px', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
                       />
                     )}
                     {imagePath && (
@@ -701,16 +844,16 @@ export default function PrintView() {
                         src={`ece-app://${imagePath}`}
                         alt="Flashcard diagram"
                         onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                        style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginLeft: '20px', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
+                        style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginLeft: '20px', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
                       />
                     )}
-                    <div style={{ paddingLeft: '20px', color: '#374151' }}>
+                    <div style={{ paddingLeft: '20px', color: 'var(--pt-text-body)' }}>
                       {imageBack && (
                         <img
                           src={`ece-app://${imageBack}`}
                           alt="Back diagram"
                           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                          style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid #e5e7eb' }}
+                          style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
                         />
                       )}
                       <p style={{ margin: 0, fontWeight: boldSide === 'definition' ? 700 : 400 }}><MathText text={back} /></p>
@@ -726,7 +869,7 @@ export default function PrintView() {
       {/* Formula Section */}
       {formulaCards.length > 0 && (
         <section style={{ marginBottom: '32px' }}>
-          <h2 style={{ fontSize: '14px', fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px', borderBottom: '1px solid #e5e7eb', paddingBottom: '4px' }}>
+          <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--pt-text-body)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px', borderBottom: '1px solid var(--pt-border-light)', paddingBottom: '4px' }}>
             Formulas
           </h2>
           {formulaCards.map((card, i) => (
@@ -736,7 +879,7 @@ export default function PrintView() {
       )}
 
       {cards.length === 0 && (
-        <p style={{ color: '#9ca3af', textAlign: 'center', padding: '48px 0' }}>No cards found for this deck.</p>
+        <p style={{ color: 'var(--pt-text-muted)', textAlign: 'center', padding: '48px 0' }}>No cards found for this deck.</p>
       )}
     </div>
   )
@@ -744,11 +887,52 @@ export default function PrintView() {
   // -------------------------------------------------------------------------
   // Render — full-screen white layout (no AppShell chrome)
   // -------------------------------------------------------------------------
+
+  // PDF mode: render bare paper content with no shell, no height constraints
+  if (isPdfMode) {
+    const currentThemeVars = PRINT_THEMES[theme].vars
+    const paperBg = currentThemeVars['--pt-bg-paper']
+    return (
+      <>
+        <style>{`
+          *, *::before, *::after { box-sizing: border-box; }
+          html, body, #root {
+            margin: 0 !important;
+            padding: 0 !important;
+            background: ${paperBg} !important;
+            height: auto !important;
+            overflow: visible !important;
+            width: 100% !important;
+          }
+        `}</style>
+        <div
+          id="pdf-paper-content"
+          style={{
+            ...currentThemeVars,
+            background: paperBg,
+            color: currentThemeVars['--pt-text-primary'],
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            minHeight: 'unset',
+            height: 'auto',
+            width: '100%',
+            boxSizing: 'border-box',
+            margin: 0,
+            padding: 0,
+          } as React.CSSProperties}
+        >
+          {paperContent}
+        </div>
+      </>
+    )
+  }
+
   return (
     <div className="h-screen w-full flex flex-col overflow-hidden bg-[#0D0D0D] print:bg-white">
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         .animate-spin { animation: spin 1s linear infinite; }
+
+        /* theme vars are applied inline via JS — no static override needed */
 
         @media print {
           /* Remove browser-added URL, date, and page number headers/footers */
@@ -784,15 +968,16 @@ export default function PrintView() {
       `}</style>
       {titleBar}
       {toolbar}
-      <div className="flex-1 overflow-y-auto" style={{ background: '#e5e7eb', padding: '40px 0' }}>
+      <div className="flex-1 overflow-y-auto show-scrollbar" style={{ background: PRINT_THEMES[theme].vars['--pt-bg-outer'], padding: '40px 0' }}>
         <div className="w-full flex justify-center pb-12 overflow-x-auto">
           <div
             id="print-paper-area"
             className="w-[800px] max-w-none"
             style={{
+              ...PRINT_THEMES[theme].vars,
               maxWidth: '800px',
               margin: '0 auto',
-              background: 'white',
+              background: PRINT_THEMES[theme].vars['--pt-bg-paper'],
               padding: '60px 70px',
               boxShadow: '0 2px 16px rgba(0,0,0,0.13)',
               minHeight: '1100px',
