@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react'
 import { Card, MCQData } from '../../types'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bookmark, Clock, ArrowRight, RefreshCw, ClipboardCheck, X, AlertTriangle, Copy, Sparkles } from 'lucide-react'
+import { Bookmark, Clock, ArrowRight, RefreshCw, ClipboardCheck, X, AlertTriangle, Copy, Sparkles, Volume2, VolumeX } from 'lucide-react'
 import { shuffle, shuffleChoices } from '../../lib/scrambler'
 import { renderMath } from '../../lib/latex'
 import { ExplanationPanel } from '../ui/ExplanationPanel'
@@ -10,6 +10,7 @@ import Toast from '../ui/Toast'
 import { useBlocker } from 'react-router-dom'
 import { LeaveConfirmModal } from '../ui/LeaveConfirmModal'
 import { dbService } from '../../services/db.service'
+import { useSound, getSoundsMuted, setSoundsMuted } from '../../hooks/useSound'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { TestNavRail } from '../ui/TestNavRail'
 
@@ -249,6 +250,15 @@ TestQuestionCard.displayName = 'TestQuestionCard'
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onComplete, onExit }) => {
+  const { play } = useSound()
+  const [isMuted, setIsMuted] = useState(() => getSoundsMuted())
+
+  const toggleMute = () => {
+    const next = !isMuted
+    setIsMuted(next)
+    setSoundsMuted(next)
+  }
+
   const [testCards, setTestCards] = useState<Card[]>([])
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(() => {
@@ -416,7 +426,14 @@ Please explain:
     if (viewState !== 'test') return
     if (settings.instantChecking && answers[cardId] !== undefined) return
     setAnswers(prev => ({ ...prev, [cardId]: choiceIndex }))
-  }, [viewState, settings.instantChecking, answers])
+    if (settings.instantChecking) {
+      const card = testCards.find(c => c.id === cardId)
+      if (card) {
+        const mcq = card.data as MCQData
+        play(choiceIndex === mcq.answer ? 'correct' : 'wrong')
+      }
+    }
+  }, [viewState, settings.instantChecking, answers, testCards, play])
 
   const toggleBookmark = useCallback((cardId: string) => {
     setBookmarkedIds(prev => {
@@ -442,6 +459,7 @@ Please explain:
     }
     setScore({ correct, total: testCards.length })
     setViewState('summary')
+    play('finish')
     const correctIds = testCards.filter(card => {
       const mcq = card.data as MCQData
       return answers[card.id] === mcq.answer
@@ -492,15 +510,18 @@ Please explain:
               </>
             ) : 'Test Mode'}
           </span>
-          {viewState === 'test' && (
-            <span className="text-[#888] text-xs font-['Rajdhani'] uppercase tracking-widest mt-0.5 block">
-              {answeredCount} of {testCards.length} Answered
-            </span>
-          )}
+          {/* subtitle removed — answered count is shown in the nav rail */}
         </div>
       </div>
 
       <div className="flex-shrink-0 flex items-center gap-2">
+        <button
+          onClick={toggleMute}
+          className={`p-2 rounded border transition-colors ${isMuted ? 'border-[#FF3333] text-[#FF3333] bg-[rgba(255,51,51,0.08)]' : 'border-[#333] text-[#888] hover:text-white hover:border-[#666]'}`}
+          title={isMuted ? 'Unmute sounds' : 'Mute sounds'}
+        >
+          {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+        </button>
         <div className="flex items-center gap-2 text-lg font-bold tracking-widest bg-[#111] px-4 py-1.5 rounded border border-[#333] shrink-0">
           <Clock className="w-4 h-4 text-[var(--accent-primary)]" />
           {formatTime(timeElapsed)}
@@ -532,6 +553,17 @@ Please explain:
     return (
       <div className="h-full bg-[var(--bg-primary)] flex flex-col relative overflow-hidden">
         {renderTopBar()}
+        <LeaveConfirmModal
+          isOpen={blocker.state === 'blocked' || showExitConfirm}
+          onConfirm={() => {
+            if (blocker.state === 'blocked') blocker.proceed?.()
+            else { setShowExitConfirm(false); handleExit() }
+          }}
+          onCancel={() => {
+            if (blocker.state === 'blocked') blocker.reset?.()
+            else setShowExitConfirm(false)
+          }}
+        />
 
         <div className="flex-1 overflow-y-auto mt-20 p-6 lg:p-12 flex flex-col items-center justify-center">
           <motion.div

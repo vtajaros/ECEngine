@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   Home,
   Brain,
@@ -21,6 +21,18 @@ type NavItem = {
 
 export const AppShell: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const location = useLocation()
+
+  // Safety net: whenever the route actually changes, forcibly clear any
+  // lingering router blocker state. This prevents the sidebar from being
+  // permanently locked if LearnMode or TestMode unmounts without calling
+  // blocker.reset() (e.g. during fast navigation or error boundary recovery).
+  useEffect(() => {
+    const w = window as any
+    if (w.__reactRouterBlocker?.state === 'blocked') {
+      try { w.__reactRouterBlocker.reset() } catch {}
+    }
+  }, [location.pathname])
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -144,4 +156,4 @@ export const AppShell: React.FC = () => {
       </div>
     </div>
   )
-}
+}

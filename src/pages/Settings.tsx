@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { Settings as SettingsIcon, Monitor, Bell, Database, Shield, CheckCircle, AlertTriangle, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { dbService } from '../services/db.service'
+import { getCustomWrongSoundEnabled, setCustomWrongSoundEnabled } from '../hooks/useSound'
+
 export default function Settings() {
 
   const [resetResetMenuOpen, setResetResetMenuOpen] = useState(false);
@@ -9,6 +11,7 @@ export default function Settings() {
   const [deleteCountdown, setDeleteCountdown] = useState(0);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [advancedSyncEnabled, setAdvancedSyncEnabled] = useState(false);
+  const [customWrongSound, setCustomWrongSound] = useState(() => getCustomWrongSoundEnabled())
 
   // API Key State — stored main-process-only; renderer only learns if it is configured
   const [apiKeyInput, setApiKeyInput] = useState('');
@@ -196,9 +199,47 @@ export default function Settings() {
                   </button>
                 </div>
 
-                <p className="text-[#555] text-xs font-['Rajdhani'] uppercase tracking-widest mt-2">
+                <p className="text-[#999] text-xs font-['Rajdhani'] uppercase tracking-widest mt-2">
                   Required for AI explanations. Get a free key at <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" className="text-[var(--accent-primary)] hover:underline transition-all">console.groq.com/keys</a>.
                 </p>
+              </div>
+            </div>
+          </section>
+
+          {/* Sound Section */}
+          <section>
+            <h2 className="font-['Rajdhani'] font-bold text-xl text-[#E8E8E8] mb-6 uppercase tracking-wider flex items-center border-b border-[#161616] pb-4">
+              <Bell size={20} className="text-[#00FF41]" />
+              <span className="ml-3">Sound & Feedback</span>
+            </h2>
+            <div className="bg-[#111111] p-6 lg:p-8 rounded-lg border border-[#161616] shadow-lg space-y-8">
+              <div className="flex flex-row items-center justify-between gap-4">
+                <div className="flex flex-col gap-1">
+                  <span className="font-['IBM_Plex_Mono'] text-[#E8E8E8] text-sm md:text-base">
+                    Disable Faah Sound Meme
+                  </span>
+                  <span className="font-['Rajdhani'] text-[#999] text-xs uppercase tracking-widest">
+                    {customWrongSound ? 'Using faah sound meme' : 'Using default synthesized sound'}
+                  </span>
+                </div>
+                <button
+                  onClick={() => {
+                    const next = !customWrongSound
+                    setCustomWrongSound(next)
+                    setCustomWrongSoundEnabled(next)
+                  }}
+                  className={`w-14 h-7 rounded-full p-1 transition-colors focus:outline-none relative shadow-inner ${
+                    !customWrongSound
+                      ? 'bg-[rgba(0,255,65,0.2)] border border-[#00FF41]'
+                      : 'bg-[#161616] border border-[#222]'
+                  }`}
+                >
+                  <span className={`block w-5 h-5 rounded-full shadow-md transform transition-transform ${
+                    !customWrongSound
+                      ? 'bg-[#00FF41] translate-x-7 shadow-[0_0_8px_rgba(0,255,65,0.8)]'
+                      : 'bg-[#555] translate-x-0'
+                  }`} />
+                </button>
               </div>
             </div>
           </section>

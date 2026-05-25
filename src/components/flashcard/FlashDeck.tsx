@@ -4,6 +4,7 @@ import { FlashCard } from './FlashCard'
 import { motion, AnimatePresence } from 'framer-motion'
 import { RefreshCw, CheckCircle } from 'lucide-react'
 import { useSessionStore } from '../../store/useSessionStore'
+import { useSound } from '../../hooks/useSound'
 
 interface FlashDeckProps {
   cards: Card[]
@@ -11,15 +12,17 @@ interface FlashDeckProps {
 }
 
 export const FlashDeck: React.FC<FlashDeckProps> = ({ cards, onComplete }) => {
+  const { play } = useSound()
   const { currentIndex, isFinished, isSubmitting, rateCard, startSession } = useSessionStore()
   const [isSwapped, setIsSwapped] = useState(false)
   const [swapResetKey, setSwapResetKey] = useState(0) // Forces FlashCard to re-mount or reset when swapped
 
   useEffect(() => {
-    if (isFinished && onComplete) {
-      onComplete()
+    if (isFinished) {
+      play('finish')
+      if (onComplete) onComplete()
     }
-  }, [isFinished, onComplete])
+  }, [isFinished, onComplete, play])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

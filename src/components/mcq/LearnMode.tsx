@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Card, MCQData } from '../../types'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bookmark, Play, AlertCircle, ArrowRight, Flag, X, Copy, Sparkles } from 'lucide-react'
+import { Bookmark, Play, AlertCircle, ArrowRight, Flag, X, Copy, Sparkles, Volume2, VolumeX } from 'lucide-react'
 import { renderMath } from '../../lib/latex'
 import Toast from '../ui/Toast'
 import { ExplanationPanel } from '../ui/ExplanationPanel'
@@ -9,6 +9,7 @@ import { Tooltip } from '../ui/Tooltip'
 import { LeaveConfirmModal } from '../ui/LeaveConfirmModal'
 import { useBlocker } from 'react-router-dom'
 import { dbService } from '../../services/db.service'
+import { useSound, getSoundsMuted, setSoundsMuted } from '../../hooks/useSound'
 
 // Partitioned learning mode handling the custom "LEARN" flow
 
@@ -25,6 +26,15 @@ type ViewState = 'question' | 'feedback' | 'partition-complete' | 'summary'
 export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, onExit }) => {
   // Partitioning logic
   const PARTITION_SIZE = 5
+
+  const { play } = useSound()
+  const [isMuted, setIsMuted] = useState(() => getSoundsMuted())
+
+  const toggleMute = () => {
+    const next = !isMuted
+    setIsMuted(next)
+    setSoundsMuted(next)
+  }
   
   // Create partitions initially
   const [partitions, setPartitions] = useState<Card[][]>([])
@@ -59,7 +69,9 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
   // Navigation Blocking logic
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
-      viewState !== 'summary' && currentLocation.pathname !== nextLocation.pathname
+      viewState !== 'summary' &&
+      viewState !== 'partition-complete' &&
+      currentLocation.pathname !== nextLocation.pathname
   )
 
   // Keep a live ref to the blocker so the unmount cleanup always calls reset()
@@ -196,6 +208,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
       if (!partitionWrongIds.has(currentCard.id)) {
         setGlobalStats(s => ({ ...s, correctFirstTry: s.correctFirstTry + 1 }))
       }
+      play('correct')
     } else {
       setChoiceStatus('wrong')
       setPartitionWrongIds(prev => new Set(prev).add(currentCard.id))
@@ -203,6 +216,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
       if (!partitionWrongIds.has(currentCard.id)) {
         setGlobalStats(s => ({ ...s, wrongFirstTry: s.wrongFirstTry + 1 }))
       }
+      play('wrong')
     }
     
     setViewState('feedback')
@@ -227,7 +241,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
       // All correct!
       setViewState('partition-complete')
       if (currentPartitionIndex === partitions.length - 1) {
-        
+        play('finish')
         // Record progress for all cards in session
         for (const [id, stats] of Object.entries(cardStats)) {
           await dbService.recordCardResult(id, stats.wasCorrectFirstTry)
@@ -239,6 +253,8 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
           bookmarked: bookmarkedIds.size,
           correctIds: Object.entries(cardStats).filter(([_, stats]) => stats.wasCorrectFirstTry).map(([id]) => id)
         })
+      } else {
+        play('roundComplete')
       }
     } else {
       // Retry wrong ones
@@ -541,7 +557,14 @@ Please explain:
           </div>
         </div>
         
-        <div className="flex justify-end">
+        <div className="flex justify-end items-center gap-3">
+          <button
+            onClick={toggleMute}
+            className={`p-2 rounded border transition-colors ${isMuted ? 'border-[#FF3333] text-[#FF3333] bg-[rgba(255,51,51,0.08)]' : 'border-[#333] text-[#888] hover:text-white hover:border-[#666]'}`}
+            title={isMuted ? 'Unmute sounds' : 'Mute sounds'}
+          >
+            {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+          </button>
           <button onClick={() => setShowExitConfirm(true)} className="px-4 py-2 border border-[#333] text-[#888] rounded hover:text-white hover:border-[#666] transition-colors font-['Rajdhani'] uppercase tracking-widest text-sm">
             Exit Learn Mode
           </button>

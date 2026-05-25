@@ -102,7 +102,7 @@ function MCQTableRow({ index, card }: MCQTableRowProps) {
         }}
       >
         <span style={{ fontWeight: 600, color: '#374151' }}>Ans: </span>
-        {CHOICE_LABELS[answer]}. <MathText text={choices[answer] ?? '—'} />
+        <MathText text={choices[answer] ?? '—'} />
       </td>
     </tr>
   )
