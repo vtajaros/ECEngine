@@ -10,6 +10,11 @@ export interface Card {
   tags: string[]
   isCustom: boolean
   createdAt: string
+  // Progress fields — populated when fetched via getCardsWithProgress, absent otherwise
+  ease_factor?: number
+  correct_count?: number
+  total_count?: number
+  last_result?: string | null
 }
 
 export interface FlashcardData {

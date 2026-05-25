@@ -370,10 +370,10 @@ export default function FlashcardStudy() {
         data: typeof card.data === 'string' ? JSON.parse(card.data) : card.data,
         type: card.type,
         id: card.id,
-        ease_factor: (card as any).ease_factor ?? 2.5,
-        correct_count: (card as any).correct_count ?? 0,
-        total_count: (card as any).total_count ?? 0,
-        last_result: (card as any).last_result ?? null,
+        ease_factor: card.ease_factor ?? 2.5,
+        correct_count: card.correct_count ?? 0,
+        total_count: card.total_count ?? 0,
+        last_result: card.last_result ?? null,
       }))
 
       const mcqs = rawCards.filter((r: any) => r.type === 'mcq').map((r: any) => ({
@@ -458,10 +458,10 @@ export default function FlashcardStudy() {
         data: typeof card.data === 'string' ? JSON.parse(card.data) : card.data,
         type: card.type,
         id: card.id,
-        ease_factor: (card as any).ease_factor ?? 2.5,
-        correct_count: (card as any).correct_count ?? 0,
-        total_count: (card as any).total_count ?? 0,
-        last_result: (card as any).last_result ?? null,
+        ease_factor: card.ease_factor ?? 2.5,
+        correct_count: card.correct_count ?? 0,
+        total_count: card.total_count ?? 0,
+        last_result: card.last_result ?? null,
       }))
 
       const mcqs = rawCards.filter((r: any) => r.type === 'mcq').map((r: any) => ({
