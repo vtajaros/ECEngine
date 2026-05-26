@@ -1,0 +1,83 @@
+// src/types/window.d.ts
+// Global Window augmentation for Electron IPC bridge.
+// This is the single source of truth for window.electron typing.
+
+export {}  // ensure this is treated as a module
+
+declare global {
+  interface Window {
+    electron: {
+      decks: {
+        getTopics: () => Promise<{ success: boolean; data?: any; error?: string }>
+        getCardsByTopic: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
+        getDueCounts: () => Promise<{ success: boolean; data?: any; error?: string }>
+        getDueCardsForSession: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
+        addDeckWithCards: (payload: {
+          topicId: string
+          name: string
+          subject: string
+          description: string
+          tags: string
+          folderName: string
+          cards: Array<{ id: string; type: string; data: string; is_custom: number }>
+        }) => Promise<{ success: boolean; error?: string }>
+        deleteTopic: (topicId: string) => Promise<{ success: boolean; error?: string }>
+        exportToText: (topicId: number | string, topicName: string) => Promise<{ success: boolean; error?: string }>
+        getTopicsWithCardCounts: () => Promise<{ success: boolean; data?: any; error?: string }>
+        getFormulaTopics: () => Promise<{ success: boolean; data?: any; error?: string }>
+        getFormulaMastery: () => Promise<{ success: boolean; data?: any; error?: string }>
+        updateDeckWithCards: (payload: {
+          deckId: string, title: string, subject: string, description: string,
+          tags: string, folderName: string,
+          cards: Array<{ id: string, type: string, data: string }>,
+          deletedCardIds: string[]
+        }) => Promise<{ success: boolean; error?: string }>
+        updateDecksFolder: (fromFolder: string, toFolder: string) => Promise<{ success: boolean; error?: string }>
+        updateFolderOrder: (folderOrders: Array<{ folderName: string, orderIndex: number }>) => Promise<{ success: boolean; error?: string }>
+      }
+      data: {
+        getCards: (topicId?: string) => Promise<{ success: boolean; data?: any; error?: string }>
+        getProgress: (cardId: string) => Promise<{ success: boolean; data?: any; error?: string }>
+        saveProgress: (payload: { cardId: string, easeFactor: number, interval: number, repetitions: number, nextReview: string, lastReviewed: string, correctIncrement: number, lastResult: string }) => Promise<{ success: boolean; error?: string }>
+        recordActivity: (payload: { today: string, correctInc: number, totalInc: number }) => Promise<{ success: boolean; error?: string }>
+        getActivityHistory: () => Promise<{ success: boolean; data?: any; error?: string }>
+        getAccuracyTrendAll: (startStr: string) => Promise<{ success: boolean; data?: any; error?: string }>
+        getAccuracyTrendSubject: (fullSubject: string, startStr: string) => Promise<{ success: boolean; data?: any; error?: string }>
+        updateTimeSpent: (today: string, minutes: number) => Promise<{ success: boolean; error?: string }>
+        getDashboardStats: () => Promise<{ success: boolean; data?: any; error?: string }>
+        getSubjectBreakdown: () => Promise<{ success: boolean; data?: any; error?: string }>
+        getSubjectProgress: () => Promise<{ success: boolean; data?: any; error?: string }>
+        getGlobalStats: () => Promise<{ success: boolean; data?: any; error?: string }>
+        clearAllData: () => Promise<{ success: boolean; error?: string }>
+        exportDecks: () => Promise<{ success: boolean; data?: string; error?: string }>
+        importDecks: (parsed: unknown) => Promise<{ success: boolean; data?: string; error?: string }>
+        getAllCardsByTopic: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
+        getCardsPrioritized: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
+        getCardsWithProgress: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
+      }
+      file: {
+        import: (filePath?: string) => Promise<{ success: boolean; data?: string; canceled?: boolean; error?: string }>
+        export: (data: unknown, savePath?: string) => Promise<{ success: boolean; canceled?: boolean; error?: string }>
+      }
+      saveImage: (srcPath: string) => Promise<{ success: boolean; filename?: string; error?: string }>
+      explainQuestion: (payload: {
+        question: string
+        choices: string[]
+        correctAnswerIndex: number
+      }) => Promise<{ text?: string; error?: string }>
+      config: {
+        setApiKey: (key: string) => Promise<{ success: boolean; error?: string }>
+        getApiKeyStatus: () => Promise<{ configured: boolean }>
+      }
+      windowControls: {
+        minimize: () => void
+        maximize: () => void
+        close: () => void
+      }
+      print: {
+        open: (topicId: string, title: string) => Promise<{ success: boolean; error?: string }>
+        toPDF: (suggestedName: string, themeVars: Record<string, string>, topicId: string, title: string, theme: string, layout: string) => Promise<{ success: boolean; canceled?: boolean; error?: string }>
+      }
+    }
+  }
+}

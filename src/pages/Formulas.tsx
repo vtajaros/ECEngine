@@ -25,8 +25,10 @@ import {
   Search,
 } from 'lucide-react'
 import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
+import type { Card, CardData, CardType } from '../types'
 import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
-import { Card, MCQData, FlashcardData } from '../types'
+import { Card as CardLegacy, MCQData, FlashcardData } from '../types'
+import type { FormulaData } from '../types'
 import { renderMath } from '../lib/latex'
 import { shuffleArray } from '../lib/utils'
 import { dbService } from '../services/db.service'
@@ -78,6 +80,28 @@ function loadFCBookmarks(): Set<string> {
 function saveFCBookmarks(set: Set<string>) {
   localStorage.setItem('fc_bookmarks', JSON.stringify([...set]))
 }
+
+function parseRawCard(row: any): Card {
+  let data: CardData
+  try {
+    data = typeof row.data === 'string' ? JSON.parse(row.data) : row.data
+    if (!data || typeof data !== 'object') throw new Error('non-object')
+  } catch {
+    console.warn(`[Formulas] Failed to parse card data for id="${row.id}"`)
+    data = {} as CardData
+  }
+  return {
+    id: row.id,
+    topicId: row.topic_id,
+    type: row.type as CardType,
+    data,
+    difficulty: row.difficulty,
+    tags: (() => { try { return JSON.parse(row.tags || '[]') } catch { return [] } })(),
+    isCustom: Boolean(row.is_custom),
+    createdAt: String(row.created_at || ''),
+  }
+}
+
 
 export default function Formulas() {
   const navigate = useNavigate()
@@ -168,11 +192,10 @@ export default function Formulas() {
   // ── Load decks from DB ──
   const loadDecks = async () => {
     try {
-      if (!window.electron?.decks) return
-        const [r, masteryRes] = await Promise.all([
-          window.electron.decks.getFormulaTopics(),
-          dbService.decks.getFormulaMastery()
-        ])
+      const [r, masteryRes] = await Promise.all([
+        window.electron.decks.getFormulaTopics(),
+        dbService.decks.getFormulaMastery()
+      ])
 
         const masteryMap: Record<string, number> = {}
         if (masteryRes.success && Array.isArray(masteryRes.data)) {
@@ -243,9 +266,7 @@ export default function Formulas() {
   const handleConfirmDelete = async () => {
     if (!setToDelete) return
     try {
-      if (window.electron?.decks) {
-        await window.electron.decks.deleteTopic(setToDelete.id)
-      }
+      await window.electron.decks.deleteTopic(setToDelete.id)
       setDecks((prev) => prev.filter((s) => s.id !== setToDelete.id))
       setSetToDelete(null)
     } catch (err) {
@@ -256,19 +277,11 @@ export default function Formulas() {
   // ── Open a deck ──
   const openDeck = async (deck: DeckInfo) => {
     try {
-      if (!window.electron?.decks) return
-        const r = await window.electron.decks.getCardsByTopic(deck.id)
+      const r = await window.electron.decks.getCardsByTopic(deck.id)
         if (r.success && r.data) {
-          const cards: Card[] = r.data.map((row: any) => ({
-            id: row.id,
-            topicId: row.topic_id,
-            type: row.type,
-            data: typeof row.data === 'string' ? JSON.parse(row.data) : row.data,
-            difficulty: row.difficulty || 'medium',
-            tags: typeof row.tags === 'string' ? JSON.parse(row.tags) : row.tags || [],
-            isCustom: !!row.is_custom,
-            createdAt: row.created_at || '',
-          }))
+          const cards: Card[] = r.data.map((row: any) => {
+            return parseRawCard(row)
+          })
           setActiveDeck({ id: deck.id, title: deck.title, cards })
           applySettings(cards, settings)
         }
@@ -386,20 +399,12 @@ export default function Formulas() {
   const currentCard = sessionCards[currentIndex] || null
 
   function getFrontText(card: Card): string {
-    if (typeof card.data === 'string') {
-      console.warn(
-        '[ECEngine] Card data parse error — card may have been saved with double-escaped LaTeX. Please re-save this card in Edit Deck.',
-        card.id,
-        card.data
-      )
-      return 'Error: Corrupted card data'
-    }
     if (card.type === 'mcq') {
       const mcq = card.data as MCQData
       return settings.swapTermDef ? mcq.choices[mcq.answer] : mcq.question
     }
     if (card.type === 'formula') {
-      const f = card.data as any
+      const f = card.data as FormulaData
       const frontStr = f.name ?? ''
 
       let descVars = ''
@@ -425,9 +430,6 @@ export default function Formulas() {
   }
 
   function getBackContent(card: Card): React.ReactNode {
-    if (typeof card.data === 'string') {
-      return <div className="text-red-500 p-4">Error: Corrupted card data</div>
-    }
     if (card.type === 'mcq') {
       const mcq = card.data as MCQData
       const text = settings.swapTermDef ? mcq.question : mcq.choices[mcq.answer]
@@ -439,7 +441,7 @@ export default function Formulas() {
       )
     }
     if (card.type === 'formula') {
-      const f = card.data as any
+      const f = card.data as FormulaData
       const frontStr = f.name ?? ''
 
       let descVars = ''
@@ -481,7 +483,7 @@ export default function Formulas() {
       return settings.swapTermDef ? mcq.question : mcq.choices[mcq.answer]
     }
     if (card.type === 'formula') {
-      const f = card.data as any
+      const f = card.data as FormulaData
       const frontStr = f.name ?? ''
 
       let descVars = ''

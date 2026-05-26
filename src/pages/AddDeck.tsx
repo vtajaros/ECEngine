@@ -1355,7 +1355,6 @@ export default function AddDeck() {
   useEffect(() => {
     async function fetchFolders() {
       let folderNames: string[] = []
-      if (!window.electron?.decks) return
       const r = await window.electron.decks.getTopics()
       folderNames = [...new Set(
         (r.data || []).map((row: any) => row.folder_name).filter(Boolean)

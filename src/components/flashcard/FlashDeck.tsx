@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react'
-import { Card } from '../../types'
+import { Card, FlashcardData } from '../../types'
 import { FlashCard } from './FlashCard'
 import { motion, AnimatePresence } from 'framer-motion'
 import { RefreshCw, CheckCircle } from 'lucide-react'
@@ -54,8 +54,8 @@ export const FlashDeck: React.FC<FlashDeckProps> = ({ cards, onComplete }) => {
   // Apply swap transformation if enabled
   const displayCard = useMemo(() => {
     if (!currentCard) return null
-    if (!isSwapped) return currentCard
-    const data = currentCard.data as any
+    if (!isSwapped || currentCard.type !== 'flashcard') return currentCard
+    const data = currentCard.data as FlashcardData
     return {
       ...currentCard,
       data: {

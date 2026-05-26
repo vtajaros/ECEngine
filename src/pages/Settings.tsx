@@ -55,16 +55,6 @@ export default function Settings() {
   };
 
   const handleResetProgress = () => {
-    // Clear localStorage for mastery_ and progress_
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && (key.startsWith('mastery_') || key.startsWith('progress_') || key === 'setMastery')) {
-        keysToRemove.push(key);
-      }
-    }
-    keysToRemove.forEach(key => localStorage.removeItem(key));
-
     setResetResetMenuOpen(false);
     setToastMessage('Progress successfully reset!');
     setTimeout(() => setToastMessage(null), 3000);
@@ -73,16 +63,6 @@ export default function Settings() {
   const handleClearAllDecks = async () => {
     // Delete from SQL/Web DB (FK-safe order)
     await dbService.clearAllData();
-
-    // Also clear any localStorage remnants
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && (key.startsWith('deck-') || key.startsWith('custom-deck-') || key.startsWith('progress_') || key.startsWith('mastery_') || key === 'ecengine_decks')) {
-        keysToRemove.push(key);
-      }
-    }
-    keysToRemove.forEach(key => localStorage.removeItem(key));
 
     setShowClearModal(false);
     setToastMessage('All decks and progress cleared successfully!');

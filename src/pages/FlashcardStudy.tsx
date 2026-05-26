@@ -79,17 +79,14 @@ export default function FlashcardStudy() {
   const loadDBSets = async () => {
     try {
       let dbSets: StudySet[] = []
-      if (!window.electron?.decks) return
 
-        let dueCountsMap = new Map<string, number>()
-        if (window.electron.decks) {
-          const dueRes = await window.electron.decks.getDueCounts()
-          if (dueRes.success && dueRes.data) {
-            dueRes.data.forEach((row: any) => {
-              dueCountsMap.set(row.topic_id, row.dueCount)
-            })
-          }
-        }
+      let dueCountsMap = new Map<string, number>()
+      const dueRes = await window.electron.decks.getDueCounts()
+      if (dueRes.success && dueRes.data) {
+        dueRes.data.forEach((row: any) => {
+          dueCountsMap.set(row.topic_id, row.dueCount)
+        })
+      }
 
         const topicsResult = await window.electron.decks.getTopicsWithCardCounts()
         if (topicsResult.success && topicsResult.data) {
@@ -371,7 +368,7 @@ export default function FlashcardStudy() {
       // Load real cards from DB
       const prioritizedCards = await dbService.getCardsWithProgress(setId)
       const rawCards = prioritizedCards.map(card => ({
-        data: typeof card.data === 'string' ? JSON.parse(card.data) : card.data,
+        data: card.data,
         type: card.type,
         id: card.id,
         ease_factor: card.ease_factor ?? 2.5,
@@ -459,7 +456,7 @@ export default function FlashcardStudy() {
       // Load real cards from DB
       const prioritizedCards = await dbService.getCardsWithProgress(setId)
       const rawCards = prioritizedCards.map(card => ({
-        data: typeof card.data === 'string' ? JSON.parse(card.data) : card.data,
+        data: card.data,
         type: card.type,
         id: card.id,
         ease_factor: card.ease_factor ?? 2.5,
@@ -935,11 +932,7 @@ export default function FlashcardStudy() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
-                                if (window.electron.print) {
-                                  window.electron.print.open(set.id, set.title)
-                                } else {
-                                  window.open(`/#/print?id=${set.id}&title=${encodeURIComponent(set.title)}`, '_blank')
-                                }
+                                window.electron.print.open(set.id, set.title)
                               }}
                               className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
                               title="Test Paper View"

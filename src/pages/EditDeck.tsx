@@ -666,7 +666,6 @@ export default function EditDeck() {
   useEffect(() => {
     async function fetchFolders() {
       let folderNames: string[] = []
-      if (!window.electron?.decks) return
       const r = await window.electron.decks.getTopics()
       folderNames = [...new Set(
         (r.data || []).map((row: any) => row.folder_name).filter(Boolean)
@@ -824,7 +823,7 @@ export default function EditDeck() {
         cards: cards.map(card => ({
           id: card.id,
           type: card.type,
-          data: typeof card.data === 'string' ? card.data : JSON.stringify(card.data)
+          data: JSON.stringify(card.data)
         })),
         deletedCardIds
       })

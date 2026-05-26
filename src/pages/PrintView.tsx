@@ -313,7 +313,7 @@ function FormulaItem({ index, card }: FormulaItemProps) {
 
 export default function PrintView() {
 
-  const controls = window.electron?.windowControls
+  const controls = window.electron.windowControls
   const [searchParams] = useSearchParams()
 
   const topicId = searchParams.get('id') ?? searchParams.get('topicId') ?? ''

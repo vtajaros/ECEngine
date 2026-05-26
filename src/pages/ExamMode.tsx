@@ -5,6 +5,7 @@ import { useExamTimer } from '../hooks/useExamTimer'
 import { renderMath } from '../lib/latex'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MOCK_MCQS } from '../lib/mockData'
+import { MCQData } from '../types'
 
 export default function ExamMode() {
   const [isStarted, setIsStarted] = useState(false)
@@ -91,16 +92,16 @@ export default function ExamMode() {
                  </div>
                  
                   <div className="text-xl text-[var(--text-primary)] mb-6 leading-relaxed font-medium">
-                   {(currentCard.data as any).question}
+                   {(currentCard.data as MCQData).question}
                  </div>
 
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                   {(currentCard.data as any).choices?.map((choice: string, idx: number) => {
+                   {(currentCard.data as MCQData).choices?.map((choice: string, idx: number) => {
                      let btnClass = "p-3 text-left border rounded transition-all font-['Rajdhani'] text-base group "
                      let prefixClass = "mr-3 font-['IBM_Plex_Mono'] transition-colors "
                      
                      if (isRevealed) {
-                       const isCorrectAnswer = idx === (currentCard.data as any).answer
+                       const isCorrectAnswer = idx === (currentCard.data as MCQData).answer
                        const isSelectedAnswer = idx === selectedAnswer
                        
                        if (isCorrectAnswer) {
@@ -153,7 +154,7 @@ export default function ExamMode() {
                    ) : (
                      <button 
                        onClick={() => {
-                         const correctIdx = (currentCard.data as any).answer
+                         const correctIdx = (currentCard.data as MCQData).answer
                          const quality = selectedAnswer === correctIdx ? 4 : 1
                          setSelectedAnswer(null)
                          setIsRevealed(false)

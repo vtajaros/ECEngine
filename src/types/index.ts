@@ -1,11 +1,14 @@
 export type CardType = 'flashcard' | 'mcq' | 'formula' | 'concept'
 export type Difficulty = 'easy' | 'medium' | 'hard'
 
+// Discriminated union payload shape
+export type CardData = FlashcardData | MCQData | FormulaData | ConceptData
+
 export interface Card {
   id: string
   topicId: string
   type: CardType
-  data: FlashcardData | MCQData | FormulaData | ConceptData
+  data: CardData
   difficulty: Difficulty
   tags: string[]
   isCustom: boolean
@@ -39,6 +42,7 @@ export interface FormulaData {
   latex: string
   variables: Record<string, string>
   imagePath?: string
+  description?: string
 }
 
 export interface ConceptData {
