@@ -821,7 +821,7 @@ export default function PrintView() {
         color: 'var(--pt-text-primary)',
         maxWidth: isPdfMode ? 'none' : '800px',
         margin: isPdfMode ? '0' : '0 auto',
-        padding: isPdfMode ? '40px 50px' : '0',
+        padding: isPdfMode ? '28px 36px' : '0',
       }}
     >
       {/* Header */}
@@ -996,6 +996,10 @@ export default function PrintView() {
     return (
       <>
         <style>{`
+          @page {
+            size: 794px 1123px;
+            margin: 0 !important;
+          }
           *, *::before, *::after { box-sizing: border-box; }
           html, body, #root {
             margin: 0 !important;
@@ -1003,7 +1007,7 @@ export default function PrintView() {
             background: ${paperBg} !important;
             height: auto !important;
             overflow: visible !important;
-            width: 100% !important;
+            width: 794px !important;
           }
         `}</style>
         <div
@@ -1015,7 +1019,7 @@ export default function PrintView() {
             fontFamily: 'Georgia, "Times New Roman", serif',
             minHeight: 'unset',
             height: 'auto',
-            width: '100%',
+            width: '794px',
             boxSizing: 'border-box',
             margin: 0,
             padding: 0,

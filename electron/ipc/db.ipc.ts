@@ -1,5 +1,6 @@
 import { ipcMain, dialog, BrowserWindow } from 'electron'
-import { initDB, queryAll, execute } from '../db/database'
+import { initDB, queryAll, execute, getDB } from '../db/database'
+import { serializeMcqCard } from './mcq.serializer'
 import * as fs from 'fs'
 import { z } from 'zod'
 
@@ -144,53 +145,14 @@ export function registerDBHandlers() {
       }
 
       // ── 3. Serialization loop with per-card isolation ─────────────────────
-      const LETTER_MAP: Record<number, string> = { 0: 'A', 1: 'B', 2: 'C', 3: 'D' }
       const blocks: string[] = []
 
       for (const card of mcqCards) {
         try {
-          // Guard: skip rows with missing or non-string data column
-          if (!card.data || typeof card.data !== 'string' || card.data.trim() === '') continue
-
-          let parsed: any
-          try {
-            parsed = JSON.parse(card.data)
-          } catch {
-            console.warn('[exportToText] Skipping card with unparseable JSON.')
-            continue
+          const serialized = serializeMcqCard(card.data)
+          if (serialized !== null) {
+            blocks.push(serialized)
           }
-
-          if (!parsed || typeof parsed !== 'object') continue
-
-          const question = (parsed.question != null ? String(parsed.question) : '').trim()
-          if (!question) continue // skip blank-question cards
-
-          // Normalize choices to a safe 4-element string array
-          const rawChoices: any[] = Array.isArray(parsed.choices) ? parsed.choices : []
-          const choices: string[] = [0, 1, 2, 3].map(i =>
-            rawChoices[i] != null ? String(rawChoices[i]) : ''
-          )
-
-          // ── 4. Answer key resolution ──────────────────────────────────────
-          const ansVal = parsed.answer
-          let ansLetter = 'A'
-
-          if (typeof ansVal === 'number' && Number.isFinite(ansVal)) {
-            ansLetter = LETTER_MAP[ansVal] ?? 'A'
-          } else if (typeof ansVal === 'string') {
-            const clean = ansVal.trim().toUpperCase()
-            if (clean === 'A' || clean === 'B' || clean === 'C' || clean === 'D') {
-              ansLetter = clean
-            } else {
-              // Fallback: match answer text against the choices array
-              const matchedIdx = choices.findIndex(c => c.trim() === ansVal.trim())
-              ansLetter = LETTER_MAP[matchedIdx] ?? 'A'
-            }
-          }
-
-          blocks.push(
-            `Q: ${question}\nA: ${choices[0]}\nB: ${choices[1]}\nC: ${choices[2]}\nD: ${choices[3]}\nANS: ${ansLetter}`
-          )
         } catch (cardErr) {
           console.warn('[exportToText] Skipping card due to unexpected error:', cardErr)
         }
@@ -558,7 +520,7 @@ export function registerDBHandlers() {
   ipcMain.handle('data:getAllCardsByTopic', async (_, topicId: string) => {
     try {
       const rows = queryAll(`
-        SELECT id, type, data, tags, difficulty, is_custom, created_at
+        SELECT id, topic_id, type, data, tags, difficulty, is_custom, created_at
         FROM cards
         WHERE topic_id = ?
         ORDER BY created_at ASC
@@ -572,7 +534,7 @@ export function registerDBHandlers() {
   ipcMain.handle('data:getCardsPrioritized', async (_, topicId: string) => {
     try {
       const rows = queryAll(`
-        SELECT c.id, c.type, c.data, c.tags, c.difficulty, c.is_custom, c.created_at,
+        SELECT c.id, c.topic_id, c.type, c.data, c.tags, c.difficulty, c.is_custom, c.created_at,
                p.next_review
         FROM cards c
         LEFT JOIN progress p ON c.id = p.card_id
@@ -594,7 +556,7 @@ export function registerDBHandlers() {
   ipcMain.handle('data:getCardsWithProgress', async (_, topicId: string) => {
     try {
       const rows = queryAll(
-        `SELECT c.id, c.type, c.data, c.tags, c.difficulty, c.is_custom, c.created_at,
+        `SELECT c.id, c.topic_id, c.type, c.data, c.tags, c.difficulty, c.is_custom, c.created_at,
                 COALESCE(p.ease_factor, 2.5)    AS ease_factor,
                 COALESCE(p.correct_count, 0)    AS correct_count,
                 COALESCE(p.total_count, 0)      AS total_count,
@@ -676,18 +638,24 @@ export function registerDBHandlers() {
         `UPDATE topics SET name = ?, subject = ?, description = ?, tags = ?, folder_name = ? WHERE id = ?`,
         [payload.title, payload.subject, payload.description, payload.tags, payload.folderName, payload.deckId]
       )
+      const db = getDB()
+      const insertCard = db.prepare(
+        'INSERT INTO cards (id, topic_id, type, data, difficulty, tags) VALUES (?, ?, ?, ?, ?, ?)'
+      )
+      const updateCard = db.prepare(
+        'UPDATE cards SET type = ?, data = ? WHERE id = ?'
+      )
+      const deleteCard = db.prepare('DELETE FROM cards WHERE id = ?')
+
       for (const card of payload.cards) {
         if (card.id.startsWith('new_')) {
-          execute(
-            'INSERT INTO cards (id, topic_id, type, data, difficulty, tags) VALUES (?, ?, ?, ?, ?, ?)',
-            [`card_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`, payload.deckId, card.type, card.data, 'medium', '[]']
-          )
+          insertCard.run(crypto.randomUUID(), payload.deckId, card.type, card.data, 'medium', '[]')
         } else {
-          execute('UPDATE cards SET type = ?, data = ? WHERE id = ?', [card.type, card.data, card.id])
+          updateCard.run(card.type, card.data, card.id)
         }
       }
       for (const cardId of payload.deletedCardIds) {
-        execute('DELETE FROM cards WHERE id = ?', [cardId])
+        deleteCard.run(cardId)
       }
       execute('COMMIT')
       return { success: true }

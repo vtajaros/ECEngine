@@ -87,6 +87,7 @@ export function registerPrintHandlers(): void {
           contextIsolation: true,
           nodeIntegration: false,
           offscreen: false,
+          zoomFactor: 1.0,
         },
       })
 
@@ -113,7 +114,7 @@ export function registerPrintHandlers(): void {
 
       const buffer = await pdfWindow.webContents.printToPDF({
         printBackground: true,
-        pageSize: 'A4',
+        pageSize: { width: 794000, height: 1123000 },
         margins: { marginType: 'none' },
         landscape: false,
         preferCSSPageSize: false,

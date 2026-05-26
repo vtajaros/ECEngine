@@ -191,6 +191,11 @@ function initSchema() {
   }
 }
 
+export function getDB(): Database.Database {
+  if (!db) throw new Error('DB not initialized');
+  return db;
+}
+
 export function queryAll(sql: string, params: any[] = []): any[] {
   if (!db) throw new Error('DB not initialized');
   return db.prepare(sql).all(params);

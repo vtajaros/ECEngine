@@ -9,6 +9,7 @@ import {
   Settings,
   Layers,
   ClipboardList,
+  FlaskConical,
 } from 'lucide-react'
 import { TitleBar } from './TitleBar'
 import { dbService } from '../../services/db.service'
@@ -30,7 +31,7 @@ export const AppShell: React.FC = () => {
   useEffect(() => {
     const w = window as any
     if (w.__reactRouterBlocker?.state === 'blocked') {
-      try { w.__reactRouterBlocker.reset() } catch {}
+      try { w.__reactRouterBlocker.reset() } catch { }
     }
   }, [location.pathname])
 
@@ -42,14 +43,15 @@ export const AppShell: React.FC = () => {
   }, [])
 
   const navItems: NavItem[] = [
-    { to: '/',           label: 'Dashboard',  icon: Home },
-    { to: '/study',      label: 'LooksFam',   icon: Brain },
+    { to: '/', label: 'Dashboard', icon: Home },
+    { to: '/study', label: 'LooksFam', icon: Brain },
     { to: '/flashcards', label: 'Flashcards', icon: Layers },
-    { to: '/formulas',   label: 'Formulas',   icon: Sigma },
-    { to: '/topics',     label: 'EELE ToS',   icon: BookOpen },
-    { to: '/checklist',  label: 'Checklist',  icon: ClipboardList },
-    { to: '/add-decks',  label: 'Add Decks',  icon: PlusCircle },
-    { to: '/settings',   label: 'Settings',   icon: Settings },
+    { to: '/formulas', label: 'Formulas', icon: Sigma },
+    { to: '/formula-bank', label: 'Formula Bank', icon: FlaskConical },
+    { to: '/topics', label: 'EELE ToS', icon: BookOpen },
+    { to: '/checklist', label: 'Checklist', icon: ClipboardList },
+    { to: '/add-decks', label: 'Add Decks', icon: PlusCircle },
+    { to: '/settings', label: 'Settings', icon: Settings },
   ]
 
   return (
@@ -62,9 +64,8 @@ export const AppShell: React.FC = () => {
       <div className="flex flex-row flex-1 overflow-hidden">
         {/* Sidebar */}
         <aside
-          className={`${
-            isCollapsed ? 'w-16' : 'w-[140px]'
-          } h-full bg-[#1A1A1A] border-r border-[#222] flex flex-col transition-all duration-300 shrink-0`}
+          className={`${isCollapsed ? 'w-16' : 'w-[150px]'
+            } h-full bg-[#1A1A1A] border-r border-[#222] flex flex-col transition-all duration-300 shrink-0`}
         >
           {/* Logo + collapse toggle */}
           <div className="h-10 w-full shrink-0 flex items-center justify-between px-2">

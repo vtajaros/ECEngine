@@ -1,5 +1,46 @@
 import { Card, Progress } from '../types'
 import { calculateSM2 } from '../lib/sm2'
+import { z } from 'zod'
+
+// ── IPC row schemas ───────────────────────────────────────────────────────────
+
+const CardRowSchema = z.object({
+  id: z.string(),
+  topic_id: z.string(),
+  type: z.enum(['flashcard', 'mcq', 'formula', 'concept']),
+  data: z.string(),
+  difficulty: z.enum(['easy', 'medium', 'hard']).nullable().optional(),
+  tags: z.string().nullable().optional(),
+  is_custom: z.union([z.boolean(), z.number()]).optional(),
+  created_at: z.union([z.number(), z.string()]).optional(),
+})
+
+const CardWithProgressRowSchema = CardRowSchema.extend({
+  ease_factor: z.number().optional(),
+  interval: z.number().optional(),
+  repetitions: z.number().optional(),
+  next_review: z.string().nullable().optional(),
+  last_reviewed: z.string().nullable().optional(),
+  correct_count: z.number().optional(),
+  total_count: z.number().optional(),
+  last_result: z.string().nullable().optional(),
+})
+
+const CardPrioritizedRowSchema = CardRowSchema.extend({
+  next_review: z.string().nullable().optional(),
+})
+
+const AccuracyTrendRowSchema = z.object({
+  day: z.string(),
+  correct: z.number(),
+  total: z.number(),
+})
+
+const ActivityHistoryRowSchema = z.object({
+  day: z.string(),
+  count: z.number(),
+  time_spent: z.number().nullable().optional(),
+})
 
 export type AccuracyGranularity = 'day' | 'week' | 'month'
 export type AccuracySubject = 'ALL' | 'MATH' | 'GEAS' | 'ELECS' | 'EST'
@@ -12,7 +53,7 @@ const toLocalDateString = (date: Date): string => {
 }
 
 
-function parseCardRow(row: any, topicId?: string): Card {
+function parseCardRow(row: z.infer<typeof CardWithProgressRowSchema>, topicId?: string): Card {
   let data: unknown = {}
   let tags: string[] = []
 
@@ -36,7 +77,7 @@ function parseCardRow(row: any, topicId?: string): Card {
     difficulty: row.difficulty as Card['difficulty'],
     tags,
     isCustom: Boolean(row.is_custom),
-    createdAt: row.created_at,
+    createdAt: row.created_at != null ? String(row.created_at) : '',
   }
 }
 
@@ -71,7 +112,7 @@ export const dbService = {
       throw new Error(`Database Operation Failed: ${result.error || 'Failed to get cards'}`)
     }
 
-    return (result.data || []).map((row: any) => parseCardRow(row))
+    return z.array(CardWithProgressRowSchema).parse(result.data || []).map(row => parseCardRow(row))
   },
 
   getProgress: async (cardId: string): Promise<{ repetitions: number; interval: number; easeFactor: number } | null> => {
@@ -134,7 +175,7 @@ export const dbService = {
     }
     const history: Record<string, { count: number, timeSpent: number }> = {}
     if (res.data) {
-      res.data.forEach((row: any) => {
+      z.array(ActivityHistoryRowSchema).parse(res.data).forEach((row) => {
         history[row.day] = { 
           count: row.count, 
           timeSpent: row.time_spent || 0 
@@ -207,7 +248,7 @@ export const dbService = {
         throw new Error(`Database Operation Failed: ${res.error || 'Failed to get accuracy trend'}`)
       }
       if (res.data) {
-        rawRows = res.data.map((r: any) => ({
+        rawRows = z.array(AccuracyTrendRowSchema).parse(res.data).map((r) => ({
           day:     String(r.day),
           correct: Number(r.correct) || 0,
           total:   Number(r.total)   || 0,
@@ -220,13 +261,13 @@ export const dbService = {
         throw new Error(`Database Operation Failed: ${res.error || 'Failed to get subject accuracy trend'}`)
       }
       if (res.data) {
-        rawRows = res.data
-          .filter((r: any) => r.day != null)
-          .map((r: any) => ({
-            day:     String(r.day),
-            correct: Number(r.correct) || 0,
-            total:   Number(r.total)   || 0,
-          }))
+        rawRows = z.array(AccuracyTrendRowSchema).parse(
+          res.data.filter((r: any) => r.day != null)
+        ).map((r) => ({
+          day:     r.day,
+          correct: r.correct,
+          total:   r.total,
+        }))
       }
     }
 
@@ -349,7 +390,7 @@ export const dbService = {
       throw new Error(`Database Operation Failed: ${result.error || 'Failed to get cards'}`)
     }
 
-    return (result.data || []).map((row: any) => parseCardRow(row, topicId))
+    return z.array(CardRowSchema).parse(result.data || []).map(row => parseCardRow(row, topicId))
   },
 
   getCardsPrioritized: async (topicId: string): Promise<Card[]> => {
@@ -357,13 +398,13 @@ export const dbService = {
     if (!result.success) {
       throw new Error(`Database Operation Failed: ${result.error || 'Failed to get prioritized cards'}`)
     }
-    return (result.data || []).map((row: any) => parseCardRow(row, topicId))
+    return z.array(CardPrioritizedRowSchema).parse(result.data || []).map(row => parseCardRow(row, topicId))
   },
 
   getCardsWithProgress: async (topicId: string): Promise<Card[]> => {
     const result = await window.electron.data.getCardsWithProgress(topicId)
     if (!result.success) throw new Error(result.error ?? 'Failed to get cards with progress')
-    return (result.data ?? []).map((row: any) => parseCardRow(row, topicId))
+    return z.array(CardWithProgressRowSchema).parse(result.data ?? []).map(row => parseCardRow(row, topicId))
   },
 
   updateDecksFolder: async (fromFolder: string, toFolder: string): Promise<{ success: boolean; error?: string }> => {
