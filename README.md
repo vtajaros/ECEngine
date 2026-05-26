@@ -8,14 +8,14 @@
     <img src="https://img.shields.io/badge/Electron-31.0-47848F.svg?style=flat-square&logo=electron" alt="Electron" />
     <img src="https://img.shields.io/badge/React-18.3-61DAFB.svg?style=flat-square&logo=react" alt="React" />
     <img src="https://img.shields.io/badge/TypeScript-5.5-3178C6.svg?style=flat-square&logo=typescript" alt="TypeScript" />
-    <img src="https://img.shields.io/badge/Database-SQLite%20%7C%20IndexedDB-003B57.svg?style=flat-square&logo=sqlite" alt="Database" />
+    <img src="https://img.shields.io/badge/Database-SQLite-003B57.svg?style=flat-square&logo=sqlite" alt="Database" />
     <img src="https://img.shields.io/badge/Styling-Tailwind%20%2B%20CSS%20Vars-38B2AC.svg?style=flat-square&logo=tailwind-css" alt="Tailwind" />
   </p>
 </div>
 
 ---
 
-**ECEngine** is a high-performance, cyberpunk-inspired offline-first study ecosystem specifically engineered for examinees preparing for the Philippine Electronics Engineering (ECE) and Electronics Technician (ECT) Licensure Exams. It transforms traditional review into a high-octane tactical workflow, empowering you to dominate the board exams with offline-first capabilities, advanced spaced repetition (SM-2), granular performance analytics, and dynamic formula reference tools.
+**ECEngine** is a high-performance, cyberpunk-inspired offline-first desktop study ecosystem specifically engineered for examinees preparing for the Philippine Electronics Engineering (ECE) and Electronics Technician (ECT) Licensure Exams. It transforms traditional review into a high-octane tactical workflow, empowering you to dominate the board exams with native desktop capabilities, advanced spaced repetition (SM-2), granular performance analytics, and dynamic formula reference tools.
 
 ---
 
@@ -31,7 +31,7 @@
     - [📥 Manifest Management (Import Pipeline)](#-manifest-management-import-pipeline)
   - [🔧 Recent Operational Changes \& UX Enhancements](#-recent-operational-changes--ux-enhancements)
   - [🏗 System Architecture \& Data Routing](#-system-architecture--data-routing)
-    - [Platform Abstraction Layer (PAL)](#platform-abstraction-layer-pal)
+    - [Database Service Layer](#database-service-layer)
     - [Data Models \& Schema Overview](#data-models--schema-overview)
   - [📂 Project Directory Layout](#-project-directory-layout)
   - [🛠 Getting Started \& Developer Guide](#-getting-started--developer-guide)
@@ -86,7 +86,7 @@ Easily import high-quality study materials:
 
 ## 🔧 Recent Operational Changes & UX Enhancements
 
-We have recently refactored the UI and added highly requested functional capabilities to polish desktop and web experiences:
+We have recently refactored the UI and added highly requested functional capabilities to polish the desktop experience:
 
 1. **Integrated Deck Keyword Search & Sorting**:
    * Added a real-time keyword search bar at the top of the deck browser, matching characters against deck and folder names.
@@ -95,47 +95,39 @@ We have recently refactored the UI and added highly requested functional capabil
    * Adjusted folder navigation icon heights, making the pencil/edit icon perfectly proportional to the folder name text size.
    * Tightened vertical gaps: removed the excessive spacing between the first row of decks and the legend/controls header. This layout adjustment is uniformly applied across **LooksFam**, **Flashcards**, and **Formulas** views.
    * Spaced out navigation tabs in the main sidebar to provide a cleaner, more readable hierarchy.
-3. **Adaptive Mobile & Tablet Optimization**:
-   * **Tablet Landscape (iPad)**: Centered and balanced deck builder blocks when a landscape tablet viewport is detected, preserving full-width desktop visuals.
-   * **Mobile Portrait view**:
-     * Removed the redundant sub-header text ("study add decks") under the main `ADD DECKS` title.
-     * Aligned cancel and save button heights for symmetrical tactile inputs.
-     * Stacked the deck creation type selectors (MCQ, Flashcard, and Formula buttons) vertically, avoiding text clipping on narrow screens.
+3. **Adaptive Desktop View Optimization**:
+   * Centered and balanced deck builder blocks when large or medium landscape screens are detected, preserving clean visual symmetry.
+   * Aligned cancel and save button heights for symmetrical tactile inputs.
+   * Stacked deck creation type selectors (MCQ, Flashcard, and Formula buttons) dynamically to ensure clarity without text clipping.
 4. **Context-Aware Save Prompts**:
    * The warning instructing users to add a title and at least one card is now elegant and contextual: it is hidden by default and only triggers on hover over the disabled Save button or when an incomplete save is actively attempted.
-5. **Architectural Quality Assurance Audit**:
-   * Executed a full code review mapping component sizes, identifying render hotspots (such as isolating countdown loops), and proposing Zod schema integrations to guard SQLite database IPC responses.
+5. **Robust Database Loading Protections**:
+   * Integrated `isLoading` state handling across **LooksFam (FlashcardStudy)**, **FlashcardViewer**, and **Formulas** deck browsers to gracefully prevent initial "No decks found" empty-state flashes while query promises resolve.
+6. **Architectural Quality Assurance Audit**:
+   * Executed a full code review mapping component sizes, identifying render hotspots (such as isolating countdown loops), and adding strict type checks to IPC responses.
 
 ---
 
 ## 🏗 System Architecture & Data Routing
 
-ECEngine runs a hybrid architecture designed to compile to a local desktop shell or deploy to the web as a static Single Page Application (SPA).
+ECEngine runs as a native desktop application powered by React 18, Vite, Electron, and a local SQLite database compiled for desktop distribution.
 
 ```mermaid
 flowchart TD
     subgraph UI_Layer [React 18 Renderer Layer]
         A[Pages: Dashboard / Study / Exam] --> B[Zustand Stores: useSessionStore / useProgressStore]
-        B --> C[Platform Abstraction Layer: db.service.ts]
-    end
-
-    subgraph Environment_Routing [PAL Router]
-        C -- Running in Electron? --> D[IPC Bridge: window.electron.db]
-        C -- Running in Browser? --> E[Dexie.js / IndexedDB]
+        B --> C[Database Service Layer: db.service.ts]
     end
 
     subgraph Desktop_Backend [Electron Main Process]
+        C --> D[IPC Bridge: window.electron.db]
         D --> F[Better-SQLite3 Database Adapter]
         F --> G[(ecengine.sqlite)]
     end
-
-    subgraph Web_Storage [Web Sandbox]
-        E --> H[(Browser IndexedDB)]
-    end
 ```
 
-### Platform Abstraction Layer (PAL)
-All state actions fetch and write database records using the unified interface in `src/services/db.service.ts`. The interface automatically routes operations to the target database:
+### Database Service Layer
+All state actions fetch and write database records using the database interface API in `src/services/db.service.ts`. This service acts as the direct proxy routing operations directly to the Electron IPC bridge:
 
 ```typescript
 // db.service.ts implementation pattern
@@ -205,7 +197,7 @@ ecengine/
 │   ├── preload.ts               # Secure contextBridge IPC boundaries
 │   ├── ipc/                     # DB, file system, and system IPC handlers
 │   └── db/                      # Schema, initialization queries, and SQLite connections
-├── src/                         # Shared React Frontend SPA
+├── src/                         # React Frontend Renderer Process
 │   ├── assets/                  # Fonts (Orbitron, Rajdhani, IBM Plex Mono), SVGs, Icons
 │   ├── components/              # UI Components
 │   │   ├── ui/                  # Visual units (Buttons, Cards, Modals)
@@ -215,13 +207,12 @@ ecengine/
 │   │   └── layout/              # Sidebars, TitleBar, and Navigation units
 │   ├── hooks/                   # Custom business logic React hooks (SM-2, timer, platform)
 │   ├── pages/                   # Main page layout views (Dashboard, ExamMode, Study)
-│   ├── services/                # Platform Abstraction Layer (PAL) & DB connectors
+│   ├── services/                # Database Service Layer & connectors
 │   ├── store/                   # Zustand store slices (Session, Preferences, Progress)
 │   └── styles/                  # Tailwind base styling and theme variable configuration
 ├── scripts/                     # Operational scripts (seeding DB, schema validators)
 ├── package.json                 # Project manifest, dependencies, and execution scripts
-├── electron.vite.config.ts      # Unified compilation and hot module replacement config
-└── vite.web.config.ts           # Web-specific standalone compilation instructions
+└── electron.vite.config.ts      # Unified compilation and hot module replacement config
 ```
 
 ---
@@ -231,7 +222,7 @@ ecengine/
 ### Prerequisites
 * **Node.js**: `v18.x` or higher installed
 * **npm** or **yarn** package manager
-* **C++ Compiler Tools** (Required only on desktop to compile native `better-sqlite3` bindings for Electron)
+* **C++ Compiler Tools** (Required to compile native `better-sqlite3` bindings for Electron)
 
 ### Installation & Seeding
 
@@ -246,7 +237,7 @@ ecengine/
    npm install
    ```
 
-3. **Compile and Seed the SQLite DB (Desktop Only)**:
+3. **Compile and Seed the SQLite DB**:
    This processes the JSON metadata inside `content/` and compiles it into `ecengine.sqlite`:
    ```bash
    npm run seed
@@ -258,14 +249,12 @@ Use the following commands inside your terminal to launch, build, or test variou
 
 | Command | Action Description |
 |---|---|
-| `npm run dev` | Spin up Electron shell in development mode with HMR |
-| `npm run dev:web` | Start the local React Web client in your browser (`localhost:5173`) |
+| `npm run dev` | Spin up Electron shell in development mode with Hot Module Replacement (HMR) |
 | `npm run build` | Compile code and bundle React and Electron assets |
-| `npm run build:web` | Build highly optimized static assets specifically for Web SPA distribution |
-| `npm run package` | Generate distributable binary installers (`.exe`, `.dmg`, `.deb`) via electron-builder |
+| `npm run preview` | Run a local preview of the compiled application |
+| `npm run package` | Generate distributable native binary installers (`.exe`, `.dmg`, `.deb`) via electron-builder |
 | `npm run validate-content` | Execute content validations over JSON files under `content/` |
 | `npm run test` | Run active Unit Tests with Vitest |
-| `npm run test:e2e` | Run end-to-end integration tests using Playwright |
 
 ---
 
@@ -273,9 +262,8 @@ Use the following commands inside your terminal to launch, build, or test variou
 
 We are mapping out additions across four core phases:
 
-### Phase 1: Portability & Multi-Platform Outlets (🔥 Active Objective)
-* **Mobile Porting (iOS & Android)**: Wrap the React web codebase inside a capacitor or Cordova shell, allowing students to access their databases and space-repetition intervals natively on tablets and smartphones.
-* **Encrypted Cloud Syncing**: Integrate Supabase or PostgreSQL storage configurations to sync study progress, custom decks, and streaks dynamically across web, mobile, and desktop endpoints.
+### Phase 1: Portability & Syncing (🔥 Active Objective)
+* **Desktop Encrypted Syncing**: Integrate cloud database options to securely backup and sync study progress, custom decks, and statistics dynamically across different workstation environments.
 
 ### Phase 2: Gamification & Engagement Mechanics
 * **XP and Daily Streaks**: Gain experience points (XP) for successfully reviewed cards, leveling up rank titles from "Apprentice Technician" to "Master Systems Engineer".
@@ -296,7 +284,7 @@ We are mapping out additions across four core phases:
 
 These instructions govern all future modifications to this repository:
 1. **No Hex Color Coding**: All styling changes must use established CSS variables inside `src/styles/theme.css` (e.g., `var(--accent-primary)`). Do not add custom hex values.
-2. **Access Proxying**: Direct browser `window.electron` calls inside React are forbidden. All DB activities must route through `src/services/db.service.ts` to maintain Web/Electron platform portability.
+2. **Access Proxying**: Direct browser `window.electron` calls inside React components should be avoided when possible. Route DB activities through `src/services/db.service.ts` for cleaner separation of concerns.
 3. **Typography Standards**: Preserve monospaced readability. Titles must utilize `Orbitron` or `Rajdhani`, and data containers should display body copy in `IBM Plex Mono` or `JetBrains Mono`. No soft pastel or rounded visuals.
 4. **TypeScript Rigidness**: Avoid typing bypasses (`any`). Ensure custom payloads are typed correctly within `src/types/` to prevent silent database runtime failures.
 

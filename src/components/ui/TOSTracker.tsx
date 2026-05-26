@@ -419,6 +419,7 @@ export const TOSTracker: React.FC = () => {
   const globalStats = useMemo(() => {
     let totalSubtopics = 0
     let weightedSum = 0
+    let reviewedCount = 0
     TOS_DATA.forEach(s =>
       s.topics.forEach(t =>
         t.subtopics.forEach(sub => {
@@ -428,11 +429,12 @@ export const TOSTracker: React.FC = () => {
             (reviewed[key] ? 0.10 : 0) +
             (refresher[key] ? 0.20 : 0) +
             (selfReview[key] ? 0.70 : 0)
+          if (reviewed[key]) reviewedCount++
         })
       )
     )
     const pct = totalSubtopics > 0 ? Math.round((weightedSum / totalSubtopics) * 100) : 0
-    return { total: totalSubtopics, pct }
+    return { total: totalSubtopics, pct, reviewed: reviewedCount }
   }, [reviewed, refresher, selfReview])
 
   const progressColor =
