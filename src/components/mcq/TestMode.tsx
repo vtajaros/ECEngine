@@ -539,13 +539,15 @@ Please explain:
       </div>
 
       <div className="flex-shrink-0 flex items-center gap-2">
-        <button
-          onClick={toggleMute}
-          className={`p-2 rounded border transition-colors ${isMuted ? 'border-[#FF3333] text-[#FF3333] bg-[rgba(255,51,51,0.08)]' : 'border-[#333] text-[#888] hover:text-white hover:border-[#666]'}`}
-          title={isMuted ? 'Unmute sounds' : 'Mute sounds'}
-        >
-          {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-        </button>
+        {settings.instantChecking && (
+          <button
+            onClick={toggleMute}
+            className={`p-2 rounded border transition-colors ${isMuted ? 'border-[#FF3333] text-[#FF3333] bg-[rgba(255,51,51,0.08)]' : 'border-[#333] text-[#888] hover:text-white hover:border-[#666]'}`}
+            title={isMuted ? 'Unmute sounds' : 'Mute sounds'}
+          >
+            {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+          </button>
+        )}
         <div className="flex items-center gap-2 text-lg font-bold tracking-widest bg-[#111] px-4 py-1.5 rounded border border-[#333] shrink-0">
           <Clock className="w-4 h-4 text-[var(--accent-primary)]" />
           {formatTime(timeElapsed)}

@@ -3,6 +3,7 @@ import {
   X, Save, ArrowLeft, FileText, Upload, AlertCircle, Check, Trash2, Plus, PlusCircle, Calculator, FlaskConical, Zap, Cpu, Layers, Wand2, GripVertical, ChevronDown, ChevronUp, AlertTriangle, RotateCcw, ImageIcon, Menu, Sigma, Type
 } from 'lucide-react'
 import { getSubjectFilterClasses } from '../lib/subjectColors'
+import { TOS_SUBJECT_COLORS } from '../lib/tosData'
 import { useNavigate, Link } from 'react-router-dom'
 import { parseImportedMCQs, parseImportedFlashcards } from '../lib/parser'
 import { detectQuizletFormat, tryConvertQuizlet } from '../lib/quizletParser'
@@ -1011,27 +1012,21 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
       {/* QUESTION (full width) */}
       <div className="relative w-full">
         <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center justify-between mb-1">
-            <Label>Question</Label>
-            <div className="flex items-center gap-2 mr-10 z-10 relative">
-              {data.imagePath ? (
-                <div className="relative group flex items-center justify-center">
-                  <img src={`ece-app://${data.imagePath}`} alt="Question image" className="w-6 h-6 object-cover rounded border border-[#333]" />
-                  <button
-                    onClick={() => set({ imagePath: undefined })}
-                    className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    title="Remove image"
-                  >
-                    <X size={10} />
-                  </button>
-                </div>
-              ) : (
-                <label className="cursor-pointer text-[#888] hover:text-[#00FF41] transition-colors" title="Add Image">
-                  <ImageIcon size={18} />
-                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                </label>
-              )}
-            </div>
+          <Label>Question</Label>
+          <div className="mr-[14px]">
+            {data.imagePath ? (
+              <div className="relative group flex items-center justify-center">
+                <img src={`ece-app://${data.imagePath}`} className="w-5 h-5 object-cover rounded border border-[#333]" />
+                <button type="button" onClick={() => set({ imagePath: undefined })} className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" title="Remove image">
+                  <X size={10} />
+                </button>
+              </div>
+            ) : (
+              <label className="cursor-pointer text-[#888] hover:text-[#00FF41] transition-colors" title="Add Image">
+                <ImageIcon size={16} />
+                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+              </label>
+            )}
           </div>
         </div>
         <MathInputField
@@ -1114,21 +1109,17 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
       <div className="relative w-full">
         <div className="flex items-center justify-between mb-1">
           <Label>Front / Term</Label>
-          <div className="flex items-center gap-2 mr-10 z-10 relative">
+          <div className="mr-[6px]">
             {data.imagePath ? (
               <div className="relative group flex items-center justify-center">
-                 <img src={`ece-app://${data.imagePath}`} alt="Flashcard image" className="w-6 h-6 object-cover rounded border border-[#333]" />
-                <button
-                  onClick={() => onChange({ ...data, imagePath: undefined })}
-                  className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                  title="Remove image"
-                >
+                <img src={`ece-app://${data.imagePath}`} className="w-5 h-5 object-cover rounded border border-[#333]" />
+                <button type="button" onClick={() => onChange({ ...data, imagePath: undefined })} className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" title="Remove image">
                   <X size={10} />
                 </button>
               </div>
             ) : (
               <label className="cursor-pointer text-[#888] hover:text-[#00FF41] transition-colors" title="Add Image">
-                <ImageIcon size={18} />
+                <ImageIcon size={16} />
                 <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
               </label>
             )}
@@ -1632,27 +1623,27 @@ export default function AddDeck() {
       const topicId = 'topic_' + Date.now().toString(36)
 
       const payload = {
-          topicId,
-          name: title.trim(),
-          subject: subject,
-          description: description.trim(),
-          tags: JSON.stringify(Array.from(deckTags)),
-          folderName: folderName.trim(),
-          cards: validCards.map(card => {
-            const cardId = 'card_' + Math.random().toString(36).substr(2, 9)
-            const cleanedData = stripPlaceholders(card.data)
-            return {
-              id: cardId,
-              type: card.type,
-              data: serializeCardData(cleanedData),
-              is_custom: 1
-            }
-          })
-        };
+        topicId,
+        name: title.trim(),
+        subject: subject,
+        description: description.trim(),
+        tags: JSON.stringify(Array.from(deckTags)),
+        folderName: folderName.trim(),
+        cards: validCards.map(card => {
+          const cardId = 'card_' + Math.random().toString(36).substr(2, 9)
+          const cleanedData = stripPlaceholders(card.data)
+          return {
+            id: cardId,
+            type: card.type,
+            data: serializeCardData(cleanedData),
+            is_custom: 1
+          }
+        })
+      };
 
-        const res = await window.electron.decks.addDeckWithCards(payload)
-        if (!res.success) throw new Error(res.error)
-        navigate('/study')
+      const res = await window.electron.decks.addDeckWithCards(payload)
+      if (!res.success) throw new Error(res.error)
+      navigate('/study')
     } catch (err: any) {
       console.error('Save failed', err)
       alert('Failed to save: ' + err.message)
@@ -1816,8 +1807,19 @@ export default function AddDeck() {
                               </button>
                             ))}
                           {existingFolders.filter(f => f.toLowerCase().includes(folderName.toLowerCase())).length === 0 && (
-                            <div className="p-3 text-xs text-[#666] font-['IBM_Plex_Mono'] text-center">
-                              Press save to create folder "{folderName}"
+                            <div
+                              className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-[#1a1a1a] transition-colors"
+                              onClick={() => { setShowFolderDropdown(false) }}
+                            >
+                              <span className="font-['IBM_Plex_Mono'] text-xs text-[#00FF41]">
+                                Create "{folderName}"
+                              </span>
+                              <button
+                                className="flex items-center justify-center w-5 h-5 rounded bg-[#00FF41]/10 border border-[#00FF41]/30 hover:bg-[#00FF41]/20 transition-colors"
+                                title="Confirm new folder name"
+                              >
+                                <Plus size={12} className="text-[#00FF41]" />
+                              </button>
                             </div>
                           )}
                         </div>
@@ -1833,21 +1835,32 @@ export default function AddDeck() {
             <label className="text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest mb-3 block">
               Subject
             </label>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2 flex-wrap">
               {SUBJECTS.map(s => {
-                const Icon = s.icon
                 const isSelected = subject === s.value
-                const colorClasses = getSubjectFilterClasses(s.short, isSelected)
+                const colors = TOS_SUBJECT_COLORS[s.short]
 
                 return (
                   <button
                     key={s.value}
                     onClick={() => setSubject(s.value)}
-                    className={`px-4 py-2 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-[11px] flex items-center gap-2 transition-all duration-200 ${colorClasses} ${!isSelected ? 'bg-[#111] hover:bg-[#1A1A1A] border-[#222] text-[#888]' : ''
-                      }`}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg border transition-all font-['Rajdhani'] font-bold text-sm uppercase tracking-widest"
+                    style={
+                      isSelected
+                        ? {
+                          background: `rgba(${colors.accentRgb},0.15)`,
+                          borderColor: `rgba(${colors.accentRgb},0.5)`,
+                          color: colors.accent,
+                          boxShadow: `0 0 16px rgba(${colors.accentRgb},0.1)`,
+                        }
+                        : {
+                          background: '#0c0c0c',
+                          borderColor: '#2a2a2a',
+                          color: '#555',
+                        }
+                    }
                   >
-                    <Icon size={14} className={isSelected ? 'text-inherit' : 'text-[#888]'} />
-                    {s.short}
+                    <span>{s.short}</span>
                   </button>
                 )
               })}

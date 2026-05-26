@@ -11,6 +11,7 @@ import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
 import { MOCK_FLASHCARDS, MOCK_MCQS } from '../lib/mockData'
 import { Play, Bookmark, X, Trash2, AlertTriangle, ClipboardList, SlidersHorizontal, Check, Pencil, Brain, Trophy, ScrollText, Search } from 'lucide-react'
 import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
+import { TOS_SUBJECT_COLORS } from '../lib/tosData'
 import { useSessionStore } from '../store/useSessionStore'
 import { motion, AnimatePresence } from 'framer-motion'
 import { shuffle, shuffleChoices } from '../lib/scrambler'
@@ -799,13 +800,41 @@ export default function FlashcardStudy() {
                   </AnimatePresence>
                 </div>
 
-                {SUBJECTS.map(s => (
-                  <button key={s} onClick={() => setActiveSubject(s)}
-                    className={`px-4 py-2 rounded-md font-['Rajdhani'] tracking-widest text-sm font-bold transition-all ${getSubjectFilterClasses(s, activeSubject === s)}`}
-                  >
-                    {s}
-                  </button>
-                ))}
+                {SUBJECTS.map(s => {
+                  const isActive = activeSubject === s
+                  const colors = s !== 'ALL' ? TOS_SUBJECT_COLORS[s] : null
+
+                  return (
+                    <button
+                      key={s}
+                      onClick={() => setActiveSubject(s)}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-lg border transition-all font-['Rajdhani'] font-bold text-sm uppercase tracking-widest"
+                      style={
+                        isActive
+                          ? s === 'ALL'
+                            ? {
+                                background: 'var(--accent-glow)',
+                                borderColor: 'var(--accent-border)',
+                                color: 'var(--accent-primary)',
+                                boxShadow: '0 0 16px rgba(0,255,65,0.1)',
+                              }
+                            : {
+                                background: `rgba(${colors?.accentRgb},0.15)`,
+                                borderColor: `rgba(${colors?.accentRgb},0.5)`,
+                                color: colors?.accent,
+                                boxShadow: `0 0 16px rgba(${colors?.accentRgb},0.1)`,
+                              }
+                          : {
+                              background: '#0c0c0c',
+                              borderColor: '#2a2a2a',
+                              color: '#555',
+                            }
+                      }
+                    >
+                      {s}
+                    </button>
+                  )
+                })}
               </div>
 
               <div

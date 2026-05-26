@@ -450,10 +450,10 @@ export const TOSTracker: React.FC = () => {
     Object.values(selfReview).some(Boolean)
 
   return (
-    <div className="w-full flex flex-col gap-5 max-w-4xl mx-auto">
+    <div className="flex flex-col gap-5 max-w-4xl mx-auto">
 
       {/* ── Global Stats Header ── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-5 py-4 rounded-xl border border-[#252525] bg-[#0c0c0c]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-4 py-3 rounded-xl border border-[#252525] bg-[#0c0c0c]">
         <div className="flex items-center gap-3.5">
           <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-[#00FF41]/10 border border-[#00FF41]/20 shrink-0">
             <TrendingUp size={18} className="text-[#00FF41]" />
