@@ -87,6 +87,7 @@ export default function FlashcardViewer() {
   // ── Deck listing state ──
   const [activeSubject, setActiveSubject] = useState<FilterSubject>('ALL')
   const [decks, setDecks] = useState<DeckInfo[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [setToDelete, setSetToDelete] = useState<DeckInfo | null>(null)
   const [deleteCountdown, setDeleteCountdown] = useState(0)
 
@@ -196,6 +197,7 @@ export default function FlashcardViewer() {
           setDecks(processedDecks)
         }
     } catch (e) { console.error('Failed to load decks', e) }
+    finally { setIsLoading(false) }
   }
 
   useEffect(() => {
@@ -1050,11 +1052,15 @@ export default function FlashcardViewer() {
               ))}
             </div>
 
-            {filteredDecks.length === 0 && (
+            {isLoading ? (
+              <div className="text-center py-20 text-[#555] font-['IBM_Plex_Mono'] text-sm tracking-widest animate-pulse">
+                Loading decks...
+              </div>
+            ) : filteredDecks.length === 0 ? (
               <div className="text-center py-20 text-[#888] font-rajdhani uppercase tracking-widest text-lg">
                 No decks found{activeSubject !== 'ALL' ? ` for ${activeSubject}` : ''}. Import some from Add Decks.
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

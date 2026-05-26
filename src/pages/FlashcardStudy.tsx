@@ -57,6 +57,7 @@ export default function FlashcardStudy() {
 
 
   const [allSets, setAllSets] = useState<StudySet[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const [setToDelete, setSetToDelete] = useState<StudySet | null>(null)
   const [deleteCountdown, setDeleteCountdown] = useState(0)
 
@@ -130,6 +131,8 @@ export default function FlashcardStudy() {
       })
     } catch (err) {
       console.error('Failed to load DB sets', err)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -962,11 +965,15 @@ export default function FlashcardStudy() {
               ))}
             </div>
 
-            {filteredAndSortedSets.length === 0 && (
+            {isLoading ? (
+              <div className="text-center py-20 text-[#555] font-['IBM_Plex_Mono'] text-sm tracking-widest animate-pulse">
+                Loading decks...
+              </div>
+            ) : filteredAndSortedSets.length === 0 ? (
               <div className="text-center py-20 text-[#888] font-rajdhani uppercase tracking-widest text-lg">
                 No decks found{activeSubject !== 'ALL' ? ` for ${activeSubject}` : ''}. Import some from Add Decks.
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
