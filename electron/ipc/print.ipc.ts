@@ -100,16 +100,13 @@ export function registerPrintHandlers(): void {
         })
       }
 
-      // Inject config immediately when DOM is ready, before React fully mounts
-      await new Promise<void>(resolve => {
-        pdfWindow!.webContents.once('dom-ready', () => resolve())
-      })
       await pdfWindow.webContents.executeJavaScript(`
         window.__pdfConfig = {
           pdfmode: '1',
           theme: ${JSON.stringify(theme)},
           layout: ${JSON.stringify(layout)},
         };
+        window.dispatchEvent(new Event('pdf-config-ready'));
       `)
       // Wait for full render: React mount + config effect + fonts + KaTeX
       await new Promise(resolve => setTimeout(resolve, 3000))

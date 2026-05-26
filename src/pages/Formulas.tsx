@@ -135,6 +135,10 @@ export default function Formulas() {
       activeDeck !== null && currentLocation.pathname !== nextLocation.pathname
   )
 
+  useEffect(() => {
+    ;(window as any).__reactRouterBlocker = blocker
+  }, [blocker])
+
   // Reset blocker on unmount if still in blocked state
   useEffect(() => {
     return () => {
@@ -883,13 +887,22 @@ export default function Formulas() {
                     >
                       <ArrowLeft className="w-4 h-4" /> Prev
                     </button>
-                    <button
-                      onClick={goNext}
-                      disabled={currentIndex === sessionCards.length - 1}
-                      className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-primary)] text-black rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-all shadow-[0_0_15px_rgba(0,255,65,0.2)] disabled:opacity-30 disabled:cursor-default"
-                    >
-                      Next <ArrowRight className="w-4 h-4" />
-                    </button>
+                    {currentIndex === sessionCards.length - 1 ? (
+                      <button
+                        onClick={() => exitSession()}
+                        className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-primary)] text-black rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-all shadow-[0_0_15px_rgba(0,255,65,0.2)]"
+                      >
+                        Finish <Check className="w-4 h-4" />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={goNext}
+                        disabled={currentIndex === sessionCards.length - 1}
+                        className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-primary)] text-black rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-all shadow-[0_0_15px_rgba(0,255,65,0.2)] disabled:opacity-30 disabled:cursor-default"
+                      >
+                        Next <ArrowRight className="w-4 h-4" />
+                      </button>
+                    )}
                   </div>
                 )}
               </motion.div>

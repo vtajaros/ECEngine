@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import {
-  X, Save, ArrowLeft, FileText, Upload, AlertCircle, Check, Trash2, Plus, Calculator, FlaskConical, Zap, Cpu, Layers, Wand2, GripVertical, ChevronDown, ChevronUp, AlertTriangle, RotateCcw, ImageIcon, Menu, Sigma, Type
+  X, Save, ArrowLeft, FileText, Upload, AlertCircle, Check, Trash2, Plus, PlusCircle, Calculator, FlaskConical, Zap, Cpu, Layers, Wand2, GripVertical, ChevronDown, ChevronUp, AlertTriangle, RotateCcw, ImageIcon, Menu, Sigma, Type
 } from 'lucide-react'
 import { getSubjectFilterClasses } from '../lib/subjectColors'
 import { useNavigate, Link } from 'react-router-dom'
@@ -1682,12 +1682,16 @@ export default function AddDeck() {
       </AnimatePresence>
       {/* Top Bar */}
       <div className="sticky top-0 z-30 bg-[#0D0D0D]/90 backdrop-blur-md border-b border-[#1a1a1a] shrink-0">
-        <div className="w-full px-6 py-4 flex items-center justify-between">
-          <div className="flex flex-col">
-            <h1 className="font-['Orbitron'] text-2xl font-bold tracking-wider">
+        <div className="w-full px-6 py-4 flex items-center justify-between relative">
+          <div className="w-1/3"></div>
+
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-3 pointer-events-none">
+            <PlusCircle className="text-[var(--accent-primary)]" size={28} />
+            <h1 className="font-['Orbitron'] text-3xl font-bold tracking-wider m-0">
               <span className="text-[var(--accent-primary)]">ADD</span> <span className="text-white">DECKS</span>
             </h1>
           </div>
+
           <div className="flex items-center gap-4">
             <button onClick={() => navigate(-1)}
               className="px-6 py-2.5 flex items-center justify-center rounded border border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-widest font-bold text-sm whitespace-nowrap">

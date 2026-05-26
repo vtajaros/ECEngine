@@ -77,7 +77,10 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
   // Keep a live ref to the blocker so the unmount cleanup always calls reset()
   // on the *current* blocker instance — not a stale closure copy.
   const blockerRef = useRef(blocker)
-  useEffect(() => { blockerRef.current = blocker }, [blocker])
+  useEffect(() => {
+    blockerRef.current = blocker
+    ;(window as any).__reactRouterBlocker = blocker
+  }, [blocker])
 
   // On unmount, unconditionally reset any lingering blocked state so the
   // sidebar never gets permanently locked after the user exits a learn session.

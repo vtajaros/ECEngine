@@ -135,10 +135,14 @@ function MCQTableRow({ index, card }: MCQTableRowProps) {
                 style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
               />
             )}
-            <ol style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-              {choices.map((choice, ci) => (
-                <li key={ci} style={{ marginBottom: '4px', listStyle: 'none' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: 'auto auto', gap: '2px 8px', marginTop: '4px' }}>
+              {/* Column order: A(0) C(2) in col1, B(1) D(3) in col2 — rendered in row order so grid places them correctly */}
+              {[0, 1, 2, 3].map((ci) => {
+                const choice = choices[ci]
+                if (choice === undefined) return null
+                return (
                   <div
+                    key={ci}
                     style={{
                       padding: '4px 8px',
                       backgroundColor: ci === answer ? 'var(--pt-answer-bg)' : 'transparent',
@@ -147,14 +151,18 @@ function MCQTableRow({ index, card }: MCQTableRowProps) {
                       borderRadius: '3px',
                       display: 'flex',
                       gap: '6px',
+                      gridColumn: ci % 2 === 0 ? 1 : 2,
+                      gridRow: ci < 2 ? 1 : 2,
+                      alignSelf: 'start',
+                      justifySelf: 'start',
                     }}
-                  >
+              >
                     <span style={{ minWidth: '18px', fontWeight: 700 }}>{CHOICE_LABELS[ci]}.</span>
                     <span><MathText text={choice} /></span>
                   </div>
-                </li>
-              ))}
-            </ol>
+                )
+              })}
+            </div>
           </div>
         </div>
       </td>
@@ -216,10 +224,13 @@ function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) 
           style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
         />
       )}
-      <ol style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-        {choices.map((choice, ci) => (
-          <li key={ci} style={{ marginBottom: '4px', listStyle: 'none' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: 'auto auto', gap: '2px 8px', marginTop: '4px' }}>
+        {[0, 1, 2, 3].map((ci) => {
+          const choice = choices[ci]
+          if (choice === undefined) return null
+          return (
             <div
+              key={ci}
               style={{
                 padding: '4px 8px',
                 backgroundColor: ci === answer ? 'var(--pt-answer-bg)' : 'transparent',
@@ -228,14 +239,18 @@ function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) 
                 borderRadius: '3px',
                 display: 'flex',
                 gap: '6px',
+                gridColumn: ci % 2 === 0 ? 1 : 2,
+                gridRow: ci < 2 ? 1 : 2,
+                alignSelf: 'start',
+                justifySelf: 'start',
               }}
             >
               <span style={{ minWidth: '18px', fontWeight: 700 }}>{CHOICE_LABELS[ci]}.</span>
               <span><MathText text={choice} /></span>
             </div>
-          </li>
-        ))}
-      </ol>
+          )
+        })}
+      </div>
     </div>
   )
 }
@@ -325,7 +340,7 @@ export default function PrintView() {
 
   const [cards, setCards] = useState<Card[]>([])
   const [loading, setLoading] = useState(true)
-  const [layout, setLayout] = useState<LayoutMode>('table')
+  const [layout, setLayout] = useState<LayoutMode>('glossary')
   const [boldSide, setBoldSide] = useState<BoldSide>('term')
   const [exportState, setExportState] = useState<ExportState>('idle')
   const [exportError, setExportError] = useState('')
@@ -544,9 +559,11 @@ export default function PrintView() {
           border: '1px solid var(--bg-elevated)',
         }}
       >
-        {([['table', Table2, 'Table'], ['glossary', List, 'Glossary'], ['qa', BookOpen, 'Q&A']] as const).map(
+        {([['glossary', List, 'Glossary'], ['table', Table2, 'Table'], ['qa', BookOpen, 'Q&A']] as const).map(
           ([mode, Icon, label]) => {
             const isDisabled = (mode === 'qa' && isFlashcardOnly) || (hasFormulas && (mode === 'glossary' || mode === 'qa'))
+            // Hide Q&A button entirely for flashcard-only decks instead of showing it grayed out
+            if (mode === 'qa' && isFlashcardOnly) return null
             return (
               <motion.button
                 key={mode}
@@ -593,7 +610,7 @@ export default function PrintView() {
             border: '1px solid var(--bg-elevated)',
           }}
         >
-          {([['term', 'Bold Term'], ['definition', 'Bold Def'], ['none', 'No Bold']] as const).map(
+          {([['term', 'Bold Term'], ['definition', 'Bold Def']] as const).map(
             ([side, label]) => (
               <motion.button
                 key={side}
@@ -616,7 +633,7 @@ export default function PrintView() {
                   color: boldSide === side ? '#000' : 'var(--text-secondary)',
                 }}
               >
-                {side !== 'none' && <Bold size={12} />}
+                <Bold size={12} />
                 {label}
               </motion.button>
             )

@@ -253,6 +253,10 @@ export default function FlashcardStudy() {
       isSessionActive && (mode === 'flashcard' || mode === 'mcq') && currentLocation.pathname !== nextLocation.pathname
   )
 
+  useEffect(() => {
+    ;(window as any).__reactRouterBlocker = blocker
+  }, [blocker])
+
   // Reset blocker on unmount if still in blocked state
   useEffect(() => {
     return () => {

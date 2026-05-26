@@ -8,16 +8,12 @@ export default function TOSChecklist() {
       <div className="max-w-7xl mx-auto flex flex-col h-full">
         <header className="mb-8 flex flex-col items-center justify-center border-b border-[var(--bg-card)] pb-6 pt-4 shrink-0">
           <div className="flex flex-col items-center text-center px-4 gap-3">
-            {/* Icon — always centered above text on mobile */}
-            <div className="flex justify-center">
-              <ClipboardList className="text-[#00FF41] mr-4 shrink-0" size={36} />
+            <div className="flex items-center gap-4">
+              <ClipboardList className="text-[#00FF41] shrink-0" size={36} />
+              <h1 className="font-['Orbitron'] text-4xl font-bold text-[var(--text-primary)] tracking-wider m-0">
+                REVIEW <span className="text-[#00FF41]">CHECKLIST</span>
+              </h1>
             </div>
-
-            {/* Title — stack the two words on mobile, inline on larger screens */}
-            <h1 className="font-['Orbitron'] text-4xl font-bold text-[var(--text-primary)] tracking-wider flex flex-row items-center justify-center gap-2">
-              REVIEW 
-              <span className="text-[#00FF41]">CHECKLIST</span>
-            </h1>
 
             {/* Subtitle */}
             <p className="text-[var(--text-secondary)] font-['Rajdhani'] text-base uppercase tracking-widest">

@@ -300,6 +300,12 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
     const container = scrollContainerRef.current
     const { scrollTop, scrollHeight, clientHeight } = container
 
+    // At absolute top → highlight first card
+    if (scrollTop < 50) {
+      setCurrentVisibleIndex(0)
+      return
+    }
+
     // At absolute bottom → highlight last card
     if (Math.abs(scrollHeight - scrollTop - clientHeight) < 2) {
       setCurrentVisibleIndex(testCards.length - 1)
@@ -347,7 +353,10 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
       viewState === 'test' && currentLocation.pathname !== nextLocation.pathname
   )
   const blockerRef = useRef(blocker)
-  useEffect(() => { blockerRef.current = blocker }, [blocker])
+  useEffect(() => {
+    blockerRef.current = blocker
+    ;(window as any).__reactRouterBlocker = blocker
+  }, [blocker])
   useEffect(() => {
     return () => {
       if (blockerRef.current.state === 'blocked') blockerRef.current.reset()
