@@ -77,10 +77,11 @@ export function registerPrintHandlers(): void {
 
       const encodedTitle = encodeURIComponent(title)
 
-      // A4 at 96dpi = 794px wide. Match exactly so printToPDF fills the page.
+      // A4 at 96dpi = 794×1122px. Window matches layout width; pageSize 'A4' is passed
+      // as a string so Chromium uses its validated internal A4 definition (no micron rounding).
       pdfWindow = new BrowserWindow({
         width: 794,
-        height: 1123,
+        height: 1122,
         show: false,
         webPreferences: {
           preload: join(__dirname, '../preload/index.js'),
@@ -109,12 +110,19 @@ export function registerPrintHandlers(): void {
         };
         window.dispatchEvent(new Event('pdf-config-ready'));
       `)
-      // Wait for full render: React mount + config effect + fonts + KaTeX
-      await new Promise(resolve => setTimeout(resolve, 3000))
+      // Wait for PrintView to signal render completion via 'pdf-ready' event.
+      // Falls back to 10s timeout on slow machines or render failure.
+      await pdfWindow.webContents.executeJavaScript(`
+        new Promise((resolve) => {
+          if (window.__pdfReady) return resolve(true)
+          window.addEventListener('pdf-ready', () => resolve(true), { once: true })
+          setTimeout(() => resolve(false), 10000)
+        })
+      `)
 
       const buffer = await pdfWindow.webContents.printToPDF({
         printBackground: true,
-        pageSize: { width: 794000, height: 1123000 },
+        pageSize: 'A4',
         margins: { marginType: 'none' },
         landscape: false,
         preferCSSPageSize: false,

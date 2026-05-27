@@ -1,4 +1,4 @@
-import { ipcMain, app } from 'electron'
+import { ipcMain, app, shell } from 'electron'
 import fs from 'fs'
 import path from 'path'
 
@@ -66,5 +66,19 @@ export function registerConfigHandlers(): void {
   ipcMain.handle('config:getApiKey', async () => {
     const key = resolveGroqApiKey()
     return { configured: Boolean(key && key.length > 0) }
+  })
+
+  /**
+   * 'shell:openExternal' — securely opens allowed URLs in the default browser.
+   */
+  ipcMain.handle('shell:openExternal', async (_, url: string) => {
+    try {
+      const allowedHosts = ['console.groq.com', 'groq.com']
+      const parsed = new URL(url)
+      if (!allowedHosts.includes(parsed.hostname)) return
+      await shell.openExternal(url)
+    } catch (err) {
+      console.error('[shell:openExternal] Error:', err)
+    }
   })
 }

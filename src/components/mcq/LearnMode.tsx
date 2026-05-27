@@ -663,6 +663,31 @@ Please explain:
             })}
           </div>
 
+          {/* Solution Block */}
+          {viewState === 'feedback' && choiceStatus === 'correct' && (mcqData.explanation || mcqData.solutionImagePath) && (
+            <div className="px-6 pb-4">
+              <div className="p-4 bg-[#111] rounded border border-[#222]">
+                <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888] mb-2 block">
+                  Solution
+                </span>
+                {mcqData.explanation && (
+                  <p
+                    className="text-sm text-[#CCC] font-['Rajdhani'] font-medium whitespace-pre-wrap leading-relaxed"
+                    dangerouslySetInnerHTML={{ __html: renderMath(mcqData.explanation) }}
+                  />
+                )}
+                {mcqData.solutionImagePath && (
+                  <img
+                    src={`ece-app://${mcqData.solutionImagePath}`}
+                    alt="Solution diagram"
+                    className="mt-3 max-w-full rounded border border-[#333] object-contain max-h-64 cursor-zoom-in"
+                    onClick={() => setZoomedImage(mcqData.solutionImagePath!)}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
           {/* ExplanationPanel: slides in below choices when open */}
           {viewState === 'feedback' && explanationOpen && (
             <ExplanationPanel

@@ -180,7 +180,7 @@ export default function Settings() {
                 </div>
 
                 <p className="text-[#999] text-xs font-['Rajdhani'] uppercase tracking-widest mt-2">
-                  Required for AI explanations. Get a free key at <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" className="text-[var(--accent-primary)] hover:underline transition-all">console.groq.com/keys</a>.
+                  Required for AI explanations. Get a free key at <button type="button" onClick={() => window.electron.shell.openExternal('https://console.groq.com/keys')} className="text-[var(--accent-primary)] hover:underline transition-all bg-transparent border-none p-0 inline font-inherit cursor-pointer">console.groq.com/keys</button>.
                 </p>
               </div>
             </div>

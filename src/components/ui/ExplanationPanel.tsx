@@ -64,7 +64,7 @@ export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({
       </button>
 
       <h4 className="font-['Orbitron'] text-[0.75rem] font-bold text-[#00FF41] tracking-widest uppercase mb-3 flex items-center">
-        ⚡ EXPLANATION
+        ⚡ AI EXPLANATION
       </h4>
 
       <div className="font-sans text-[0.875rem] text-[#E8E8E8] leading-[1.6]">

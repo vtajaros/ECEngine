@@ -118,7 +118,7 @@ interface MCQTableRowProps {
 function MCQTableRow({ index, card }: MCQTableRowProps) {
   const { question, choices, answer } = card.data
   return (
-    <tr style={{ borderBottom: '1px solid var(--pt-border)', pageBreakInside: 'avoid' }}>
+    <tr style={{ borderBottom: '1px solid var(--pt-border)', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
       <td style={{ padding: '10px 12px', verticalAlign: 'top', width: '65%', overflow: 'hidden' }}>
         <div style={{ display: 'flex', gap: '8px' }}>
           <span style={{ fontWeight: 700, minWidth: '24px', color: 'var(--pt-text-primary)' }}>{index}.</span>
@@ -193,7 +193,14 @@ function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) 
   const { question, choices, answer, imagePath } = card.data
   if (qaMode) {
     return (
-      <div style={{ marginBottom: '14px', pageBreakInside: 'avoid', borderBottom: '1px solid var(--pt-border-light)', paddingBottom: '10px' }}>
+      <div style={{
+        marginBottom: '14px',
+        pageBreakInside: 'avoid',
+        breakInside: 'avoid',
+        borderBottom: '1px solid var(--pt-border-light)',
+        paddingBottom: '10px',
+        display: 'block',
+      }}>
         <p style={{ fontWeight: 400, color: 'var(--pt-text-primary)', marginBottom: '4px' }}>
           {index}. <MathText text={question} />
         </p>
@@ -212,7 +219,12 @@ function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) 
     )
   }
   return (
-    <div style={{ marginBottom: '16px', pageBreakInside: 'avoid' }}>
+    <div style={{
+      marginBottom: '16px',
+      pageBreakInside: 'avoid',
+      breakInside: 'avoid',
+      display: 'block',
+    }}>
       <p style={{ fontWeight: 600, color: 'var(--pt-text-primary)', marginBottom: '6px' }}>
         {index}. <MathText text={question} />
       </p>
@@ -429,6 +441,14 @@ export default function PrintView() {
       setLoading(false)
     })
   }, [topicId])
+
+  // Signal to print.ipc.ts that the PDF render is complete.
+  // Fires only in PDF mode, after cards have loaded and React has committed the DOM.
+  useEffect(() => {
+    if (!isPdfMode || loading) return
+    ;(window as any).__pdfReady = true
+    window.dispatchEvent(new Event('pdf-ready'))
+  }, [isPdfMode, loading])
 
 
 
@@ -821,7 +841,7 @@ export default function PrintView() {
         color: 'var(--pt-text-primary)',
         maxWidth: isPdfMode ? 'none' : '800px',
         margin: isPdfMode ? '0' : '0 auto',
-        padding: isPdfMode ? '28px 36px' : '0',
+        padding: isPdfMode ? '0' : '0',
       }}
     >
       {/* Header */}
@@ -851,7 +871,7 @@ export default function PrintView() {
                   <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--pt-text-body)', borderLeft: '1px solid var(--pt-border)', width: '35%', backgroundColor: 'var(--pt-thead-bg)' }}>Answer</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody style={{ display: 'table-row-group' }}>
                 {mcqCards.map((card, i) => (
                   <MCQTableRow key={card.id} index={i + 1} card={card} />
                 ))}
@@ -997,8 +1017,8 @@ export default function PrintView() {
       <>
         <style>{`
           @page {
-            size: 794px 1123px;
-            margin: 0 !important;
+            size: A4 portrait;
+            margin: 0;
           }
           *, *::before, *::after { box-sizing: border-box; }
           html, body, #root {
@@ -1008,6 +1028,8 @@ export default function PrintView() {
             height: auto !important;
             overflow: visible !important;
             width: 794px !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
           }
         `}</style>
         <div
@@ -1022,7 +1044,7 @@ export default function PrintView() {
             width: '794px',
             boxSizing: 'border-box',
             margin: 0,
-            padding: 0,
+            padding: '36px 48px',
           } as React.CSSProperties}
         >
           {paperContent}

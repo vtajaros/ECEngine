@@ -34,6 +34,7 @@ export interface MCQData {
   answer: number
   explanation: string
   imagePath?: string
+  solutionImagePath?: string
   yearAsked?: number
 }
 

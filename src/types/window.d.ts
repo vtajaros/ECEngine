@@ -10,8 +10,6 @@ declare global {
       decks: {
         getTopics: () => Promise<{ success: boolean; data?: any; error?: string }>
         getCardsByTopic: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
-        getDueCounts: () => Promise<{ success: boolean; data?: any; error?: string }>
-        getDueCardsForSession: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
         addDeckWithCards: (payload: {
           topicId: string
           name: string
@@ -29,7 +27,7 @@ declare global {
         updateDeckWithCards: (payload: {
           deckId: string, title: string, subject: string, description: string,
           tags: string, folderName: string,
-          cards: Array<{ id: string, type: string, data: string }>,
+          cards: Array<{ id: string, type: string, data: string, isNew: boolean }>,
           deletedCardIds: string[]
         }) => Promise<{ success: boolean; error?: string }>
         updateDecksFolder: (fromFolder: string, toFolder: string) => Promise<{ success: boolean; error?: string }>
@@ -68,6 +66,9 @@ declare global {
       config: {
         setApiKey: (key: string) => Promise<{ success: boolean; error?: string }>
         getApiKeyStatus: () => Promise<{ configured: boolean }>
+      }
+      shell: {
+        openExternal: (url: string) => Promise<void>
       }
       windowControls: {
         minimize: () => void

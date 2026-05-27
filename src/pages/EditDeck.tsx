@@ -74,6 +74,7 @@ interface MCQEdit {
   answer: number
   explanation: string
   imagePath?: string
+  solutionImagePath?: string
 }
 
 interface FlashcardEdit {
@@ -265,6 +266,7 @@ interface CardRowProps {
 }
 
 const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?: boolean; onError?: (msg: string) => void }> = ({ data, onChange, isNew, onError }) => {
+  const [showSolution, setShowSolution] = useState(!!data.explanation)
   const set = (patch: Partial<MCQEdit>) => onChange({ ...data, ...patch })
   const setChoice = (i: number, val: string) => {
     const choices = [...data.choices] as MCQEdit['choices']
@@ -272,6 +274,33 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
     set({ choices })
   }
   const labels = ['A', 'B', 'C', 'D']
+
+  const handleSolutionImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // 10MB limit guardrail
+    if (file.size > 10 * 1024 * 1024) {
+      if (onError) onError('Image exceeds 10MB limit.')
+      e.target.value = ''
+      return
+    }
+
+    const path = (file as any).path
+    if (!path) return
+    try {
+      const result = await window.electron.saveImage(path)
+      if (result.success && result.filename) {
+        set({ solutionImagePath: result.filename })
+      } else {
+        if (onError) onError(result.error || 'Failed to save image')
+      }
+    } catch (err: any) {
+      console.error(err)
+      if (onError) onError('Error saving image: ' + err.message)
+    }
+    e.target.value = ''
+  }
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -360,15 +389,47 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
       </div>
 
       <div>
-        <Label>Explanation (optional)</Label>
-        <MathInputField
-          value={data.explanation}
-          onChange={val => set({ explanation: val })}
-          placeholder="Explanation for the correct answer..."
-          rows={2}
-          multiline={true}
-          defaultMathMode={isPureMath(data.explanation || '')}
-        />
+        {!showSolution ? (
+          <button
+            type="button"
+            onClick={() => setShowSolution(true)}
+            className="text-[11px] font-['Rajdhani'] uppercase tracking-widest text-[#888] hover:text-[#00FF41] transition-colors font-bold"
+          >
+            + Add Solution
+          </button>
+        ) : (
+          <>
+            <Label>Solution</Label>
+            <MathInputField
+              value={data.explanation || ''}
+              onChange={val => set({ explanation: val })}
+              placeholder="Write the solution or reasoning for the correct answer..."
+              rows={6}
+              multiline={true}
+              defaultMathMode={isPureMath(data.explanation || '')}
+            />
+            <div className="mt-3">
+              {data.solutionImagePath ? (
+                <div className="relative group inline-block">
+                  <img src={`ece-app://${data.solutionImagePath}`} alt="Solution image" className="w-24 h-24 object-cover rounded border border-[#333]" />
+                  <button
+                    type="button"
+                    onClick={() => set({ solutionImagePath: undefined })}
+                    className="absolute -top-2 -right-2 bg-[#FF4B4B] text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : (
+                <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#888] rounded transition-colors bg-[#0a0a0a]">
+                  <ImageIcon size={24} />
+                  <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest mt-2 font-bold text-center leading-tight">Add<br />Image</span>
+                  <input type="file" accept="image/*" className="hidden" onChange={handleSolutionImageUpload} />
+                </label>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
@@ -716,6 +777,7 @@ export default function EditDeck() {
                   explanation: parsed.explanation ?? '',
                 }
                 if (parsed.imagePath) d.imagePath = parsed.imagePath
+                if (parsed.solutionImagePath) d.solutionImagePath = parsed.solutionImagePath
                 return { id: row.id, type: 'mcq', data: d } as EditCard
               } else if (row.type === 'formula') {
                 // Normalise field names: support canonical camelCase AND any
@@ -824,7 +886,8 @@ export default function EditDeck() {
         cards: cards.map(card => ({
           id: card.id,
           type: card.type,
-          data: JSON.stringify(card.data)
+          data: JSON.stringify(card.data),
+          isNew: card.isNew ?? false
         })),
         deletedCardIds
       })

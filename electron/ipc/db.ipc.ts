@@ -1,16 +1,13 @@
-import { ipcMain, dialog, BrowserWindow } from 'electron'
+import { ipcMain, dialog, BrowserWindow, app } from 'electron'
 import { initDB, queryAll, execute, getDB } from '../db/database'
 import { serializeMcqCard } from './mcq.serializer'
 import * as fs from 'fs'
+import * as path from 'path'
 import { z } from 'zod'
 
 export function registerDBHandlers() {
   // Initialize the database eagerly
-  try {
-    initDB()
-  } catch (err) {
-    console.error('[DB Init Error]', err)
-  }
+  initDB()
 
   // ---- NEW SEMANTIC HANDLERS ----
   ipcMain.handle('decks:getTopics', async () => {
@@ -43,77 +40,36 @@ export function registerDBHandlers() {
     cards: Array<{id: string, type: string, data: string, is_custom: number}>
   }) => {
     try {
-      execute('BEGIN TRANSACTION')
-      execute(
-        `INSERT INTO topics (id, name, subject, description, tags, folder_name) VALUES (?, ?, ?, ?, ?, ?)`,
-        [payload.topicId, payload.name, payload.subject, payload.description, payload.tags, payload.folderName]
-      )
-      
-      for (const card of payload.cards) {
+      getDB().transaction(() => {
         execute(
-          `INSERT INTO cards (id, topic_id, type, data, is_custom) VALUES (?, ?, ?, ?, ?)`,
-          [card.id, payload.topicId, card.type, card.data, card.is_custom]
+          `INSERT INTO topics (id, name, subject, description, tags, folder_name) VALUES (?, ?, ?, ?, ?, ?)`,
+          [payload.topicId, payload.name, payload.subject, payload.description, payload.tags, payload.folderName]
         )
-      }
-      
-      execute('COMMIT')
+        
+        for (const card of payload.cards) {
+          execute(
+            `INSERT INTO cards (id, topic_id, type, data, is_custom) VALUES (?, ?, ?, ?, ?)`,
+            [card.id, payload.topicId, card.type, card.data, card.is_custom]
+          )
+        }
+      })()
       return { success: true }
     } catch (error) {
       console.error('[Decks addDeckWithCards Error]', error)
-      try { execute('ROLLBACK') } catch {}
       return { success: false, error: (error as Error).message }
     }
   })
 
   ipcMain.handle('decks:deleteTopic', async (_, topicId: string) => {
     try {
-      execute('BEGIN TRANSACTION')
-      execute(`DELETE FROM progress WHERE card_id IN (SELECT id FROM cards WHERE topic_id = ?)`, [topicId])
-      execute(`DELETE FROM cards WHERE topic_id = ?`, [topicId])
-      execute(`DELETE FROM topics WHERE id = ?`, [topicId])
-      execute('COMMIT')
+      getDB().transaction(() => {
+        execute(`DELETE FROM progress WHERE card_id IN (SELECT id FROM cards WHERE topic_id = ?)`, [topicId])
+        execute(`DELETE FROM cards WHERE topic_id = ?`, [topicId])
+        execute(`DELETE FROM topics WHERE id = ?`, [topicId])
+      })()
       return { success: true }
     } catch (error) {
       console.error('[Decks deleteTopic Error]', error)
-      try { execute('ROLLBACK') } catch {}
-      return { success: false, error: (error as Error).message }
-    }
-  })
-
-  ipcMain.handle('decks:getDueCounts', async () => {
-    try {
-      const nowIso = new Date().toISOString()
-      const sql = `
-        SELECT c.topic_id, COUNT(c.id) as dueCount
-        FROM cards c
-        LEFT JOIN progress p ON c.id = p.card_id
-        WHERE p.card_id IS NULL
-           OR p.last_result = 'wrong'
-           OR p.next_review <= ?
-        GROUP BY c.topic_id
-      `
-      const rows = queryAll(sql, [nowIso])
-      return { success: true, data: rows }
-    } catch (error) {
-      console.error('[Decks getDueCounts Error]', error)
-      return { success: false, error: (error as Error).message }
-    }
-  })
-
-  ipcMain.handle('decks:getDueCardsForSession', async (_, topicId: string) => {
-    try {
-      const nowIso = new Date().toISOString()
-      const sql = `
-        SELECT c.*, p.ease_factor, p.interval, p.repetitions, p.next_review, p.last_reviewed, p.last_result
-        FROM cards c
-        LEFT JOIN progress p ON c.id = p.card_id
-        WHERE c.topic_id = ?
-          AND (p.card_id IS NULL OR p.last_result = 'wrong' OR p.next_review <= ?)
-      `
-      const rows = queryAll(sql, [topicId, nowIso])
-      return { success: true, data: rows }
-    } catch (error) {
-      console.error('[Decks getDueCardsForSession Error]', error)
       return { success: false, error: (error as Error).message }
     }
   })
@@ -199,7 +155,7 @@ export function registerDBHandlers() {
         SELECT c.*, p.ease_factor, p.interval, p.repetitions, p.next_review, p.last_reviewed
         FROM cards c
         LEFT JOIN progress p ON c.id = p.card_id
-        WHERE (p.next_review IS NULL OR p.next_review <= datetime('now'))
+        WHERE 1=1
       `
       const params: unknown[] = []
       if (topicId) {
@@ -406,16 +362,24 @@ export function registerDBHandlers() {
 
   ipcMain.handle('data:clearAllData', async () => {
     try {
-      execute('BEGIN TRANSACTION')
-      execute('DELETE FROM progress')
-      execute('DELETE FROM study_activity')
-      execute('DELETE FROM exam_sessions')
-      execute('DELETE FROM cards')
-      execute('DELETE FROM topics')
-      execute('COMMIT')
+      // Back up the DB file before destroying all data — single-file copy, instant, atomic at the OS level.
+      const dbPath = app.getPath('userData')
+      const src = path.join(dbPath, 'ecengine.sqlite')
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+      const dest = path.join(dbPath, `ecengine_backup_${timestamp}.sqlite`)
+      if (fs.existsSync(src)) {
+        fs.copyFileSync(src, dest)
+      }
+
+      getDB().transaction(() => {
+        execute('DELETE FROM progress')
+        execute('DELETE FROM study_activity')
+        execute('DELETE FROM exam_sessions')
+        execute('DELETE FROM cards')
+        execute('DELETE FROM topics')
+      })()
       return { success: true }
     } catch (error) {
-      try { execute('ROLLBACK') } catch {}
       return { success: false, error: (error as Error).message }
     }
   })
@@ -485,34 +449,33 @@ export function registerDBHandlers() {
         return { success: false, error: `Invalid backup format — ${message}` }
       }
       const { topics, cards, progress } = result.data
-      execute('BEGIN TRANSACTION')
-      for (const t of topics) {
-        execute(
-          `INSERT OR REPLACE INTO topics (id, name, subject, created_at, description, folder_name, tags)
-           VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [t.id, t.name, t.subject, t.created_at ?? Date.now()/1000, t.description ?? '', t.folder_name ?? 'Uncategorized', t.tags ?? '[]']
-        )
-      }
-      for (const c of cards) {
-        execute(
-          `INSERT OR REPLACE INTO cards (id, topic_id, type, data, difficulty, tags, is_custom, created_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-          [c.id, c.topic_id, c.type, c.data, c.difficulty ?? 'medium', c.tags ?? '[]', c.is_custom ? 1 : 0, c.created_at ?? Date.now()/1000]
-        )
-      }
-      if (progress) {
-        for (const p of progress) {
+      getDB().transaction(() => {
+        for (const t of topics) {
           execute(
-            `INSERT OR REPLACE INTO progress (card_id, ease_factor, interval, repetitions, next_review, last_reviewed, correct_count, total_count)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [p.card_id, p.ease_factor ?? 2.5, p.interval ?? 1, p.repetitions ?? 0, p.next_review, p.last_reviewed, p.correct_count ?? 0, p.total_count ?? 0]
+            `INSERT OR REPLACE INTO topics (id, name, subject, created_at, description, folder_name, tags)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [t.id, t.name, t.subject, t.created_at ?? Date.now()/1000, t.description ?? '', t.folder_name ?? 'Uncategorized', t.tags ?? '[]']
           )
         }
-      }
-      execute('COMMIT')
+        for (const c of cards) {
+          execute(
+            `INSERT OR REPLACE INTO cards (id, topic_id, type, data, difficulty, tags, is_custom, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [c.id, c.topic_id, c.type, c.data, c.difficulty ?? 'medium', c.tags ?? '[]', c.is_custom ? 1 : 0, c.created_at ?? Date.now()/1000]
+          )
+        }
+        if (progress) {
+          for (const p of progress) {
+            execute(
+              `INSERT OR REPLACE INTO progress (card_id, ease_factor, interval, repetitions, next_review, last_reviewed, correct_count, total_count)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+              [p.card_id, p.ease_factor ?? 2.5, p.interval ?? 1, p.repetitions ?? 0, p.next_review, p.last_reviewed, p.correct_count ?? 0, p.total_count ?? 0]
+            )
+          }
+        }
+      })()
       return { success: true, data: 'Decks and progress imported successfully' }
     } catch (error) {
-      try { execute('ROLLBACK') } catch {}
       return { success: false, error: (error as Error).message }
     }
   })
@@ -629,15 +592,10 @@ export function registerDBHandlers() {
     description: string,
     tags: string,
     folderName: string,
-    cards: Array<{ id: string, type: string, data: string }>,
+    cards: Array<{ id: string, type: string, data: string, isNew: boolean }>,
     deletedCardIds: string[]
   }) => {
     try {
-      execute('BEGIN TRANSACTION')
-      execute(
-        `UPDATE topics SET name = ?, subject = ?, description = ?, tags = ?, folder_name = ? WHERE id = ?`,
-        [payload.title, payload.subject, payload.description, payload.tags, payload.folderName, payload.deckId]
-      )
       const db = getDB()
       const insertCard = db.prepare(
         'INSERT INTO cards (id, topic_id, type, data, difficulty, tags) VALUES (?, ?, ?, ?, ?, ?)'
@@ -647,20 +605,24 @@ export function registerDBHandlers() {
       )
       const deleteCard = db.prepare('DELETE FROM cards WHERE id = ?')
 
-      for (const card of payload.cards) {
-        if (card.id.startsWith('new_')) {
-          insertCard.run(crypto.randomUUID(), payload.deckId, card.type, card.data, 'medium', '[]')
-        } else {
-          updateCard.run(card.type, card.data, card.id)
+      db.transaction(() => {
+        execute(
+          `UPDATE topics SET name = ?, subject = ?, description = ?, tags = ?, folder_name = ? WHERE id = ?`,
+          [payload.title, payload.subject, payload.description, payload.tags, payload.folderName, payload.deckId]
+        )
+        for (const card of payload.cards) {
+          if (card.isNew) {
+            insertCard.run(crypto.randomUUID(), payload.deckId, card.type, card.data, 'medium', '[]')
+          } else {
+            updateCard.run(card.type, card.data, card.id)
+          }
         }
-      }
-      for (const cardId of payload.deletedCardIds) {
-        deleteCard.run(cardId)
-      }
-      execute('COMMIT')
+        for (const cardId of payload.deletedCardIds) {
+          deleteCard.run(cardId)
+        }
+      })()
       return { success: true }
     } catch (error) {
-      try { execute('ROLLBACK') } catch {}
       return { success: false, error: (error as Error).message }
     }
   })
@@ -684,17 +646,16 @@ export function registerDBHandlers() {
     folderOrders: Array<{ folderName: string, orderIndex: number }>
   }) => {
     try {
-      execute('BEGIN TRANSACTION')
-      for (const { folderName, orderIndex } of payload.folderOrders) {
-        execute(
-          `UPDATE topics SET order_index = ? WHERE folder_name = ?`,
-          [orderIndex, folderName]
-        )
-      }
-      execute('COMMIT')
+      getDB().transaction(() => {
+        for (const { folderName, orderIndex } of payload.folderOrders) {
+          execute(
+            `UPDATE topics SET order_index = ? WHERE folder_name = ?`,
+            [orderIndex, folderName]
+          )
+        }
+      })()
       return { success: true }
     } catch (error) {
-      try { execute('ROLLBACK') } catch {}
       return { success: false, error: (error as Error).message }
     }
   })

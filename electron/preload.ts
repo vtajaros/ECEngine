@@ -5,8 +5,6 @@ contextBridge.exposeInMainWorld('electron', {
   decks: {
     getTopics: () => ipcRenderer.invoke('decks:getTopics'),
     getCardsByTopic: (topicId: string) => ipcRenderer.invoke('decks:getCardsByTopic', topicId),
-    getDueCounts: () => ipcRenderer.invoke('decks:getDueCounts'),
-    getDueCardsForSession: (topicId: string) => ipcRenderer.invoke('decks:getDueCardsForSession', topicId),
     addDeckWithCards: (payload: any) => ipcRenderer.invoke('decks:addDeckWithCards', payload),
     deleteTopic: (topicId: string) => ipcRenderer.invoke('decks:deleteTopic', topicId),
     exportToText: (topicId: number | string, topicName: string) => ipcRenderer.invoke('decks:exportToText', topicId, topicName),
@@ -59,6 +57,9 @@ contextBridge.exposeInMainWorld('electron', {
     /** Returns whether an API key is configured — never returns the key value */
     getApiKeyStatus: (): Promise<{ configured: boolean }> =>
       ipcRenderer.invoke('config:getApiKey'),
+  },
+  shell: {
+    openExternal: (url: string) => ipcRenderer.invoke('shell:openExternal', url),
   },
   windowControls: {
     minimize: () => ipcRenderer.send('window-minimize'),

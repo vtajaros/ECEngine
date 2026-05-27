@@ -142,12 +142,19 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
             className="w-full mt-4 bg-[#161616] border-l-4 border-[#00BFFF] p-5 rounded relative overflow-hidden"
           >
              <h3 className="font-['Rajdhani'] font-bold text-[#00BFFF] text-base uppercase tracking-wider mb-2">
-               Explanation
+               Solution
              </h3>
              <div 
                className="text-[var(--text-primary)] font-['Rajdhani'] text-base font-medium leading-relaxed mb-4"
                dangerouslySetInnerHTML={{ __html: renderMath(data.explanation) }}
              />
+             {data.solutionImagePath && (
+               <img
+                 src={`ece-app://${data.solutionImagePath}`}
+                 alt="Solution diagram"
+                 className="mt-3 mb-4 max-w-full rounded border border-[#333] object-contain max-h-64"
+               />
+             )}
              
              <div className="flex justify-end">
                <button 

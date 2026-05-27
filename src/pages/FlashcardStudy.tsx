@@ -47,7 +47,6 @@ interface StudySet {
   tags?: string[]
   createdAt?: number
   folderName?: string
-  dueCount?: number
   order_index?: number
 }
 
@@ -82,28 +81,19 @@ export default function FlashcardStudy() {
     try {
       let dbSets: StudySet[] = []
 
-      let dueCountsMap = new Map<string, number>()
-      const dueRes = await window.electron.decks.getDueCounts()
-      if (dueRes.success && dueRes.data) {
-        dueRes.data.forEach((row: any) => {
-          dueCountsMap.set(row.topic_id, row.dueCount)
-        })
-      }
+      const topicsResult = await window.electron.decks.getTopicsWithCardCounts()
+      if (topicsResult.success && topicsResult.data) {
+        dbSets = topicsResult.data.map((row: any) => {
+          const types = (row.types || '').split(',').filter(Boolean)
 
-        const topicsResult = await window.electron.decks.getTopicsWithCardCounts()
-        if (topicsResult.success && topicsResult.data) {
-          dbSets = topicsResult.data.map((row: any) => {
-            const types = (row.types || '').split(',').filter(Boolean)
+          // Skip formula-only decks or empty decks
+          if (types.length === 0 || (types.length === 1 && types[0] === 'formula')) return null
 
-            // Skip formula-only decks or empty decks
-            if (types.length === 0 || (types.length === 1 && types[0] === 'formula')) return null
+          let deckType: 'mcq' | 'flashcard' | 'mixed' = 'mcq'
+          if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
+          else if (types.includes('flashcard')) deckType = 'flashcard'
 
-            let deckType: 'mcq' | 'flashcard' | 'mixed' = 'mcq'
-            if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
-            else if (types.includes('flashcard')) deckType = 'flashcard'
-
-            const mastery = 0; // DB-based progress handles mastery calculation in the service layer
-            const dueCount = dueCountsMap.get(row.id) || 0
+          const mastery = 0; // DB-based progress handles mastery calculation in the service layer
 
             let parsedTags: string[] = []
             try {
@@ -118,7 +108,6 @@ export default function FlashcardStudy() {
               count: row.card_count || 0,
               mastery,
               deckType,
-              dueCount,
               tags: parsedTags,
               createdAt: row.created_at || Date.now(),
               folderName: row.folder_name || 'Uncategorized',

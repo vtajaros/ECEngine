@@ -192,14 +192,24 @@ const TestQuestionCard = memo(({
         })}
       </div>
 
-      {showFeedback && mcq.explanation && (
+      {showFeedback && (mcq.explanation || mcq.solutionImagePath) && (
         <div className="px-6 pb-6 pt-2">
           <div className="p-4 bg-[#111] rounded border border-[#222]">
-            <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888] mb-1 block">Explanation</span>
-            <p
-              className="text-sm text-[#CCC] font-['Rajdhani'] font-medium whitespace-pre-wrap leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: renderMath(mcq.explanation) }}
-            />
+            <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888] mb-1 block">Solution</span>
+            {mcq.explanation && (
+              <p
+                className="text-sm text-[#CCC] font-['Rajdhani'] font-medium whitespace-pre-wrap leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: renderMath(mcq.explanation) }}
+              />
+            )}
+            {mcq.solutionImagePath && (
+              <img
+                src={`ece-app://${mcq.solutionImagePath}`}
+                alt="Solution diagram"
+                className="mt-3 max-w-full rounded border border-[#333] object-contain max-h-64 cursor-zoom-in"
+                onClick={(e) => { e.stopPropagation(); onSetZoomedImage(mcq.solutionImagePath!) }}
+              />
+            )}
           </div>
         </div>
       )}
