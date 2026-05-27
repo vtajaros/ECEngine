@@ -2,7 +2,7 @@
 // Global Window augmentation for Electron IPC bridge.
 // This is the single source of truth for window.electron typing.
 
-export {}  // ensure this is treated as a module
+export { }  // ensure this is treated as a module
 
 declare global {
   interface Window {

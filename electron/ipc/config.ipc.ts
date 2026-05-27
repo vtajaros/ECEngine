@@ -2,6 +2,8 @@ import { ipcMain, app, shell } from 'electron'
 import fs from 'fs'
 import path from 'path'
 
+let cachedGroqApiKey: string | undefined | null = null // null = not yet loaded
+
 interface AppConfig {
   groqApiKey?: string
 }
@@ -31,11 +33,14 @@ function writeConfig(config: AppConfig): void {
  * Priority: userData/config.json → process.env.GROQ_API_KEY
  */
 export function resolveGroqApiKey(): string | undefined {
+  if (cachedGroqApiKey !== null) return cachedGroqApiKey
   const config = readConfig()
   if (config.groqApiKey && config.groqApiKey.trim()) {
-    return config.groqApiKey.trim()
+    cachedGroqApiKey = config.groqApiKey.trim()
+    return cachedGroqApiKey
   }
-  return process.env['GROQ_API_KEY'] || undefined
+  cachedGroqApiKey = process.env['GROQ_API_KEY'] || undefined
+  return cachedGroqApiKey
 }
 
 export function registerConfigHandlers(): void {
@@ -52,6 +57,7 @@ export function registerConfigHandlers(): void {
       const config = readConfig()
       config.groqApiKey = trimmed || undefined
       writeConfig(config)
+      cachedGroqApiKey = trimmed || undefined
       return { success: true }
     } catch (err) {
       console.error('[config:setApiKey] Error:', err)

@@ -15,11 +15,11 @@ export interface ExplanationPanelProps {
   onClose: () => void;
 }
 
-export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({ 
-  question, 
-  choices, 
-  answerIndex, 
-  onClose 
+export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({
+  question,
+  choices,
+  answerIndex,
+  onClose
 }) => {
   const [loading, setLoading] = useState(true);
   const [explanation, setExplanation] = useState<string | null>(null);
@@ -31,7 +31,7 @@ export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({
     async function fetchExplanation() {
       setLoading(true);
       setErrorType(null);
-      
+
       try {
         const text = await getExplanation({ question, choices, correctAnswerIndex: answerIndex });
         if (isMounted) {
@@ -55,7 +55,7 @@ export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({
 
   return (
     <div className="bg-[#111111] border-t-2 border-t-[rgba(0,255,65,0.2)] px-[20px] py-[16px] relative mt-4 w-full animate-slide-down shadow-lg rounded-b-lg">
-      <button 
+      <button
         onClick={onClose}
         className="absolute top-4 right-4 text-[#888888] hover:text-[#00FF41] transition-colors"
         aria-label="Close Explanation"
@@ -82,7 +82,7 @@ export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({
         {!loading && explanation && (
           <div className="space-y-3">
             {explanation.trim().split(/\n\s*\n/).filter(p => p.trim()).map((paragraph, idx) => (
-              <div 
+              <div
                 key={idx}
                 dangerouslySetInnerHTML={{ __html: renderMath(renderMarkdownBold(paragraph.trim())) }}
               />

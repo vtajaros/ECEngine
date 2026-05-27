@@ -35,6 +35,17 @@ function createWindow() {
     },
   })
 
+  win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' ece-app: data:; connect-src 'self' https://api.groq.com https://openrouter.ai;"
+        ]
+      }
+    })
+  })
+
   // Show window smoothly once React/Vite has loaded the UI initially
   win.once('ready-to-show', () => {
     win.maximize()

@@ -70,7 +70,6 @@ export function registerImageProtocolScheme() {
         secure: true,
         standard: true,
         supportFetchAPI: true,
-        bypassCSP: true,
       },
     },
   ])

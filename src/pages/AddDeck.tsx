@@ -905,6 +905,16 @@ const MathInputField: React.FC<MathInputFieldProps> = ({
     return () => el.removeEventListener('input', handler)
   }, [mathMode, onChange])
 
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    const el = textareaRef.current
+    if (el) {
+      el.style.height = 'auto'
+      el.style.height = el.scrollHeight + 'px'
+    }
+  }, [value, mathMode])
+
   return (
     <div className="relative flex flex-col gap-2 w-full flex-1">
       <button
@@ -919,11 +929,18 @@ const MathInputField: React.FC<MathInputFieldProps> = ({
       {!mathMode ? (
         multiline ? (
           <textarea
+            ref={textareaRef}
             rows={rows}
             value={value}
             onChange={e => onChange(e.target.value)}
             placeholder={placeholder}
             className={`${textareaCls} pr-10`}
+            style={{ resize: 'none', overflow: 'hidden' }}
+            onInput={(e) => {
+              const el = e.currentTarget as HTMLTextAreaElement
+              el.style.height = 'auto'
+              el.style.height = el.scrollHeight + 'px'
+            }}
           />
         ) : (
           <input
@@ -1067,7 +1084,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="flex flex-col gap-3">
         {data.choices.map((choice, i) => (
           <div key={i} className="flex flex-col">
             <Label>Choice {labels[i]}</Label>
@@ -1083,7 +1100,8 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
                 value={choice}
                 onChange={val => setChoice(i, val)}
                 placeholder={`Choice ${labels[i]}...`}
-                multiline={false}
+                multiline={true}
+                rows={1}
               />
             </div>
           </div>

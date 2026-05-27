@@ -71,15 +71,15 @@ export default function Settings() {
 
   const handleExportDecks = async () => {
     try {
-        const dataStr = await dbService.exportDecks();
-        const res = await window.electron.file.export(dataStr);
-        if (res.success) {
-          setToastMessage('Database exported successfully!');
-          setTimeout(() => setToastMessage(null), 3000);
-        } else if (!res.canceled) {
-          setToastMessage(res.error || 'Export failed.');
-          setTimeout(() => setToastMessage(null), 3000);
-        }
+      const dataStr = await dbService.exportDecks();
+      const res = await window.electron.file.export(dataStr);
+      if (res.success) {
+        setToastMessage('Database exported successfully!');
+        setTimeout(() => setToastMessage(null), 3000);
+      } else if (!res.canceled) {
+        setToastMessage(res.error || 'Export failed.');
+        setTimeout(() => setToastMessage(null), 3000);
+      }
     } catch (e) {
       console.error(e);
       setToastMessage('Export failed.');
@@ -89,18 +89,18 @@ export default function Settings() {
 
   const handleImportDecks = async () => {
     try {
-        const res = await window.electron.file.import();
-        if (res.success && res.data) {
-          const result = await dbService.importDecks(res.data);
-          setToastMessage(result.message);
-          setTimeout(() => setToastMessage(null), 3000);
-          if (result.success) {
-            setTimeout(() => window.location.reload(), 1500);
-          }
-        } else if (!res.canceled) {
-          setToastMessage(res.error || 'Import failed.');
-          setTimeout(() => setToastMessage(null), 3000);
+      const res = await window.electron.file.import();
+      if (res.success && res.data) {
+        const result = await dbService.importDecks(res.data);
+        setToastMessage(result.message);
+        setTimeout(() => setToastMessage(null), 3000);
+        if (result.success) {
+          setTimeout(() => window.location.reload(), 1500);
         }
+      } else if (!res.canceled) {
+        setToastMessage(res.error || 'Import failed.');
+        setTimeout(() => setToastMessage(null), 3000);
+      }
     } catch (err) {
       console.error(err);
       setToastMessage('Import failed.');
@@ -208,17 +208,15 @@ export default function Settings() {
                     setCustomWrongSound(next)
                     setCustomWrongSoundEnabled(next)
                   }}
-                  className={`w-14 h-7 rounded-full p-1 transition-colors focus:outline-none relative shadow-inner ${
-                    !customWrongSound
-                      ? 'bg-[rgba(0,255,65,0.2)] border border-[#00FF41]'
-                      : 'bg-[#161616] border border-[#222]'
-                  }`}
+                  className={`w-14 h-7 rounded-full p-1 transition-colors focus:outline-none relative shadow-inner ${!customWrongSound
+                    ? 'bg-[rgba(0,255,65,0.2)] border border-[#00FF41]'
+                    : 'bg-[#161616] border border-[#222]'
+                    }`}
                 >
-                  <span className={`block w-5 h-5 rounded-full shadow-md transform transition-transform ${
-                    !customWrongSound
-                      ? 'bg-[#00FF41] translate-x-7 shadow-[0_0_8px_rgba(0,255,65,0.8)]'
-                      : 'bg-[#555] translate-x-0'
-                  }`} />
+                  <span className={`block w-5 h-5 rounded-full shadow-md transform transition-transform ${!customWrongSound
+                    ? 'bg-[#00FF41] translate-x-7 shadow-[0_0_8px_rgba(0,255,65,0.8)]'
+                    : 'bg-[#555] translate-x-0'
+                    }`} />
                 </button>
               </div>
             </div>
@@ -234,7 +232,7 @@ export default function Settings() {
                 {section.title === 'Data & Sync' && (
                   <div className="flex items-center gap-3">
                     <span className="text-[10px] text-[#666] tracking-widest uppercase font-bold">Unlock Advanced</span>
-                    <button 
+                    <button
                       onClick={() => setAdvancedSyncEnabled(!advancedSyncEnabled)}
                       className={`w-10 h-5 rounded-full p-0.5 transition-colors ${advancedSyncEnabled ? 'bg-[rgba(255,51,51,0.2)] border border-[#FF3333]' : 'bg-[#161616] border border-[#222]'} focus:outline-none relative shadow-inner flex items-center`}
                     >
@@ -251,44 +249,45 @@ export default function Settings() {
 
                   return (
                     <div key={idy} className={`flex flex-row items-center justify-between gap-4 transition-all duration-300 ${isDisabled ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
-                    <div className="font-['IBM_Plex_Mono'] text-[#E8E8E8] text-sm md:text-base">
-                      {opt.label}
+                      <div className="font-['IBM_Plex_Mono'] text-[#E8E8E8] text-sm md:text-base">
+                        {opt.label}
+                      </div>
+
+                      {opt.type === 'toggle' && (
+                        <button className={`w-14 h-7 rounded-full p-1 transition-colors ${opt.current ? 'bg-[rgba(0,255,65,0.2)] border border-[#00FF41]' : 'bg-[#161616] border border-[#222]'} focus:outline-none relative shadow-inner`}>
+                          <span className={`block w-5 h-5 rounded-full shadow-md transform transition-transform ${opt.current ? 'bg-[#00FF41] translate-x-7 shadow-[0_0_8px_rgba(0,255,65,0.8)]' : 'bg-[#555] translate-x-0'}`} />
+                        </button>
+                      )}
+
+                      {opt.type === 'select' && (
+                        <select className="bg-[#161616] border border-[#222] rounded px-4 py-2 text-sm text-[#E8E8E8] focus:border-[#00FF41] outline-none font-['Rajdhani'] uppercase tracking-wider">
+                          <option>{opt.current}</option>
+                        </select>
+                      )}
+
+                      {opt.type === 'action' && (
+                        <button
+                          onClick={() => {
+                            if ((opt as any).actionId === 'reset-progress') {
+                              setResetResetMenuOpen(true);
+                            } else if ((opt as any).actionId === 'clear-all') {
+                              setShowClearModal(true);
+                            } else if ((opt as any).actionId === 'export') {
+                              handleExportDecks();
+                            } else if ((opt as any).actionId === 'import') {
+                              handleImportDecks();
+                            }
+                          }}
+                          className={`px-4 py-2 border rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all ${(opt as any).danger
+                            ? 'border-[#FF3333] text-[#FF3333] hover:bg-[rgba(255,51,51,0.1)] hover:shadow-[0_0_10px_rgba(255,51,51,0.5)]'
+                            : 'border-[#00FF41] text-[#00FF41] hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)]'
+                            }`}>
+                          {(opt as any).buttonText}
+                        </button>
+                      )}
                     </div>
-
-                    {opt.type === 'toggle' && (
-                      <button className={`w-14 h-7 rounded-full p-1 transition-colors ${opt.current ? 'bg-[rgba(0,255,65,0.2)] border border-[#00FF41]' : 'bg-[#161616] border border-[#222]'} focus:outline-none relative shadow-inner`}>
-                        <span className={`block w-5 h-5 rounded-full shadow-md transform transition-transform ${opt.current ? 'bg-[#00FF41] translate-x-7 shadow-[0_0_8px_rgba(0,255,65,0.8)]' : 'bg-[#555] translate-x-0'}`} />
-                      </button>
-                    )}
-
-                    {opt.type === 'select' && (
-                      <select className="bg-[#161616] border border-[#222] rounded px-4 py-2 text-sm text-[#E8E8E8] focus:border-[#00FF41] outline-none font-['Rajdhani'] uppercase tracking-wider">
-                        <option>{opt.current}</option>
-                      </select>
-                    )}
-
-                    {opt.type === 'action' && (
-                      <button
-                        onClick={() => {
-                          if ((opt as any).actionId === 'reset-progress') {
-                            setResetResetMenuOpen(true);
-                          } else if ((opt as any).actionId === 'clear-all') {
-                            setShowClearModal(true);
-                          } else if ((opt as any).actionId === 'export') {
-                            handleExportDecks();
-                          } else if ((opt as any).actionId === 'import') {
-                            handleImportDecks();
-                          }
-                        }}
-                        className={`px-4 py-2 border rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all ${(opt as any).danger
-                          ? 'border-[#FF3333] text-[#FF3333] hover:bg-[rgba(255,51,51,0.1)] hover:shadow-[0_0_10px_rgba(255,51,51,0.5)]'
-                          : 'border-[#00FF41] text-[#00FF41] hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)]'
-                          }`}>
-                        {(opt as any).buttonText}
-                      </button>
-                    )}
-                  </div>
-                )})}
+                  )
+                })}
               </div>
             </section>
           ))}
