@@ -151,8 +151,8 @@ function MCQTableRow({ index, card }: MCQTableRowProps) {
                       borderRadius: '3px',
                       display: 'flex',
                       gap: '6px',
-                      gridColumn: ci % 2 === 0 ? 1 : 2,
-                      gridRow: ci < 2 ? 1 : 2,
+                      gridColumn: ci < 2 ? 1 : 2,
+                      gridRow: ci % 2 === 0 ? 1 : 2,
                       alignSelf: 'start',
                       justifySelf: 'start',
                     }}
@@ -251,8 +251,8 @@ function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) 
                 borderRadius: '3px',
                 display: 'flex',
                 gap: '6px',
-                gridColumn: ci % 2 === 0 ? 1 : 2,
-                gridRow: ci < 2 ? 1 : 2,
+                gridColumn: ci < 2 ? 1 : 2,
+                gridRow: ci % 2 === 0 ? 1 : 2,
                 alignSelf: 'start',
                 justifySelf: 'start',
               }}

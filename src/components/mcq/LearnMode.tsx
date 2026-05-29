@@ -620,7 +620,7 @@ Please explain:
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             {[0, 1, 2, 3].map((idx) => {
               const choice = mcqData.choices[idx];
               if (choice === undefined) return null;
@@ -644,12 +644,18 @@ Please explain:
                 }
               }
 
+              let orderClass = ""
+              if (idx === 0) orderClass = "order-1"
+              else if (idx === 1) orderClass = "order-2 md:order-3"
+              else if (idx === 2) orderClass = "order-3 md:order-2"
+              else if (idx === 3) orderClass = "order-4"
+
               return (
                 <button
                   key={idx}
                   onClick={() => viewState === 'question' && submitAnswer(idx)}
                   disabled={viewState === 'feedback'}
-                  className={`py-4 px-4 text-base rounded-lg border text-left flex items-center transition-all font-['Rajdhani'] ${btnClass}`}
+                  className={`py-4 px-4 text-base rounded-lg border text-left flex items-center transition-all font-['Rajdhani'] ${btnClass} ${orderClass}`}
                 >
                   <span className={`font-['IBM_Plex_Mono'] mr-4 w-8 text-base flex-shrink-0 ${prefixClass}`}>
                     {String.fromCharCode(65 + idx)}.

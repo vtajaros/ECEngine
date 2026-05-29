@@ -136,7 +136,7 @@ const TestQuestionCard = memo(({
         </button>
       </div>
 
-      <div className="p-6 grid grid-cols-2 gap-4 items-start">
+      <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
         {[0, 1, 2, 3].map((cIdx) => {
           const choice = mcq.choices[cIdx]
           if (choice === undefined) return null
@@ -169,13 +169,19 @@ const TestQuestionCard = memo(({
           }
 
           const choiceLabel = String.fromCharCode(65 + cIdx)
+          
+          let orderClass = ""
+          if (cIdx === 0) orderClass = "order-1"
+          else if (cIdx === 1) orderClass = "order-2 md:order-3"
+          else if (cIdx === 2) orderClass = "order-3 md:order-2"
+          else if (cIdx === 3) orderClass = "order-4"
 
           return (
             <button
               key={cIdx}
               onClick={(e) => { e.stopPropagation(); onSelectChoice(card.id, cIdx) }}
               disabled={viewState === 'review' || (settings.instantChecking && isAnswered)}
-              className={`flex items-center text-left py-4 px-4 min-h-[56px] rounded-lg border transition-all duration-200 font-['Rajdhani'] ${stateStyles} ${
+              className={`flex items-center text-left py-4 px-4 min-h-[56px] rounded-lg border transition-all duration-200 font-['Rajdhani'] ${stateStyles} ${orderClass} ${
                 viewState === 'review' || (settings.instantChecking && isAnswered) ? 'cursor-default' : 'cursor-pointer'
               }`}
             >

@@ -124,6 +124,12 @@ export default function ExamMode() {
                        }
                      }
 
+                     let orderClass = ""
+                     if (idx === 0) orderClass = "order-1"
+                     else if (idx === 1) orderClass = "order-2 md:order-3"
+                     else if (idx === 2) orderClass = "order-3 md:order-2"
+                     else if (idx === 3) orderClass = "order-4"
+
                      return (
                        <button 
                          key={idx}
@@ -132,7 +138,7 @@ export default function ExamMode() {
                            setSelectedAnswer(idx)
                            setIsRevealed(true)
                          }}
-                         className={btnClass}
+                         className={`${btnClass} ${orderClass}`}
                        >
                          <span className={prefixClass}>
                            {String.fromCharCode(65 + idx)}.

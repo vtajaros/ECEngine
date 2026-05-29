@@ -62,13 +62,21 @@ The heart of active recall and spaced repetition in ECEngine:
 * **Unified Decks Structure**: Custom and preloaded decks can contain multiple card types, including traditional Flashcards, Multiple-Choice Questions (MCQs), and Formula sheets.
 * **Partitioned Learning (Learn Mode)**: Focuses your review into manageable 5-card batches, enforcing perfect mastery by looping through incorrect cards until they are correctly answered before unlocking the next batch.
 * **Zero-Lag Navigation (Test Mode)**: High-density scroll tracking keeps your position perfectly synced in extensive mock question banks, supporting frame-perfect interactions.
-* **AI Explanation Sidebar**: Deconstructs questions into theoretical foundations, step-by-step mathematical derivations, and distractor option rationales.
+* **AI Explanation Sidebar**: Powered by Grok Llama-3.3-70B, it instantly deconstructs questions into theoretical foundations, step-by-step mathematical derivations, and distractor option rationales.
+* **Standardized Choice Layouts**: Multiple-choice options consistently map to A/C on the top row and B/D on the bottom row, mirroring the format of actual Professional Regulation Commission (PRC) exam papers.
 
 ### 📝 Exam Simulation Mode
 Build test-taking stamina by simulating actual Professional Regulation Commission (PRC) exam conditions:
 * **Custom Configurator**: Multi-select topics from the hierarchical ECE taxonomy, define question volume (25, 50, or 100 items), and allocate time limits.
-* **Authentic Mock Conditions**: Randomizes question order and shuffles choice sequences. Answers are entirely hidden during the exam with active "Mark for Review" selectors.
+* **Authentic Mock Conditions**: Randomizes question order and shuffles choice sequences. Features strict mode, time limits (1h to 4h), and subject-specific filtering (Math, GEAS, ELECS, EST). Answers are entirely hidden during the exam with active "Mark for Review" selectors.
 * **Interactive Post-Exam Diagnostics**: Instant results breakdown featuring overall score, passing telemetry, detailed analysis of missed concepts, and the option to instantly re-run a customized session isolating only incorrect items.
+
+### 🖨️ Test Paper Generator & PDF Export
+Generate printable test papers and study guides dynamically from your decks:
+* **Multiple Layouts**: Toggle between Glossary, Table, and Q&A formats to suit different review styles.
+* **Print Themes**: Optimize readability with native Light, Sepia, and Dark themes.
+* **Direct PDF Export**: Render high-fidelity PDFs instantly for offline study or physical printing.
+* **Interactive Scaling**: Sumatra-style right-click zoom and scaling to adjust document proportions dynamically.
 
 ### 🧪 Formulas & Reference Laboratory
 A comprehensive mathematical vault for engineering relations:
@@ -91,10 +99,14 @@ We have recently refactored the UI and added highly requested functional capabil
 1. **Integrated Deck Keyword Search & Sorting**:
    * Added a real-time keyword search bar at the top of the deck browser, matching characters against deck and folder names.
    * Introduced comprehensive sorting options, enabling developers and students to sort decks dynamically by **Date Ascending** or **Date Descending** to manage growing libraries.
-2. **Visual Layout Refinements**:
+2. **Visual Layout Refinements & Standardization**:
    * Adjusted folder navigation icon heights, making the pencil/edit icon perfectly proportional to the folder name text size.
+   * Standardized Multiple-Choice layout grids (A & C on top, B & D on bottom) across Learn, Test, Exam, and Print modes to mimic standard board exam papers.
    * Tightened vertical gaps: removed the excessive spacing between the first row of decks and the legend/controls header. This layout adjustment is uniformly applied across **LooksFam**, **Flashcards**, and **Formulas** views.
    * Spaced out navigation tabs in the main sidebar to provide a cleaner, more readable hierarchy.
+3. **Advanced Integrations (AI & PDF)**:
+   * **Grok Llama-3.3-70B Integration**: Embedded AI context generation for instant, localized AI explanations of complex questions without breaking focus.
+   * **Native PDF Export**: Added `PrintView` to generate stylized, downloadable PDFs directly from deck data.
 3. **Adaptive Desktop View Optimization**:
    * Centered and balanced deck builder blocks when large or medium landscape screens are detected, preserving clean visual symmetry.
    * Aligned cancel and save button heights for symmetrical tactile inputs.
@@ -270,7 +282,7 @@ We are mapping out additions across four core phases:
 * **Wrong Answer Log**: Automatically archive incorrect choices into a specialized review folder for targeting weak concepts.
 * **Past Board Exam Filters**: Tag cards and questions with `year_asked` descriptors to easily filter questions from previous licensure tests.
 
-### Phase 3: Content Expansion & AI Diagnostics
+### Phase 3: Content Expansion & Advanced Tooling
 * **Public Manifest Gallery**: A communal deck repository allowing teachers and students to publish, vote on, and download customized flashcard decks.
 * **Equation Solver Workstation**: Integrated math scripts to show step-by-step calculations for circuit, wave propagation, and engineering economics problems.
 
