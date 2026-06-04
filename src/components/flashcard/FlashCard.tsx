@@ -84,19 +84,19 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting
   return (
     <div className="flex flex-col items-center justify-center w-full max-w-2xl mx-auto min-h-[350px]">
       <div
-        className="relative w-full h-[350px] cursor-pointer"
+        className="relative w-full min-h-[350px] cursor-pointer"
         style={{ perspective: 1000 }}
         onClick={() => doFlip(!isFlipped)}
       >
         <motion.div
-          className="w-full h-full"
+          className="w-full min-h-[350px]"
           animate={{ rotateY: isFlipped ? 180 : 0 }}
           transition={{ duration: 0.6, type: 'spring', stiffness: 200, damping: 20 }}
           style={{ transformStyle: 'preserve-3d' }}
         >
           {/* Front */}
           <div
-            className="absolute w-full h-full bg-[#161616] border border-[rgba(0,255,65,0.3)] shadow-[0_0_15px_rgba(0,255,65,0.1)] rounded-lg p-12 flex flex-col"
+            className="relative w-full bg-[#161616] border border-[rgba(0,255,65,0.3)] shadow-[0_0_15px_rgba(0,255,65,0.1)] rounded-lg p-8 flex flex-col min-h-[350px]"
             style={{ backfaceVisibility: 'hidden' }}
           >
             <div className="flex justify-between items-start mb-4">
@@ -113,8 +113,12 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting
             </div>
 
             <div className="flex-1 flex flex-col items-center justify-center text-center w-full">
+              <h2
+                className="text-2xl font-['Rajdhani'] font-semibold leading-snug text-center break-words w-full"
+                dangerouslySetInnerHTML={{ __html: renderMath(data.front) }}
+              />
               {data.imagePath && (
-                <div className="mb-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
+                <div className="mt-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
                   <img
                     src={`ece-app://${data.imagePath}`}
                     alt="Flashcard diagram"
@@ -123,20 +127,16 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting
                   />
                 </div>
               )}
-              <h2
-                className="text-2xl font-['Rajdhani'] font-semibold leading-snug text-center break-words w-full"
-                dangerouslySetInnerHTML={{ __html: renderMath(data.front) }}
-              />
             </div>
 
             <div className="text-center text-[#888888] text-sm mt-4 font-['Rajdhani']">
-              Press SPACE or click to flip
+              Click or press Space to flip
             </div>
           </div>
 
           {/* Back */}
           <div
-            className="absolute w-full h-full bg-[#161616] border border-[#00FF41] shadow-[0_0_20px_rgba(0,255,65,0.2)] rounded-lg p-12 flex flex-col"
+            className="absolute inset-0 bg-[#161616] border border-[#00FF41] shadow-[0_0_20px_rgba(0,255,65,0.2)] rounded-lg p-8 flex flex-col"
             style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
           >
             <div className="text-center text-[#888888] text-sm mb-4 font-['Rajdhani'] uppercase tracking-widest border-b border-[#111111] pb-2">

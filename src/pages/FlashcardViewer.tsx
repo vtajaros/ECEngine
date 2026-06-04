@@ -614,8 +614,9 @@ export default function FlashcardViewer() {
 <div className="flex-1 flex items-center justify-center px-8 pb-8 cursor-pointer" onClick={() => !settings.writtenMode && setIsFlipped(f => !f)}>
                     {!isFlipped ? (
                       <div className="text-center w-full">
+                        <div className="text-xl lg:text-2xl font-medium text-[#E8E8E8] leading-relaxed font-['IBM_Plex_Mono']" dangerouslySetInnerHTML={{ __html: renderMath(getFrontText(currentCard)) }} />
                         {currentCard.data.imagePath && (
-                          <div className="mb-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
+                          <div className="mt-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
                             <img
                                src={`ece-app://${currentCard.data.imagePath}`}
                                alt="Card diagram"
@@ -624,7 +625,6 @@ export default function FlashcardViewer() {
                             />
                           </div>
                         )}
-                        <div className="text-xl lg:text-2xl font-medium text-[#E8E8E8] leading-relaxed font-['IBM_Plex_Mono']" dangerouslySetInnerHTML={{ __html: renderMath(getFrontText(currentCard)) }} />
                         {!settings.writtenMode && <p className="text-[#555] text-sm mt-6 font-['Rajdhani']">Click or press Space to flip</p>}
                       </div>
                     ) : (
