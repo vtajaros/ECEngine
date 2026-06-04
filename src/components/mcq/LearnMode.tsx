@@ -10,12 +10,18 @@ import { LeaveConfirmModal } from '../ui/LeaveConfirmModal'
 import { useBlocker } from 'react-router-dom'
 import { dbService } from '../../services/db.service'
 import { useSound, getSoundsMuted, setSoundsMuted } from '../../hooks/useSound'
+import { useTTS } from '../../hooks/useTTS'
 
 // Partitioned learning mode handling the custom "LEARN" flow
 
 interface LearnModeProps {
   cards: Card[]
   title?: string
+  // ── TTS ──────────────────────────────────────────────────────────────────────
+  // Passed down from FlashcardStudy via LearnSettings. LearnMode does NOT own
+  // the preference — it only consumes it. This keeps TTS state out of the
+  // session store and co-located with the other learn settings.
+  ttsEnabled?: boolean
   onComplete: (stats: { correct: number; wrong: number; bookmarked: number; correctIds: string[] }) => void
   onExit: () => void
 }
@@ -23,27 +29,31 @@ interface LearnModeProps {
 type QuestionStatus = 'unanswered' | 'correct' | 'wrong'
 type ViewState = 'question' | 'feedback' | 'partition-complete' | 'summary'
 
-export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, onExit }) => {
+export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled = false, onComplete, onExit }) => {
   // Partitioning logic
   const PARTITION_SIZE = 5
 
   const { play } = useSound()
   const [isMuted, setIsMuted] = useState(() => getSoundsMuted())
 
+  // ── TTS ────────────────────────────────────────────────────────────────────
+  const { speak, stop } = useTTS(ttsEnabled && !isMuted)
+
   const toggleMute = () => {
     const next = !isMuted
     setIsMuted(next)
     setSoundsMuted(next)
+    if (next) stop() // cut off any in-flight speech immediately on mute
   }
-  
+
   // Create partitions initially
   const [partitions, setPartitions] = useState<Card[][]>([])
   const [currentPartitionIndex, setCurrentPartitionIndex] = useState(0)
-  
+
   // Specific to current partition
   const [activeQueue, setActiveQueue] = useState<Card[]>([])
   const [currentCardIndex, setCurrentCardIndex] = useState(0)
-  
+
   // State for current card
   const [viewState, setViewState] = useState<ViewState>('question')
   const [selectedChoiceIndex, setSelectedChoiceIndex] = useState<number | null>(null)
@@ -52,7 +62,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
     const saved = localStorage.getItem('bookmarkedIds')
     return saved ? new Set(JSON.parse(saved)) : new Set()
   })
-  
+
   // Tracking
   const [partitionWrongIds, setPartitionWrongIds] = useState<Set<string>>(new Set())
   const [partitionCorrectIds, setPartitionCorrectIds] = useState<Set<string>>(new Set())
@@ -61,7 +71,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
   const [zoomedImage, setZoomedImage] = useState<string | null>(null)
   const [showToast, setShowToast] = useState(false)
   const [explanationOpen, setExplanationOpen] = useState(false)
-    // Summary view: which question row has its panel open (null = all closed)
+  // Summary view: which question row has its panel open (null = all closed)
   const [openExplanationId, setOpenExplanationId] = useState<number | null>(null)
 
   const [showExitConfirm, setShowExitConfirm] = useState(false)
@@ -74,23 +84,19 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
       currentLocation.pathname !== nextLocation.pathname
   )
 
-  // Keep a live ref to the blocker so the unmount cleanup always calls reset()
-  // on the *current* blocker instance — not a stale closure copy.
   const blockerRef = useRef(blocker)
   useEffect(() => {
     blockerRef.current = blocker
-    ;(window as any).__reactRouterBlocker = blocker
+      ; (window as any).__reactRouterBlocker = blocker
   }, [blocker])
 
-  // On unmount, unconditionally reset any lingering blocked state so the
-  // sidebar never gets permanently locked after the user exits a learn session.
   useEffect(() => {
     return () => {
       if (blockerRef.current.state === 'blocked') {
         blockerRef.current.reset()
       }
     }
-  }, []) // intentionally empty — runs only on unmount
+  }, [])
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -103,13 +109,12 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  // Safe exit: reset any active blocker before handing control to parent
   const handleExit = () => {
+    stop() // cancel any in-flight speech before unmounting
     if (blocker.state === 'blocked') blocker.reset()
     onExit()
   }
 
-  // Reset the explanation panel when the round changes
   useEffect(() => {
     setOpenExplanationId(null);
   }, [currentPartitionIndex, activeQueue]);
@@ -146,6 +151,19 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
   const isMcq = currentCard?.type === 'mcq'
   const mcqData = currentCard?.data as MCQData
 
+  // ── TTS trigger: read question text when a new card enters view ─────────────
+  // Fires when currentCard changes AND viewState is 'question'.
+  // We do NOT read on 'feedback' — the answer has already been submitted,
+  // re-reading the question at that point is disorienting.
+  useEffect(() => {
+    if (!currentCard || viewState !== 'question') return
+    if (!isMcq || !mcqData?.question) return
+    speak(mcqData.question)
+  }, [currentCard?.id, viewState])
+  // NOTE: `speak` is intentionally omitted from the dep array.
+  // It's stable (useCallback with [ttsEnabled]) but adding it would re-fire
+  // on every render cycle. currentCard.id + viewState is the correct trigger.
+
   // Keyboard controls
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (viewState === 'feedback') {
@@ -155,22 +173,20 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
       }
       return
     }
-    
+
     if (viewState === 'partition-complete') {
-      // Allow enter to continue, but we need to know what button it triggers.
-      // Easiest is to ignore Enter on this screen since there are multiple buttons (Restart vs Continue).
       return
     }
 
     if (viewState === 'question' && isMcq && mcqData?.choices) {
       const key = e.key.toLowerCase()
       let mappedIndex = -1
-      
+
       if (key === '1' || key === 'a') mappedIndex = 0
       if (key === '2' || key === 'b') mappedIndex = 1
       if (key === '3' || key === 'c') mappedIndex = 2
       if (key === '4' || key === 'd') mappedIndex = 3
-      
+
       if (mappedIndex >= 0 && mappedIndex < mcqData.choices.length) {
         submitAnswer(mappedIndex)
       }
@@ -196,12 +212,16 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
 
   const submitAnswer = (choiceIdx: number | 'idk') => {
     if (viewState !== 'question') return
-    
+
+    // Stop any in-flight speech when the user answers — don't keep reading
+    // the question after they've already committed to an answer.
+    stop()
+
     const isIdk = choiceIdx === 'idk'
     const isCorrect = !isIdk && choiceIdx === mcqData.answer
 
     setSelectedChoiceIndex(isIdk ? null : choiceIdx)
-    
+
     setCardStats(prev => {
       const existing = prev[currentCard.id] || { wasCorrectFirstTry: true, usedIDK: false, attemptCount: 0 }
       const newStats = { ...existing }
@@ -214,7 +234,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
       }
       return { ...prev, [currentCard.id]: newStats }
     })
-    
+
     if (isCorrect) {
       setChoiceStatus('correct')
       setPartitionCorrectIds(prev => new Set(prev).add(currentCard.id))
@@ -232,7 +252,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
       }
       play('wrong')
     }
-    
+
     setViewState('feedback')
   }
 
@@ -240,23 +260,20 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
     setViewState('question')
     setSelectedChoiceIndex(null)
     setChoiceStatus('unanswered')
-    setExplanationOpen(false) // Reset explanation on each new question
+    setExplanationOpen(false)
 
     if (currentCardIndex < activeQueue.length - 1) {
       setCurrentCardIndex(prev => prev + 1)
     } else {
-      // Reached end of partition queue
       handleEndOfQueue()
     }
   }
 
   const handleEndOfQueue = async () => {
     if (partitionWrongIds.size === 0) {
-      // All correct!
       setViewState('partition-complete')
       if (currentPartitionIndex === partitions.length - 1) {
         play('finish')
-        // Record progress for all cards in session
         for (const [id, stats] of Object.entries(cardStats)) {
           await dbService.recordCardResult(id, stats.wasCorrectFirstTry)
         }
@@ -271,11 +288,10 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
         play('roundComplete')
       }
     } else {
-      // Retry wrong ones
       const nextQueue = activeQueue.filter(c => partitionWrongIds.has(c.id))
       setActiveQueue(nextQueue)
       setCurrentCardIndex(0)
-      setPartitionWrongIds(new Set()) // Reset wrong tracking for this retry loop
+      setPartitionWrongIds(new Set())
       setPartitionCorrectIds(new Set())
       setViewState('question')
     }
@@ -284,7 +300,6 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
   const startNextPartitionPhase = () => {
     const nextIdx = currentPartitionIndex + 1
     if (nextIdx < partitions.length) {
-      // Load next partition
       setCurrentPartitionIndex(nextIdx)
       setActiveQueue([...partitions[nextIdx]])
       setCurrentCardIndex(0)
@@ -310,7 +325,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, onComplete, 
     setViewState('question')
     setSelectedChoiceIndex(null)
     setChoiceStatus('unanswered')
-    setOpenExplanationId(null) // close any open summary panel
+    setOpenExplanationId(null)
   }
 
   const handleStudyAgain = () => {
@@ -366,7 +381,7 @@ Please explain:
 
     return (
       <div className="flex flex-col items-center justify-center p-6 lg:p-10 h-full bg-[#0D0D0D]">
-        <motion.div 
+        <motion.div
           initial={{ y: "100%", opacity: 0 }}
           animate={{ y: "0%", opacity: 1 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
@@ -384,8 +399,8 @@ Please explain:
             )}
             <div className="inline-block bg-[#0D0D0D] border border-[#333] px-4 py-1.5 rounded-lg">
               <span className="text-[#E8E8E8] font-['Rajdhani'] text-sm font-bold tracking-wider">
-                {isLastPartition 
-                  ? `${overallCorrectFirstTryCount} / ${cards.length} flawless answers` 
+                {isLastPartition
+                  ? `${overallCorrectFirstTryCount} / ${cards.length} flawless answers`
                   : `${partitionCorrectFirstTryCount} / ${currentPartitionCards.length} flawless answers`}
               </span>
             </div>
@@ -401,7 +416,7 @@ Please explain:
                 const overallPos = (currentPartitionIndex * PARTITION_SIZE) + idx + 1
 
                 return (
-                  <motion.div 
+                  <motion.div
                     key={c.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -411,21 +426,19 @@ Please explain:
                     <div className="flex items-start justify-between gap-4 mb-2">
                       <span className="font-['Rajdhani'] font-bold text-[#888] whitespace-nowrap mt-0.5">Q{overallPos}</span>
                       <div className="text-[#E8E8E8] font-['IBM_Plex_Mono'] text-[13px] leading-relaxed flex-1" dangerouslySetInnerHTML={{ __html: renderMath(mcq.question) }} />
-                      <button 
+                      <button
                         onClick={() => toggleBookmark(c.id)}
                         className={`p-1 rounded transition-colors shrink-0 mt-0.5 ${bookmarkedIds.has(c.id) ? 'text-[#FFB800] bg-[#FFB800]/10' : 'text-[#555] hover:text-[#FFB800] hover:bg-[#FFB800]/5'}`}
                         title="Bookmark Question"
                       >
                         <Bookmark className={`w-4 h-4 ${bookmarkedIds.has(c.id) ? 'fill-current' : ''}`} />
                       </button>
-                      {/* Sparkles: toggle AI explanation for this row */}
                       <button
                         onClick={() => setOpenExplanationId(openExplanationId === idx ? null : idx)}
-                        className={`p-1 rounded transition-colors shrink-0 mt-0.5 border ${
-                          openExplanationId === idx
-                            ? 'border-[#00FF41] text-[#00FF41] bg-[rgba(0,255,65,0.1)]'
-                            : 'border-[rgba(0,255,65,0.3)] text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41]'
-                        }`}
+                        className={`p-1 rounded transition-colors shrink-0 mt-0.5 border ${openExplanationId === idx
+                          ? 'border-[#00FF41] text-[#00FF41] bg-[rgba(0,255,65,0.1)]'
+                          : 'border-[rgba(0,255,65,0.3)] text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41]'
+                          }`}
                         title={openExplanationId === idx ? 'Hide explanation' : 'AI Explain'}
                       >
                         <Sparkles className="w-4 h-4" />
@@ -444,7 +457,6 @@ Please explain:
                       )}
                     </div>
 
-                    {/* ExplanationPanel: slides in below this row when selected */}
                     <AnimatePresence>
                       {openExplanationId === idx && (
                         <motion.div
@@ -472,7 +484,7 @@ Please explain:
 
           {/* Footer Buttons */}
           <div className="p-3 border-t border-[#222] bg-[#161616] flex justify-between gap-4 shrink-0">
-            <button 
+            <button
               onClick={handleRestartRound}
               className="px-4 py-2 text-sm bg-[#111] border border-[#00FF41] text-[#00FF41] rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[rgba(0,255,65,0.1)] transition-colors"
             >
@@ -480,13 +492,13 @@ Please explain:
             </button>
             {isLastPartition ? (
               <div className="flex gap-4">
-                <button 
+                <button
                   onClick={handleExit}
                   className="px-4 py-2 text-sm bg-[#222] text-[#E8E8E8] rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[#333] transition-colors"
                 >
                   Exit
                 </button>
-                <button 
+                <button
                   onClick={handleStudyAgain}
                   className="px-5 py-2 text-sm bg-[#00FF41] text-black rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[rgba(0,255,65,0.8)] shadow-[0_0_15px_rgba(0,255,65,0.2)] transition-all"
                 >
@@ -494,7 +506,7 @@ Please explain:
                 </button>
               </div>
             ) : (
-              <button 
+              <button
                 onClick={startNextPartitionPhase}
                 className="px-5 py-2 text-sm bg-[#00FF41] text-black rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[rgba(0,255,65,0.8)] shadow-[0_0_15px_rgba(0,255,65,0.2)] transition-all flex items-center"
               >
@@ -508,13 +520,12 @@ Please explain:
   }
 
   // RENDER QUESTION OR FEEDBACK
-  // Guards
   if (!currentCard || !isMcq) return <div className="text-white p-8">Only MCQ implemented for Learn Mode stub.</div>
-  
+
   if (!mcqData || typeof mcqData === 'string' || !Array.isArray(mcqData.choices) || mcqData.choices.length !== 4) {
     console.warn('[ECEngine] Card data parse error — card may have been saved with double-escaped LaTeX. Please re-save this card in Edit Deck.', currentCard.id, currentCard.data)
     return (
-      <div style={{color: 'red', padding: 20}}>
+      <div style={{ color: 'red', padding: 20 }}>
         DEBUG — Bad card data: {JSON.stringify(currentCard.data)}
       </div>
     )
@@ -530,10 +541,11 @@ Please explain:
 
   return (
     <div className="flex flex-col h-full bg-[#0D0D0D] p-8 relative">
-      <LeaveConfirmModal 
+      <LeaveConfirmModal
         isOpen={blocker.state === 'blocked' || showExitConfirm}
         onConfirm={() => {
           if (blocker.state === 'blocked') {
+            stop()
             blocker.proceed && blocker.proceed()
           } else {
             setShowExitConfirm(false)
@@ -548,7 +560,7 @@ Please explain:
           }
         }}
       />
-      
+
       <div className="max-w-3xl w-full mx-auto flex flex-wrap items-center justify-between gap-2 mb-4">
         <div className="flex flex-col flex-1 min-w-0">
           <div className="flex flex-wrap items-center gap-4 text-[#E8E8E8] font-['IBM_Plex_Mono'] font-bold text-sm tracking-wider uppercase mb-3">
@@ -560,9 +572,9 @@ Please explain:
             )}
           </div>
           <div className="w-64 max-w-full bg-[#1a1a1a] h-[6px] rounded-full overflow-hidden mb-3">
-            <div 
-              className="h-full bg-[#00FF41] transition-all duration-300 ease-in-out shadow-[0_0_8px_rgba(0,255,65,0.6)]" 
-              style={{ width: `${(overallCurrentQuestion / cards.length) * 100}%` }} 
+            <div
+              className="h-full bg-[#00FF41] transition-all duration-300 ease-in-out shadow-[0_0_8px_rgba(0,255,65,0.6)]"
+              style={{ width: `${(overallCurrentQuestion / cards.length) * 100}%` }}
             />
           </div>
           <div className="text-[11px] font-['IBM_Plex_Mono'] flex items-center gap-4 text-[#888]">
@@ -570,8 +582,9 @@ Please explain:
             <span className="flex items-center gap-1 text-[#FF3333]"><div className="w-2 h-2 rounded-full bg-[#FF3333]"></div> ✗ {totalWrongInPartition} to retry</span>
           </div>
         </div>
-        
+
         <div className="flex justify-end items-center gap-3">
+
           <button
             onClick={toggleMute}
             className={`p-2 rounded border transition-colors ${isMuted ? 'border-[#FF3333] text-[#FF3333] bg-[rgba(255,51,51,0.08)]' : 'border-[#333] text-[#888] hover:text-white hover:border-[#666]'}`}
@@ -586,14 +599,14 @@ Please explain:
       </div>
 
       <div className="flex-1 flex items-center justify-center w-full">
-        <motion.div 
+        <motion.div
           key={currentCard.id}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-3xl mx-auto bg-[#161616] border border-[#222] rounded-xl shadow-2xl p-10 relative flex flex-col overflow-y-auto"
         >
-          {/* Bookmark Togggle */}
-          <button 
+          {/* Bookmark Toggle */}
+          <button
             onClick={() => toggleBookmark()}
             className="absolute top-6 right-6 text-[#666] hover:text-[var(--warning)] transition-colors"
             title="Bookmark"
@@ -603,15 +616,15 @@ Please explain:
 
           <div className="mb-10 pr-4 h-auto flex-none">
             <span className="text-[var(--accent-primary)] font-['IBM_Plex_Mono'] text-sm font-bold tracking-widest mb-3 block">Question {overallCurrentQuestion}</span>
-            <div 
+            <div
               className="text-white font-['Rajdhani'] font-semibold mb-6 text-lg leading-relaxed whitespace-pre-wrap"
               dangerouslySetInnerHTML={{ __html: renderMath(mcqData.question) }}
             />
 
             {mcqData.imagePath && (
               <div className="mb-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
-                <img 
-                  src={`ece-app://${mcqData.imagePath}`} 
+                <img
+                  src={`ece-app://${mcqData.imagePath}`}
                   alt="Circuit diagram"
                   className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
                   onClick={() => setZoomedImage(mcqData.imagePath!)}
@@ -624,7 +637,7 @@ Please explain:
             {[0, 1, 2, 3].map((idx) => {
               const choice = mcqData.choices[idx];
               if (choice === undefined) return null;
-              
+
               let btnClass = "border-[#222] bg-[#111] hover:border-[#00FF41] hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] cursor-pointer"
               let prefixClass = "text-[#666]"
               let textClass = "text-[#E8E8E8]"
@@ -660,9 +673,9 @@ Please explain:
                   <span className={`font-['IBM_Plex_Mono'] mr-4 w-8 text-base flex-shrink-0 ${prefixClass}`}>
                     {String.fromCharCode(65 + idx)}.
                   </span>
-                  <div 
-                    className={`flex-1 text-left break-words font-['Rajdhani'] font-medium text-base leading-normal ${textClass}`} 
-                    dangerouslySetInnerHTML={{ __html: renderMath(choice) }} 
+                  <div
+                    className={`flex-1 text-left break-words font-['Rajdhani'] font-medium text-base leading-normal ${textClass}`}
+                    dangerouslySetInnerHTML={{ __html: renderMath(choice) }}
                   />
                 </button>
               )
@@ -694,7 +707,6 @@ Please explain:
             </div>
           )}
 
-          {/* ExplanationPanel: slides in below choices when open */}
           {viewState === 'feedback' && explanationOpen && (
             <ExplanationPanel
               question={mcqData.question}
@@ -706,7 +718,7 @@ Please explain:
 
           {viewState === 'question' ? (
             <div className="flex justify-center border-t border-[#222] pt-6 mt-auto">
-              <button 
+              <button
                 onClick={() => submitAnswer('idk')}
                 className="px-8 py-3 rounded text-[#888] font-['Rajdhani'] uppercase tracking-widest text-sm hover:bg-[#222] hover:text-white transition-colors"
               >
@@ -715,49 +727,46 @@ Please explain:
             </div>
           ) : (
             <div className="flex flex-col items-center border-t border-[#222] pt-6 mt-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
-               {choiceStatus === 'wrong' && (
-                 <div className="text-[var(--color-wrong)] font-['Rajdhani'] flex items-center mb-4 uppercase tracking-widest text-sm font-bold">
-                   <AlertCircle className="w-5 h-5 mr-2" />
-                   Review the correct answer and continue
-                 </div>
-               )}
-               {choiceStatus === 'correct' && (
-                 <div className="text-[var(--color-correct)] font-['Rajdhani'] flex items-center mb-4 uppercase tracking-widest text-sm font-bold">
-                   <Play className="w-5 h-5 mr-2" />
-                   Correct!
-                 </div>
-               )}
-                <button 
-                  onClick={handleNext}
-                  className="w-full max-w-sm mx-auto py-3 text-base rounded bg-[var(--accent-primary)] text-black font-bold font-['Orbitron'] tracking-widest uppercase hover:bg-[var(--accent-dim)] transition-colors shadow-[0_0_20px_rgba(0,255,65,0.3)] hover:shadow-[0_0_30px_rgba(0,255,65,0.5)] mb-4"
-                >
-                  Next <span className="font-['IBM_Plex_Mono'] text-xs ml-2 opacity-60">(Space)</span>
-                </button>
+              {choiceStatus === 'wrong' && (
+                <div className="text-[var(--color-wrong)] font-['Rajdhani'] flex items-center mb-4 uppercase tracking-widest text-sm font-bold">
+                  <AlertCircle className="w-5 h-5 mr-2" />
+                  Review the correct answer and continue
+                </div>
+              )}
+              {choiceStatus === 'correct' && (
+                <div className="text-[var(--color-correct)] font-['Rajdhani'] flex items-center mb-4 uppercase tracking-widest text-sm font-bold">
+                  <Play className="w-5 h-5 mr-2" />
+                  Correct!
+                </div>
+              )}
+              <button
+                onClick={handleNext}
+                className="w-full max-w-sm mx-auto py-3 text-base rounded bg-[var(--accent-primary)] text-black font-bold font-['Orbitron'] tracking-widest uppercase hover:bg-[var(--accent-dim)] transition-colors shadow-[0_0_20px_rgba(0,255,65,0.3)] hover:shadow-[0_0_30px_rgba(0,255,65,0.5)] mb-4"
+              >
+                Next <span className="font-['IBM_Plex_Mono'] text-xs ml-2 opacity-60">(Space)</span>
+              </button>
 
-               {/* Secondary action buttons: GET CONTEXT and EXPLAIN */}
-               <div className="flex items-center gap-3 flex-wrap justify-center">
-                 <Tooltip content="Copy context to paste into GPT/Gemini/Claude for a better AI explanation.">
-                   <button 
-                     onClick={handleGetContext}
-                     className="flex items-center gap-2 px-4 py-2 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-[#888] transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
-                   >
-                     <Copy size={14} />
-                     Get Context
-                   </button>
-                 </Tooltip>
+              <div className="flex items-center gap-3 flex-wrap justify-center">
+                <Tooltip content="Copy context to paste into GPT/Gemini/Claude for a better AI explanation.">
+                  <button
+                    onClick={handleGetContext}
+                    className="flex items-center gap-2 px-4 py-2 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-[#888] transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
+                  >
+                    <Copy size={14} />
+                    Get Context
+                  </button>
+                </Tooltip>
 
-                 <Tooltip position="right" content="Explain using Grok Llama-3.3-70B">
-
-                   <button 
-                     onClick={() => setExplanationOpen(true)}
-                     className="flex items-center gap-2 px-4 py-2 border border-[rgba(0,255,65,0.3)] rounded text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41] transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
-                   >
-                     <Sparkles size={14} />
-                     Explain
-                   </button>
-                 </Tooltip>
-
-               </div>
+                <Tooltip position="right" content="Explain using Grok Llama-3.3-70B">
+                  <button
+                    onClick={() => setExplanationOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2 border border-[rgba(0,255,65,0.3)] rounded text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41] transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
+                  >
+                    <Sparkles size={14} />
+                    Explain
+                  </button>
+                </Tooltip>
+              </div>
             </div>
           )}
 
@@ -766,9 +775,9 @@ Please explain:
 
       <AnimatePresence>
         {showToast && (
-          <Toast 
-            message="Context copied to clipboard — paste into Gemini, ChatGPT, or Claude" 
-            onDismiss={() => setShowToast(false)} 
+          <Toast
+            message="Context copied to clipboard — paste into Gemini, ChatGPT, or Claude"
+            onDismiss={() => setShowToast(false)}
           />
         )}
       </AnimatePresence>
@@ -783,7 +792,7 @@ Please explain:
             className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4 lg:p-10 cursor-zoom-out backdrop-blur-sm"
             onClick={() => setZoomedImage(null)}
           >
-            <button 
+            <button
               className="absolute top-6 right-6 text-[#888] hover:text-[#00FF41] transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-[#00FF41]"
               onClick={() => setZoomedImage(null)}
               title="Close"

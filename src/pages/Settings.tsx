@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react'
-import { Settings as SettingsIcon, Monitor, Bell, Database, Shield, CheckCircle, AlertTriangle, X } from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react'
+import { Settings as SettingsIcon, Monitor, Bell, Database, Shield, CheckCircle, AlertTriangle, X, Volume2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { dbService } from '../services/db.service'
 import { getCustomWrongSoundEnabled, setCustomWrongSoundEnabled } from '../hooks/useSound'
@@ -13,6 +13,12 @@ export default function Settings() {
   const [advancedSyncEnabled, setAdvancedSyncEnabled] = useState(false);
   const [customWrongSound, setCustomWrongSound] = useState(() => getCustomWrongSoundEnabled())
 
+  // TTS voice selection
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([])
+  const [selectedVoice, setSelectedVoice] = useState<string>(() => localStorage.getItem('ttsVoice') ?? '')
+  const voicesLoadedRef = useRef(false)
+  const [voicesLoaded, setVoicesLoaded] = useState(false)
+
   // API Key State — stored main-process-only; renderer only learns if it is configured
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [apiKeyConfigured, setApiKeyConfigured] = useState(false);
@@ -24,6 +30,34 @@ export default function Settings() {
     };
     check();
   }, []);
+
+  // Load available TTS voices — getVoices() is async in Chromium, fires voiceschanged event
+  useEffect(() => {
+    const load = () => {
+      if (voicesLoadedRef.current) return
+      const voices = window.speechSynthesis.getVoices()
+      if (voices.length === 0) return
+      voicesLoadedRef.current = true
+      const english = voices.filter(v => v.lang.startsWith('en'))
+      setAvailableVoices(english)
+      setVoicesLoaded(true)
+    }
+    load()
+    window.speechSynthesis.addEventListener('voiceschanged', load)
+
+    // On Linux, voiceschanged may never fire — show fallback message after 3s
+    const timeout = setTimeout(() => {
+      if (!voicesLoadedRef.current) {
+        setAvailableVoices([])
+        setVoicesLoaded(true)
+      }
+    }, 3000)
+
+    return () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', load)
+      clearTimeout(timeout)
+    }
+  }, [])
 
   // ── Countdown for delete ──
   useEffect(() => {
@@ -182,6 +216,55 @@ export default function Settings() {
                 <p className="text-[#999] text-xs font-['Rajdhani'] uppercase tracking-widest mt-2">
                   Required for AI explanations. Get a free key at <button type="button" onClick={() => window.electron.shell.openExternal('https://console.groq.com/keys')} className="text-[var(--accent-primary)] hover:underline transition-all bg-transparent border-none p-0 inline font-inherit cursor-pointer">console.groq.com/keys</button>.
                 </p>
+              </div>
+            </div>
+          </section>
+
+          {/* TTS Voice Section */}
+          <section>
+            <h2 className="font-['Rajdhani'] font-bold text-xl text-[#E8E8E8] mb-6 uppercase tracking-wider flex items-center border-b border-[#161616] pb-4">
+              <Volume2 size={20} className="text-[#00FF41]" />
+              <span className="ml-3">Text-to-Speech</span>
+            </h2>
+            <div className="bg-[#111111] p-6 lg:p-8 rounded-lg border border-[#161616] shadow-lg space-y-4">
+              <div className="flex flex-row items-center justify-between gap-4">
+                <div className="flex flex-col gap-1">
+                  <span className="font-['IBM_Plex_Mono'] text-[#E8E8E8] text-sm md:text-base">
+                    Reading Voice
+                  </span>
+                  <span className="font-['Rajdhani'] text-[#999] text-xs uppercase tracking-widest text-left">
+                    {!voicesLoaded ? 'Loading voices…' : (() => {
+                      const ua = navigator.userAgent.toLowerCase()
+                      const isLinux = ua.includes('linux')
+                      const isMac = ua.includes('macintosh') || ua.includes('mac os x')
+
+                      if (availableVoices.length === 0) {
+                        if (isLinux) return 'NO ENGLISH VOICES FOUND — ENSURE SPEECH-DISPATCHER IS INSTALLED'
+                        if (isMac) return 'NO ENGLISH VOICES FOUND — CHECK MAC SYSTEM SPEECH SETTINGS'
+                        return 'NO ENGLISH VOICES FOUND — CHECK WINDOWS SPEECH SETTINGS'
+                      }
+
+                      const count = `${availableVoices.length} English voices available`
+                      if (isMac) return `${count} — TRY SAMANTHA OR SIRI`
+                      if (isLinux) return `${count} — ENSURE SPEECH-DISPATCHER IS INSTALLED`
+                      return `${count} — TRY ZIRA (FEMALE) OR DAVID (MALE)`
+                    })()}
+                  </span>
+                </div>
+                <select
+                  value={selectedVoice}
+                  onChange={(e) => {
+                    setSelectedVoice(e.target.value)
+                    localStorage.setItem('ttsVoice', e.target.value)
+                  }}
+                  disabled={availableVoices.length === 0}
+                  className="bg-[#161616] border border-[#222] focus:border-[#00FF41] rounded px-4 py-2 text-sm text-[#E8E8E8] outline-none font-['Rajdhani'] uppercase tracking-wider max-w-[220px] disabled:opacity-40"
+                >
+                  <option value="">System Default</option>
+                  {availableVoices.map(v => (
+                    <option key={v.name} value={v.name}>{v.name}</option>
+                  ))}
+                </select>
               </div>
             </div>
           </section>

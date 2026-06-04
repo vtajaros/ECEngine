@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import FolderPanel from '@/components/ui/FolderPanel'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate, useBlocker } from 'react-router-dom'
-import { Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle, SlidersHorizontal, Pencil, Play, Trash2, AlertTriangle, Trophy, ScrollText, Search } from 'lucide-react'
+import { Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle, SlidersHorizontal, Pencil, Play, Trash2, AlertTriangle, Trophy, ScrollText, Search, Volume2, VolumeX } from 'lucide-react'
 import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
 import type { Card, CardData, CardType } from '../types'
 import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
@@ -12,6 +12,7 @@ import type { FormulaData } from '../types'
 import { renderMath } from '../lib/latex'
 import { shuffleArray } from '../lib/utils'
 import { dbService } from '../services/db.service'
+import { useTTS } from '../hooks/useTTS'
 
 
 
@@ -115,6 +116,12 @@ export default function FlashcardViewer() {
   const [isFlipped, setIsFlipped] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [settings, setSettings] = useState<FCSettings>({ shuffle: false, bookmarkedOnly: false, swapTermDef: false, writtenMode: false })
+
+  // ── TTS ────────────────────────────────────────────────────────────────────
+  const [fcTtsEnabled, setFcTtsEnabled] = useState<boolean>(() => {
+    try { return localStorage.getItem('learnSettings_ttsEnabled') === 'true' } catch { return false }
+  })
+  const { speak, stop } = useTTS(fcTtsEnabled)
   const [bookmarks, setBookmarks] = useState<Set<string>>(loadFCBookmarks)
 
   // ── Written mode state ──
@@ -290,6 +297,8 @@ export default function FlashcardViewer() {
     }
   }
 
+
+
   // ── Keyboard ──
   useEffect(() => {
     if (!activeDeck) return
@@ -343,6 +352,7 @@ export default function FlashcardViewer() {
     setShowSettings(false)
     setSettings(s => ({ ...s, bookmarkedOnly: false })) // Reset bookmark filter on exit
     setWrittenStats({ correct: 0, total: 0 })
+    stop()
   }
 
   // ── Helpers ──
@@ -394,6 +404,20 @@ export default function FlashcardViewer() {
     const fc = card.data as FlashcardData
     return settings.swapTermDef ? fc.front : fc.back
   }
+
+  // ── TTS: read front face when card changes ─────────────────────────────────
+  useEffect(() => {
+    if (!currentCard || !activeDeck) return
+    const text = getFrontText(currentCard)
+    if (text) speak(text)
+  }, [currentCard?.id])
+
+  // ── TTS: read back face when card is flipped ───────────────────────────────
+  useEffect(() => {
+    if (!isFlipped || !currentCard || !activeDeck) return
+    const correct = getCorrectAnswer(currentCard)
+    if (correct) speak(correct)
+  }, [isFlipped])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -475,6 +499,7 @@ export default function FlashcardViewer() {
             isOpen={blocker.state === 'blocked' || showExitConfirm}
             onConfirm={() => {
               if (blocker.state === 'blocked') {
+                stop()
                 blocker.proceed && blocker.proceed()
               } else {
                 setShowExitConfirm(false)
@@ -515,6 +540,18 @@ export default function FlashcardViewer() {
             >
               <RotateCcw className="w-3.5 h-3.5" />
               {settings.swapTermDef ? 'SWAPPED' : 'SWAP'}
+            </button>
+            <button
+              onClick={() => {
+                const next = !fcTtsEnabled
+                setFcTtsEnabled(next)
+                try { localStorage.setItem('learnSettings_ttsEnabled', String(next)) } catch {}
+                if (!next) stop()
+              }}
+              className={`p-2 rounded border transition-colors ${fcTtsEnabled ? 'border-[#00FF41] text-[#00FF41] bg-[#00FF41]/10' : 'border-[#333] text-[#888] hover:text-white hover:border-[#666]'}`}
+              title={fcTtsEnabled ? 'TTS On — click to disable' : 'TTS Off — click to enable'}
+            >
+              {fcTtsEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
             </button>
             <button onClick={() => setShowSettings(!showSettings)} className="text-[#888] hover:text-[var(--accent-primary)] transition-colors p-2 rounded hover:bg-[#222]">
               <Settings2 className="w-5 h-5" />

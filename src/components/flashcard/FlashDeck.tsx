@@ -1,21 +1,31 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { Card, FlashcardData } from '../../types'
 import { FlashCard } from './FlashCard'
 import { motion, AnimatePresence } from 'framer-motion'
 import { RefreshCw, CheckCircle } from 'lucide-react'
 import { useSessionStore } from '../../store/useSessionStore'
 import { useSound } from '../../hooks/useSound'
+import { useTTS } from '../../hooks/useTTS'
 
 interface FlashDeckProps {
   cards: Card[]
   onComplete?: () => void
+  /**
+   * Whether TTS is enabled for this session.
+   * Passed down from FlashcardStudy → FlashDeck → FlashCard (onFlip callback).
+   * Defaults to false — no speech without explicit opt-in.
+   */
+  ttsEnabled?: boolean
 }
 
-export const FlashDeck: React.FC<FlashDeckProps> = ({ cards, onComplete }) => {
+export const FlashDeck: React.FC<FlashDeckProps> = ({ cards, onComplete, ttsEnabled = false }) => {
   const { play } = useSound()
   const { currentIndex, isFinished, isSubmitting, rateCard, startSession } = useSessionStore()
   const [isSwapped, setIsSwapped] = useState(false)
-  const [swapResetKey, setSwapResetKey] = useState(0) // Forces FlashCard to re-mount or reset when swapped
+  const [swapResetKey, setSwapResetKey] = useState(0)
+
+  // ── TTS ────────────────────────────────────────────────────────────────────
+  const { speak, stop } = useTTS(ttsEnabled)
 
   useEffect(() => {
     if (isFinished) {
@@ -27,10 +37,10 @@ export const FlashDeck: React.FC<FlashDeckProps> = ({ cards, onComplete }) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
-      
+
       if (e.key === 'f' || e.key === 'F') {
         setIsSwapped(prev => !prev)
-        setSwapResetKey(k => k + 1) // Reset the flip state of the card
+        setSwapResetKey(k => k + 1)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -50,8 +60,7 @@ export const FlashDeck: React.FC<FlashDeckProps> = ({ cards, onComplete }) => {
   }
 
   const currentCard = cards[currentIndex]
-  
-  // Apply swap transformation if enabled
+
   const displayCard = useMemo(() => {
     if (!currentCard) return null
     if (!isSwapped || currentCard.type !== 'flashcard') return currentCard
@@ -66,26 +75,48 @@ export const FlashDeck: React.FC<FlashDeckProps> = ({ cards, onComplete }) => {
     }
   }, [currentCard, isSwapped])
 
+  // ── TTS: read front face text when a new card appears ─────────────────────
+  // Fires on card change. After a swap toggle we also re-read because the
+  // front text has changed (swapResetKey increments on swap).
+  useEffect(() => {
+    if (!displayCard || isFinished) return
+    if (displayCard.type !== 'flashcard') return
+    const data = displayCard.data as FlashcardData
+    if (data.front) speak(data.front)
+  }, [displayCard?.id, swapResetKey, isFinished])
+  // NOTE: `speak` omitted from deps intentionally — stable callback, adding it
+  // causes double-fire. Trigger is card identity + swap key.
+
+  // ── TTS: read back face text when card is flipped ─────────────────────────
+  // onFlip is called by FlashCard whenever the flip state changes. We only
+  // speak on flip-to-back (isFlipped === true). Flip-to-front is a reset,
+  // not a new card — no re-read needed.
+  const handleFlip = useCallback((isFlipped: boolean) => {
+    if (!isFlipped) return
+    if (!displayCard || displayCard.type !== 'flashcard') return
+    const data = displayCard.data as FlashcardData
+    if (data.back) speak(data.back)
+  }, [displayCard, speak])
+
   return (
     <div className="w-full max-w-4xl mx-auto py-6 mt-8">
-      
+
       {/* Header */}
       <div className="mb-6 flex flex-col gap-3">
         <div className="flex justify-between items-center text-sm font-['Rajdhani'] uppercase tracking-wider text-[#888888]">
-            <div className="flex items-center gap-4">
-              <span>{isFinished ? 'Session Complete' : `Card ${currentIndex + 1} of ${cards.length}`}</span>
-              <button 
-                onClick={() => { setIsSwapped(!isSwapped); setSwapResetKey(k => k + 1); }}
-                className={`flex items-center gap-2 px-2 py-0.5 rounded text-[10px] font-bold border transition-all ${
-                  isSwapped 
-                    ? 'bg-[#00FF41]/20 text-[#00FF41] border-[#00FF41]' 
-                    : 'bg-[#1A1A1A] text-[#888] border-[#333] hover:border-[#555] hover:text-[#E8E8E8]'
+          <div className="flex items-center gap-4">
+            <span>{isFinished ? 'Session Complete' : `Card ${currentIndex + 1} of ${cards.length}`}</span>
+            <button
+              onClick={() => { setIsSwapped(!isSwapped); setSwapResetKey(k => k + 1); }}
+              className={`flex items-center gap-2 px-2 py-0.5 rounded text-[10px] font-bold border transition-all ${isSwapped
+                  ? 'bg-[#00FF41]/20 text-[#00FF41] border-[#00FF41]'
+                  : 'bg-[#1A1A1A] text-[#888] border-[#333] hover:border-[#555] hover:text-[#E8E8E8]'
                 }`}
-                title="Toggle Term/Definition Swap (Shortcut: F)"
-              >
-                {isSwapped ? 'SWAPPED (DEF → TERM)' : 'SWAP TERM/DEF'}
-              </button>
-            </div>
+              title="Toggle Term/Definition Swap (Shortcut: F)"
+            >
+              {isSwapped ? 'SWAPPED (DEF → TERM)' : 'SWAP TERM/DEF'}
+            </button>
+          </div>
           {!isFinished && <span>{Math.round((currentIndex / cards.length) * 100)}%</span>}
         </div>
       </div>
@@ -102,7 +133,15 @@ export const FlashDeck: React.FC<FlashDeckProps> = ({ cards, onComplete }) => {
               transition={{ duration: 0.2 }}
               className="w-full"
             >
-              {displayCard && <FlashCard key={`${displayCard.id}_${swapResetKey}`} card={displayCard} onRate={rateCard} isSubmitting={isSubmitting} />}
+              {displayCard && (
+                <FlashCard
+                  key={`${displayCard.id}_${swapResetKey}`}
+                  card={displayCard}
+                  onRate={rateCard}
+                  isSubmitting={isSubmitting}
+                  onFlip={handleFlip}
+                />
+              )}
             </motion.div>
           ) : (
             <motion.div
@@ -116,7 +155,7 @@ export const FlashDeck: React.FC<FlashDeckProps> = ({ cards, onComplete }) => {
               <p className="text-[#888888] mb-8 font-['Rajdhani'] text-lg">
                 You reviewed {cards.length} cards. Next reviews are scheduled!
               </p>
-              <button 
+              <button
                 onClick={restart}
                 className="w-full py-3 bg-[#111111] text-[#00FF41] border border-[#00FF41] rounded hover:bg-[rgba(0,255,65,0.1)] transition-colors flex items-center justify-center font-['Rajdhani'] text-lg tracking-wider"
               >

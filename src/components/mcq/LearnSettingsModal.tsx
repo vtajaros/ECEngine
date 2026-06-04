@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Play, X, Settings2, Shuffle, Bookmark, Dices } from 'lucide-react'
+import { Play, X, Settings2, Shuffle, Bookmark, Dices, Volume2 } from 'lucide-react'
 
 export interface LearnSettings {
   type: string
@@ -9,6 +9,11 @@ export interface LearnSettings {
   bookmarkedOnly: boolean
   itemCount: 'All' | number
   randomSample: boolean
+  // ── TTS ─────────────────────────────────────────────────────────────────────
+  // Persisted to localStorage under the key 'learnSettings_ttsEnabled' so the
+  // preference survives navigation without polluting useSessionStore (which is
+  // SM2-only). Default: false — never auto-speak without explicit opt-in.
+  ttsEnabled: boolean
 }
 
 interface StudySet {
@@ -26,6 +31,18 @@ interface LearnSettingsModalProps {
   onClose: () => void
 }
 
+const TTS_STORAGE_KEY = 'learnSettings_ttsEnabled'
+
+/** Read the persisted TTS preference. Call this when initialising LearnSettings
+ *  in FlashcardStudy so the default reflects the user's last choice. */
+export function loadTTSPreference(): boolean {
+  try {
+    return localStorage.getItem(TTS_STORAGE_KEY) === 'true'
+  } catch {
+    return false
+  }
+}
+
 export const LearnSettingsModal: React.FC<LearnSettingsModalProps> = ({
   isOpen,
   setId,
@@ -38,11 +55,18 @@ export const LearnSettingsModal: React.FC<LearnSettingsModalProps> = ({
   const setInfo = allSets.find(s => s.id === setId)
 
   const toggle = (key: keyof LearnSettings) => {
-    onSettingsChange({ ...settings, [key]: !settings[key as keyof LearnSettings] })
+    const next = { ...settings, [key]: !settings[key as keyof LearnSettings] }
+    onSettingsChange(next)
+    // Persist TTS preference immediately on toggle
+    if (key === 'ttsEnabled') {
+      try {
+        localStorage.setItem(TTS_STORAGE_KEY, String(!settings.ttsEnabled))
+      } catch { /* storage unavailable — silent fail */ }
+    }
   }
 
   const renderToggle = (
-    key: 'shuffleQuestions' | 'shuffleChoices' | 'bookmarkedOnly' | 'randomSample',
+    key: 'shuffleQuestions' | 'shuffleChoices' | 'bookmarkedOnly' | 'randomSample' | 'ttsEnabled',
     label: string,
     Icon: React.FC<{ className?: string }>
   ) => (
@@ -101,11 +125,10 @@ export const LearnSettingsModal: React.FC<LearnSettingsModalProps> = ({
                         <button
                           key={count}
                           onClick={() => onSettingsChange({ ...settings, itemCount: count })}
-                          className={`py-2 rounded font-['Rajdhani'] uppercase tracking-wider text-sm transition-all border ${
-                            settings.itemCount === count
-                              ? 'bg-[rgba(0,255,65,0.1)] border-[#00FF41] text-[#00FF41]'
-                              : 'bg-[#161616] border-[#333] text-[#888] hover:border-[#555]'
-                          }`}
+                          className={`py-2 rounded font-['Rajdhani'] uppercase tracking-wider text-sm transition-all border ${settings.itemCount === count
+                            ? 'bg-[rgba(0,255,65,0.1)] border-[#00FF41] text-[#00FF41]'
+                            : 'bg-[#161616] border-[#333] text-[#888] hover:border-[#555]'
+                            }`}
                         >
                           {count}
                         </button>
@@ -126,11 +149,10 @@ export const LearnSettingsModal: React.FC<LearnSettingsModalProps> = ({
                             onSettingsChange({ ...settings, itemCount: Math.min(Math.max(val, 1), setInfo.count) })
                           }
                         }}
-                        className={`py-2 px-1 rounded font-['Rajdhani'] uppercase tracking-wider text-sm transition-all border outline-none text-center bg-[#161616] ${
-                          typeof settings.itemCount === 'number' && !options.includes(settings.itemCount)
-                            ? 'bg-[rgba(0,255,65,0.1)] border-[#00FF41] text-[#00FF41]'
-                            : 'border-[#333] text-[#888] hover:border-[#555] focus:border-[#555] placeholder-[#555]'
-                        }`}
+                        className={`py-2 px-1 rounded font-['Rajdhani'] uppercase tracking-wider text-sm transition-all border outline-none text-center bg-[#161616] ${typeof settings.itemCount === 'number' && !options.includes(settings.itemCount)
+                          ? 'bg-[rgba(0,255,65,0.1)] border-[#00FF41] text-[#00FF41]'
+                          : 'border-[#333] text-[#888] hover:border-[#555] focus:border-[#555] placeholder-[#555]'
+                          }`}
                       />
                     </div>
                   </div>
@@ -146,6 +168,19 @@ export const LearnSettingsModal: React.FC<LearnSettingsModalProps> = ({
                   {renderToggle('bookmarkedOnly', 'Bookmarked Only', ({ className }) => <Bookmark className={className} />)}
                   {renderToggle('randomSample', 'Random Sample', ({ className }) => <Dices className={className} />)}
                 </div>
+              </div>
+
+              {/* TTS — separate section to signal it's a session-wide behaviour */}
+              <div className="flex flex-col gap-3">
+                <label className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888]">Accessibility</label>
+                <div className="flex flex-col gap-2">
+                  {renderToggle('ttsEnabled', 'Read Questions Aloud (TTS)', ({ className }) => <Volume2 className={className} />)}
+                </div>
+                {settings.ttsEnabled && (
+                  <p className="text-[10px] text-[#555] font-['IBM_Plex_Mono'] leading-relaxed">
+                    Uses your system voice. Questions are read when each card appears. Math notation is skipped.
+                  </p>
+                )}
               </div>
             </div>
 

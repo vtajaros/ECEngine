@@ -5,7 +5,7 @@ import { FlashDeck } from '../components/flashcard/FlashDeck'
 import { MCQDeck } from '../components/mcq/MCQDeck'
 import { LearnMode } from '../components/mcq/LearnMode'
 import { TestMode } from '../components/mcq/TestMode'
-import { LearnSettingsModal, LearnSettings } from '../components/mcq/LearnSettingsModal'
+import { LearnSettingsModal, LearnSettings, loadTTSPreference } from '../components/mcq/LearnSettingsModal'
 import { TestSettingsModal, TestSettings } from '../components/mcq/TestSettingsModal'
 import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
 import { MOCK_FLASHCARDS, MOCK_MCQS } from '../lib/mockData'
@@ -283,7 +283,8 @@ export default function FlashcardStudy() {
     shuffleChoices: false,
     bookmarkedOnly: false,
     itemCount: 'All',
-    randomSample: false
+    randomSample: false,
+    ttsEnabled: loadTTSPreference(),
   })
 
   // Pre-Test Settings Modal State
@@ -549,6 +550,7 @@ export default function FlashcardStudy() {
         <LearnMode
           cards={currentDeck}
           title={activeSessionTitle}
+          ttsEnabled={learnSettings.ttsEnabled}
           onComplete={(stats) => {
             console.log('Learn Mode Stats:', stats)
           }}
@@ -607,7 +609,7 @@ export default function FlashcardStudy() {
             />
           )}
 
-        {mode === 'flashcard' && <FlashDeck cards={currentDeck} onComplete={handleComplete} />}
+        {mode === 'flashcard' && <FlashDeck cards={currentDeck} onComplete={handleComplete} ttsEnabled={learnSettings.ttsEnabled} />}
         {mode === 'mcq' && <MCQDeck cards={currentDeck} onComplete={handleComplete} />}
       </div>
     )
