@@ -10,7 +10,7 @@ export interface LearnSettings {
   itemCount: 'All' | number
   randomSample: boolean
   // ── TTS ─────────────────────────────────────────────────────────────────────
-  // Persisted to localStorage under the key 'learnSettings_ttsEnabled' so the
+  // Persisted to localStorage under the key 'ecengine:tts:enabled' so the
   // preference survives navigation without polluting useSessionStore (which is
   // SM2-only). Default: false — never auto-speak without explicit opt-in.
   ttsEnabled: boolean
@@ -31,7 +31,7 @@ interface LearnSettingsModalProps {
   onClose: () => void
 }
 
-const TTS_STORAGE_KEY = 'learnSettings_ttsEnabled'
+const TTS_STORAGE_KEY = 'ecengine:tts:enabled'
 
 /** Read the persisted TTS preference. Call this when initialising LearnSettings
  *  in FlashcardStudy so the default reflects the user's last choice. */

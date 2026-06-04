@@ -162,7 +162,7 @@ export function registerDBHandlers() {
         sql += ` AND c.topic_id = ?`
         params.push(topicId)
       }
-      sql += ` ORDER BY RANDOM() LIMIT 100`
+      sql += ` ORDER BY RANDOM()`
       const rows = queryAll(sql, params)
       return { success: true, data: rows }
     } catch (error) {
@@ -414,7 +414,7 @@ export function registerDBHandlers() {
   const CardSchema = z.object({
     id: z.string(),
     topic_id: z.string(),
-    type: z.enum(['flashcard', 'mcq', 'formula']),
+    type: z.enum(['flashcard', 'mcq', 'formula', 'concept']),
     data: z.string(),
     difficulty: z.enum(['easy', 'medium', 'hard']).optional(),
     tags: z.string().optional(),

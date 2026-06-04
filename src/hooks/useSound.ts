@@ -4,7 +4,7 @@ import wrongSfx from '../assets/sounds/wrong.wav'
 
 export type SoundEvent = 'correct' | 'wrong' | 'roundComplete' | 'finish'
 
-const CUSTOM_WRONG_SOUND_KEY = 'ecengine_custom_wrong_sound'
+const CUSTOM_WRONG_SOUND_KEY = 'ecengine:wrongSound:enabled'
 const MUTE_KEY = 'ecengine_sounds_muted'
 
 export function getSoundsMuted(): boolean {
@@ -107,11 +107,25 @@ function playFinishSound(ctx: AudioContext) {
 
 // ── File-based wrong sound ────────────────────────────────────────────────────
 
+let cachedWrongBuffer: AudioBuffer | null = null
+
 function playCustomWrongSound(ctx: AudioContext) {
+  if (cachedWrongBuffer) {
+    const source = ctx.createBufferSource()
+    const gain = ctx.createGain()
+    source.buffer = cachedWrongBuffer
+    gain.gain.value = 0.6
+    source.connect(gain)
+    gain.connect(ctx.destination)
+    source.start(ctx.currentTime)
+    return
+  }
+
   fetch(wrongSfx)
     .then(res => res.arrayBuffer())
     .then(buf => ctx.decodeAudioData(buf))
     .then(decoded => {
+      cachedWrongBuffer = decoded
       const source = ctx.createBufferSource()
       const gain = ctx.createGain()
       source.buffer = decoded

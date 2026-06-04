@@ -15,7 +15,7 @@ export default function Settings() {
 
   // TTS voice selection
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([])
-  const [selectedVoice, setSelectedVoice] = useState<string>(() => localStorage.getItem('ttsVoice') ?? '')
+  const [selectedVoice, setSelectedVoice] = useState<string>(() => localStorage.getItem('ecengine:tts:voice') ?? '')
   const voicesLoadedRef = useRef(false)
   const [voicesLoaded, setVoicesLoaded] = useState(false)
 
@@ -41,6 +41,11 @@ export default function Settings() {
       const english = voices.filter(v => v.lang.startsWith('en'))
       setAvailableVoices(english)
       setVoicesLoaded(true)
+      // Re-apply saved preference now that the voice list is populated
+      const saved = localStorage.getItem('ecengine:tts:voice')
+      if (saved && english.some(v => v.name === saved)) {
+        setSelectedVoice(saved)
+      }
     }
     load()
     window.speechSynthesis.addEventListener('voiceschanged', load)
@@ -255,7 +260,7 @@ export default function Settings() {
                   value={selectedVoice}
                   onChange={(e) => {
                     setSelectedVoice(e.target.value)
-                    localStorage.setItem('ttsVoice', e.target.value)
+                    localStorage.setItem('ecengine:tts:voice', e.target.value)
                   }}
                   disabled={availableVoices.length === 0}
                   className="bg-[#161616] border border-[#222] focus:border-[#00FF41] rounded px-4 py-2 text-sm text-[#E8E8E8] outline-none font-['Rajdhani'] uppercase tracking-wider max-w-[220px] disabled:opacity-40"

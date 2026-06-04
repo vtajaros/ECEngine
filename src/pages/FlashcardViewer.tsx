@@ -119,7 +119,7 @@ export default function FlashcardViewer() {
 
   // ── TTS ────────────────────────────────────────────────────────────────────
   const [fcTtsEnabled, setFcTtsEnabled] = useState<boolean>(() => {
-    try { return localStorage.getItem('learnSettings_ttsEnabled') === 'true' } catch { return false }
+    try { return localStorage.getItem('ecengine:tts:enabled') === 'true' } catch { return false }
   })
   const { speak, stop } = useTTS(fcTtsEnabled)
   const [bookmarks, setBookmarks] = useState<Set<string>>(loadFCBookmarks)
@@ -545,7 +545,7 @@ export default function FlashcardViewer() {
               onClick={() => {
                 const next = !fcTtsEnabled
                 setFcTtsEnabled(next)
-                try { localStorage.setItem('learnSettings_ttsEnabled', String(next)) } catch {}
+                try { localStorage.setItem('ecengine:tts:enabled', String(next)) } catch {}
                 if (!next) stop()
               }}
               className={`p-2 rounded border transition-colors ${fcTtsEnabled ? 'border-[#00FF41] text-[#00FF41] bg-[#00FF41]/10' : 'border-[#333] text-[#888] hover:text-white hover:border-[#666]'}`}

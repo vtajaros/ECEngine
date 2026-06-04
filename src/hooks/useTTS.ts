@@ -47,14 +47,31 @@ export function useTTS(ttsEnabled: boolean) {
             utterance.pitch = 1
             utterance.volume = 1
 
-            // Apply saved voice preference — getVoices() may return [] on Linux
-            const savedVoiceName = localStorage.getItem('ttsVoice')
+            // Apply saved voice preference.
+            // getVoices() returns [] on cold start in Chromium — voices load async.
+            // If empty, wait for voiceschanged then re-speak.
+            const savedVoiceName = localStorage.getItem('ecengine:tts:voice')
             if (savedVoiceName) {
                 const voices = window.speechSynthesis.getVoices()
                 if (voices.length > 0) {
                     const match = voices.find(v => v.name === savedVoiceName)
                     if (match) utterance.voice = match
-                    // If no match (voice uninstalled/changed OS), fall back to system default silently
+                } else {
+                    // Voices not loaded yet — defer speak until they are
+                    window.speechSynthesis.cancel()
+                    const onVoicesReady = () => {
+                        window.speechSynthesis.removeEventListener('voiceschanged', onVoicesReady)
+                        const loadedVoices = window.speechSynthesis.getVoices()
+                        const match = loadedVoices.find(v => v.name === savedVoiceName)
+                        const deferred = new SpeechSynthesisUtterance(clean)
+                        deferred.rate = 0.95
+                        deferred.pitch = 1
+                        deferred.volume = 1
+                        if (match) deferred.voice = match
+                        window.speechSynthesis.speak(deferred)
+                    }
+                    window.speechSynthesis.addEventListener('voiceschanged', onVoicesReady)
+                    return
                 }
             }
             utteranceRef.current = utterance

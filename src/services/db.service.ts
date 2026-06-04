@@ -197,12 +197,7 @@ export const dbService = {
       EST:   'Electronics Systems & Technologies',
     }
 
-    const toLocal = (d: Date): string => {
-      const y = d.getFullYear()
-      const m = String(d.getMonth() + 1).padStart(2, '0')
-      const dy = String(d.getDate()).padStart(2, '0')
-      return `${y}-${m}-${dy}`
-    }
+
 
     const lookback: Record<AccuracyGranularity, number> = {
       day:   13,
@@ -214,7 +209,7 @@ export const dbService = {
       const d = new Date(dateStr + 'T00:00:00')
       const mon = new Date(d)
       mon.setDate(d.getDate() - ((d.getDay() + 6) % 7))
-      return toLocal(mon)
+      return toLocalDateString(mon)
     }
 
     const bucketKey = (day: string): string => {
@@ -237,7 +232,7 @@ export const dbService = {
 
     const startDate = new Date()
     startDate.setDate(startDate.getDate() - lookback[granularity])
-    const startStr = toLocal(startDate)
+    const startStr = toLocalDateString(startDate)
 
     type RawRow = { day: string; correct: number; total: number }
     let rawRows: RawRow[] = []
