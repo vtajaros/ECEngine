@@ -35,6 +35,37 @@ export function useTTS(ttsEnabled: boolean) {
                 .replace(/\$[^$]*?\$/g, '')          // inline LaTeX
                 .replace(/<[^>]+>/g, '')             // HTML tags
                 .replace(/_{2,}/g, 'blank')          // fill-in-the-blank underscores → spoken "blank"
+                // Engineering symbol normalization — must run before whitespace collapse
+                .replace(/>=/g, ' greater than or equal to ')
+                .replace(/<=/g, ' less than or equal to ')
+                .replace(/!=/g, ' not equal to ')
+                .replace(/==/g, ' equal to ')
+                .replace(/=>/g, ' implies ')
+                .replace(/>>>/g, ' much much greater than ')
+                .replace(/<</g, ' much less than ')
+                .replace(/>>/g, ' much greater than ')
+                .replace(/>/g, ' greater than ')
+                .replace(/</g, ' less than ')
+                .replace(/±/g, ' plus or minus ')
+                .replace(/×/g, ' times ')
+                .replace(/÷/g, ' divided by ')
+                .replace(/≈/g, ' approximately equal to ')
+                .replace(/≠/g, ' not equal to ')
+                .replace(/≤/g, ' less than or equal to ')
+                .replace(/≥/g, ' greater than or equal to ')
+                .replace(/∞/g, ' infinity ')
+                .replace(/√/g, ' square root of ')
+                .replace(/π/g, ' pi ')
+                .replace(/Ω/g, ' ohms ')
+                .replace(/μ/g, ' micro ')
+                .replace(/θ/g, ' theta ')
+                .replace(/φ/g, ' phi ')
+                .replace(/α/g, ' alpha ')
+                .replace(/β/g, ' beta ')
+                .replace(/γ/g, ' gamma ')
+                .replace(/δ/g, ' delta ')
+                .replace(/λ/g, ' lambda ')
+                .replace(/ω/g, ' omega ')
                 .replace(/\s+/g, ' ')               // collapse whitespace
                 .trim()
 

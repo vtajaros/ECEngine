@@ -99,17 +99,10 @@ function isFormula(card: Card): card is Card & { data: FormulaData } {
 
 /** Renders text that may contain LaTeX via dangerouslySetInnerHTML. */
 function MathText({ text, style }: { text: string; style?: React.CSSProperties }) {
-  // Replace newlines with <br> BEFORE passing to renderMath so KaTeX doesn't
-  // consume them. Split on \n, render each line's math separately, rejoin with <br>.
-  // This mirrors how LearnMode/TestMode render question text (whitespace-pre-wrap).
-  const html = text
-    .split('\n')
-    .map(line => renderMath(line))
-    .join('<br>')
   return (
     <span
       style={style}
-      dangerouslySetInnerHTML={{ __html: html }}
+      dangerouslySetInnerHTML={{ __html: renderMath(text) }}
     />
   )
 }
@@ -208,9 +201,10 @@ function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) 
         paddingBottom: '10px',
         display: 'block',
       }}>
-        <p style={{ fontWeight: 400, color: 'var(--pt-text-primary)', marginBottom: '4px' }}>
-          {index}. <MathText text={question} />
-        </p>
+        <div style={{ display: 'flex', gap: '4px', fontWeight: 400, color: 'var(--pt-text-primary)', marginBottom: '4px' }}>
+          <span style={{ flexShrink: 0 }}>{index}.</span>
+          <span><MathText text={question} /></span>
+        </div>
         {imagePath && (
           <img
             src={`ece-app://${imagePath}`}
@@ -232,9 +226,10 @@ function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) 
       breakInside: 'avoid',
       display: 'block',
     }}>
-      <p style={{ fontWeight: 600, color: 'var(--pt-text-primary)', marginBottom: '6px' }}>
-        {index}. <MathText text={question} />
-      </p>
+      <div style={{ display: 'flex', gap: '4px', fontWeight: 600, color: 'var(--pt-text-primary)', marginBottom: '6px' }}>
+        <span style={{ flexShrink: 0 }}>{index}.</span>
+        <span><MathText text={question} /></span>
+      </div>
       {imagePath && (
         <img
           src={`ece-app://${imagePath}`}
@@ -243,7 +238,7 @@ function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) 
           style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
         />
       )}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: 'auto auto', gap: '2px 8px', marginTop: '4px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: 'auto auto', gap: '2px 8px', marginTop: '12px' }}>
         {[0, 1, 2, 3].map((ci) => {
           const choice = choices[ci]
           if (choice === undefined) return null

@@ -297,6 +297,15 @@ export default function FlashcardStudy() {
     startSession([])
   }
 
+  // Safe programmatic navigation — always resets any stale blocker first so
+  // the router doesn't silently swallow navigate() calls when isSessionActive
+  // was left true by a previous session that ended via onExit rather than useBlocker.
+  const safeNavigate = (to: string) => {
+    if (blocker.state === 'blocked') blocker.reset()
+    setIsSessionActive(false)
+    navigate(to)
+  }
+
   // Pre-Learn Settings Modal State
   const [showSettingsModal, setShowSettingsModal] = useState<{ isOpen: boolean; setId: string | null }>({ isOpen: false, setId: null })
   const [learnSettings, setLearnSettings] = useState<LearnSettings>({
@@ -986,7 +995,7 @@ export default function FlashcardStudy() {
                             </button>
                           )}
                           <button
-                            onClick={(e) => { e.stopPropagation(); navigate(`/edit-deck/${set.id}`) }}
+                            onClick={(e) => { e.stopPropagation(); safeNavigate(`/edit-deck/${set.id}`) }}
                             className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
                             title="Edit Deck"
                           >

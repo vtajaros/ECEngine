@@ -123,7 +123,7 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
                 {letters[index]}
               </div>
               <div 
-                className="flex-1 text-base font-['Rajdhani'] font-semibold tracking-wide"
+                className="flex-1 text-base font-['Rajdhani'] font-semibold tracking-wide mcq-choice-text"
                 dangerouslySetInnerHTML={{ __html: renderMath(choice) }}
               />
               {showResult && isCorrectAnswer && <CheckCircle2 className="text-[#00FF41] ml-3 flex-shrink-0" size={20} />}

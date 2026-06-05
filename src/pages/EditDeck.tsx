@@ -6,7 +6,7 @@ import {
   CheckCircle2, AlertCircle, RotateCcw, ImageIcon, X, Sigma,
   Calculator, FlaskConical, Zap, Cpu, FileText
 } from 'lucide-react'
-import { renderMath, isRawLatex, isPureMath } from '../lib/latex'
+import { renderMath, isRawLatex } from '../lib/latex'
 import { getSubjectFilterClasses } from '../lib/subjectColors'
 import { TOS_SUBJECT_COLORS } from '../lib/tosData'
 import {
@@ -142,9 +142,28 @@ const MathInputField: React.FC<MathInputFieldProps> = ({
   useEffect(() => {
     const el = mathfieldRef.current
     if (!el || !mathMode) return
+    
     const handler = () => onChange(el.value)
     el.addEventListener('input', handler)
-    return () => el.removeEventListener('input', handler)
+
+    const spaceHandler = (e: KeyboardEvent) => {
+      if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault()
+        e.stopPropagation()
+        const mathEl = el as any
+        if (typeof mathEl.executeCommand === 'function') {
+          mathEl.executeCommand(['insert', '\\text{ }'])
+        } else if (typeof mathEl.insert === 'function') {
+          mathEl.insert('\\text{ }')
+        }
+      }
+    }
+    el.addEventListener('keydown', spaceHandler)
+
+    return () => {
+      el.removeEventListener('input', handler)
+      el.removeEventListener('keydown', spaceHandler)
+    }
   }, [mathMode, onChange])
 
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
@@ -217,7 +236,8 @@ const MathInputField: React.FC<MathInputFieldProps> = ({
               <div className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-[#888] mb-1">Preview</div>
               {(() => {
                 try {
-                  return <div className="text-[#E8E8E8]" dangerouslySetInnerHTML={{ __html: renderMath(value) }} />
+                  const previewText = !value.includes('$') && isRawLatex(value) ? `$${value}$` : value
+                  return <div className="text-[#E8E8E8]" dangerouslySetInnerHTML={{ __html: renderMath(previewText) }} />
                 } catch {
                   return <code className="text-[#E8E8E8] break-all">{value}</code>
                 }
@@ -357,7 +377,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
             placeholder="Enter question text..."
             rows={6}
             multiline={true}
-            defaultMathMode={isPureMath(data.question)}
+            defaultMathMode={false}
           />
         </div>
         <div className="shrink-0 flex flex-col items-center justify-start mt-5">
@@ -399,7 +419,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
                 placeholder={`Choice ${labels[i]}...`}
                 multiline={true}
                 rows={1}
-                defaultMathMode={isPureMath(choice)}
+                defaultMathMode={/[_^][\w{]|\\[a-zA-Z]/.test(choice)}
               />
             </div>
           </div>
@@ -424,7 +444,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
               placeholder="Write the solution or reasoning for the correct answer..."
               rows={6}
               multiline={true}
-              defaultMathMode={isPureMath(data.explanation || '')}
+              defaultMathMode={false}
             />
             <div className="mt-3">
               {data.solutionImagePath ? (
@@ -552,8 +572,8 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
           {String(index + 1).padStart(2, '0')}
         </span>
         <span className="flex-1 text-[#ccc] font-['IBM_Plex_Mono'] text-sm truncate">
-          {card.type === 'formula' || isRawLatex(truncated) || truncated.includes('$') || truncated.includes('\\') ? (
-            <span dangerouslySetInnerHTML={{ __html: renderMath(isRawLatex(truncated) && !truncated.includes('$') ? `$${truncated}$` : truncated) }} />
+          {card.type === 'formula' || truncated.includes('$') || truncated.includes('\\') ? (
+            <span dangerouslySetInnerHTML={{ __html: renderMath(truncated) }} />
           ) : (
             truncated
           )}

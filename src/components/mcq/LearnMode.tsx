@@ -674,7 +674,7 @@ Please explain:
                     {String.fromCharCode(65 + idx)}.
                   </span>
                   <div
-                    className={`flex-1 text-left break-words font-['Rajdhani'] font-medium text-base leading-normal ${textClass}`}
+                    className={`flex-1 text-left break-words font-['Rajdhani'] font-medium text-base leading-normal mcq-choice-text ${textClass}`}
                     dangerouslySetInnerHTML={{ __html: renderMath(choice) }}
                   />
                 </button>

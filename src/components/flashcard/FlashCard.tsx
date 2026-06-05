@@ -144,7 +144,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting
             </div>
             <div className="flex-1 flex items-center justify-center text-center overflow-y-auto w-full">
               <div
-                className="text-2xl font-['Rajdhani'] font-medium leading-snug whitespace-pre-wrap text-center break-words w-full"
+                className="text-2xl font-['Rajdhani'] font-medium leading-snug text-center break-words w-full"
                 dangerouslySetInnerHTML={{ __html: renderMath(data.back) }}
               />
             </div>

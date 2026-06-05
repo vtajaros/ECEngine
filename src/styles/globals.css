@@ -81,3 +81,11 @@ input[type='number'] {
   background: #888888;
 }
 
+/* KaTeX display-mode equations inside MCQ choices render left-aligned.
+   KaTeX applies text-align:center on BOTH .katex-display AND .katex-display > .katex,
+   so we must override both levels. */
+.mcq-choice-text .katex-display,
+.mcq-choice-text .katex-display > .katex {
+  text-align: left !important;
+  margin: 0 !important;
+}

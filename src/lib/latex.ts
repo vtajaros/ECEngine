@@ -44,10 +44,19 @@ export const isRawLatex = (text: string): boolean => {
   if (text.includes('$')) return true
   // Superscripts or subscripts with braces: a^{...} or a_{...}
   if (/[\^_]\{/.test(text)) return true
-  // Bare superscripts: a^2, x^n
-  if (/\^\w/.test(text)) return true
-  // Bare subscripts: x_1, x_n but NOT __ or ___
-  if (/(?<!^|[_])_(?![_])[a-zA-Z0-9{]/.test(text)) return true
+  // Bare superscripts or subscripts
+  const hasBareNotation = /\^\w/.test(text) || /(?<!^|[_])_(?![_])[a-zA-Z0-9{]/.test(text)
+  if (hasBareNotation) {
+    // Prose guard: if text contains 4+ English words separated by spaces, it's likely prose
+    // with incidental notation (e.g. "The f_T of a BJT is..."), not a pure math expression.
+    let stripped = text.replace(/\\(text|mathrm|textbf|textit)\{[^}]*\}/g, '')
+    stripped = stripped.replace(/\\[a-zA-Z]+/g, '')
+    const words = stripped.match(/\b[a-zA-Z]{2,}\b/g) || []
+    if (words.length >= 4 && /\s/.test(stripped)) {
+      return false
+    }
+    return true
+  }
   return false
 }
 
@@ -70,7 +79,7 @@ export const isPureMath = (text: string): boolean => {
 // Since users who use $ are explicitly opting into delimiters, we should
 // NOT aggressively auto-detect raw latex in mixed contexts.
 function renderSegment(segment: string): string {
-  return segment
+  return segment.replace(/\n/g, '<br>')
 }
 
 // Use DOMPurify's built-in profiles: html + svg + svgFilters.
@@ -155,22 +164,23 @@ export const renderMath = (text: string): string => {
       segments.push(renderSegment(t.slice(lastIndex)))
     }
 
-    return DOMPurify.sanitize(segments.join(''), PURIFY_OPTS_FULL)
+    return DOMPurify.sanitize(segments.join('').replace(/\n/g, '<br>'), PURIFY_OPTS_FULL)
   }
 
-  // ── Path A: pure raw LaTeX (no $ delimiters) ──
-  // A string is considered plain text (not pure math) if it contains at least one space
-  // AND contains at least one English word (2+ letters) not part of a LaTeX command.
-  if (isPureMath(t)) {
+  // ── Path A: raw LaTeX with no $ delimiters ──
+  // If isRawLatex and no $ present, render as inline math wrapped in $...$.
+  // isPureMath was too restrictive — it rejected valid equations containing spaces
+  // (e.g. "I_{CEO}=\alpha\cdot I_{CBO}") because stripped text had whitespace.
+  if (isRawLatex(t) && !t.includes('$')) {
     try {
       const rendered = katex.renderToString(t, {
         throwOnError: false,
-        displayMode: true,
+        displayMode: isPureMath(t), // block display only for pure single-expression math
         trust: true
       })
       return DOMPurify.sanitize(rendered, PURIFY_OPTS_FULL)
     } catch {
-      return t
+      return t.replace(/\n/g, '<br>')
     }
   }
 
@@ -207,7 +217,7 @@ export const renderMath = (text: string): string => {
   // Markdown bolding **text**
   rendered = rendered.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
 
-  return DOMPurify.sanitize(rendered, PURIFY_OPTS_FULL)
+  return DOMPurify.sanitize(rendered.replace(/\n/g, '<br>'), PURIFY_OPTS_FULL)
 }
 
 /**

@@ -189,7 +189,7 @@ const TestQuestionCard = memo(({
                 {choiceLabel}.
               </div>
               <span
-                className="flex-1 break-words font-['Rajdhani'] font-medium text-base leading-normal"
+                className="flex-1 break-words font-['Rajdhani'] font-medium text-base leading-normal mcq-choice-text"
                 dangerouslySetInnerHTML={{ __html: renderMath(choice) }}
               />
               {iconElement && <div className="ml-4 flex-shrink-0">{iconElement}</div>}
