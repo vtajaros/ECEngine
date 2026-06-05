@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Settings as SettingsIcon, Monitor, Bell, Database, Shield, CheckCircle, AlertTriangle, X, Volume2 } from 'lucide-react'
+import { Settings as SettingsIcon, Monitor, Bell, Database, Shield, CheckCircle, AlertTriangle, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { dbService } from '../services/db.service'
 import { getCustomWrongSoundEnabled, setCustomWrongSoundEnabled } from '../hooks/useSound'
@@ -162,7 +162,7 @@ export default function Settings() {
   ]
 
   return (
-    <div className="h-full bg-[#0D0D0D] px-8 pb-8 pt-6 lg:px-12 lg:pb-12 lg:pt-6 overflow-y-auto w-full relative">
+    <div className="h-full bg-[#0D0D0D] px-8 pb-8 pt-6 lg:px-12 lg:pb-12 lg:pt-6 overflow-y-auto show-scrollbar w-full relative">
       <div className="max-w-3xl mx-auto">
         <header className="mb-12 flex flex-col items-center text-center gap-2">
           <h1 className="font-['Orbitron'] text-4xl font-bold text-[#E8E8E8] tracking-wider flex items-center justify-center">
@@ -225,13 +225,13 @@ export default function Settings() {
             </div>
           </section>
 
-          {/* TTS Voice Section */}
+          {/* Sound & Feedback Section */}
           <section>
             <h2 className="font-['Rajdhani'] font-bold text-xl text-[#E8E8E8] mb-6 uppercase tracking-wider flex items-center border-b border-[#161616] pb-4">
-              <Volume2 size={20} className="text-[#00FF41]" />
-              <span className="ml-3">Text-to-Speech</span>
+              <Bell size={20} className="text-[#00FF41]" />
+              <span className="ml-3">Sound & Feedback</span>
             </h2>
-            <div className="bg-[#111111] p-6 lg:p-8 rounded-lg border border-[#161616] shadow-lg space-y-4">
+            <div className="bg-[#111111] p-6 lg:p-8 rounded-lg border border-[#161616] shadow-lg space-y-6">
               <div className="flex flex-row items-center justify-between gap-4">
                 <div className="flex flex-col gap-1">
                   <span className="font-['IBM_Plex_Mono'] text-[#E8E8E8] text-sm md:text-base">
@@ -271,17 +271,7 @@ export default function Settings() {
                   ))}
                 </select>
               </div>
-            </div>
-          </section>
-
-          {/* Sound Section */}
-          <section>
-            <h2 className="font-['Rajdhani'] font-bold text-xl text-[#E8E8E8] mb-6 uppercase tracking-wider flex items-center border-b border-[#161616] pb-4">
-              <Bell size={20} className="text-[#00FF41]" />
-              <span className="ml-3">Sound & Feedback</span>
-            </h2>
-            <div className="bg-[#111111] p-6 lg:p-8 rounded-lg border border-[#161616] shadow-lg space-y-8">
-              <div className="flex flex-row items-center justify-between gap-4">
+              <div className="border-t border-[#161616] pt-6 flex flex-row items-center justify-between gap-4">
                 <div className="flex flex-col gap-1">
                   <span className="font-['IBM_Plex_Mono'] text-[#E8E8E8] text-sm md:text-base">
                     Disable Faah Sound Meme

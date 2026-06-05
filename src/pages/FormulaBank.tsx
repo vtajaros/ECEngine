@@ -195,7 +195,7 @@ const TopicDetail = ({
       </div>
 
       {/* Subtopics */}
-      <div className="flex-1 overflow-y-auto p-6 lg:p-8">
+      <div className="flex-1 overflow-y-auto show-scrollbar p-6 lg:p-8">
         <div className="max-w-5xl mx-auto flex flex-col gap-10">
           {topic.subtopics.map((subtopic, si) => (
             <div key={si}>
@@ -365,7 +365,7 @@ export default function FormulaBank() {
             </div>
 
             {/* Topic List */}
-            <div className="flex-1 overflow-y-auto p-6 lg:p-8">
+            <div className="flex-1 overflow-y-auto show-scrollbar p-6 lg:p-8">
               <div className="max-w-4xl mx-auto flex flex-col gap-3">
                 {isSearching && (
                   <div className="font-['Rajdhani'] text-[#888] text-sm uppercase tracking-widest mb-2">

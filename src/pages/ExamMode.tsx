@@ -36,7 +36,7 @@ export default function ExamMode() {
   
   if (isStarted) {
     return (
-      <div className="h-full bg-[var(--bg-primary)] p-6 lg:p-10 flex flex-col relative overflow-y-auto w-full">
+      <div className="h-full bg-[var(--bg-primary)] p-6 lg:p-10 flex flex-col relative overflow-y-auto show-scrollbar w-full">
         {/* Global Progress Bar */}
         {!isFinished && (
           <div className="fixed top-0 left-0 w-full bg-[var(--bg-secondary)] h-1.5 z-50 shadow-[0_4px_10px_rgba(0,0,0,0.5)]">
@@ -199,7 +199,7 @@ export default function ExamMode() {
   }
 
   return (
-    <div className="h-full bg-[var(--bg-primary)] p-8 lg:p-12 overflow-y-auto w-full">
+    <div className="h-full bg-[var(--bg-primary)] p-8 lg:p-12 overflow-y-auto show-scrollbar w-full">
       <header className="mb-10">
         <h1 className="font-['Orbitron'] text-4xl font-bold text-[var(--text-primary)] mb-2 tracking-wider flex items-center">
           <FileText className="text-[var(--accent-primary)] mr-4" size={36} />

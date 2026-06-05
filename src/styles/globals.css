@@ -15,15 +15,16 @@ html, body, #root {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Hide scrollbars globally but keep functionality */
-*::-webkit-scrollbar {
-  display: none !important;
+/* Scrollbar suppression for specific elements only — not global */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-* {
-  -ms-overflow-style: none !important;
-  scrollbar-width: none !important;
-}
+/* .scrollbar-hide is a legacy alias for .no-scrollbar */
 
 input[type='number']::-webkit-inner-spin-button,
 input[type='number']::-webkit-outer-spin-button {
@@ -44,33 +45,39 @@ input[type='number'] {
   gap: 1rem;
 }
 
-/* Hide scrollbar utility class (for legacy reference) */
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
+
+/* Visible scrollbar — thin green, webkit only (Chromium/Electron) */
+.show-scrollbar::-webkit-scrollbar,
+.custom-scrollbar::-webkit-scrollbar {
+  width: 3px;
+}
+.show-scrollbar::-webkit-scrollbar-track,
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.show-scrollbar::-webkit-scrollbar-thumb,
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #00FF41;
+  border-radius: 999px;
+}
+.show-scrollbar::-webkit-scrollbar-thumb:hover,
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #00cc33;
 }
 
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+/* PrintView — wider scrollbar for clickability */
+.print-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+.print-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+.print-scrollbar::-webkit-scrollbar-thumb {
+  background: #555555;
+  border-radius: 4px;
+}
+.print-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #888888;
 }
 
-/* Visible scrollbar override — defeats the global * suppression */
-.show-scrollbar::-webkit-scrollbar {
-  display: block !important;
-  width: 8px !important;
-}
-.show-scrollbar::-webkit-scrollbar-track {
-  background: #111 !important;
-}
-.show-scrollbar::-webkit-scrollbar-thumb {
-  background: #00FF41 !important;
-  border-radius: 4px !important;
-}
-.show-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #00cc33 !important;
-}
-.show-scrollbar {
-  -ms-overflow-style: auto !important;
-  scrollbar-width: thin !important;
-  scrollbar-color: #00FF41 #111 !important;
-}

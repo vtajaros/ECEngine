@@ -69,6 +69,7 @@ export default function FlashcardStudy() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterType, setFilterType] = useState<'all' | 'mcq' | 'flashcard' | 'mixed'>('all')
   const filterPopoverRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   const availableTags = useMemo(() => {
     const tags = new Set<string>()
@@ -141,7 +142,28 @@ export default function FlashcardStudy() {
   }, [])
 
   const [activeSubject, setActiveSubject] = useState<Subject>('ALL')
-  const [activeFolder, setActiveFolder] = useState<string | 'all'>('all')
+  const [activeFolder, setActiveFolder] = useState<string | 'all'>(
+    () => sessionStorage.getItem('looksfam:activeFolder') ?? 'all'
+  )
+
+  useEffect(() => {
+    sessionStorage.setItem('looksfam:activeFolder', activeFolder)
+  }, [activeFolder])
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem('looksfam:scrollTop')
+    if (saved && scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = parseInt(saved, 10)
+    }
+  }, [isLoading])
+
+  useEffect(() => {
+    const el = scrollContainerRef.current
+    if (!el) return
+    const save = () => sessionStorage.setItem('looksfam:scrollTop', String(el.scrollTop))
+    el.addEventListener('scroll', save, { passive: true })
+    return () => el.removeEventListener('scroll', save)
+  }, [isLoading])
 
   const folders = useMemo(() => {
     const folderMap = new Map<string, number>()
@@ -647,7 +669,7 @@ export default function FlashcardStudy() {
           onDeleteFolder={handleDeleteFolder}
           onReorderFolders={handleReorderFolders}
         />
-        <div className="flex flex-col flex-1 min-w-0 overflow-y-auto">
+        <div ref={scrollContainerRef} className="flex flex-col flex-1 min-w-0 overflow-y-auto show-scrollbar">
           <div className="flex flex-col items-center w-full pt-6 pb-0 px-6">
             <div className="w-full max-w-5xl flex flex-col items-center justify-center gap-6 mb-2 border-b border-[var(--bg-card)] pb-4 relative z-30 pt-4">
               <h1 className="text-2xl lg:text-3xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4 uppercase">

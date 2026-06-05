@@ -1013,7 +1013,7 @@ export default function Formulas() {
           onDeleteFolder={handleDeleteFolder}
           onReorderFolders={handleReorderFolders}
         />
-        <div className="flex flex-col flex-1 min-w-0 overflow-y-auto">
+        <div className="flex flex-col flex-1 min-w-0 overflow-y-auto show-scrollbar">
           {/* Header centered above decks */}
           <div className="flex flex-col items-center w-full pt-6 pb-0 px-6">
             <div className="w-full max-w-5xl flex flex-col items-center justify-center gap-6 mb-2 border-b border-[var(--bg-card)] pb-4 pt-4 relative z-30">

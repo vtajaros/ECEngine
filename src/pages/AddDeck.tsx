@@ -1732,7 +1732,7 @@ export default function AddDeck() {
   }
 
   return (
-    <div className="h-full bg-[#0D0D0D] overflow-y-auto flex flex-col font-['IBM_Plex_Mono']">
+    <div className="h-full bg-[#0D0D0D] overflow-y-auto show-scrollbar flex flex-col font-['IBM_Plex_Mono']">
       <AnimatePresence>
         {toast && (
           <motion.div

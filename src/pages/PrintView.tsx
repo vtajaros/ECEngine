@@ -99,10 +99,17 @@ function isFormula(card: Card): card is Card & { data: FormulaData } {
 
 /** Renders text that may contain LaTeX via dangerouslySetInnerHTML. */
 function MathText({ text, style }: { text: string; style?: React.CSSProperties }) {
+  // Replace newlines with <br> BEFORE passing to renderMath so KaTeX doesn't
+  // consume them. Split on \n, render each line's math separately, rejoin with <br>.
+  // This mirrors how LearnMode/TestMode render question text (whitespace-pre-wrap).
+  const html = text
+    .split('\n')
+    .map(line => renderMath(line))
+    .join('<br>')
   return (
     <span
       style={style}
-      dangerouslySetInnerHTML={{ __html: renderMath(text) }}
+      dangerouslySetInnerHTML={{ __html: html }}
     />
   )
 }
@@ -1095,7 +1102,7 @@ export default function PrintView() {
       `}</style>
       {titleBar}
       {toolbar}
-      <div ref={scrollAreaRef} className="flex-1 overflow-y-auto show-scrollbar" style={{ background: PRINT_THEMES[theme].vars['--pt-bg-outer'], padding: '40px 0' }}>
+      <div ref={scrollAreaRef} className="flex-1 overflow-y-auto print-scrollbar" style={{ background: PRINT_THEMES[theme].vars['--pt-bg-outer'], padding: '40px 0' }}>
         <div className="w-full flex justify-center pb-12 overflow-x-auto">
           <div
             id="print-paper-area"

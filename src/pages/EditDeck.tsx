@@ -982,7 +982,7 @@ export default function EditDeck() {
       </div>
 
       {/* ── Scrollable Body ── */}
-      <div className="flex-1 overflow-y-auto w-full">
+      <div className="flex-1 overflow-y-auto show-scrollbar w-full">
         <div className="w-full px-6 lg:px-10 xl:grid xl:grid-cols-3 xl:gap-6 flex flex-col gap-6 py-6 lg:py-8 items-center xl:items-start">
 
           {/* ── Metadata Section — Pane 1 (sticky left 1/3) */}
