@@ -77,7 +77,7 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
         </div>
 
         <div 
-          className="font-['Rajdhani'] font-semibold text-[var(--text-primary)] text-lg leading-relaxed"
+          className="font-['Rajdhani'] font-semibold text-[var(--text-primary)] text-lg leading-relaxed mcq-question-text"
           dangerouslySetInnerHTML={{ __html: renderMath(data.question) }}
         />
         

@@ -107,7 +107,7 @@ const TestQuestionCard = memo(({
               {index + 1}.
             </span>
             <span
-              className="flex-1 mt-[2px]"
+              className="flex-1 mt-[2px] mcq-question-text"
               dangerouslySetInnerHTML={{ __html: renderMath(mcq.question) }}
             />
           </h3>

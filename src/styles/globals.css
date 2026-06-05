@@ -89,3 +89,10 @@ input[type='number'] {
   text-align: left !important;
   margin: 0 !important;
 }
+
+/* KaTeX display-mode equations inside MCQ question text render left-aligned */
+.mcq-question-text .katex-display,
+.mcq-question-text .katex-display > .katex {
+  text-align: left !important;
+  margin: 0 !important;
+}

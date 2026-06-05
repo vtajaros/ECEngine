@@ -425,7 +425,7 @@ Please explain:
                   >
                     <div className="flex items-start justify-between gap-4 mb-2">
                       <span className="font-['Rajdhani'] font-bold text-[#888] whitespace-nowrap mt-0.5">Q{overallPos}</span>
-                      <div className="text-[#E8E8E8] font-['IBM_Plex_Mono'] text-[13px] leading-relaxed flex-1" dangerouslySetInnerHTML={{ __html: renderMath(mcq.question) }} />
+                      <div className="text-[#E8E8E8] font-['IBM_Plex_Mono'] text-[13px] leading-relaxed flex-1 mcq-question-text" dangerouslySetInnerHTML={{ __html: renderMath(mcq.question) }} />
                       <button
                         onClick={() => toggleBookmark(c.id)}
                         className={`p-1 rounded transition-colors shrink-0 mt-0.5 ${bookmarkedIds.has(c.id) ? 'text-[#FFB800] bg-[#FFB800]/10' : 'text-[#555] hover:text-[#FFB800] hover:bg-[#FFB800]/5'}`}
@@ -617,7 +617,7 @@ Please explain:
           <div className="mb-10 pr-4 h-auto flex-none">
             <span className="text-[var(--accent-primary)] font-['IBM_Plex_Mono'] text-sm font-bold tracking-widest mb-3 block">Question {overallCurrentQuestion}</span>
             <div
-              className="text-white font-['Rajdhani'] font-semibold mb-6 text-lg leading-relaxed whitespace-pre-wrap"
+              className="text-white font-['Rajdhani'] font-semibold mb-6 text-lg leading-relaxed whitespace-pre-wrap mcq-question-text"
               dangerouslySetInnerHTML={{ __html: renderMath(mcqData.question) }}
             />
 
