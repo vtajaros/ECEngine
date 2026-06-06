@@ -41,8 +41,22 @@ React Components -> Zustand / React State -> src/services/db.service.ts -> windo
 - Subject filter buttons across the app (Deck editor, Viewers) were unified to use the Review Checklist style with `getSubjectFilterClasses()`.
 - Added `isLoading` state handling across viewers to prevent empty state flashes while querying the database.
 - Print to PDF handlers in `electron/ipc/print.ipc.ts` were updated to conform to Electron 31 typings (`margins` object instead of `marginType`).
+- **TTS Cleanup**: Removed all dead Kokoro/Groq TTS engine code from `Settings.tsx` (dead state, IPC calls, voice arrays, button groups). `useTTS.ts` now exclusively uses the Web Speech API (Chromium's built-in `speechSynthesis`). No TTS IPC bridge exists in preload.
+- **`useTTS.ts` additions**: `speakWithCallback(text, onEnd)` was added alongside `speak()` and `stop()`. It is identical to `speak()` but attaches `onend`/`onerror` handlers to the utterance so callers can be notified when speech finishes. If TTS is disabled or text is empty, `onEnd()` is called immediately.
+- **Autoplay feature** added to `FlashcardViewer.tsx` only:
+  - `isAutoplay` boolean state + `autoplayRef` (timer, activeIndex, phase, isNewCard) + `autoplaySpeechDoneRef` manage the sequence without race conditions.
+  - Single sequencer `useEffect` (deps: `[isAutoplay, isFlipped, currentIndex, activeDeck]`): waits for TTS to finish via `speakWithCallback`, then applies a post-speech delay (front: 1 s, back: 1 s, new-card gap: 2 s) before flipping or advancing.
+  - Manual navigation (`goNext`, `goPrev`, Space/ArrowUp/ArrowDown keys) stops autoplay immediately.
+  - Written mode disables the AUTO button entirely.
+  - AUTO button (Play/Pause icon) is rendered before the TTS toggle in the top bar.
+- **Keyboard shortcuts**: `ArrowUp` and `ArrowDown` now flip the card (same behaviour as Space).
+- **3D card flip animation**: The card uses a CSS `rotateY` 3D flip (`transformStyle: preserve-3d`, `backfaceVisibility: hidden`, `WebkitBackfaceVisibility: hidden` on both faces). Front and back are always in the DOM — no conditional render. Duration: 0.5 s cubic-bezier.
+- **Card transition animation**: `AnimatePresence + motion.div` slides cards horizontally (`x: ±30`, 0.2 s `easeOut`) instead of the previous vertical fade.
+- **Visual fixes**: Back face border normalised to `border-[#222]` (was incorrectly green). Nav Prev/Next buttons wrapped in a persistent `h-[52px]` container so the card never jumps when they appear. TTS and Settings2 top-bar buttons updated to `px-3 py-1.5` to match SWAP/AUTO height.
 
 ## 7. Strict Rules
 - **DO NOT** introduce arbitrary inline styles unless absolutely necessary for dynamic layout (e.g., progress bars). Use Tailwind classes.
 - **DO NOT** change `onClick` logic or data structure shapes when performing visual redesigns.
 - **ALWAYS** check `src/types/index.ts` before modifying data objects to avoid TypeScript errors.
+- **DO NOT** expose TTS through the Electron IPC bridge / preload. TTS runs entirely in the renderer via `window.speechSynthesis`.
+- **DO NOT** add a second sequencer `useEffect` for autoplay — the single effect pattern with `autoplaySpeechDoneRef` is intentional to prevent stale closure race conditions.

@@ -107,16 +107,32 @@ We have recently refactored the UI and added highly requested functional capabil
 3. **Advanced Integrations (AI & PDF)**:
    * **Grok Llama-3.3-70B Integration**: Embedded AI context generation for instant, localized AI explanations of complex questions without breaking focus.
    * **Native PDF Export**: Added `PrintView` to generate stylized, downloadable PDFs directly from deck data.
-3. **Adaptive Desktop View Optimization**:
+4. **Adaptive Desktop View Optimization**:
    * Centered and balanced deck builder blocks when large or medium landscape screens are detected, preserving clean visual symmetry.
    * Aligned cancel and save button heights for symmetrical tactile inputs.
    * Stacked deck creation type selectors (MCQ, Flashcard, and Formula buttons) dynamically to ensure clarity without text clipping.
-4. **Context-Aware Save Prompts**:
+5. **Context-Aware Save Prompts**:
    * The warning instructing users to add a title and at least one card is now elegant and contextual: it is hidden by default and only triggers on hover over the disabled Save button or when an incomplete save is actively attempted.
-5. **Robust Database Loading Protections**:
+6. **Robust Database Loading Protections**:
    * Integrated `isLoading` state handling across **LooksFam (FlashcardStudy)**, **FlashcardViewer**, and **Formulas** deck browsers to gracefully prevent initial "No decks found" empty-state flashes while query promises resolve.
-6. **Architectural Quality Assurance Audit**:
-   * Executed a full code review mapping component sizes, identifying render hotspots (such as isolating countdown loops), and adding strict type checks to IPC responses.
+7. **TTS Engine Cleanup**:
+   * Removed all dead Kokoro and Groq TTS engine code from `Settings.tsx` — dead state variables, IPC calls, voice arrays, and button groups are gone.
+   * `useTTS.ts` now exclusively uses the Web Speech API (`window.speechSynthesis`) built into Chromium/Electron. No external API key or IPC bridge is required for TTS.
+   * Added `speakWithCallback(text, onEnd)` to `useTTS.ts` — identical to `speak()` but fires an `onEnd` callback when the utterance finishes (or errors), enabling speech-aware sequencing.
+8. **Flashcard Viewer — Autoplay Mode**:
+   * New **AUTO** button (Play/Pause) in the FlashcardViewer top bar triggers a hands-free card review loop.
+   * Sequence: card appears → TTS reads front → 1 s pause → flip → TTS reads back → 1 s pause → next card (2 s gap between cards). All timers start **after** TTS finishes, eliminating mid-speech cutoffs.
+   * Manual navigation (arrow keys, Space, Prev/Next buttons) immediately stops autoplay. Written mode hides the AUTO button entirely.
+   * Implemented with a single sequencer `useEffect` and a `autoplaySpeechDoneRef` continuation ref to prevent stale-closure race conditions.
+9. **Flashcard Viewer — Keyboard Shortcuts**:
+   * `ArrowUp` and `ArrowDown` now flip the card, in addition to the existing Space shortcut.
+10. **Flashcard Viewer — 3D Card Flip Animation**:
+    * The card flips like a physical flashcard using CSS 3D transforms (`rotateY`, `transformStyle: preserve-3d`).
+    * Both front and back faces are always in the DOM (no conditional render), hidden via `backfaceVisibility: hidden` + `WebkitBackfaceVisibility: hidden` for Chromium compatibility.
+    * Card-to-card transitions slide horizontally via `AnimatePresence` (`x: ±30`, 0.2 s `easeOut`).
+11. **Flashcard Viewer — Visual Fixes**:
+    * Nav Prev/Next buttons are wrapped in a persistent `h-[52px]` container so the card never shifts when they appear or disappear.
+    * TTS and Settings icon buttons in the top bar use matching `px-3 py-1.5` padding to sit at the same height as the SWAP and AUTO buttons.
 
 ---
 
