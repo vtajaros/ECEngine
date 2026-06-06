@@ -15,9 +15,10 @@ export default function Settings() {
 
   // TTS voice selection
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([])
-  const [selectedVoice, setSelectedVoice] = useState<string>(() => localStorage.getItem('ecengine:tts:voice') ?? '')
+  const [selectedSystemVoice, setSelectedSystemVoice] = useState<string>(
+    () => localStorage.getItem('ecengine:tts:voice') ?? ''
+  )
   const voicesLoadedRef = useRef(false)
-  const [voicesLoaded, setVoicesLoaded] = useState(false)
 
   // API Key State — stored main-process-only; renderer only learns if it is configured
   const [apiKeyInput, setApiKeyInput] = useState('');
@@ -38,30 +39,22 @@ export default function Settings() {
       const voices = window.speechSynthesis.getVoices()
       if (voices.length === 0) return
       voicesLoadedRef.current = true
-      const english = voices.filter(v => v.lang.startsWith('en'))
-      setAvailableVoices(english)
-      setVoicesLoaded(true)
-      // Re-apply saved preference now that the voice list is populated
+      const englishVoices = voices.filter(v => v.lang.startsWith('en'))
+      setAvailableVoices(englishVoices)
+  
+      // Auto-select Microsoft Mark if user has no saved preference
       const saved = localStorage.getItem('ecengine:tts:voice')
-      if (saved && english.some(v => v.name === saved)) {
-        setSelectedVoice(saved)
+      if (!saved) {
+        const mark = englishVoices.find(v => v.name.includes('Microsoft Mark'))
+        if (mark) {
+          localStorage.setItem('ecengine:tts:voice', mark.name)
+          setSelectedSystemVoice(mark.name)
+        }
       }
     }
     load()
     window.speechSynthesis.addEventListener('voiceschanged', load)
-
-    // On Linux, voiceschanged may never fire — show fallback message after 3s
-    const timeout = setTimeout(() => {
-      if (!voicesLoadedRef.current) {
-        setAvailableVoices([])
-        setVoicesLoaded(true)
-      }
-    }, 3000)
-
-    return () => {
-      window.speechSynthesis.removeEventListener('voiceschanged', load)
-      clearTimeout(timeout)
-    }
+    return () => window.speechSynthesis.removeEventListener('voiceschanged', load)
   }, [])
 
   // ── Countdown for delete ──
@@ -238,28 +231,15 @@ export default function Settings() {
                     Reading Voice
                   </span>
                   <span className="font-['Rajdhani'] text-[#999] text-xs uppercase tracking-widest text-left">
-                    {!voicesLoaded ? 'Loading voices…' : (() => {
-                      const ua = navigator.userAgent.toLowerCase()
-                      const isLinux = ua.includes('linux')
-                      const isMac = ua.includes('macintosh') || ua.includes('mac os x')
-
-                      if (availableVoices.length === 0) {
-                        if (isLinux) return 'NO ENGLISH VOICES FOUND — ENSURE SPEECH-DISPATCHER IS INSTALLED'
-                        if (isMac) return 'NO ENGLISH VOICES FOUND — CHECK MAC SYSTEM SPEECH SETTINGS'
-                        return 'NO ENGLISH VOICES FOUND — CHECK WINDOWS SPEECH SETTINGS'
-                      }
-
-                      const count = `${availableVoices.length} English voices available`
-                      if (isMac) return `${count} — TRY SAMANTHA OR SIRI`
-                      if (isLinux) return `${count} — ENSURE SPEECH-DISPATCHER IS INSTALLED`
-                      return `${count} — TRY ZIRA (FEMALE) OR DAVID (MALE)`
-                    })()}
+                    {availableVoices.length > 0
+                      ? `${availableVoices.length} English voices available — Microsoft Mark recommended`
+                      : 'Loading voices…'}
                   </span>
                 </div>
                 <select
-                  value={selectedVoice}
+                  value={selectedSystemVoice}
                   onChange={(e) => {
-                    setSelectedVoice(e.target.value)
+                    setSelectedSystemVoice(e.target.value)
                     localStorage.setItem('ecengine:tts:voice', e.target.value)
                   }}
                   disabled={availableVoices.length === 0}
@@ -267,7 +247,9 @@ export default function Settings() {
                 >
                   <option value="">System Default</option>
                   {availableVoices.map(v => (
-                    <option key={v.name} value={v.name}>{v.name}</option>
+                    <option key={v.name} value={v.name}>
+                      {v.name}{v.name.includes('Microsoft Mark') ? ' ★' : ''}
+                    </option>
                   ))}
                 </select>
               </div>

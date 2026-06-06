@@ -93,7 +93,7 @@ app.whenReady().then(() => {
   registerConfigHandlers()
   registerPrintHandlers()
   handleImageProtocol()
-  
+
   // Window Control Handlers
   ipcMain.on('window-minimize', () => {
     BrowserWindow.getFocusedWindow()?.minimize()

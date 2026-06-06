@@ -109,8 +109,8 @@ export const FlashDeck: React.FC<FlashDeckProps> = ({ cards, onComplete, ttsEnab
             <button
               onClick={() => { setIsSwapped(!isSwapped); setSwapResetKey(k => k + 1); }}
               className={`flex items-center gap-2 px-2 py-0.5 rounded text-[10px] font-bold border transition-all ${isSwapped
-                  ? 'bg-[#00FF41]/20 text-[#00FF41] border-[#00FF41]'
-                  : 'bg-[#1A1A1A] text-[#888] border-[#333] hover:border-[#555] hover:text-[#E8E8E8]'
+                ? 'bg-[#00FF41]/20 text-[#00FF41] border-[#00FF41]'
+                : 'bg-[#1A1A1A] text-[#888] border-[#333] hover:border-[#555] hover:text-[#E8E8E8]'
                 }`}
               title="Toggle Term/Definition Swap (Shortcut: F)"
             >

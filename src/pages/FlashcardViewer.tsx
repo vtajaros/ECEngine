@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import FolderPanel from '@/components/ui/FolderPanel'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate, useBlocker } from 'react-router-dom'
-import { Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle, SlidersHorizontal, Pencil, Play, Trash2, AlertTriangle, Trophy, ScrollText, Search, Volume2, VolumeX } from 'lucide-react'
+import { Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle, SlidersHorizontal, Pencil, Play, Pause, Trash2, AlertTriangle, Trophy, ScrollText, Search, Volume2, VolumeX } from 'lucide-react'
 import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
 import type { Card, CardData, CardType } from '../types'
 import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
@@ -116,12 +116,21 @@ export default function FlashcardViewer() {
   const [isFlipped, setIsFlipped] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [settings, setSettings] = useState<FCSettings>({ shuffle: false, bookmarkedOnly: false, swapTermDef: false, writtenMode: false })
+  const [isAutoplay, setIsAutoplay] = useState(false)
+
+  const autoplayRef = useRef<{
+    timer: ReturnType<typeof setTimeout> | null
+    activeIndex: number
+    phase: 'front' | 'back'
+    isNewCard: boolean
+  }>({ timer: null, activeIndex: -1, phase: 'front', isNewCard: false })
+  const autoplaySpeechDoneRef = useRef<(() => void) | null>(null)
 
   // ── TTS ────────────────────────────────────────────────────────────────────
   const [fcTtsEnabled, setFcTtsEnabled] = useState<boolean>(() => {
     try { return localStorage.getItem('ecengine:tts:enabled') === 'true' } catch { return false }
   })
-  const { speak, stop } = useTTS(fcTtsEnabled)
+  const { speak, stop, speakWithCallback } = useTTS(fcTtsEnabled)
   const [bookmarks, setBookmarks] = useState<Set<string>>(loadFCBookmarks)
 
   // ── Written mode state ──
@@ -139,7 +148,7 @@ export default function FlashcardViewer() {
   )
 
   useEffect(() => {
-    ;(window as any).__reactRouterBlocker = blocker
+    ; (window as any).__reactRouterBlocker = blocker
   }, [blocker])
 
   // Reset blocker on unmount if still in blocked state
@@ -173,37 +182,37 @@ export default function FlashcardViewer() {
     try {
       let processedDecks: any[] = []
       const r = await window.electron.decks.getTopicsWithCardCounts()
-        if (r.success && r.data) {
-          processedDecks = r.data.map((row: any) => {
-            const types = (row.types || '').split(',')
+      if (r.success && r.data) {
+        processedDecks = r.data.map((row: any) => {
+          const types = (row.types || '').split(',')
 
-            // Skip formula-only decks
-            if (types.length === 1 && types[0] === 'formula') return null
+          // Skip formula-only decks
+          if (types.length === 1 && types[0] === 'formula') return null
 
-            let deckType: 'mcq' | 'flashcard' | 'mixed' = 'flashcard'
-            if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
-            else if (types.includes('mcq')) deckType = 'mcq'
+          let deckType: 'mcq' | 'flashcard' | 'mixed' = 'flashcard'
+          if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
+          else if (types.includes('mcq')) deckType = 'mcq'
 
-            let parsedTags: string[] = []
-            try {
-              if (row.tags) parsedTags = JSON.parse(row.tags)
-            } catch (e) { }
+          let parsedTags: string[] = []
+          try {
+            if (row.tags) parsedTags = JSON.parse(row.tags)
+          } catch (e) { }
 
-            return {
-              id: row.id,
-              title: row.name,
-              subject: SUBJECT_MAP[row.subject] || 'ELECS',
-              cardCount: row.card_count || 0,
-              deckType,
-              description: row.description || '',
-              tags: parsedTags,
-              createdAt: row.created_at || Date.now(),
-              folderName: row.folder_name || 'Uncategorized',
-              order_index: row.order_index
-            }
-          }).filter((d: DeckInfo | null): d is DeckInfo => d !== null)
-          setDecks(processedDecks)
-        }
+          return {
+            id: row.id,
+            title: row.name,
+            subject: SUBJECT_MAP[row.subject] || 'ELECS',
+            cardCount: row.card_count || 0,
+            deckType,
+            description: row.description || '',
+            tags: parsedTags,
+            createdAt: row.created_at || Date.now(),
+            folderName: row.folder_name || 'Uncategorized',
+            order_index: row.order_index
+          }
+        }).filter((d: DeckInfo | null): d is DeckInfo => d !== null)
+        setDecks(processedDecks)
+      }
     } catch (e) { console.error('Failed to load decks', e) }
     finally { setIsLoading(false) }
   }
@@ -245,8 +254,8 @@ export default function FlashcardViewer() {
     try {
       let rawCards: any[] = []
       const r = await window.electron.decks.getCardsByTopic(deck.id)
-        if (r.success && r.data) {
-          rawCards = r.data
+      if (r.success && r.data) {
+        rawCards = r.data
       }
 
       const cards: Card[] = rawCards.map((row: any) => {
@@ -279,6 +288,7 @@ export default function FlashcardViewer() {
 
   // ── Navigation ──
   const goNext = () => {
+    if (isAutoplay) setIsAutoplay(false)
     if (currentIndex < sessionCards.length - 1) {
       setCurrentIndex(i => i + 1)
       setIsFlipped(false)
@@ -288,6 +298,7 @@ export default function FlashcardViewer() {
     }
   }
   const goPrev = () => {
+    if (isAutoplay) setIsAutoplay(false)
     if (currentIndex > 0) {
       setCurrentIndex(i => i - 1)
       setIsFlipped(false)
@@ -309,7 +320,16 @@ export default function FlashcardViewer() {
         setShowExitConfirm(true)
         return
       }
-      if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); setIsFlipped(f => !f) }
+      if (e.key === ' ' || e.code === 'Space') { 
+        e.preventDefault()
+        if (isAutoplay) setIsAutoplay(false)
+        setIsFlipped(f => !f) 
+      }
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault()
+        if (isAutoplay) setIsAutoplay(false)
+        setIsFlipped(f => !f)
+      }
       if (e.key === 'ArrowRight') goNext()
       if (e.key === 'ArrowLeft') goPrev()
       if (e.key === 'f' || e.key === 'F') {
@@ -320,7 +340,7 @@ export default function FlashcardViewer() {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [activeDeck, currentIndex, sessionCards.length])
+  }, [activeDeck, currentIndex, sessionCards.length, isAutoplay])
 
   // ── Bookmark toggle ──
   const toggleBookmark = (cardId: string) => {
@@ -419,6 +439,71 @@ export default function FlashcardViewer() {
     if (correct) speak(correct)
   }, [isFlipped])
 
+  // ── Autoplay Sequencer ──
+  useEffect(() => {
+    if (autoplayRef.current.timer) clearTimeout(autoplayRef.current.timer)
+    autoplaySpeechDoneRef.current = null
+
+    if (!isAutoplay || !activeDeck || !currentCard || settings.writtenMode) return
+
+    const index = currentIndex
+    autoplayRef.current.activeIndex = index
+
+    const isNewCard = autoplayRef.current.isNewCard
+    autoplayRef.current.isNewCard = false
+
+    if (!isFlipped) {
+      autoplayRef.current.phase = 'front'
+      // Wait for front TTS to finish, then wait 2s, then flip
+      autoplaySpeechDoneRef.current = () => {
+        if (autoplayRef.current.activeIndex !== index) return
+        autoplayRef.current.timer = setTimeout(() => {
+          if (autoplayRef.current.activeIndex !== index) return
+          setIsFlipped(true)
+        }, 2000)
+      }
+      const frontText = getFrontText(currentCard)
+      speakWithCallback(frontText, () => autoplaySpeechDoneRef.current?.())
+    } else {
+      autoplayRef.current.phase = 'back'
+      // Wait for back TTS to finish, then wait 2s (or 3s), then advance
+      autoplaySpeechDoneRef.current = () => {
+        if (autoplayRef.current.activeIndex !== index) return
+        const delay = isNewCard ? 3000 : 2000
+        autoplayRef.current.timer = setTimeout(() => {
+          if (autoplayRef.current.activeIndex !== index) return
+          if (index < sessionCards.length - 1) {
+            autoplayRef.current.isNewCard = true
+            setCurrentIndex(i => i + 1)
+            setIsFlipped(false)
+            setWrittenAnswer('')
+            setWrittenSubmitted(false)
+            setWrittenCorrect(null)
+          } else {
+            setIsAutoplay(false)
+          }
+        }, delay)
+      }
+      const backText = getCorrectAnswer(currentCard)
+      speakWithCallback(backText, () => autoplaySpeechDoneRef.current?.())
+    }
+  }, [isAutoplay, isFlipped, currentIndex, activeDeck])
+
+  useEffect(() => {
+    return () => {
+      if (autoplayRef.current.timer) clearTimeout(autoplayRef.current.timer)
+      autoplaySpeechDoneRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!activeDeck) {
+      setIsAutoplay(false)
+      if (autoplayRef.current.timer) clearTimeout(autoplayRef.current.timer)
+      autoplaySpeechDoneRef.current = null
+    }
+  }, [activeDeck])
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (filterPopoverRef.current && !filterPopoverRef.current.contains(event.target as Node)) {
@@ -477,7 +562,7 @@ export default function FlashcardViewer() {
       let comparison = 0
       if (sortBy === 'date') comparison = (a.createdAt || 0) - (b.createdAt || 0)
       else if (sortBy === 'title') comparison = a.title.localeCompare(b.title)
-      
+
       return sortOrder === 'desc' ? -comparison : comparison
     })
 
@@ -495,7 +580,7 @@ export default function FlashcardViewer() {
       <div className="h-full bg-[#0D0D0D] flex flex-col overflow-hidden">
         {/* Top Bar */}
         <div className="shrink-0 bg-[#111] border-b border-[#222] px-6 py-4 flex items-center justify-between z-20">
-          <LeaveConfirmModal 
+          <LeaveConfirmModal
             isOpen={blocker.state === 'blocked' || showExitConfirm}
             onConfirm={() => {
               if (blocker.state === 'blocked') {
@@ -533,19 +618,32 @@ export default function FlashcardViewer() {
             <button
               onClick={() => { setSettings(s => ({ ...s, swapTermDef: !s.swapTermDef })); setIsFlipped(false); }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${settings.swapTermDef
-                  ? 'bg-[#00FF41]/20 text-[#00FF41] border-[#00FF41]'
-                  : 'bg-[#1a1a1a] text-[#888] border-[#333] hover:border-[#555] hover:text-[#E8E8E8]'
+                ? 'bg-[#00FF41]/20 text-[#00FF41] border-[#00FF41]'
+                : 'bg-[#1a1a1a] text-[#888] border-[#333] hover:border-[#555] hover:text-[#E8E8E8]'
                 }`}
               title="Swap Term / Definition (Shortcut: F)"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               {settings.swapTermDef ? 'SWAPPED' : 'SWAP'}
             </button>
+            {!settings.writtenMode && (
+              <button
+                onClick={() => setIsAutoplay(prev => !prev)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${isAutoplay
+                  ? 'bg-[#00FF41]/10 text-[#00FF41] border-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.3)]'
+                  : 'bg-[#1a1a1a] text-[#888] border-[#333] hover:border-[#555] hover:text-[#E8E8E8]'
+                  }`}
+                title="Autoplay"
+              >
+                {isAutoplay ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                AUTO
+              </button>
+            )}
             <button
               onClick={() => {
                 const next = !fcTtsEnabled
                 setFcTtsEnabled(next)
-                try { localStorage.setItem('ecengine:tts:enabled', String(next)) } catch {}
+                try { localStorage.setItem('ecengine:tts:enabled', String(next)) } catch { }
                 if (!next) stop()
               }}
               className={`p-2 rounded border transition-colors ${fcTtsEnabled ? 'border-[#00FF41] text-[#00FF41] bg-[#00FF41]/10' : 'border-[#333] text-[#888] hover:text-white hover:border-[#666]'}`}
@@ -577,8 +675,8 @@ export default function FlashcardViewer() {
                 ].map(opt => (
                   <button key={opt.key} onClick={() => setSettings(s => ({ ...s, [opt.key]: !s[opt.key] }))}
                     className={`px-4 py-2 rounded-lg text-sm font-['Rajdhani'] font-bold tracking-widest uppercase transition-all border ${settings[opt.key]
-                        ? 'bg-[var(--accent-primary)] text-black border-[var(--accent-primary)] shadow-[0_0_10px_rgba(0,255,65,0.3)]'
-                        : 'bg-[#1a1a1a] text-[#888] border-[#333] hover:text-white hover:border-[#555]'
+                      ? 'bg-[var(--accent-primary)] text-black border-[var(--accent-primary)] shadow-[0_0_10px_rgba(0,255,65,0.3)]'
+                      : 'bg-[#1a1a1a] text-[#888] border-[#333] hover:text-white hover:border-[#555]'
                       }`}
                   >
                     {opt.label}
@@ -611,15 +709,15 @@ export default function FlashcardViewer() {
                   </div>
 
                   {/* Card Content */}
-<div className="flex-1 flex items-center justify-center px-8 pb-8 cursor-pointer" onClick={() => !settings.writtenMode && setIsFlipped(f => !f)}>
+                  <div className="flex-1 flex items-center justify-center px-8 pb-8 cursor-pointer" onClick={() => !settings.writtenMode && setIsFlipped(f => !f)}>
                     {!isFlipped ? (
                       <div className="text-center w-full">
                         <div className="text-xl lg:text-2xl font-medium text-[#E8E8E8] leading-relaxed font-['IBM_Plex_Mono']" dangerouslySetInnerHTML={{ __html: renderMath(getFrontText(currentCard)) }} />
                         {currentCard.data.imagePath && (
                           <div className="mt-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
                             <img
-                               src={`ece-app://${currentCard.data.imagePath}`}
-                               alt="Card diagram"
+                              src={`ece-app://${currentCard.data.imagePath}`}
+                              alt="Card diagram"
                               className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
                               onClick={(e) => { e.stopPropagation(); setZoomedImage(currentCard.data.imagePath!); }}
                             />
@@ -711,11 +809,11 @@ export default function FlashcardViewer() {
               >
                 <X size={24} />
               </button>
-               <motion.img
-                 initial={{ scale: 0.9, opacity: 0 }}
-                 animate={{ scale: 1, opacity: 1 }}
-                 src={`ece-app://${zoomedImage}`}
-                 alt="Zoomed diagram"
+              <motion.img
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                src={`ece-app://${zoomedImage}`}
+                alt="Zoomed diagram"
                 className="max-w-[90vw] max-h-[90vh] object-contain shadow-2xl rounded-lg"
                 onClick={(e) => e.stopPropagation()}
               />
@@ -804,8 +902,8 @@ export default function FlashcardViewer() {
                   <button
                     onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                     className={`p-2 rounded-lg border transition-all ${showAdvancedFilters || filterTags.length > 0 || filterType !== 'all' || sortBy !== 'date' || sortOrder !== 'desc' || searchQuery
-                        ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
-                        : 'bg-[var(--bg-secondary)] border-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                      ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
+                      : 'bg-[var(--bg-secondary)] border-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                       }`}
                   >
                     <SlidersHorizontal size={20} />
@@ -902,8 +1000,8 @@ export default function FlashcardViewer() {
                                       )
                                     }}
                                     className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-['Rajdhani'] uppercase tracking-wider border transition-all ${isActive
-                                        ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
-                                        : 'bg-[#1A1A1A] border-[#333] text-[#888] hover:border-[#555] hover:text-[#E8E8E8]'
+                                      ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
+                                      : 'bg-[#1A1A1A] border-[#333] text-[#888] hover:border-[#555] hover:text-[#E8E8E8]'
                                       }`}
                                   >
                                     {tag}
@@ -946,22 +1044,22 @@ export default function FlashcardViewer() {
                         isActive
                           ? s === 'ALL'
                             ? {
-                                background: 'var(--accent-glow)',
-                                borderColor: 'var(--accent-border)',
-                                color: 'var(--accent-primary)',
-                                boxShadow: '0 0 16px rgba(0,255,65,0.1)',
-                              }
-                            : {
-                                background: `rgba(${colors?.accentRgb},0.15)`,
-                                borderColor: `rgba(${colors?.accentRgb},0.5)`,
-                                color: colors?.accent,
-                                boxShadow: `0 0 16px rgba(${colors?.accentRgb},0.1)`,
-                              }
-                          : {
-                              background: '#0c0c0c',
-                              borderColor: '#2a2a2a',
-                              color: '#555',
+                              background: 'var(--accent-glow)',
+                              borderColor: 'var(--accent-border)',
+                              color: 'var(--accent-primary)',
+                              boxShadow: '0 0 16px rgba(0,255,65,0.1)',
                             }
+                            : {
+                              background: `rgba(${colors?.accentRgb},0.15)`,
+                              borderColor: `rgba(${colors?.accentRgb},0.5)`,
+                              color: colors?.accent,
+                              boxShadow: `0 0 16px rgba(${colors?.accentRgb},0.1)`,
+                            }
+                          : {
+                            background: '#0c0c0c',
+                            borderColor: '#2a2a2a',
+                            color: '#555',
+                          }
                       }
                     >
                       {s}
@@ -997,194 +1095,194 @@ export default function FlashcardViewer() {
             <div className="flex flex-col items-center">
               <div className="w-full max-w-5xl">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-0 pb-4">
-              {filteredDecks.map(deck => (
-                <div
-                  key={deck.id}
-                  className="relative isolate group transition-all duration-300 border border-[#333] bg-[#1a1a1a] p-5 flex flex-col w-full min-h-[180px] justify-between hover:-translate-x-[6px] hover:-translate-y-[6px] rounded-xl before:absolute before:w-full before:h-full before:top-0 before:left-0 before:bg-[#1a1a1a] before:border before:border-[#333] before:rounded-xl before:translate-x-[6px] before:translate-y-[6px] before:z-[-1] before:transition-transform before:duration-300 group-hover:before:translate-x-[12px] group-hover:before:translate-y-[12px] after:absolute after:w-full after:h-full after:top-0 after:left-0 after:bg-[#1a1a1a] after:border after:border-[#333] after:rounded-xl after:translate-x-[12px] after:translate-y-[12px] after:z-[-2] after:transition-transform after:duration-300 group-hover:after:translate-x-[18px] group-hover:after:translate-y-[18px]"
-                >
-                  {/* Top Section: Title & Stats Stack */}
-                  <div className="flex justify-between items-start gap-4">
-                    {/* Left Column: Title & Tags */}
-                    <div className="flex-1 min-w-0 flex flex-col gap-3">
-                      {/* Title Row */}
-                      <div className="flex items-center gap-3">
-                        <span className={`w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] uppercase font-rajdhani font-bold tracking-widest text-[10px] shrink-0 ${getSubjectBadgeClasses(deck.subject)}`}>
-                          {deck.subject}
-                        </span>
-                        <h3 className="text-lg font-bold font-rajdhani tracking-wide text-[#E8E8E8] uppercase truncate flex-1">
-                          {deck.title}
-                        </h3>
-                      </div>
-                      {/* Tag Row: Type & Custom Tags (Aligned with Date) */}
-                      <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                        <span className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]">
-                          {deck.deckType === 'mixed' ? 'MIX' : deck.deckType === 'mcq' ? 'MCQ' : 'FC'}
-                        </span>
-                        {deck.tags && deck.tags.length > 0 && deck.tags.map(tag => (
-                          <span
-                            key={tag}
-                            className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]"
-                          >
-                            {tag}
+                  {filteredDecks.map(deck => (
+                    <div
+                      key={deck.id}
+                      className="relative isolate group transition-all duration-300 border border-[#333] bg-[#1a1a1a] p-5 flex flex-col w-full min-h-[180px] justify-between hover:-translate-x-[6px] hover:-translate-y-[6px] rounded-xl before:absolute before:w-full before:h-full before:top-0 before:left-0 before:bg-[#1a1a1a] before:border before:border-[#333] before:rounded-xl before:translate-x-[6px] before:translate-y-[6px] before:z-[-1] before:transition-transform before:duration-300 group-hover:before:translate-x-[12px] group-hover:before:translate-y-[12px] after:absolute after:w-full after:h-full after:top-0 after:left-0 after:bg-[#1a1a1a] after:border after:border-[#333] after:rounded-xl after:translate-x-[12px] after:translate-y-[12px] after:z-[-2] after:transition-transform after:duration-300 group-hover:after:translate-x-[18px] group-hover:after:translate-y-[18px]"
+                    >
+                      {/* Top Section: Title & Stats Stack */}
+                      <div className="flex justify-between items-start gap-4">
+                        {/* Left Column: Title & Tags */}
+                        <div className="flex-1 min-w-0 flex flex-col gap-3">
+                          {/* Title Row */}
+                          <div className="flex items-center gap-3">
+                            <span className={`w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] uppercase font-rajdhani font-bold tracking-widest text-[10px] shrink-0 ${getSubjectBadgeClasses(deck.subject)}`}>
+                              {deck.subject}
+                            </span>
+                            <h3 className="text-lg font-bold font-rajdhani tracking-wide text-[#E8E8E8] uppercase truncate flex-1">
+                              {deck.title}
+                            </h3>
+                          </div>
+                          {/* Tag Row: Type & Custom Tags (Aligned with Date) */}
+                          <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                            <span className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]">
+                              {deck.deckType === 'mixed' ? 'MIX' : deck.deckType === 'mcq' ? 'MCQ' : 'FC'}
+                            </span>
+                            {deck.tags && deck.tags.length > 0 && deck.tags.map(tag => (
+                              <span
+                                key={tag}
+                                className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Right Column: Administrative Info */}
+                        <div className="flex flex-col items-end gap-1.5 shrink-0">
+                          {/* Items Tag */}
+                          <span className="w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] text-[#E8E8E8] font-rajdhani font-bold tracking-widest text-[10px] shrink-0 uppercase whitespace-nowrap">
+                            {deck.cardCount} ITEMS
                           </span>
-                        ))}
+                          {/* Date String */}
+                          <span className="text-[10px] text-gray-500 uppercase font-['IBM_Plex_Mono'] tracking-widest">
+                            {deck.createdAt ? new Date(deck.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Deck Description */}
+                      {deck.description && deck.description.trim() !== "" && (
+                        <p className="text-[11px] text-gray-400 font-['IBM_Plex_Mono'] leading-relaxed mt-2 line-clamp-2 uppercase pr-4">
+                          {deck.description}
+                        </p>
+                      )}
+
+                      {/* Bottom Row: Progress and Actions */}
+                      <div className="flex items-center gap-6 w-full mt-4">
+                        {/* MASTERY label — fixed, does not grow */}
+                        <span className="text-[10px] font-rajdhani tracking-widest uppercase text-gray-500 shrink-0">
+                          Mastery
+                        </span>
+
+                        {/* Mastery bar — flex-1 so it fills all remaining space */}
+                        <div className="flex-1 bg-[#111] h-1 rounded-full overflow-hidden min-w-[40px]">
+                          <div
+                            className="h-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.4)] w-0"
+                          />
+                        </div>
+
+                        {/* Mastery percentage — fixed, does not grow */}
+                        <span className="text-[#00FF41] font-bold text-[10px] font-rajdhani shrink-0">
+                          0%
+                        </span>
+
+                        {/* Divider */}
+                        <div className="h-4 w-px bg-slate-800 shrink-0" />
+
+                        {/* Secondary Action Icons */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          {/* LEARN button — sits right after the percentage, no gap */}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openDeck(deck); }}
+                            className="py-2 px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                            title="Learn this deck"
+                            aria-label="Learn"
+                          >
+                            <Play className="w-3 h-3" />
+                            <span className="hidden xl:inline">Learn</span>
+                          </button>
+
+                          {deck.id.startsWith('topic_') && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                window.electron.print.open(deck.id, deck.title)
+                              }}
+                              className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
+                              title="Test Paper View"
+                            >
+                              <ScrollText className="w-4 h-4" />
+                            </button>
+                          )}
+                          <button
+                            onClick={(e) => { e.stopPropagation(); navigate(`/edit-deck/${deck.id}`) }}
+                            className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
+                            title="Edit Deck"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setSetToDelete(deck); }}
+                            className="p-2 bg-[#111] border border-[#333] hover:border-red-500/50 text-gray-500 hover:text-red-500 rounded transition-colors"
+                            title="Delete Set"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
-
-                    {/* Right Column: Administrative Info */}
-                    <div className="flex flex-col items-end gap-1.5 shrink-0">
-                      {/* Items Tag */}
-                      <span className="w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] text-[#E8E8E8] font-rajdhani font-bold tracking-widest text-[10px] shrink-0 uppercase whitespace-nowrap">
-                        {deck.cardCount} ITEMS
-                      </span>
-                      {/* Date String */}
-                      <span className="text-[10px] text-gray-500 uppercase font-['IBM_Plex_Mono'] tracking-widest">
-                        {deck.createdAt ? new Date(deck.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Deck Description */}
-                  {deck.description && deck.description.trim() !== "" && (
-                    <p className="text-[11px] text-gray-400 font-['IBM_Plex_Mono'] leading-relaxed mt-2 line-clamp-2 uppercase pr-4">
-                      {deck.description}
-                    </p>
-                  )}
-
-                  {/* Bottom Row: Progress and Actions */}
-                  <div className="flex items-center gap-6 w-full mt-4">
-                    {/* MASTERY label — fixed, does not grow */}
-                    <span className="text-[10px] font-rajdhani tracking-widest uppercase text-gray-500 shrink-0">
-                      Mastery
-                    </span>
-
-                    {/* Mastery bar — flex-1 so it fills all remaining space */}
-                    <div className="flex-1 bg-[#111] h-1 rounded-full overflow-hidden min-w-[40px]">
-                      <div
-                        className="h-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.4)] w-0"
-                      />
-                    </div>
-
-                    {/* Mastery percentage — fixed, does not grow */}
-                    <span className="text-[#00FF41] font-bold text-[10px] font-rajdhani shrink-0">
-                      0%
-                    </span>
-
-                    {/* Divider */}
-                    <div className="h-4 w-px bg-slate-800 shrink-0" />
-
-                    {/* Secondary Action Icons */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      {/* LEARN button — sits right after the percentage, no gap */}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); openDeck(deck); }}
-                        className="py-2 px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
-                        title="Learn this deck"
-                        aria-label="Learn"
-                      >
-                        <Play className="w-3 h-3" />
-                        <span className="hidden xl:inline">Learn</span>
-                      </button>
-
-                      {deck.id.startsWith('topic_') && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            window.electron.print.open(deck.id, deck.title)
-                          }}
-                          className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
-                          title="Test Paper View"
-                        >
-                          <ScrollText className="w-4 h-4" />
-                        </button>
-                      )}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); navigate(`/edit-deck/${deck.id}`) }}
-                        className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
-                        title="Edit Deck"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setSetToDelete(deck); }}
-                        className="p-2 bg-[#111] border border-[#333] hover:border-red-500/50 text-gray-500 hover:text-red-500 rounded transition-colors"
-                        title="Delete Set"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
+
+                {isLoading ? (
+                  <div className="text-center py-20 text-[#555] font-['IBM_Plex_Mono'] text-sm tracking-widest animate-pulse">
+                    Loading decks...
+                  </div>
+                ) : filteredDecks.length === 0 ? (
+                  <div className="text-center py-20 text-[#888] font-rajdhani uppercase tracking-widest text-lg">
+                    No decks found{activeSubject !== 'ALL' ? ` for ${activeSubject}` : ''}. Import some from Add Decks.
+                  </div>
+                ) : null}
+              </div>
             </div>
-
-            {isLoading ? (
-              <div className="text-center py-20 text-[#555] font-['IBM_Plex_Mono'] text-sm tracking-widest animate-pulse">
-                Loading decks...
-              </div>
-            ) : filteredDecks.length === 0 ? (
-              <div className="text-center py-20 text-[#888] font-rajdhani uppercase tracking-widest text-lg">
-                No decks found{activeSubject !== 'ALL' ? ` for ${activeSubject}` : ''}. Import some from Add Decks.
-              </div>
-            ) : null}
           </div>
-        </div>
-      </div>
 
-      {/* Delete Confirmation Modal */}
-      <AnimatePresence>
-        {setToDelete && (
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSetToDelete(null)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-md"
-            />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-md bg-[#111] border border-[#333] rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden"
-            >
-              <div className="h-1 w-full bg-gradient-to-r from-transparent via-[#FF003C] to-transparent" />
-              <div className="p-8 flex flex-col items-center text-center">
-                <div className="w-16 h-16 rounded-full bg-[#FF003C]/10 border border-[#FF003C]/30 flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(255,0,60,0.1)]">
-                  <AlertTriangle className="w-8 h-8 text-[#FF003C]" />
-                </div>
-                <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-4 tracking-widest uppercase">
-                  DELETE DECK?
-                </h3>
-                <p className="text-[#888] font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
-                  Are you absolutely sure you want to delete <strong className="text-white">{setToDelete.title}</strong>? This action cannot be undone and will permanently remove all {setToDelete.cardCount} items in this set.
-                </p>
-                <div className="flex flex-col gap-3 w-full">
-                  <button
-                    onClick={handleConfirmDelete}
-                    disabled={deleteCountdown > 0}
-                    className="w-full py-4 bg-[#FF003C] hover:bg-[#D00030] disabled:bg-[#1A1A1A] disabled:text-[#444] disabled:cursor-not-allowed text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,0,60,0.2)] hover:shadow-[0_0_25px_rgba(255,0,60,0.4)]"
-                  >
-                    Confirm Delete
-                  </button>
+          {/* Delete Confirmation Modal */}
+          <AnimatePresence>
+            {setToDelete && (
+              <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setSetToDelete(null)}
+                  className="absolute inset-0 bg-black/80 backdrop-blur-md"
+                />
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                  className="relative w-full max-w-md bg-[#111] border border-[#333] rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden"
+                >
+                  <div className="h-1 w-full bg-gradient-to-r from-transparent via-[#FF003C] to-transparent" />
+                  <div className="p-8 flex flex-col items-center text-center">
+                    <div className="w-16 h-16 rounded-full bg-[#FF003C]/10 border border-[#FF003C]/30 flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(255,0,60,0.1)]">
+                      <AlertTriangle className="w-8 h-8 text-[#FF003C]" />
+                    </div>
+                    <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-4 tracking-widest uppercase">
+                      DELETE DECK?
+                    </h3>
+                    <p className="text-[#888] font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
+                      Are you absolutely sure you want to delete <strong className="text-white">{setToDelete.title}</strong>? This action cannot be undone and will permanently remove all {setToDelete.cardCount} items in this set.
+                    </p>
+                    <div className="flex flex-col gap-3 w-full">
+                      <button
+                        onClick={handleConfirmDelete}
+                        disabled={deleteCountdown > 0}
+                        className="w-full py-4 bg-[#FF003C] hover:bg-[#D00030] disabled:bg-[#1A1A1A] disabled:text-[#444] disabled:cursor-not-allowed text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,0,60,0.2)] hover:shadow-[0_0_25px_rgba(255,0,60,0.4)]"
+                      >
+                        Confirm Delete
+                      </button>
+                      <button
+                        onClick={() => setSetToDelete(null)}
+                        className="w-full py-4 bg-[#1A1A1A] border border-[#333] hover:border-[#555] text-[#888] hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
                   <button
                     onClick={() => setSetToDelete(null)}
-                    className="w-full py-4 bg-[#1A1A1A] border border-[#333] hover:border-[#555] text-[#888] hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
+                    className="absolute top-4 right-4 text-[#444] hover:text-white transition-colors p-1"
                   >
-                    Cancel
+                    <X size={20} />
                   </button>
-                </div>
+                </motion.div>
               </div>
-              <button
-                onClick={() => setSetToDelete(null)}
-                className="absolute top-4 right-4 text-[#444] hover:text-white transition-colors p-1"
-              >
-                <X size={20} />
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>
