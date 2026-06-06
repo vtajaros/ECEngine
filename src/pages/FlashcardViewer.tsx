@@ -454,22 +454,22 @@ export default function FlashcardViewer() {
 
     if (!isFlipped) {
       autoplayRef.current.phase = 'front'
-      // Wait for front TTS to finish, then wait 2s, then flip
+      // Wait for front TTS to finish, then wait 1s, then flip
       autoplaySpeechDoneRef.current = () => {
         if (autoplayRef.current.activeIndex !== index) return
         autoplayRef.current.timer = setTimeout(() => {
           if (autoplayRef.current.activeIndex !== index) return
           setIsFlipped(true)
-        }, 2000)
+        }, 1000)
       }
       const frontText = getFrontText(currentCard)
       speakWithCallback(frontText, () => autoplaySpeechDoneRef.current?.())
     } else {
       autoplayRef.current.phase = 'back'
-      // Wait for back TTS to finish, then wait 2s (or 3s), then advance
+      // Wait for back TTS to finish, then wait 1s (or 2s), then advance
       autoplaySpeechDoneRef.current = () => {
         if (autoplayRef.current.activeIndex !== index) return
-        const delay = isNewCard ? 3000 : 2000
+        const delay = isNewCard ? 2000 : 1000
         autoplayRef.current.timer = setTimeout(() => {
           if (autoplayRef.current.activeIndex !== index) return
           if (index < sessionCards.length - 1) {
@@ -646,12 +646,12 @@ export default function FlashcardViewer() {
                 try { localStorage.setItem('ecengine:tts:enabled', String(next)) } catch { }
                 if (!next) stop()
               }}
-              className={`p-2 rounded border transition-colors ${fcTtsEnabled ? 'border-[#00FF41] text-[#00FF41] bg-[#00FF41]/10' : 'border-[#333] text-[#888] hover:text-white hover:border-[#666]'}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${fcTtsEnabled ? 'border-[#00FF41] text-[#00FF41] bg-[#00FF41]/10' : 'border-[#333] text-[#888] hover:text-white hover:border-[#666]'}`}
               title={fcTtsEnabled ? 'TTS On — click to disable' : 'TTS Off — click to enable'}
             >
               {fcTtsEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
             </button>
-            <button onClick={() => setShowSettings(!showSettings)} className="text-[#888] hover:text-[var(--accent-primary)] transition-colors p-2 rounded hover:bg-[#222]">
+            <button onClick={() => setShowSettings(!showSettings)} className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-transparent text-xs font-['Rajdhani'] font-bold uppercase tracking-widest text-[#888] hover:text-[var(--accent-primary)] transition-all hover:bg-[#222]">
               <Settings2 className="w-5 h-5" />
             </button>
           </div>
@@ -691,43 +691,91 @@ export default function FlashcardViewer() {
         <div className="flex-1 flex items-center justify-center p-6 lg:p-10">
           <div className="w-full max-w-3xl">
             <AnimatePresence mode="wait">
-              <motion.div key={`${currentCard.id}-${currentIndex}`} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.25 }}>
-                {/* The Card */}
-                <div className="relative bg-[#161616] border border-[#222] rounded-xl shadow-2xl min-h-[350px] flex flex-col">
-                  {/* Bookmark */}
-                  <button onClick={() => toggleBookmark(currentCard.id)} className="absolute top-5 right-5 z-10 text-[#666] hover:text-[#FFB800] transition-colors" title="Bookmark">
-                    <Bookmark className={`w-6 h-6 ${isBookmarked ? 'fill-[#FFB800] text-[#FFB800]' : ''}`} />
-                  </button>
+              <motion.div key={`${currentCard.id}-${currentIndex}`} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.2, ease: 'easeOut' }}>
+                {/* 3D Flip Card Container */}
+                <div 
+                  className="w-full cursor-pointer" 
+                  style={{ perspective: '1200px', minHeight: '350px' }}
+                  onClick={() => !settings.writtenMode && setIsFlipped(f => !f)}
+                >
+                  <div
+                    style={{
+                      position: 'relative',
+                      width: '100%',
+                      height: '100%',
+                      minHeight: '350px',
+                      transformStyle: 'preserve-3d',
+                      transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                      transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                      willChange: 'transform',
+                    }}
+                  >
+                    {/* FRONT FACE */}
+                    <div
+                      className="bg-[#161616] border border-[#222] rounded-xl shadow-2xl flex flex-col"
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        backfaceVisibility: 'hidden',
+                        WebkitBackfaceVisibility: 'hidden',
+                      }}
+                    >
+                      {/* Bookmark */}
+                      <button onClick={(e) => { e.stopPropagation(); toggleBookmark(currentCard.id) }} className="absolute top-5 right-5 z-10 text-[#666] hover:text-[#FFB800] transition-colors" title="Bookmark">
+                        <Bookmark className={`w-6 h-6 ${isBookmarked ? 'fill-[#FFB800] text-[#FFB800]' : ''}`} />
+                      </button>
 
-                  {/* Card Label */}
-                  <div className="px-8 pt-6 pb-2">
-                    <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888]">
-                      {isFlipped
-                        ? (settings.swapTermDef ? 'Term' : 'Definition')
-                        : (settings.swapTermDef ? 'Definition' : 'Term')}
-                    </span>
-                  </div>
-
-                  {/* Card Content */}
-                  <div className="flex-1 flex items-center justify-center px-8 pb-8 cursor-pointer" onClick={() => !settings.writtenMode && setIsFlipped(f => !f)}>
-                    {!isFlipped ? (
-                      <div className="text-center w-full">
-                        <div className="text-xl lg:text-2xl font-medium text-[#E8E8E8] leading-relaxed font-['IBM_Plex_Mono']" dangerouslySetInnerHTML={{ __html: renderMath(getFrontText(currentCard)) }} />
-                        {currentCard.data.imagePath && (
-                          <div className="mt-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
-                            <img
-                              src={`ece-app://${currentCard.data.imagePath}`}
-                              alt="Card diagram"
-                              className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
-                              onClick={(e) => { e.stopPropagation(); setZoomedImage(currentCard.data.imagePath!); }}
-                            />
-                          </div>
-                        )}
-                        {!settings.writtenMode && <p className="text-[#555] text-sm mt-6 font-['Rajdhani']">Click or press Space to flip</p>}
+                      {/* Card Label */}
+                      <div className="px-8 pt-6 pb-2">
+                        <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888]">
+                          {settings.swapTermDef ? 'Definition' : 'Term'}
+                        </span>
                       </div>
-                    ) : (
-                      <div className="text-center w-full text-[#E8E8E8]">{getBackContent(currentCard)}</div>
-                    )}
+
+                      {/* Front Content */}
+                      <div className="flex-1 flex items-center justify-center px-8 pb-8">
+                        <div className="text-center w-full">
+                          <div className="text-xl lg:text-2xl font-medium text-[#E8E8E8] leading-relaxed font-['IBM_Plex_Mono']" dangerouslySetInnerHTML={{ __html: renderMath(getFrontText(currentCard)) }} />
+                          {currentCard.data.imagePath && (
+                            <div className="mt-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
+                              <img
+                                src={`ece-app://${currentCard.data.imagePath}`}
+                                alt="Card diagram"
+                                className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
+                                onClick={(e) => { e.stopPropagation(); setZoomedImage(currentCard.data.imagePath!); }}
+                              />
+                            </div>
+                          )}
+                          {!settings.writtenMode && <p className="text-[#555] text-sm mt-6 font-['Rajdhani']">Click or press Space to flip</p>}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* BACK FACE */}
+                    <div
+                      className="bg-[#161616] border border-[#222] rounded-xl shadow-2xl flex flex-col"
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        backfaceVisibility: 'hidden',
+                        WebkitBackfaceVisibility: 'hidden',
+                        transform: 'rotateY(180deg)',
+                      }}
+                    >
+                      {/* Card Label */}
+                      <div className="px-8 pt-6 pb-2">
+                        <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888]">
+                          {settings.swapTermDef ? 'Term' : 'Definition'}
+                        </span>
+                      </div>
+
+                      {/* Back Content */}
+                      <div className="flex-1 flex items-center justify-center px-8 pb-8">
+                        <div className="text-center w-full text-[#E8E8E8]">
+                          {getBackContent(currentCard)}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -768,25 +816,27 @@ export default function FlashcardViewer() {
                 )}
 
                 {/* Navigation Buttons */}
-                {(isFlipped || (settings.writtenMode && writtenSubmitted)) && (
-                  <div className="mt-6 flex justify-between items-center">
-                    <button onClick={goPrev} disabled={currentIndex === 0}
-                      className="flex items-center gap-2 px-6 py-3 bg-[#111] border border-[#333] rounded-lg text-[#E8E8E8] font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[#222] hover:border-[#555] transition-all disabled:opacity-30 disabled:cursor-default">
-                      <ArrowLeft className="w-4 h-4" /> Prev
-                    </button>
-                    {currentIndex === sessionCards.length - 1 ? (
-                      <button onClick={() => exitSession()}
-                        className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-primary)] text-black rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-all shadow-[0_0_15px_rgba(0,255,65,0.2)]">
-                        Finish <Check className="w-4 h-4" />
+                <div className="mt-6 h-[52px] flex justify-between items-center">
+                  {(isFlipped || (settings.writtenMode && writtenSubmitted)) && (
+                    <>
+                      <button onClick={goPrev} disabled={currentIndex === 0}
+                        className="flex items-center gap-2 px-6 py-3 bg-[#111] border border-[#333] rounded-lg text-[#E8E8E8] font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[#222] hover:border-[#555] transition-all disabled:opacity-30 disabled:cursor-default">
+                        <ArrowLeft className="w-4 h-4" /> Prev
                       </button>
-                    ) : (
-                      <button onClick={goNext} disabled={currentIndex === sessionCards.length - 1}
-                        className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-primary)] text-black rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-all shadow-[0_0_15px_rgba(0,255,65,0.2)] disabled:opacity-30 disabled:cursor-default">
-                        Next <ArrowRight className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                )}
+                      {currentIndex === sessionCards.length - 1 ? (
+                        <button onClick={() => exitSession()}
+                          className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-primary)] text-black rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-all shadow-[0_0_15px_rgba(0,255,65,0.2)]">
+                          Finish <Check className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <button onClick={goNext} disabled={currentIndex === sessionCards.length - 1}
+                          className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-primary)] text-black rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-all shadow-[0_0_15px_rgba(0,255,65,0.2)] disabled:opacity-30 disabled:cursor-default">
+                          Next <ArrowRight className="w-4 h-4" />
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
               </motion.div>
             </AnimatePresence>
           </div>
