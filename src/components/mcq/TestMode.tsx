@@ -539,7 +539,7 @@ Please explain:
           <X className="w-5 h-5" />
         </button>
         <div className="flex flex-col flex-1 min-w-0">
-          <span className="text-[var(--text-primary)] font-['Orbitron'] tracking-widest font-bold text-2xl truncate uppercase flex items-center min-w-0">
+          <span className="text-[var(--text-primary)] font-['Rajdhani'] tracking-widest font-bold text-2xl truncate uppercase flex items-center min-w-0">
             {title ? (
               <>
                 <span className="text-[#888] mr-2 shrink-0">TEST:</span>

@@ -16,6 +16,7 @@ import { dbService } from '../services/db.service'
 import { useTTS } from '../hooks/useTTS'
 import { useIdleAwareTimer } from '../hooks/useIdleAwareTimer'
 import { FlashcardContextPanel } from '../components/flashcard/FlashcardContextPanel'
+import { getDynamicFontSize } from '../lib/textUtils'
 
 
 
@@ -60,15 +61,6 @@ function saveFCBookmarks(set: Set<string>) {
 
 
 
-function getDynamicFontSize(text: string): string {
-  const len = text?.length ?? 0
-  if (len <= 20)  return 'text-5xl'
-  if (len <= 40)  return 'text-4xl'
-  if (len <= 80)  return 'text-3xl'
-  if (len <= 160) return 'text-2xl'
-  if (len <= 300) return 'text-xl'
-  return 'text-lg'
-}
 
 export default function FlashcardViewer() {
   const navigate = useNavigate()
@@ -708,8 +700,8 @@ Provide a thorough explanation covering ALL of the following:
               <X className="w-5 h-5" />
             </button>
             <div className="flex flex-col">
-              <span className="text-[var(--accent-primary)] font-['Orbitron'] font-bold tracking-widest text-sm uppercase">{activeDeck.title}</span>
-              <span className="text-[#888] text-xs font-['Rajdhani'] uppercase tracking-widest">Card {currentIndex + 1} of {sessionCards.length}</span>
+              <span className="text-[var(--accent-primary)] font-['Rajdhani'] font-bold tracking-widest text-base uppercase">{activeDeck.title}</span>
+              <span className="text-[#E8E8E8] text-xs font-['Rajdhani'] font-bold uppercase tracking-widest">Card {currentIndex + 1} of {sessionCards.length}</span>
             </div>
           </div>
           <div className="flex items-center gap-3">

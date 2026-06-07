@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 import { Card, FlashcardData } from '../../types'
 import { renderMath } from '../../lib/latex'
-
+import { getDynamicFontSize } from '../../lib/textUtils'
 interface FlashCardProps {
   card: Card
   onRate: (rating: number) => void // 1: Again, 2: Hard, 3: Good, 4: Easy
@@ -26,15 +26,6 @@ const getContextColor = (difficulty: string) => {
   }
 }
 
-function getDynamicFontSize(text: string): string {
-  const len = text?.length ?? 0
-  if (len <= 20)  return 'text-5xl'
-  if (len <= 40)  return 'text-4xl'
-  if (len <= 80)  return 'text-3xl'
-  if (len <= 160) return 'text-2xl'
-  if (len <= 300) return 'text-xl'
-  return 'text-lg'
-}
 
 export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting = false, onFlip }) => {
   const [isFlipped, setIsFlipped] = useState(false)
