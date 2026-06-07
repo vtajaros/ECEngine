@@ -53,6 +53,9 @@ React Components -> Zustand / React State -> src/services/db.service.ts -> windo
 - **3D card flip animation**: The card uses a CSS `rotateY` 3D flip (`transformStyle: preserve-3d`, `backfaceVisibility: hidden`, `WebkitBackfaceVisibility: hidden` on both faces). Front and back are always in the DOM — no conditional render. Duration: 0.5 s cubic-bezier.
 - **Card transition animation**: `AnimatePresence + motion.div` slides cards horizontally (`x: ±30`, 0.2 s `easeOut`) instead of the previous vertical fade.
 - **Visual fixes**: Back face border normalised to `border-[#222]` (was incorrectly green). Nav Prev/Next buttons wrapped in a persistent `h-[52px]` container so the card never jumps when they appear. TTS and Settings2 top-bar buttons updated to `px-3 py-1.5` to match SWAP/AUTO height.
+- **Typography updates**: `Formulas.tsx` and `TestMode.tsx` headers updated to use `Rajdhani` and standardized sizing/colors to match `FlashcardViewer`.
+- **AI Handlers**: Added 15-second timeouts with `AbortController` to Groq API calls in `electron/ipc/ai.ipc.ts` to prevent IPC channel freezing on dropped connections.
+- **Known Issue**: The app sometimes locks navigation when aborting a learn mode or test session.
 
 ## 7. Strict Rules
 - **DO NOT** introduce arbitrary inline styles unless absolutely necessary for dynamic layout (e.g., progress bars). Use Tailwind classes.

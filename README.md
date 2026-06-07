@@ -308,6 +308,12 @@ We are mapping out additions across four core phases:
 
 ---
 
+## 🐛 Known Issues
+
+* **Navigation Lock on Abort**: The application sometimes locks navigation when a user aborts an active learn mode or test session mid-progress. This requires a hard restart to clear the active navigation blocker state.
+
+---
+
 ## 🤖 AI Auditor & Developer Manifesto
 
 These instructions govern all future modifications to this repository:

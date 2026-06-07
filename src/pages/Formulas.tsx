@@ -591,10 +591,10 @@ export default function Formulas() {
               <X className="w-5 h-5" />
             </button>
             <div className="flex flex-col">
-              <span className="text-[var(--accent-primary)] font-['Orbitron'] font-bold tracking-widest text-sm uppercase">
+              <span className="text-[var(--accent-primary)] font-['Rajdhani'] font-bold tracking-widest text-2xl uppercase">
                 {activeDeck.title}
               </span>
-              <span className="text-[#888] text-xs font-['Rajdhani'] uppercase tracking-widest">
+              <span className="text-white text-xs font-['Rajdhani'] uppercase tracking-widest">
                 Card {currentIndex + 1} of {sessionCards.length}
               </span>
             </div>

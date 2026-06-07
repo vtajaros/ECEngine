@@ -59,8 +59,11 @@ STRICT FORMATTING RULES:
     const endpoint = 'https://api.groq.com/openai/v1/chat/completions'
 
     try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 15000)
       const response = await net.fetch(endpoint, {
         method: 'POST',
+        signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${apiKey}`,
@@ -80,6 +83,8 @@ STRICT FORMATTING RULES:
         }),
       })
 
+      clearTimeout(timeout)
+
       if (!response.ok) {
         if (response.status === 401) return { error: 'INVALID_KEY' }
         if (response.status === 429) return { error: 'RATE_LIMITED' }
@@ -95,6 +100,9 @@ STRICT FORMATTING RULES:
 
       return { text: text.trim() }
     } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return { error: 'TIMEOUT' }
+      }
       const message = err instanceof Error ? err.message : String(err)
       console.error('[ai:explain] Network error:', message)
       return { error: 'NETWORK_ERROR', detail: message }
@@ -133,6 +141,7 @@ STRICT FORMATTING RULES:
           let body = ''
           response.on('data', (chunk) => { body += chunk.toString() })
           response.on('end', () => {
+            clearTimeout(timer)
             if (response.statusCode && response.statusCode >= 400) {
               reject({ status: response.statusCode, body })
             } else {
@@ -142,6 +151,10 @@ STRICT FORMATTING RULES:
           response.on('error', reject)
         })
         req.on('error', reject)
+        const timer = setTimeout(() => {
+          req.abort()
+          reject({ timeout: true })
+        }, 15000)
         req.setHeader('Content-Type', 'application/json')
         req.setHeader('Authorization', `Bearer ${apiKey}`)
         req.write(JSON.stringify({
@@ -158,6 +171,7 @@ STRICT FORMATTING RULES:
       if (!text) return { error: 'API_ERROR' }
       return { text }
     } catch (err: any) {
+      if (err?.timeout) return { error: 'TIMEOUT' }
       if (err?.status) return { error: 'API_ERROR', status: err.status }
       return { error: 'NETWORK_ERROR' }
     }
