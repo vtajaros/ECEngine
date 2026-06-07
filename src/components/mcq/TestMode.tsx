@@ -129,7 +129,7 @@ const TestQuestionCard = memo(({
           className={`p-2 rounded transition-colors ${isBookmarked
             ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/10'
             : 'text-[#555] hover:bg-[#222] hover:text-[#888]'
-          }`}
+            }`}
           title={isBookmarked ? 'Remove Bookmark' : 'Bookmark Question'}
         >
           <Bookmark className="w-5 h-5 fill-current" />
@@ -169,7 +169,7 @@ const TestQuestionCard = memo(({
           }
 
           const choiceLabel = String.fromCharCode(65 + cIdx)
-          
+
           let orderClass = ""
           if (cIdx === 0) orderClass = "order-1"
           else if (cIdx === 1) orderClass = "order-2 md:order-3"
@@ -181,9 +181,8 @@ const TestQuestionCard = memo(({
               key={cIdx}
               onClick={(e) => { e.stopPropagation(); onSelectChoice(card.id, cIdx) }}
               disabled={viewState === 'review' || (settings.instantChecking && isAnswered)}
-              className={`flex items-center text-left py-4 px-4 min-h-[56px] rounded-lg border transition-all duration-200 font-['Rajdhani'] ${stateStyles} ${orderClass} ${
-                viewState === 'review' || (settings.instantChecking && isAnswered) ? 'cursor-default' : 'cursor-pointer'
-              }`}
+              className={`flex items-center text-left py-4 px-4 min-h-[56px] rounded-lg border transition-all duration-200 font-['Rajdhani'] ${stateStyles} ${orderClass} ${viewState === 'review' || (settings.instantChecking && isAnswered) ? 'cursor-default' : 'cursor-pointer'
+                }`}
             >
               <div className={`flex-shrink-0 mr-3 font-['IBM_Plex_Mono'] ${prefixStyles}`}>
                 {choiceLabel}.
@@ -232,14 +231,13 @@ const TestQuestionCard = memo(({
             </button>
           </Tooltip>
 
-          <Tooltip position="right" content="Explain using Grok Llama-3.3-70B">
+          <Tooltip position="right" content="Explain using Llama-3.3-70B">
             <button
               onClick={(e) => { e.stopPropagation(); onToggleExplanation(index) }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 border rounded transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem] ${
-                openExplanationId === index
+              className={`flex items-center gap-1.5 px-3 py-1.5 border rounded transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem] ${openExplanationId === index
                   ? 'border-[#00FF41] bg-[rgba(0,255,65,0.08)] text-[#00FF41]'
                   : 'border-[rgba(0,255,65,0.3)] text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41]'
-              }`}
+                }`}
             >
               <Sparkles size={12} />
               {openExplanationId === index ? 'Hide Explanation' : 'Explain'}
@@ -371,7 +369,6 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
   const blockerRef = useRef(blocker)
   useEffect(() => {
     blockerRef.current = blocker
-    ;(window as any).__reactRouterBlocker = blocker
   }, [blocker])
   useEffect(() => {
     return () => {

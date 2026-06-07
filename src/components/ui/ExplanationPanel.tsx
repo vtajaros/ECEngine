@@ -24,6 +24,7 @@ export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({
   const [loading, setLoading] = useState(true);
   const [explanation, setExplanation] = useState<string | null>(null);
   const [errorType, setErrorType] = useState<string | null>(null);
+  const [errorDetails, setErrorDetails] = useState<{ status?: number; detail?: string } | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -31,6 +32,7 @@ export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({
     async function fetchExplanation() {
       setLoading(true);
       setErrorType(null);
+      setErrorDetails(null);
 
       try {
         const text = await getExplanation({ question, choices, correctAnswerIndex: answerIndex });
@@ -41,6 +43,7 @@ export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({
       } catch (err: any) {
         if (isMounted) {
           setErrorType(err.message || 'API_ERROR');
+          setErrorDetails({ status: err.status, detail: err.detail });
           setLoading(false);
         }
       }
@@ -110,7 +113,12 @@ export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({
               <p>Groq is currently busy. Try again in a moment.</p>
             )}
             {(!['NO_KEY', 'INVALID_KEY', 'RATE_LIMITED'].includes(errorType)) && (
-              <p>Could not generate explanation. Check your connection or Settings.</p>
+              <div className="space-y-1">
+                {errorDetails?.status === 503 && <p>Groq service unavailable. Try again later.</p>}
+                {errorDetails?.status === 500 && <p>Groq server error. Try again in a moment.</p>}
+                {!errorDetails?.status && <p>Network error. Check your connection.</p>}
+                {errorDetails?.status && errorDetails.status !== 503 && errorDetails.status !== 500 && <p>Could not generate explanation (Status: {errorDetails.status}).</p>}
+              </div>
             )}
           </div>
         )}

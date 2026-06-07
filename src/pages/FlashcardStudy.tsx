@@ -96,26 +96,26 @@ export default function FlashcardStudy() {
 
           const mastery = 0; // DB-based progress handles mastery calculation in the service layer
 
-            let parsedTags: string[] = []
-            try {
-              if (row.tags) parsedTags = JSON.parse(row.tags)
-            } catch (e) { }
+          let parsedTags: string[] = []
+          try {
+            if (row.tags) parsedTags = JSON.parse(row.tags)
+          } catch (e) { }
 
-            return {
-              id: row.id,
-              title: row.name,
-              description: row.description || '',
-              subject: SUBJECT_MAP[row.subject] || 'ELECS',
-              count: row.card_count || 0,
-              mastery,
-              deckType,
-              tags: parsedTags,
-              createdAt: row.created_at || Date.now(),
-              folderName: row.folder_name || 'Uncategorized',
-              order_index: row.order_index
-            }
-          }).filter((s: StudySet | null): s is StudySet => s !== null)
-        }
+          return {
+            id: row.id,
+            title: row.name,
+            description: row.description || '',
+            subject: SUBJECT_MAP[row.subject] || 'ELECS',
+            count: row.card_count || 0,
+            mastery,
+            deckType,
+            tags: parsedTags,
+            createdAt: row.created_at || Date.now(),
+            folderName: row.folder_name || 'Uncategorized',
+            order_index: row.order_index
+          }
+        }).filter((s: StudySet | null): s is StudySet => s !== null)
+      }
       setAllSets(prev => {
         const nonDb = prev.filter(s => !s.id.startsWith('topic_'));
         return [...nonDb, ...dbSets];
@@ -214,7 +214,7 @@ export default function FlashcardStudy() {
       if (sortBy === 'date') comparison = (a.createdAt || 0) - (b.createdAt || 0)
       else if (sortBy === 'mastery') comparison = a.mastery - b.mastery
       else if (sortBy === 'title') comparison = a.title.localeCompare(b.title)
-      
+
       return sortOrder === 'desc' ? -comparison : comparison
     })
 
@@ -265,9 +265,7 @@ export default function FlashcardStudy() {
       isSessionActive && (mode === 'flashcard' || mode === 'mcq') && currentLocation.pathname !== nextLocation.pathname
   )
 
-  useEffect(() => {
-    ;(window as any).__reactRouterBlocker = blocker
-  }, [blocker])
+
 
   // Reset blocker on unmount if still in blocked state
   useEffect(() => {
@@ -318,6 +316,8 @@ export default function FlashcardStudy() {
     ttsEnabled: loadTTSPreference(),
   })
 
+
+
   // Pre-Test Settings Modal State
   const [showTestModal, setShowTestModal] = useState<{ isOpen: boolean; setId: string | null }>({ isOpen: false, setId: null })
   const [testSettings, setTestSettings] = useState<TestSettings>({
@@ -346,7 +346,7 @@ export default function FlashcardStudy() {
       const distractorIndices = new Set<number>();
       let attempts = 0;
       const targetDistractors = Math.min(3, total - 1);
-      
+
       while (distractorIndices.size < targetDistractors && attempts < 30) {
         const randIdx = Math.floor(Math.random() * total);
         if (randIdx !== i && flashcards[randIdx].back !== fc.back) {
@@ -354,7 +354,7 @@ export default function FlashcardStudy() {
         }
         attempts++;
       }
-      
+
       const shuffledOthers = Array.from(distractorIndices).map(idx => flashcards[idx].back);
       const { choices, answer: answerIndex } = shuffleChoices([fc.back, ...shuffledOthers], 0);
 
@@ -462,6 +462,33 @@ export default function FlashcardStudy() {
     }
 
     startSession(filteredData as any)
+  }
+
+  const handleFlashStart = async () => {
+    const setId = showFlashSettingsModal.setId
+    if (!setId) return
+    setShowFlashSettingsModal({ isOpen: false, setId: null })
+
+    const set = allSets.find(s => s.id === setId)
+    if (!set) return
+
+    const result = await dbService.getCardsByTopic(setId)
+    if (!result.success || !result.data) return
+
+    let filteredData = result.data.filter((c: any) => c.type === 'flashcard')
+
+    if (flashSettings.bookmarkedOnly) {
+      const saved = localStorage.getItem('bookmarkedIds')
+      const bookmarked = saved ? new Set(JSON.parse(saved)) : new Set()
+      filteredData = filteredData.filter((c: any) => bookmarked.has(c.id))
+    }
+
+    if (filteredData.length === 0) return
+
+    setActiveSessionTitle(set.title)
+    setMode('flashcard')
+    startSession(filteredData as any)
+    setIsSessionActive(true)
   }
 
   const handleStartTest = async () => {
@@ -606,7 +633,7 @@ export default function FlashcardStudy() {
 
     return (
       <div className="h-full bg-[var(--bg-primary)] p-6 lg:p-10 flex flex-col relative overflow-y-auto w-full">
-        <LeaveConfirmModal 
+        <LeaveConfirmModal
           isOpen={blocker.state === 'blocked' || showExitConfirm}
           onConfirm={() => {
             if (blocker.state === 'blocked') {
@@ -625,22 +652,22 @@ export default function FlashcardStudy() {
           }}
         />
 
-          <StudyHeader
-            topicName={activeSessionTitle || 'Active Session'}
-            currentCardIndex={currentIndex}
-            totalCards={currentDeck.length}
-            onBackClick={() => setShowExitConfirm(true)}
+        <StudyHeader
+          topicName={activeSessionTitle || 'Active Session'}
+          currentCardIndex={currentIndex}
+          totalCards={currentDeck.length}
+          onBackClick={() => setShowExitConfirm(true)}
+        />
+
+        {!isFinished && (
+          <StudySessionStats
+            correctCount={(sessionStats?.good || 0) + (sessionStats?.easy || 0)}
+            totalReviewed={currentIndex}
+            streakDays={0}
           />
+        )}
 
-          {!isFinished && (
-            <StudySessionStats
-              correctCount={(sessionStats?.good || 0) + (sessionStats?.easy || 0)}
-              totalReviewed={currentIndex}
-              streakDays={0}
-            />
-          )}
-
-        {mode === 'flashcard' && <FlashDeck cards={currentDeck} onComplete={handleComplete} ttsEnabled={learnSettings.ttsEnabled} />}
+        {mode === 'flashcard' && <FlashDeck cards={currentDeck} onComplete={handleComplete} />}
         {mode === 'mcq' && <MCQDeck cards={currentDeck} onComplete={handleComplete} />}
       </div>
     )
@@ -657,6 +684,7 @@ export default function FlashcardStudy() {
         onStart={handleStartLearn}
         onClose={() => setShowSettingsModal({ isOpen: false, setId: null })}
       />
+
 
       <TestSettingsModal
         isOpen={showTestModal.isOpen}
@@ -691,8 +719,8 @@ export default function FlashcardStudy() {
                   <button
                     onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                     className={`p-2 rounded-lg border transition-all ${showAdvancedFilters || filterTags.length > 0 || filterType !== 'all' || sortBy !== 'date' || sortOrder !== 'desc' || searchQuery
-                        ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
-                        : 'bg-[var(--bg-secondary)] border-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                      ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
+                      : 'bg-[var(--bg-secondary)] border-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                       }`}
                   >
                     <SlidersHorizontal size={20} />
@@ -789,8 +817,8 @@ export default function FlashcardStudy() {
                                       )
                                     }}
                                     className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-['Rajdhani'] uppercase tracking-wider border transition-all ${isActive
-                                        ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
-                                        : 'bg-[#1A1A1A] border-[#333] text-[#888] hover:border-[#555] hover:text-[#E8E8E8]'
+                                      ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
+                                      : 'bg-[#1A1A1A] border-[#333] text-[#888] hover:border-[#555] hover:text-[#E8E8E8]'
                                       }`}
                                   >
                                     {tag}
@@ -835,22 +863,22 @@ export default function FlashcardStudy() {
                         isActive
                           ? s === 'ALL'
                             ? {
-                                background: 'var(--accent-glow)',
-                                borderColor: 'var(--accent-border)',
-                                color: 'var(--accent-primary)',
-                                boxShadow: '0 0 16px rgba(0,255,65,0.1)',
-                              }
-                            : {
-                                background: `rgba(${colors?.accentRgb},0.15)`,
-                                borderColor: `rgba(${colors?.accentRgb},0.5)`,
-                                color: colors?.accent,
-                                boxShadow: `0 0 16px rgba(${colors?.accentRgb},0.1)`,
-                              }
-                          : {
-                              background: '#0c0c0c',
-                              borderColor: '#2a2a2a',
-                              color: '#555',
+                              background: 'var(--accent-glow)',
+                              borderColor: 'var(--accent-border)',
+                              color: 'var(--accent-primary)',
+                              boxShadow: '0 0 16px rgba(0,255,65,0.1)',
                             }
+                            : {
+                              background: `rgba(${colors?.accentRgb},0.15)`,
+                              borderColor: `rgba(${colors?.accentRgb},0.5)`,
+                              color: colors?.accent,
+                              boxShadow: `0 0 16px rgba(${colors?.accentRgb},0.1)`,
+                            }
+                          : {
+                            background: '#0c0c0c',
+                            borderColor: '#2a2a2a',
+                            color: '#555',
+                          }
                       }
                     >
                       {s}
@@ -968,6 +996,7 @@ export default function FlashcardStudy() {
                               <Play className="w-3 h-3" />
                               <span className="hidden xl:inline">Learn</span>
                             </button>
+
                             <button
                               onClick={(e) => { e.stopPropagation(); handleOpenTest(set.id); }}
                               className="py-2 px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
@@ -1012,77 +1041,77 @@ export default function FlashcardStudy() {
                           )}
                         </div>
                       </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+
+                {isLoading ? (
+                  <div className="text-center py-20 text-[#555] font-['IBM_Plex_Mono'] text-sm tracking-widest animate-pulse">
+                    Loading decks...
+                  </div>
+                ) : filteredAndSortedSets.length === 0 ? (
+                  <div className="text-center py-20 text-[#888] font-rajdhani uppercase tracking-widest text-lg">
+                    No decks found{activeSubject !== 'ALL' ? ` for ${activeSubject}` : ''}. Import some from Add Decks.
+                  </div>
+                ) : null}
+              </div>
             </div>
-
-            {isLoading ? (
-              <div className="text-center py-20 text-[#555] font-['IBM_Plex_Mono'] text-sm tracking-widest animate-pulse">
-                Loading decks...
-              </div>
-            ) : filteredAndSortedSets.length === 0 ? (
-              <div className="text-center py-20 text-[#888] font-rajdhani uppercase tracking-widest text-lg">
-                No decks found{activeSubject !== 'ALL' ? ` for ${activeSubject}` : ''}. Import some from Add Decks.
-              </div>
-            ) : null}
           </div>
-        </div>
-      </div>
 
-      {/* Delete Confirmation Modal */}
-      <AnimatePresence>
-        {setToDelete && (
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSetToDelete(null)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-md"
-            />
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-md bg-[#111] border border-[#333] rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden"
-            >
-              <div className="h-1 w-full bg-gradient-to-r from-transparent via-[#FF003C] to-transparent" />
-              <div className="p-8 flex flex-col items-center text-center">
-                <div className="w-16 h-16 rounded-full bg-[#FF003C]/10 border border-[#FF003C]/30 flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(255,0,60,0.1)]">
-                  <AlertTriangle className="w-8 h-8 text-[#FF003C]" />
-                </div>
-                <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-4 tracking-widest uppercase">
-                  DELETE DECK?
-                </h3>
-                <p className="text-[#888] font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
-                  Are you absolutely sure you want to delete <strong className="text-white">{setToDelete.title}</strong>? This action cannot be undone and will permanently remove all {setToDelete.count} items in this set.
-                </p>
-                <div className="flex flex-col gap-3 w-full">
-                  <button
-                    onClick={handleConfirmDelete}
-                    disabled={deleteCountdown > 0}
-                    className="w-full py-4 bg-[#FF003C] hover:bg-[#D00030] disabled:bg-[#1A1A1A] disabled:text-[#444] disabled:cursor-not-allowed text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,0,60,0.2)] hover:shadow-[0_0_25px_rgba(255,0,60,0.4)]"
-                  >
-                    Confirm Delete
-                  </button>
+          {/* Delete Confirmation Modal */}
+          <AnimatePresence>
+            {setToDelete && (
+              <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setSetToDelete(null)}
+                  className="absolute inset-0 bg-black/80 backdrop-blur-md"
+                />
+                <motion.div
+                  initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                  className="relative w-full max-w-md bg-[#111] border border-[#333] rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden"
+                >
+                  <div className="h-1 w-full bg-gradient-to-r from-transparent via-[#FF003C] to-transparent" />
+                  <div className="p-8 flex flex-col items-center text-center">
+                    <div className="w-16 h-16 rounded-full bg-[#FF003C]/10 border border-[#FF003C]/30 flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(255,0,60,0.1)]">
+                      <AlertTriangle className="w-8 h-8 text-[#FF003C]" />
+                    </div>
+                    <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-4 tracking-widest uppercase">
+                      DELETE DECK?
+                    </h3>
+                    <p className="text-[#888] font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
+                      Are you absolutely sure you want to delete <strong className="text-white">{setToDelete.title}</strong>? This action cannot be undone and will permanently remove all {setToDelete.count} items in this set.
+                    </p>
+                    <div className="flex flex-col gap-3 w-full">
+                      <button
+                        onClick={handleConfirmDelete}
+                        disabled={deleteCountdown > 0}
+                        className="w-full py-4 bg-[#FF003C] hover:bg-[#D00030] disabled:bg-[#1A1A1A] disabled:text-[#444] disabled:cursor-not-allowed text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,0,60,0.2)] hover:shadow-[0_0_25px_rgba(255,0,60,0.4)]"
+                      >
+                        Confirm Delete
+                      </button>
+                      <button
+                        onClick={() => setSetToDelete(null)}
+                        className="w-full py-4 bg-[#1A1A1A] border border-[#333] hover:border-[#555] text-[#888] hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
                   <button
                     onClick={() => setSetToDelete(null)}
-                    className="w-full py-4 bg-[#1A1A1A] border border-[#333] hover:border-[#555] text-[#888] hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
+                    className="absolute top-4 right-4 text-[#444] hover:text-white transition-colors p-1"
                   >
-                    Cancel
+                    <X size={20} />
                   </button>
-                </div>
+                </motion.div>
               </div>
-              <button
-                onClick={() => setSetToDelete(null)}
-                className="absolute top-4 right-4 text-[#444] hover:text-white transition-colors p-1"
-              >
-                <X size={20} />
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </div>

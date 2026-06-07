@@ -161,9 +161,7 @@ export default function Formulas() {
       activeDeck !== null && currentLocation.pathname !== nextLocation.pathname
   )
 
-  useEffect(() => {
-    ;(window as any).__reactRouterBlocker = blocker
-  }, [blocker])
+
 
   // Reset blocker on unmount if still in blocked state
   useEffect(() => {

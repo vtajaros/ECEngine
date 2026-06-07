@@ -16,13 +16,41 @@ interface FlashDeckProps {
    * Defaults to false — no speech without explicit opt-in.
    */
   ttsEnabled?: boolean
+  shuffleCards?: boolean
+  swappedTerms?: boolean
+  autoplay?: boolean
+  autoplayDelay?: number
 }
 
-export const FlashDeck: React.FC<FlashDeckProps> = ({ cards, onComplete, ttsEnabled = false }) => {
+export const FlashDeck: React.FC<FlashDeckProps> = ({
+  cards,
+  onComplete,
+  ttsEnabled = false,
+  shuffleCards = false,
+  swappedTerms = false,
+  autoplay = false,
+  autoplayDelay = 5,
+}) => {
   const { play } = useSound()
   const { currentIndex, isFinished, isSubmitting, rateCard, startSession } = useSessionStore()
   const [isSwapped, setIsSwapped] = useState(false)
   const [swapResetKey, setSwapResetKey] = useState(0)
+
+  // Shuffle on session start if enabled
+  const activeCards = useMemo(() => {
+    if (!shuffleCards) return cards
+    return [...cards].sort(() => Math.random() - 0.5)
+  }, [cards, shuffleCards])
+
+  // Autoplay
+  useEffect(() => {
+    if (!autoplay || isFinished) return
+    const timer = setInterval(() => {
+      // Advance by triggering the "Good" rating
+      if (!isSubmitting) rateCard(3)
+    }, autoplayDelay * 1000)
+    return () => clearInterval(timer)
+  }, [autoplay, autoplayDelay, currentIndex, isFinished, isSubmitting, rateCard])
 
   // ── TTS ────────────────────────────────────────────────────────────────────
   const { speak, stop } = useTTS(ttsEnabled)
@@ -48,10 +76,10 @@ export const FlashDeck: React.FC<FlashDeckProps> = ({ cards, onComplete, ttsEnab
   }, [])
 
   const restart = () => {
-    startSession(cards)
+    startSession(activeCards)
   }
 
-  if (!cards || cards.length === 0) {
+  if (!activeCards || activeCards.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-[#888888]">
         No cards available for this topic.
@@ -59,11 +87,12 @@ export const FlashDeck: React.FC<FlashDeckProps> = ({ cards, onComplete, ttsEnab
     )
   }
 
-  const currentCard = cards[currentIndex]
+  const currentCard = activeCards[currentIndex]
 
   const displayCard = useMemo(() => {
     if (!currentCard) return null
-    if (!isSwapped || currentCard.type !== 'flashcard') return currentCard
+    const effectiveSwapped = swappedTerms || isSwapped
+    if (!effectiveSwapped || currentCard.type !== 'flashcard') return currentCard
     const data = currentCard.data as FlashcardData
     return {
       ...currentCard,
@@ -73,7 +102,7 @@ export const FlashDeck: React.FC<FlashDeckProps> = ({ cards, onComplete, ttsEnab
         back: data.front
       }
     }
-  }, [currentCard, isSwapped])
+  }, [currentCard, isSwapped, swappedTerms])
 
   // ── TTS: read front face text when a new card appears ─────────────────────
   // Fires on card change. After a swap toggle we also re-read because the
@@ -105,7 +134,7 @@ export const FlashDeck: React.FC<FlashDeckProps> = ({ cards, onComplete, ttsEnab
       <div className="mb-6 flex flex-col gap-3">
         <div className="flex justify-between items-center text-sm font-['Rajdhani'] uppercase tracking-wider text-[#888888]">
           <div className="flex items-center gap-4">
-            <span>{isFinished ? 'Session Complete' : `Card ${currentIndex + 1} of ${cards.length}`}</span>
+            <span>{isFinished ? 'Session Complete' : `Card ${currentIndex + 1} of ${activeCards.length}`}</span>
             <button
               onClick={() => { setIsSwapped(!isSwapped); setSwapResetKey(k => k + 1); }}
               className={`flex items-center gap-2 px-2 py-0.5 rounded text-[10px] font-bold border transition-all ${isSwapped
@@ -117,7 +146,7 @@ export const FlashDeck: React.FC<FlashDeckProps> = ({ cards, onComplete, ttsEnab
               {isSwapped ? 'SWAPPED (DEF → TERM)' : 'SWAP TERM/DEF'}
             </button>
           </div>
-          {!isFinished && <span>{Math.round((currentIndex / cards.length) * 100)}%</span>}
+          {!isFinished && <span>{Math.round((currentIndex / activeCards.length) * 100)}%</span>}
         </div>
       </div>
 
@@ -153,7 +182,7 @@ export const FlashDeck: React.FC<FlashDeckProps> = ({ cards, onComplete, ttsEnab
               <CheckCircle className="text-[#00FF41] w-16 h-16 mb-4" />
               <h2 className="text-2xl font-bold font-['Orbitron'] text-[#E8E8E8] mb-2">Deck Finished</h2>
               <p className="text-[#888888] mb-8 font-['Rajdhani'] text-lg">
-                You reviewed {cards.length} cards. Next reviews are scheduled!
+                You reviewed {activeCards.length} cards. Next reviews are scheduled!
               </p>
               <button
                 onClick={restart}

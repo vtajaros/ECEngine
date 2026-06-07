@@ -85,18 +85,19 @@ STRICT FORMATTING RULES:
         if (response.status === 429) return { error: 'RATE_LIMITED' }
         const errBody = await response.text().catch(() => '')
         console.error('[ai:explain] Groq error:', response.status, errBody)
-        return { error: 'API_ERROR' }
+        return { error: 'API_ERROR', status: response.status, detail: errBody }
       }
 
       const data = (await response.json()) as GroqResponse
       const text = data?.choices?.[0]?.message?.content
 
-      if (!text) return { error: 'API_ERROR' }
+      if (!text) return { error: 'API_ERROR', status: 200, detail: 'Empty response from model' }
 
       return { text: text.trim() }
     } catch (err) {
-      console.error('[ai:explain] Network error:', err)
-      return { error: 'API_ERROR' }
+      const message = err instanceof Error ? err.message : String(err)
+      console.error('[ai:explain] Network error:', message)
+      return { error: 'NETWORK_ERROR', detail: message }
     }
   })
 }

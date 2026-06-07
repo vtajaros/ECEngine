@@ -11,6 +11,17 @@ export interface ExplainParams {
   correctAnswerIndex: number
 }
 
+export class ExplainError extends Error {
+  status?: number
+  detail?: string
+  constructor(message: string, status?: number, detail?: string) {
+    super(message)
+    this.name = 'ExplainError'
+    this.status = status
+    this.detail = detail
+  }
+}
+
 export async function getExplanation(params: ExplainParams): Promise<string> {
 
   // Route through Electron main process IPC — key is resolved server-side only
@@ -22,15 +33,15 @@ export async function getExplanation(params: ExplainParams): Promise<string> {
   })
 
   if (result.error === 'NO_KEY') {
-    throw new Error('NO_KEY')
+    throw new ExplainError('NO_KEY')
   }
 
   if (result.error) {
-    throw new Error(result.error)
+    throw new ExplainError(result.error, result.status, result.detail)
   }
 
   if (!result.text) {
-    throw new Error('API_ERROR')
+    throw new ExplainError('API_ERROR')
   }
 
   return result.text

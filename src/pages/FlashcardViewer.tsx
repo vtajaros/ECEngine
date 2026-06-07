@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate, useBlocker } from 'react-router-dom'
 import { Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle, SlidersHorizontal, Pencil, Play, Pause, Trash2, AlertTriangle, Trophy, ScrollText, Search, Volume2, VolumeX } from 'lucide-react'
 import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
+import { FlashCardSettingsModal, FlashCardSettings, FLASH_SETTINGS_DEFAULTS, loadFlashTTSPreference } from '../components/flashcard/FlashCardSettingsModal'
 import type { Card, CardData, CardType } from '../types'
 import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
 import { TOS_SUBJECT_COLORS } from '../lib/tosData'
@@ -109,6 +110,13 @@ export default function FlashcardViewer() {
     return Array.from(tags).sort()
   }, [decks])
 
+  // ── Pre-session flashcard settings modal ──
+  const [showFlashModal, setShowFlashModal] = useState<{ isOpen: boolean; deckId: string | null }>({ isOpen: false, deckId: null })
+  const [flashModalSettings, setFlashModalSettings] = useState<FlashCardSettings>({
+    ...FLASH_SETTINGS_DEFAULTS,
+    ttsEnabled: loadFlashTTSPreference(),
+  })
+
   // ── Active session state ──
   const [activeDeck, setActiveDeck] = useState<{ id: string; title: string; cards: Card[] } | null>(null)
   const [sessionCards, setSessionCards] = useState<Card[]>([])
@@ -147,9 +155,7 @@ export default function FlashcardViewer() {
       activeDeck !== null && currentLocation.pathname !== nextLocation.pathname
   )
 
-  useEffect(() => {
-    ; (window as any).__reactRouterBlocker = blocker
-  }, [blocker])
+
 
   // Reset blocker on unmount if still in blocked state
   useEffect(() => {
@@ -373,6 +379,47 @@ export default function FlashcardViewer() {
     setSettings(s => ({ ...s, bookmarkedOnly: false })) // Reset bookmark filter on exit
     setWrittenStats({ correct: 0, total: 0 })
     stop()
+  }
+
+  const handleFlashModalStart = async () => {
+    const deckId = showFlashModal.deckId
+    if (!deckId) return
+    setShowFlashModal({ isOpen: false, deckId: null })
+
+    const deck = decks.find(d => d.id === deckId)
+    if (!deck) return
+
+    const r = await window.electron.decks.getCardsByTopic(deckId)
+    if (!r.success || !r.data) return
+
+    let cards: Card[] = r.data.map((row: any) => parseRawCard(row))
+
+    if (cards.length === 0) return
+
+    if (flashModalSettings.bookmarkedOnly) {
+      const bm = loadFCBookmarks()
+      cards = cards.filter(c => bm.has(c.id))
+    }
+
+    if (flashModalSettings.shuffleCards) {
+      cards = shuffleArray(cards)
+    }
+
+    if (cards.length === 0) return
+
+    // Sync modal TTS setting into the existing fcTtsEnabled state
+    setFcTtsEnabled(flashModalSettings.ttsEnabled)
+
+    // Sync swap setting into existing FCSettings
+    setSettings(s => ({ ...s, swapTermDef: flashModalSettings.swappedTerms }))
+
+    // Start autoplay if enabled
+    setIsAutoplay(flashModalSettings.autoplay)
+
+    setCurrentIndex(0)
+    setIsFlipped(false)
+    setSessionCards(cards)
+    setActiveDeck({ id: deck.id, title: deck.title, cards })
   }
 
   // ── Helpers ──
@@ -1225,7 +1272,7 @@ export default function FlashcardViewer() {
                         <div className="flex items-center gap-2 shrink-0">
                           {/* LEARN button — sits right after the percentage, no gap */}
                           <button
-                            onClick={(e) => { e.stopPropagation(); openDeck(deck); }}
+                            onClick={(e) => { e.stopPropagation(); setShowFlashModal({ isOpen: true, deckId: deck.id }); }}
                             className="py-2 px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
                             title="Learn this deck"
                             aria-label="Learn"
@@ -1335,6 +1382,15 @@ export default function FlashcardViewer() {
           </AnimatePresence>
         </div>
       </div>
+      <FlashCardSettingsModal
+        isOpen={showFlashModal.isOpen}
+        setId={showFlashModal.deckId}
+        settings={flashModalSettings}
+        allSets={decks.map(d => ({ id: d.id, count: d.cardCount }))}
+        onSettingsChange={setFlashModalSettings}
+        onStart={handleFlashModalStart}
+        onClose={() => setShowFlashModal({ isOpen: false, deckId: null })}
+      />
     </div>
   )
 }

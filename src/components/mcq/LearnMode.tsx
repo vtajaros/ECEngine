@@ -87,7 +87,6 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
   const blockerRef = useRef(blocker)
   useEffect(() => {
     blockerRef.current = blocker
-      ; (window as any).__reactRouterBlocker = blocker
   }, [blocker])
 
   useEffect(() => {
@@ -757,7 +756,7 @@ Please explain:
                   </button>
                 </Tooltip>
 
-                <Tooltip position="right" content="Explain using Grok Llama-3.3-70B">
+                <Tooltip position="right" content="Explain using Llama-3.3-70B">
                   <button
                     onClick={() => setExplanationOpen(true)}
                     className="flex items-center gap-2 px-4 py-2 border border-[rgba(0,255,65,0.3)] rounded text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41] transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
