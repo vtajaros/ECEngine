@@ -22,6 +22,9 @@ type NavItem = {
 
 export const AppShell: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [showFormulaBank, setShowFormulaBank] = useState(() =>
+    localStorage.getItem('ecengine:show-formula-bank') === 'true'
+  )
   const location = useLocation()
 
 
@@ -33,12 +36,24 @@ export const AppShell: React.FC = () => {
     return () => clearInterval(interval)
   }, [])
 
+  useEffect(() => {
+    const handler = () => {
+      setShowFormulaBank(localStorage.getItem('ecengine:show-formula-bank') === 'true')
+    }
+    window.addEventListener('storage', handler)
+    window.addEventListener('ecengine:settings-changed', handler)
+    return () => {
+      window.removeEventListener('storage', handler)
+      window.removeEventListener('ecengine:settings-changed', handler)
+    }
+  }, [])
+
   const navItems: NavItem[] = [
     { to: '/', label: 'Dashboard', icon: Home },
     { to: '/study', label: 'LooksFam', icon: Brain },
     { to: '/flashcards', label: 'Flashcards', icon: Layers },
     { to: '/formulas', label: 'Formulas', icon: Sigma },
-    { to: '/formula-bank', label: 'Formula Bank', icon: FlaskConical },
+    ...(showFormulaBank ? [{ to: '/formula-bank', label: 'Formula Bank', icon: FlaskConical }] : []),
     { to: '/topics', label: 'EELE ToS', icon: BookOpen },
     { to: '/checklist', label: 'Checklist', icon: ClipboardList },
     { to: '/add-decks', label: 'Add Decks', icon: PlusCircle },

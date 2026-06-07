@@ -12,6 +12,9 @@ export default function Settings() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [advancedSyncEnabled, setAdvancedSyncEnabled] = useState(false);
   const [customWrongSound, setCustomWrongSound] = useState(() => getCustomWrongSoundEnabled())
+  const [showFormulaBank, setShowFormulaBank] = useState(
+    () => localStorage.getItem('ecengine:show-formula-bank') === 'true'
+  )
 
   // TTS voice selection
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([])
@@ -145,6 +148,13 @@ export default function Settings() {
       title: 'Data & Sync',
       icon: <Database size={20} className="text-[#00FF41]" />,
       options: [
+        {
+          label: 'Show Formula Bank',
+          description: 'Show the Formula Bank page in the sidebar navigation.',
+          type: 'custom-toggle',
+          advanced: true,
+          actionId: 'formula-bank-toggle'
+        },
         { label: 'Auto-Backup Progress Locally', type: 'toggle', current: true, advanced: true },
         { label: 'Import Decks', type: 'action', buttonText: 'IMPORT JSON', actionId: 'import', advanced: true },
         { label: 'Export Decks', type: 'action', buttonText: 'EXPORT JSON', actionId: 'export', advanced: true },
@@ -316,6 +326,20 @@ export default function Settings() {
                       {opt.type === 'toggle' && (
                         <button className={`w-14 h-7 rounded-full p-1 transition-colors ${opt.current ? 'bg-[rgba(0,255,65,0.2)] border border-[#00FF41]' : 'bg-[#161616] border border-[#222]'} focus:outline-none relative shadow-inner`}>
                           <span className={`block w-5 h-5 rounded-full shadow-md transform transition-transform ${opt.current ? 'bg-[#00FF41] translate-x-7 shadow-[0_0_8px_rgba(0,255,65,0.8)]' : 'bg-[#555] translate-x-0'}`} />
+                        </button>
+                      )}
+
+                      {opt.type === 'custom-toggle' && (opt as any).actionId === 'formula-bank-toggle' && (
+                        <button
+                          onClick={() => {
+                            const next = !showFormulaBank
+                            setShowFormulaBank(next)
+                            localStorage.setItem('ecengine:show-formula-bank', String(next))
+                            window.dispatchEvent(new Event('ecengine:settings-changed'))
+                          }}
+                          className={`w-14 h-7 rounded-full p-1 transition-colors ${showFormulaBank ? 'bg-[rgba(0,255,65,0.2)] border border-[#00FF41]' : 'bg-[#161616] border border-[#222]'} focus:outline-none relative shadow-inner`}
+                        >
+                          <span className={`block w-5 h-5 rounded-full shadow-md transform transition-transform ${showFormulaBank ? 'bg-[#00FF41] translate-x-7 shadow-[0_0_8px_rgba(0,255,65,0.8)]' : 'bg-[#555] translate-x-0'}`} />
                         </button>
                       )}
 

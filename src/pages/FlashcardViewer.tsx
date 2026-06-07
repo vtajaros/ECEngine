@@ -413,8 +413,12 @@ export default function FlashcardViewer() {
     // Sync swap setting into existing FCSettings
     setSettings(s => ({ ...s, swapTermDef: flashModalSettings.swappedTerms }))
 
-    // Start autoplay if enabled
-    setIsAutoplay(flashModalSettings.autoplay)
+    // Defer autoplay by one tick so swapTermDef/ttsEnabled are committed first
+    if (flashModalSettings.autoplay) {
+      setTimeout(() => setIsAutoplay(true), 0)
+    } else {
+      setIsAutoplay(false)
+    }
 
     setCurrentIndex(0)
     setIsFlipped(false)
@@ -534,7 +538,7 @@ export default function FlashcardViewer() {
       const backText = getCorrectAnswer(currentCard)
       speakWithCallback(backText, () => autoplaySpeechDoneRef.current?.())
     }
-  }, [isAutoplay, isFlipped, currentIndex, activeDeck])
+  }, [isAutoplay, isFlipped, currentIndex, activeDeck, settings.swapTermDef])
 
   useEffect(() => {
     return () => {
@@ -663,7 +667,14 @@ export default function FlashcardViewer() {
             )}
             {/* Swap Term/Def toggle button — always visible */}
             <button
-              onClick={() => { setSettings(s => ({ ...s, swapTermDef: !s.swapTermDef })); setIsFlipped(false); }}
+              onClick={() => {
+                stop()
+                if (autoplayRef.current.timer) clearTimeout(autoplayRef.current.timer)
+                autoplaySpeechDoneRef.current = null
+                autoplayRef.current.isNewCard = true
+                setIsFlipped(false)
+                setSettings(s => ({ ...s, swapTermDef: !s.swapTermDef }))
+              }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${settings.swapTermDef
                 ? 'bg-[#00FF41]/20 text-[#00FF41] border-[#00FF41]'
                 : 'bg-[#1a1a1a] text-[#888] border-[#333] hover:border-[#555] hover:text-[#E8E8E8]'
@@ -693,13 +704,17 @@ export default function FlashcardViewer() {
                 try { localStorage.setItem('ecengine:tts:enabled', String(next)) } catch { }
                 if (!next) stop()
               }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${fcTtsEnabled ? 'border-[#00FF41] text-[#00FF41] bg-[#00FF41]/10' : 'border-[#333] text-[#888] hover:text-white hover:border-[#666]'}`}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${fcTtsEnabled ? 'border-[#00FF41] text-[#00FF41] bg-[#00FF41]/10' : 'border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555]'}`}
               title={fcTtsEnabled ? 'TTS On — click to disable' : 'TTS Off — click to enable'}
             >
-              {fcTtsEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+              {fcTtsEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
             </button>
-            <button onClick={() => setShowSettings(!showSettings)} className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-transparent text-xs font-['Rajdhani'] font-bold uppercase tracking-widest text-[#888] hover:text-[var(--accent-primary)] transition-all hover:bg-[#222]">
-              <Settings2 className="w-5 h-5" />
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${showSettings ? 'bg-[#00FF41]/10 text-[#00FF41] border-[#00FF41]' : 'bg-[#1a1a1a] text-[#888] border-[#333] hover:border-[#555] hover:text-[#E8E8E8]'}`}
+              title="Settings"
+            >
+              <Settings2 className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
