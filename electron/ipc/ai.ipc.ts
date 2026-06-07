@@ -100,4 +100,66 @@ STRICT FORMATTING RULES:
       return { error: 'NETWORK_ERROR', detail: message }
     }
   })
+
+  ipcMain.handle('ai:explainFlashcard', async (_event, payload: { term: string; definition: string }) => {
+    const { term, definition } = payload
+
+    const apiKey = resolveGroqApiKey()
+    if (!apiKey) {
+      return { error: 'NO_KEY' }
+    }
+
+    const userPrompt = `FLASHCARD:
+Term: ${term}
+Definition: ${definition}
+
+You are an ECE board exam tutor. Provide a concise explanation to help the student deeply understand and remember this concept.
+
+STRICT FORMATTING RULES:
+1. STRUCTURE:
+   - **Explanation:** Start with one sentence stating what the term IS and why it matters in ECE. Be specific — no filler.
+   - **Key Formula or Example:** Include ONLY if a formula or concrete example clarifies the concept. Skip entirely if purely definitional.
+   - **Memory Tip:** Always end with this. One mnemonic, analogy, or quick fact. Not generic advice.
+2. LATEX: Wrap all math, variables, and units in $ ... $ delimiters.
+3. SEPARATION: Use exactly two newlines between sections.
+4. CONSTRAINTS: Max 120 words. No filler sentences.`
+
+    const endpoint = 'https://api.groq.com/openai/v1/chat/completions'
+
+    try {
+      const req = net.request({ method: 'POST', url: endpoint })
+      const responseText = await new Promise<string>((resolve, reject) => {
+        req.on('response', (response) => {
+          let body = ''
+          response.on('data', (chunk) => { body += chunk.toString() })
+          response.on('end', () => {
+            if (response.statusCode && response.statusCode >= 400) {
+              reject({ status: response.statusCode, body })
+            } else {
+              resolve(body)
+            }
+          })
+          response.on('error', reject)
+        })
+        req.on('error', reject)
+        req.setHeader('Content-Type', 'application/json')
+        req.setHeader('Authorization', `Bearer ${apiKey}`)
+        req.write(JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [{ role: 'user', content: userPrompt }],
+          max_tokens: 300,
+          temperature: 0.4,
+        }))
+        req.end()
+      })
+
+      const parsed: GroqResponse = JSON.parse(responseText)
+      const text = parsed.choices?.[0]?.message?.content?.trim()
+      if (!text) return { error: 'API_ERROR' }
+      return { text }
+    } catch (err: any) {
+      if (err?.status) return { error: 'API_ERROR', status: err.status }
+      return { error: 'NETWORK_ERROR' }
+    }
+  })
 }

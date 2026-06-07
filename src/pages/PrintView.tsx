@@ -114,8 +114,9 @@ function MathText({ text, style }: { text: string; style?: React.CSSProperties }
 interface MCQTableRowProps {
   index: number
   card: Card & { data: MCQData }
+  hideAnswers?: boolean
 }
-function MCQTableRow({ index, card }: MCQTableRowProps) {
+function MCQTableRow({ index, card, hideAnswers }: MCQTableRowProps) {
   const { question, choices, answer } = card.data
   return (
     <tr style={{ borderBottom: '1px solid var(--pt-border)', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
@@ -145,9 +146,9 @@ function MCQTableRow({ index, card }: MCQTableRowProps) {
                     key={ci}
                     style={{
                       padding: '4px 8px',
-                      backgroundColor: ci === answer ? 'var(--pt-answer-bg)' : 'transparent',
-                      color: ci === answer ? 'var(--pt-answer-text)' : 'var(--pt-text-body)',
-                      fontWeight: ci === answer ? 700 : 400,
+                      backgroundColor: (!hideAnswers && ci === answer) ? 'var(--pt-answer-bg)' : 'transparent',
+                      color: (!hideAnswers && ci === answer) ? 'var(--pt-answer-text)' : 'var(--pt-text-body)',
+                      fontWeight: (!hideAnswers && ci === answer) ? 700 : 400,
                       borderRadius: '3px',
                       display: 'flex',
                       gap: '6px',
@@ -176,9 +177,10 @@ function MCQTableRow({ index, card }: MCQTableRowProps) {
         }}
       >
         <span style={{ fontWeight: 700, color: 'var(--pt-text-secondary)' }}></span>
-        <span style={{ fontWeight: 700, color: 'var(--pt-text-primary)' }}>
+        {!hideAnswers && <span style={{ fontWeight: 700, color: 'var(--pt-text-primary)' }}>
           <MathText text={choices[answer] ?? '—'} />
-        </span>
+        </span>}
+        {hideAnswers && <span style={{ color: 'var(--pt-text-muted)' }}>—</span>}
       </td>
     </tr>
   )
@@ -188,8 +190,9 @@ interface MCQGlossaryItemProps {
   index: number
   card: Card & { data: MCQData }
   qaMode?: boolean
+  hideAnswers?: boolean
 }
-function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) {
+function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers }: MCQGlossaryItemProps) {
   const { question, choices, answer, imagePath } = card.data
   if (qaMode) {
     return (
@@ -213,9 +216,10 @@ function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) 
             style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', marginLeft: '16px', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
           />
         )}
-        <p style={{ fontWeight: 700, color: 'var(--pt-text-body)', margin: 0, paddingLeft: '16px' }}>
+        {!hideAnswers && <p style={{ fontWeight: 700, color: 'var(--pt-text-body)', margin: 0, paddingLeft: '16px' }}>
           <MathText text={choices[answer] ?? '—'} />
-        </p>
+        </p>}
+        {hideAnswers && <p style={{ color: 'var(--pt-text-muted)', margin: 0, paddingLeft: '16px' }}>—</p>}
       </div>
     )
   }
@@ -247,9 +251,9 @@ function MCQGlossaryItem({ index, card, qaMode = false }: MCQGlossaryItemProps) 
               key={ci}
               style={{
                 padding: '4px 8px',
-                backgroundColor: ci === answer ? 'var(--pt-answer-bg)' : 'transparent',
-                color: ci === answer ? 'var(--pt-answer-text)' : 'var(--pt-text-body)',
-                fontWeight: ci === answer ? 700 : 400,
+                backgroundColor: (!hideAnswers && ci === answer) ? 'var(--pt-answer-bg)' : 'transparent',
+                color: (!hideAnswers && ci === answer) ? 'var(--pt-answer-text)' : 'var(--pt-text-body)',
+                fontWeight: (!hideAnswers && ci === answer) ? 700 : 400,
                 borderRadius: '3px',
                 display: 'flex',
                 gap: '6px',
@@ -360,6 +364,7 @@ export default function PrintView() {
   const [exportError, setExportError] = useState('')
   const [scale, setScale] = useState(1)
   const [theme, setTheme] = useState<PrintTheme>('light')
+  const [hideAnswers, setHideAnswers] = useState(false)
 
   // Sync theme+layout from pdfConfig once it arrives
   useEffect(() => {
@@ -699,6 +704,41 @@ export default function PrintView() {
         ))}
       </div>
 
+      {/* Hide Answers toggle — only for MCQ decks */}
+      {mcqCards.length > 0 && (
+        <div
+          className="flex-shrink-0"
+          style={{
+            display: 'flex',
+            gap: '4px',
+            background: 'var(--bg-card)',
+            padding: '4px',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--bg-elevated)',
+          }}
+        >
+          <motion.button
+            onClick={() => setHideAnswers(h => !h)}
+            whileTap={{ scale: 0.95 }}
+            className="whitespace-nowrap flex-shrink-0 text-[11px] px-[10px] py-[5px]"
+            style={{
+              borderRadius: 'var(--radius-sm)',
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-ui)',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              transition: 'all 0.15s',
+              background: hideAnswers ? 'var(--accent-primary)' : 'transparent',
+              color: hideAnswers ? '#000' : 'var(--text-secondary)',
+            }}
+          >
+            {hideAnswers ? 'Answers Hidden' : 'Hide Answers'}
+          </motion.button>
+        </div>
+      )}
+
       {/* Zoom controls */}
       <div
         className="flex-shrink-0"
@@ -875,14 +915,14 @@ export default function PrintView() {
               </thead>
               <tbody style={{ display: 'table-row-group' }}>
                 {mcqCards.map((card, i) => (
-                  <MCQTableRow key={card.id} index={i + 1} card={card} />
+                  <MCQTableRow key={card.id} index={i + 1} card={card} hideAnswers={hideAnswers} />
                 ))}
               </tbody>
             </table>
           ) : (
             <div>
               {mcqCards.map((card, i) => (
-                <MCQGlossaryItem key={card.id} index={i + 1} card={card} qaMode={layout === 'qa'} />
+                <MCQGlossaryItem key={card.id} index={i + 1} card={card} qaMode={layout === 'qa'} hideAnswers={hideAnswers} />
               ))}
             </div>
           )}

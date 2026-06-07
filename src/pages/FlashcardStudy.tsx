@@ -15,6 +15,7 @@ import { TOS_SUBJECT_COLORS } from '../lib/tosData'
 import { useSessionStore } from '../store/useSessionStore'
 import { motion, AnimatePresence } from 'framer-motion'
 import { shuffle, shuffleChoices } from '../lib/scrambler'
+import { useIdleAwareTimer } from '../hooks/useIdleAwareTimer'
 
 import { StudyHeader } from '../components/study/StudyHeader'
 import { StudySessionStats } from '../components/study/StudySessionStats'
@@ -253,6 +254,7 @@ export default function FlashcardStudy() {
   const [showExitConfirm, setShowExitConfirm] = useState(false)
   const startSession = useSessionStore(state => state.startSession)
   const { currentDeck, currentIndex, isFinished, sessionStats } = useSessionStore()
+  useIdleAwareTimer(isSessionActive)
 
   // Navigation Blocking logic
   const blocker = useBlocker(
@@ -459,32 +461,6 @@ export default function FlashcardStudy() {
     startSession(filteredData as any)
   }
 
-  const handleFlashStart = async () => {
-    const setId = showFlashSettingsModal.setId
-    if (!setId) return
-    setShowFlashSettingsModal({ isOpen: false, setId: null })
-
-    const set = allSets.find(s => s.id === setId)
-    if (!set) return
-
-    const result = await dbService.getCardsByTopic(setId)
-    if (!result.success || !result.data) return
-
-    let filteredData = result.data.filter((c: any) => c.type === 'flashcard')
-
-    if (flashSettings.bookmarkedOnly) {
-      const saved = localStorage.getItem('bookmarkedIds')
-      const bookmarked = saved ? new Set(JSON.parse(saved)) : new Set()
-      filteredData = filteredData.filter((c: any) => bookmarked.has(c.id))
-    }
-
-    if (filteredData.length === 0) return
-
-    setActiveSessionTitle(set.title)
-    setMode('flashcard')
-    startSession(filteredData as any)
-    setIsSessionActive(true)
-  }
 
   const handleStartTest = async () => {
     const setId = showTestModal.setId

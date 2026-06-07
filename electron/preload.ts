@@ -50,6 +50,8 @@ contextBridge.exposeInMainWorld('electron', {
     // apiKey removed — key is managed exclusively in the main process
   }): Promise<{ text?: string; error?: string }> =>
     ipcRenderer.invoke('ai:explain', payload),
+  explainFlashcard: (payload: { term: string; definition: string }) =>
+    ipcRenderer.invoke('ai:explainFlashcard', payload),
   config: {
     /** Save the API key to userData/config.json in the main process */
     setApiKey: (key: string): Promise<{ success: boolean; error?: string }> =>

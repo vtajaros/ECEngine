@@ -46,3 +46,21 @@ export async function getExplanation(params: ExplainParams): Promise<string> {
 
   return result.text
 }
+
+export interface FlashcardExplainParams {
+  term: string
+  definition: string
+}
+
+export async function getFlashcardExplanation(params: FlashcardExplainParams): Promise<string> {
+  const result = await window.electron.explainFlashcard({
+    term: params.term,
+    definition: params.definition,
+  })
+
+  if (result.error === 'NO_KEY') throw new ExplainError('NO_KEY')
+  if (result.error) throw new ExplainError(result.error, result.status, result.detail)
+  if (!result.text) throw new ExplainError('API_ERROR')
+
+  return result.text
+}

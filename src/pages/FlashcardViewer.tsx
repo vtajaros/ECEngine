@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import FolderPanel from '@/components/ui/FolderPanel'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate, useBlocker } from 'react-router-dom'
-import { Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle, SlidersHorizontal, Pencil, Play, Pause, Trash2, AlertTriangle, Trophy, ScrollText, Search, Volume2, VolumeX } from 'lucide-react'
+import { Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuffle, PenLine, Check, XCircle, SlidersHorizontal, Pencil, Play, Pause, Trash2, AlertTriangle, Trophy, ScrollText, Search, Volume2, VolumeX, Copy, Sparkles } from 'lucide-react'
 import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
 import { FlashCardSettingsModal, FlashCardSettings, FLASH_SETTINGS_DEFAULTS, loadFlashTTSPreference } from '../components/flashcard/FlashCardSettingsModal'
 import type { Card, CardData, CardType } from '../types'
@@ -14,6 +14,8 @@ import { renderMath } from '../lib/latex'
 import { shuffleArray } from '../lib/utils'
 import { dbService } from '../services/db.service'
 import { useTTS } from '../hooks/useTTS'
+import { useIdleAwareTimer } from '../hooks/useIdleAwareTimer'
+import { FlashcardContextPanel } from '../components/flashcard/FlashcardContextPanel'
 
 
 
@@ -124,6 +126,7 @@ export default function FlashcardViewer() {
     try { return localStorage.getItem('ecengine:tts:enabled') === 'true' } catch { return false }
   })
   const { speak, stop, speakWithCallback } = useTTS(fcTtsEnabled)
+  useIdleAwareTimer(activeDeck !== null)
   const [bookmarks, setBookmarks] = useState<Set<string>>(loadFCBookmarks)
 
   // ── Written mode state ──
@@ -131,8 +134,10 @@ export default function FlashcardViewer() {
   const [writtenSubmitted, setWrittenSubmitted] = useState(false)
   const [writtenCorrect, setWrittenCorrect] = useState<boolean | null>(null)
   const [writtenStats, setWrittenStats] = useState({ correct: 0, total: 0 })
+  const [showContext, setShowContext] = useState(false)
   const [zoomedImage, setZoomedImage] = useState<string | null>(null)
   const [showExitConfirm, setShowExitConfirm] = useState(false)
+  const [showToast, setShowToast] = useState(false)
 
   // Navigation Blocking logic
   const blocker = useBlocker(
@@ -361,7 +366,51 @@ export default function FlashcardViewer() {
     setShowSettings(false)
     setSettings(s => ({ ...s, bookmarkedOnly: false })) // Reset bookmark filter on exit
     setWrittenStats({ correct: 0, total: 0 })
+    setShowContext(false)
+    setShowToast(false)
     stop()
+  }
+
+  const handleGetContext = () => {
+    if (!currentCard) return
+    const term = getFrontText(currentCard)
+    const definition = getCorrectAnswer(currentCard)
+    const template = `Please explain the following Electronics Engineering flashcard concept in depth:
+
+TERM:
+${term}
+
+DEFINITION:
+${definition}
+
+Provide a thorough explanation covering ALL of the following:
+
+1. CONCEPT BREAKDOWN
+   - What exactly is this term/concept and what does it do?
+   - What are its key characteristics or properties?
+   - Where and how is it used in real-world Electronics Engineering?
+
+2. UNDERLYING PRINCIPLES
+   - What fundamental laws, theorems, or principles govern this concept?
+   - Include any relevant formulas, equations, or derivations.
+   - Explain the units, variables, and their physical meaning.
+
+3. BOARD EXAM CONTEXT
+   - What types of questions appear on the Philippine ECE Board Exam about this?
+   - What are common traps, misconceptions, or tricky variations to watch out for?
+   - How does this concept connect to other topics in the exam syllabus?
+
+4. WORKED EXAMPLE
+   - Give a concrete numerical example or scenario if applicable.
+   - Walk through the solution step by step.
+
+5. MEMORY AIDS
+   - Provide a mnemonic, analogy, or mental model to remember this.
+   - Give a one-sentence summary that captures the essence of the concept.`
+    navigator.clipboard.writeText(template).then(() => {
+      setShowToast(true)
+      setTimeout(() => setShowToast(false), 3000)
+    })
   }
 
   const handleFlashModalStart = async () => {
@@ -465,6 +514,7 @@ export default function FlashcardViewer() {
   useEffect(() => {
     if (!currentCard || !activeDeck) return
     const text = getFrontText(currentCard)
+    setShowContext(false)
     if (text) speak(text)
   }, [currentCard?.id, settings.swapTermDef])
 
@@ -613,7 +663,7 @@ export default function FlashcardViewer() {
   // ══════════════════════════════════════════════
   if (activeDeck && currentCard) {
     return (
-      <div className="h-full bg-[#0D0D0D] flex flex-col overflow-hidden">
+      <div className="h-full bg-[#0D0D0D] flex flex-col overflow-hidden relative">
         {/* Top Bar */}
         <div className="shrink-0 bg-[#111] border-b border-[#222] px-6 py-4 flex items-center justify-between z-20">
           <LeaveConfirmModal
@@ -862,27 +912,63 @@ export default function FlashcardViewer() {
                   </div>
                 )}
 
-                {/* Navigation Buttons */}
-                <div className="mt-6 h-[52px] flex justify-between items-center">
-                  {(isFlipped || (settings.writtenMode && writtenSubmitted)) && (
-                    <>
-                      <button onClick={goPrev} disabled={currentIndex === 0}
-                        className="flex items-center gap-2 px-6 py-3 bg-[#111] border border-[#333] rounded-lg text-[#E8E8E8] font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[#222] hover:border-[#555] transition-all disabled:opacity-30 disabled:cursor-default">
-                        <ArrowLeft className="w-4 h-4" /> Prev
-                      </button>
-                      {currentIndex === sessionCards.length - 1 ? (
-                        <button onClick={() => exitSession()}
-                          className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-primary)] text-black rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-all shadow-[0_0_15px_rgba(0,255,65,0.2)]">
-                          Finish <Check className="w-4 h-4" />
+                {/* Navigation Buttons + Context/Explain row */}
+                <div className="mt-6 flex flex-col gap-3">
+                  <div className="h-[52px] flex justify-between items-center relative">
+                    {(isFlipped || (settings.writtenMode && writtenSubmitted)) && (
+                      <>
+                        <button onClick={goPrev} disabled={currentIndex === 0}
+                          className="flex items-center gap-2 px-6 py-3 bg-[#111] border border-[#333] rounded-lg text-[#E8E8E8] font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[#222] hover:border-[#555] transition-all disabled:opacity-30 disabled:cursor-default">
+                          <ArrowLeft className="w-4 h-4" /> Prev
                         </button>
-                      ) : (
-                        <button onClick={goNext} disabled={currentIndex === sessionCards.length - 1}
-                          className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-primary)] text-black rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-all shadow-[0_0_15px_rgba(0,255,65,0.2)] disabled:opacity-30 disabled:cursor-default">
-                          Next <ArrowRight className="w-4 h-4" />
-                        </button>
-                      )}
-                    </>
-                  )}
+
+                        {/* Center: Get Context + Explain */}
+                        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3">
+                          <button
+                            onClick={handleGetContext}
+                            className="flex items-center gap-2 px-4 py-2 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-[#888] transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
+                            title="Copy context to paste into GPT/Gemini/Claude"
+                          >
+                            <Copy className="w-3.5 h-3.5" />
+                            Get Context
+                          </button>
+                          <button
+                            onClick={() => setShowContext(c => !c)}
+                            className="flex items-center gap-2 px-4 py-2 border border-[rgba(0,255,65,0.3)] rounded text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41] transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
+                            title="Explain using Llama-3.3-70B"
+                          >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            Explain
+                          </button>
+                        </div>
+
+                        {currentIndex === sessionCards.length - 1 ? (
+                          <button onClick={() => exitSession()}
+                            className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-primary)] text-black rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-all shadow-[0_0_15px_rgba(0,255,65,0.2)]">
+                            Finish <Check className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <button onClick={goNext} disabled={currentIndex === sessionCards.length - 1}
+                            className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-primary)] text-black rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-all shadow-[0_0_15px_rgba(0,255,65,0.2)] disabled:opacity-30 disabled:cursor-default">
+                            Next <ArrowRight className="w-4 h-4" />
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+
+                  {/* AI Context Panel */}
+                  {showContext && isFlipped && currentCard && !settings.writtenMode && (() => {
+                    const term = getFrontText(currentCard)
+                    const definition = getCorrectAnswer(currentCard)
+                    return (
+                      <FlashcardContextPanel
+                        term={term}
+                        definition={definition}
+                        onClose={() => setShowContext(false)}
+                      />
+                    )
+                  })()}
                 </div>
               </motion.div>
             </AnimatePresence>
@@ -917,6 +1003,13 @@ export default function FlashcardViewer() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Clipboard toast */}
+        {showToast && (
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[300] bg-[#1a1a1a] border border-[#333] text-[#E8E8E8] text-xs font-['Rajdhani'] uppercase tracking-widest px-5 py-3 rounded-lg shadow-2xl whitespace-nowrap">
+            Context copied — paste into Gemini, ChatGPT, or Claude
+          </div>
+        )}
       </div>
     )
   }
