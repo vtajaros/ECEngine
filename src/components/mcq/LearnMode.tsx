@@ -614,7 +614,7 @@ Please explain:
           </button>
 
           <div className="mb-10 pr-4 h-auto flex-none">
-            <span className="text-[var(--accent-primary)] font-['IBM_Plex_Mono'] text-sm font-bold tracking-widest mb-3 block">Question {overallCurrentQuestion}</span>
+            <span className="text-[var(--accent-primary)] font-['Rajdhani'] text-sm font-bold tracking-widest mb-3 block">Question {overallCurrentQuestion}</span>
             <div
               className="text-white font-['Rajdhani'] font-semibold mb-6 text-lg leading-relaxed whitespace-pre-wrap mcq-question-text"
               dangerouslySetInnerHTML={{ __html: renderMath(mcqData.question) }}

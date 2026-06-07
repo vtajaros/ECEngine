@@ -10,7 +10,7 @@ import { TestSettingsModal, TestSettings } from '../components/mcq/TestSettingsM
 import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
 import { MOCK_FLASHCARDS, MOCK_MCQS } from '../lib/mockData'
 import { Play, Bookmark, X, Trash2, AlertTriangle, ClipboardList, SlidersHorizontal, Check, Pencil, Brain, Trophy, ScrollText, Search } from 'lucide-react'
-import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
+import { getSubjectFilterClasses, getSubjectBadgeClasses, SUBJECT_MAP } from '../lib/subjectColors'
 import { TOS_SUBJECT_COLORS } from '../lib/tosData'
 import { useSessionStore } from '../store/useSessionStore'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -29,12 +29,7 @@ type Subject = 'ALL' | 'MATH' | 'GEAS' | 'ELECS' | 'EST'
 const SUBJECTS: Subject[] = ['ALL', 'MATH', 'GEAS', 'ELECS', 'EST']
 
 // Map full subject names (from DB) to short codes used in the UI
-const SUBJECT_MAP: Record<string, Subject> = {
-  'Mathematics': 'MATH',
-  'General Engineering & Applied Sciences': 'GEAS',
-  'Electronics Engineering': 'ELECS',
-  'Electronics Systems & Technologies': 'EST',
-}
+
 
 interface StudySet {
   id: string

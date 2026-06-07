@@ -36,6 +36,9 @@ export default function Dashboard() {
   const [trendLoading, setTrendLoading]       = useState(false)
   
   const [examDate, setExamDate] = useState(localStorage.getItem('ecengine_exam_date') || '2026-10-16')
+  const [preboardDate, setPreboardDate] = useState<string | null>(
+    localStorage.getItem('ecengine_preboard_date') || null
+  )
 
   useEffect(() => {
     setTrendLoading(true)
@@ -97,6 +100,15 @@ export default function Dashboard() {
     localStorage.setItem('ecengine_exam_date', date)
   }
 
+  const handlePreboardDateChange = (date: string | null) => {
+    if (date) {
+      localStorage.setItem('ecengine_preboard_date', date)
+    } else {
+      localStorage.removeItem('ecengine_preboard_date')
+    }
+    setPreboardDate(date)
+  }
+
   const getSubjectClasses = (subject: string) => {
     switch (subject) {
       case 'MATH': return 'text-orange-400 border-orange-500/20 bg-orange-500/10'
@@ -121,7 +133,12 @@ export default function Dashboard() {
         </div>
 
         {/* Board Exam Countdown */}
-        <ExamCountdown examDate={examDate} onExamDateChange={handleExamDateChange} />
+        <ExamCountdown 
+          examDate={examDate} 
+          onExamDateChange={handleExamDateChange} 
+          preboardDate={preboardDate}
+          onPreboardDateChange={handlePreboardDateChange}
+        />
       </header>
 
       {/* Analytics Row 1 */}

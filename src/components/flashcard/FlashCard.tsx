@@ -26,6 +26,16 @@ const getContextColor = (difficulty: string) => {
   }
 }
 
+function getDynamicFontSize(text: string): string {
+  const len = text?.length ?? 0
+  if (len <= 20)  return 'text-5xl'
+  if (len <= 40)  return 'text-4xl'
+  if (len <= 80)  return 'text-3xl'
+  if (len <= 160) return 'text-2xl'
+  if (len <= 300) return 'text-xl'
+  return 'text-lg'
+}
+
 export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting = false, onFlip }) => {
   const [isFlipped, setIsFlipped] = useState(false)
   const [zoomedImage, setZoomedImage] = useState<string | null>(null)
@@ -114,7 +124,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting
 
             <div className="flex-1 flex flex-col items-center justify-center text-center w-full">
               <h2
-                className="text-2xl font-['Rajdhani'] font-semibold leading-snug text-center break-words w-full"
+                className={`${getDynamicFontSize(data.front)} font-['Rajdhani'] font-semibold leading-snug text-center break-words w-full`}
                 dangerouslySetInnerHTML={{ __html: renderMath(data.front) }}
               />
               {data.imagePath && (
@@ -144,7 +154,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting
             </div>
             <div className="flex-1 flex items-center justify-center text-center overflow-y-auto w-full">
               <div
-                className="text-2xl font-['Rajdhani'] font-medium leading-snug text-center break-words w-full"
+                className={`${getDynamicFontSize(data.back)} font-['Rajdhani'] font-medium leading-snug text-center break-words w-full`}
                 dangerouslySetInnerHTML={{ __html: renderMath(data.back) }}
               />
             </div>

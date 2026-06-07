@@ -6,7 +6,7 @@ import { Layers, Bookmark, Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Shuff
 import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
 import { FlashCardSettingsModal, FlashCardSettings, FLASH_SETTINGS_DEFAULTS, loadFlashTTSPreference } from '../components/flashcard/FlashCardSettingsModal'
 import type { Card, CardData, CardType } from '../types'
-import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
+import { getSubjectFilterClasses, getSubjectBadgeClasses, SUBJECT_MAP } from '../lib/subjectColors'
 import { TOS_SUBJECT_COLORS } from '../lib/tosData'
 import { Card as CardLegacy, MCQData, FlashcardData } from '../types'
 import type { FormulaData } from '../types'
@@ -22,12 +22,7 @@ type FilterSubject = 'ALL' | Subject
 
 const SUBJECTS: FilterSubject[] = ['ALL', 'MATH', 'GEAS', 'ELECS', 'EST']
 
-const SUBJECT_MAP: Record<string, Subject> = {
-  'Mathematics': 'MATH',
-  'General Engineering & Applied Sciences': 'GEAS',
-  'Electronics Engineering': 'ELECS',
-  'Electronics Systems & Technologies': 'EST',
-}
+
 
 interface DeckInfo {
   id: string
@@ -60,27 +55,17 @@ function saveFCBookmarks(set: Set<string>) {
   localStorage.setItem('fc_bookmarks', JSON.stringify([...set]))
 }
 
-function parseRawCard(row: any): Card {
-  let data: CardData
-  try {
-    data = typeof row.data === 'string' ? JSON.parse(row.data) : row.data
-    if (!data || typeof data !== 'object') throw new Error('non-object')
-  } catch {
-    console.warn(`[FlashcardViewer] Failed to parse card data for id="${row.id}"`)
-    data = {} as CardData
-  }
-  return {
-    id: row.id,
-    topicId: row.topic_id,
-    type: row.type as CardType,
-    data,
-    difficulty: row.difficulty,
-    tags: (() => { try { return JSON.parse(row.tags || '[]') } catch { return [] } })(),
-    isCustom: Boolean(row.is_custom),
-    createdAt: String(row.created_at || ''),
-  }
-}
 
+
+function getDynamicFontSize(text: string): string {
+  const len = text?.length ?? 0
+  if (len <= 20)  return 'text-5xl'
+  if (len <= 40)  return 'text-4xl'
+  if (len <= 80)  return 'text-3xl'
+  if (len <= 160) return 'text-2xl'
+  if (len <= 300) return 'text-xl'
+  return 'text-lg'
+}
 
 export default function FlashcardViewer() {
   const navigate = useNavigate()
@@ -258,15 +243,8 @@ export default function FlashcardViewer() {
   // ── Open a deck ──
   const openDeck = async (deck: DeckInfo) => {
     try {
-      let rawCards: any[] = []
-      const r = await window.electron.decks.getCardsByTopic(deck.id)
-      if (r.success && r.data) {
-        rawCards = r.data
-      }
-
-      const cards: Card[] = rawCards.map((row: any) => {
-        return parseRawCard(row)
-      })
+      const cards = await dbService.getAllCardsByTopic(deck.id)
+      if (cards.length === 0) return
       setActiveDeck({ id: deck.id, title: deck.title, cards })
       applySettings(cards, settings)
     } catch (e) { console.error('Failed to load cards', e) }
@@ -340,6 +318,11 @@ export default function FlashcardViewer() {
       if (e.key === 'ArrowLeft') goPrev()
       if (e.key === 'f' || e.key === 'F') {
         // Toggle swap term/def and reset flip so front face shows first
+        stop()
+        if (autoplayRef.current.timer) clearTimeout(autoplayRef.current.timer)
+        autoplaySpeechDoneRef.current = null
+        autoplayRef.current.isNewCard = true
+        setIsAutoplay(false)
         setSettings(s => ({ ...s, swapTermDef: !s.swapTermDef }))
         setIsFlipped(false)
       }
@@ -389,16 +372,18 @@ export default function FlashcardViewer() {
     const deck = decks.find(d => d.id === deckId)
     if (!deck) return
 
-    const r = await window.electron.decks.getCardsByTopic(deckId)
-    if (!r.success || !r.data) return
-
-    let cards: Card[] = r.data.map((row: any) => parseRawCard(row))
-
-    if (cards.length === 0) return
+    let cards: Card[] = []
+    try {
+      cards = await dbService.getAllCardsByTopic(deckId)
+      if (cards.length === 0) return
+    } catch (e) {
+      console.error('[FlashcardViewer] Failed to load cards:', e)
+      return
+    }
 
     if (flashModalSettings.bookmarkedOnly) {
       const bm = loadFCBookmarks()
-      cards = cards.filter(c => bm.has(c.id))
+      cards = cards.filter(c => bm.has(`fc_bookmark_${c.id}`))
     }
 
     if (flashModalSettings.shuffleCards) {
@@ -447,18 +432,18 @@ export default function FlashcardViewer() {
     if (card.type === 'mcq') {
       const mcq = card.data as MCQData
       const text = settings.swapTermDef ? mcq.question : mcq.choices[mcq.answer]
-      return <div className="text-xl lg:text-2xl leading-relaxed font-['IBM_Plex_Mono'] text-[#E8E8E8] font-medium" dangerouslySetInnerHTML={{ __html: renderMath(text) }} />
+      return <div className={`${getDynamicFontSize(text)} leading-relaxed font-['Rajdhani'] font-bold text-[#E8E8E8]`} dangerouslySetInnerHTML={{ __html: renderMath(text) }} />
     }
     if (card.type === 'formula') {
       const f = card.data as FormulaData
       const frontStr = f.name + (f.latex ? `\n\n$$${f.latex}$$` : '')
       const backStr = [f.description, f.variables].filter(Boolean).join('\n\n')
       const text = settings.swapTermDef ? frontStr : backStr
-      return <div className={`leading-relaxed ${settings.swapTermDef ? "text-xl lg:text-2xl font-['IBM_Plex_Mono'] text-[#E8E8E8] font-medium" : "text-xl text-[#E8E8E8]"}`} dangerouslySetInnerHTML={{ __html: renderMath(text) }} />
+      return <div className={`leading-relaxed ${getDynamicFontSize(text)} font-['Rajdhani'] font-bold text-[#E8E8E8]`} dangerouslySetInnerHTML={{ __html: renderMath(text) }} />
     }
     const fc = card.data as FlashcardData
     const text = settings.swapTermDef ? fc.front : fc.back
-    return <div className="text-xl leading-relaxed" dangerouslySetInnerHTML={{ __html: renderMath(text) }} />
+    return <div className={`${getDynamicFontSize(text)} font-['Rajdhani'] font-bold leading-relaxed text-[#E8E8E8]`} dangerouslySetInnerHTML={{ __html: renderMath(text) }} />
   }
 
   function getCorrectAnswer(card: Card): string {
@@ -481,7 +466,7 @@ export default function FlashcardViewer() {
     if (!currentCard || !activeDeck) return
     const text = getFrontText(currentCard)
     if (text) speak(text)
-  }, [currentCard?.id])
+  }, [currentCard?.id, settings.swapTermDef])
 
   // ── TTS: read back face when card is flipped ───────────────────────────────
   useEffect(() => {
@@ -511,7 +496,7 @@ export default function FlashcardViewer() {
         autoplayRef.current.timer = setTimeout(() => {
           if (autoplayRef.current.activeIndex !== index) return
           setIsFlipped(true)
-        }, 1000)
+        }, 2000)
       }
       const frontText = getFrontText(currentCard)
       speakWithCallback(frontText, () => autoplaySpeechDoneRef.current?.())
@@ -520,7 +505,7 @@ export default function FlashcardViewer() {
       // Wait for back TTS to finish, then wait 1s (or 2s), then advance
       autoplaySpeechDoneRef.current = () => {
         if (autoplayRef.current.activeIndex !== index) return
-        const delay = isNewCard ? 2000 : 1000
+        const delay = Math.max(flashModalSettings.autoplayDelay * 1000, 2000)
         autoplayRef.current.timer = setTimeout(() => {
           if (autoplayRef.current.activeIndex !== index) return
           if (index < sessionCards.length - 1) {
@@ -538,7 +523,7 @@ export default function FlashcardViewer() {
       const backText = getCorrectAnswer(currentCard)
       speakWithCallback(backText, () => autoplaySpeechDoneRef.current?.())
     }
-  }, [isAutoplay, isFlipped, currentIndex, activeDeck, settings.swapTermDef])
+  }, [isAutoplay, isFlipped, currentIndex, activeDeck, settings.swapTermDef, flashModalSettings.autoplayDelay])
 
   useEffect(() => {
     return () => {
@@ -797,7 +782,7 @@ export default function FlashcardViewer() {
                       {/* Front Content */}
                       <div className="flex-1 flex items-center justify-center px-8 pb-8">
                         <div className="text-center w-full">
-                          <div className="text-xl lg:text-2xl font-medium text-[#E8E8E8] leading-relaxed font-['IBM_Plex_Mono']" dangerouslySetInnerHTML={{ __html: renderMath(getFrontText(currentCard)) }} />
+                          <div className={`${getDynamicFontSize(getFrontText(currentCard))} font-['Rajdhani'] font-bold text-[#E8E8E8] leading-relaxed`} dangerouslySetInnerHTML={{ __html: renderMath(getFrontText(currentCard)) }} />
                           {currentCard.data.imagePath && (
                             <div className="mt-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
                               <img

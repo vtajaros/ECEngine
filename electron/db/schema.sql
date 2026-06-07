@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS cards (
 CREATE TABLE IF NOT EXISTS progress (
   card_id TEXT PRIMARY KEY,
   ease_factor REAL DEFAULT 2.5,
-  interval INTEGER DEFAULT 0,
+  interval INTEGER DEFAULT 1,
   repetitions INTEGER DEFAULT 0,
   next_review TEXT,
   last_reviewed TEXT,

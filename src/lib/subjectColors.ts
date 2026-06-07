@@ -1,3 +1,12 @@
+import type { Subject } from '../types'
+
+export const SUBJECT_MAP: Record<string, Subject> = {
+  'Mathematics': 'MATH',
+  'General Engineering & Applied Sciences': 'GEAS',
+  'Electronics Engineering': 'ELECS',
+  'Electronics Systems & Technologies': 'EST',
+}
+
 export function getSubjectFilterClasses(subject: string, isActive: boolean) {
   if (!isActive) return 'text-[#888] hover:text-[#E8E8E8] hover:bg-[#1A1A1A] border border-transparent'
   

@@ -17,7 +17,7 @@ export const FLASH_SETTINGS_DEFAULTS: FlashCardSettings = {
   bookmarkedOnly: false,
   ttsEnabled: false,
   autoplay: false,
-  autoplayDelay: 5,
+  autoplayDelay: 2,
 }
 
 const TTS_FLASH_KEY = 'ecengine:flash:tts:enabled'

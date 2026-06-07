@@ -3,20 +3,20 @@ import { Edit2, Calendar, X, AlertCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 interface ExamCountdownProps {
-  examDate: string           // 'YYYY-MM-DD'
+  examDate: string
   onExamDateChange: (date: string) => void
+  preboardDate: string | null
+  onPreboardDateChange: (date: string | null) => void
 }
 
-export default function ExamCountdown({ examDate, onExamDateChange }: ExamCountdownProps) {
+export default function ExamCountdown({ examDate, onExamDateChange, preboardDate, onPreboardDateChange }: ExamCountdownProps) {
   const calculateTimeLeft = (target: string) => {
-    const targetDate = new Date(`${target}T00:00:00`).getTime()
-    const now = new Date().getTime()
-    const distance = targetDate - now
-
-    if (distance < 0) return { days: 0, hours: 0, mins: 0, secs: 0 }
-
+    const distance = new Date(`${target}T00:00:00`).getTime() - new Date().getTime()
+    if (distance < 0) return { weeks: 0, days: 0, hours: 0, mins: 0, secs: 0 }
+    const totalDays = Math.floor(distance / (1000 * 60 * 60 * 24))
     return {
-      days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+      weeks: Math.floor(totalDays / 7),
+      days: totalDays,
       hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
       mins: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
       secs: Math.floor((distance % (1000 * 60)) / 1000)
@@ -24,16 +24,25 @@ export default function ExamCountdown({ examDate, onExamDateChange }: ExamCountd
   }
 
   const [timeLeft, setTimeLeft] = useState(calculateTimeLeft(examDate))
+  const [preboardTimeLeft, setPreboardTimeLeft] = useState(
+    preboardDate ? calculateTimeLeft(preboardDate) : null
+  )
+
   const [modalOpen, setModalOpen] = useState(false)
   const [modalDate, setModalDate] = useState(examDate)
   const [modalError, setModalError] = useState<string | null>(null)
 
+  const [preboardModalOpen, setPreboardModalOpen] = useState(false)
+  const [preboardModalDate, setPreboardModalDate] = useState(preboardDate ?? '')
+  const [preboardModalError, setPreboardModalError] = useState<string | null>(null)
+
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft(examDate))
+      if (preboardDate) setPreboardTimeLeft(calculateTimeLeft(preboardDate))
     }, 1000)
     return () => clearInterval(timer)
-  }, [examDate])
+  }, [examDate, preboardDate])
 
   const openDateModal = () => {
     setModalDate(examDate)
@@ -89,8 +98,69 @@ export default function ExamCountdown({ examDate, onExamDateChange }: ExamCountd
     setModalError(null)
   }
 
+  const openPreboardModal = () => {
+    setPreboardModalDate(preboardDate ?? '')
+    setPreboardModalError(null)
+    setPreboardModalOpen(true)
+  }
+
+  const closePreboardModal = () => {
+    setPreboardModalOpen(false)
+    setPreboardModalError(null)
+  }
+
+  const handlePreboardModalDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value
+    setPreboardModalDate(val)
+    if (!val) {
+      setPreboardModalError('Please enter a date.')
+      return
+    }
+    const chosen = new Date(val + 'T00:00:00')
+    const today  = new Date()
+    today.setHours(0, 0, 0, 0)
+    if (chosen <= today) {
+      setPreboardModalError('That date has already passed. Please choose a future date.')
+    } else {
+      setPreboardModalError(null)
+    }
+  }
+
+  const confirmPreboardDateChange = () => {
+    if (preboardModalError || !preboardModalDate) return
+    const chosen = new Date(preboardModalDate + 'T00:00:00')
+    const today  = new Date()
+    today.setHours(0, 0, 0, 0)
+    if (chosen <= today) {
+      setPreboardModalError('That date has already passed. Please choose a future date.')
+      return
+    }
+    
+    const dateRegex = /^\d{4}-\d{2}-\d{2}$/
+    if (!dateRegex.test(preboardModalDate)) {
+      setPreboardModalError('Invalid date format. Use YYYY-MM-DD.')
+      return
+    }
+    const parsed = new Date(`${preboardModalDate}T00:00:00`)
+    if (isNaN(parsed.getTime())) {
+      setPreboardModalError('Invalid date. Please enter a valid calendar date.')
+      return
+    }
+
+    onPreboardDateChange(preboardModalDate)
+    setPreboardModalOpen(false)
+    setPreboardModalError(null)
+  }
+
+  const removePreboardDate = () => {
+    onPreboardDateChange(null)
+    setPreboardModalOpen(false)
+    setPreboardModalError(null)
+  }
+
   return (
-    <>
+    <div className="flex items-center gap-3">
+      {/* EXAM TARGET TIMER */}
       <div className="bg-[#111] border border-[#00FF41]/10 rounded-lg px-4 py-2 flex items-center gap-6 shadow-xl relative group">
         <button
           onClick={openDateModal}
@@ -111,6 +181,10 @@ export default function ExamCountdown({ examDate, onExamDateChange }: ExamCountd
 
         <div className="flex gap-4">
           <div className="flex flex-col items-center">
+            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{timeLeft.weeks}</span>
+            <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Wks</span>
+          </div>
+          <div className="flex flex-col items-center">
             <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{timeLeft.days}</span>
             <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Days</span>
           </div>
@@ -129,6 +203,68 @@ export default function ExamCountdown({ examDate, onExamDateChange }: ExamCountd
         </div>
       </div>
 
+      {/* PREBOARD TIMER OR ADD BUTTON */}
+      {preboardDate && preboardTimeLeft ? (
+        <div className="bg-[#111] border border-[#FFB800]/10 rounded-lg px-4 py-2 flex items-center gap-6 shadow-xl relative group">
+          <button
+            onClick={openPreboardModal}
+            className="absolute -top-2 -right-2 p-1.5 bg-[#1A1A1A] border border-[#333] rounded-full text-[#666] hover:text-[#FFB800] opacity-70 hover:opacity-100 transition-all z-10 shadow-lg"
+            title="Change preboard date"
+          >
+            <Edit2 size={12} />
+          </button>
+          <button
+            onClick={removePreboardDate}
+            className="absolute -top-2 -right-8 p-1.5 bg-[#1A1A1A] border border-[#333] rounded-full text-[#666] hover:text-[#FF3333] opacity-70 hover:opacity-100 transition-all z-10 shadow-lg"
+            title="Remove preboard date"
+          >
+            <X size={12} />
+          </button>
+
+          <div className="flex flex-col">
+            <span className="text-[10px] font-['Orbitron'] text-[#FFB800] uppercase tracking-widest opacity-80">
+              Preboards Target
+            </span>
+            <span className="text-[11px] font-['Rajdhani'] text-[#888] uppercase tracking-widest font-bold">
+              {new Date(preboardDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase()}
+            </span>
+          </div>
+
+          <div className="flex gap-4">
+            <div className="flex flex-col items-center">
+              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{preboardTimeLeft.weeks}</span>
+              <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Wks</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{preboardTimeLeft.days}</span>
+              <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Days</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{preboardTimeLeft.hours.toString().padStart(2, '0')}</span>
+              <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Hrs</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{preboardTimeLeft.mins.toString().padStart(2, '0')}</span>
+              <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Min</span>
+            </div>
+            <div className="flex flex-col items-center">
+              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#FFB800] leading-none">{preboardTimeLeft.secs.toString().padStart(2, '0')}</span>
+              <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Sec</span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="flex justify-start px-2">
+          <button
+            onClick={openPreboardModal}
+            className="text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest text-[#666] hover:text-[#FFB800] transition-colors flex items-center gap-1 opacity-70 hover:opacity-100"
+          >
+            <Edit2 size={10} /> Add Preboard
+          </button>
+        </div>
+      )}
+
+      {/* EXAM MODAL */}
       <AnimatePresence>
         {modalOpen && (
           <>
@@ -257,6 +393,145 @@ export default function ExamCountdown({ examDate, onExamDateChange }: ExamCountd
           </>
         )}
       </AnimatePresence>
-    </>
+
+      {/* PREBOARD MODAL */}
+      <AnimatePresence>
+        {preboardModalOpen && (
+          <>
+            <motion.div
+              key="preboard-modal-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
+              onClick={closePreboardModal}
+            />
+            <motion.div
+              key="preboard-modal-dialog"
+              initial={{ opacity: 0, scale: 0.95, y: -12 }}
+              animate={{ opacity: 1, scale: 1,    y: 0 }}
+              exit={{   opacity: 0, scale: 0.95,  y: -8 }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
+            >
+              <div
+                className="pointer-events-auto w-full max-w-sm mx-4 bg-[#111] border border-[#2A2A2A] rounded-2xl shadow-2xl overflow-hidden"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#1E1E1E]">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="text-[#FFB800]" size={16} />
+                    <span className="font-['Rajdhani'] font-bold text-sm text-[#E8E8E8] uppercase tracking-widest">
+                      Set Preboards Target
+                    </span>
+                  </div>
+                  <button
+                    onClick={closePreboardModal}
+                    className="text-[#555] hover:text-[#E8E8E8] transition-colors p-1 rounded-lg hover:bg-[#1A1A1A]"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+
+                <div className="px-6 py-6 space-y-5">
+                  <div className="text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest text-[#555]">
+                    Current target:&nbsp;
+                    <span className="text-[#FFB800]">
+                      {preboardDate ? new Date(preboardDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'None'}
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest text-[#666]">
+                      New Date
+                    </label>
+                    <input
+                      type="date"
+                      value={preboardModalDate}
+                      onChange={handlePreboardModalDateChange}
+                      min={new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0]}
+                      className="w-full bg-[#0D0D0D] border border-[#2A2A2A] rounded-xl px-4 py-3 text-[#E8E8E8] font-['IBM_Plex_Mono'] text-sm focus:outline-none focus:border-[#FFB800]/40 transition-colors [color-scheme:dark]"
+                    />
+                  </div>
+
+                  <AnimatePresence mode="wait">
+                    {preboardModalError && (
+                      <motion.div
+                        key="preboard-modal-error"
+                        initial={{ opacity: 0, y: -4, height: 0 }}
+                        animate={{ opacity: 1, y: 0,  height: 'auto' }}
+                        exit={{   opacity: 0, y: -4,  height: 0 }}
+                        transition={{ duration: 0.15 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="flex items-start gap-2 bg-red-500/5 border border-red-500/20 rounded-xl px-4 py-3">
+                          <AlertCircle className="text-red-400 shrink-0 mt-0.5" size={14} />
+                          <span className="font-['Rajdhani'] text-red-400 text-xs font-bold leading-relaxed">
+                            {preboardModalError}
+                          </span>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  <AnimatePresence>
+                    {preboardModalDate && !preboardModalError && (() => {
+                      const d = Math.ceil(
+                        (new Date(preboardModalDate + 'T00:00:00').getTime() - new Date().setHours(0,0,0,0)) / 86400000
+                      )
+                      return d > 0 ? (
+                        <motion.div
+                          key="preboard-days-preview"
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.15 }}
+                          className="flex items-center justify-center gap-2 py-2"
+                        >
+                          <span className="font-['IBM_Plex_Mono'] text-2xl font-bold text-[#FFB800]">{d}</span>
+                          <span className="font-['Rajdhani'] text-[#555] text-xs uppercase tracking-widest font-bold">
+                            days until preboard
+                          </span>
+                        </motion.div>
+                      ) : null
+                    })()}
+                  </AnimatePresence>
+                </div>
+
+                <div className="flex gap-3 px-6 pb-6">
+                  {preboardDate && (
+                    <button
+                      onClick={removePreboardDate}
+                      className="px-4 py-2.5 bg-[#FF3333]/10 border border-[#FF3333]/20 rounded-xl text-[#FF3333] font-['Rajdhani'] font-bold text-xs uppercase tracking-widest hover:bg-[#FF3333]/20 transition-all"
+                      title="Remove Preboard Date"
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                  <button
+                    onClick={closePreboardModal}
+                    className="flex-1 px-4 py-2.5 bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl text-[#888] font-['Rajdhani'] font-bold text-xs uppercase tracking-widest hover:text-[#E8E8E8] hover:bg-[#222] transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmPreboardDateChange}
+                    disabled={!!preboardModalError || !preboardModalDate}
+                    className="flex-1 px-4 py-2.5 rounded-xl font-['Rajdhani'] font-bold text-xs uppercase tracking-widest transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                    style={{
+                      backgroundColor: (!preboardModalError && preboardModalDate) ? '#FFB800' : '#1A1A1A',
+                      color: (!preboardModalError && preboardModalDate) ? '#000' : '#555',
+                    }}
+                  >
+                    Confirm
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
   )
 }

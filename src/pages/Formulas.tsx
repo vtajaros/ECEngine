@@ -26,7 +26,7 @@ import {
 } from 'lucide-react'
 import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
 import type { Card, CardData, CardType } from '../types'
-import { getSubjectFilterClasses, getSubjectBadgeClasses } from '../lib/subjectColors'
+import { getSubjectFilterClasses, getSubjectBadgeClasses, SUBJECT_MAP } from '../lib/subjectColors'
 import { TOS_SUBJECT_COLORS } from '../lib/tosData'
 import { Card as CardLegacy, MCQData, FlashcardData } from '../types'
 import type { FormulaData } from '../types'
@@ -41,12 +41,7 @@ type FilterSubject = 'ALL' | Subject
 
 const SUBJECTS: FilterSubject[] = ['ALL', 'MATH', 'GEAS', 'ELECS', 'EST']
 
-const SUBJECT_MAP: Record<string, Subject> = {
-  Mathematics: 'MATH',
-  'General Engineering & Applied Sciences': 'GEAS',
-  'Electronics Engineering': 'ELECS',
-  'Electronics Systems & Technologies': 'EST',
-}
+
 
 interface DeckInfo {
   id: string
@@ -82,26 +77,7 @@ function saveFCBookmarks(set: Set<string>) {
   localStorage.setItem('fc_bookmarks', JSON.stringify([...set]))
 }
 
-function parseRawCard(row: any): Card {
-  let data: CardData
-  try {
-    data = typeof row.data === 'string' ? JSON.parse(row.data) : row.data
-    if (!data || typeof data !== 'object') throw new Error('non-object')
-  } catch {
-    console.warn(`[Formulas] Failed to parse card data for id="${row.id}"`)
-    data = {} as CardData
-  }
-  return {
-    id: row.id,
-    topicId: row.topic_id,
-    type: row.type as CardType,
-    data,
-    difficulty: row.difficulty,
-    tags: (() => { try { return JSON.parse(row.tags || '[]') } catch { return [] } })(),
-    isCustom: Boolean(row.is_custom),
-    createdAt: String(row.created_at || ''),
-  }
-}
+
 
 
 export default function Formulas() {
@@ -278,14 +254,10 @@ export default function Formulas() {
   // ── Open a deck ──
   const openDeck = async (deck: DeckInfo) => {
     try {
-      const r = await window.electron.decks.getCardsByTopic(deck.id)
-        if (r.success && r.data) {
-          const cards: Card[] = r.data.map((row: any) => {
-            return parseRawCard(row)
-          })
-          setActiveDeck({ id: deck.id, title: deck.title, cards })
-          applySettings(cards, settings)
-        }
+      const cards = await dbService.getAllCardsByTopic(deck.id)
+      if (cards.length === 0) return
+      setActiveDeck({ id: deck.id, title: deck.title, cards })
+      applySettings(cards, settings)
     } catch (e) {
       console.error('Failed to load cards', e)
     }
