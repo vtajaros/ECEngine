@@ -112,6 +112,25 @@ export default function FlashcardStudy() {
           }
         }).filter((s: StudySet | null): s is StudySet => s !== null)
       }
+
+      // Load mastery percentages and merge into sets
+      try {
+        const masteryResult = await window.electron.decks.getFormulaMastery()
+        if (masteryResult.success && masteryResult.data) {
+          const masteryMap = new Map<string, number>()
+          for (const row of masteryResult.data) {
+            const pct = row.mastery != null ? Math.round(row.mastery * 100) : 0
+            masteryMap.set(row.topic_id, pct)
+          }
+          dbSets = dbSets.map(s => ({
+            ...s,
+            mastery: masteryMap.get(s.id) ?? 0,
+          }))
+        }
+      } catch (e) {
+        console.warn('[FlashcardStudy] Failed to load mastery:', e)
+      }
+
       setAllSets(prev => {
         const nonDb = prev.filter(s => !s.id.startsWith('topic_'));
         return [...nonDb, ...dbSets];

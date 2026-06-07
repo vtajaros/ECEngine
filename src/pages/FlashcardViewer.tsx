@@ -37,6 +37,7 @@ interface DeckInfo {
   createdAt?: number
   folderName?: string
   order_index?: number
+  mastery?: number
 }
 
 interface FCSettings {
@@ -207,6 +208,23 @@ export default function FlashcardViewer() {
             order_index: row.order_index
           }
         }).filter((d: DeckInfo | null): d is DeckInfo => d !== null)
+        // Load mastery and merge
+        try {
+          const masteryResult = await window.electron.decks.getFormulaMastery()
+          if (masteryResult.success && masteryResult.data) {
+            const masteryMap = new Map<string, number>()
+            for (const row of masteryResult.data) {
+              const pct = row.mastery != null ? Math.round(row.mastery * 100) : 0
+              masteryMap.set(row.topic_id, pct)
+            }
+            processedDecks = processedDecks.map((d: DeckInfo) => ({
+              ...d,
+              mastery: masteryMap.get(d.id) ?? 0,
+            }))
+          }
+        } catch (e) {
+          console.warn('[FlashcardViewer] Failed to load mastery:', e)
+        }
         setDecks(processedDecks)
       }
     } catch (e) { console.error('Failed to load decks', e) }
@@ -1349,13 +1367,14 @@ Provide a thorough explanation covering ALL of the following:
                         {/* Mastery bar — flex-1 so it fills all remaining space */}
                         <div className="flex-1 bg-[#111] h-1 rounded-full overflow-hidden min-w-[40px]">
                           <div
-                            className="h-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.4)] w-0"
+                            className="h-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.4)] transition-all duration-500"
+                            style={{ width: `${deck.mastery ?? 0}%` }}
                           />
                         </div>
 
                         {/* Mastery percentage — fixed, does not grow */}
                         <span className="text-[#00FF41] font-bold text-[10px] font-rajdhani shrink-0">
-                          0%
+                          {deck.mastery ?? 0}%
                         </span>
 
                         {/* Divider */}

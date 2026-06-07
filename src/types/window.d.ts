@@ -62,7 +62,11 @@ declare global {
         question: string
         choices: string[]
         correctAnswerIndex: number
-      }) => Promise<{ text?: string; error?: string }>
+      }) => Promise<{ text?: string; error?: string; status?: number; detail?: string }>
+      explainFlashcard: (payload: {
+        term: string
+        definition: string
+      }) => Promise<{ text?: string; error?: string; status?: number; detail?: string }>
       config: {
         setApiKey: (key: string) => Promise<{ success: boolean; error?: string }>
         getApiKeyStatus: () => Promise<{ configured: boolean }>
@@ -78,10 +82,6 @@ declare global {
       print: {
         open: (topicId: string, title: string) => Promise<{ success: boolean; error?: string }>
         toPDF: (suggestedName: string, themeVars: Record<string, string>, topicId: string, title: string, theme: string, layout: string) => Promise<{ success: boolean; canceled?: boolean; error?: string }>
-      }
-    }
-  }
-}
       }
     }
   }

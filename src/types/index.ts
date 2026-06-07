@@ -1,3 +1,4 @@
+export type Subject = 'MATH' | 'GEAS' | 'ELECS' | 'EST'
 export type CardType = 'flashcard' | 'mcq' | 'formula' | 'concept'
 export type Difficulty = 'easy' | 'medium' | 'hard'
 
