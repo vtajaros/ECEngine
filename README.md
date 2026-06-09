@@ -133,6 +133,10 @@ We have recently refactored the UI and added highly requested functional capabil
 11. **Flashcard Viewer — Visual Fixes**:
     * Nav Prev/Next buttons are wrapped in a persistent `h-[52px]` container so the card never shifts when they appear or disappear.
     * TTS and Settings icon buttons in the top bar use matching `px-3 py-1.5` padding to sit at the same height as the SWAP and AUTO buttons.
+12. **Navigation State Stability**:
+    * Resolved a navigation locking issue where `useBlocker` would get stuck in a 'blocked' state when a user prematurely exits a session. Blocker resets are now synchronous and atomic across `FlashcardViewer`, `Formulas`, and `FlashcardStudy`.
+13. **Asynchronous File I/O Optimization**:
+    * Replaced all synchronous file system calls (`fs.writeFileSync`, `fs.copyFileSync`, `fs.readFileSync`) within `ipcMain.handle` boundaries across `db.ipc.ts`, `config.ipc.ts`, `file.ipc.ts`, and `print.ipc.ts` with their `fs/promises` async equivalents. This prevents blocking the main Electron process thread during large database backups and JSON file exports.
 
 ---
 
@@ -305,12 +309,6 @@ We are mapping out additions across four core phases:
 ### Phase 4: UI/UX Aesthetic customizers
 * **Visual Terminal Themes**: A selection of custom cyberpunk terminal presets (e.g., "Night City Neon", "Matrix Green", "Netrunner Amber").
 * **Circuits 3D Visualizer**: Render complex circuitry using Three.js directly within the card explanation panel to provide visual context.
-
----
-
-## 🐛 Known Issues
-
-* **Navigation Lock on Abort**: The application sometimes locks navigation when a user aborts an active learn mode or test session mid-progress. This requires a hard restart to clear the active navigation blocker state.
 
 ---
 
