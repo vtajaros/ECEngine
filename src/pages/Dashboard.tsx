@@ -120,7 +120,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="h-full bg-[#0D0D0D] px-8 pb-8 pt-4 lg:px-12 lg:pb-12 lg:pt-4 overflow-y-auto no-scrollbar">
+    <div className="h-full bg-[#0D0D0D] px-8 pb-8 pt-4 lg:px-12 lg:pb-12 lg:pt-4 overflow-hidden">
       {/* Header */}
       <header className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>

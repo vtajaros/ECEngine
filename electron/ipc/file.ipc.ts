@@ -1,5 +1,5 @@
 import { ipcMain, dialog, BrowserWindow } from 'electron'
-import fs from 'fs'
+import fsp from 'fs/promises'
 
 export function registerFileHandlers() {
   ipcMain.handle('file:export', async (event, dataStr: string) => {
@@ -17,7 +17,7 @@ export function registerFileHandlers() {
     }
 
     try {
-      fs.writeFileSync(filePath, dataStr, 'utf8')
+      await fsp.writeFile(filePath, dataStr, 'utf8')
       return { success: true }
     } catch (err: any) {
       return { success: false, error: err.message }
@@ -39,7 +39,7 @@ export function registerFileHandlers() {
     }
 
     try {
-      const dataStr = fs.readFileSync(filePaths[0], 'utf8')
+      const dataStr = await fsp.readFile(filePaths[0], 'utf8')
       return { success: true, data: dataStr }
     } catch (err: any) {
       return { success: false, error: err.message }

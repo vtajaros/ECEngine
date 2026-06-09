@@ -1,6 +1,6 @@
 import { ipcMain, BrowserWindow, dialog, app } from 'electron'
 import { join } from 'path'
-import fs from 'fs'
+import fsp from 'fs/promises'
 
 let printWindow: BrowserWindow | null = null
 
@@ -128,7 +128,7 @@ export function registerPrintHandlers(): void {
         preferCSSPageSize: false,
       })
 
-      fs.writeFileSync(filePath, buffer)
+      await fsp.writeFile(filePath, buffer)
       return { success: true }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err)

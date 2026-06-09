@@ -602,7 +602,10 @@ export default function FlashcardStudy() {
           onComplete={(stats) => {
             console.log('Learn Mode Stats:', stats)
           }}
-          onExit={() => setIsSessionActive(false)}
+          onExit={() => {
+            if (blocker.state === 'blocked') blocker.reset()
+            setIsSessionActive(false)
+          }}
         />
       )
     }
@@ -616,7 +619,10 @@ export default function FlashcardStudy() {
           onComplete={(stats) => {
             console.log('Test Mode Stats:', stats)
           }}
-          onExit={() => setIsSessionActive(false)}
+          onExit={() => {
+            if (blocker.state === 'blocked') blocker.reset()
+            setIsSessionActive(false)
+          }}
         />
       )
     }

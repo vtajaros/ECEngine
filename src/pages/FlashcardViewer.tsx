@@ -369,6 +369,7 @@ export default function FlashcardViewer() {
 
   // ── Exit session ──
   const exitSession = () => {
+    if (blocker.state === 'blocked') blocker.reset()
     setActiveDeck(null)
     setSessionCards([])
     setCurrentIndex(0)

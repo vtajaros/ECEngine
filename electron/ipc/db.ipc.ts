@@ -2,6 +2,7 @@ import { ipcMain, dialog, BrowserWindow, app } from 'electron'
 import { initDB, queryAll, execute, getDB } from '../db/database'
 import { serializeMcqCard } from './mcq.serializer'
 import * as fs from 'fs'
+import * as fsp from 'fs/promises'
 import * as path from 'path'
 import { z } from 'zod'
 
@@ -140,7 +141,7 @@ export function registerDBHandlers() {
         return { success: false, error: 'Export canceled' }
       }
 
-      fs.writeFileSync(result.filePath, payload, 'utf-8')
+      await fsp.writeFile(result.filePath, payload, 'utf-8')
       return { success: true }
     } catch (error) {
       console.error('[Decks exportToText Error]', error)
@@ -367,8 +368,10 @@ export function registerDBHandlers() {
       const src = path.join(dbPath, 'ecengine.sqlite')
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
       const dest = path.join(dbPath, `ecengine_backup_${timestamp}.sqlite`)
-      if (fs.existsSync(src)) {
-        fs.copyFileSync(src, dest)
+      try {
+        await fsp.copyFile(src, dest)
+      } catch {
+        // src does not exist — skip backup silently
       }
 
       getDB().transaction(() => {

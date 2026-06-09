@@ -106,7 +106,7 @@ export default function ReviewHeatmap({ activityHistory, monthsToShow = 6 }: Rev
                   {week.map(day => {
                     const data = activityHistory[day] || { count: 0, timeSpent: 0 }
                     const timeH = Math.floor(data.timeSpent / 60)
-                    const timeM = data.timeSpent % 60
+                    const timeM = Math.floor(data.timeSpent) % 60
                     const dateObj = new Date(day)
                     const isOutRange = dateObj < gridStartDate || dateObj > gridEndDate
 

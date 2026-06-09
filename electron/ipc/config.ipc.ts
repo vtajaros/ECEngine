@@ -1,5 +1,6 @@
 import { ipcMain, app, shell } from 'electron'
 import fs from 'fs'
+import fsp from 'fs/promises'
 import path from 'path'
 
 let cachedGroqApiKey: string | undefined | null = null // null = not yet loaded
@@ -56,7 +57,7 @@ export function registerConfigHandlers(): void {
       const trimmed = key.trim()
       const config = readConfig()
       config.groqApiKey = trimmed || undefined
-      writeConfig(config)
+      await fsp.writeFile(getConfigPath(), JSON.stringify(config, null, 2), 'utf8')
       cachedGroqApiKey = trimmed || undefined
       return { success: true }
     } catch (err) {
