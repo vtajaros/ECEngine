@@ -14,7 +14,7 @@ import { getSubjectFilterClasses, getSubjectBadgeClasses, SUBJECT_MAP } from '..
 import { TOS_SUBJECT_COLORS } from '../lib/tosData'
 import { useSessionStore } from '../store/useSessionStore'
 import { motion, AnimatePresence } from 'framer-motion'
-import { shuffle, shuffleChoices } from '../lib/scrambler'
+import { shuffle, shuffleChoices, isSafeToShuffleChoices } from '../lib/scrambler'
 import { useIdleAwareTimer } from '../hooks/useIdleAwareTimer'
 
 import { StudyHeader } from '../components/study/StudyHeader'
@@ -454,7 +454,7 @@ export default function FlashcardStudy() {
 
     if (learnSettings.shuffleChoices) {
       filteredData = filteredData.map(card => {
-        if (card.type === 'mcq' && card.data && Array.isArray(card.data.choices)) {
+        if (card.type === 'mcq' && card.data && Array.isArray(card.data.choices) && isSafeToShuffleChoices(card.data.choices)) {
           const sc = shuffleChoices(card.data.choices, card.data.answer)
           return {
             ...card,
@@ -542,7 +542,7 @@ export default function FlashcardStudy() {
 
     if (testSettings.shuffleChoices) {
       filteredData = filteredData.map(card => {
-        if (card.type === 'mcq' && card.data && Array.isArray(card.data.choices)) {
+        if (card.type === 'mcq' && card.data && Array.isArray(card.data.choices) && isSafeToShuffleChoices(card.data.choices)) {
           const sc = shuffleChoices(card.data.choices, card.data.answer)
           return {
             ...card,

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from '
 import { Card, MCQData } from '../../types'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bookmark, Clock, ArrowRight, RefreshCw, ClipboardCheck, X, AlertTriangle, Copy, Sparkles, Volume2, VolumeX } from 'lucide-react'
-import { shuffle, shuffleChoices } from '../../lib/scrambler'
+import { shuffle, shuffleChoices, isSafeToShuffleChoices } from '../../lib/scrambler'
 import { renderMath } from '../../lib/latex'
 import { ExplanationPanel } from '../ui/ExplanationPanel'
 import { Tooltip } from '../ui/Tooltip'
@@ -442,7 +442,7 @@ Please explain:
     if (settings.shuffleChoices) {
       finalCards = finalCards.map(card => {
         const mcq = card.data as MCQData
-        if (mcq?.choices) {
+        if (mcq?.choices && isSafeToShuffleChoices(mcq.choices)) {
           const sc = shuffleChoices(mcq.choices, mcq.answer)
           return { ...card, data: { ...mcq, choices: sc.choices, answer: sc.answer } }
         }
