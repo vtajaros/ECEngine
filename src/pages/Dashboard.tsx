@@ -281,7 +281,7 @@ export default function Dashboard() {
                 Session Stats
               </h2>
             </div>
-            <div className="flex items-center gap-0 divide-x divide-[#2A2A2A]">
+            <div className="flex items-start gap-0 divide-x divide-[#2A2A2A]">
               <div className="flex flex-col gap-0.5 flex-1 pr-4">
                 <span className="font-['Rajdhani'] text-[#666] uppercase tracking-widest text-[9px] font-bold">Studied</span>
                 <div className="flex items-baseline gap-1">
@@ -295,7 +295,6 @@ export default function Dashboard() {
                   <span className="font-['IBM_Plex_Mono'] text-xl font-bold text-[#E8E8E8]">{statsData.accuracy || 0}</span>
                   <span className="font-['Rajdhani'] text-[#00FF41] font-bold text-[9px]">%</span>
                 </div>
-                <span className="font-['Rajdhani'] text-[#555] uppercase tracking-widest text-[9px] font-bold">all time</span>
               </div>
             </div>
           </div>
