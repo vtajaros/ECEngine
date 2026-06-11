@@ -67,8 +67,13 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
         previousEaseFactor
       )
 
-      const nextReview = new Date()
-      nextReview.setDate(nextReview.getDate() + interval)
+      // Build a plain local date string (YYYY-MM-DD) — no UTC shift.
+      // toISOString() would convert local time to UTC, causing premature due
+      // cards in UTC+ timezones. The DB queries compare against date('now','localtime').
+      const nextReviewDate = new Date()
+      nextReviewDate.setDate(nextReviewDate.getDate() + interval)
+      const pad = (n: number) => String(n).padStart(2, '0')
+      const nextReviewStr = `${nextReviewDate.getFullYear()}-${pad(nextReviewDate.getMonth() + 1)}-${pad(nextReviewDate.getDate())}`
 
       // quality 3 (Good) or 4 (Easy) = correct answer; 1 (Again) or 2 (Hard) = incorrect
       const isCorrect = quality >= 3
@@ -77,8 +82,8 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
         easeFactor,
         interval,
         repetitions,
-        nextReview: nextReview.toISOString(),
-        lastReviewed: new Date().toISOString()
+        nextReview: nextReviewStr,           // e.g. "2026-06-15" — plain local date, no time component
+        lastReviewed: new Date().toISOString() // full ISO kept for display/history only
       }, isCorrect)
 
       // Re-read state after the await — index may not have changed but sessionStats

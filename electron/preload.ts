@@ -36,6 +36,9 @@ contextBridge.exposeInMainWorld('electron', {
     importDecks: (parsed: any) => ipcRenderer.invoke('data:importDecks', parsed),
     getAllCardsByTopic: (topicId: string) => ipcRenderer.invoke('data:getAllCardsByTopic', topicId),
     getCardsPrioritized: (topicId: string) => ipcRenderer.invoke('data:getCardsPrioritized', topicId),
+    getDueCards: (topicId: string) => ipcRenderer.invoke('data:getDueCards', topicId),
+    getDueCardCount: (topicId: string) => ipcRenderer.invoke('data:getDueCardCount', topicId),
+    getDueBySubject: () => ipcRenderer.invoke('data:getDueBySubject'),
   },
   file: {
     import: (filePath?: string) => ipcRenderer.invoke('file:import', filePath),

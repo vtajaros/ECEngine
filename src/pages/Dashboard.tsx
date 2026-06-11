@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { BookOpen, Library, Sigma, Download, Zap, BookMarked, BarChart2, TrendingUp, Check, Calendar, Edit2, Activity, Clock, X, AlertCircle } from 'lucide-react'
+import { BookOpen, Library, Sigma, Download, Zap, BookMarked, BarChart2, TrendingUp, Calendar, Edit2, Activity, Clock, X, AlertCircle } from 'lucide-react'
 import { getSubjectBadgeClasses } from '../lib/subjectColors'
 import { dbService, AccuracyGranularity, AccuracySubject } from '../services/db.service'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -28,6 +28,13 @@ export default function Dashboard() {
     { subject: 'EST', count: 0 },
   ])
   const [subjectProgress, setSubjectProgress] = useState<any[]>([])
+  const [dueBySubject, setDueBySubject] = useState<{
+    subject: string
+    due_today: number
+    due_d1: number; due_d2: number; due_d3: number
+    due_d4: number; due_d5: number
+    total_cards: number
+  }[]>([])
   const [history, setHistory] = useState<Record<string, { count: number, timeSpent: number }>>({})
   
   const [selectedSubject, setSelectedSubject] = useState<AccuracySubject>('ALL')
@@ -59,6 +66,7 @@ export default function Dashboard() {
       const globalStats = await dbService.getGlobalStats()
       const rawSubjectProgress = await dbService.getSubjectProgress()
       const activityHistory = await dbService.getActivityHistory()
+      const rawDueBySubject = await dbService.getDueBySubject()
       
       // Use real history for heatmap
       setHistory(activityHistory)
@@ -90,6 +98,12 @@ export default function Dashboard() {
 
       setSubjectProgress(formattedProgress)
 
+      const formattedDue = subjects.map(s => {
+        const found = rawDueBySubject.find((r: any) => (SUBJECT_MAP[r.subject] || r.subject) === s)
+        return found ?? { subject: s, due_today: 0, due_d1: 0, due_d2: 0, due_d3: 0, due_d4: 0, due_d5: 0, total_cards: 0 }
+      })
+      setDueBySubject(formattedDue)
+
     } catch (error) {
       console.error('Failed to load dashboard data:', error)
     }
@@ -120,9 +134,9 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="h-full bg-[#0D0D0D] px-8 pb-8 pt-4 lg:px-12 lg:pb-12 lg:pt-4 overflow-hidden">
+    <div className="h-full bg-[#0D0D0D] px-8 pb-4 pt-4 lg:px-12 lg:pb-6 lg:pt-4 overflow-hidden flex flex-col gap-4">
       {/* Header */}
-      <header className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+      <header className="shrink-0 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="font-['Orbitron'] text-3xl lg:text-4xl font-bold text-[#E8E8E8] mb-1 tracking-wider">
             <span className="text-[#00FF41]">ECE</span>ngine
@@ -142,50 +156,105 @@ export default function Dashboard() {
       </header>
 
       {/* Analytics Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
+      <div className="shrink-0 grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Condensed KPIs */}
-        <div className="lg:col-span-1 flex flex-col gap-4">
-          <div className="bg-[#1A1A1A] p-4 rounded-xl border border-[#222] shadow-lg flex flex-col justify-between min-h-[130px]">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-[#666] font-['Rajdhani'] uppercase tracking-widest text-[10px] font-bold">Total Decks</p>
-              <Library className="text-[#00FF41]/10" size={16} />
+        <div className="lg:col-span-1 flex flex-col gap-4 self-stretch">
+
+          {/* Total Decks — donut chart */}
+          <div className="bg-[#1A1A1A] p-5 rounded-xl border border-[#222] shadow-lg flex flex-col flex-1">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-['Rajdhani'] font-bold text-sm text-[#E8E8E8] uppercase tracking-widest flex items-center gap-2">
+                <Library className="text-[#00FF41]" size={13} />
+                Total Decks
+              </h2>
             </div>
-            <div className="flex items-baseline gap-2 mb-4">
-              <span className="font-['IBM_Plex_Mono'] text-2xl font-bold text-[#E8E8E8]">{statsData.totalDecks}</span>
-              <span className="font-['Rajdhani'] text-[#00FF41] font-bold text-[10px]">DECKS</span>
+
+            {/* Donut + legend row */}
+            <div className="flex flex-col items-center gap-4 flex-1 justify-center">
+              {/* SVG Donut */}
+              {(() => {
+                const SUBJECT_COLORS: Record<string, string> = {
+                  MATH: '#FB923C', GEAS: '#60A5FA', ELECS: '#F87171', EST: '#22C55E'
+                }
+                const total = subjectCounts.reduce((s, r) => s + r.count, 0) || 1
+                const cx = 60, cy = 60, r = 46, stroke = 12
+                const circumference = 2 * Math.PI * r
+                let offset = 0
+                const slices = subjectCounts.map(item => {
+                  const pct = item.count / total
+                  const dash = pct * circumference
+                  const slice = { subject: item.subject, dash, offset, color: SUBJECT_COLORS[item.subject] ?? '#555' }
+                  offset += dash
+                  return slice
+                })
+                return (
+                  <svg width="120" height="120" viewBox="0 0 120 120" className="shrink-0">
+                    {/* Track */}
+                    <circle cx={cx} cy={cy} r={r} fill="none" stroke="#222" strokeWidth={stroke} />
+                    {/* Slices */}
+                    {slices.map((s, i) => (
+                      <circle
+                        key={i}
+                        cx={cx} cy={cy} r={r}
+                        fill="none"
+                        stroke={s.color}
+                        strokeWidth={stroke}
+                        strokeDasharray={`${s.dash} ${circumference - s.dash}`}
+                        strokeDashoffset={-(s.offset - circumference / 4)}
+                        style={{ transition: 'stroke-dasharray 0.6s ease' }}
+                      />
+                    ))}
+                    {/* Center label */}
+                    <text x={cx} y={cy - 6} textAnchor="middle" fill="#E8E8E8"
+                      fontSize="18" fontFamily="'IBM Plex Mono', monospace" fontWeight="bold">
+                      {total}
+                    </text>
+                    <text x={cx} y={cy + 12} textAnchor="middle" fill="#555"
+                      fontSize="9" fontFamily="'Rajdhani', sans-serif" fontWeight="bold"
+                      letterSpacing="1">
+                      DECKS
+                    </text>
+                  </svg>
+                )
+              })()}
+
+              {/* Legend */}
+              <div className="grid grid-cols-2 gap-1.5 w-full">
+                {subjectCounts.map((item, i) => (
+                  <div key={i} className={`px-2 py-1 rounded border text-[9px] font-bold font-['Rajdhani'] uppercase tracking-wider text-center ${getSubjectClasses(item.subject)}`}>
+                    {item.subject}: {item.count}
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-1.5 mt-auto">
-              {subjectCounts.map((item, i) => (
-                <div key={i} className={`px-2 py-1 rounded border text-[9px] font-bold font-['Rajdhani'] uppercase tracking-wider text-center ${getSubjectClasses(item.subject)}`}>
-                  {item.subject}: {item.count}
+          </div>
+
+          {/* Cards Studied + Accuracy — merged */}
+          <div className="bg-[#1A1A1A] p-5 rounded-xl border border-[#222] shadow-lg">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-['Rajdhani'] font-bold text-sm text-[#E8E8E8] uppercase tracking-widest flex items-center gap-2">
+                <BarChart2 className="text-[#00FF41]" size={13} />
+                Session Stats
+              </h2>
+            </div>
+            <div className="flex items-center gap-0 divide-x divide-[#2A2A2A]">
+              <div className="flex flex-col gap-0.5 flex-1 pr-4">
+                <span className="font-['Rajdhani'] text-[#666] uppercase tracking-widest text-[9px] font-bold">Studied</span>
+                <div className="flex items-baseline gap-1">
+                  <span className="font-['IBM_Plex_Mono'] text-xl font-bold text-[#E8E8E8]">{statsData.totalStudied || 0}</span>
+                  <span className="font-['Rajdhani'] text-[#00FF41] font-bold text-[9px]">CARDS</span>
                 </div>
-              ))}
+              </div>
+              <div className="flex flex-col gap-0.5 flex-1 pl-4">
+                <span className="font-['Rajdhani'] text-[#666] uppercase tracking-widest text-[9px] font-bold">Accuracy</span>
+                <div className="flex items-baseline gap-1">
+                  <span className="font-['IBM_Plex_Mono'] text-xl font-bold text-[#E8E8E8]">{statsData.accuracy || 0}</span>
+                  <span className="font-['Rajdhani'] text-[#00FF41] font-bold text-[9px]">%</span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="bg-[#1A1A1A] p-4 rounded-xl border border-[#222] flex items-center justify-between shadow-lg">
-            <div>
-              <p className="text-[#666] font-['Rajdhani'] uppercase tracking-widest text-[10px] mb-1 font-bold">Cards Studied</p>
-              <div className="flex items-baseline gap-2">
-                <span className="font-['IBM_Plex_Mono'] text-2xl font-bold text-[#E8E8E8]">
-                  {statsData.totalStudied || 0}
-                </span>
-                <span className="font-['Rajdhani'] text-[#00FF41] font-bold text-[10px]">CARDS</span>
-              </div>
-            </div>
-            <Check className="text-[#00FF41]/10" size={20} />
-          </div>
-
-          <div className="bg-[#1A1A1A] p-4 rounded-xl border border-[#222] flex items-center justify-between shadow-lg">
-            <div>
-              <p className="text-[#666] font-['Rajdhani'] uppercase tracking-widest text-[10px] mb-1 font-bold">Accuracy Rate</p>
-              <div className="flex items-baseline gap-2">
-                <span className="font-['IBM_Plex_Mono'] text-2xl font-bold text-[#E8E8E8]">{statsData.accuracy || 0}</span>
-                <span className="font-['Rajdhani'] text-[#00FF41] font-bold text-[10px]">%</span>
-              </div>
-            </div>
-            <TrendingUp className="text-[#00FF41]/10" size={20} />
-          </div>
         </div>
 
         {/* ACTIVITY HEATMAP (Swapped to Top) */}
@@ -221,12 +290,12 @@ export default function Dashboard() {
       </div>
 
       {/* Row 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* ACCURACY TREND */}
-        <div className="lg:col-span-2 bg-[#1A1A1A] border border-[#222] rounded-xl p-6 shadow-xl relative overflow-hidden flex flex-col min-h-[300px]">
+        <div className="lg:col-span-3 bg-[#1A1A1A] border border-[#222] rounded-xl p-4 shadow-xl relative overflow-hidden flex flex-col min-h-0">
 
           {/* Header */}
-          <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
+          <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
             <h2 className="font-['Rajdhani'] font-bold text-sm text-[#E8E8E8] uppercase tracking-widest flex items-center shrink-0">
               <Activity
                 className="mr-2 shrink-0 transition-colors duration-300"
@@ -304,43 +373,86 @@ export default function Dashboard() {
           </AnimatePresence>
         </div>
 
-        {/* Subject Mastery Panel */}
-        <div className="p-6 bg-[#111111] rounded-xl border border-[#161616]">
-          <h2 className="font-['Rajdhani'] font-bold text-sm text-[#E8E8E8] mb-6 uppercase tracking-widest border-b border-[#161616] pb-4 flex items-center">
-              <TrendingUp className="mr-2 text-[#666]" size={16} />
-              Subject Mastery
+        {/* Due Cards Panel */}
+        <div className="lg:col-span-2 p-4 bg-[#111111] rounded-xl border border-[#161616] flex flex-col min-h-0 overflow-hidden">
+          <h2 className="font-['Rajdhani'] font-bold text-sm text-[#E8E8E8] mb-3 uppercase tracking-widest border-b border-[#1E1E1E] pb-3 flex items-center justify-between">
+            <span className="flex items-center gap-2">
+              <AlertCircle size={15} className="text-[#00FF41]" />
+              Due Cards
+            </span>
+            <span className="text-[#00FF41] font-['IBM_Plex_Mono'] text-xs">
+              {dueBySubject.reduce((s, r) => s + r.due_today, 0)} today
+            </span>
           </h2>
-          <div className="space-y-6">
-            {subjectProgress.length > 0 ? (
-              subjectProgress.map((item, idx) => {
-                let color = '#00FF41'
-                if (item.percent < 30) color = '#FF3333'
-                else if (item.percent < 60) color = '#FFB800'
 
+          {/* Per-subject rows */}
+          <div className="flex flex-col gap-2 mb-3">
+            {(['MATH', 'GEAS', 'ELECS', 'EST'] as const).map(subj => {
+              const row = dueBySubject.find(r => r.subject === subj)
+              const dueToday = row?.due_today ?? 0
+              const total = row?.total_cards ?? 0
+              const pct = total > 0 ? Math.min(100, Math.round((dueToday / total) * 100)) : 0
+              const SUBJECT_COLORS: Record<string, string> = {
+                MATH: '#F97316', GEAS: '#60A5FA', ELECS: '#F87171', EST: '#00FF41'
+              }
+              const color = SUBJECT_COLORS[subj]
+              return (
+                <div key={subj}>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <span className="font-['Rajdhani'] font-bold text-[11px] uppercase tracking-widest text-[#666]">{subj}</span>
+                    <span className="font-['IBM_Plex_Mono'] text-[11px]" style={{ color: dueToday > 0 ? color : '#444' }}>
+                      {dueToday} / {total}
+                    </span>
+                  </div>
+                  <div className="w-full bg-[#161616] h-1.5 rounded-full overflow-hidden border border-[#222]">
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{
+                        width: `${pct}%`,
+                        backgroundColor: color,
+                        boxShadow: dueToday > 0 ? `0 0 6px ${color}60` : 'none'
+                      }}
+                    />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* 5-day upcoming sparkline */}
+          <div className="mt-auto border-t border-[#1E1E1E] pt-3">
+            <p className="font-['Rajdhani'] text-[10px] uppercase tracking-widest text-[#444] mb-2 font-bold">Upcoming 5 days</p>
+            <div className="flex items-end gap-1.5 h-12">
+              {[1, 2, 3, 4, 5].map(d => {
+                const key = `due_d${d}` as 'due_d1'|'due_d2'|'due_d3'|'due_d4'|'due_d5'
+                const count = dueBySubject.reduce((sum, r) => sum + (r[key] ?? 0), 0)
+                const maxCount = Math.max(1, ...[1,2,3,4,5].map(x =>
+                  dueBySubject.reduce((sum, r) => sum + (r[`due_d${x}` as typeof key] ?? 0), 0)
+                ))
+                const heightPct = Math.max(8, Math.round((count / maxCount) * 100))
+                const today = new Date()
+                const futureDate = new Date(today)
+                futureDate.setDate(today.getDate() + d)
+                const label = futureDate.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()
                 return (
-                  <div key={idx}>
-                    <div className="flex justify-between text-[11px] mb-2 font-['Rajdhani'] text-[#666] uppercase tracking-wider font-bold">
-                      <span>{item.subject}</span>
-                      <span style={{ color }}>{item.percent}%</span>
-                    </div>
-                    <div className="w-full bg-[#161616] h-2 rounded-full overflow-hidden border border-[#222]">
-                      <div 
-                        className="h-full transition-all duration-1000" 
-                        style={{ 
-                          width: `${item.percent}%`, 
-                          backgroundColor: color,
-                          boxShadow: `0 0 8px ${color}40` 
-                        }} 
+                  <div key={d} className="flex-1 flex flex-col items-center gap-1">
+                    <span className="font-['IBM_Plex_Mono'] text-[9px] text-[#555]">{count > 0 ? count : ''}</span>
+                    <div className="w-full flex items-end" style={{ height: '36px' }}>
+                      <div
+                        className="w-full rounded-sm transition-all duration-700"
+                        style={{
+                          height: `${heightPct}%`,
+                          backgroundColor: count > 0 ? '#00FF41' : '#1A1A1A',
+                          opacity: count > 0 ? 0.7 : 1,
+                          border: '1px solid #222'
+                        }}
                       />
                     </div>
+                    <span className="font-['Rajdhani'] text-[9px] text-[#444] font-bold">{label}</span>
                   </div>
                 )
-              })
-            ) : (
-              <div className="text-[#444] font-['IBM_Plex_Mono'] text-[10px] text-center py-2">
-                No data available.
-              </div>
-            )}
+              })}
+            </div>
           </div>
         </div>
       </div>

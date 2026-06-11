@@ -25,14 +25,14 @@ describe('calculateSM2 — interval progression', () => {
     expect(result.repetitions).toBe(2)
   })
 
-  it('rep 2 + q=4 (EF unchanged) → interval = round(6 * 2.5) = 15', () => {
+  it('rep 2 + q=4 (Easy bonus applied) → interval = round(6 * 2.5) = 15, EF = 2.65', () => {
     // q=4: EF delta = 0.1 - 1*(0.08 + 1*0.02) = 0.1 - 0.10 = 0.00
-    // new EF = 2.5 + 0.00 = 2.5
-    // interval = round(6 * 2.5) = 15
+    // interval computed using EF before bonus: round(6 * 2.5) = 15
+    // Easy bonus applied after interval: EF = 2.5 + 0.15 = 2.65
     const result = calculateSM2(4, 2, 6, DEFAULT_EF)
     expect(result.interval).toBe(15)
     expect(result.repetitions).toBe(3)
-    expect(result.easeFactor).toBeCloseTo(2.5, 5)
+    expect(result.easeFactor).toBeCloseTo(2.65, 5)
   })
 
   it('rep 2 + q=5 (EF increases) → interval = round(6 * 2.6) = 16', () => {
@@ -55,12 +55,15 @@ describe('calculateSM2 — interval progression', () => {
 
   it('compounds correctly over three passing reps', () => {
     // Simulate rep 0 → 1 → 2 → 3 at q=4 each time
-    const r0 = calculateSM2(4, 0, 1, DEFAULT_EF)  // interval=1,  reps→1
-    const r1 = calculateSM2(4, r0.repetitions, r0.interval, r0.easeFactor) // interval=6,  reps→2
-    const r2 = calculateSM2(4, r1.repetitions, r1.interval, r1.easeFactor) // interval=15, reps→3
+    // r0: reps=0 → interval=1, EF=2.5+0.15=2.65
+    // r1: reps=1 → interval=6, EF=2.65+0.15=2.80
+    // r2: reps=2 → interval=round(6 * 2.80)=17, EF=2.80+0.15=2.95
+    const r0 = calculateSM2(4, 0, 1, DEFAULT_EF)
+    const r1 = calculateSM2(4, r0.repetitions, r0.interval, r0.easeFactor)
+    const r2 = calculateSM2(4, r1.repetitions, r1.interval, r1.easeFactor)
     expect(r0.interval).toBe(1)
     expect(r1.interval).toBe(6)
-    expect(r2.interval).toBe(15)
+    expect(r2.interval).toBe(17)
     expect(r2.repetitions).toBe(3)
   })
 })
@@ -68,11 +71,12 @@ describe('calculateSM2 — interval progression', () => {
 // ─── Failure / reset behaviour ────────────────────────────────────────────────
 
 describe('calculateSM2 — failure resets (quality < 3)', () => {
-  it('q=2 resets repetitions to 0 and interval to 1', () => {
-    // Card was at rep 5, large interval — a fail should reset entirely
+  it('q=2 (Hard) preserves repetitions and reduces interval by 20%', () => {
+    // Card was at rep 5, interval 30 — Hard reduces interval, does NOT reset
+    // interval = max(1, round(30 * 0.8)) = max(1, 24) = 24
     const result = calculateSM2(2, 5, 30, DEFAULT_EF)
-    expect(result.repetitions).toBe(0)
-    expect(result.interval).toBe(1)
+    expect(result.repetitions).toBe(5)
+    expect(result.interval).toBe(24)
   })
 
   it('q=1 resets repetitions to 0 and interval to 1', () => {
@@ -81,20 +85,21 @@ describe('calculateSM2 — failure resets (quality < 3)', () => {
     expect(result.interval).toBe(1)
   })
 
-  it('q=0 resets repetitions to 0 and interval to 1', () => {
-    const result = calculateSM2(0, 2, 6, DEFAULT_EF)
+  it('q=1 (Again) resets repetitions to 0 and interval to 1', () => {
+    // quality=1 is the only full-lapse rating; q=0 is out of range
+    const result = calculateSM2(1, 2, 6, DEFAULT_EF)
     expect(result.repetitions).toBe(0)
     expect(result.interval).toBe(1)
   })
 
-  it('q=2 still decreases easeFactor even on failure', () => {
+  it('q=2 (Hard) decreases easeFactor and reduces interval by 20%', () => {
     // q=2: EF delta = 0.1 - 3*(0.08 + 3*0.02) = 0.1 - 3*(0.14) = 0.1 - 0.42 = -0.32
     // new EF = 2.5 - 0.32 = 2.18
+    // Hard — repetitions preserved (3), interval = max(1, round(15 * 0.8)) = 12
     const result = calculateSM2(2, 3, 15, DEFAULT_EF)
     expect(result.easeFactor).toBeCloseTo(2.18, 5)
-    // Repetitions and interval still reset
-    expect(result.repetitions).toBe(0)
-    expect(result.interval).toBe(1)
+    expect(result.repetitions).toBe(3)
+    expect(result.interval).toBe(12)
   })
 
   it('q=0 still decreases easeFactor even on failure', () => {
@@ -130,9 +135,10 @@ describe('calculateSM2 — easeFactor floor at 1.3', () => {
   })
 
   it('does not clamp when EF stays above 1.3', () => {
-    // q=4 at EF=1.5 → delta=0, stays at 1.5 — no clamp should fire
+    // q=4 at EF=1.5 → formula delta=0, then Easy bonus +0.15 → final EF=1.65
+    // 1.65 > 1.3 so no clamp fires
     const result = calculateSM2(4, 2, 6, 1.5)
-    expect(result.easeFactor).toBeCloseTo(1.5, 5)
+    expect(result.easeFactor).toBeCloseTo(1.65, 5)
   })
 })
 
@@ -144,9 +150,12 @@ describe('calculateSM2 — q=3 boundary (lowest passing grade)', () => {
     expect(result.repetitions).toBe(3) // 2 + 1
   })
 
-  it('q=2 resets repetitions (one below threshold)', () => {
+  it('q=2 (Hard) preserves repetitions (one below pass threshold)', () => {
+    // Hard is no longer a lapse — repetitions are preserved, interval reduced by 20%
+    // interval = max(1, round(6 * 0.8)) = max(1, 5) = 5
     const result = calculateSM2(2, 2, 6, DEFAULT_EF)
-    expect(result.repetitions).toBe(0)
+    expect(result.repetitions).toBe(2)
+    expect(result.interval).toBe(5)
   })
 })
 

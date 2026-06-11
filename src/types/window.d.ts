@@ -51,6 +51,9 @@ declare global {
         importDecks: (parsed: unknown) => Promise<{ success: boolean; data?: string; error?: string }>
         getAllCardsByTopic: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
         getCardsPrioritized: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
+        getDueCards: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
+        getDueCardCount: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
+        getDueBySubject: () => Promise<{ success: boolean; data?: any; error?: string }>
         getCardsWithProgress: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
       }
       file: {

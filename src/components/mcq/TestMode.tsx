@@ -492,7 +492,6 @@ Please explain:
     for (const card of testCards) {
       const mcq = card.data as MCQData
       const isCorrect = answers[card.id] === mcq.answer
-      await dbService.recordCardResult(card.id, isCorrect)
     }
     setScore({ correct, total: testCards.length })
     setViewState('summary')

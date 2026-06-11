@@ -259,15 +259,15 @@ export function registerDBHandlers() {
   ipcMain.handle('data:getAccuracyTrendSubject', async (_, fullSubject: string, startStr: string) => {
     try {
       const sql = `
-         SELECT DATE(p.last_reviewed)  AS day,
+         SELECT SUBSTR(p.last_reviewed, 1, 10) AS day,
                 SUM(p.correct_count)   AS correct,
                 SUM(p.total_count)     AS total
          FROM   progress p
          JOIN   cards   c ON p.card_id  = c.id
          JOIN   topics  t ON c.topic_id = t.id
          WHERE  t.subject = ?
-           AND  DATE(p.last_reviewed) >= ?
-         GROUP  BY DATE(p.last_reviewed)
+           AND  SUBSTR(p.last_reviewed, 1, 10) >= ?
+         GROUP  BY SUBSTR(p.last_reviewed, 1, 10)
          ORDER  BY day ASC`
       const rows = queryAll(sql, [fullSubject, startStr])
       return { success: true, data: rows }
@@ -295,7 +295,7 @@ export function registerDBHandlers() {
       const studiedRows = queryAll('SELECT COUNT(card_id) as count FROM progress WHERE repetitions > 0')
       const totalStudied = studiedRows[0]?.count || 0
 
-      const dueRows = queryAll("SELECT COUNT(id) as count FROM cards c LEFT JOIN progress p ON c.id = p.card_id WHERE p.next_review <= datetime('now') OR p.next_review IS NULL")
+      const dueRows = queryAll("SELECT COUNT(id) as count FROM cards c LEFT JOIN progress p ON c.id = p.card_id WHERE p.next_review <= date('now', 'localtime') OR p.next_review IS NULL")
       const dueToday = dueRows[0]?.count || 0
 
       const accRows = queryAll('SELECT CAST(SUM(correct_count) AS REAL) / NULLIF(SUM(total_count), 0) as accuracy FROM progress')
@@ -508,11 +508,72 @@ export function registerDBHandlers() {
         ORDER BY
           CASE
             WHEN p.next_review IS NULL THEN 0
-            WHEN p.next_review <= datetime('now') THEN 0
+            WHEN p.next_review <= date('now', 'localtime') THEN 0
             ELSE 1
           END ASC,
-          c.created_at ASC
+          COALESCE(p.next_review, '1970-01-01') ASC
       `, [topicId])
+      return { success: true, data: rows }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('data:getDueCards', async (_, topicId: string) => {
+    try {
+      const rows = queryAll(`
+        SELECT c.id, c.topic_id, c.type, c.data, c.tags, c.difficulty, c.is_custom, c.created_at,
+               p.next_review
+        FROM cards c
+        LEFT JOIN progress p ON c.id = p.card_id
+        WHERE c.topic_id = ?
+          AND (p.next_review IS NULL OR p.next_review <= date('now', 'localtime'))
+        ORDER BY COALESCE(p.next_review, '1970-01-01') ASC
+      `, [topicId])
+      return { success: true, data: rows }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('data:getDueCardCount', async (_, topicId: string) => {
+    try {
+      const row = queryAll(`
+        SELECT COUNT(*) as count
+        FROM cards c
+        LEFT JOIN progress p ON c.id = p.card_id
+        WHERE c.topic_id = ?
+          AND (p.next_review IS NULL OR p.next_review <= date('now', 'localtime'))
+      `, [topicId]) as { count: number }[]
+      return { success: true, data: row[0]?.count ?? 0 }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('data:getDueBySubject', async () => {
+    try {
+      const rows = queryAll(`
+        SELECT
+          t.subject,
+          SUM(CASE WHEN p.next_review IS NULL OR p.next_review <= date('now', 'localtime') THEN 1 ELSE 0 END) AS due_today,
+          SUM(CASE WHEN p.next_review = date('now', 'localtime', '+1 day') THEN 1 ELSE 0 END) AS due_d1,
+          SUM(CASE WHEN p.next_review = date('now', 'localtime', '+2 days') THEN 1 ELSE 0 END) AS due_d2,
+          SUM(CASE WHEN p.next_review = date('now', 'localtime', '+3 days') THEN 1 ELSE 0 END) AS due_d3,
+          SUM(CASE WHEN p.next_review = date('now', 'localtime', '+4 days') THEN 1 ELSE 0 END) AS due_d4,
+          SUM(CASE WHEN p.next_review = date('now', 'localtime', '+5 days') THEN 1 ELSE 0 END) AS due_d5,
+          COUNT(c.id) AS total_cards
+        FROM topics t
+        JOIN cards c ON c.topic_id = t.id
+        LEFT JOIN progress p ON p.card_id = c.id
+        GROUP BY t.subject
+      `) as {
+        subject: string
+        due_today: number
+        due_d1: number; due_d2: number; due_d3: number
+        due_d4: number; due_d5: number
+        total_cards: number
+      }[]
       return { success: true, data: rows }
     } catch (error) {
       return { success: false, error: (error as Error).message }

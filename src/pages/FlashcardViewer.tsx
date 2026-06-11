@@ -17,6 +17,7 @@ import { useTTS } from '../hooks/useTTS'
 import { useIdleAwareTimer } from '../hooks/useIdleAwareTimer'
 import { FlashcardContextPanel } from '../components/flashcard/FlashcardContextPanel'
 import { getDynamicFontSize } from '../lib/textUtils'
+import { useSessionStore } from '../store/useSessionStore'
 
 
 
@@ -64,6 +65,7 @@ function saveFCBookmarks(set: Set<string>) {
 
 export default function FlashcardViewer() {
   const navigate = useNavigate()
+  const { startSession, rateCard, isSubmitting } = useSessionStore()
 
 
 
@@ -80,7 +82,7 @@ export default function FlashcardViewer() {
   const [sortBy, setSortBy] = useState<'date' | 'title'>('date')
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
   const [searchQuery, setSearchQuery] = useState('')
-  const [filterType, setFilterType] = useState<'all' | 'mcq' | 'flashcard' | 'mixed'>('all')
+  const [filterType, setFilterType] = useState<'all' | 'mcq' | 'flashcard' | 'mixed'>('flashcard')
   const [activeFolder, setActiveFolder] = useState<string | 'all'>('all')
   const filterPopoverRef = useRef<HTMLDivElement>(null)
 
@@ -296,6 +298,19 @@ export default function FlashcardViewer() {
       setWrittenCorrect(null)
     }
   }
+
+  const handleFinish = async () => {
+    if (isSubmitting) return
+    if (isAutoplay) setIsAutoplay(false)
+    
+    // Save SM-2 progress for the final card before exiting
+    let quality = 3
+    if (settings.writtenMode && writtenSubmitted) {
+      quality = writtenCorrect ? 4 : 1
+    }
+    await rateCard(quality)
+    exitSession()
+  }
   const goPrev = () => {
     if (isAutoplay) setIsAutoplay(false)
     if (currentIndex > 0) {
@@ -434,7 +449,7 @@ Provide a thorough explanation covering ALL of the following:
 
     let cards: Card[] = []
     try {
-      cards = await dbService.getAllCardsByTopic(deckId)
+      cards = await dbService.getCardsPrioritized(deckId)
       if (cards.length === 0) return
     } catch (e) {
       console.error('[FlashcardViewer] Failed to load cards:', e)
@@ -469,6 +484,9 @@ Provide a thorough explanation covering ALL of the following:
     setIsFlipped(false)
     setSessionCards(cards)
     setActiveDeck({ id: deck.id, title: deck.title, cards })
+
+    // Initialize SM-2 session so rateCard() writes to DB
+    startSession(cards)
   }
 
   // ── Helpers ──
@@ -524,16 +542,23 @@ Provide a thorough explanation covering ALL of the following:
   // ── TTS: read front face when card changes ─────────────────────────────────
   useEffect(() => {
     if (!currentCard || !activeDeck) return
+    if (isAutoplay) return
     const text = getFrontText(currentCard)
     setShowContext(false)
     if (text) speak(text)
   }, [currentCard?.id, settings.swapTermDef])
 
-  // ── TTS: read back face when card is flipped ───────────────────────────────
+  // ── TTS: read face when card is flipped ──────────────────────────────────
   useEffect(() => {
-    if (!isFlipped || !currentCard || !activeDeck) return
-    const correct = getCorrectAnswer(currentCard)
-    if (correct) speak(correct)
+    if (!currentCard || !activeDeck) return
+    if (isAutoplay) return // autoplay owns TTS sequencing entirely
+    if (isFlipped) {
+      const correct = getCorrectAnswer(currentCard)
+      if (correct) speak(correct)
+    } else {
+      const front = getFrontText(currentCard)
+      if (front) speak(front)
+    }
   }, [isFlipped])
 
   // ── Autoplay Sequencer ──
@@ -567,11 +592,12 @@ Provide a thorough explanation covering ALL of the following:
       autoplaySpeechDoneRef.current = () => {
         if (autoplayRef.current.activeIndex !== index) return
         const delay = Math.max(flashModalSettings.autoplayDelay * 1000, 2000)
-        autoplayRef.current.timer = setTimeout(() => {
+        autoplayRef.current.timer = setTimeout(async () => {
           if (autoplayRef.current.activeIndex !== index) return
           if (index < sessionCards.length - 1) {
             autoplayRef.current.isNewCard = true
-            setCurrentIndex(i => i + 1)
+            autoplayRef.current.activeIndex = index + 1
+            setCurrentIndex(index + 1)
             setIsFlipped(false)
             setWrittenAnswer('')
             setWrittenSubmitted(false)
@@ -795,196 +821,213 @@ Provide a thorough explanation covering ALL of the following:
           )}
         </AnimatePresence>
 
-        {/* Card Area */}
-        <div className="flex-1 flex items-center justify-center p-6 lg:p-10">
-          <div className="w-full max-w-3xl">
+        {/* Card Area — single centered column, card + buttons + AI panel stacked together */}
+        <div className="flex-1 flex items-center justify-center min-h-0 px-6 lg:px-10 py-4 overflow-y-auto">
+          <div className="w-full max-w-3xl flex flex-col gap-4">
+
             <AnimatePresence mode="wait">
-              <motion.div key={`${currentCard.id}-${currentIndex}`} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.2, ease: 'easeOut' }}>
-                {/* 3D Flip Card Container */}
-                <div 
-                  className="w-full cursor-pointer" 
-                  style={{ perspective: '1200px', minHeight: '350px' }}
-                  onClick={() => !settings.writtenMode && setIsFlipped(f => !f)}
-                >
-                  <div
-                    style={{
-                      position: 'relative',
-                      width: '100%',
-                      height: '100%',
-                      minHeight: '350px',
-                      transformStyle: 'preserve-3d',
-                      transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                      transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-                      willChange: 'transform',
+                <motion.div key={`${currentCard.id}-${currentIndex}`} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.2, ease: 'easeOut' }}>
+                  {/* 3D Flip Card Container */}
+                  <div 
+                    className="w-full cursor-pointer" 
+                    style={{ perspective: '1200px', minHeight: '350px' }}
+                    onClick={() => {
+                      if (!settings.writtenMode) {
+                        if (isAutoplay) setIsAutoplay(false)
+                        setIsFlipped(f => !f)
+                      }
                     }}
                   >
-                    {/* FRONT FACE */}
                     <div
-                      className="bg-[#161616] border border-[#222] rounded-xl shadow-2xl flex flex-col"
                       style={{
-                        position: 'absolute',
-                        inset: 0,
-                        backfaceVisibility: 'hidden',
-                        WebkitBackfaceVisibility: 'hidden',
+                        position: 'relative',
+                        width: '100%',
+                        height: '100%',
+                        minHeight: '350px',
+                        transformStyle: 'preserve-3d',
+                        transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                        transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                        willChange: 'transform',
                       }}
                     >
-                      {/* Bookmark */}
-                      <button onClick={(e) => { e.stopPropagation(); toggleBookmark(currentCard.id) }} className="absolute top-5 right-5 z-10 text-[#666] hover:text-[#FFB800] transition-colors" title="Bookmark">
-                        <Bookmark className={`w-6 h-6 ${isBookmarked ? 'fill-[#FFB800] text-[#FFB800]' : ''}`} />
-                      </button>
+                      {/* FRONT FACE */}
+                      <div
+                        className="bg-[#161616] border border-[#222] rounded-xl shadow-2xl flex flex-col"
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          backfaceVisibility: 'hidden',
+                          WebkitBackfaceVisibility: 'hidden',
+                        }}
+                      >
+                        {/* Bookmark */}
+                        <button onClick={(e) => { e.stopPropagation(); toggleBookmark(currentCard.id) }} className="absolute top-5 right-5 z-10 text-[#666] hover:text-[#FFB800] transition-colors" title="Bookmark">
+                          <Bookmark className={`w-6 h-6 ${isBookmarked ? 'fill-[#FFB800] text-[#FFB800]' : ''}`} />
+                        </button>
 
-                      {/* Card Label */}
-                      <div className="px-8 pt-6 pb-2">
-                        <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888]">
-                          {settings.swapTermDef ? 'Definition' : 'Term'}
-                        </span>
-                      </div>
+                        {/* Card Label */}
+                        <div className="px-8 pt-6 pb-2">
+                          <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888]">
+                            {settings.swapTermDef ? 'Definition' : 'Term'}
+                          </span>
+                        </div>
 
-                      {/* Front Content */}
-                      <div className="flex-1 flex items-center justify-center px-8 pb-8">
-                        <div className="text-center w-full">
-                          <div className={`${getDynamicFontSize(getFrontText(currentCard))} font-['Rajdhani'] font-bold text-[#E8E8E8] leading-relaxed`} dangerouslySetInnerHTML={{ __html: renderMath(getFrontText(currentCard)) }} />
-                          {currentCard.data.imagePath && (
-                            <div className="mt-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
-                              <img
-                                src={`ece-app://${currentCard.data.imagePath}`}
-                                alt="Card diagram"
-                                className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
-                                onClick={(e) => { e.stopPropagation(); setZoomedImage(currentCard.data.imagePath!); }}
-                              />
-                            </div>
-                          )}
-                          {!settings.writtenMode && <p className="text-[#555] text-sm mt-6 font-['Rajdhani']">Click or press Space to flip</p>}
+                        {/* Front Content */}
+                        <div className="flex-1 flex items-center justify-center px-8 pb-8">
+                          <div className="text-center w-full">
+                            <div className={`${getDynamicFontSize(getFrontText(currentCard))} font-['Rajdhani'] font-bold text-[#E8E8E8] leading-relaxed`} dangerouslySetInnerHTML={{ __html: renderMath(getFrontText(currentCard)) }} />
+                            {currentCard.data.imagePath && (
+                              <div className="mt-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
+                                <img
+                                  src={`ece-app://${currentCard.data.imagePath}`}
+                                  alt="Card diagram"
+                                  className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
+                                  onClick={(e) => { e.stopPropagation(); setZoomedImage(currentCard.data.imagePath!); }}
+                                />
+                              </div>
+                            )}
+                            {!settings.writtenMode && <p className="text-[#555] text-sm mt-6 font-['Rajdhani']">Click or press Space to flip</p>}
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* BACK FACE */}
-                    <div
-                      className="bg-[#161616] border border-[#222] rounded-xl shadow-2xl flex flex-col"
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        backfaceVisibility: 'hidden',
-                        WebkitBackfaceVisibility: 'hidden',
-                        transform: 'rotateY(180deg)',
-                      }}
-                    >
-                      {/* Card Label */}
-                      <div className="px-8 pt-6 pb-2">
-                        <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888]">
-                          {settings.swapTermDef ? 'Term' : 'Definition'}
-                        </span>
-                      </div>
+                      {/* BACK FACE */}
+                      <div
+                        className="bg-[#161616] border border-[#222] rounded-xl shadow-2xl flex flex-col"
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          backfaceVisibility: 'hidden',
+                          WebkitBackfaceVisibility: 'hidden',
+                          transform: 'rotateY(180deg)',
+                        }}
+                      >
+                        {/* Card Label */}
+                        <div className="px-8 pt-6 pb-2">
+                          <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888]">
+                            {settings.swapTermDef ? 'Term' : 'Definition'}
+                          </span>
+                        </div>
 
-                      {/* Back Content */}
-                      <div className="flex-1 flex items-center justify-center px-8 pb-8">
-                        <div className="text-center w-full text-[#E8E8E8]">
-                          {getBackContent(currentCard)}
+                        {/* Back Content */}
+                        <div className="flex-1 flex items-center justify-center px-8 pb-8">
+                          <div className="text-center w-full text-[#E8E8E8]">
+                            {getBackContent(currentCard)}
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Written Mode Input */}
-                {settings.writtenMode && !isFlipped && (
-                  <div className="mt-4 flex flex-col gap-3">
-                    <input
-                      type="text" value={writtenAnswer}
-                      onChange={e => setWrittenAnswer(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') handleWrittenSubmit() }}
-                      disabled={writtenSubmitted}
-                      placeholder="Type your answer..."
-                      className="w-full bg-[#111] border border-[#333] focus:border-[var(--accent-primary)] text-[#E8E8E8] placeholder-[#555] py-4 px-6 rounded-lg font-['IBM_Plex_Mono'] outline-none transition-colors"
-                    />
-                    {!writtenSubmitted ? (
-                      <button onClick={handleWrittenSubmit} className="w-full py-3 bg-[var(--accent-primary)] text-black rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-colors">Submit</button>
-                    ) : (
-                      <div className="flex items-center gap-3 p-4 rounded-lg border bg-[#111]" style={{ borderColor: writtenCorrect ? '#00FF41' : '#FF3333' }}>
-                        {writtenCorrect
-                          ? <Check className="w-6 h-6 text-[#00FF41] shrink-0" />
-                          : <XCircle className="w-6 h-6 text-[#FF3333] shrink-0" />}
-                        <div className="flex-1">
-                          <span className={`font-['Rajdhani'] font-bold uppercase tracking-widest text-sm ${writtenCorrect ? 'text-[#00FF41]' : 'text-[#FF3333]'}`}>
-                            {writtenCorrect ? 'Correct!' : 'Incorrect'}
-                          </span>
-                          {!writtenCorrect && (
-                            <div className="text-[#888] text-sm font-['IBM_Plex_Mono'] mt-1">
-                              Correct: <span className="text-[#00FF41]" dangerouslySetInnerHTML={{ __html: renderMath(getCorrectAnswer(currentCard)) }} />
-                            </div>
-                          )}
+                  {/* Written Mode Input */}
+                  {settings.writtenMode && !isFlipped && (
+                    <div className="mt-4 flex flex-col gap-3">
+                      <input
+                        type="text" value={writtenAnswer}
+                        onChange={e => setWrittenAnswer(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') handleWrittenSubmit() }}
+                        disabled={writtenSubmitted}
+                        placeholder="Type your answer..."
+                        className="w-full bg-[#111] border border-[#333] focus:border-[var(--accent-primary)] text-[#E8E8E8] placeholder-[#555] py-4 px-6 rounded-lg font-['IBM_Plex_Mono'] outline-none transition-colors"
+                      />
+                      {!writtenSubmitted ? (
+                        <button onClick={handleWrittenSubmit} className="w-full py-3 bg-[var(--accent-primary)] text-black rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-colors">Submit</button>
+                      ) : (
+                        <div className="flex items-center gap-3 p-4 rounded-lg border bg-[#111]" style={{ borderColor: writtenCorrect ? '#00FF41' : '#FF3333' }}>
+                          {writtenCorrect
+                            ? <Check className="w-6 h-6 text-[#00FF41] shrink-0" />
+                            : <XCircle className="w-6 h-6 text-[#FF3333] shrink-0" />}
+                          <div className="flex-1">
+                            <span className={`font-['Rajdhani'] font-bold uppercase tracking-widest text-sm ${writtenCorrect ? 'text-[#00FF41]' : 'text-[#FF3333]'}`}>
+                              {writtenCorrect ? 'Correct!' : 'Incorrect'}
+                            </span>
+                            {!writtenCorrect && (
+                              <div className="text-[#888] text-sm font-['IBM_Plex_Mono'] mt-1">
+                                Correct: <span className="text-[#00FF41]" dangerouslySetInnerHTML={{ __html: renderMath(getCorrectAnswer(currentCard)) }} />
+                              </div>
+                            )}
+                          </div>
+                          <button onClick={() => { setIsFlipped(true) }} className="px-4 py-2 text-sm bg-[#222] text-[#E8E8E8] rounded font-['Rajdhani'] uppercase tracking-widest hover:bg-[#333] transition-colors">
+                            View Card
+                          </button>
                         </div>
-                        <button onClick={() => { setIsFlipped(true) }} className="px-4 py-2 text-sm bg-[#222] text-[#E8E8E8] rounded font-['Rajdhani'] uppercase tracking-widest hover:bg-[#333] transition-colors">
-                          View Card
-                        </button>
-                      </div>
-                    )}
+                      )}
+                    </div>
+                  )}
+                </motion.div>
+            </AnimatePresence>
+
+            {/* Rating row — opacity toggle, no layout shift */}
+            <div className="h-[84px] flex items-center justify-center w-full">
+              <div className={`flex gap-3 transition-opacity duration-150 ${(isFlipped || (settings.writtenMode && writtenSubmitted)) && !isAutoplay ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+                {[
+                  { rating: 1, label: 'Again', sub: '< 1m', hint: 'Wrong or blank',         color: '#FF3333' },
+                  { rating: 2, label: 'Hard',  sub: '~5m',  hint: 'Right but struggled',    color: '#FFB800' },
+                  { rating: 3, label: 'Good',  sub: '~10m', hint: 'Right with some effort', color: '#00FF41' },
+                  { rating: 4, label: 'Easy',  sub: '4d+',  hint: 'Instant recall',         color: '#00BFFF' },
+                ].map(({ rating, label, sub, hint, color }) => (
+                  <button
+                    key={rating}
+                    onClick={async () => {
+                      await rateCard(rating)
+                      const nextIdx = useSessionStore.getState().currentIndex
+                      if (useSessionStore.getState().isFinished) { exitSession(); return }
+                      setCurrentIndex(nextIdx)
+                      setIsFlipped(false)
+                      setWrittenAnswer('')
+                      setWrittenSubmitted(false)
+                      setWrittenCorrect(null)
+                    }}
+                    disabled={isSubmitting}
+                    className="px-5 py-2 bg-[#111] border rounded transition-colors flex flex-col items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#161616]"
+                    style={{ borderColor: color, color }}
+                  >
+                    <span className="font-['Rajdhani'] font-bold text-lg mb-0.5">{label}</span>
+                    <span className="text-xs text-[#888]">{sub}</span>
+                    <span className="text-[10px] text-[#555] mt-0.5 font-['IBM_Plex_Mono']">{hint}</span>
+                  </button>
+                ))}
+                {isSubmitting && (
+                  <div className="self-center ml-2 flex items-center gap-2 text-[#888] text-xs font-['Rajdhani'] animate-pulse">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                    Saving…
                   </div>
                 )}
+              </div>
+            </div>
 
-                {/* Navigation Buttons + Context/Explain row */}
-                <div className="mt-6 flex flex-col gap-3">
-                  <div className="h-[52px] flex justify-between items-center relative">
-                    {(isFlipped || (settings.writtenMode && writtenSubmitted)) && (
-                      <>
-                        <button onClick={goPrev} disabled={currentIndex === 0}
-                          className="flex items-center gap-2 px-6 py-3 bg-[#111] border border-[#333] rounded-lg text-[#E8E8E8] font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[#222] hover:border-[#555] transition-all disabled:opacity-30 disabled:cursor-default">
-                          <ArrowLeft className="w-4 h-4" /> Prev
-                        </button>
+            {/* Utility row — opacity toggle, no layout shift */}
+            <div className="h-[40px] flex items-center justify-center gap-3 w-full">
+              <div className={`flex items-center gap-3 transition-opacity duration-150 ${(isFlipped || (settings.writtenMode && writtenSubmitted)) && !isAutoplay ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+                <button onClick={goPrev} disabled={currentIndex === 0}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#111] border border-[#333] rounded text-[#888] font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[#222] hover:border-[#555] transition-all disabled:opacity-30 disabled:cursor-default text-xs">
+                  <ArrowLeft className="w-3 h-3" /> Prev
+                </button>
+                <button onClick={handleGetContext}
+                  className="flex items-center gap-2 px-4 py-2 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-[#888] transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs">
+                  <Copy className="w-3.5 h-3.5" /> Get Context
+                </button>
+                <button onClick={() => setShowContext(c => !c)}
+                  className="flex items-center gap-2 px-4 py-2 border border-[rgba(0,255,65,0.3)] rounded text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41] transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs">
+                  <Sparkles className="w-3.5 h-3.5" /> Explain
+                </button>
+                <button onClick={goNext} disabled={currentIndex === sessionCards.length - 1}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#111] border border-[#333] rounded text-[#888] font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[#222] hover:border-[#555] transition-all disabled:opacity-30 disabled:cursor-default text-xs">
+                  Skip <ArrowRight className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
 
-                        {/* Center: Get Context + Explain */}
-                        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-3">
-                          <button
-                            onClick={handleGetContext}
-                            className="flex items-center gap-2 px-4 py-2 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-[#888] transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
-                            title="Copy context to paste into GPT/Gemini/Claude"
-                          >
-                            <Copy className="w-3.5 h-3.5" />
-                            Get Context
-                          </button>
-                          <button
-                            onClick={() => setShowContext(c => !c)}
-                            className="flex items-center gap-2 px-4 py-2 border border-[rgba(0,255,65,0.3)] rounded text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41] transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
-                            title="Explain using Llama-3.3-70B"
-                          >
-                            <Sparkles className="w-3.5 h-3.5" />
-                            Explain
-                          </button>
-                        </div>
+            {/* AI Context Panel — below buttons */}
+            {showContext && isFlipped && currentCard && !settings.writtenMode && (() => {
+              const term = getFrontText(currentCard)
+              const definition = getCorrectAnswer(currentCard)
+              return <FlashcardContextPanel term={term} definition={definition} onClose={() => setShowContext(false)} />
+            })()}
 
-                        {currentIndex === sessionCards.length - 1 ? (
-                          <button onClick={() => exitSession()}
-                            className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-primary)] text-black rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-all shadow-[0_0_15px_rgba(0,255,65,0.2)]">
-                            Finish <Check className="w-4 h-4" />
-                          </button>
-                        ) : (
-                          <button onClick={goNext} disabled={currentIndex === sessionCards.length - 1}
-                            className="flex items-center gap-2 px-6 py-3 bg-[var(--accent-primary)] text-black rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-all shadow-[0_0_15px_rgba(0,255,65,0.2)] disabled:opacity-30 disabled:cursor-default">
-                            Next <ArrowRight className="w-4 h-4" />
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </div>
-
-                  {/* AI Context Panel */}
-                  {showContext && isFlipped && currentCard && !settings.writtenMode && (() => {
-                    const term = getFrontText(currentCard)
-                    const definition = getCorrectAnswer(currentCard)
-                    return (
-                      <FlashcardContextPanel
-                        term={term}
-                        definition={definition}
-                        onClose={() => setShowContext(false)}
-                      />
-                    )
-                  })()}
-                </div>
-              </motion.div>
-            </AnimatePresence>
           </div>
         </div>
+
 
         {/* Lightbox Modal */}
         <AnimatePresence>
@@ -1102,7 +1145,7 @@ Provide a thorough explanation covering ALL of the following:
                 <div className="relative shrink-0" ref={filterPopoverRef}>
                   <button
                     onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                    className={`p-2 rounded-lg border transition-all ${showAdvancedFilters || filterTags.length > 0 || filterType !== 'all' || sortBy !== 'date' || sortOrder !== 'desc' || searchQuery
+                    className={`p-2 rounded-lg border transition-all ${showAdvancedFilters || filterTags.length > 0 || filterType !== 'flashcard' || sortBy !== 'date' || sortOrder !== 'desc' || searchQuery
                       ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
                       : 'bg-[var(--bg-secondary)] border-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                       }`}
@@ -1215,11 +1258,11 @@ Provide a thorough explanation covering ALL of the following:
                         )}
 
                         {/* Clear Button */}
-                        {(filterTags.length > 0 || filterType !== 'all' || sortBy !== 'date') && (
+                        {(filterTags.length > 0 || filterType !== 'flashcard' || sortBy !== 'date') && (
                           <button
                             onClick={() => {
                               setFilterTags([])
-                              setFilterType('all')
+                              setFilterType('flashcard')
                               setSortBy('date')
                             }}
                             className="mt-2 text-xs font-['Rajdhani'] uppercase tracking-widest text-red-400 hover:text-red-300 text-center py-1 transition-colors"

@@ -274,7 +274,6 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
       if (currentPartitionIndex === partitions.length - 1) {
         play('finish')
         for (const [id, stats] of Object.entries(cardStats)) {
-          await dbService.recordCardResult(id, stats.wasCorrectFirstTry)
         }
 
         onComplete({

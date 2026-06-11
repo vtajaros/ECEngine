@@ -26,6 +26,13 @@ const getContextColor = (difficulty: string) => {
   }
 }
 
+const RATINGS = [
+  { rating: 1, label: 'Again', sub: '< 1m',  hint: 'Wrong or blank',         border: 'border-[#FF3333]', text: 'text-[#FF3333]' },
+  { rating: 2, label: 'Hard',  sub: '~5m',   hint: 'Right but struggled',    border: 'border-[#FFB800]', text: 'text-[#FFB800]' },
+  { rating: 3, label: 'Good',  sub: '~10m',  hint: 'Right with some effort', border: 'border-[#00FF41]', text: 'text-[#00FF41]' },
+  { rating: 4, label: 'Easy',  sub: '4d+',   hint: 'Instant recall',         border: 'border-[#00BFFF]', text: 'text-[#00BFFF]' },
+]
+
 
 export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting = false, onFlip }) => {
   const [isFlipped, setIsFlipped] = useState(false)
@@ -155,42 +162,18 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting
 
       {/* Action Buttons */}
       <div className={`mt-8 flex gap-4 transition-opacity duration-300 ${isFlipped ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-        <button
-          onClick={() => onRate(1)}
-          disabled={isSubmitting}
-          className={`px-6 py-2 bg-[#111111] border border-[#FF3333] text-[#FF3333] rounded transition-colors flex flex-col items-center group ${isSubmitting ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#161616]'
-            }`}
-        >
-          <span className="font-['Rajdhani'] font-bold text-lg mb-1 group-hover:drop-shadow-[0_0_5px_rgba(255,51,51,0.5)]">Again</span>
-          <span className="text-xs text-[#888888]">(1) &lt; 1m</span>
-        </button>
-        <button
-          onClick={() => onRate(2)}
-          disabled={isSubmitting}
-          className={`px-6 py-2 bg-[#111111] border border-[#FFB800] text-[#FFB800] rounded transition-colors flex flex-col items-center group ${isSubmitting ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#161616]'
-            }`}
-        >
-          <span className="font-['Rajdhani'] font-bold text-lg mb-1 group-hover:drop-shadow-[0_0_5px_rgba(255,184,0,0.5)]">Hard</span>
-          <span className="text-xs text-[#888888]">(2) 5m</span>
-        </button>
-        <button
-          onClick={() => onRate(3)}
-          disabled={isSubmitting}
-          className={`px-6 py-2 bg-[#111111] border border-[#00FF41] text-[#00FF41] rounded transition-colors flex flex-col items-center group ${isSubmitting ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#161616]'
-            }`}
-        >
-          <span className="font-['Rajdhani'] font-bold text-lg mb-1 group-hover:drop-shadow-[0_0_5px_rgba(0,255,65,0.5)]">Good</span>
-          <span className="text-xs text-[#888888]">(3) 10m</span>
-        </button>
-        <button
-          onClick={() => onRate(4)}
-          disabled={isSubmitting}
-          className={`px-6 py-2 bg-[#111111] border border-[#00BFFF] text-[#00BFFF] rounded transition-colors flex flex-col items-center group ${isSubmitting ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#161616]'
-            }`}
-        >
-          <span className="font-['Rajdhani'] font-bold text-lg mb-1 group-hover:drop-shadow-[0_0_5px_rgba(0,191,255,0.5)]">Easy</span>
-          <span className="text-xs text-[#888888]">(4) 4d</span>
-        </button>
+        {RATINGS.map(({ rating, label, sub, hint, border, text }) => (
+          <button
+            key={rating}
+            onClick={() => onRate(rating)}
+            disabled={isSubmitting}
+            className={`px-6 py-2 bg-[#111111] border ${border} ${text} rounded transition-colors flex flex-col items-center group ${isSubmitting ? 'opacity-40 cursor-not-allowed' : 'hover:bg-[#161616]'}`}
+          >
+            <span className="font-['Rajdhani'] font-bold text-lg mb-0.5 group-hover:drop-shadow-[0_0_5px_currentColor]">{label}</span>
+            <span className="text-xs text-[#888]">{sub}</span>
+            <span className="text-[10px] text-[#555] mt-0.5 font-['IBM_Plex_Mono']">{hint}</span>
+          </button>
+        ))}
 
         {isSubmitting && (
           <div className="self-center ml-2 flex items-center gap-2 text-[#888888] text-xs font-['Rajdhani'] animate-pulse">

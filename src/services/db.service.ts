@@ -46,10 +46,8 @@ export type AccuracyGranularity = 'day' | 'week' | 'month'
 export type AccuracySubject = 'ALL' | 'MATH' | 'GEAS' | 'ELECS' | 'EST'
 
 const toLocalDateString = (date: Date): string => {
-  const y = date.getFullYear()
-  const m = String(date.getMonth() + 1).padStart(2, '0')
-  const d = String(date.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
 
@@ -82,29 +80,6 @@ function parseCardRow(row: z.infer<typeof CardWithProgressRowSchema>, topicId?: 
 }
 
 export const dbService = {
-  recordCardResult: async (cardId: string, correct: boolean): Promise<void> => {
-    const existing = await dbService.getProgress(cardId)
-    const repetitions = existing?.repetitions ?? 0
-    const interval = existing?.interval ?? 1
-    const easeFactor = existing?.easeFactor ?? 2.5
-
-    const quality = correct ? 4 : 1
-    const sm2Result = calculateSM2(quality, repetitions, interval, easeFactor)
-
-    const now = new Date()
-    const nextReview = new Date(now.getTime() + sm2Result.interval * 86400000)
-
-    await dbService.saveProgress(
-      cardId,
-      {
-        ...sm2Result,
-        nextReview: nextReview.toISOString(),
-        lastReviewed: now.toISOString(),
-      },
-      correct
-    )
-  },
-
   getCards: async (topicId?: string): Promise<Card[]> => {
     const result = await window.electron.data.getCards(topicId)
     
@@ -158,7 +133,9 @@ export const dbService = {
   },
 
   recordActivity: async (isCorrect?: boolean) => {
-    const today = toLocalDateString(new Date())
+    const now = new Date()
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
     const correctInc = isCorrect ? 1 : 0
     const totalInc = isCorrect !== undefined ? 1 : 0
     
@@ -288,7 +265,9 @@ export const dbService = {
   },
 
   updateTimeSpent: async (minutes: number) => {
-    const today = toLocalDateString(new Date())
+    const now = new Date()
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
     const result = await window.electron.data.updateTimeSpent(today, minutes)
     if (!result.success) {
       throw new Error(`Database Operation Failed: ${result.error || 'Failed to update time spent'}`)
@@ -394,6 +373,30 @@ export const dbService = {
       throw new Error(`Database Operation Failed: ${result.error || 'Failed to get prioritized cards'}`)
     }
     return z.array(CardPrioritizedRowSchema).parse(result.data || []).map(row => parseCardRow(row, topicId))
+  },
+
+  getDueCards: async (topicId: string): Promise<Card[]> => {
+    const result = await window.electron.data.getDueCards(topicId)
+    if (!result.success) throw new Error(result.error ?? 'Failed to get due cards')
+    return z.array(CardPrioritizedRowSchema).parse(result.data ?? []).map(row => parseCardRow(row, topicId))
+  },
+
+  getDueCardCount: async (topicId: string): Promise<number> => {
+    const result = await window.electron.data.getDueCardCount(topicId)
+    if (!result.success) throw new Error(result.error ?? 'Failed to get due card count')
+    return result.data as number
+  },
+
+  getDueBySubject: async (): Promise<{
+    subject: string
+    due_today: number
+    due_d1: number; due_d2: number; due_d3: number
+    due_d4: number; due_d5: number
+    total_cards: number
+  }[]> => {
+    const result = await window.electron.data.getDueBySubject()
+    if (!result.success) throw new Error(result.error ?? 'Failed to get due by subject')
+    return result.data
   },
 
   getCardsWithProgress: async (topicId: string): Promise<Card[]> => {

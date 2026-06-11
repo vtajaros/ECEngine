@@ -4,59 +4,14 @@
 
 import { describe, it, expect } from 'vitest'
 
-// ─── Inline extraction of the pure formatting logic ──────────────────────────
-// This mirrors the serialization loop in exportToText exactly.
-// When exportToText is refactored into a standalone function, replace this
-// with a direct import.
+import { serializeMcqCard } from './mcq.serializer'
 
-const LETTER_MAP: Record<number, string> = Object.fromEntries(
-    ['A', 'B', 'C', 'D', 'E', 'F'].map((l, i) => [i, l])
-)
 const CHOICE_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F']
 
 interface McqCardData {
     question?: unknown
     choices?: unknown
     answer?: unknown
-}
-
-function serializeMcqCard(rawData: string): string | null {
-    if (!rawData || typeof rawData !== 'string' || rawData.trim() === '') return null
-
-    let parsed: McqCardData
-    try {
-        parsed = JSON.parse(rawData)
-    } catch {
-        return null
-    }
-
-    if (!parsed || typeof parsed !== 'object') return null
-
-    const question = (parsed.question != null ? String(parsed.question) : '').trim()
-    if (!question) return null
-
-    const rawChoices: unknown[] = Array.isArray(parsed.choices) ? parsed.choices : []
-    if (rawChoices.length === 0) return null
-
-    const choices: string[] = rawChoices.map(c => (c != null ? String(c) : '').trim())
-
-    const ansVal = parsed.answer
-    let ansLetter = 'A'
-
-    if (typeof ansVal === 'number' && Number.isFinite(ansVal)) {
-        ansLetter = LETTER_MAP[ansVal] ?? 'A'
-    } else if (typeof ansVal === 'string') {
-        const clean = ansVal.trim().toUpperCase()
-        if (['A', 'B', 'C', 'D', 'E', 'F'].includes(clean)) {
-            ansLetter = clean
-        } else {
-            const matchedIdx = choices.findIndex(c => c.trim() === ansVal.trim())
-            ansLetter = LETTER_MAP[matchedIdx] ?? 'A'
-        }
-    }
-
-    const choiceLines = choices.map((c, i) => `${CHOICE_LETTERS[i]}: ${c}`).join('\n')
-    return `Q: ${question}\n${choiceLines}\nANS: ${ansLetter}`
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
