@@ -42,6 +42,12 @@ export default function Dashboard() {
   const [accuracyTrend, setAccuracyTrend]     = useState<{ date: string; acc: number | null }[]>([])
   const [trendLoading, setTrendLoading]       = useState(false)
   
+  const [hoveredSubject, setHoveredSubject] = useState<string | null>(null)
+
+  const SUBJECT_COLORS: Record<string, string> = {
+    MATH: '#FB923C', GEAS: '#60A5FA', ELECS: '#F87171', EST: '#22C55E'
+  }
+
   const [examDate, setExamDate] = useState(localStorage.getItem('ecengine_exam_date') || '2026-10-16')
   const [preboardDate, setPreboardDate] = useState<string | null>(
     localStorage.getItem('ecengine_preboard_date') || null
@@ -170,12 +176,9 @@ export default function Dashboard() {
             </div>
 
             {/* Donut + legend row */}
-            <div className="flex flex-col items-center gap-4 flex-1 justify-center">
+            <div className="flex flex-col items-center gap-4 flex-1 justify-center relative" onMouseLeave={() => setHoveredSubject(null)}>
               {/* SVG Donut */}
               {(() => {
-                const SUBJECT_COLORS: Record<string, string> = {
-                  MATH: '#FB923C', GEAS: '#60A5FA', ELECS: '#F87171', EST: '#22C55E'
-                }
                 const total = subjectCounts.reduce((s, r) => s + r.count, 0) || 1
                 const cx = 60, cy = 60, r = 46, stroke = 12
                 const circumference = 2 * Math.PI * r
@@ -183,48 +186,89 @@ export default function Dashboard() {
                 const slices = subjectCounts.map(item => {
                   const pct = item.count / total
                   const dash = pct * circumference
-                  const slice = { subject: item.subject, dash, offset, color: SUBJECT_COLORS[item.subject] ?? '#555' }
+                  const slice = { subject: item.subject, count: item.count, dash, offset, color: SUBJECT_COLORS[item.subject] ?? '#555' }
                   offset += dash
                   return slice
                 })
                 return (
-                  <svg width="120" height="120" viewBox="0 0 120 120" className="shrink-0">
-                    {/* Track */}
-                    <circle cx={cx} cy={cy} r={r} fill="none" stroke="#222" strokeWidth={stroke} />
-                    {/* Slices */}
-                    {slices.map((s, i) => (
-                      <circle
-                        key={i}
-                        cx={cx} cy={cy} r={r}
-                        fill="none"
-                        stroke={s.color}
-                        strokeWidth={stroke}
-                        strokeDasharray={`${s.dash} ${circumference - s.dash}`}
-                        strokeDashoffset={-(s.offset - circumference / 4)}
-                        style={{ transition: 'stroke-dasharray 0.6s ease' }}
-                      />
-                    ))}
-                    {/* Center label */}
-                    <text x={cx} y={cy - 6} textAnchor="middle" fill="#E8E8E8"
-                      fontSize="18" fontFamily="'IBM Plex Mono', monospace" fontWeight="bold">
-                      {total}
-                    </text>
-                    <text x={cx} y={cy + 12} textAnchor="middle" fill="#555"
-                      fontSize="9" fontFamily="'Rajdhani', sans-serif" fontWeight="bold"
-                      letterSpacing="1">
-                      DECKS
-                    </text>
-                  </svg>
+                  <div className="relative">
+                    <svg width="120" height="120" viewBox="0 0 120 120" className="shrink-0">
+                      {/* Track */}
+                      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#222" strokeWidth={stroke} />
+                      {/* Slices */}
+                      {slices.map((s, i) => {
+                        const isHovered = hoveredSubject === s.subject
+                        const isDimmed = hoveredSubject && hoveredSubject !== s.subject
+                        return (
+                          <circle
+                            key={i}
+                            cx={cx} cy={cy} r={r}
+                            fill="none"
+                            stroke={s.color}
+                            strokeWidth={isHovered ? stroke + 6 : stroke}
+                            strokeDasharray={`${s.dash} ${circumference - s.dash}`}
+                            strokeDashoffset={-(s.offset - circumference / 4)}
+                            style={{ 
+                              transition: 'stroke-width 0.2s ease, opacity 0.2s ease, stroke-dasharray 0.6s ease',
+                              opacity: isDimmed ? 0.35 : 1,
+                              cursor: 'pointer'
+                            }}
+                            onMouseEnter={() => setHoveredSubject(s.subject)}
+                          />
+                        )
+                      })}
+                      {/* Center label */}
+                      <text x={cx} y={cy - 6} textAnchor="middle" fill="#E8E8E8"
+                        fontSize="18" fontFamily="'IBM Plex Mono', monospace" fontWeight="bold">
+                        {total}
+                      </text>
+                      <text x={cx} y={cy + 12} textAnchor="middle" fill="#555"
+                        fontSize="9" fontFamily="'Rajdhani', sans-serif" fontWeight="bold"
+                        letterSpacing="1">
+                        DECKS
+                      </text>
+                    </svg>
+
+                    {/* Tooltip */}
+                    <AnimatePresence>
+                      {hoveredSubject && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 5 }}
+                          className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a1a] text-white text-xs px-3 py-1 rounded-full whitespace-nowrap pointer-events-none z-10 shadow-xl border border-[#333]"
+                        >
+                          {(() => {
+                            const activeSlice = slices.find(s => s.subject === hoveredSubject)
+                            return activeSlice ? `${activeSlice.subject} — ${activeSlice.count} decks` : ''
+                          })()}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 )
               })()}
 
               {/* Legend */}
               <div className="grid grid-cols-2 gap-1.5 w-full">
-                {subjectCounts.map((item, i) => (
-                  <div key={i} className={`px-2 py-1 rounded border text-[9px] font-bold font-['Rajdhani'] uppercase tracking-wider text-center ${getSubjectClasses(item.subject)}`}>
-                    {item.subject}: {item.count}
-                  </div>
-                ))}
+                {subjectCounts.map((item, i) => {
+                  const isHovered = hoveredSubject === item.subject
+                  const isDimmed = hoveredSubject && hoveredSubject !== item.subject
+                  return (
+                    <div 
+                      key={i} 
+                      onMouseEnter={() => setHoveredSubject(item.subject)}
+                      className={`px-2 py-1 rounded border text-[9px] font-bold font-['Rajdhani'] uppercase tracking-wider text-center transition-all duration-200 cursor-pointer ${getSubjectClasses(item.subject)}`}
+                      style={{
+                        opacity: isDimmed ? 0.4 : 1,
+                        boxShadow: isHovered ? `0 0 0 2px ${SUBJECT_COLORS[item.subject] ?? '#555'}40` : 'none',
+                        borderColor: isHovered ? (SUBJECT_COLORS[item.subject] ?? '#555') : undefined
+                      }}
+                    >
+                      {item.subject}: {item.count}
+                    </div>
+                  )
+                })}
               </div>
             </div>
           </div>
@@ -246,11 +290,12 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="flex flex-col gap-0.5 flex-1 pl-4">
-                <span className="font-['Rajdhani'] text-[#666] uppercase tracking-widest text-[9px] font-bold">Accuracy</span>
+                <span className="font-['Rajdhani'] text-[#666] uppercase tracking-widest text-[9px] font-bold">Avg. Accuracy</span>
                 <div className="flex items-baseline gap-1">
                   <span className="font-['IBM_Plex_Mono'] text-xl font-bold text-[#E8E8E8]">{statsData.accuracy || 0}</span>
                   <span className="font-['Rajdhani'] text-[#00FF41] font-bold text-[9px]">%</span>
                 </div>
+                <span className="font-['Rajdhani'] text-[#555] uppercase tracking-widest text-[9px] font-bold">all time</span>
               </div>
             </div>
           </div>
