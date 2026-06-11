@@ -57,6 +57,16 @@ React Components -> Zustand / React State -> src/services/db.service.ts -> windo
 - **AI Handlers**: Added 15-second timeouts with `AbortController` to Groq API calls in `electron/ipc/ai.ipc.ts` to prevent IPC channel freezing on dropped connections.
 - **Navigation Stability**: Fixed a navigation lock bug where `useBlocker` gets stuck when aborting a learn mode or test session. Blocker is now synchronously reset on exit.
 - **Async I/O Optimization**: Replaced synchronous `fs.*` calls in `ipcMain.handle` with `fs/promises` equivalents to prevent blocking the main thread during large file exports and DB backups.
+- **Fix 13 — FlashcardLearn.tsx decomposition COMPLETE**
+  - Original: 1544 lines, 32 useState, 13 useEffect (god component)
+  - Result:
+    - `src/pages/FlashcardLearn.tsx` — 821 lines (state orchestrator)
+    - `src/components/flashcard/FlashcardSession.tsx` — 349 lines (active study UI)
+    - `src/components/flashcard/FlashcardDeckBrowser.tsx` — 328 lines (deck browser UI)
+    - `src/components/flashcard/StudyCard.tsx` — 224 lines (3D card + written mode)
+    - `src/components/deck/AdvancedFiltersPopover.tsx` — 152 lines (filter popover)
+    - `src/components/deck/DeckCard.tsx` — 149 lines (deck card, React.memo)
+  - Validation: `tsc --noEmit` zero errors post-refactor.
 
 ## 7. Strict Rules
 - **DO NOT** introduce arbitrary inline styles unless absolutely necessary for dynamic layout (e.g., progress bars). Use Tailwind classes.
