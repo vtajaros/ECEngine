@@ -15,7 +15,9 @@ export interface Card {
   isCustom: boolean
   createdAt: string
   // Progress fields — populated when fetched via getCardsWithProgress, absent otherwise
-  ease_factor?: number
+  easeFactor?: number
+  repetitions?: number
+  interval?: number
   correct_count?: number
   total_count?: number
   last_result?: string | null

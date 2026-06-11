@@ -34,7 +34,7 @@ interface LearnSettingsModalProps {
 const TTS_STORAGE_KEY = 'ecengine:tts:enabled'
 
 /** Read the persisted TTS preference. Call this when initialising LearnSettings
- *  in FlashcardStudy so the default reflects the user's last choice. */
+ *  in LooksFamStudy so the default reflects the user's last choice. */
 export function loadTTSPreference(): boolean {
   try {
     return localStorage.getItem(TTS_STORAGE_KEY) === 'true'

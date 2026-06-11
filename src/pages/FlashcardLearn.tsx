@@ -63,7 +63,7 @@ function saveFCBookmarks(set: Set<string>) {
 
 
 
-export default function FlashcardViewer() {
+export default function FlashcardLearn() {
   const navigate = useNavigate()
   const { startSession, rateCard, isSubmitting } = useSessionStore()
 
@@ -217,7 +217,7 @@ export default function FlashcardViewer() {
             }))
           }
         } catch (e) {
-          console.warn('[FlashcardViewer] Failed to load mastery:', e)
+          console.warn('[FlashcardLearn] Failed to load mastery:', e)
         }
         setDecks(processedDecks)
       }
@@ -452,7 +452,7 @@ Provide a thorough explanation covering ALL of the following:
       cards = await dbService.getCardsPrioritized(deckId)
       if (cards.length === 0) return
     } catch (e) {
-      console.error('[FlashcardViewer] Failed to load cards:', e)
+      console.error('[FlashcardLearn] Failed to load cards:', e)
       return
     }
 

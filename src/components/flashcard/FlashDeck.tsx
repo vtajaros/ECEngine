@@ -12,7 +12,7 @@ interface FlashDeckProps {
   onComplete?: () => void
   /**
    * Whether TTS is enabled for this session.
-   * Passed down from FlashcardStudy → FlashDeck → FlashCard (onFlip callback).
+   * Passed down from LooksFamStudy → FlashDeck → FlashCard (onFlip callback).
    * Defaults to false — no speech without explicit opt-in.
    */
   ttsEnabled?: boolean

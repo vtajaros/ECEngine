@@ -76,6 +76,12 @@ function parseCardRow(row: z.infer<typeof CardWithProgressRowSchema>, topicId?: 
     tags,
     isCustom: Boolean(row.is_custom),
     createdAt: row.created_at != null ? String(row.created_at) : '',
+    easeFactor: row.ease_factor,
+    repetitions: row.repetitions,
+    interval: row.interval,
+    correct_count: row.correct_count,
+    total_count: row.total_count,
+    last_result: row.last_result,
   }
 }
 
@@ -90,6 +96,8 @@ export const dbService = {
     return z.array(CardWithProgressRowSchema).parse(result.data || []).map(row => parseCardRow(row))
   },
 
+  /** @deprecated SM-2 state is now preloaded via getCardsWithProgress.
+   *  Only kept for any legacy callers. Do not use in new code. */
   getProgress: async (cardId: string): Promise<{ repetitions: number; interval: number; easeFactor: number } | null> => {
     const result = await window.electron.data.getProgress(cardId)
     if (!result.success) {

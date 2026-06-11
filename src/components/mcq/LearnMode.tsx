@@ -18,7 +18,7 @@ interface LearnModeProps {
   cards: Card[]
   title?: string
   // ── TTS ──────────────────────────────────────────────────────────────────────
-  // Passed down from FlashcardStudy via LearnSettings. LearnMode does NOT own
+  // Passed down from LooksFamStudy via LearnSettings. LearnMode does NOT own
   // the preference — it only consumes it. This keeps TTS state out of the
   // session store and co-located with the other learn settings.
   ttsEnabled?: boolean

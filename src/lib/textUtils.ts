@@ -1,6 +1,6 @@
 /**
  * Returns a Tailwind font-size class based on text length.
- * Used for dynamic card face sizing across FlashCard.tsx and FlashcardViewer.tsx.
+ * Used for dynamic card face sizing across FlashCard.tsx and FlashcardLearn.tsx.
  */
 export function getDynamicFontSize(text: string): string {
   const len = text?.length ?? 0

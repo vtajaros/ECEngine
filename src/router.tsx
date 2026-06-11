@@ -6,8 +6,8 @@ import { ErrorBoundary } from './components/ui/ErrorBoundary'
 const ImportBackup = lazy(() => import('./pages/ImportBackup'))
 const Dashboard      = lazy(() => import('./pages/Dashboard'))
 const TableOfContents = lazy(() => import('./pages/TableOfContents'))
-const FlashcardStudy = lazy(() => import('./pages/FlashcardStudy'))
-const FlashcardViewer = lazy(() => import('./pages/FlashcardViewer'))
+const LooksFamStudy = lazy(() => import('./pages/LooksFamStudy'))
+const FlashcardLearn = lazy(() => import('./pages/FlashcardLearn'))
 const Formulas       = lazy(() => import('./pages/Formulas'))
 const FormulaBank    = lazy(() => import('./pages/FormulaBank'))
 const AddDeck        = lazy(() => import('./pages/AddDeck'))
@@ -55,11 +55,11 @@ export const router = createHashRouter([
       },
       {
         path: 'study',
-        element: <ErrorBoundary><Lazy><FlashcardStudy /></Lazy></ErrorBoundary>
+        element: <ErrorBoundary><Lazy><LooksFamStudy /></Lazy></ErrorBoundary>
       },
       {
         path: 'flashcards',
-        element: <ErrorBoundary><Lazy><FlashcardViewer /></Lazy></ErrorBoundary>
+        element: <ErrorBoundary><Lazy><FlashcardLearn /></Lazy></ErrorBoundary>
       },
       {
         path: 'formulas',

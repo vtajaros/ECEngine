@@ -48,7 +48,7 @@ interface StudySet {
 
 // Removed Mock Sets
 
-export default function FlashcardStudy() {
+export default function LooksFamStudy() {
   const navigate = useNavigate()
 
 
@@ -128,7 +128,7 @@ export default function FlashcardStudy() {
           }))
         }
       } catch (e) {
-        console.warn('[FlashcardStudy] Failed to load mastery:', e)
+        console.warn('[LooksFamStudy] Failed to load mastery:', e)
       }
 
       setAllSets(prev => {
@@ -412,7 +412,9 @@ export default function FlashcardStudy() {
         data: card.data,
         type: card.type,
         id: card.id,
-        ease_factor: card.ease_factor ?? 2.5,
+        easeFactor: card.easeFactor ?? 2.5,
+        repetitions: card.repetitions ?? 0,
+        interval: card.interval ?? 1,
         correct_count: card.correct_count ?? 0,
         total_count: card.total_count ?? 0,
         last_result: card.last_result ?? null,
@@ -420,7 +422,9 @@ export default function FlashcardStudy() {
 
       const mcqs = rawCards.filter((r: any) => r.type === 'mcq').map((r: any) => ({
         id: r.id, topicId: 'custom', type: 'mcq', difficulty: 'medium', tags: [], isCustom: true, data: r.data,
-        ease_factor: r.ease_factor,
+        easeFactor: r.easeFactor,
+        repetitions: r.repetitions,
+        interval: r.interval,
         correct_count: r.correct_count,
         total_count: r.total_count,
         last_result: r.last_result,
@@ -501,7 +505,9 @@ export default function FlashcardStudy() {
         data: card.data,
         type: card.type,
         id: card.id,
-        ease_factor: card.ease_factor ?? 2.5,
+        easeFactor: card.easeFactor ?? 2.5,
+        repetitions: card.repetitions ?? 0,
+        interval: card.interval ?? 1,
         correct_count: card.correct_count ?? 0,
         total_count: card.total_count ?? 0,
         last_result: card.last_result ?? null,
@@ -509,7 +515,9 @@ export default function FlashcardStudy() {
 
       const mcqs = rawCards.filter((r: any) => r.type === 'mcq').map((r: any) => ({
         id: r.id, topicId: 'custom', type: 'mcq', difficulty: 'medium', tags: [], isCustom: true, data: r.data,
-        ease_factor: r.ease_factor,
+        easeFactor: r.easeFactor,
+        repetitions: r.repetitions,
+        interval: r.interval,
         correct_count: r.correct_count,
         total_count: r.total_count,
         last_result: r.last_result,

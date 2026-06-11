@@ -115,6 +115,8 @@ export function registerDeckHandlers(): void {
       const rows = queryAll(
         `SELECT c.id, c.topic_id, c.type, c.data, c.tags, c.difficulty, c.is_custom, c.created_at,
                 COALESCE(p.ease_factor, 2.5)    AS ease_factor,
+                COALESCE(p.repetitions, 0)      AS repetitions,
+                COALESCE(p.interval, 1)         AS interval,
                 COALESCE(p.correct_count, 0)    AS correct_count,
                 COALESCE(p.total_count, 0)      AS total_count,
                 p.last_result
