@@ -161,7 +161,7 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
   return (
     <div className="flex items-center gap-3">
       {/* EXAM TARGET TIMER */}
-      <div className="bg-[#111] border border-[#00FF41]/10 rounded-lg px-4 py-2 flex items-center gap-6 shadow-xl relative group">
+      <div className="bg-[#1A1A1A] border border-[#00FF41]/10 rounded-lg px-4 py-2 flex items-center gap-6 shadow-xl relative group">
         <button
           onClick={openDateModal}
           className="absolute -top-2 -right-2 p-1.5 bg-[#1A1A1A] border border-[#333] rounded-full text-[#666] hover:text-[#00FF41] opacity-70 hover:opacity-100 transition-all z-10 shadow-lg"
@@ -205,7 +205,7 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
 
       {/* PREBOARD TIMER OR ADD BUTTON */}
       {preboardDate && preboardTimeLeft ? (
-        <div className="bg-[#111] border border-[#FFB800]/10 rounded-lg px-4 py-2 flex items-center gap-6 shadow-xl relative group">
+        <div className="bg-[#1A1A1A] border border-[#FFB800]/10 rounded-lg px-4 py-2 flex items-center gap-6 shadow-xl relative group">
           <button
             onClick={openPreboardModal}
             className="absolute -top-2 -right-2 p-1.5 bg-[#1A1A1A] border border-[#333] rounded-full text-[#666] hover:text-[#FFB800] opacity-70 hover:opacity-100 transition-all z-10 shadow-lg"

@@ -418,7 +418,7 @@ export default function Dashboard() {
         </div>
 
         {/* Due Cards Panel */}
-        <div className="lg:col-span-2 p-4 bg-[#111111] rounded-xl border border-[#161616] flex flex-col min-h-0 overflow-hidden">
+        <div className="lg:col-span-2 p-4 bg-[#1A1A1A] rounded-xl border border-[#222] flex flex-col min-h-0 overflow-hidden">
           <h2 className="font-['Rajdhani'] font-bold text-sm text-[#E8E8E8] mb-3 uppercase tracking-widest border-b border-[#1E1E1E] pb-3 flex items-center justify-between">
             <span className="flex items-center gap-2">
               <AlertCircle size={15} className="text-[#00FF41]" />
