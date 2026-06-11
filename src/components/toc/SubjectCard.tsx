@@ -26,9 +26,9 @@ function TopicRow({ topic, searchQuery }: { topic: Topic, searchQuery: string })
   const isExpanded = expanded || (searchQuery.trim().length > 0 && visibleSubtopics.length > 0)
 
   return (
-    <div className="flex flex-col border-b border-[#222] last:border-b-0">
+    <div className="flex flex-col border-b border-border-base last:border-b-0">
       <div 
-        className="flex items-center justify-between p-4 cursor-pointer hover:bg-[#1a1a1a] transition-colors"
+        className="flex items-center justify-between p-4 cursor-pointer hover:bg-surface transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-3">
@@ -57,9 +57,9 @@ function TopicRow({ topic, searchQuery }: { topic: Topic, searchQuery: string })
               {visibleSubtopics.map(st => {
                 const isMatch = matchesSearch(st.name, searchQuery)
                 return (
-                  <div key={st.id} className="flex items-center gap-3 py-1.5 cursor-pointer hover:bg-[#161616] transition-colors rounded px-2 group">
+                  <div key={st.id} className="flex items-center gap-3 py-1.5 cursor-pointer hover:bg-surface-2 transition-colors rounded px-2 group">
                     <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-primary)] shrink-0" />
-                    <span className="text-[13px] font-['IBM_Plex_Mono'] text-[#888] group-hover:text-[#E8E8E8] transition-colors">
+                    <span className="text-[13px] font-['IBM_Plex_Mono'] text-text-muted group-hover:text-text-primary transition-colors">
                       {/* TODO: Link to filtered decks for this subtopic */}
                       {isMatch && searchQuery ? highlightText(st.name, searchQuery) : st.name}
                     </span>
@@ -108,7 +108,7 @@ export function SubjectCard({ subject, searchQuery }: SubjectCardProps) {
   const isExpanded = expanded || (searchQuery.trim().length > 0 && visibleTopics.length > 0)
 
   return (
-    <div className={`flex flex-col bg-[var(--bg-card)] border rounded-xl overflow-hidden transition-all ${isExpanded ? 'border-[#333] border-l-[4px] border-l-[var(--accent-primary)] shadow-[0_0_20px_rgba(0,255,65,0.05)]' : 'border-[#222] hover:border-[#333]'}`}>
+    <div className={`flex flex-col bg-[var(--bg-card)] border rounded-xl overflow-hidden transition-all ${isExpanded ? 'border-[#333] border-l-[4px] border-l-[var(--accent-primary)] shadow-[0_0_20px_rgba(0,255,65,0.05)]' : 'border-border-base hover:border-[#333]'}`}>
       <div 
         className="flex items-center justify-between p-6 cursor-pointer hover:bg-[var(--bg-elevated)] transition-colors"
         onClick={() => setExpanded(!expanded)}
@@ -136,7 +136,7 @@ export function SubjectCard({ subject, searchQuery }: SubjectCardProps) {
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2, ease: "easeInOut" }}
-            className="overflow-hidden border-t border-[#222]"
+            className="overflow-hidden border-t border-border-base"
           >
             <div className="flex flex-col">
               {visibleTopics.map(topic => (

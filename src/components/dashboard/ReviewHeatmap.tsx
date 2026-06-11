@@ -65,11 +65,11 @@ export default function ReviewHeatmap({ activityHistory, monthsToShow = 6 }: Rev
   const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
 
   const getLevel = (timeSpent: number) => {
-    if (!timeSpent) return 'bg-[#1A1A1A] border-[#2A2A2A]' 
+    if (!timeSpent) return 'bg-surface border-border-subtle' 
     if (timeSpent < 60) return 'bg-[#003311] border-[#005511] shadow-[0_0_8px_rgba(0,51,17,0.4)]'
     if (timeSpent < 120) return 'bg-[#006e21] border-[#008821] shadow-[0_0_12px_rgba(0,110,33,0.5)]'
     if (timeSpent < 180) return 'bg-[#00a630] border-[#00bb30] shadow-[0_0_15px_rgba(0,166,48,0.6)]'
-    return 'bg-[#00FF41] border-[#00FF41] shadow-[0_0_20px_rgba(0,255,65,0.7)]'
+    return 'bg-accent border-accent shadow-[0_0_20px_rgba(0,255,65,0.7)]'
   }
 
   return (
@@ -81,7 +81,7 @@ export default function ReviewHeatmap({ activityHistory, monthsToShow = 6 }: Rev
             {monthLabels.map((label, i) => (
               <span
                 key={i}
-                className="absolute text-[11px] font-['Orbitron'] text-[#E8E8E8] opacity-70 font-bold uppercase tracking-[0.2em]"
+                className="absolute text-[11px] font-['Orbitron'] text-text-primary opacity-70 font-bold uppercase tracking-[0.2em]"
                 style={{ left: `calc(2.2rem + ${label.weekIndex} * (var(--cell-size) + var(--gap-size)))` }}
               >
                 {label.name}

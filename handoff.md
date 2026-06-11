@@ -67,6 +67,11 @@ React Components -> Zustand / React State -> src/services/db.service.ts -> windo
     - `src/components/deck/AdvancedFiltersPopover.tsx` — 152 lines (filter popover)
     - `src/components/deck/DeckCard.tsx` — 149 lines (deck card, React.memo)
   - Validation: `tsc --noEmit` zero errors post-refactor.
+- **Fix 14 — Tailwind token unification COMPLETE**
+  - Scope: 49 files, 1127 instances replaced
+  - New tokens added to `tailwind.config.ts`: `surface`, `surface-2`, `border-base`, `border-subtle`, `text-primary`, `text-muted`, `accent`, `warn`, `danger`
+  - Residuals intentionally left: `#333`, `#111`, `#555`, `#FF003C` and other component-specific one-off values.
+  - Validation: `tsc --noEmit` zero errors.
 
 ## 7. Strict Rules
 - **DO NOT** introduce arbitrary inline styles unless absolutely necessary for dynamic layout (e.g., progress bars). Use Tailwind classes.

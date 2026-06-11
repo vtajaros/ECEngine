@@ -562,9 +562,9 @@ export default function Formulas() {
   // ══════════════════════════════════════════════
   if (activeDeck && currentCard) {
     return (
-      <div className="h-full bg-[#0D0D0D] flex flex-col overflow-hidden">
+      <div className="h-full bg-engine-black flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <div className="shrink-0 bg-[#111] border-b border-[#222] px-6 py-4 flex items-center justify-between z-20">
+        <div className="shrink-0 bg-[#111] border-b border-border-base px-6 py-4 flex items-center justify-between z-20">
           <LeaveConfirmModal
             isOpen={blocker.state === 'blocked' || showExitConfirm}
             onConfirm={() => {
@@ -586,7 +586,7 @@ export default function Formulas() {
           <div className="flex items-center gap-4">
             <button
               onClick={() => setShowExitConfirm(true)}
-              className="text-[#888] hover:text-white transition-colors p-2 rounded hover:bg-[#222]"
+              className="text-text-muted hover:text-white transition-colors p-2 rounded hover:bg-border-base"
               title="Exit"
             >
               <X className="w-5 h-5" />
@@ -602,7 +602,7 @@ export default function Formulas() {
           </div>
           <div className="flex items-center gap-3">
             {settings.writtenMode && (
-              <span className="text-xs font-['IBM_Plex_Mono'] text-[#888] bg-[#1a1a1a] px-3 py-1 rounded border border-[#333]">
+              <span className="text-xs font-['IBM_Plex_Mono'] text-text-muted bg-surface px-3 py-1 rounded border border-[#333]">
                 Accuracy:{' '}
                 <span className="text-[var(--accent-primary)]">
                   {writtenStats.total > 0
@@ -620,8 +620,8 @@ export default function Formulas() {
               }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${
                 settings.swapTermDef
-                  ? 'bg-[#00FF41]/20 text-[#00FF41] border-[#00FF41]'
-                  : 'bg-[#1a1a1a] text-[#888] border-[#333] hover:border-[#555] hover:text-[#E8E8E8]'
+                  ? 'bg-accent/20 text-accent border-accent'
+                  : 'bg-surface text-text-muted border-[#333] hover:border-[#555] hover:text-text-primary'
               }`}
               title="Swap Term / Definition (Shortcut: F)"
             >
@@ -630,7 +630,7 @@ export default function Formulas() {
             </button>
             <button
               onClick={() => setShowSettings(!showSettings)}
-              className="text-[#888] hover:text-[var(--accent-primary)] transition-colors p-2 rounded hover:bg-[#222]"
+              className="text-text-muted hover:text-[var(--accent-primary)] transition-colors p-2 rounded hover:bg-border-base"
             >
               <Settings2 className="w-5 h-5" />
             </button>
@@ -638,7 +638,7 @@ export default function Formulas() {
         </div>
 
         {/* Progress Bar */}
-        <div className="shrink-0 w-full bg-[#1a1a1a] h-[4px]">
+        <div className="shrink-0 w-full bg-surface h-[4px]">
           <motion.div
             className="h-full bg-[var(--accent-primary)] shadow-[0_0_8px_rgba(0,255,65,0.6)]"
             animate={{ width: `${progress}%` }}
@@ -668,7 +668,7 @@ export default function Formulas() {
                     className={`px-4 py-2 rounded-lg text-sm font-['Rajdhani'] font-bold tracking-widest uppercase transition-all border ${
                       settings[opt.key]
                         ? 'bg-[var(--accent-primary)] text-black border-[var(--accent-primary)] shadow-[0_0_10px_rgba(0,255,65,0.3)]'
-                        : 'bg-[#1a1a1a] text-[#888] border-[#333] hover:text-white hover:border-[#555]'
+                        : 'bg-surface text-text-muted border-[#333] hover:text-white hover:border-[#555]'
                     }`}
                   >
                     {opt.label}
@@ -691,21 +691,21 @@ export default function Formulas() {
                 transition={{ duration: 0.25 }}
               >
                 {/* The Card */}
-                <div className="relative bg-[#161616] border border-[#222] rounded-xl shadow-2xl min-h-[350px] flex flex-col">
+                <div className="relative bg-surface-2 border border-border-base rounded-xl shadow-2xl min-h-[350px] flex flex-col">
                   {/* Bookmark */}
                   <button
                     onClick={() => toggleBookmark(currentCard.id)}
-                    className="absolute top-5 right-5 z-10 text-[#666] hover:text-[#FFB800] transition-colors"
+                    className="absolute top-5 right-5 z-10 text-[#666] hover:text-warn transition-colors"
                     title="Bookmark"
                   >
                     <Bookmark
-                      className={`w-6 h-6 ${isBookmarked ? 'fill-[#FFB800] text-[#FFB800]' : ''}`}
+                      className={`w-6 h-6 ${isBookmarked ? 'fill-warn text-warn' : ''}`}
                     />
                   </button>
 
                   {/* Card Label */}
                   <div className="px-8 pt-6 pb-2">
-                    <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888]">
+                    <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-text-muted">
                       {isFlipped
                         ? currentCard.type === 'mcq'
                           ? settings.swapTermDef
@@ -740,7 +740,7 @@ export default function Formulas() {
                     {!isFlipped ? (
                       <div className="text-center w-full">
                         {currentCard.data.imagePath && (
-                          <div className="mb-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
+                          <div className="mb-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-accent transition-all">
                             <img
                               src={`ece-app://${currentCard.data.imagePath}`}
                               alt="Card diagram"
@@ -784,7 +784,7 @@ export default function Formulas() {
                         )}
                       </div>
                     ) : (
-                      <div className="text-center w-full text-[#E8E8E8]">
+                      <div className="text-center w-full text-text-primary">
                         {getBackContent(currentCard)}
                       </div>
                     )}
@@ -803,7 +803,7 @@ export default function Formulas() {
                       }}
                       disabled={writtenSubmitted}
                       placeholder="Type your answer..."
-                      className="w-full bg-[#111] border border-[#333] focus:border-[var(--accent-primary)] text-[#E8E8E8] placeholder-[#555] py-4 px-6 rounded-lg font-['IBM_Plex_Mono'] outline-none transition-colors"
+                      className="w-full bg-[#111] border border-[#333] focus:border-[var(--accent-primary)] text-text-primary placeholder-[#555] py-4 px-6 rounded-lg font-['IBM_Plex_Mono'] outline-none transition-colors"
                     />
                     {!writtenSubmitted ? (
                       <button
@@ -818,21 +818,21 @@ export default function Formulas() {
                         style={{ borderColor: writtenCorrect ? '#00FF41' : '#FF3333' }}
                       >
                         {writtenCorrect ? (
-                          <Check className="w-6 h-6 text-[#00FF41] shrink-0" />
+                          <Check className="w-6 h-6 text-accent shrink-0" />
                         ) : (
-                          <XCircle className="w-6 h-6 text-[#FF3333] shrink-0" />
+                          <XCircle className="w-6 h-6 text-danger shrink-0" />
                         )}
                         <div className="flex-1">
                           <span
-                            className={`font-['Rajdhani'] font-bold uppercase tracking-widest text-sm ${writtenCorrect ? 'text-[#00FF41]' : 'text-[#FF3333]'}`}
+                            className={`font-['Rajdhani'] font-bold uppercase tracking-widest text-sm ${writtenCorrect ? 'text-accent' : 'text-danger'}`}
                           >
                             {writtenCorrect ? 'Correct!' : 'Incorrect'}
                           </span>
                           {!writtenCorrect && (
-                            <div className="text-[#888] text-sm font-['IBM_Plex_Mono'] mt-1">
+                            <div className="text-text-muted text-sm font-['IBM_Plex_Mono'] mt-1">
                               Correct:{' '}
                               <span
-                                className="text-[#00FF41]"
+                                className="text-accent"
                                 dangerouslySetInnerHTML={{
                                   __html: renderMath(getCorrectAnswer(currentCard)),
                                 }}
@@ -844,7 +844,7 @@ export default function Formulas() {
                           onClick={() => {
                             setIsFlipped(true)
                           }}
-                          className="px-4 py-2 text-sm bg-[#222] text-[#E8E8E8] rounded font-['Rajdhani'] uppercase tracking-widest hover:bg-[#333] transition-colors"
+                          className="px-4 py-2 text-sm bg-border-base text-text-primary rounded font-['Rajdhani'] uppercase tracking-widest hover:bg-[#333] transition-colors"
                         >
                           View Card
                         </button>
@@ -859,7 +859,7 @@ export default function Formulas() {
                     <button
                       onClick={goPrev}
                       disabled={currentIndex === 0}
-                      className="flex items-center gap-2 px-6 py-3 bg-[#111] border border-[#333] rounded-lg text-[#E8E8E8] font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[#222] hover:border-[#555] transition-all disabled:opacity-30 disabled:cursor-default"
+                      className="flex items-center gap-2 px-6 py-3 bg-[#111] border border-[#333] rounded-lg text-text-primary font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-border-base hover:border-[#555] transition-all disabled:opacity-30 disabled:cursor-default"
                     >
                       <ArrowLeft className="w-4 h-4" /> Prev
                     </button>
@@ -897,7 +897,7 @@ export default function Formulas() {
               onClick={() => setZoomedImage(null)}
             >
               <button
-                className="absolute top-6 right-6 text-[#888] hover:text-[#00FF41] transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-[#00FF41]"
+                className="absolute top-6 right-6 text-text-muted hover:text-accent transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-accent"
                 onClick={() => setZoomedImage(null)}
                 title="Close"
               >
@@ -921,10 +921,10 @@ export default function Formulas() {
   // Empty session fallback
   if (activeDeck && sessionCards.length === 0) {
     return (
-      <div className="h-full bg-[#0D0D0D] flex flex-col items-center justify-center gap-6 p-10 text-center">
+      <div className="h-full bg-engine-black flex flex-col items-center justify-center gap-6 p-10 text-center">
         <div className="flex flex-col items-center gap-2">
-          <Bookmark className="w-12 h-12 text-[#FFB800] opacity-50 mb-2" />
-          <p className="text-[#888] font-['IBM_Plex_Mono'] text-lg">
+          <Bookmark className="w-12 h-12 text-warn opacity-50 mb-2" />
+          <p className="text-text-muted font-['IBM_Plex_Mono'] text-lg">
             No cards match your current filters.
           </p>
           <p className="text-[#555] font-['Rajdhani'] uppercase tracking-widest text-sm">
@@ -941,7 +941,7 @@ export default function Formulas() {
           </button>
           <button
             onClick={handleExit}
-            className="px-6 py-3 bg-[#111] border border-[#333] text-[#888] hover:text-white hover:border-[#555] rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
+            className="px-6 py-3 bg-[#111] border border-[#333] text-text-muted hover:text-white hover:border-[#555] rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
           >
             Back to Decks
           </button>
@@ -1004,7 +1004,7 @@ export default function Formulas() {
                       sortBy !== 'date' ||
                       sortOrder !== 'desc' ||
                       searchQuery
-                        ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
+                        ? 'bg-accent/10 border-accent text-accent'
                         : 'bg-[var(--bg-secondary)] border-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                     }`}
                   >
@@ -1021,12 +1021,12 @@ export default function Formulas() {
                         className="absolute left-0 mt-2 w-72 bg-[#111] border border-[#333] rounded-lg shadow-2xl p-4 z-50 flex flex-col gap-4"
                       >
                         <div className="flex justify-between items-center pb-2 border-b border-[#333]">
-                          <span className="font-['Rajdhani'] font-bold text-sm tracking-widest uppercase text-[#00FF41]">
+                          <span className="font-['Rajdhani'] font-bold text-sm tracking-widest uppercase text-accent">
                             Filters & Sort
                           </span>
                           <button
                             onClick={() => setShowAdvancedFilters(false)}
-                            className="text-[#888] hover:text-[#E8E8E8]"
+                            className="text-text-muted hover:text-text-primary"
                           >
                             <X size={16} />
                           </button>
@@ -1040,13 +1040,13 @@ export default function Formulas() {
                             placeholder="Search decks..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-[#1A1A1A] border border-[#333] focus:border-[#00FF41] rounded-lg py-2 pl-9 pr-3 text-sm text-[#E8E8E8] placeholder-[#555] outline-none transition-colors font-['IBM_Plex_Mono']"
+                            className="w-full bg-surface border border-[#333] focus:border-accent rounded-lg py-2 pl-9 pr-3 text-sm text-text-primary placeholder-[#555] outline-none transition-colors font-['IBM_Plex_Mono']"
                           />
                         </div>
 
                         {/* Type Filter */}
                         <div className="flex flex-col gap-2">
-                          <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">
+                          <label className="text-xs font-['Rajdhani'] tracking-widest text-text-muted uppercase">
                             Type
                           </label>
                           <div className="grid grid-cols-4 gap-1">
@@ -1056,8 +1056,8 @@ export default function Formulas() {
                                 onClick={() => setFilterType(opt)}
                                 className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${
                                   filterType === opt
-                                    ? 'bg-[#00FF41]/20 text-[#00FF41] font-bold'
-                                    : 'bg-[#1A1A1A] text-[#888] hover:bg-[#222]'
+                                    ? 'bg-accent/20 text-accent font-bold'
+                                    : 'bg-surface text-text-muted hover:bg-border-base'
                                 }`}
                               >
                                 {opt === 'formula' ? 'F1' : opt}
@@ -1069,7 +1069,7 @@ export default function Formulas() {
                         {/* Tag Filters */}
                         {availableTags.length > 0 && (
                           <div className="flex flex-col gap-2">
-                            <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">
+                            <label className="text-xs font-['Rajdhani'] tracking-widest text-text-muted uppercase">
                               Tags (AND)
                             </label>
                             <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
@@ -1085,8 +1085,8 @@ export default function Formulas() {
                                     }}
                                     className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-['Rajdhani'] uppercase tracking-wider border transition-all ${
                                       isActive
-                                        ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
-                                        : 'bg-[#1A1A1A] border-[#333] text-[#888] hover:border-[#555] hover:text-[#E8E8E8]'
+                                        ? 'bg-accent/10 border-accent text-accent'
+                                        : 'bg-surface border-[#333] text-text-muted hover:border-[#555] hover:text-text-primary'
                                     }`}
                                   >
                                     {tag}
@@ -1101,18 +1101,18 @@ export default function Formulas() {
                         {/* Sort Selection */}
                         <div className="flex flex-col gap-2">
                           <div className="flex justify-between items-center">
-                            <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">
+                            <label className="text-xs font-['Rajdhani'] tracking-widest text-text-muted uppercase">
                               Sort By
                             </label>
-                            <div className="flex bg-[#1A1A1A] rounded overflow-hidden border border-[#333]">
+                            <div className="flex bg-surface rounded overflow-hidden border border-[#333]">
                               {(['asc', 'desc'] as const).map((order) => (
                                 <button
                                   key={order}
                                   onClick={() => setSortOrder(order)}
                                   className={`px-2 py-0.5 text-[10px] font-['Rajdhani'] uppercase tracking-widest transition-colors ${
                                     sortOrder === order
-                                      ? 'bg-[#00FF41] text-black font-bold'
-                                      : 'text-[#888] hover:text-[#E8E8E8]'
+                                      ? 'bg-accent text-black font-bold'
+                                      : 'text-text-muted hover:text-text-primary'
                                   }`}
                                 >
                                   {order}
@@ -1127,8 +1127,8 @@ export default function Formulas() {
                                 onClick={() => setSortBy(opt)}
                                 className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${
                                   sortBy === opt
-                                    ? 'bg-[#00FF41]/20 text-[#00FF41] font-bold'
-                                    : 'bg-[#1A1A1A] text-[#888] hover:bg-[#222]'
+                                    ? 'bg-accent/20 text-accent font-bold'
+                                    : 'bg-surface text-text-muted hover:bg-border-base'
                                 }`}
                               >
                                 {opt}
@@ -1223,7 +1223,7 @@ export default function Formulas() {
                   {filteredDecks.map((deck) => (
                     <div
                       key={deck.id}
-                      className="relative isolate group transition-all duration-300 border border-[#333] bg-[#1a1a1a] p-5 flex flex-col w-full min-h-[180px] justify-between hover:-translate-x-[6px] hover:-translate-y-[6px] rounded-xl before:absolute before:w-full before:h-full before:top-0 before:left-0 before:bg-[#1a1a1a] before:border before:border-[#333] before:rounded-xl before:translate-x-[6px] before:translate-y-[6px] before:z-[-1] before:transition-transform before:duration-300 group-hover:before:translate-x-[12px] group-hover:before:translate-y-[12px] after:absolute after:w-full after:h-full after:top-0 after:left-0 after:bg-[#1a1a1a] after:border after:border-[#333] after:rounded-xl after:translate-x-[12px] after:translate-y-[12px] after:z-[-2] after:transition-transform after:duration-300 group-hover:after:translate-x-[18px] group-hover:after:translate-y-[18px]"
+                      className="relative isolate group transition-all duration-300 border border-[#333] bg-surface p-5 flex flex-col w-full min-h-[180px] justify-between hover:-translate-x-[6px] hover:-translate-y-[6px] rounded-xl before:absolute before:w-full before:h-full before:top-0 before:left-0 before:bg-surface before:border before:border-[#333] before:rounded-xl before:translate-x-[6px] before:translate-y-[6px] before:z-[-1] before:transition-transform before:duration-300 group-hover:before:translate-x-[12px] group-hover:before:translate-y-[12px] after:absolute after:w-full after:h-full after:top-0 after:left-0 after:bg-surface after:border after:border-[#333] after:rounded-xl after:translate-x-[12px] after:translate-y-[12px] after:z-[-2] after:transition-transform after:duration-300 group-hover:after:translate-x-[18px] group-hover:after:translate-y-[18px]"
                     >
                       {/* Top Section: Title & Stats Stack */}
                       <div className="flex justify-between items-start gap-4">
@@ -1236,7 +1236,7 @@ export default function Formulas() {
                             >
                               {deck.subject}
                             </span>
-                            <h3 className="text-lg font-bold font-rajdhani tracking-wide text-[#E8E8E8] uppercase truncate flex-1">
+                            <h3 className="text-lg font-bold font-rajdhani tracking-wide text-text-primary uppercase truncate flex-1">
                               {deck.title}
                             </h3>
                           </div>
@@ -1261,7 +1261,7 @@ export default function Formulas() {
                         {/* Right Column: Administrative Info */}
                         <div className="flex flex-col items-end gap-1.5 shrink-0">
                           {/* Items Tag */}
-                          <span className="w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] text-[#E8E8E8] font-rajdhani font-bold tracking-widest text-[10px] shrink-0 uppercase whitespace-nowrap">
+                          <span className="w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] text-text-primary font-rajdhani font-bold tracking-widest text-[10px] shrink-0 uppercase whitespace-nowrap">
                             {deck.cardCount} ITEMS
                           </span>
                           {/* Date String */}
@@ -1298,12 +1298,12 @@ export default function Formulas() {
                           <motion.div
                             initial={{ width: 0 }}
                             animate={{ width: `${deck.mastery}%` }}
-                            className="h-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.4)]"
+                            className="h-full bg-accent shadow-[0_0_8px_rgba(0,255,65,0.4)]"
                           />
                         </div>
 
                         {/* Mastery percentage — fixed, does not grow */}
-                        <span className="text-[#00FF41] font-bold text-[10px] font-rajdhani shrink-0">
+                        <span className="text-accent font-bold text-[10px] font-rajdhani shrink-0">
                           {deck.mastery}%
                         </span>
 
@@ -1318,7 +1318,7 @@ export default function Formulas() {
                               e.stopPropagation()
                               openDeck(deck)
                             }}
-                            className="py-2 px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                            className="py-2 px-3 bg-[#111] border border-[#333] hover:border-accent hover:text-accent text-text-primary rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
                             title="Learn this deck"
                             aria-label="Learn"
                           >
@@ -1369,7 +1369,7 @@ export default function Formulas() {
                     Loading decks...
                   </div>
                 ) : filteredDecks.length === 0 ? (
-                  <div className="text-center py-20 text-[#888] font-rajdhani uppercase tracking-widest text-lg">
+                  <div className="text-center py-20 text-text-muted font-rajdhani uppercase tracking-widest text-lg">
                     No decks found{activeSubject !== 'ALL' ? ` for ${activeSubject}` : ''}. Import
                     some from Add Decks.
                   </div>
@@ -1403,7 +1403,7 @@ export default function Formulas() {
                     <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-4 tracking-widest uppercase">
                       DELETE DECK?
                     </h3>
-                    <p className="text-[#888] font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
+                    <p className="text-text-muted font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
                       Are you absolutely sure you want to delete{' '}
                       <strong className="text-white">{setToDelete.title}</strong>? This action
                       cannot be undone and will permanently remove all {setToDelete.cardCount} items
@@ -1413,13 +1413,13 @@ export default function Formulas() {
                       <button
                         onClick={handleConfirmDelete}
                         disabled={deleteCountdown > 0}
-                        className="w-full py-4 bg-[#FF003C] hover:bg-[#D00030] disabled:bg-[#1A1A1A] disabled:text-[#444] disabled:cursor-not-allowed text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,0,60,0.2)] hover:shadow-[0_0_25px_rgba(255,0,60,0.4)]"
+                        className="w-full py-4 bg-[#FF003C] hover:bg-[#D00030] disabled:bg-surface disabled:text-[#444] disabled:cursor-not-allowed text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,0,60,0.2)] hover:shadow-[0_0_25px_rgba(255,0,60,0.4)]"
                       >
                         Confirm Delete
                       </button>
                       <button
                         onClick={() => setSetToDelete(null)}
-                        className="w-full py-4 bg-[#1A1A1A] border border-[#333] hover:border-[#555] text-[#888] hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
+                        className="w-full py-4 bg-surface border border-[#333] hover:border-[#555] text-text-muted hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
                       >
                         Cancel
                       </button>

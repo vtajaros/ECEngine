@@ -378,16 +378,16 @@ Please explain:
     const overallCorrectFirstTryCount = cards.filter(c => cardStats[c.id]?.wasCorrectFirstTry).length
 
     return (
-      <div className="flex flex-col items-center justify-center p-6 lg:p-10 h-full bg-[#0D0D0D]">
+      <div className="flex flex-col items-center justify-center p-6 lg:p-10 h-full bg-engine-black">
         <motion.div
           initial={{ y: "100%", opacity: 0 }}
           animate={{ y: "0%", opacity: 1 }}
           transition={{ duration: 0.35, ease: "easeOut" }}
-          className="bg-[#111] border border-[#222] rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col max-w-3xl w-full h-[80vh] max-h-[800px] overflow-hidden"
+          className="bg-[#111] border border-border-base rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col max-w-3xl w-full h-[80vh] max-h-[800px] overflow-hidden"
         >
           {/* Header */}
-          <div className="p-3 border-b border-[#222] text-center bg-[#161616] shrink-0">
-            <h2 className="text-xl font-['Orbitron'] font-bold text-[#00FF41] mb-0 tracking-widest uppercase">
+          <div className="p-3 border-b border-border-base text-center bg-surface-2 shrink-0">
+            <h2 className="text-xl font-['Orbitron'] font-bold text-accent mb-0 tracking-widest uppercase">
               {isLastPartition ? 'Set Complete! 🎉' : 'Round Complete'}
             </h2>
             {title && (
@@ -395,8 +395,8 @@ Please explain:
                 {title}
               </div>
             )}
-            <div className="inline-block bg-[#0D0D0D] border border-[#333] px-4 py-1.5 rounded-lg">
-              <span className="text-[#E8E8E8] font-['Rajdhani'] text-sm font-bold tracking-wider">
+            <div className="inline-block bg-engine-black border border-[#333] px-4 py-1.5 rounded-lg">
+              <span className="text-text-primary font-['Rajdhani'] text-sm font-bold tracking-wider">
                 {isLastPartition
                   ? `${overallCorrectFirstTryCount} / ${cards.length} flawless answers`
                   : `${partitionCorrectFirstTryCount} / ${currentPartitionCards.length} flawless answers`}
@@ -405,7 +405,7 @@ Please explain:
           </div>
 
           {/* Question Review List */}
-          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-[#0D0D0D]">
+          <div className="flex-1 overflow-y-auto p-8 custom-scrollbar bg-engine-black">
             <div className="flex flex-col gap-2">
               {currentPartitionCards.map((c, idx) => {
                 const stat = cardStats[c.id] || { wasCorrectFirstTry: false, usedIDK: false, attemptCount: 0 }
@@ -419,14 +419,14 @@ Please explain:
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.05 }}
-                    className="bg-[#161616] border border-[rgba(0,255,65,0.15)] rounded-lg p-[12px_16px] mb-2 shrink-0"
+                    className="bg-surface-2 border border-[rgba(0,255,65,0.15)] rounded-lg p-[12px_16px] mb-2 shrink-0"
                   >
                     <div className="flex items-start justify-between gap-4 mb-2">
-                      <span className="font-['Rajdhani'] font-bold text-[#888] whitespace-nowrap mt-0.5">Q{overallPos}</span>
-                      <div className="text-[#E8E8E8] font-['IBM_Plex_Mono'] text-[13px] leading-relaxed flex-1 mcq-question-text" dangerouslySetInnerHTML={{ __html: renderMath(mcq.question) }} />
+                      <span className="font-['Rajdhani'] font-bold text-text-muted whitespace-nowrap mt-0.5">Q{overallPos}</span>
+                      <div className="text-text-primary font-['IBM_Plex_Mono'] text-[13px] leading-relaxed flex-1 mcq-question-text" dangerouslySetInnerHTML={{ __html: renderMath(mcq.question) }} />
                       <button
                         onClick={() => toggleBookmark(c.id)}
-                        className={`p-1 rounded transition-colors shrink-0 mt-0.5 ${bookmarkedIds.has(c.id) ? 'text-[#FFB800] bg-[#FFB800]/10' : 'text-[#555] hover:text-[#FFB800] hover:bg-[#FFB800]/5'}`}
+                        className={`p-1 rounded transition-colors shrink-0 mt-0.5 ${bookmarkedIds.has(c.id) ? 'text-warn bg-warn/10' : 'text-[#555] hover:text-warn hover:bg-warn/5'}`}
                         title="Bookmark Question"
                       >
                         <Bookmark className={`w-4 h-4 ${bookmarkedIds.has(c.id) ? 'fill-current' : ''}`} />
@@ -434,8 +434,8 @@ Please explain:
                       <button
                         onClick={() => setOpenExplanationId(openExplanationId === idx ? null : idx)}
                         className={`p-1 rounded transition-colors shrink-0 mt-0.5 border ${openExplanationId === idx
-                          ? 'border-[#00FF41] text-[#00FF41] bg-[rgba(0,255,65,0.1)]'
-                          : 'border-[rgba(0,255,65,0.3)] text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41]'
+                          ? 'border-accent text-accent bg-[rgba(0,255,65,0.1)]'
+                          : 'border-[rgba(0,255,65,0.3)] text-accent hover:bg-[rgba(0,255,65,0.08)] hover:border-accent'
                           }`}
                         title={openExplanationId === idx ? 'Hide explanation' : 'AI Explain'}
                       >
@@ -444,14 +444,14 @@ Please explain:
                     </div>
                     <div className="pl-8 flex items-start justify-between gap-2">
                       <div className="flex items-start gap-2">
-                        <span className="text-[#00FF41] font-bold">✓</span>
-                        <div className="text-[#00FF41] font-['IBM_Plex_Mono'] text-[13px]" dangerouslySetInnerHTML={{ __html: renderMath(correctAnswerText) }} />
+                        <span className="text-accent font-bold">✓</span>
+                        <div className="text-accent font-['IBM_Plex_Mono'] text-[13px]" dangerouslySetInnerHTML={{ __html: renderMath(correctAnswerText) }} />
                       </div>
                       {stat.usedIDK && (
-                        <span className="text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded bg-[#FFB800]/20 text-[#FFB800] border border-[#FFB800]/30 shrink-0">IDK</span>
+                        <span className="text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded bg-warn/20 text-warn border border-warn/30 shrink-0">IDK</span>
                       )}
                       {!stat.wasCorrectFirstTry && !stat.usedIDK && (
-                        <span className="text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded bg-[#FF3333]/20 text-[#FF3333] border border-[#FF3333]/30 shrink-0">Missed</span>
+                        <span className="text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded bg-danger/20 text-danger border border-danger/30 shrink-0">Missed</span>
                       )}
                     </div>
 
@@ -481,10 +481,10 @@ Please explain:
           </div>
 
           {/* Footer Buttons */}
-          <div className="p-3 border-t border-[#222] bg-[#161616] flex justify-between gap-4 shrink-0">
+          <div className="p-3 border-t border-border-base bg-surface-2 flex justify-between gap-4 shrink-0">
             <button
               onClick={handleRestartRound}
-              className="px-4 py-2 text-sm bg-[#111] border border-[#00FF41] text-[#00FF41] rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[rgba(0,255,65,0.1)] transition-colors"
+              className="px-4 py-2 text-sm bg-[#111] border border-accent text-accent rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[rgba(0,255,65,0.1)] transition-colors"
             >
               Restart Round
             </button>
@@ -492,13 +492,13 @@ Please explain:
               <div className="flex gap-4">
                 <button
                   onClick={handleExit}
-                  className="px-4 py-2 text-sm bg-[#222] text-[#E8E8E8] rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[#333] transition-colors"
+                  className="px-4 py-2 text-sm bg-border-base text-text-primary rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[#333] transition-colors"
                 >
                   Exit
                 </button>
                 <button
                   onClick={handleStudyAgain}
-                  className="px-5 py-2 text-sm bg-[#00FF41] text-black rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[rgba(0,255,65,0.8)] shadow-[0_0_15px_rgba(0,255,65,0.2)] transition-all"
+                  className="px-5 py-2 text-sm bg-accent text-black rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[rgba(0,255,65,0.8)] shadow-[0_0_15px_rgba(0,255,65,0.2)] transition-all"
                 >
                   Study Again
                 </button>
@@ -506,7 +506,7 @@ Please explain:
             ) : (
               <button
                 onClick={startNextPartitionPhase}
-                className="px-5 py-2 text-sm bg-[#00FF41] text-black rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[rgba(0,255,65,0.8)] shadow-[0_0_15px_rgba(0,255,65,0.2)] transition-all flex items-center"
+                className="px-5 py-2 text-sm bg-accent text-black rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[rgba(0,255,65,0.8)] shadow-[0_0_15px_rgba(0,255,65,0.2)] transition-all flex items-center"
               >
                 Continue <ArrowRight className="w-5 h-5 ml-2" />
               </button>
@@ -538,7 +538,7 @@ Please explain:
   const totalWrongInPartition = partitionWrongIds.size
 
   return (
-    <div className="flex flex-col h-full bg-[#0D0D0D] p-8 relative">
+    <div className="flex flex-col h-full bg-engine-black p-8 relative">
       <LeaveConfirmModal
         isOpen={blocker.state === 'blocked' || showExitConfirm}
         onConfirm={() => {
@@ -561,23 +561,23 @@ Please explain:
 
       <div className="max-w-3xl w-full mx-auto flex flex-wrap items-center justify-between gap-2 mb-4">
         <div className="flex flex-col flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-4 text-[#E8E8E8] font-['IBM_Plex_Mono'] font-bold text-sm tracking-wider uppercase mb-3">
+          <div className="flex flex-wrap items-center gap-4 text-text-primary font-['IBM_Plex_Mono'] font-bold text-sm tracking-wider uppercase mb-3">
             <span>Question {overallCurrentQuestion} of {cards.length}</span>
             {title && (
-              <span className="text-[#00FF41] font-['Orbitron'] font-bold text-lg tracking-[0.1em] uppercase whitespace-nowrap flex-shrink-0">
+              <span className="text-accent font-['Orbitron'] font-bold text-lg tracking-[0.1em] uppercase whitespace-nowrap flex-shrink-0">
                 {title}
               </span>
             )}
           </div>
-          <div className="w-64 max-w-full bg-[#1a1a1a] h-[6px] rounded-full overflow-hidden mb-3">
+          <div className="w-64 max-w-full bg-surface h-[6px] rounded-full overflow-hidden mb-3">
             <div
-              className="h-full bg-[#00FF41] transition-all duration-300 ease-in-out shadow-[0_0_8px_rgba(0,255,65,0.6)]"
+              className="h-full bg-accent transition-all duration-300 ease-in-out shadow-[0_0_8px_rgba(0,255,65,0.6)]"
               style={{ width: `${(overallCurrentQuestion / cards.length) * 100}%` }}
             />
           </div>
-          <div className="text-[11px] font-['IBM_Plex_Mono'] flex items-center gap-4 text-[#888]">
-            <span className="flex items-center gap-1 text-[#00FF41]"><div className="w-2 h-2 rounded-full bg-[#00FF41]"></div> ✓ {totalCorrectInPartition} correct</span>
-            <span className="flex items-center gap-1 text-[#FF3333]"><div className="w-2 h-2 rounded-full bg-[#FF3333]"></div> ✗ {totalWrongInPartition} to retry</span>
+          <div className="text-[11px] font-['IBM_Plex_Mono'] flex items-center gap-4 text-text-muted">
+            <span className="flex items-center gap-1 text-accent"><div className="w-2 h-2 rounded-full bg-accent"></div> ✓ {totalCorrectInPartition} correct</span>
+            <span className="flex items-center gap-1 text-danger"><div className="w-2 h-2 rounded-full bg-danger"></div> ✗ {totalWrongInPartition} to retry</span>
           </div>
         </div>
 
@@ -585,12 +585,12 @@ Please explain:
 
           <button
             onClick={toggleMute}
-            className={`p-2 rounded border transition-colors ${isMuted ? 'border-[#FF3333] text-[#FF3333] bg-[rgba(255,51,51,0.08)]' : 'border-[#333] text-[#888] hover:text-white hover:border-[#666]'}`}
+            className={`p-2 rounded border transition-colors ${isMuted ? 'border-danger text-danger bg-[rgba(255,51,51,0.08)]' : 'border-[#333] text-text-muted hover:text-white hover:border-[#666]'}`}
             title={isMuted ? 'Unmute sounds' : 'Mute sounds'}
           >
             {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
           </button>
-          <button onClick={() => setShowExitConfirm(true)} className="px-4 py-2 border border-[#333] text-[#888] rounded hover:text-white hover:border-[#666] transition-colors font-['Rajdhani'] uppercase tracking-widest text-sm">
+          <button onClick={() => setShowExitConfirm(true)} className="px-4 py-2 border border-[#333] text-text-muted rounded hover:text-white hover:border-[#666] transition-colors font-['Rajdhani'] uppercase tracking-widest text-sm">
             Exit Learn Mode
           </button>
         </div>
@@ -601,7 +601,7 @@ Please explain:
           key={currentCard.id}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-3xl mx-auto bg-[#161616] border border-[#222] rounded-xl shadow-2xl p-10 relative flex flex-col overflow-y-auto"
+          className="w-full max-w-3xl mx-auto bg-surface-2 border border-border-base rounded-xl shadow-2xl p-10 relative flex flex-col overflow-y-auto"
         >
           {/* Bookmark Toggle */}
           <button
@@ -609,7 +609,7 @@ Please explain:
             className="absolute top-6 right-6 text-[#666] hover:text-[var(--warning)] transition-colors"
             title="Bookmark"
           >
-            <Bookmark className={`w-6 h-6 ${isBookmarked ? 'fill-[#FFB800] text-[#FFB800]' : ''}`} />
+            <Bookmark className={`w-6 h-6 ${isBookmarked ? 'fill-warn text-warn' : ''}`} />
           </button>
 
           <div className="mb-10 pr-4 h-auto flex-none">
@@ -620,7 +620,7 @@ Please explain:
             />
 
             {mcqData.imagePath && (
-              <div className="mb-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
+              <div className="mb-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-accent transition-all">
                 <img
                   src={`ece-app://${mcqData.imagePath}`}
                   alt="Circuit diagram"
@@ -636,9 +636,9 @@ Please explain:
               const choice = mcqData.choices[idx];
               if (choice === undefined) return null;
 
-              let btnClass = "border-[#222] bg-[#111] hover:border-[#00FF41] hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] cursor-pointer"
+              let btnClass = "border-border-base bg-[#111] hover:border-accent hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] cursor-pointer"
               let prefixClass = "text-[#666]"
-              let textClass = "text-[#E8E8E8]"
+              let textClass = "text-text-primary"
 
               if (viewState === 'feedback') {
                 if (idx === mcqData.answer) {
@@ -650,7 +650,7 @@ Please explain:
                   prefixClass = "text-[var(--color-wrong)] font-bold"
                   textClass = "text-[#aaa]"
                 } else {
-                  btnClass = "border-[#222] bg-[#111] opacity-60 cursor-default"
+                  btnClass = "border-border-base bg-[#111] opacity-60 cursor-default"
                   textClass = "text-[#555]"
                 }
               }
@@ -683,8 +683,8 @@ Please explain:
           {/* Solution Block */}
           {viewState === 'feedback' && choiceStatus === 'correct' && (mcqData.explanation || mcqData.solutionImagePath) && (
             <div className="px-6 pb-4">
-              <div className="p-4 bg-[#111] rounded border border-[#222]">
-                <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888] mb-2 block">
+              <div className="p-4 bg-[#111] rounded border border-border-base">
+                <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-text-muted mb-2 block">
                   Solution
                 </span>
                 {mcqData.explanation && (
@@ -715,16 +715,16 @@ Please explain:
           )}
 
           {viewState === 'question' ? (
-            <div className="flex justify-center border-t border-[#222] pt-6 mt-auto">
+            <div className="flex justify-center border-t border-border-base pt-6 mt-auto">
               <button
                 onClick={() => submitAnswer('idk')}
-                className="px-8 py-3 rounded text-[#888] font-['Rajdhani'] uppercase tracking-widest text-sm hover:bg-[#222] hover:text-white transition-colors"
+                className="px-8 py-3 rounded text-text-muted font-['Rajdhani'] uppercase tracking-widest text-sm hover:bg-border-base hover:text-white transition-colors"
               >
                 I Don't Know
               </button>
             </div>
           ) : (
-            <div className="flex flex-col items-center border-t border-[#222] pt-6 mt-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="flex flex-col items-center border-t border-border-base pt-6 mt-auto animate-in fade-in slide-in-from-bottom-4 duration-300">
               {choiceStatus === 'wrong' && (
                 <div className="text-[var(--color-wrong)] font-['Rajdhani'] flex items-center mb-4 uppercase tracking-widest text-sm font-bold">
                   <AlertCircle className="w-5 h-5 mr-2" />
@@ -748,7 +748,7 @@ Please explain:
                 <Tooltip content="Copy context to paste into GPT/Gemini/Claude for a better AI explanation.">
                   <button
                     onClick={handleGetContext}
-                    className="flex items-center gap-2 px-4 py-2 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-[#888] transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
+                    className="flex items-center gap-2 px-4 py-2 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-text-muted transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
                   >
                     <Copy size={14} />
                     Get Context
@@ -758,7 +758,7 @@ Please explain:
                 <Tooltip position="right" content="Explain using Llama-3.3-70B">
                   <button
                     onClick={() => setExplanationOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 border border-[rgba(0,255,65,0.3)] rounded text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41] transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
+                    className="flex items-center gap-2 px-4 py-2 border border-[rgba(0,255,65,0.3)] rounded text-accent hover:bg-[rgba(0,255,65,0.08)] hover:border-accent transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
                   >
                     <Sparkles size={14} />
                     Explain
@@ -791,7 +791,7 @@ Please explain:
             onClick={() => setZoomedImage(null)}
           >
             <button
-              className="absolute top-6 right-6 text-[#888] hover:text-[#00FF41] transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-[#00FF41]"
+              className="absolute top-6 right-6 text-text-muted hover:text-accent transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-accent"
               onClick={() => setZoomedImage(null)}
               title="Close"
             >

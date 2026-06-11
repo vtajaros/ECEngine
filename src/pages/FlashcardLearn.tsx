@@ -707,6 +707,10 @@ Provide a thorough explanation covering ALL of the following:
         onShowContext={setShowContext}
         onRateCard={async (rating) => {
           await rateCard(rating)
+          if (useSessionStore.getState().isFinished) { exitSession() }
+        }}
+        onGetContext={handleGetContext}
+        onGoNext={() => {
           const nextIdx = useSessionStore.getState().currentIndex
           if (useSessionStore.getState().isFinished) { exitSession(); return }
           setCurrentIndex(nextIdx)
@@ -714,9 +718,8 @@ Provide a thorough explanation covering ALL of the following:
           setWrittenAnswer('')
           setWrittenSubmitted(false)
           setWrittenCorrect(null)
+          goNext()
         }}
-        onGetContext={handleGetContext}
-        onGoNext={goNext}
         onGoPrev={goPrev}
         stop={stop}
         autoplayRef={autoplayRef}
@@ -728,10 +731,10 @@ Provide a thorough explanation covering ALL of the following:
   // Empty session fallback
   if (activeDeck && sessionCards.length === 0) {
     return (
-      <div className="h-full bg-[#0D0D0D] flex flex-col items-center justify-center gap-6 p-10 text-center">
+      <div className="h-full bg-engine-black flex flex-col items-center justify-center gap-6 p-10 text-center">
         <div className="flex flex-col items-center gap-2">
-          <Bookmark className="w-12 h-12 text-[#FFB800] opacity-50 mb-2" />
-          <p className="text-[#888] font-['IBM_Plex_Mono'] text-lg">No cards match your current filters.</p>
+          <Bookmark className="w-12 h-12 text-warn opacity-50 mb-2" />
+          <p className="text-text-muted font-['IBM_Plex_Mono'] text-lg">No cards match your current filters.</p>
           <p className="text-[#555] font-['Rajdhani'] uppercase tracking-widest text-sm">
             (You might have 'Bookmarked Only' enabled with no bookmarks in this deck)
           </p>
@@ -746,7 +749,7 @@ Provide a thorough explanation covering ALL of the following:
           </button>
           <button
             onClick={handleExit}
-            className="px-6 py-3 bg-[#111] border border-[#333] text-[#888] hover:text-white hover:border-[#555] rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
+            className="px-6 py-3 bg-[#111] border border-[#333] text-text-muted hover:text-white hover:border-[#555] rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
           >
             Back to Decks
           </button>

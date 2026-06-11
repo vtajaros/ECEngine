@@ -72,14 +72,14 @@ export const LearnSettingsModal: React.FC<LearnSettingsModalProps> = ({
   ) => (
     <button
       onClick={() => toggle(key)}
-      className="flex items-center justify-between p-3 bg-[#161616] rounded border border-[#222] hover:border-[#333] transition-colors"
+      className="flex items-center justify-between p-3 bg-surface-2 rounded border border-border-base hover:border-[#333] transition-colors"
     >
-      <div className="flex items-center gap-3 text-[#E8E8E8] font-['Rajdhani'] tracking-wider text-sm">
-        <Icon className="w-4 h-4 text-[#888]" />
+      <div className="flex items-center gap-3 text-text-primary font-['Rajdhani'] tracking-wider text-sm">
+        <Icon className="w-4 h-4 text-text-muted" />
         {label}
       </div>
-      <div className={`w-10 h-5 rounded-full transition-colors relative ${settings[key] ? 'bg-[rgba(0,255,65,0.2)]' : 'bg-[#222]'}`}>
-        <div className={`absolute top-1 max-w-[calc(100%-8px)] h-3 w-3 rounded-full transition-all ${settings[key] ? 'bg-[#00FF41] left-6' : 'bg-[#888] left-1'}`} />
+      <div className={`w-10 h-5 rounded-full transition-colors relative ${settings[key] ? 'bg-[rgba(0,255,65,0.2)]' : 'bg-border-base'}`}>
+        <div className={`absolute top-1 max-w-[calc(100%-8px)] h-3 w-3 rounded-full transition-all ${settings[key] ? 'bg-accent left-6' : 'bg-text-muted left-1'}`} />
       </div>
     </button>
   )
@@ -100,14 +100,14 @@ export const LearnSettingsModal: React.FC<LearnSettingsModalProps> = ({
             className="bg-[#111] border border-[#333] rounded-lg shadow-2xl w-full max-w-md overflow-hidden flex flex-col"
           >
             {/* Header */}
-            <div className="p-6 border-b border-[#222] flex justify-between items-center bg-[#161616]">
+            <div className="p-6 border-b border-border-base flex justify-between items-center bg-surface-2">
               <div className="flex items-center gap-3">
-                <Settings2 className="w-5 h-5 text-[#00FF41]" />
-                <h2 className="text-xl font-bold text-[#E8E8E8] font-['Orbitron'] uppercase tracking-wider">
+                <Settings2 className="w-5 h-5 text-accent" />
+                <h2 className="text-xl font-bold text-text-primary font-['Orbitron'] uppercase tracking-wider">
                   Learn Settings
                 </h2>
               </div>
-              <button onClick={onClose} className="text-[#888] hover:text-white transition-colors">
+              <button onClick={onClose} className="text-text-muted hover:text-white transition-colors">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -119,15 +119,15 @@ export const LearnSettingsModal: React.FC<LearnSettingsModalProps> = ({
                 const options: ('All' | number)[] = ['All', ...[20, 50, 100].filter(c => c < setInfo.count)]
                 return (
                   <div className="flex flex-col gap-3">
-                    <label className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888]">Number of Items</label>
+                    <label className="text-xs font-['Rajdhani'] uppercase tracking-widest text-text-muted">Number of Items</label>
                     <div className="grid grid-cols-4 gap-2">
                       {options.map(count => (
                         <button
                           key={count}
                           onClick={() => onSettingsChange({ ...settings, itemCount: count })}
                           className={`py-2 rounded font-['Rajdhani'] uppercase tracking-wider text-sm transition-all border ${settings.itemCount === count
-                            ? 'bg-[rgba(0,255,65,0.1)] border-[#00FF41] text-[#00FF41]'
-                            : 'bg-[#161616] border-[#333] text-[#888] hover:border-[#555]'
+                            ? 'bg-[rgba(0,255,65,0.1)] border-accent text-accent'
+                            : 'bg-surface-2 border-[#333] text-text-muted hover:border-[#555]'
                             }`}
                         >
                           {count}
@@ -149,9 +149,9 @@ export const LearnSettingsModal: React.FC<LearnSettingsModalProps> = ({
                             onSettingsChange({ ...settings, itemCount: Math.min(Math.max(val, 1), setInfo.count) })
                           }
                         }}
-                        className={`py-2 px-1 rounded font-['Rajdhani'] uppercase tracking-wider text-sm transition-all border outline-none text-center bg-[#161616] ${typeof settings.itemCount === 'number' && !options.includes(settings.itemCount)
-                          ? 'bg-[rgba(0,255,65,0.1)] border-[#00FF41] text-[#00FF41]'
-                          : 'border-[#333] text-[#888] hover:border-[#555] focus:border-[#555] placeholder-[#555]'
+                        className={`py-2 px-1 rounded font-['Rajdhani'] uppercase tracking-wider text-sm transition-all border outline-none text-center bg-surface-2 ${typeof settings.itemCount === 'number' && !options.includes(settings.itemCount)
+                          ? 'bg-[rgba(0,255,65,0.1)] border-accent text-accent'
+                          : 'border-[#333] text-text-muted hover:border-[#555] focus:border-[#555] placeholder-[#555]'
                           }`}
                       />
                     </div>
@@ -161,7 +161,7 @@ export const LearnSettingsModal: React.FC<LearnSettingsModalProps> = ({
 
               {/* Toggles */}
               <div className="flex flex-col gap-3">
-                <label className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888]">Modifiers</label>
+                <label className="text-xs font-['Rajdhani'] uppercase tracking-widest text-text-muted">Modifiers</label>
                 <div className="flex flex-col gap-2">
                   {renderToggle('shuffleQuestions', 'Shuffle Questions', ({ className }) => <Shuffle className={className} />)}
                   {renderToggle('shuffleChoices', 'Shuffle Choices', ({ className }) => <Shuffle className={className} />)}
@@ -172,7 +172,7 @@ export const LearnSettingsModal: React.FC<LearnSettingsModalProps> = ({
 
               {/* TTS — separate section to signal it's a session-wide behaviour */}
               <div className="flex flex-col gap-3">
-                <label className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888]">Accessibility</label>
+                <label className="text-xs font-['Rajdhani'] uppercase tracking-widest text-text-muted">Accessibility</label>
                 <div className="flex flex-col gap-2">
                   {renderToggle('ttsEnabled', 'Read Questions Aloud (TTS)', ({ className }) => <Volume2 className={className} />)}
                 </div>
@@ -185,16 +185,16 @@ export const LearnSettingsModal: React.FC<LearnSettingsModalProps> = ({
             </div>
 
             {/* Footer */}
-            <div className="p-6 border-t border-[#222] bg-[#161616] flex justify-end gap-3">
+            <div className="p-6 border-t border-border-base bg-surface-2 flex justify-end gap-3">
               <button
                 onClick={onClose}
-                className="px-5 py-2 rounded bg-transparent border border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-wider text-sm"
+                className="px-5 py-2 rounded bg-transparent border border-[#333] text-text-muted hover:text-text-primary hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-wider text-sm"
               >
                 Cancel
               </button>
               <button
                 onClick={onStart}
-                className="flex items-center px-6 py-2 rounded bg-[#00FF41] text-black font-bold hover:bg-[rgba(0,255,65,0.8)] shadow-[0_0_10px_rgba(0,255,65,0.2)] transition-all font-['Rajdhani'] uppercase tracking-wider text-sm"
+                className="flex items-center px-6 py-2 rounded bg-accent text-black font-bold hover:bg-[rgba(0,255,65,0.8)] shadow-[0_0_10px_rgba(0,255,65,0.2)] transition-all font-['Rajdhani'] uppercase tracking-wider text-sm"
               >
                 <Play className="w-4 h-4 mr-2 fill-current" />
                 Start Session

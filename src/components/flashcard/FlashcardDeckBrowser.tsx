@@ -142,7 +142,7 @@ export function FlashcardDeckBrowser({
                   <button
                     onClick={() => onShowAdvancedFilters(!showAdvancedFilters)}
                     className={`p-2 rounded-lg border transition-all ${showAdvancedFilters || filterTags.length > 0 || filterType !== 'flashcard' || sortBy !== 'date' || sortOrder !== 'desc' || searchQuery
-                      ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
+                      ? 'bg-accent/10 border-accent text-accent'
                       : 'bg-[var(--bg-secondary)] border-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                       }`}
                   >
@@ -250,7 +250,7 @@ export function FlashcardDeckBrowser({
                     Loading decks...
                   </div>
                 ) : filteredDecks.length === 0 ? (
-                  <div className="text-center py-20 text-[#888] font-rajdhani uppercase tracking-widest text-lg">
+                  <div className="text-center py-20 text-text-muted font-rajdhani uppercase tracking-widest text-lg">
                     No decks found{activeSubject !== 'ALL' ? ` for ${activeSubject}` : ''}. Import some from Add Decks.
                   </div>
                 ) : null}
@@ -283,20 +283,20 @@ export function FlashcardDeckBrowser({
                     <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-4 tracking-widest uppercase">
                       DELETE DECK?
                     </h3>
-                    <p className="text-[#888] font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
+                    <p className="text-text-muted font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
                       Are you absolutely sure you want to delete <strong className="text-white">{setToDelete.title}</strong>? This action cannot be undone and will permanently remove all {setToDelete.cardCount} items in this set.
                     </p>
                     <div className="flex flex-col gap-3 w-full">
                       <button
                         onClick={onConfirmDelete}
                         disabled={deleteCountdown > 0}
-                        className="w-full py-4 bg-[#FF003C] hover:bg-[#D00030] disabled:bg-[#1A1A1A] disabled:text-[#444] disabled:cursor-not-allowed text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,0,60,0.2)] hover:shadow-[0_0_25px_rgba(255,0,60,0.4)]"
+                        className="w-full py-4 bg-[#FF003C] hover:bg-[#D00030] disabled:bg-surface disabled:text-[#444] disabled:cursor-not-allowed text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,0,60,0.2)] hover:shadow-[0_0_25px_rgba(255,0,60,0.4)]"
                       >
                         Confirm Delete
                       </button>
                       <button
                         onClick={onCancelDelete}
-                        className="w-full py-4 bg-[#1A1A1A] border border-[#333] hover:border-[#555] text-[#888] hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
+                        className="w-full py-4 bg-surface border border-[#333] hover:border-[#555] text-text-muted hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
                       >
                         Cancel
                       </button>

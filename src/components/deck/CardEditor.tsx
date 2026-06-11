@@ -33,7 +33,7 @@ export const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttr
 
   return (
     <div
-      className={`rounded-lg border transition-colors ${expanded ? 'border-[#00FF41]/30 bg-[#0f1a0f]' : 'border-[#222] bg-[#111] hover:border-[#333]'}`}
+      className={`rounded-lg border transition-colors ${expanded ? 'border-accent/30 bg-[#0f1a0f]' : 'border-border-base bg-[#111] hover:border-[#333]'}`}
     >
       {/* Collapsed row */}
       <div
@@ -44,7 +44,7 @@ export const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttr
         <span
           {...dragHandleProps}
           onClick={e => e.stopPropagation()}
-          className="text-[#444] hover:text-[#888] cursor-grab active:cursor-grabbing flex-shrink-0 touch-none"
+          className="text-[#444] hover:text-text-muted cursor-grab active:cursor-grabbing flex-shrink-0 touch-none"
           title="Drag to reorder"
         >
           <GripVertical className="w-4 h-4" />
@@ -57,7 +57,7 @@ export const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttr
           ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
           : card.type === 'formula'
             ? 'text-[#A855F7] border-[#A855F7]/30 bg-[#A855F7]/10'
-            : 'text-[#00FF41] border-[#00FF41]/30 bg-[#00FF41]/10'
+            : 'text-accent border-accent/30 bg-accent/10'
           }`}>
           {card.type === 'mcq' ? 'MCQ' : card.type === 'formula' ? 'FM' : 'FC'}
         </span>
@@ -80,7 +80,7 @@ export const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttr
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-5 pt-2 border-t border-[#1a1a1a]">
+            <div className="px-4 pb-5 pt-2 border-t border-surface">
               {card.type === 'mcq' ? (
                 <MCQForm
                   data={card.data as MCQEdit}

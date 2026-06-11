@@ -60,7 +60,7 @@ export const MCQDeck: React.FC<MCQDeckProps> = ({ cards, onComplete }) => {
 
   if (!activeCards || activeCards.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-[#888888]">
+      <div className="flex flex-col items-center justify-center p-8 text-text-muted">
         No MCQs available for this topic.
       </div>
     )
@@ -76,17 +76,17 @@ export const MCQDeck: React.FC<MCQDeckProps> = ({ cards, onComplete }) => {
       
       {/* Header and Progress */}
       <div className="mb-8 flex flex-col gap-3">
-        <div className="flex justify-between items-center text-sm font-['Rajdhani'] uppercase tracking-wider text-[#888888]">
+        <div className="flex justify-between items-center text-sm font-['Rajdhani'] uppercase tracking-wider text-text-muted">
           <span>{isDone ? 'Session Complete' : `Question ${currentIndex + 1} of ${activeCards.length}`}</span>
           {!isDone && (
             <div className="flex items-center gap-4">
-              <span className="text-[#E8E8E8] font-bold">Score: {score} / {activeCards.length}</span>
+              <span className="text-text-primary font-bold">Score: {score} / {activeCards.length}</span>
               <span>{Math.round((currentIndex / activeCards.length) * 100)}% Complete</span>
             </div>
           )}
         </div>
         {!isDone && (
-          <div className="w-full bg-[#111111] h-1.5 rounded-full overflow-hidden border border-[#161616]">
+          <div className="w-full bg-[#111111] h-1.5 rounded-full overflow-hidden border border-surface-2">
             <motion.div 
               className="bg-[#00BFFF] h-full shadow-[0_0_8px_rgba(0,191,255,0.8)]"
               initial={{ width: 0 }}
@@ -120,16 +120,16 @@ export const MCQDeck: React.FC<MCQDeckProps> = ({ cards, onComplete }) => {
               key="done"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-[#161616] p-10 rounded-lg border shadow-xl flex flex-col items-center max-w-md w-full text-center"
+              className="bg-surface-2 p-10 rounded-lg border shadow-xl flex flex-col items-center max-w-md w-full text-center"
               style={{ borderColor: passed ? 'rgba(0,255,65,0.3)' : 'rgba(255,51,51,0.3)' }}
             >
               {passed ? (
-                <Trophy className="text-[#00FF41] w-20 h-20 mb-4 drop-shadow-[0_0_10px_rgba(0,255,65,0.5)]" />
+                <Trophy className="text-accent w-20 h-20 mb-4 drop-shadow-[0_0_10px_rgba(0,255,65,0.5)]" />
               ) : (
-                <AlertTriangle className="text-[#FF3333] w-20 h-20 mb-4 drop-shadow-[0_0_10px_rgba(255,51,51,0.5)]" />
+                <AlertTriangle className="text-danger w-20 h-20 mb-4 drop-shadow-[0_0_10px_rgba(255,51,51,0.5)]" />
               )}
               
-              <h2 className="text-3xl font-bold font-['Orbitron'] text-[#E8E8E8] mb-2">
+              <h2 className="text-3xl font-bold font-['Orbitron'] text-text-primary mb-2">
                 {passed ? 'Passed!' : 'Failed.'}
               </h2>
               
@@ -137,14 +137,14 @@ export const MCQDeck: React.FC<MCQDeckProps> = ({ cards, onComplete }) => {
                 {percentage}%
               </div>
               
-              <p className="text-[#888888] mb-8 font-['Rajdhani'] text-lg">
+              <p className="text-text-muted mb-8 font-['Rajdhani'] text-lg">
                 You got {score} out of {activeCards.length} correct. The passing score is 75%.
               </p>
               
               <div className="flex gap-4 w-full">
                 <button 
                   onClick={restart}
-                  className="flex-1 py-3 bg-[#111111] text-[#E8E8E8] border border-[#444] rounded hover:bg-[#161616] transition-colors flex items-center justify-center font-['Rajdhani'] text-lg tracking-wider"
+                  className="flex-1 py-3 bg-[#111111] text-text-primary border border-[#444] rounded hover:bg-surface-2 transition-colors flex items-center justify-center font-['Rajdhani'] text-lg tracking-wider"
                 >
                   <RefreshCw size={18} className="mr-2" />
                   Restart
@@ -152,7 +152,7 @@ export const MCQDeck: React.FC<MCQDeckProps> = ({ cards, onComplete }) => {
                 {wrongItems.length > 0 && (
                   <button 
                     onClick={retryWrong}
-                    className="flex-1 py-3 bg-[#111111] text-[#FFB800] border border-[#FFB800] rounded hover:bg-[rgba(255,184,0,0.1)] transition-colors flex items-center justify-center font-['Rajdhani'] text-lg tracking-wider"
+                    className="flex-1 py-3 bg-[#111111] text-warn border border-warn rounded hover:bg-[rgba(255,184,0,0.1)] transition-colors flex items-center justify-center font-['Rajdhani'] text-lg tracking-wider"
                   >
                     Retry Wrong
                   </button>

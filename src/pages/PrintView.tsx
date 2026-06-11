@@ -506,7 +506,7 @@ export default function PrintView() {
   // Titlebar (custom centered, matching main window, not printed)
   // -------------------------------------------------------------------------
   const titleBar = (
-    <div className="print:hidden w-full h-8 bg-[#1A1A1A] text-gray-400 flex items-center justify-between select-none [-webkit-app-region:drag] relative shrink-0 px-0">
+    <div className="print:hidden w-full h-8 bg-surface text-gray-400 flex items-center justify-between select-none [-webkit-app-region:drag] relative shrink-0 px-0">
       {/* Left side spacer to balance the right controls or put logo */}
       <div className="flex items-center [-webkit-app-region:no-drag] pl-3">
         <img
@@ -525,7 +525,7 @@ export default function PrintView() {
       {/* Centered Title */}
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2">
         <span className="font-rajdhani font-bold tracking-wider text-white text-xs whitespace-nowrap">
-          <span className="text-[#00FF41]">TEST PAPER VIEW</span> — {title}
+          <span className="text-accent">TEST PAPER VIEW</span> — {title}
           <span className="text-gray-500 font-normal"> · {cards.length} cards</span>
         </span>
       </div>
@@ -1096,7 +1096,7 @@ export default function PrintView() {
   }
 
   return (
-    <div className="h-screen w-full flex flex-col overflow-hidden bg-[#0D0D0D] print:bg-white">
+    <div className="h-screen w-full flex flex-col overflow-hidden bg-engine-black print:bg-white">
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         .animate-spin { animation: spin 1s linear infinite; }

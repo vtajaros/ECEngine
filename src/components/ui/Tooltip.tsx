@@ -28,9 +28,9 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 
             animate={{ opacity: 1, x: 0, y: '-50%', scale: 1 }}
             exit={{ opacity: 0, x: isLeft ? -10 : 10, y: '-50%', scale: 0.95 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className={`absolute ${isLeft ? 'right-[calc(100%+12px)]' : 'left-[calc(100%+12px)]'} top-1/2 mb-0 px-3 py-2 bg-[#0D0D0D] border border-[#00FF41] rounded shadow-[0_0_15px_rgba(0,255,65,0.3)] z-[999] pointer-events-none w-max max-w-[200px] text-center`}
+            className={`absolute ${isLeft ? 'right-[calc(100%+12px)]' : 'left-[calc(100%+12px)]'} top-1/2 mb-0 px-3 py-2 bg-engine-black border border-accent rounded shadow-[0_0_15px_rgba(0,255,65,0.3)] z-[999] pointer-events-none w-max max-w-[200px] text-center`}
           >
-            <p className="text-[#00FF41] text-[10px] font-['Rajdhani'] font-bold tracking-widest leading-tight uppercase">
+            <p className="text-accent text-[10px] font-['Rajdhani'] font-bold tracking-widest leading-tight uppercase">
               {content}
             </p>
             {/* Arrow */}

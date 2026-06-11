@@ -40,8 +40,8 @@ export const AdvancedFiltersPopover: React.FC<AdvancedFiltersPopoverProps> = ({
       className="absolute left-0 mt-2 w-72 bg-[#111] border border-[#333] rounded-lg shadow-2xl p-4 z-50 flex flex-col gap-4"
     >
       <div className="flex justify-between items-center pb-2 border-b border-[#333]">
-        <span className="font-['Rajdhani'] font-bold text-sm tracking-widest uppercase text-[#00FF41]">Filters & Sort</span>
-        <button onClick={onClose} className="text-[#888] hover:text-[#E8E8E8]">
+        <span className="font-['Rajdhani'] font-bold text-sm tracking-widest uppercase text-accent">Filters & Sort</span>
+        <button onClick={onClose} className="text-text-muted hover:text-text-primary">
           <X size={16} />
         </button>
       </div>
@@ -54,20 +54,20 @@ export const AdvancedFiltersPopover: React.FC<AdvancedFiltersPopoverProps> = ({
           placeholder="Search decks..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-[#1A1A1A] border border-[#333] focus:border-[#00FF41] rounded-lg py-2 pl-9 pr-3 text-sm text-[#E8E8E8] placeholder-[#555] outline-none transition-colors font-['IBM_Plex_Mono']"
+          className="w-full bg-surface border border-[#333] focus:border-accent rounded-lg py-2 pl-9 pr-3 text-sm text-text-primary placeholder-[#555] outline-none transition-colors font-['IBM_Plex_Mono']"
         />
       </div>
 
       {/* Sort Selection */}
       <div className="flex flex-col gap-2">
         <div className="flex justify-between items-center">
-          <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Sort By</label>
-          <div className="flex bg-[#1A1A1A] rounded overflow-hidden border border-[#333]">
+          <label className="text-xs font-['Rajdhani'] tracking-widest text-text-muted uppercase">Sort By</label>
+          <div className="flex bg-surface rounded overflow-hidden border border-[#333]">
             {(['asc', 'desc'] as const).map(order => (
               <button
                 key={order}
                 onClick={() => setSortOrder(order)}
-                className={`px-2 py-0.5 text-[10px] font-['Rajdhani'] uppercase tracking-widest transition-colors ${sortOrder === order ? 'bg-[#00FF41] text-black font-bold' : 'text-[#888] hover:text-[#E8E8E8]'}`}
+                className={`px-2 py-0.5 text-[10px] font-['Rajdhani'] uppercase tracking-widest transition-colors ${sortOrder === order ? 'bg-accent text-black font-bold' : 'text-text-muted hover:text-text-primary'}`}
               >
                 {order}
               </button>
@@ -79,7 +79,7 @@ export const AdvancedFiltersPopover: React.FC<AdvancedFiltersPopoverProps> = ({
             <button
               key={opt}
               onClick={() => setSortBy(opt)}
-              className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${sortBy === opt ? 'bg-[#00FF41]/20 text-[#00FF41] font-bold' : 'bg-[#1A1A1A] text-[#888] hover:bg-[#222]'
+              className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${sortBy === opt ? 'bg-accent/20 text-accent font-bold' : 'bg-surface text-text-muted hover:bg-border-base'
                 }`}
             >
               {opt}
@@ -90,13 +90,13 @@ export const AdvancedFiltersPopover: React.FC<AdvancedFiltersPopoverProps> = ({
 
       {/* Type Filter */}
       <div className="flex flex-col gap-2">
-        <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Type</label>
+        <label className="text-xs font-['Rajdhani'] tracking-widest text-text-muted uppercase">Type</label>
         <div className="grid grid-cols-4 gap-1">
           {(['all', 'mcq', 'flashcard', 'mixed'] as const).map(opt => (
             <button
               key={opt}
               onClick={() => setFilterType(opt)}
-              className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${filterType === opt ? 'bg-[#00FF41]/20 text-[#00FF41] font-bold' : 'bg-[#1A1A1A] text-[#888] hover:bg-[#222]'
+              className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${filterType === opt ? 'bg-accent/20 text-accent font-bold' : 'bg-surface text-text-muted hover:bg-border-base'
                 }`}
             >
               {opt === 'flashcard' ? 'FC' : opt}
@@ -108,7 +108,7 @@ export const AdvancedFiltersPopover: React.FC<AdvancedFiltersPopoverProps> = ({
       {/* Tag Filters */}
       {availableTags.length > 0 && (
         <div className="flex flex-col gap-2">
-          <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Tags (AND)</label>
+          <label className="text-xs font-['Rajdhani'] tracking-widest text-text-muted uppercase">Tags (AND)</label>
           <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
             {availableTags.map(tag => {
               const isActive = filterTags.includes(tag)
@@ -121,8 +121,8 @@ export const AdvancedFiltersPopover: React.FC<AdvancedFiltersPopoverProps> = ({
                     )
                   }}
                   className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-['Rajdhani'] uppercase tracking-wider border transition-all ${isActive
-                    ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
-                    : 'bg-[#1A1A1A] border-[#333] text-[#888] hover:border-[#555] hover:text-[#E8E8E8]'
+                    ? 'bg-accent/10 border-accent text-accent'
+                    : 'bg-surface border-[#333] text-text-muted hover:border-[#555] hover:text-text-primary'
                     }`}
                 >
                   {tag}

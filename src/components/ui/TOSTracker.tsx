@@ -136,7 +136,7 @@ const TopicAccordion: React.FC<TopicAccordionProps> = ({
         <td className="px-3 py-3 text-center w-24">
           {allReviewed && (
             <span title="All subtopics reviewed">
-              <CheckSquare size={18} className="text-[#00FF41] mx-auto opacity-70" />
+              <CheckSquare size={18} className="text-accent mx-auto opacity-70" />
             </span>
           )}
         </td>
@@ -145,7 +145,7 @@ const TopicAccordion: React.FC<TopicAccordionProps> = ({
         <td className="px-3 py-3 text-center w-24">
           {allRefresher && (
             <span title="All subtopics refreshed">
-              <CheckSquare size={18} className="text-[#00FF41] mx-auto opacity-70" />
+              <CheckSquare size={18} className="text-accent mx-auto opacity-70" />
             </span>
           )}
         </td>
@@ -154,7 +154,7 @@ const TopicAccordion: React.FC<TopicAccordionProps> = ({
         <td className="px-3 py-3 text-center w-24">
           {allSelfReview && (
             <span title="All subtopics self-reviewed">
-              <CheckSquare size={18} className="text-[#00FF41] mx-auto opacity-70" />
+              <CheckSquare size={18} className="text-accent mx-auto opacity-70" />
             </span>
           )}
         </td>
@@ -190,7 +190,7 @@ const TopicAccordion: React.FC<TopicAccordionProps> = ({
                 aria-label="Toggle Review status"
               >
                 {isReviewed ? (
-                  <CheckSquare size={18} className="text-[#00FF41]" />
+                  <CheckSquare size={18} className="text-accent" />
                 ) : (
                   <Square size={18} className="text-gray-600 hover:text-gray-400" />
                 )}
@@ -205,7 +205,7 @@ const TopicAccordion: React.FC<TopicAccordionProps> = ({
                 aria-label="Toggle Refresher status"
               >
                 {isRefresher ? (
-                  <CheckSquare size={18} className="text-[#00FF41]" />
+                  <CheckSquare size={18} className="text-accent" />
                 ) : (
                   <Square size={18} className="text-gray-600 hover:text-gray-400" />
                 )}
@@ -220,7 +220,7 @@ const TopicAccordion: React.FC<TopicAccordionProps> = ({
                 aria-label="Toggle Self Review status"
               >
                 {isSelfReview ? (
-                  <CheckSquare size={18} className="text-[#00FF41]" />
+                  <CheckSquare size={18} className="text-accent" />
                 ) : (
                   <Square size={18} className="text-gray-600 hover:text-gray-400" />
                 )}
@@ -258,7 +258,7 @@ const SubjectPanel: React.FC<SubjectPanelProps> = ({
     <div className="rounded-xl border overflow-hidden flex flex-col bg-[#080808]" style={{ borderColor: '#222' }}>
       <table className="w-full text-left border-collapse">
         <thead>
-          <tr className="border-b border-[#222] bg-[#050505] font-['Rajdhani'] text-xs font-bold text-gray-400 uppercase tracking-widest select-none">
+          <tr className="border-b border-border-base bg-[#050505] font-['Rajdhani'] text-xs font-bold text-gray-400 uppercase tracking-widest select-none">
             <th className="px-4 py-2.5 text-xs">TOPICS & SYLLABUS</th>
             <th className="px-3 py-2.5 text-center w-24 whitespace-nowrap" style={{ color: '#00FF41' }}>REVIEW</th>
             <th className="px-3 py-2.5 text-center w-24 whitespace-nowrap" style={{ color: '#00FF41' }}>REFRESHER</th>
@@ -455,11 +455,11 @@ export const TOSTracker: React.FC = () => {
       {/* ── Global Stats Header ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-4 py-3 rounded-xl border border-[#252525] bg-[#0c0c0c]">
         <div className="flex items-center gap-3.5">
-          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-[#00FF41]/10 border border-[#00FF41]/20 shrink-0">
-            <TrendingUp size={18} className="text-[#00FF41]" />
+          <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-accent/10 border border-accent/20 shrink-0">
+            <TrendingUp size={18} className="text-accent" />
           </div>
           <div>
-            <span className="font-['Rajdhani'] text-xs font-bold uppercase tracking-widest text-[#00FF41] block leading-tight">
+            <span className="font-['Rajdhani'] text-xs font-bold uppercase tracking-widest text-accent block leading-tight">
               OVERALL REVIEW PROGRESS
             </span>
             <span className="font-['IBM_Plex_Mono'] text-[10px] text-gray-500">
@@ -487,11 +487,11 @@ export const TOSTracker: React.FC = () => {
           </div>
 
           {hasAnyProgress && (
-            <div className="border-l border-[#222] pl-4">
+            <div className="border-l border-border-base pl-4">
               {!showReset ? (
                 <button
                   onClick={() => setShowReset(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded bg-[#1a1a1a] hover:bg-red-950/20 text-gray-400 hover:text-red-400 transition-all border border-[#2d2d2d] hover:border-red-900/50 text-xs font-['Rajdhani'] uppercase tracking-widest font-semibold"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded bg-surface hover:bg-red-950/20 text-gray-400 hover:text-red-400 transition-all border border-[#2d2d2d] hover:border-red-900/50 text-xs font-['Rajdhani'] uppercase tracking-widest font-semibold"
                   title="Reset all checklist progress"
                 >
                   <RotateCcw size={12} />

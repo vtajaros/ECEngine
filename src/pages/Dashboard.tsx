@@ -140,12 +140,12 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="h-full bg-[#0D0D0D] px-8 pb-4 pt-4 lg:px-12 lg:pb-6 lg:pt-4 overflow-hidden flex flex-col gap-4">
+    <div className="h-full bg-engine-black px-8 pb-4 pt-4 lg:px-12 lg:pb-6 lg:pt-4 overflow-hidden flex flex-col gap-4">
       {/* Header */}
       <header className="shrink-0 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="font-['Orbitron'] text-3xl lg:text-4xl font-bold text-[#E8E8E8] mb-1 tracking-wider">
-            <span className="text-[#00FF41]">ECE</span>ngine
+          <h1 className="font-['Orbitron'] text-3xl lg:text-4xl font-bold text-text-primary mb-1 tracking-wider">
+            <span className="text-accent">ECE</span>ngine
           </h1>
           <p className="text-[#666] font-['Rajdhani'] text-lg uppercase tracking-widest">
             Review Dashboard
@@ -167,10 +167,10 @@ export default function Dashboard() {
         <div className="lg:col-span-1 flex flex-col gap-4 self-stretch">
 
           {/* Total Decks — donut chart */}
-          <div className="bg-[#1A1A1A] p-5 rounded-xl border border-[#222] shadow-lg flex flex-col flex-1">
+          <div className="bg-surface p-5 rounded-xl border border-border-base shadow-lg flex flex-col flex-1">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-['Rajdhani'] font-bold text-sm text-[#E8E8E8] uppercase tracking-widest flex items-center gap-2">
-                <Library className="text-[#00FF41]" size={13} />
+              <h2 className="font-['Rajdhani'] font-bold text-sm text-text-primary uppercase tracking-widest flex items-center gap-2">
+                <Library className="text-accent" size={13} />
                 Total Decks
               </h2>
             </div>
@@ -236,7 +236,7 @@ export default function Dashboard() {
                           initial={{ opacity: 0, y: 5 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 5 }}
-                          className="absolute -top-8 left-1/2 -translate-x-1/2 bg-[#1a1a1a] text-white text-xs px-3 py-1 rounded-full whitespace-nowrap pointer-events-none z-10 shadow-xl border border-[#333]"
+                          className="absolute -top-8 left-1/2 -translate-x-1/2 bg-surface text-white text-xs px-3 py-1 rounded-full whitespace-nowrap pointer-events-none z-10 shadow-xl border border-[#333]"
                         >
                           {(() => {
                             const activeSlice = slices.find(s => s.subject === hoveredSubject)
@@ -274,10 +274,10 @@ export default function Dashboard() {
           </div>
 
           {/* Cards Studied + Accuracy — merged */}
-          <div className="bg-[#1A1A1A] p-5 rounded-xl border border-[#222] shadow-lg">
+          <div className="bg-surface p-5 rounded-xl border border-border-base shadow-lg">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="font-['Rajdhani'] font-bold text-sm text-[#E8E8E8] uppercase tracking-widest flex items-center gap-2">
-                <BarChart2 className="text-[#00FF41]" size={13} />
+              <h2 className="font-['Rajdhani'] font-bold text-sm text-text-primary uppercase tracking-widest flex items-center gap-2">
+                <BarChart2 className="text-accent" size={13} />
                 Session Stats
               </h2>
             </div>
@@ -285,15 +285,15 @@ export default function Dashboard() {
               <div className="flex flex-col gap-0.5 flex-1 pr-4">
                 <span className="font-['Rajdhani'] text-[#666] uppercase tracking-widest text-[9px] font-bold">Studied</span>
                 <div className="flex items-baseline gap-1">
-                  <span className="font-['IBM_Plex_Mono'] text-xl font-bold text-[#E8E8E8]">{statsData.totalStudied || 0}</span>
-                  <span className="font-['Rajdhani'] text-[#00FF41] font-bold text-[9px]">CARDS</span>
+                  <span className="font-['IBM_Plex_Mono'] text-xl font-bold text-text-primary">{statsData.totalStudied || 0}</span>
+                  <span className="font-['Rajdhani'] text-accent font-bold text-[9px]">CARDS</span>
                 </div>
               </div>
               <div className="flex flex-col gap-0.5 flex-1 pl-4">
                 <span className="font-['Rajdhani'] text-[#666] uppercase tracking-widest text-[9px] font-bold">Avg. Accuracy</span>
                 <div className="flex items-baseline gap-1">
-                  <span className="font-['IBM_Plex_Mono'] text-xl font-bold text-[#E8E8E8]">{statsData.accuracy || 0}</span>
-                  <span className="font-['Rajdhani'] text-[#00FF41] font-bold text-[9px]">%</span>
+                  <span className="font-['IBM_Plex_Mono'] text-xl font-bold text-text-primary">{statsData.accuracy || 0}</span>
+                  <span className="font-['Rajdhani'] text-accent font-bold text-[9px]">%</span>
                 </div>
               </div>
             </div>
@@ -302,19 +302,19 @@ export default function Dashboard() {
         </div>
 
         {/* ACTIVITY HEATMAP (Swapped to Top) */}
-        <div className="lg:col-span-3 p-8 bg-[#161616] rounded-xl border border-[rgba(0,255,65,0.05)] shadow-2xl flex flex-col items-center">
+        <div className="lg:col-span-3 p-8 bg-surface-2 rounded-xl border border-[rgba(0,255,65,0.05)] shadow-2xl flex flex-col items-center">
             <div className="flex items-center justify-between mb-8 w-full">
-              <h2 className="font-['Rajdhani'] font-bold text-sm text-[#E8E8E8] uppercase tracking-widest flex items-center">
-                <Clock className="mr-2 text-[#00FF41]" size={16} />
+              <h2 className="font-['Rajdhani'] font-bold text-sm text-text-primary uppercase tracking-widest flex items-center">
+                <Clock className="mr-2 text-accent" size={16} />
                 Activity Monitoring
               </h2>
               <div className="flex items-center gap-2 text-[10px] font-['Rajdhani'] font-bold text-[#444] uppercase tracking-widest">
                 <span>0H</span>
-                <div className="w-3 h-3 rounded-sm bg-[#1A1A1A] border border-[#2A2A2A]" />
+                <div className="w-3 h-3 rounded-sm bg-surface border border-border-subtle" />
                 <div className="w-3 h-3 rounded-sm bg-[#003311]" />
                 <div className="w-3 h-3 rounded-sm bg-[#006e21]" />
                 <div className="w-3 h-3 rounded-sm bg-[#00a630]" />
-                <div className="w-3 h-3 rounded-sm bg-[#00FF41]" />
+                <div className="w-3 h-3 rounded-sm bg-accent" />
                 <span>4H+</span>
               </div>
             </div>
@@ -336,11 +336,11 @@ export default function Dashboard() {
       {/* Row 2 */}
       <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* ACCURACY TREND */}
-        <div className="lg:col-span-3 bg-[#1A1A1A] border border-[#222] rounded-xl p-4 shadow-xl relative overflow-hidden flex flex-col min-h-0">
+        <div className="lg:col-span-3 bg-surface border border-border-base rounded-xl p-4 shadow-xl relative overflow-hidden flex flex-col min-h-0">
 
           {/* Header */}
           <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
-            <h2 className="font-['Rajdhani'] font-bold text-sm text-[#E8E8E8] uppercase tracking-widest flex items-center shrink-0">
+            <h2 className="font-['Rajdhani'] font-bold text-sm text-text-primary uppercase tracking-widest flex items-center shrink-0">
               <Activity
                 className="mr-2 shrink-0 transition-colors duration-300"
                 size={16}
@@ -350,13 +350,13 @@ export default function Dashboard() {
             </h2>
 
             <div className="flex items-center gap-2 flex-wrap justify-end">
-              <div className="flex flex-wrap gap-1 bg-[#111] p-1 rounded-lg border border-[#222]">
+              <div className="flex flex-wrap gap-1 bg-[#111] p-1 rounded-lg border border-border-base">
                 {(['ALL', 'MATH', 'GEAS', 'ELECS', 'EST'] as const).map(subj => (
                   <button
                     key={subj}
                     onClick={() => setSelectedSubject(subj)}
                     className={`px-3 py-1 text-[10px] font-bold font-['Rajdhani'] uppercase tracking-widest rounded transition-all duration-200 ${
-                      selectedSubject === subj ? 'text-black' : 'text-[#888] hover:text-[#E8E8E8] hover:bg-[#222]'
+                      selectedSubject === subj ? 'text-black' : 'text-text-muted hover:text-text-primary hover:bg-border-base'
                     }`}
                     style={selectedSubject === subj ? { backgroundColor: SUBJECT_LINE_COLOR[subj] } : {}}
                   >
@@ -369,7 +369,7 @@ export default function Dashboard() {
                 <select
                   value={granularity}
                   onChange={e => setGranularity(e.target.value as AccuracyGranularity)}
-                  className="appearance-none bg-[#111] border border-[#2A2A2A] text-[#888] text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest rounded-lg pl-3 pr-7 py-[6px] focus:outline-none focus:border-[#444] hover:text-[#E8E8E8] cursor-pointer transition-colors"
+                  className="appearance-none bg-[#111] border border-border-subtle text-text-muted text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest rounded-lg pl-3 pr-7 py-[6px] focus:outline-none focus:border-[#444] hover:text-text-primary cursor-pointer transition-colors"
                 >
                   <option value="day">Daily</option>
                   <option value="week">Weekly</option>
@@ -404,7 +404,7 @@ export default function Dashboard() {
                     <button
                       key={s}
                       onClick={() => setSelectedSubject(s)}
-                      className="flex items-center gap-1.5 text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest text-[#555] hover:text-[#E8E8E8] transition-colors"
+                      className="flex items-center gap-1.5 text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest text-[#555] hover:text-text-primary transition-colors"
                     >
                       <span className="inline-block w-4 h-[2px] rounded-full" style={{ backgroundColor: SUBJECT_LINE_COLOR[s] }} />
                       {s}
@@ -418,13 +418,13 @@ export default function Dashboard() {
         </div>
 
         {/* Due Cards Panel */}
-        <div className="lg:col-span-2 p-4 bg-[#1A1A1A] rounded-xl border border-[#222] flex flex-col min-h-0 overflow-hidden">
-          <h2 className="font-['Rajdhani'] font-bold text-sm text-[#E8E8E8] mb-3 uppercase tracking-widest border-b border-[#1E1E1E] pb-3 flex items-center justify-between">
+        <div className="lg:col-span-2 p-4 bg-surface rounded-xl border border-border-base flex flex-col min-h-0 overflow-hidden">
+          <h2 className="font-['Rajdhani'] font-bold text-sm text-text-primary mb-3 uppercase tracking-widest border-b border-[#1E1E1E] pb-3 flex items-center justify-between">
             <span className="flex items-center gap-2">
-              <AlertCircle size={15} className="text-[#00FF41]" />
+              <AlertCircle size={15} className="text-accent" />
               Due Cards
             </span>
-            <span className="text-[#00FF41] font-['IBM_Plex_Mono'] text-xs">
+            <span className="text-accent font-['IBM_Plex_Mono'] text-xs">
               {dueBySubject.reduce((s, r) => s + r.due_today, 0)} today
             </span>
           </h2>
@@ -448,7 +448,7 @@ export default function Dashboard() {
                       {dueToday} / {total}
                     </span>
                   </div>
-                  <div className="w-full bg-[#161616] h-1.5 rounded-full overflow-hidden border border-[#222]">
+                  <div className="w-full bg-surface-2 h-1.5 rounded-full overflow-hidden border border-border-base">
                     <div
                       className="h-full rounded-full transition-all duration-700"
                       style={{

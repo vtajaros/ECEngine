@@ -68,7 +68,7 @@ export default function DeckMetadataForm({ metadata, setMetadata }: DeckMetadata
             onChange={e => setMetadata(prev => ({ ...prev, title: e.target.value }))}
             maxLength={80}
             placeholder='Enter deck title...'
-            className="w-full bg-transparent text-[#E8E8E8] text-[1.15rem] font-['Orbitron'] border-b-2 border-[#333] focus:border-[#00FF41] pb-3 focus:outline-none placeholder:text-[#555] transition-colors tracking-wide pr-16"
+            className="w-full bg-transparent text-text-primary text-[1.15rem] font-['Orbitron'] border-b-2 border-[#333] focus:border-accent pb-3 focus:outline-none placeholder:text-[#555] transition-colors tracking-wide pr-16"
           />
           <span className="absolute right-0 bottom-4 text-xs font-['IBM_Plex_Mono'] text-[#666]">
             {metadata.title.length} / 80
@@ -80,7 +80,7 @@ export default function DeckMetadataForm({ metadata, setMetadata }: DeckMetadata
           placeholder="Add a description... (optional)"
           className="w-full bg-transparent text-[#aaa] text-sm font-['IBM_Plex_Mono'] pb-2 focus:outline-none placeholder:text-[#555] transition-colors"
         />
-        <div className="mt-2 pt-2 border-t border-[#222]">
+        <div className="mt-2 pt-2 border-t border-border-base">
           <label className="text-[10px] text-[#555] font-['Rajdhani'] font-bold uppercase tracking-widest mb-1 block">
             Folder / Category
           </label>
@@ -92,14 +92,14 @@ export default function DeckMetadataForm({ metadata, setMetadata }: DeckMetadata
                 onChange={e => setMetadata(prev => ({ ...prev, folderName: e.target.value, showFolderDropdown: true }))}
                 onFocus={() => setMetadata(prev => ({ ...prev, showFolderDropdown: true }))}
                 placeholder="e.g. Select or type folder name..."
-                className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-[#E8E8E8] text-sm font-['IBM_Plex_Mono'] focus:border-[#00FF41] focus:bg-[#111] outline-none transition-colors pr-16 placeholder-[#555]"
+                className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-text-primary text-sm font-['IBM_Plex_Mono'] focus:border-accent focus:bg-[#111] outline-none transition-colors pr-16 placeholder-[#555]"
               />
               <div className="absolute right-2 flex items-center gap-1">
                 {metadata.folderName && (
                   <button
                     type="button"
                     onClick={() => setMetadata(prev => ({ ...prev, folderName: '', showFolderDropdown: true }))}
-                    className="p-1 text-[#444] hover:text-[#00FF41] transition-colors"
+                    className="p-1 text-[#444] hover:text-accent transition-colors"
                     title="Clear folder"
                   >
                     <X size={14} />
@@ -108,7 +108,7 @@ export default function DeckMetadataForm({ metadata, setMetadata }: DeckMetadata
                 <button
                   type="button"
                   onClick={() => setMetadata(prev => ({ ...prev, showFolderDropdown: !prev.showFolderDropdown }))}
-                  className="p-1 text-[#666] hover:text-[#00FF41] transition-colors"
+                  className="p-1 text-[#666] hover:text-accent transition-colors"
                   title="Toggle folder list"
                 >
                   <ChevronDown size={14} className={`transform transition-transform ${metadata.showFolderDropdown ? 'rotate-180' : ''}`} />
@@ -123,7 +123,7 @@ export default function DeckMetadataForm({ metadata, setMetadata }: DeckMetadata
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -5 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-[#161616] border border-[#333] rounded-lg shadow-2xl max-h-48 overflow-y-auto custom-scrollbar"
+                  className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-surface-2 border border-[#333] rounded-lg shadow-2xl max-h-48 overflow-y-auto custom-scrollbar"
                 >
                   {metadata.existingFolders.length === 0 ? (
                     <div className="p-3 text-xs text-[#666] font-['IBM_Plex_Mono'] text-center">
@@ -138,27 +138,27 @@ export default function DeckMetadataForm({ metadata, setMetadata }: DeckMetadata
                             key={f}
                             type="button"
                             onClick={() => setMetadata(prev => ({ ...prev, folderName: f, showFolderDropdown: false }))}
-                            className="w-full text-left px-3 py-2 text-xs font-['IBM_Plex_Mono'] text-[#ccc] hover:bg-[#222] hover:text-[#00FF41] transition-colors flex items-center justify-between"
+                            className="w-full text-left px-3 py-2 text-xs font-['IBM_Plex_Mono'] text-[#ccc] hover:bg-border-base hover:text-accent transition-colors flex items-center justify-between"
                           >
                             <span>{f}</span>
                             {metadata.folderName.toLowerCase() === f.toLowerCase() && (
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#00FF41]" />
+                              <span className="w-1.5 h-1.5 rounded-full bg-accent" />
                             )}
                           </button>
                         ))}
                       {metadata.existingFolders.filter(f => f.toLowerCase().includes(metadata.folderName.toLowerCase())).length === 0 && (
                         <div
-                          className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-[#1a1a1a] transition-colors"
+                          className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-surface transition-colors"
                           onClick={() => setMetadata(prev => ({ ...prev, showFolderDropdown: false }))}
                         >
-                          <span className="font-['IBM_Plex_Mono'] text-xs text-[#00FF41]">
+                          <span className="font-['IBM_Plex_Mono'] text-xs text-accent">
                             Create "{metadata.folderName}"
                           </span>
                           <button
-                            className="flex items-center justify-center w-5 h-5 rounded bg-[#00FF41]/10 border border-[#00FF41]/30 hover:bg-[#00FF41]/20 transition-colors"
+                            className="flex items-center justify-center w-5 h-5 rounded bg-accent/10 border border-accent/30 hover:bg-accent/20 transition-colors"
                             title="Confirm new folder name"
                           >
-                            <Plus size={12} className="text-[#00FF41]" />
+                            <Plus size={12} className="text-accent" />
                           </button>
                         </div>
                       )}
@@ -172,7 +172,7 @@ export default function DeckMetadataForm({ metadata, setMetadata }: DeckMetadata
       </div>
 
       <div>
-        <label className="text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest mb-3 block">
+        <label className="text-[11px] text-accent font-['Rajdhani'] font-bold uppercase tracking-widest mb-3 block">
           Subject
         </label>
         <div className="flex gap-2 flex-wrap">
@@ -208,7 +208,7 @@ export default function DeckMetadataForm({ metadata, setMetadata }: DeckMetadata
       </div>
 
       <div>
-        <label className="text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest mb-3 block">
+        <label className="text-[11px] text-accent font-['Rajdhani'] font-bold uppercase tracking-widest mb-3 block">
           Source Tags
         </label>
         <div className="flex flex-wrap gap-3">
@@ -222,8 +222,8 @@ export default function DeckMetadataForm({ metadata, setMetadata }: DeckMetadata
                   return { ...prev, deckTags: next }
                 })}
                 className={`px-4 py-2 rounded-full font-['Rajdhani'] uppercase tracking-wider text-xs font-bold transition-all border ${isSelected
-                  ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
-                  : 'bg-[#161616] border-[#333] text-[#888] hover:border-[#555] hover:text-[#E8E8E8]'
+                  ? 'bg-accent/10 border-accent text-accent'
+                  : 'bg-surface-2 border-[#333] text-text-muted hover:border-[#555] hover:text-text-primary'
                   }`}
               >
                 {tag}
@@ -231,9 +231,9 @@ export default function DeckMetadataForm({ metadata, setMetadata }: DeckMetadata
             )
           })}
           {metadata.deckTags.filter(t => !PREDEFINED_TAGS.includes(t)).map(tag => (
-            <div key={tag} className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#00FF41]/10 border border-[#00FF41] text-[#00FF41] font-['Rajdhani'] uppercase tracking-wider text-xs font-bold">
+            <div key={tag} className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-accent/10 border border-accent text-accent font-['Rajdhani'] uppercase tracking-wider text-xs font-bold">
               {tag}
-              <button onClick={() => setMetadata(prev => ({ ...prev, deckTags: prev.deckTags.filter(t => t !== tag) }))} className="text-[#00FF41] hover:text-white transition-colors cursor-pointer rounded-full p-0.5 -mr-2">
+              <button onClick={() => setMetadata(prev => ({ ...prev, deckTags: prev.deckTags.filter(t => t !== tag) }))} className="text-accent hover:text-white transition-colors cursor-pointer rounded-full p-0.5 -mr-2">
                 <X size={12} />
               </button>
             </div>
@@ -254,7 +254,7 @@ export default function DeckMetadataForm({ metadata, setMetadata }: DeckMetadata
                 }
               }
             }}
-            className="flex-1 bg-[#111] border border-[#333] rounded px-3 py-2 text-sm text-[#E8E8E8] placeholder-[#555] focus:border-[#00FF41] focus:outline-none font-['Rajdhani'] uppercase tracking-wider transition-colors h-[38px]"
+            className="flex-1 bg-[#111] border border-[#333] rounded px-3 py-2 text-sm text-text-primary placeholder-[#555] focus:border-accent focus:outline-none font-['Rajdhani'] uppercase tracking-wider transition-colors h-[38px]"
           />
           <button
             onClick={() => {
@@ -262,7 +262,7 @@ export default function DeckMetadataForm({ metadata, setMetadata }: DeckMetadata
                 setMetadata(prev => ({ ...prev, deckTags: [...prev.deckTags, prev.customTagInput.trim()], customTagInput: '' }));
               }
             }}
-            className="w-[38px] h-[38px] bg-[#111] border border-[#333] text-[#888] flex items-center justify-center rounded hover:text-[#00FF41] hover:border-[#00FF41] transition-colors shrink-0"
+            className="w-[38px] h-[38px] bg-[#111] border border-[#333] text-text-muted flex items-center justify-center rounded hover:text-accent hover:border-accent transition-colors shrink-0"
           >
             <Plus size={18} />
           </button>

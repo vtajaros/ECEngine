@@ -56,15 +56,15 @@ export const TestNavRail = memo(({
 
   return (
     <aside
-      className="w-36 shrink-0 flex flex-col items-stretch border-r border-zinc-800 border-y border-l border-[#222]/30 rounded-xl shadow-xl overflow-hidden h-[calc(100vh-120px)] py-0 mb-0 bg-[#0a0a0a] select-none"
+      className="w-36 shrink-0 flex flex-col items-stretch border-r border-zinc-800 border-y border-l border-border-base/30 rounded-xl shadow-xl overflow-hidden h-[calc(100vh-120px)] py-0 mb-0 bg-[#0a0a0a] select-none"
       aria-label="Question Navigator"
     >
-      <div className="px-4 py-3 shrink-0 flex flex-col items-center gap-1 border-b border-[#1a1a1a]">
+      <div className="px-4 py-3 shrink-0 flex flex-col items-center gap-1 border-b border-surface">
         <span className="font-['Rajdhani'] font-semibold tracking-widest text-zinc-400 text-[10px] uppercase leading-tight">
           Item Navigator
         </span>
         <div className="flex items-center gap-1.5 mt-0.5">
-          <span className="font-['IBM_Plex_Mono'] text-[11px] text-[#00FF41] font-bold tabular-nums">
+          <span className="font-['IBM_Plex_Mono'] text-[11px] text-accent font-bold tabular-nums">
             {answeredCount}
           </span>
           <span className="font-['IBM_Plex_Mono'] text-[11px] text-[#444]">/</span>
@@ -75,9 +75,9 @@ export const TestNavRail = memo(({
             answered
           </span>
         </div>
-        <div className="mt-2 w-full h-0.5 bg-[#1a1a1a] rounded-full overflow-hidden">
+        <div className="mt-2 w-full h-0.5 bg-surface rounded-full overflow-hidden">
           <div
-            className="h-full rounded-full bg-[#00FF41] transition-all duration-500"
+            className="h-full rounded-full bg-accent transition-all duration-500"
             style={{
               width: totalItems > 0
                 ? `${Math.round((answeredCount / totalItems) * 100)}%`
@@ -108,7 +108,7 @@ export const TestNavRail = memo(({
                   'flex items-center justify-start gap-2 w-full',
                   'py-1.5 px-3 rounded-md',
                   isActive
-                    ? 'text-white font-bold bg-white/5 border-l-2 border-[#00FF41] pl-2.5'
+                    ? 'text-white font-bold bg-white/5 border-l-2 border-accent pl-2.5'
                     : answered
                       ? 'text-green-400 font-medium hover:text-green-300 hover:bg-white/5'
                       : 'text-zinc-400 font-medium hover:text-white hover:bg-white/5'

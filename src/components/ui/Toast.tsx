@@ -22,8 +22,8 @@ const Toast: React.FC<ToastProps> = ({ message, onDismiss }) => {
       exit={{ opacity: 0, y: 20, scale: 0.95 }}
       className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[300]"
     >
-      <div className="bg-[#1C1C1C] border border-[rgba(0,255,65,0.3)] text-[#E8E8E8] px-6 py-3 rounded-lg shadow-2xl flex items-center gap-3 backdrop-blur-md">
-        <div className="w-1.5 h-1.5 rounded-full bg-[#00FF41] shadow-[0_0_8px_#00FF41]" />
+      <div className="bg-[#1C1C1C] border border-[rgba(0,255,65,0.3)] text-text-primary px-6 py-3 rounded-lg shadow-2xl flex items-center gap-3 backdrop-blur-md">
+        <div className="w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_8px_#00FF41]" />
         <span className="text-xs font-['IBM_Plex_Mono'] tracking-wide">{message}</span>
       </div>
     </motion.div>

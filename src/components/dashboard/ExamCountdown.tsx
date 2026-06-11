@@ -161,43 +161,43 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
   return (
     <div className="flex items-center gap-3">
       {/* EXAM TARGET TIMER */}
-      <div className="bg-[#1A1A1A] border border-[#00FF41]/10 rounded-lg px-4 py-2 flex items-center gap-6 shadow-xl relative group">
+      <div className="bg-surface border border-accent/10 rounded-lg px-4 py-2 flex items-center gap-6 shadow-xl relative group">
         <button
           onClick={openDateModal}
-          className="absolute -top-2 -right-2 p-1.5 bg-[#1A1A1A] border border-[#333] rounded-full text-[#666] hover:text-[#00FF41] opacity-70 hover:opacity-100 transition-all z-10 shadow-lg"
+          className="absolute -top-2 -right-2 p-1.5 bg-surface border border-[#333] rounded-full text-[#666] hover:text-accent opacity-70 hover:opacity-100 transition-all z-10 shadow-lg"
           title="Change exam date"
         >
           <Edit2 size={12} />
         </button>
 
         <div className="flex flex-col">
-          <span className="text-[10px] font-['Orbitron'] text-[#00FF41] uppercase tracking-widest opacity-80">
+          <span className="text-[10px] font-['Orbitron'] text-accent uppercase tracking-widest opacity-80">
             Exam Target
           </span>
-          <span className="text-[11px] font-['Rajdhani'] text-[#888] uppercase tracking-widest font-bold">
+          <span className="text-[11px] font-['Rajdhani'] text-text-muted uppercase tracking-widest font-bold">
             {new Date(examDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase()}
           </span>
         </div>
 
         <div className="flex gap-4">
           <div className="flex flex-col items-center">
-            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{timeLeft.weeks}</span>
+            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{timeLeft.weeks}</span>
             <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Wks</span>
           </div>
           <div className="flex flex-col items-center">
-            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{timeLeft.days}</span>
+            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{timeLeft.days}</span>
             <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Days</span>
           </div>
           <div className="flex flex-col items-center">
-            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{timeLeft.hours.toString().padStart(2, '0')}</span>
+            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{timeLeft.hours.toString().padStart(2, '0')}</span>
             <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Hrs</span>
           </div>
           <div className="flex flex-col items-center">
-            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{timeLeft.mins.toString().padStart(2, '0')}</span>
+            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{timeLeft.mins.toString().padStart(2, '0')}</span>
             <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Min</span>
           </div>
           <div className="flex flex-col items-center">
-            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#00FF41] leading-none">{timeLeft.secs.toString().padStart(2, '0')}</span>
+            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-accent leading-none">{timeLeft.secs.toString().padStart(2, '0')}</span>
             <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Sec</span>
           </div>
         </div>
@@ -205,50 +205,50 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
 
       {/* PREBOARD TIMER OR ADD BUTTON */}
       {preboardDate && preboardTimeLeft ? (
-        <div className="bg-[#1A1A1A] border border-[#FFB800]/10 rounded-lg px-4 py-2 flex items-center gap-6 shadow-xl relative group">
+        <div className="bg-surface border border-warn/10 rounded-lg px-4 py-2 flex items-center gap-6 shadow-xl relative group">
           <button
             onClick={openPreboardModal}
-            className="absolute -top-2 -right-2 p-1.5 bg-[#1A1A1A] border border-[#333] rounded-full text-[#666] hover:text-[#FFB800] opacity-70 hover:opacity-100 transition-all z-10 shadow-lg"
+            className="absolute -top-2 -right-2 p-1.5 bg-surface border border-[#333] rounded-full text-[#666] hover:text-warn opacity-70 hover:opacity-100 transition-all z-10 shadow-lg"
             title="Change preboard date"
           >
             <Edit2 size={12} />
           </button>
           <button
             onClick={removePreboardDate}
-            className="absolute -top-2 -right-8 p-1.5 bg-[#1A1A1A] border border-[#333] rounded-full text-[#666] hover:text-[#FF3333] opacity-70 hover:opacity-100 transition-all z-10 shadow-lg"
+            className="absolute -top-2 -right-8 p-1.5 bg-surface border border-[#333] rounded-full text-[#666] hover:text-danger opacity-70 hover:opacity-100 transition-all z-10 shadow-lg"
             title="Remove preboard date"
           >
             <X size={12} />
           </button>
 
           <div className="flex flex-col">
-            <span className="text-[10px] font-['Orbitron'] text-[#FFB800] uppercase tracking-widest opacity-80">
+            <span className="text-[10px] font-['Orbitron'] text-warn uppercase tracking-widest opacity-80">
               Preboards Target
             </span>
-            <span className="text-[11px] font-['Rajdhani'] text-[#888] uppercase tracking-widest font-bold">
+            <span className="text-[11px] font-['Rajdhani'] text-text-muted uppercase tracking-widest font-bold">
               {new Date(preboardDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase()}
             </span>
           </div>
 
           <div className="flex gap-4">
             <div className="flex flex-col items-center">
-              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{preboardTimeLeft.weeks}</span>
+              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{preboardTimeLeft.weeks}</span>
               <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Wks</span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{preboardTimeLeft.days}</span>
+              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{preboardTimeLeft.days}</span>
               <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Days</span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{preboardTimeLeft.hours.toString().padStart(2, '0')}</span>
+              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{preboardTimeLeft.hours.toString().padStart(2, '0')}</span>
               <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Hrs</span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#E8E8E8] leading-none">{preboardTimeLeft.mins.toString().padStart(2, '0')}</span>
+              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{preboardTimeLeft.mins.toString().padStart(2, '0')}</span>
               <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Min</span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-[#FFB800] leading-none">{preboardTimeLeft.secs.toString().padStart(2, '0')}</span>
+              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-warn leading-none">{preboardTimeLeft.secs.toString().padStart(2, '0')}</span>
               <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Sec</span>
             </div>
           </div>
@@ -257,7 +257,7 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
         <div className="flex justify-start px-2">
           <button
             onClick={openPreboardModal}
-            className="text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest text-[#666] hover:text-[#FFB800] transition-colors flex items-center gap-1 opacity-70 hover:opacity-100"
+            className="text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest text-[#666] hover:text-warn transition-colors flex items-center gap-1 opacity-70 hover:opacity-100"
           >
             <Edit2 size={10} /> Add Preboard
           </button>
@@ -286,19 +286,19 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
               className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
             >
               <div
-                className="pointer-events-auto w-full max-w-sm mx-4 bg-[#111] border border-[#2A2A2A] rounded-2xl shadow-2xl overflow-hidden"
+                className="pointer-events-auto w-full max-w-sm mx-4 bg-[#111] border border-border-subtle rounded-2xl shadow-2xl overflow-hidden"
                 onClick={e => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#1E1E1E]">
                   <div className="flex items-center gap-2">
-                    <Calendar className="text-[#00FF41]" size={16} />
-                    <span className="font-['Rajdhani'] font-bold text-sm text-[#E8E8E8] uppercase tracking-widest">
+                    <Calendar className="text-accent" size={16} />
+                    <span className="font-['Rajdhani'] font-bold text-sm text-text-primary uppercase tracking-widest">
                       Set Exam Target
                     </span>
                   </div>
                   <button
                     onClick={closeDateModal}
-                    className="text-[#555] hover:text-[#E8E8E8] transition-colors p-1 rounded-lg hover:bg-[#1A1A1A]"
+                    className="text-[#555] hover:text-text-primary transition-colors p-1 rounded-lg hover:bg-surface"
                   >
                     <X size={16} />
                   </button>
@@ -307,7 +307,7 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
                 <div className="px-6 py-6 space-y-5">
                   <div className="text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest text-[#555]">
                     Current target:&nbsp;
-                    <span className="text-[#00FF41]">
+                    <span className="text-accent">
                       {new Date(examDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                     </span>
                   </div>
@@ -321,7 +321,7 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
                       value={modalDate}
                       onChange={handleModalDateChange}
                       min={new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0]}
-                      className="w-full bg-[#0D0D0D] border border-[#2A2A2A] rounded-xl px-4 py-3 text-[#E8E8E8] font-['IBM_Plex_Mono'] text-sm focus:outline-none focus:border-[#00FF41]/40 transition-colors [color-scheme:dark]"
+                      className="w-full bg-engine-black border border-border-subtle rounded-xl px-4 py-3 text-text-primary font-['IBM_Plex_Mono'] text-sm focus:outline-none focus:border-accent/40 transition-colors [color-scheme:dark]"
                     />
                   </div>
 
@@ -359,7 +359,7 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
                           transition={{ duration: 0.15 }}
                           className="flex items-center justify-center gap-2 py-2"
                         >
-                          <span className="font-['IBM_Plex_Mono'] text-2xl font-bold text-[#00FF41]">{d}</span>
+                          <span className="font-['IBM_Plex_Mono'] text-2xl font-bold text-accent">{d}</span>
                           <span className="font-['Rajdhani'] text-[#555] text-xs uppercase tracking-widest font-bold">
                             days until exam
                           </span>
@@ -372,7 +372,7 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
                 <div className="flex gap-3 px-6 pb-6">
                   <button
                     onClick={closeDateModal}
-                    className="flex-1 px-4 py-2.5 bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl text-[#888] font-['Rajdhani'] font-bold text-xs uppercase tracking-widest hover:text-[#E8E8E8] hover:bg-[#222] transition-all"
+                    className="flex-1 px-4 py-2.5 bg-surface border border-border-subtle rounded-xl text-text-muted font-['Rajdhani'] font-bold text-xs uppercase tracking-widest hover:text-text-primary hover:bg-border-base transition-all"
                   >
                     Cancel
                   </button>
@@ -416,19 +416,19 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
               className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none"
             >
               <div
-                className="pointer-events-auto w-full max-w-sm mx-4 bg-[#111] border border-[#2A2A2A] rounded-2xl shadow-2xl overflow-hidden"
+                className="pointer-events-auto w-full max-w-sm mx-4 bg-[#111] border border-border-subtle rounded-2xl shadow-2xl overflow-hidden"
                 onClick={e => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-[#1E1E1E]">
                   <div className="flex items-center gap-2">
-                    <Calendar className="text-[#FFB800]" size={16} />
-                    <span className="font-['Rajdhani'] font-bold text-sm text-[#E8E8E8] uppercase tracking-widest">
+                    <Calendar className="text-warn" size={16} />
+                    <span className="font-['Rajdhani'] font-bold text-sm text-text-primary uppercase tracking-widest">
                       Set Preboards Target
                     </span>
                   </div>
                   <button
                     onClick={closePreboardModal}
-                    className="text-[#555] hover:text-[#E8E8E8] transition-colors p-1 rounded-lg hover:bg-[#1A1A1A]"
+                    className="text-[#555] hover:text-text-primary transition-colors p-1 rounded-lg hover:bg-surface"
                   >
                     <X size={16} />
                   </button>
@@ -437,7 +437,7 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
                 <div className="px-6 py-6 space-y-5">
                   <div className="text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest text-[#555]">
                     Current target:&nbsp;
-                    <span className="text-[#FFB800]">
+                    <span className="text-warn">
                       {preboardDate ? new Date(preboardDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'None'}
                     </span>
                   </div>
@@ -451,7 +451,7 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
                       value={preboardModalDate}
                       onChange={handlePreboardModalDateChange}
                       min={new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0]}
-                      className="w-full bg-[#0D0D0D] border border-[#2A2A2A] rounded-xl px-4 py-3 text-[#E8E8E8] font-['IBM_Plex_Mono'] text-sm focus:outline-none focus:border-[#FFB800]/40 transition-colors [color-scheme:dark]"
+                      className="w-full bg-engine-black border border-border-subtle rounded-xl px-4 py-3 text-text-primary font-['IBM_Plex_Mono'] text-sm focus:outline-none focus:border-warn/40 transition-colors [color-scheme:dark]"
                     />
                   </div>
 
@@ -489,7 +489,7 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
                           transition={{ duration: 0.15 }}
                           className="flex items-center justify-center gap-2 py-2"
                         >
-                          <span className="font-['IBM_Plex_Mono'] text-2xl font-bold text-[#FFB800]">{d}</span>
+                          <span className="font-['IBM_Plex_Mono'] text-2xl font-bold text-warn">{d}</span>
                           <span className="font-['Rajdhani'] text-[#555] text-xs uppercase tracking-widest font-bold">
                             days until preboard
                           </span>
@@ -503,7 +503,7 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
                   {preboardDate && (
                     <button
                       onClick={removePreboardDate}
-                      className="px-4 py-2.5 bg-[#FF3333]/10 border border-[#FF3333]/20 rounded-xl text-[#FF3333] font-['Rajdhani'] font-bold text-xs uppercase tracking-widest hover:bg-[#FF3333]/20 transition-all"
+                      className="px-4 py-2.5 bg-danger/10 border border-danger/20 rounded-xl text-danger font-['Rajdhani'] font-bold text-xs uppercase tracking-widest hover:bg-danger/20 transition-all"
                       title="Remove Preboard Date"
                     >
                       <X size={16} />
@@ -511,7 +511,7 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
                   )}
                   <button
                     onClick={closePreboardModal}
-                    className="flex-1 px-4 py-2.5 bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl text-[#888] font-['Rajdhani'] font-bold text-xs uppercase tracking-widest hover:text-[#E8E8E8] hover:bg-[#222] transition-all"
+                    className="flex-1 px-4 py-2.5 bg-surface border border-border-subtle rounded-xl text-text-muted font-['Rajdhani'] font-bold text-xs uppercase tracking-widest hover:text-text-primary hover:bg-border-base transition-all"
                   >
                     Cancel
                   </button>

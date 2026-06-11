@@ -25,7 +25,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({ isCollapsed, onToggleSidebar
   const pageTitle = routeLabels[location.pathname] ?? 'ECEngine'
 
   return (
-    <div className="w-full h-8 bg-[#1A1A1A] text-gray-400 flex items-center justify-between select-none [-webkit-app-region:drag] relative shrink-0 px-0">
+    <div className="w-full h-8 bg-surface text-gray-400 flex items-center justify-between select-none [-webkit-app-region:drag] relative shrink-0 px-0">
       {/* Left Side: Navigation (Anchored to Sidebar Width) */}
       <div className="flex items-center gap-1 ml-2 [-webkit-app-region:no-drag]">
         <button
@@ -44,7 +44,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({ isCollapsed, onToggleSidebar
       <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-2">
         <img src="/ecengine_icon.png" alt="Logo" className="w-4 h-4 object-contain" />
         <span className="font-rajdhani font-bold tracking-wider text-white text-xs">
-          <span className="text-[#00FF41]">ECE</span>ngine
+          <span className="text-accent">ECE</span>ngine
           <span className="text-gray-400 font-normal"> · </span>
           <span className="text-white">{pageTitle}</span>
         </span>

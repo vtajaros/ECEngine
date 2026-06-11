@@ -474,7 +474,7 @@ export default function AddDeck() {
   }
 
   return (
-    <div className="h-full bg-[#0D0D0D] overflow-y-auto show-scrollbar flex flex-col font-['IBM_Plex_Mono']">
+    <div className="h-full bg-engine-black overflow-y-auto show-scrollbar flex flex-col font-['IBM_Plex_Mono']">
       <AnimatePresence>
         {toast && (
           <motion.div
@@ -482,7 +482,7 @@ export default function AddDeck() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             className={`fixed top-4 right-4 z-[200] flex items-center gap-3 px-5 py-3 rounded-lg border shadow-2xl font-['Rajdhani'] tracking-wider text-sm ${toast.type === 'success'
-              ? 'bg-[#0a1a0a] border-[#00FF41]/40 text-[#00FF41]'
+              ? 'bg-[#0a1a0a] border-accent/40 text-accent'
               : 'bg-[#1a0a0a] border-[#FF4444]/40 text-[#FF4444]'
               }`}
           >
@@ -492,7 +492,7 @@ export default function AddDeck() {
         )}
       </AnimatePresence>
       {/* Top Bar */}
-      <div className="sticky top-0 z-30 bg-[#0D0D0D]/90 backdrop-blur-md border-b border-[#1a1a1a] shrink-0">
+      <div className="sticky top-0 z-30 bg-engine-black/90 backdrop-blur-md border-b border-surface shrink-0">
         <div className="w-full px-6 py-4 flex items-center justify-between relative">
           <div className="w-1/3"></div>
 
@@ -505,7 +505,7 @@ export default function AddDeck() {
 
           <div className="flex items-center gap-4">
             <button onClick={() => navigate(-1)}
-              className="px-6 py-2.5 flex items-center justify-center rounded border border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-widest font-bold text-sm whitespace-nowrap">
+              className="px-6 py-2.5 flex items-center justify-center rounded border border-[#333] text-text-muted hover:text-text-primary hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-widest font-bold text-sm whitespace-nowrap">
               Cancel
             </button>
             <div className="relative group">
@@ -514,13 +514,13 @@ export default function AddDeck() {
                 disabled={!canSave || saving}
                 className={`px-8 py-2.5 font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all flex items-center justify-center gap-2 whitespace-nowrap ${canSave && !saving
                   ? 'bg-[var(--accent-primary)] text-black hover:bg-[var(--accent-dim)] shadow-[0_0_15px_rgba(0,255,65,0.25)]'
-                  : 'bg-[#222] text-[#555] cursor-not-allowed'
+                  : 'bg-border-base text-[#555] cursor-not-allowed'
                   }`}
               >
                 <Save size={16} /> {saving ? 'Saving...' : 'Save Deck'}
               </button>
               {!canSave && (
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 absolute top-full right-0 mt-2 w-48 p-2 bg-[#161616] border border-[#333] rounded shadow-xl text-center text-xs font-['IBM_Plex_Mono'] text-[#888] pointer-events-none z-50">
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 absolute top-full right-0 mt-2 w-48 p-2 bg-surface-2 border border-[#333] rounded shadow-xl text-center text-xs font-['IBM_Plex_Mono'] text-text-muted pointer-events-none z-50">
                   Add a title and at least one complete card to save
                 </div>
               )}
@@ -538,12 +538,12 @@ export default function AddDeck() {
         <div className="w-full max-w-4xl xl:max-w-none xl:col-span-2 flex flex-col gap-6">
           <section className="flex flex-row flex-wrap items-center justify-between gap-4">
             {/* Deck Type Toggle */}
-            <div className="flex flex-row w-auto bg-[#111] border border-[#222] p-1 rounded-lg gap-1">
+            <div className="flex flex-row w-auto bg-[#111] border border-border-base p-1 rounded-lg gap-1">
               <button
                 onClick={() => handleDeckTypeChange('mcq')}
                 className={`w-auto px-6 py-2.5 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${deckType === 'mcq'
-                  ? 'bg-[#222] text-[#00FF41] shadow-sm'
-                  : 'text-[#888] hover:text-[#ccc]'
+                  ? 'bg-border-base text-accent shadow-sm'
+                  : 'text-text-muted hover:text-[#ccc]'
                   }`}
               >
                 MCQ Set
@@ -551,8 +551,8 @@ export default function AddDeck() {
               <button
                 onClick={() => handleDeckTypeChange('flashcard')}
                 className={`w-auto px-6 py-2.5 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${deckType === 'flashcard'
-                  ? 'bg-[#222] text-[#00FF41] shadow-sm'
-                  : 'text-[#888] hover:text-[#ccc]'
+                  ? 'bg-border-base text-accent shadow-sm'
+                  : 'text-text-muted hover:text-[#ccc]'
                   }`}
               >
                 Flashcard Set
@@ -560,8 +560,8 @@ export default function AddDeck() {
               <button
                 onClick={() => handleDeckTypeChange('formula')}
                 className={`w-auto px-6 py-2.5 rounded-md font-['Rajdhani'] uppercase tracking-widest font-bold text-sm transition-all whitespace-nowrap ${deckType === 'formula'
-                  ? 'bg-[#222] text-[#00FF41] shadow-sm'
-                  : 'text-[#888] hover:text-[#ccc]'
+                  ? 'bg-border-base text-accent shadow-sm'
+                  : 'text-text-muted hover:text-[#ccc]'
                   }`}
               >
                 Formula Set
@@ -572,13 +572,13 @@ export default function AddDeck() {
             <div className="flex flex-wrap items-center gap-3 justify-end">
               <button
                 onClick={() => openImportModal('mcq')}
-                className="flex items-center gap-2 px-4 py-2 rounded border border-[#333] bg-[#161616] text-[#888] hover:text-[#00FF41] hover:border-[#00FF41]/50 font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all"
+                className="flex items-center gap-2 px-4 py-2 rounded border border-[#333] bg-surface-2 text-text-muted hover:text-accent hover:border-accent/50 font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all"
               >
                 <Upload size={14} /> Import MCQs
               </button>
               <button
                 onClick={() => openImportModal('flashcard')}
-                className="flex items-center gap-2 px-4 py-2 rounded border border-[#333] bg-[#161616] text-[#888] hover:text-[#00FF41] hover:border-[#00FF41]/50 font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all"
+                className="flex items-center gap-2 px-4 py-2 rounded border border-[#333] bg-surface-2 text-text-muted hover:text-accent hover:border-accent/50 font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all"
               >
                 <Upload size={14} /> Import Flashcards
               </button>
@@ -613,7 +613,7 @@ export default function AddDeck() {
               {historyStack.length > 0 && (
                 <button
                   onClick={undo}
-                  className="flex items-center justify-center p-5 rounded-lg border-2 border-[#666] text-[#666] hover:text-[#00FF41] hover:border-[#00FF41] transition-colors"
+                  className="flex items-center justify-center p-5 rounded-lg border-2 border-[#666] text-[#666] hover:text-accent hover:border-accent transition-colors"
                   title="Undo (Ctrl+Z)"
                 >
                   <RotateCcw className="w-5 h-5" />
@@ -621,9 +621,9 @@ export default function AddDeck() {
               )}
               <button
                 onClick={addCard}
-                className="w-full py-5 rounded-lg border-2 border-dashed border-[#333] bg-[#111] hover:bg-[#161616] hover:border-[#00FF41]/50 text-[#888] hover:text-[#00FF41] flex flex-col items-center justify-center gap-2 transition-all group"
+                className="w-full py-5 rounded-lg border-2 border-dashed border-[#333] bg-[#111] hover:bg-surface-2 hover:border-accent/50 text-text-muted hover:text-accent flex flex-col items-center justify-center gap-2 transition-all group"
               >
-                <div className="w-8 h-8 rounded-full bg-[#1a1a1a] group-hover:bg-[#00FF41]/10 flex items-center justify-center transition-colors">
+                <div className="w-8 h-8 rounded-full bg-surface group-hover:bg-accent/10 flex items-center justify-center transition-colors">
                   <Plus size={18} />
                 </div>
                 <span className="font-['Rajdhani'] font-bold uppercase tracking-widest text-sm">Add Card</span>
@@ -661,23 +661,23 @@ export default function AddDeck() {
               initial={{ scale: 0.95, y: 20 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 20 }}
-              className="bg-[#0D0D0D] border border-[#FF4B4B] rounded-lg shadow-[0_0_30px_rgba(255,75,75,0.15)] w-full max-w-md overflow-hidden flex flex-col"
+              className="bg-engine-black border border-[#FF4B4B] rounded-lg shadow-[0_0_30px_rgba(255,75,75,0.15)] w-full max-w-md overflow-hidden flex flex-col"
             >
-              <div className="p-6 border-b border-[#222] flex items-center gap-3 bg-[#111]">
+              <div className="p-6 border-b border-border-base flex items-center gap-3 bg-[#111]">
                 <AlertTriangle className="w-6 h-6 text-[#FF4B4B]" />
-                <h2 className="text-xl font-bold text-[#E8E8E8] font-['Rajdhani'] uppercase tracking-wider">
+                <h2 className="text-xl font-bold text-text-primary font-['Rajdhani'] uppercase tracking-wider">
                   Change Set Type
                 </h2>
               </div>
               <div className="p-6">
                 <p className="text-[#CCCCCC] font-['Rajdhani'] tracking-wider mb-4 leading-relaxed text-base">
-                  Switching to <strong className="text-[#E8E8E8] font-bold">{pendingType === 'mcq' ? 'MCQ Set' : pendingType === 'flashcard' ? 'Flashcard Set' : 'Formula Set'}</strong> will permanently clear all current cards in this editor. This action cannot be undone.
+                  Switching to <strong className="text-text-primary font-bold">{pendingType === 'mcq' ? 'MCQ Set' : pendingType === 'flashcard' ? 'Flashcard Set' : 'Formula Set'}</strong> will permanently clear all current cards in this editor. This action cannot be undone.
                 </p>
               </div>
-              <div className="p-6 border-t border-[#222] bg-[#111] flex justify-end gap-3">
+              <div className="p-6 border-t border-border-base bg-[#111] flex justify-end gap-3">
                 <button
                   onClick={() => { setShowConfirmTypeModal(false); setPendingType(null); }}
-                  className="px-5 py-2 rounded bg-transparent border border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-wider text-sm font-bold"
+                  className="px-5 py-2 rounded bg-transparent border border-[#333] text-text-muted hover:text-text-primary hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-wider text-sm font-bold"
                 >
                   Cancel
                 </button>

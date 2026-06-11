@@ -19,7 +19,7 @@ function renderFormula(latex: string): React.ReactNode {
       />
     )
   } catch {
-    return <code className="text-[#E8E8E8] break-all text-xs">{latex}</code>
+    return <code className="text-text-primary break-all text-xs">{latex}</code>
   }
 }
 
@@ -46,7 +46,7 @@ const TopicRow = ({
   return (
     <button
       onClick={onClick}
-      className="w-full text-left bg-[#111] border border-[#222] rounded-lg px-5 py-4 flex items-center gap-4 group transition-all"
+      className="w-full text-left bg-[#111] border border-border-base rounded-lg px-5 py-4 flex items-center gap-4 group transition-all"
       onMouseEnter={e => {
         ;(e.currentTarget as HTMLElement).style.borderColor = colors.accent
       }}
@@ -61,14 +61,14 @@ const TopicRow = ({
       />
 
       {/* Number */}
-      <span className="text-xs font-['IBM_Plex_Mono'] shrink-0 w-6 text-right text-[#888]">
+      <span className="text-xs font-['IBM_Plex_Mono'] shrink-0 w-6 text-right text-text-muted">
         {String(index + 1).padStart(2, '0')}
       </span>
 
       {/* Topic name and formula count */}
       <div className="flex-1 min-w-0 flex flex-col justify-center">
         <div className="flex items-center gap-2">
-          <div className={`font-['Rajdhani'] font-bold text-lg leading-tight truncate ${count === 0 ? 'text-[#888]' : 'text-[#E8E8E8]'}`}>
+          <div className={`font-['Rajdhani'] font-bold text-lg leading-tight truncate ${count === 0 ? 'text-text-muted' : 'text-text-primary'}`}>
             {topic.name}
           </div>
           {showSubjectBadge && (
@@ -112,13 +112,13 @@ const FormulaCard = ({
 
   return (
     <div
-      className="bg-[#0c0c0c] border border-[#222] rounded-lg p-4 relative flex flex-col gap-2 transition-colors"
+      className="bg-[#0c0c0c] border border-border-base rounded-lg p-4 relative flex flex-col gap-2 transition-colors"
       style={{ borderLeftColor: colors.accent, borderLeftWidth: '4px' }}
     >
-      <div className="font-['Rajdhani'] font-bold uppercase text-sm tracking-widest text-[#E8E8E8]">
+      <div className="font-['Rajdhani'] font-bold uppercase text-sm tracking-widest text-text-primary">
         {formula.name}
       </div>
-      <div className="bg-[#080808] border border-[#1a1a1a] rounded p-4 my-2 overflow-x-auto flex items-center justify-center min-h-[56px]">
+      <div className="bg-[#080808] border border-surface rounded p-4 my-2 overflow-x-auto flex items-center justify-center min-h-[56px]">
         {renderFormula(formula.latex)}
       </div>
       {formula.description && (
@@ -162,18 +162,18 @@ const TopicDetail = ({
       className="flex flex-col h-full bg-[var(--bg-primary)]"
     >
       {/* Detail header */}
-      <div className="sticky top-0 z-50 bg-[var(--bg-secondary)] border-b border-[#222] shadow-lg px-6 py-4 flex flex-col gap-2 shrink-0">
+      <div className="sticky top-0 z-50 bg-[var(--bg-secondary)] border-b border-border-base shadow-lg px-6 py-4 flex flex-col gap-2 shrink-0">
         <div className="flex items-center justify-between">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 text-[#888] hover:text-white transition-colors font-['Rajdhani'] font-bold text-sm uppercase tracking-widest shrink-0"
+            className="flex items-center gap-2 text-text-muted hover:text-white transition-colors font-['Rajdhani'] font-bold text-sm uppercase tracking-widest shrink-0"
           >
             <ArrowLeft size={16} />
             BACK
           </button>
           
           <div className="text-[#555] font-['Rajdhani'] text-xs font-bold uppercase tracking-widest">
-            {subjectCode} <span className="mx-1">&gt;</span> <span className="text-[#888]">{topic.name}</span>
+            {subjectCode} <span className="mx-1">&gt;</span> <span className="text-text-muted">{topic.name}</span>
           </div>
         </div>
 
@@ -218,7 +218,7 @@ const TopicDetail = ({
               </div>
 
               {subtopic.formulas.length === 0 ? (
-                <div className="text-[#2a2a2a] text-xs text-center py-3 font-['IBM_Plex_Mono'] border border-[#1a1a1a] rounded-lg bg-[#0c0c0c]">
+                <div className="text-[#2a2a2a] text-xs text-center py-3 font-['IBM_Plex_Mono'] border border-surface rounded-lg bg-[#0c0c0c]">
                   — no formulas yet —
                 </div>
               ) : (
@@ -310,7 +310,7 @@ export default function FormulaBank() {
             className="flex flex-col h-full"
           >
             {/* Page Header */}
-            <div className="sticky top-0 z-50 bg-[var(--bg-secondary)] border-b border-[#222] shadow-lg flex flex-col px-6 py-4 shrink-0 gap-4">
+            <div className="sticky top-0 z-50 bg-[var(--bg-secondary)] border-b border-border-base shadow-lg flex flex-col px-6 py-4 shrink-0 gap-4">
               <h1 className="font-['Orbitron'] font-bold text-2xl uppercase tracking-widest text-white">
                 FORMULA BANK
               </h1>
@@ -358,7 +358,7 @@ export default function FormulaBank() {
                     placeholder="Search topics & formulas..."
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
-                    className="w-full bg-[#111] border border-[#2a2a2a] rounded-lg pl-10 pr-4 py-2 text-white font-['Rajdhani'] text-sm tracking-wide placeholder-[#888] focus:border-[#555] focus:outline-none transition-colors"
+                    className="w-full bg-[#111] border border-border-subtle rounded-lg pl-10 pr-4 py-2 text-white font-['Rajdhani'] text-sm tracking-wide placeholder-[#888] focus:border-[#555] focus:outline-none transition-colors"
                   />
                 </div>
               </div>
@@ -368,7 +368,7 @@ export default function FormulaBank() {
             <div className="flex-1 overflow-y-auto show-scrollbar p-6 lg:p-8">
               <div className="max-w-4xl mx-auto flex flex-col gap-3">
                 {isSearching && (
-                  <div className="font-['Rajdhani'] text-[#888] text-sm uppercase tracking-widest mb-2">
+                  <div className="font-['Rajdhani'] text-text-muted text-sm uppercase tracking-widest mb-2">
                     {topicRows.length} result{topicRows.length !== 1 ? 's' : ''} for "{searchQuery}"
                   </div>
                 )}

@@ -60,19 +60,19 @@ export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({
     <div className="bg-[#111111] border-t-2 border-t-[rgba(0,255,65,0.2)] px-[20px] py-[16px] relative mt-4 w-full animate-slide-down shadow-lg rounded-b-lg">
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 text-[#888888] hover:text-[#00FF41] transition-colors"
+        className="absolute top-4 right-4 text-text-muted hover:text-accent transition-colors"
         aria-label="Close Explanation"
       >
         <X size={18} />
       </button>
 
-      <h4 className="font-['Orbitron'] text-[0.75rem] font-bold text-[#00FF41] tracking-widest uppercase mb-3 flex items-center">
+      <h4 className="font-['Orbitron'] text-[0.75rem] font-bold text-accent tracking-widest uppercase mb-3 flex items-center">
         ⚡ AI EXPLANATION
       </h4>
 
-      <div className="font-sans text-[0.875rem] text-[#E8E8E8] leading-[1.6]">
+      <div className="font-sans text-[0.875rem] text-text-primary leading-[1.6]">
         {loading && (
-          <div className="flex items-center text-[#888888] font-mono">
+          <div className="flex items-center text-text-muted font-mono">
             Generating explanation
             <span className="flex ml-1">
               <span className="animate-razer-pulse" style={{ animationDelay: '0ms' }}>.</span>
@@ -97,11 +97,11 @@ export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({
 
 
         {!loading && errorType && (
-          <div className="text-[#FF3333]">
+          <div className="text-danger">
             {errorType === 'NO_KEY' && (
               <p>
                 Add your Groq API key in Settings to enable AI explanations.{' '}
-                <Link to="/settings" className="text-[#00FF41] underline hover:text-white transition-colors ml-1">
+                <Link to="/settings" className="text-accent underline hover:text-white transition-colors ml-1">
                   Go to Settings
                 </Link>
               </p>

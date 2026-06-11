@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Play, Pause,
          Volume2, VolumeX, Copy, Sparkles } from 'lucide-react'
@@ -113,10 +113,28 @@ export function FlashcardSession({
   autoplayRef,
   autoplaySpeechDoneRef
 }: FlashcardSessionProps) {
+  const [selectedRating, setSelectedRating] = useState<number | null>(null)
+  const [showRatingFeedback, setShowRatingFeedback] = useState(false)
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setSelectedRating(null)
+      setShowRatingFeedback(false)
+    }, 50)
+    return () => clearTimeout(t)
+  }, [currentIndex])
+
+  const RATING_FEEDBACK: Record<number, { label: string; message: string; color: string }> = {
+    1: { label: 'Again',  message: 'Card will repeat shortly — keep at it.',      color: '#FF3333' },
+    2: { label: 'Hard',   message: 'Scheduled in ~5 min — review more carefully.', color: '#FFB800' },
+    3: { label: 'Good',   message: 'Nice! Scheduled in ~10 min.',                  color: '#00FF41' },
+    4: { label: 'Easy',   message: 'Marked easy — see you in 4+ days.',            color: '#00BFFF' },
+  }
+
   return (
-    <div className="h-full bg-[#0D0D0D] flex flex-col overflow-hidden relative">
+    <div className="h-full bg-engine-black flex flex-col overflow-hidden relative">
       {/* Top Bar */}
-      <div className="shrink-0 bg-[#111] border-b border-[#222] px-6 py-4 flex items-center justify-between z-20">
+      <div className="shrink-0 bg-[#111] border-b border-border-base px-6 py-4 flex items-center justify-between z-20">
         <LeaveConfirmModal
           isOpen={blockerState === 'blocked' || showExitConfirm}
           onConfirm={() => {
@@ -136,17 +154,17 @@ export function FlashcardSession({
           }}
         />
         <div className="flex items-center gap-4">
-          <button onClick={() => onSetExitConfirm(true)} className="text-[#888] hover:text-white transition-colors p-2 rounded hover:bg-[#222]" title="Exit">
+          <button onClick={() => onSetExitConfirm(true)} className="text-text-muted hover:text-white transition-colors p-2 rounded hover:bg-border-base" title="Exit">
             <X className="w-5 h-5" />
           </button>
           <div className="flex flex-col">
             <span className="text-[var(--accent-primary)] font-['Rajdhani'] font-bold tracking-widest text-base uppercase">{activeDeck.title}</span>
-            <span className="text-[#E8E8E8] text-xs font-['Rajdhani'] font-bold uppercase tracking-widest">Card {currentIndex + 1} of {sessionCards.length}</span>
+            <span className="text-text-primary text-xs font-['Rajdhani'] font-bold uppercase tracking-widest">Card {currentIndex + 1} of {sessionCards.length}</span>
           </div>
         </div>
         <div className="flex items-center gap-3">
           {settings.writtenMode && (
-            <span className="text-xs font-['IBM_Plex_Mono'] text-[#888] bg-[#1a1a1a] px-3 py-1 rounded border border-[#333]">
+            <span className="text-xs font-['IBM_Plex_Mono'] text-text-muted bg-surface px-3 py-1 rounded border border-[#333]">
               Accuracy: <span className="text-[var(--accent-primary)]">{writtenStats.total > 0 ? Math.round((writtenStats.correct / writtenStats.total) * 100) : 0}%</span>
             </span>
           )}
@@ -154,8 +172,8 @@ export function FlashcardSession({
           <button
             onClick={onSwapTermDef}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${settings.swapTermDef
-              ? 'bg-[#00FF41]/20 text-[#00FF41] border-[#00FF41]'
-              : 'bg-[#1a1a1a] text-[#888] border-[#333] hover:border-[#555] hover:text-[#E8E8E8]'
+              ? 'bg-accent/20 text-accent border-accent'
+              : 'bg-surface text-text-muted border-[#333] hover:border-[#555] hover:text-text-primary'
               }`}
             title="Swap Term / Definition (Shortcut: F)"
           >
@@ -166,8 +184,8 @@ export function FlashcardSession({
             <button
               onClick={onToggleAutoplay}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${isAutoplay
-                ? 'bg-[#00FF41]/10 text-[#00FF41] border-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.3)]'
-                : 'bg-[#1a1a1a] text-[#888] border-[#333] hover:border-[#555] hover:text-[#E8E8E8]'
+                ? 'bg-accent/10 text-accent border-accent shadow-[0_0_8px_rgba(0,255,65,0.3)]'
+                : 'bg-surface text-text-muted border-[#333] hover:border-[#555] hover:text-text-primary'
                 }`}
               title="Autoplay"
             >
@@ -177,14 +195,14 @@ export function FlashcardSession({
           )}
           <button
             onClick={onToggleTTS}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${fcTtsEnabled ? 'border-[#00FF41] text-[#00FF41] bg-[#00FF41]/10' : 'border-[#333] text-[#888] hover:text-[#E8E8E8] hover:border-[#555]'}`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${fcTtsEnabled ? 'border-accent text-accent bg-accent/10' : 'border-[#333] text-text-muted hover:text-text-primary hover:border-[#555]'}`}
             title={fcTtsEnabled ? 'TTS On — click to disable' : 'TTS Off — click to enable'}
           >
             {fcTtsEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
           </button>
           <button
             onClick={onToggleSettings}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${showSettings ? 'bg-[#00FF41]/10 text-[#00FF41] border-[#00FF41]' : 'bg-[#1a1a1a] text-[#888] border-[#333] hover:border-[#555] hover:text-[#E8E8E8]'}`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${showSettings ? 'bg-accent/10 text-accent border-accent' : 'bg-surface text-text-muted border-[#333] hover:border-[#555] hover:text-text-primary'}`}
             title="Settings"
           >
             <Settings2 className="w-3.5 h-3.5" />
@@ -193,7 +211,7 @@ export function FlashcardSession({
       </div>
 
       {/* Progress Bar */}
-      <div className="shrink-0 w-full bg-[#1a1a1a] h-[4px]">
+      <div className="shrink-0 w-full bg-surface h-[4px]">
         <motion.div className="h-full bg-[var(--accent-primary)] shadow-[0_0_8px_rgba(0,255,65,0.6)]" animate={{ width: `${progress}%` }} transition={{ duration: 0.3 }} />
       </div>
 
@@ -211,7 +229,7 @@ export function FlashcardSession({
                 <button key={opt.key} onClick={() => onSettingChange(opt.key)}
                   className={`px-4 py-2 rounded-lg text-sm font-['Rajdhani'] font-bold tracking-widest uppercase transition-all border ${settings[opt.key]
                     ? 'bg-[var(--accent-primary)] text-black border-[var(--accent-primary)] shadow-[0_0_10px_rgba(0,255,65,0.3)]'
-                    : 'bg-[#1a1a1a] text-[#888] border-[#333] hover:text-white hover:border-[#555]'
+                    : 'bg-surface text-text-muted border-[#333] hover:text-white hover:border-[#555]'
                     }`}
                 >
                   {opt.label}
@@ -225,6 +243,33 @@ export function FlashcardSession({
       {/* Card Area — single centered column, card + buttons + AI panel stacked together */}
       <div className="flex-1 flex items-center justify-center min-h-0 px-6 lg:px-10 py-4 overflow-y-auto">
         <div className="w-full max-w-3xl flex flex-col gap-4">
+
+          <AnimatePresence>
+            {showRatingFeedback && selectedRating !== null && (() => {
+              const fb = RATING_FEEDBACK[selectedRating]
+              return (
+                <motion.div
+                  key="rating-feedback"
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex items-center gap-3 px-5 py-3 rounded-lg border bg-[#111]"
+                  style={{ borderColor: fb.color }}
+                >
+                  <span
+                    className="font-['Rajdhani'] font-bold uppercase tracking-widest text-sm"
+                    style={{ color: fb.color }}
+                  >
+                    {fb.label}
+                  </span>
+                  <span className="text-[#888] font-['IBM_Plex_Mono'] text-xs">
+                    {fb.message}
+                  </span>
+                </motion.div>
+              )
+            })()}
+          </AnimatePresence>
 
           <AnimatePresence mode="wait">
             <StudyCard
@@ -258,18 +303,29 @@ export function FlashcardSession({
               ].map(({ rating, label, sub, hint, color }) => (
                 <button
                   key={rating}
-                  onClick={() => onRateCard(rating)}
-                  disabled={isSubmitting}
-                  className="px-5 py-2 bg-[#111] border rounded transition-colors flex flex-col items-center disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#161616]"
+                  onClick={async () => {
+                    if (selectedRating !== null) return
+                    setSelectedRating(rating)
+                    setShowRatingFeedback(true)
+                    await onRateCard(rating)
+                  }}
+                  disabled={isSubmitting || (selectedRating !== null && selectedRating !== rating)}
+                  className={`px-5 py-2 border rounded transition-all flex flex-col items-center disabled:opacity-40 disabled:cursor-not-allowed ${
+                    selectedRating === rating
+                      ? 'bg-[#1a1a1a] scale-105 shadow-[0_0_12px_rgba(0,0,0,0.4)]'
+                      : selectedRating !== null
+                        ? 'bg-[#111] opacity-40 cursor-not-allowed'
+                        : 'bg-[#111] hover:bg-[#161616] cursor-pointer'
+                  }`}
                   style={{ borderColor: color, color }}
                 >
                   <span className="font-['Rajdhani'] font-bold text-lg mb-0.5">{label}</span>
-                  <span className="text-xs text-[#888]">{sub}</span>
+                  <span className="text-xs text-text-muted">{sub}</span>
                   <span className="text-[10px] text-[#555] mt-0.5 font-['IBM_Plex_Mono']">{hint}</span>
                 </button>
               ))}
               {isSubmitting && (
-                <div className="self-center ml-2 flex items-center gap-2 text-[#888] text-xs font-['Rajdhani'] animate-pulse">
+                <div className="self-center ml-2 flex items-center gap-2 text-text-muted text-xs font-['Rajdhani'] animate-pulse">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
                   Saving…
                 </div>
@@ -277,23 +333,45 @@ export function FlashcardSession({
             </div>
           </div>
 
+          {showRatingFeedback && selectedRating !== null && (
+            <div className="flex justify-center">
+              <button
+                onClick={() => {
+                  onGoNext()
+                  setTimeout(() => {
+                    setSelectedRating(null)
+                    setShowRatingFeedback(false)
+                  }, 250)
+                }}
+                className="flex items-center gap-2 px-8 py-3 rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest text-sm border-2 transition-all hover:opacity-80 bg-[#111]"
+                style={{
+                  borderColor: '#00FF41',
+                  color: '#00FF41',
+                  boxShadow: '0 0 12px rgba(0,255,65,0.2)'
+                }}
+              >
+                Next Card <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
           {/* Utility row — opacity toggle, no layout shift */}
           <div className="h-[40px] flex items-center justify-center gap-3 w-full">
             <div className={`flex items-center gap-3 transition-opacity duration-150 ${(isFlipped || (settings.writtenMode && writtenSubmitted)) && !isAutoplay ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
               <button onClick={onGoPrev} disabled={currentIndex === 0}
-                className="flex items-center gap-2 px-4 py-2 bg-[#111] border border-[#333] rounded text-[#888] font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[#222] hover:border-[#555] transition-all disabled:opacity-30 disabled:cursor-default text-xs">
+                className="flex items-center gap-2 px-4 py-2 bg-[#111] border border-[#333] rounded text-text-muted font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-border-base hover:border-[#555] transition-all disabled:opacity-30 disabled:cursor-default text-xs">
                 <ArrowLeft className="w-3 h-3" /> Prev
               </button>
               <button onClick={onGetContext}
-                className="flex items-center gap-2 px-4 py-2 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-[#888] transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs">
+                className="flex items-center gap-2 px-4 py-2 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-text-muted transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs">
                 <Copy className="w-3.5 h-3.5" /> Get Context
               </button>
               <button onClick={() => onShowContext(!showContext)}
-                className="flex items-center gap-2 px-4 py-2 border border-[rgba(0,255,65,0.3)] rounded text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41] transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs">
+                className="flex items-center gap-2 px-4 py-2 border border-[rgba(0,255,65,0.3)] rounded text-accent hover:bg-[rgba(0,255,65,0.08)] hover:border-accent transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs">
                 <Sparkles className="w-3.5 h-3.5" /> Explain
               </button>
               <button onClick={onGoNext} disabled={currentIndex === sessionCards.length - 1}
-                className="flex items-center gap-2 px-4 py-2 bg-[#111] border border-[#333] rounded text-[#888] font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[#222] hover:border-[#555] transition-all disabled:opacity-30 disabled:cursor-default text-xs">
+                className="flex items-center gap-2 px-4 py-2 bg-[#111] border border-[#333] rounded text-text-muted font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-border-base hover:border-[#555] transition-all disabled:opacity-30 disabled:cursor-default text-xs">
                 Skip <ArrowRight className="w-3 h-3" />
               </button>
             </div>
@@ -320,7 +398,7 @@ export function FlashcardSession({
             onClick={() => onZoomImage(null)}
           >
             <button
-              className="absolute top-6 right-6 text-[#888] hover:text-[#00FF41] transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-[#00FF41]"
+              className="absolute top-6 right-6 text-text-muted hover:text-accent transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-accent"
               onClick={() => onZoomImage(null)}
               title="Close"
             >
@@ -340,7 +418,7 @@ export function FlashcardSession({
 
       {/* Clipboard toast */}
       {showToast && (
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[300] bg-[#1a1a1a] border border-[#333] text-[#E8E8E8] text-xs font-['Rajdhani'] uppercase tracking-widest px-5 py-3 rounded-lg shadow-2xl whitespace-nowrap">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[300] bg-surface border border-[#333] text-text-primary text-xs font-['Rajdhani'] uppercase tracking-widest px-5 py-3 rounded-lg shadow-2xl whitespace-nowrap">
           Context copied — paste into Gemini, ChatGPT, or Claude
         </div>
       )}

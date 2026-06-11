@@ -9,9 +9,9 @@ export default function TOSChecklist() {
         <header className="mb-8 flex flex-col items-center justify-center border-b border-[var(--bg-card)] pb-6 pt-4 shrink-0">
           <div className="flex flex-col items-center text-center px-4 gap-3">
             <div className="flex items-center gap-4">
-              <ClipboardList className="text-[#00FF41] shrink-0" size={36} />
+              <ClipboardList className="text-accent shrink-0" size={36} />
               <h1 className="font-['Orbitron'] text-4xl font-bold text-[var(--text-primary)] tracking-wider m-0">
-                REVIEW <span className="text-[#00FF41]">CHECKLIST</span>
+                REVIEW <span className="text-accent">CHECKLIST</span>
               </h1>
             </div>
 

@@ -37,10 +37,10 @@ export interface FlashcardEdit {
 }
 
 const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-[#888] mb-1 block">{children}</span>
+  <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-text-muted mb-1 block">{children}</span>
 )
 
-const inputCls = "w-full bg-[#0D0D0D] border border-[#2a2a2a] rounded px-3 py-2 text-[#E8E8E8] font-['IBM_Plex_Mono'] text-sm outline-none focus:border-[#00FF41] transition-colors placeholder-[#555]"
+const inputCls = "w-full bg-engine-black border border-border-subtle rounded px-3 py-2 text-text-primary font-['IBM_Plex_Mono'] text-sm outline-none focus:border-accent transition-colors placeholder-[#555]"
 const textareaCls = `${inputCls} resize-none leading-relaxed`
 
 interface MathInputFieldProps {
@@ -163,13 +163,13 @@ const MathInputField: React.FC<MathInputFieldProps> = ({
           />
           {value.trim().length > 0 && (
             <div className="bg-[var(--bg-elevated)] border border-[rgba(0,255,65,0.1)] rounded-lg p-3">
-              <div className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-[#888] mb-1">Preview</div>
+              <div className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-text-muted mb-1">Preview</div>
               {(() => {
                 try {
                   const rendered = renderMath(value)
-                  return <div className="text-[#E8E8E8]" dangerouslySetInnerHTML={{ __html: rendered }} />
+                  return <div className="text-text-primary" dangerouslySetInnerHTML={{ __html: rendered }} />
                 } catch {
-                  return <code className="text-[#E8E8E8] break-all">{value}</code>
+                  return <code className="text-text-primary break-all">{value}</code>
                 }
               })()}
             </div>
@@ -259,7 +259,7 @@ export const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; 
                 </button>
               </div>
             ) : (
-              <label className="cursor-pointer text-[#888] hover:text-[#00FF41] transition-colors" title="Add Image">
+              <label className="cursor-pointer text-text-muted hover:text-accent transition-colors" title="Add Image">
                 <ImageIcon size={16} />
                 <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
               </label>
@@ -304,7 +304,7 @@ export const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; 
           <button
             type="button"
             onClick={() => setShowSolution(true)}
-            className="text-[11px] font-['Rajdhani'] uppercase tracking-widest text-[#888] hover:text-[#00FF41] transition-colors font-bold"
+            className="text-[11px] font-['Rajdhani'] uppercase tracking-widest text-text-muted hover:text-accent transition-colors font-bold"
           >
             + Add Solution
           </button>
@@ -331,7 +331,7 @@ export const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; 
                   </button>
                 </div>
               ) : (
-                <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#888] rounded transition-colors bg-[#0a0a0a]">
+                <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#333] hover:border-accent hover:text-accent text-text-muted rounded transition-colors bg-[#0a0a0a]">
                   <ImageIcon size={24} />
                   <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest mt-2 font-bold text-center leading-tight">Add<br />Image</span>
                   <input type="file" accept="image/*" className="hidden" onChange={handleSolutionImageUpload} />
@@ -388,7 +388,7 @@ export const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: Flashc
                 </button>
               </div>
             ) : (
-              <label className="cursor-pointer text-[#888] hover:text-[#00FF41] transition-colors" title="Add Image">
+              <label className="cursor-pointer text-text-muted hover:text-accent transition-colors" title="Add Image">
                 <ImageIcon size={16} />
                 <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
               </label>

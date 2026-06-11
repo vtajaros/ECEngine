@@ -137,6 +137,12 @@ We have recently refactored the UI and added highly requested functional capabil
     * Resolved a navigation locking issue where `useBlocker` would get stuck in a 'blocked' state when a user prematurely exits a session. Blocker resets are now synchronous and atomic across `FlashcardViewer`, `Formulas`, and `FlashcardStudy`.
 13. **Asynchronous File I/O Optimization**:
     * Replaced all synchronous file system calls (`fs.writeFileSync`, `fs.copyFileSync`, `fs.readFileSync`) within `ipcMain.handle` boundaries across `db.ipc.ts`, `config.ipc.ts`, `file.ipc.ts`, and `print.ipc.ts` with their `fs/promises` async equivalents. This prevents blocking the main Electron process thread during large database backups and JSON file exports.
+14. **Component Decomposition (FlashcardLearn)**:
+    * Decomposed the massive 1,500+ line `FlashcardLearn.tsx` into modular components (`FlashcardSession`, `FlashcardDeckBrowser`, `StudyCard`, `AdvancedFiltersPopover`, `DeckCard`).
+    * Reduced the main file to 821 lines, acting strictly as a state orchestrator rather than a monolithic render engine.
+15. **Tailwind Token Unification**:
+    * Unified hardcoded hex colors across 49 files and 1,127 instances into a standardized semantic token system in `tailwind.config.ts`.
+    * Introduced tokens like `surface`, `surface-2`, `border-base`, `border-subtle`, `text-primary`, `text-muted`, `accent`, `warn`, and `danger` for a consistent theme implementation while preserving intentional component-specific residuals.
 
 ---
 

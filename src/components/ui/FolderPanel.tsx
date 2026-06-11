@@ -286,7 +286,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                 <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-4 tracking-widest uppercase">
                   DELETE FOLDER?
                 </h3>
-                <p className="text-[#888] font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
+                <p className="text-text-muted font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
                   Are you absolutely sure you want to delete{' '}
                   <strong className="text-white">{folderToDelete}</strong>?{' '}
                   All decks inside will be moved to Uncategorized.
@@ -303,7 +303,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                   </button>
                   <button
                     onClick={() => setFolderToDelete(null)}
-                    className="w-full py-4 bg-[#1A1A1A] border border-[#333] hover:border-[#555] text-[#888] hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
+                    className="w-full py-4 bg-surface border border-[#333] hover:border-[#555] text-text-muted hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
                   >
                     CANCEL
                   </button>

@@ -146,7 +146,7 @@ export default function Settings() {
   const sections = [
     {
       title: 'Data & Sync',
-      icon: <Database size={20} className="text-[#00FF41]" />,
+      icon: <Database size={20} className="text-accent" />,
       options: [
         {
           label: 'Show Formula Bank',
@@ -165,14 +165,14 @@ export default function Settings() {
   ]
 
   return (
-    <div className="h-full bg-[#0D0D0D] px-8 pb-8 pt-6 lg:px-12 lg:pb-12 lg:pt-6 overflow-y-auto show-scrollbar w-full relative">
+    <div className="h-full bg-engine-black px-8 pb-8 pt-6 lg:px-12 lg:pb-12 lg:pt-6 overflow-y-auto show-scrollbar w-full relative">
       <div className="max-w-3xl mx-auto">
         <header className="mb-12 flex flex-col items-center text-center gap-2">
-          <h1 className="font-['Orbitron'] text-4xl font-bold text-[#E8E8E8] tracking-wider flex items-center justify-center">
-            <SettingsIcon className="text-[#00FF41] mr-4" size={36} />
+          <h1 className="font-['Orbitron'] text-4xl font-bold text-text-primary tracking-wider flex items-center justify-center">
+            <SettingsIcon className="text-accent mr-4" size={36} />
             SETTINGS
           </h1>
-          <p className="text-[#888888] font-['Rajdhani'] text-lg uppercase tracking-widest mt-2">
+          <p className="text-text-muted font-['Rajdhani'] text-lg uppercase tracking-widest mt-2">
             MANAGE YOUR AI INTEGRATION, APPLICATION BEHAVIOR, AND FLASHCARD DATA
           </p>
         </header>
@@ -180,16 +180,16 @@ export default function Settings() {
         <div className="space-y-12">
           {/* AI Integration Section */}
           <section>
-            <h2 className="font-['Rajdhani'] font-bold text-xl text-[#E8E8E8] mb-6 uppercase tracking-wider flex items-center border-b border-[#161616] pb-4">
-              <Shield size={20} className="text-[#00FF41]" />
+            <h2 className="font-['Rajdhani'] font-bold text-xl text-text-primary mb-6 uppercase tracking-wider flex items-center border-b border-surface-2 pb-4">
+              <Shield size={20} className="text-accent" />
               <span className="ml-3">AI Integration</span>
             </h2>
-            <div className="bg-[#111111] p-6 lg:p-8 rounded-lg border border-[#161616] shadow-lg space-y-4">
+            <div className="bg-[#111111] p-6 lg:p-8 rounded-lg border border-surface-2 shadow-lg space-y-4">
               <div className="flex flex-col gap-2">
                 <label className="font-['IBM_Plex_Mono'] text-[var(--text-primary)] text-sm">Groq API Key</label>
 
                 {/* Status badge */}
-                <div className="flex items-center gap-2 bg-[#161616] border border-[#222] rounded px-4 py-3">
+                <div className="flex items-center gap-2 bg-surface-2 border border-border-base rounded px-4 py-3">
                   {apiKeyConfigured ? (
                     <>
                       <CheckCircle size={16} className="text-[var(--accent-primary)] shrink-0" />
@@ -210,7 +210,7 @@ export default function Settings() {
                     placeholder={apiKeyConfigured ? 'Enter new key to replace…' : 'Enter your Groq API key…'}
                     value={apiKeyInput}
                     onChange={(e) => setApiKeyInput(e.target.value)}
-                    className="flex-1 bg-[#161616] border border-[#222] focus:border-[var(--accent-primary)] rounded px-4 py-2 text-[var(--text-primary)] outline-none font-['IBM_Plex_Mono'] transition-colors"
+                    className="flex-1 bg-surface-2 border border-border-base focus:border-[var(--accent-primary)] rounded px-4 py-2 text-[var(--text-primary)] outline-none font-['IBM_Plex_Mono'] transition-colors"
                   />
                   <button
                     onClick={handleSaveApiKey}
@@ -230,14 +230,14 @@ export default function Settings() {
 
           {/* Sound & Feedback Section */}
           <section>
-            <h2 className="font-['Rajdhani'] font-bold text-xl text-[#E8E8E8] mb-6 uppercase tracking-wider flex items-center border-b border-[#161616] pb-4">
-              <Bell size={20} className="text-[#00FF41]" />
+            <h2 className="font-['Rajdhani'] font-bold text-xl text-text-primary mb-6 uppercase tracking-wider flex items-center border-b border-surface-2 pb-4">
+              <Bell size={20} className="text-accent" />
               <span className="ml-3">Sound & Feedback</span>
             </h2>
-            <div className="bg-[#111111] p-6 lg:p-8 rounded-lg border border-[#161616] shadow-lg space-y-6">
+            <div className="bg-[#111111] p-6 lg:p-8 rounded-lg border border-surface-2 shadow-lg space-y-6">
               <div className="flex flex-row items-center justify-between gap-4">
                 <div className="flex flex-col gap-1">
-                  <span className="font-['IBM_Plex_Mono'] text-[#E8E8E8] text-sm md:text-base">
+                  <span className="font-['IBM_Plex_Mono'] text-text-primary text-sm md:text-base">
                     Reading Voice
                   </span>
                   <span className="font-['Rajdhani'] text-[#999] text-xs uppercase tracking-widest text-left">
@@ -253,7 +253,7 @@ export default function Settings() {
                     localStorage.setItem('ecengine:tts:voice', e.target.value)
                   }}
                   disabled={availableVoices.length === 0}
-                  className="bg-[#161616] border border-[#222] focus:border-[#00FF41] rounded px-4 py-2 text-sm text-[#E8E8E8] outline-none font-['Rajdhani'] uppercase tracking-wider max-w-[220px] disabled:opacity-40"
+                  className="bg-surface-2 border border-border-base focus:border-accent rounded px-4 py-2 text-sm text-text-primary outline-none font-['Rajdhani'] uppercase tracking-wider max-w-[220px] disabled:opacity-40"
                 >
                   <option value="">System Default</option>
                   {availableVoices.map(v => (
@@ -263,9 +263,9 @@ export default function Settings() {
                   ))}
                 </select>
               </div>
-              <div className="border-t border-[#161616] pt-6 flex flex-row items-center justify-between gap-4">
+              <div className="border-t border-surface-2 pt-6 flex flex-row items-center justify-between gap-4">
                 <div className="flex flex-col gap-1">
-                  <span className="font-['IBM_Plex_Mono'] text-[#E8E8E8] text-sm md:text-base">
+                  <span className="font-['IBM_Plex_Mono'] text-text-primary text-sm md:text-base">
                     Disable Faah Sound Meme
                   </span>
                   <span className="font-['Rajdhani'] text-[#999] text-xs uppercase tracking-widest">
@@ -279,12 +279,12 @@ export default function Settings() {
                     setCustomWrongSoundEnabled(next)
                   }}
                   className={`w-14 h-7 rounded-full p-1 transition-colors focus:outline-none relative shadow-inner ${!customWrongSound
-                    ? 'bg-[rgba(0,255,65,0.2)] border border-[#00FF41]'
-                    : 'bg-[#161616] border border-[#222]'
+                    ? 'bg-[rgba(0,255,65,0.2)] border border-accent'
+                    : 'bg-surface-2 border border-border-base'
                     }`}
                 >
                   <span className={`block w-5 h-5 rounded-full shadow-md transform transition-transform ${!customWrongSound
-                    ? 'bg-[#00FF41] translate-x-7 shadow-[0_0_8px_rgba(0,255,65,0.8)]'
+                    ? 'bg-accent translate-x-7 shadow-[0_0_8px_rgba(0,255,65,0.8)]'
                     : 'bg-[#555] translate-x-0'
                     }`} />
                 </button>
@@ -294,7 +294,7 @@ export default function Settings() {
 
           {sections.map((section, idx) => (
             <section key={idx}>
-              <h2 className="font-['Rajdhani'] font-bold text-xl text-[#E8E8E8] mb-6 uppercase tracking-wider flex items-center justify-between border-b border-[#161616] pb-4">
+              <h2 className="font-['Rajdhani'] font-bold text-xl text-text-primary mb-6 uppercase tracking-wider flex items-center justify-between border-b border-surface-2 pb-4">
                 <div className="flex items-center">
                   {section.icon}
                   <span className="ml-3">{section.title}</span>
@@ -304,28 +304,28 @@ export default function Settings() {
                     <span className="text-[10px] text-[#666] tracking-widest uppercase font-bold">Unlock Advanced</span>
                     <button
                       onClick={() => setAdvancedSyncEnabled(!advancedSyncEnabled)}
-                      className={`w-10 h-5 rounded-full p-0.5 transition-colors ${advancedSyncEnabled ? 'bg-[rgba(255,51,51,0.2)] border border-[#FF3333]' : 'bg-[#161616] border border-[#222]'} focus:outline-none relative shadow-inner flex items-center`}
+                      className={`w-10 h-5 rounded-full p-0.5 transition-colors ${advancedSyncEnabled ? 'bg-[rgba(255,51,51,0.2)] border border-danger' : 'bg-surface-2 border border-border-base'} focus:outline-none relative shadow-inner flex items-center`}
                     >
-                      <span className={`block w-3.5 h-3.5 rounded-full shadow-md transform transition-transform ${advancedSyncEnabled ? 'bg-[#FF3333] translate-x-5 shadow-[0_0_8px_rgba(255,51,51,0.8)]' : 'bg-[#555] translate-x-0'}`} />
+                      <span className={`block w-3.5 h-3.5 rounded-full shadow-md transform transition-transform ${advancedSyncEnabled ? 'bg-danger translate-x-5 shadow-[0_0_8px_rgba(255,51,51,0.8)]' : 'bg-[#555] translate-x-0'}`} />
                     </button>
                   </div>
                 )}
               </h2>
 
-              <div className="bg-[#111111] p-6 lg:p-8 rounded-lg border border-[#161616] shadow-lg space-y-8">
+              <div className="bg-[#111111] p-6 lg:p-8 rounded-lg border border-surface-2 shadow-lg space-y-8">
                 {section.options.map((opt, idy) => {
                   const isAdvanced = (opt as any).advanced;
                   const isDisabled = isAdvanced && section.title === 'Data & Sync' && !advancedSyncEnabled;
 
                   return (
                     <div key={idy} className={`flex flex-row items-center justify-between gap-4 transition-all duration-300 ${isDisabled ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
-                      <div className="font-['IBM_Plex_Mono'] text-[#E8E8E8] text-sm md:text-base">
+                      <div className="font-['IBM_Plex_Mono'] text-text-primary text-sm md:text-base">
                         {opt.label}
                       </div>
 
                       {opt.type === 'toggle' && (
-                        <button className={`w-14 h-7 rounded-full p-1 transition-colors ${opt.current ? 'bg-[rgba(0,255,65,0.2)] border border-[#00FF41]' : 'bg-[#161616] border border-[#222]'} focus:outline-none relative shadow-inner`}>
-                          <span className={`block w-5 h-5 rounded-full shadow-md transform transition-transform ${opt.current ? 'bg-[#00FF41] translate-x-7 shadow-[0_0_8px_rgba(0,255,65,0.8)]' : 'bg-[#555] translate-x-0'}`} />
+                        <button className={`w-14 h-7 rounded-full p-1 transition-colors ${opt.current ? 'bg-[rgba(0,255,65,0.2)] border border-accent' : 'bg-surface-2 border border-border-base'} focus:outline-none relative shadow-inner`}>
+                          <span className={`block w-5 h-5 rounded-full shadow-md transform transition-transform ${opt.current ? 'bg-accent translate-x-7 shadow-[0_0_8px_rgba(0,255,65,0.8)]' : 'bg-[#555] translate-x-0'}`} />
                         </button>
                       )}
 
@@ -337,14 +337,14 @@ export default function Settings() {
                             localStorage.setItem('ecengine:show-formula-bank', String(next))
                             window.dispatchEvent(new Event('ecengine:settings-changed'))
                           }}
-                          className={`w-14 h-7 rounded-full p-1 transition-colors ${showFormulaBank ? 'bg-[rgba(0,255,65,0.2)] border border-[#00FF41]' : 'bg-[#161616] border border-[#222]'} focus:outline-none relative shadow-inner`}
+                          className={`w-14 h-7 rounded-full p-1 transition-colors ${showFormulaBank ? 'bg-[rgba(0,255,65,0.2)] border border-accent' : 'bg-surface-2 border border-border-base'} focus:outline-none relative shadow-inner`}
                         >
-                          <span className={`block w-5 h-5 rounded-full shadow-md transform transition-transform ${showFormulaBank ? 'bg-[#00FF41] translate-x-7 shadow-[0_0_8px_rgba(0,255,65,0.8)]' : 'bg-[#555] translate-x-0'}`} />
+                          <span className={`block w-5 h-5 rounded-full shadow-md transform transition-transform ${showFormulaBank ? 'bg-accent translate-x-7 shadow-[0_0_8px_rgba(0,255,65,0.8)]' : 'bg-[#555] translate-x-0'}`} />
                         </button>
                       )}
 
                       {opt.type === 'select' && (
-                        <select className="bg-[#161616] border border-[#222] rounded px-4 py-2 text-sm text-[#E8E8E8] focus:border-[#00FF41] outline-none font-['Rajdhani'] uppercase tracking-wider">
+                        <select className="bg-surface-2 border border-border-base rounded px-4 py-2 text-sm text-text-primary focus:border-accent outline-none font-['Rajdhani'] uppercase tracking-wider">
                           <option>{opt.current}</option>
                         </select>
                       )}
@@ -363,8 +363,8 @@ export default function Settings() {
                             }
                           }}
                           className={`px-4 py-2 border rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all ${(opt as any).danger
-                            ? 'border-[#FF3333] text-[#FF3333] hover:bg-[rgba(255,51,51,0.1)] hover:shadow-[0_0_10px_rgba(255,51,51,0.5)]'
-                            : 'border-[#00FF41] text-[#00FF41] hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)]'
+                            ? 'border-danger text-danger hover:bg-[rgba(255,51,51,0.1)] hover:shadow-[0_0_10px_rgba(255,51,51,0.5)]'
+                            : 'border-accent text-accent hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)]'
                             }`}>
                           {(opt as any).buttonText}
                         </button>
@@ -385,10 +385,10 @@ export default function Settings() {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-[#161616] border border-[#00FF41] shadow-[0_0_15px_rgba(0,255,65,0.2)] px-6 py-3 rounded-full flex items-center gap-3 z-[100]"
+            className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-surface-2 border border-accent shadow-[0_0_15px_rgba(0,255,65,0.2)] px-6 py-3 rounded-full flex items-center gap-3 z-[100]"
           >
-            <CheckCircle className="w-5 h-5 text-[#00FF41]" />
-            <span className="text-[#E8E8E8] font-['Rajdhani'] font-bold tracking-widest uppercase text-sm">
+            <CheckCircle className="w-5 h-5 text-accent" />
+            <span className="text-text-primary font-['Rajdhani'] font-bold tracking-widest uppercase text-sm">
               {toastMessage}
             </span>
           </motion.div>
@@ -420,7 +420,7 @@ export default function Settings() {
                 <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-4 tracking-widest uppercase">
                   Reset Mastery Progress
                 </h3>
-                <p className="text-[#888] font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
+                <p className="text-text-muted font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
                   Are you sure you want to reset all mastery and progress data across all decks? This will clear your studied status but keep your decks intact.
                 </p>
                 <div className="flex flex-col gap-3 w-full">
@@ -432,7 +432,7 @@ export default function Settings() {
                   </button>
                   <button
                     onClick={() => setResetResetMenuOpen(false)}
-                    className="w-full py-4 bg-[#1A1A1A] border border-[#333] hover:border-[#555] text-[#888] hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
+                    className="w-full py-4 bg-surface border border-[#333] hover:border-[#555] text-text-muted hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
                   >
                     Cancel
                   </button>
@@ -474,20 +474,20 @@ export default function Settings() {
                 <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-4 tracking-widest uppercase">
                   Clear All Decks
                 </h3>
-                <p className="text-[#888] font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
+                <p className="text-text-muted font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
                   This will permanently delete <strong className="text-white">ALL decks, cards, and progress</strong> from the database. This cannot be undone.
                 </p>
                 <div className="flex flex-col gap-3 w-full">
                   <button
                     onClick={handleClearAllDecks}
                     disabled={deleteCountdown > 0}
-                    className="w-full py-4 bg-[#FF003C] hover:bg-[#D00030] disabled:bg-[#1A1A1A] disabled:text-[#444] disabled:cursor-not-allowed text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,0,60,0.2)] hover:shadow-[0_0_25px_rgba(255,0,60,0.4)]"
+                    className="w-full py-4 bg-[#FF003C] hover:bg-[#D00030] disabled:bg-surface disabled:text-[#444] disabled:cursor-not-allowed text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,0,60,0.2)] hover:shadow-[0_0_25px_rgba(255,0,60,0.4)]"
                   >
                     Confirm Delete
                   </button>
                   <button
                     onClick={() => setShowClearModal(false)}
-                    className="w-full py-4 bg-[#1A1A1A] border border-[#333] hover:border-[#555] text-[#888] hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
+                    className="w-full py-4 bg-surface border border-[#333] hover:border-[#555] text-text-muted hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
                   >
                     Cancel
                   </button>

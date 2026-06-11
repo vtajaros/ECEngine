@@ -92,8 +92,8 @@ const TestQuestionCard = memo(({
       onClick={() => onScrollTo(index)}
       className={`flex-shrink-0 bg-[var(--bg-card)] border rounded-xl overflow-hidden shadow-lg transition-colors duration-300 relative cursor-pointer scroll-mt-20
         ${showFeedback
-          ? (isCorrect ? 'border-[#00FF41]/30 bg-[#00FF41]/5' : (isAnswered ? 'border-[#FF003C]/30 bg-[#FF003C]/5' : 'border-[#333]'))
-          : (isAnswered ? 'border-[#555]' : 'border-[#222]')
+          ? (isCorrect ? 'border-accent/30 bg-accent/5' : (isAnswered ? 'border-[#FF003C]/30 bg-[#FF003C]/5' : 'border-[#333]'))
+          : (isAnswered ? 'border-[#555]' : 'border-border-base')
         }`}
     >
       <div className="p-6 border-b border-[#333] flex items-start gap-4">
@@ -113,7 +113,7 @@ const TestQuestionCard = memo(({
           </h3>
 
           {mcq.imagePath && (
-            <div className="mt-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-[#00FF41] transition-all">
+            <div className="mt-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-accent transition-all">
               <img
                 src={`ece-app://${mcq.imagePath}`}
                 alt="Question diagram"
@@ -128,7 +128,7 @@ const TestQuestionCard = memo(({
           onClick={(e) => { e.stopPropagation(); onToggleBookmark(card.id) }}
           className={`p-2 rounded transition-colors ${isBookmarked
             ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/10'
-            : 'text-[#555] hover:bg-[#222] hover:text-[#888]'
+            : 'text-[#555] hover:bg-border-base hover:text-text-muted'
             }`}
           title={isBookmarked ? 'Remove Bookmark' : 'Bookmark Question'}
         >
@@ -143,22 +143,22 @@ const TestQuestionCard = memo(({
 
           const isSelected = userAnswer === cIdx
 
-          let stateStyles = 'border-[#333] hover:border-[#00FF41] hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] bg-[#111] text-[#E8E8E8]'
+          let stateStyles = 'border-[#333] hover:border-accent hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] bg-[#111] text-text-primary'
           let iconElement: React.ReactNode = null
           let prefixStyles = 'text-[#666]'
 
           if (showFeedback) {
             const isChoiceCorrect = cIdx === mcq.answer
             if (isChoiceCorrect) {
-              stateStyles = 'border-[#00FF41] bg-[rgba(0,255,65,0.1)] text-[#00FF41] shadow-[0_0_15px_rgba(0,255,65,0.15)]'
-              iconElement = <div className="text-[#00FF41] font-bold">✓</div>
-              prefixStyles = 'text-[#00FF41] font-bold'
+              stateStyles = 'border-accent bg-[rgba(0,255,65,0.1)] text-accent shadow-[0_0_15px_rgba(0,255,65,0.15)]'
+              iconElement = <div className="text-accent font-bold">✓</div>
+              prefixStyles = 'text-accent font-bold'
             } else if (isSelected && !isChoiceCorrect) {
               stateStyles = 'border-[#FF003C] bg-[rgba(255,0,60,0.1)] text-[#FF003C]'
               iconElement = <div className="text-[#FF003C] font-bold">✗</div>
               prefixStyles = 'text-[#FF003C] font-bold'
             } else {
-              stateStyles = 'border-[#222] bg-[#111] text-[#666] opacity-60'
+              stateStyles = 'border-border-base bg-[#111] text-[#666] opacity-60'
               prefixStyles = 'text-[#555]'
             }
           } else {
@@ -199,8 +199,8 @@ const TestQuestionCard = memo(({
 
       {showFeedback && (mcq.explanation || mcq.solutionImagePath) && (
         <div className="px-6 pb-6 pt-2">
-          <div className="p-4 bg-[#111] rounded border border-[#222]">
-            <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-[#888] mb-1 block">Solution</span>
+          <div className="p-4 bg-[#111] rounded border border-border-base">
+            <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-text-muted mb-1 block">Solution</span>
             {mcq.explanation && (
               <p
                 className="text-sm text-[#CCC] font-['Rajdhani'] font-medium whitespace-pre-wrap leading-relaxed"
@@ -224,7 +224,7 @@ const TestQuestionCard = memo(({
           <Tooltip content="Copy context to paste into GPT/Gemini/Claude for a better AI explanation.">
             <button
               onClick={(e) => { e.stopPropagation(); onGetContext(mcq) }}
-              className="flex items-center gap-1.5 px-3 py-1.5 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-[#888] transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem]"
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-text-muted transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem]"
             >
               <Copy size={12} />
               Get Context
@@ -235,8 +235,8 @@ const TestQuestionCard = memo(({
             <button
               onClick={(e) => { e.stopPropagation(); onToggleExplanation(index) }}
               className={`flex items-center gap-1.5 px-3 py-1.5 border rounded transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem] ${openExplanationId === index
-                  ? 'border-[#00FF41] bg-[rgba(0,255,65,0.08)] text-[#00FF41]'
-                  : 'border-[rgba(0,255,65,0.3)] text-[#00FF41] hover:bg-[rgba(0,255,65,0.08)] hover:border-[#00FF41]'
+                  ? 'border-accent bg-[rgba(0,255,65,0.08)] text-accent'
+                  : 'border-[rgba(0,255,65,0.3)] text-accent hover:bg-[rgba(0,255,65,0.08)] hover:border-accent'
                 }`}
             >
               <Sparkles size={12} />
@@ -532,7 +532,7 @@ Please explain:
       <div className="flex items-center gap-6 flex-1 min-w-0">
         <button
           onClick={() => { if (viewState === 'test') setShowExitConfirm(true); else handleExit() }}
-          className="text-[#888] hover:text-[var(--text-primary)] transition-colors flex items-center justify-center p-2 rounded hover:bg-[#222] shrink-0"
+          className="text-text-muted hover:text-[var(--text-primary)] transition-colors flex items-center justify-center p-2 rounded hover:bg-border-base shrink-0"
           title="Exit Test"
         >
           <X className="w-5 h-5" />
@@ -541,7 +541,7 @@ Please explain:
           <span className="text-[var(--text-primary)] font-['Rajdhani'] tracking-widest font-bold text-2xl truncate uppercase flex items-center min-w-0">
             {title ? (
               <>
-                <span className="text-[#888] mr-2 shrink-0">TEST:</span>
+                <span className="text-text-muted mr-2 shrink-0">TEST:</span>
                 <span className="text-[var(--accent-primary)] truncate">{title}</span>
               </>
             ) : 'Test Mode'}
@@ -554,7 +554,7 @@ Please explain:
         {settings.instantChecking && (
           <button
             onClick={toggleMute}
-            className={`p-2 rounded border transition-colors ${isMuted ? 'border-[#FF3333] text-[#FF3333] bg-[rgba(255,51,51,0.08)]' : 'border-[#333] text-[#888] hover:text-white hover:border-[#666]'}`}
+            className={`p-2 rounded border transition-colors ${isMuted ? 'border-danger text-danger bg-[rgba(255,51,51,0.08)]' : 'border-[#333] text-text-muted hover:text-white hover:border-[#666]'}`}
             title={isMuted ? 'Unmute sounds' : 'Mute sounds'}
           >
             {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
@@ -575,7 +575,7 @@ Please explain:
         ) : (
           <button
             onClick={handleExit}
-            className="bg-[#222] text-[#E8E8E8] px-4 py-2 text-base rounded font-['Rajdhani'] font-bold tracking-widest uppercase hover:bg-[#333] border border-[#444] transition-colors whitespace-nowrap"
+            className="bg-border-base text-text-primary px-4 py-2 text-base rounded font-['Rajdhani'] font-bold tracking-widest uppercase hover:bg-[#333] border border-[#444] transition-colors whitespace-nowrap"
           >
             Finish Review
           </button>
@@ -609,40 +609,40 @@ Please explain:
             animate={{ scale: 1, opacity: 1 }}
             className="bg-[var(--bg-card)] border border-[#333] rounded-xl p-10 max-w-2xl w-full flex flex-col items-center text-center shadow-2xl relative overflow-hidden"
           >
-            <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 blur-[100px] opacity-20 pointer-events-none transition-colors duration-1000 ${isPassed ? 'bg-[#00FF41]' : 'bg-[#FF003C]'}`} />
+            <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-full h-32 blur-[100px] opacity-20 pointer-events-none transition-colors duration-1000 ${isPassed ? 'bg-accent' : 'bg-[#FF003C]'}`} />
 
             <div className="z-10 flex flex-col items-center w-full">
-              <ClipboardCheck className={`w-16 h-16 mb-6 ${isPassed ? 'text-[#00FF41]' : 'text-[#FF003C]'}`} />
+              <ClipboardCheck className={`w-16 h-16 mb-6 ${isPassed ? 'text-accent' : 'text-[#FF003C]'}`} />
               <h2 className="text-3xl font-['Orbitron'] font-bold text-[var(--text-primary)] mb-1 uppercase tracking-wide">
                 Test Completed
               </h2>
               {title && (
-                <div className="text-[#00FF41] font-['Orbitron'] font-bold text-xl tracking-[0.2em] uppercase mb-4">
+                <div className="text-accent font-['Orbitron'] font-bold text-xl tracking-[0.2em] uppercase mb-4">
                   {title}
                 </div>
               )}
-              <p className="text-[#888] font-['Rajdhani'] text-lg tracking-widest mb-8">
+              <p className="text-text-muted font-['Rajdhani'] text-lg tracking-widest mb-8">
                 {isPassed ? 'Passed (≥ 75%)' : 'Failed (< 75%)'}
               </p>
 
-              <div className="flex items-center justify-center gap-12 w-full border-y border-[#222] py-8 mb-8 bg-[#161616] rounded-lg">
+              <div className="flex items-center justify-center gap-12 w-full border-y border-border-base py-8 mb-8 bg-surface-2 rounded-lg">
                 <div className="flex flex-col items-center">
                   <span className="text-[var(--text-secondary)] text-sm font-['Rajdhani'] uppercase tracking-widest mb-1">Score</span>
-                  <span className={`text-5xl font-['Rajdhani'] font-bold ${isPassed ? 'text-[#00FF41]' : 'text-[#FF003C]'}`}>
+                  <span className={`text-5xl font-['Rajdhani'] font-bold ${isPassed ? 'text-accent' : 'text-[#FF003C]'}`}>
                     {percentage}%
                   </span>
                 </div>
                 <div className="w-px h-16 bg-[#333]"></div>
                 <div className="flex flex-col items-center">
                   <span className="text-[var(--text-secondary)] text-sm font-['Rajdhani'] uppercase tracking-widest mb-1">Correct</span>
-                  <span className="text-3xl font-['Rajdhani'] font-bold text-[#E8E8E8]">
-                    {score.correct} <span className="text-[#888] text-xl">/ {score.total}</span>
+                  <span className="text-3xl font-['Rajdhani'] font-bold text-text-primary">
+                    {score.correct} <span className="text-text-muted text-xl">/ {score.total}</span>
                   </span>
                 </div>
                 <div className="w-px h-16 bg-[#333]"></div>
                 <div className="flex flex-col items-center">
                   <span className="text-[var(--text-secondary)] text-sm font-['Rajdhani'] uppercase tracking-widest mb-1">Time</span>
-                  <span className="text-3xl font-['Rajdhani'] font-bold text-[#E8E8E8]">
+                  <span className="text-3xl font-['Rajdhani'] font-bold text-text-primary">
                     {formatTime(timeElapsed)}
                   </span>
                 </div>
@@ -661,7 +661,7 @@ Please explain:
                       setTimeElapsed(0)
                       setViewState('test')
                     }}
-                    className="flex-1 py-3 px-6 rounded bg-[#222] border border-[#333] hover:bg-[#333] hover:border-[#555] text-[var(--text-primary)] transition-all font-['Rajdhani'] font-bold tracking-widest uppercase flex items-center justify-center gap-2"
+                    className="flex-1 py-3 px-6 rounded bg-border-base border border-[#333] hover:bg-[#333] hover:border-[#555] text-[var(--text-primary)] transition-all font-['Rajdhani'] font-bold tracking-widest uppercase flex items-center justify-center gap-2"
                   >
                     <RefreshCw className="w-5 h-5" />
                     Retry Wrong Items
@@ -768,7 +768,7 @@ Please explain:
             </div>
 
             {testCards.length === 0 && (
-              <div className="text-center text-[#888] mt-20 font-['Rajdhani'] uppercase tracking-widest">
+              <div className="text-center text-text-muted mt-20 font-['Rajdhani'] uppercase tracking-widest">
                 No questions available for this test.
               </div>
             )}
@@ -792,17 +792,17 @@ Please explain:
               className="bg-[#111] border border-[#333] p-8 rounded-xl max-w-md w-full shadow-2xl"
             >
               <div className="flex flex-col items-center text-center">
-                <AlertTriangle className="w-16 h-16 text-[#FFB800] mb-4" />
+                <AlertTriangle className="w-16 h-16 text-warn mb-4" />
                 <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-2 tracking-widest uppercase">
                   Submit Test?
                 </h3>
 
                 {testCards.length - answeredCount > 0 ? (
-                  <p className="text-[#E8E8E8] font-['IBM_Plex_Mono'] mb-6">
-                    You still have <span className="text-[#FF3333] font-bold">{testCards.length - answeredCount}</span> unanswered questions. Are you sure you want to submit?
+                  <p className="text-text-primary font-['IBM_Plex_Mono'] mb-6">
+                    You still have <span className="text-danger font-bold">{testCards.length - answeredCount}</span> unanswered questions. Are you sure you want to submit?
                   </p>
                 ) : (
-                  <p className="text-[#E8E8E8] font-['IBM_Plex_Mono'] mb-6">
+                  <p className="text-text-primary font-['IBM_Plex_Mono'] mb-6">
                     You have answered all questions. Are you ready to submit and see your score?
                   </p>
                 )}
@@ -810,7 +810,7 @@ Please explain:
                 <div className="flex gap-4 w-full">
                   <button
                     onClick={() => setShowSubmitConfirm(false)}
-                    className="flex-1 py-3 bg-[#222] text-[#E8E8E8] rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[#333] transition-colors"
+                    className="flex-1 py-3 bg-border-base text-text-primary rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[#333] transition-colors"
                   >
                     Cancel
                   </button>
@@ -848,7 +848,7 @@ Please explain:
             onClick={() => setZoomedImage(null)}
           >
             <button
-              className="absolute top-6 right-6 text-[#888] hover:text-[#00FF41] transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-[#00FF41]"
+              className="absolute top-6 right-6 text-text-muted hover:text-accent transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-accent"
               onClick={() => setZoomedImage(null)}
               title="Close"
             >

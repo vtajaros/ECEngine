@@ -47,7 +47,7 @@ export const LeaveConfirmModal: React.FC<LeaveConfirmModalProps> = ({
                 Abort Session?
               </h3>
               
-              <p className="text-[#888] font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
+              <p className="text-text-muted font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
                 {message}
               </p>
 
@@ -60,7 +60,7 @@ export const LeaveConfirmModal: React.FC<LeaveConfirmModalProps> = ({
                 </button>
                 <button 
                   onClick={onCancel}
-                  className="w-full py-4 bg-[#1A1A1A] border border-[#333] hover:border-[#555] text-[#888] hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
+                  className="w-full py-4 bg-surface border border-[#333] hover:border-[#555] text-text-muted hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
                 >
                   Keep Studying
                 </button>

@@ -723,7 +723,7 @@ export default function LooksFamStudy() {
                   <button
                     onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                     className={`p-2 rounded-lg border transition-all ${showAdvancedFilters || filterTags.length > 0 || filterType !== 'all' || sortBy !== 'date' || sortOrder !== 'desc' || searchQuery
-                      ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
+                      ? 'bg-accent/10 border-accent text-accent'
                       : 'bg-[var(--bg-secondary)] border-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                       }`}
                   >
@@ -740,8 +740,8 @@ export default function LooksFamStudy() {
                         className="absolute left-0 mt-2 w-72 bg-[#111] border border-[#333] rounded-lg shadow-2xl p-4 z-50 flex flex-col gap-4"
                       >
                         <div className="flex justify-between items-center pb-2 border-b border-[#333]">
-                          <span className="font-['Rajdhani'] font-bold text-sm tracking-widest uppercase text-[#00FF41]">Filters & Sort</span>
-                          <button onClick={() => setShowAdvancedFilters(false)} className="text-[#888] hover:text-[#E8E8E8]">
+                          <span className="font-['Rajdhani'] font-bold text-sm tracking-widest uppercase text-accent">Filters & Sort</span>
+                          <button onClick={() => setShowAdvancedFilters(false)} className="text-text-muted hover:text-text-primary">
                             <X size={16} />
                           </button>
                         </div>
@@ -754,20 +754,20 @@ export default function LooksFamStudy() {
                             placeholder="Search decks..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-[#1A1A1A] border border-[#333] focus:border-[#00FF41] rounded-lg py-2 pl-9 pr-3 text-sm text-[#E8E8E8] placeholder-[#555] outline-none transition-colors font-['IBM_Plex_Mono']"
+                            className="w-full bg-surface border border-[#333] focus:border-accent rounded-lg py-2 pl-9 pr-3 text-sm text-text-primary placeholder-[#555] outline-none transition-colors font-['IBM_Plex_Mono']"
                           />
                         </div>
 
                         {/* Sort Selection */}
                         <div className="flex flex-col gap-2">
                           <div className="flex justify-between items-center">
-                            <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Sort By</label>
-                            <div className="flex bg-[#1A1A1A] rounded overflow-hidden border border-[#333]">
+                            <label className="text-xs font-['Rajdhani'] tracking-widest text-text-muted uppercase">Sort By</label>
+                            <div className="flex bg-surface rounded overflow-hidden border border-[#333]">
                               {(['asc', 'desc'] as const).map(order => (
                                 <button
                                   key={order}
                                   onClick={() => setSortOrder(order)}
-                                  className={`px-2 py-0.5 text-[10px] font-['Rajdhani'] uppercase tracking-widest transition-colors ${sortOrder === order ? 'bg-[#00FF41] text-black font-bold' : 'text-[#888] hover:text-[#E8E8E8]'}`}
+                                  className={`px-2 py-0.5 text-[10px] font-['Rajdhani'] uppercase tracking-widest transition-colors ${sortOrder === order ? 'bg-accent text-black font-bold' : 'text-text-muted hover:text-text-primary'}`}
                                 >
                                   {order}
                                 </button>
@@ -779,7 +779,7 @@ export default function LooksFamStudy() {
                               <button
                                 key={opt}
                                 onClick={() => setSortBy(opt)}
-                                className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${sortBy === opt ? 'bg-[#00FF41]/20 text-[#00FF41] font-bold' : 'bg-[#1A1A1A] text-[#888] hover:bg-[#222]'
+                                className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${sortBy === opt ? 'bg-accent/20 text-accent font-bold' : 'bg-surface text-text-muted hover:bg-border-base'
                                   }`}
                               >
                                 {opt}
@@ -790,13 +790,13 @@ export default function LooksFamStudy() {
 
                         {/* Type Filter */}
                         <div className="flex flex-col gap-2">
-                          <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Type</label>
+                          <label className="text-xs font-['Rajdhani'] tracking-widest text-text-muted uppercase">Type</label>
                           <div className="grid grid-cols-4 gap-1">
                             {(['all', 'mcq', 'flashcard', 'mixed'] as const).map(opt => (
                               <button
                                 key={opt}
                                 onClick={() => setFilterType(opt)}
-                                className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${filterType === opt ? 'bg-[#00FF41]/20 text-[#00FF41] font-bold' : 'bg-[#1A1A1A] text-[#888] hover:bg-[#222]'
+                                className={`text-xs py-1.5 rounded transition-colors uppercase font-['Rajdhani'] tracking-wider ${filterType === opt ? 'bg-accent/20 text-accent font-bold' : 'bg-surface text-text-muted hover:bg-border-base'
                                   }`}
                               >
                                 {opt === 'flashcard' ? 'FC' : opt}
@@ -808,7 +808,7 @@ export default function LooksFamStudy() {
                         {/* Tag Filters */}
                         {availableTags.length > 0 && (
                           <div className="flex flex-col gap-2">
-                            <label className="text-xs font-['Rajdhani'] tracking-widest text-[#888] uppercase">Tags (AND)</label>
+                            <label className="text-xs font-['Rajdhani'] tracking-widest text-text-muted uppercase">Tags (AND)</label>
                             <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1 custom-scrollbar">
                               {availableTags.map(tag => {
                                 const isActive = filterTags.includes(tag)
@@ -821,8 +821,8 @@ export default function LooksFamStudy() {
                                       )
                                     }}
                                     className={`flex items-center gap-1 px-2 py-1 rounded text-[10px] font-['Rajdhani'] uppercase tracking-wider border transition-all ${isActive
-                                      ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
-                                      : 'bg-[#1A1A1A] border-[#333] text-[#888] hover:border-[#555] hover:text-[#E8E8E8]'
+                                      ? 'bg-accent/10 border-accent text-accent'
+                                      : 'bg-surface border-[#333] text-text-muted hover:border-[#555] hover:text-text-primary'
                                       }`}
                                   >
                                     {tag}
@@ -921,7 +921,7 @@ export default function LooksFamStudy() {
                   {filteredAndSortedSets.map(set => (
                     <div
                       key={set.id}
-                      className="relative isolate group transition-all duration-300 border border-[#333] bg-[#1a1a1a] p-5 flex flex-col w-full min-h-[180px] justify-between hover:-translate-x-[6px] hover:-translate-y-[6px] rounded-xl before:absolute before:w-full before:h-full before:top-0 before:left-0 before:bg-[#1a1a1a] before:border before:border-[#333] before:rounded-xl before:translate-x-[6px] before:translate-y-[6px] before:z-[-1] before:transition-transform before:duration-300 group-hover:before:translate-x-[12px] group-hover:before:translate-y-[12px] after:absolute after:w-full after:h-full after:top-0 after:left-0 after:bg-[#1a1a1a] after:border after:border-[#333] after:rounded-xl after:translate-x-[12px] after:translate-y-[12px] after:z-[-2] after:transition-transform after:duration-300 group-hover:after:translate-x-[18px] group-hover:after:translate-y-[18px]"
+                      className="relative isolate group transition-all duration-300 border border-[#333] bg-surface p-5 flex flex-col w-full min-h-[180px] justify-between hover:-translate-x-[6px] hover:-translate-y-[6px] rounded-xl before:absolute before:w-full before:h-full before:top-0 before:left-0 before:bg-surface before:border before:border-[#333] before:rounded-xl before:translate-x-[6px] before:translate-y-[6px] before:z-[-1] before:transition-transform before:duration-300 group-hover:before:translate-x-[12px] group-hover:before:translate-y-[12px] after:absolute after:w-full after:h-full after:top-0 after:left-0 after:bg-surface after:border after:border-[#333] after:rounded-xl after:translate-x-[12px] after:translate-y-[12px] after:z-[-2] after:transition-transform after:duration-300 group-hover:after:translate-x-[18px] group-hover:after:translate-y-[18px]"
                     >
                       <div className="flex justify-between items-start gap-4">
                         {/* Left Column: Title & Tags */}
@@ -931,7 +931,7 @@ export default function LooksFamStudy() {
                             <span className={`w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] uppercase font-rajdhani font-bold tracking-widest text-[10px] shrink-0 ${getSubjectBadgeClasses(set.subject)}`}>
                               {set.subject}
                             </span>
-                            <h3 className="text-lg font-bold font-rajdhani tracking-wide text-[#E8E8E8] uppercase truncate flex-1">
+                            <h3 className="text-lg font-bold font-rajdhani tracking-wide text-text-primary uppercase truncate flex-1">
                               {set.title}
                             </h3>
                           </div>
@@ -954,7 +954,7 @@ export default function LooksFamStudy() {
                         {/* Right Column: Administrative Info */}
                         <div className="flex flex-col items-end gap-1.5 shrink-0">
                           {/* Items Tag */}
-                          <span className="w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] text-[#E8E8E8] font-rajdhani font-bold tracking-widest text-[10px] shrink-0 uppercase whitespace-nowrap">
+                          <span className="w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] text-text-primary font-rajdhani font-bold tracking-widest text-[10px] shrink-0 uppercase whitespace-nowrap">
                             {set.count} ITEMS
                           </span>
                           {/* Date String */}
@@ -978,13 +978,13 @@ export default function LooksFamStudy() {
                           <div className="w-32">
                             <div className="flex justify-between text-[10px] font-rajdhani tracking-widest mb-1 uppercase text-gray-500">
                               <span>MASTERY</span>
-                              <span className="text-[#00FF41] font-bold">{set.mastery}%</span>
+                              <span className="text-accent font-bold">{set.mastery}%</span>
                             </div>
                             <div className="w-full bg-[#111] h-1 rounded-full overflow-hidden">
                               <motion.div
                                 initial={{ width: 0 }}
                                 animate={{ width: `${set.mastery}%` }}
-                                className="h-full bg-[#00FF41] shadow-[0_0_8px_rgba(0,255,65,0.4)]"
+                                className="h-full bg-accent shadow-[0_0_8px_rgba(0,255,65,0.4)]"
                               />
                             </div>
                           </div>
@@ -993,7 +993,7 @@ export default function LooksFamStudy() {
                           <div className="flex items-center gap-2">
                             <button
                               onClick={(e) => { e.stopPropagation(); handleOpenLearn(set.id); }}
-                              className="py-2 px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                              className="py-2 px-3 bg-[#111] border border-[#333] hover:border-accent hover:text-accent text-text-primary rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
                               title="Learn this deck"
                               aria-label="Learn"
                             >
@@ -1003,7 +1003,7 @@ export default function LooksFamStudy() {
 
                             <button
                               onClick={(e) => { e.stopPropagation(); handleOpenTest(set.id); }}
-                              className="py-2 px-3 bg-[#111] border border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#E8E8E8] rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                              className="py-2 px-3 bg-[#111] border border-[#333] hover:border-accent hover:text-accent text-text-primary rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
                               title="Test this deck"
                               aria-label="Test"
                             >
@@ -1054,7 +1054,7 @@ export default function LooksFamStudy() {
                     Loading decks...
                   </div>
                 ) : filteredAndSortedSets.length === 0 ? (
-                  <div className="text-center py-20 text-[#888] font-rajdhani uppercase tracking-widest text-lg">
+                  <div className="text-center py-20 text-text-muted font-rajdhani uppercase tracking-widest text-lg">
                     No decks found{activeSubject !== 'ALL' ? ` for ${activeSubject}` : ''}. Import some from Add Decks.
                   </div>
                 ) : null}
@@ -1087,20 +1087,20 @@ export default function LooksFamStudy() {
                     <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-4 tracking-widest uppercase">
                       DELETE DECK?
                     </h3>
-                    <p className="text-[#888] font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
+                    <p className="text-text-muted font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
                       Are you absolutely sure you want to delete <strong className="text-white">{setToDelete.title}</strong>? This action cannot be undone and will permanently remove all {setToDelete.count} items in this set.
                     </p>
                     <div className="flex flex-col gap-3 w-full">
                       <button
                         onClick={handleConfirmDelete}
                         disabled={deleteCountdown > 0}
-                        className="w-full py-4 bg-[#FF003C] hover:bg-[#D00030] disabled:bg-[#1A1A1A] disabled:text-[#444] disabled:cursor-not-allowed text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,0,60,0.2)] hover:shadow-[0_0_25px_rgba(255,0,60,0.4)]"
+                        className="w-full py-4 bg-[#FF003C] hover:bg-[#D00030] disabled:bg-surface disabled:text-[#444] disabled:cursor-not-allowed text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,0,60,0.2)] hover:shadow-[0_0_25px_rgba(255,0,60,0.4)]"
                       >
                         Confirm Delete
                       </button>
                       <button
                         onClick={() => setSetToDelete(null)}
-                        className="w-full py-4 bg-[#1A1A1A] border border-[#333] hover:border-[#555] text-[#888] hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
+                        className="w-full py-4 bg-surface border border-[#333] hover:border-[#555] text-text-muted hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
                       >
                         Cancel
                       </button>

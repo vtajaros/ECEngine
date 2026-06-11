@@ -93,10 +93,10 @@ interface FormulaEdit {
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-[#888] mb-1 block">{children}</span>
+  <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-text-muted mb-1 block">{children}</span>
 )
 
-const inputCls = "w-full bg-[#0D0D0D] border border-[#2a2a2a] rounded px-3 py-2 text-[#E8E8E8] font-['IBM_Plex_Mono'] text-sm outline-none focus:border-[#00FF41] transition-colors placeholder-[#555]"
+const inputCls = "w-full bg-engine-black border border-border-subtle rounded px-3 py-2 text-text-primary font-['IBM_Plex_Mono'] text-sm outline-none focus:border-accent transition-colors placeholder-[#555]"
 const textareaCls = `${inputCls} resize-none leading-relaxed`
 
 // ── MathInputField: text area with ∑ toggle for MathLive equation entry ──────
@@ -182,7 +182,7 @@ const MathInputField: React.FC<MathInputFieldProps> = ({
         type="button"
         onClick={() => setMathMode(m => !m)}
         title={mathMode ? 'Switch to text mode' : 'Switch to equation mode'}
-        className="absolute top-2 right-2 z-10 flex items-center justify-center min-w-[28px] h-[24px] px-2 rounded-full bg-[#1C1C1C] border border-[rgba(0,255,65,0.3)] text-[#00FF41] hover:bg-[rgba(0,255,65,0.1)] font-bold text-xs transition-colors shadow-sm"
+        className="absolute top-2 right-2 z-10 flex items-center justify-center min-w-[28px] h-[24px] px-2 rounded-full bg-[#1C1C1C] border border-[rgba(0,255,65,0.3)] text-accent hover:bg-[rgba(0,255,65,0.1)] font-bold text-xs transition-colors shadow-sm"
       >
         {mathMode ? 'Aa' : <Sigma size={12} />}
       </button>
@@ -233,13 +233,13 @@ const MathInputField: React.FC<MathInputFieldProps> = ({
           />
           {value.trim().length > 0 && (
             <div className="bg-[#1C1C1C] border border-[rgba(0,255,65,0.1)] rounded-lg p-3">
-              <div className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-[#888] mb-1">Preview</div>
+              <div className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-text-muted mb-1">Preview</div>
               {(() => {
                 try {
                   const previewText = !value.includes('$') && isRawLatex(value) ? `$${value}$` : value
-                  return <div className="text-[#E8E8E8]" dangerouslySetInnerHTML={{ __html: renderMath(previewText) }} />
+                  return <div className="text-text-primary" dangerouslySetInnerHTML={{ __html: renderMath(previewText) }} />
                 } catch {
-                  return <code className="text-[#E8E8E8] break-all">{value}</code>
+                  return <code className="text-text-primary break-all">{value}</code>
                 }
               })()}
             </div>
@@ -392,7 +392,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
               </button>
             </div>
           ) : (
-            <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#888] rounded transition-colors bg-[#0a0a0a]">
+            <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#333] hover:border-accent hover:text-accent text-text-muted rounded transition-colors bg-[#0a0a0a]">
               <ImageIcon size={24} />
               <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest mt-2 font-bold text-center leading-tight">Add<br />Image</span>
               <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
@@ -431,7 +431,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
           <button
             type="button"
             onClick={() => setShowSolution(true)}
-            className="text-[11px] font-['Rajdhani'] uppercase tracking-widest text-[#888] hover:text-[#00FF41] transition-colors font-bold"
+            className="text-[11px] font-['Rajdhani'] uppercase tracking-widest text-text-muted hover:text-accent transition-colors font-bold"
           >
             + Add Solution
           </button>
@@ -459,7 +459,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
                   </button>
                 </div>
               ) : (
-                <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#888] rounded transition-colors bg-[#0a0a0a]">
+                <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#333] hover:border-accent hover:text-accent text-text-muted rounded transition-colors bg-[#0a0a0a]">
                   <ImageIcon size={24} />
                   <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest mt-2 font-bold text-center leading-tight">Add<br />Image</span>
                   <input type="file" accept="image/*" className="hidden" onChange={handleSolutionImageUpload} />
@@ -528,7 +528,7 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
               </button>
             </div>
           ) : (
-            <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#333] hover:border-[#00FF41] hover:text-[#00FF41] text-[#888] rounded transition-colors bg-[#0a0a0a]">
+            <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#333] hover:border-accent hover:text-accent text-text-muted rounded transition-colors bg-[#0a0a0a]">
               <ImageIcon size={24} />
               <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest mt-2 font-bold text-center leading-tight">Add<br />Image</span>
               <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
@@ -553,7 +553,7 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
 
   return (
     <div
-      className={`rounded-lg border transition-colors ${expanded ? 'border-[#00FF41]/30 bg-[#0f1a0f]' : 'border-[#222] bg-[#111] hover:border-[#333]'}`}
+      className={`rounded-lg border transition-colors ${expanded ? 'border-accent/30 bg-[#0f1a0f]' : 'border-border-base bg-[#111] hover:border-[#333]'}`}
     >
       {/* Collapsed row */}
       <div
@@ -563,7 +563,7 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
         <span
           {...dragHandleProps}
           onClick={e => e.stopPropagation()}
-          className="text-[#444] hover:text-[#888] cursor-grab active:cursor-grabbing flex-shrink-0 touch-none"
+          className="text-[#444] hover:text-text-muted cursor-grab active:cursor-grabbing flex-shrink-0 touch-none"
           title="Drag to reorder"
         >
           <GripVertical className="w-4 h-4" />
@@ -582,7 +582,7 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
             ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
             : card.type === 'formula'
               ? 'text-[#A855F7] border-[#A855F7]/30 bg-[#A855F7]/10'
-              : 'text-[#00FF41] border-[#00FF41]/30 bg-[#00FF41]/10'
+              : 'text-accent border-accent/30 bg-accent/10'
           }`}>
           {card.type === 'mcq' ? 'MCQ' : card.type === 'formula' ? 'FM' : 'FC'}
         </span>
@@ -604,7 +604,7 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-8 pt-4 border-t border-[#1a1a1a] min-h-[220px]">
+            <div className="px-4 pb-8 pt-4 border-t border-surface min-h-[220px]">
               {card.type === 'mcq' ? (
                 <MCQForm
                   data={card.data as MCQEdit}
@@ -945,14 +945,14 @@ export default function EditDeck() {
   // ─── Render ───────────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="h-full bg-[#0D0D0D] flex items-center justify-center">
-        <div className="text-[#00FF41] font-['IBM_Plex_Mono'] text-sm tracking-widest animate-pulse">LOADING DECK...</div>
+      <div className="h-full bg-engine-black flex items-center justify-center">
+        <div className="text-accent font-['IBM_Plex_Mono'] text-sm tracking-widest animate-pulse">LOADING DECK...</div>
       </div>
     )
   }
 
   return (
-    <div className="h-full bg-[#0D0D0D] flex flex-col overflow-hidden">
+    <div className="h-full bg-engine-black flex flex-col overflow-hidden">
 
       {/* ── Toast ── */}
       <AnimatePresence>
@@ -962,7 +962,7 @@ export default function EditDeck() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             className={`fixed top-4 right-4 z-[200] flex items-center gap-3 px-5 py-3 rounded-lg border shadow-2xl font-['Rajdhani'] tracking-wider text-sm ${toast.type === 'success'
-                ? 'bg-[#0a1a0a] border-[#00FF41]/40 text-[#00FF41]'
+                ? 'bg-[#0a1a0a] border-accent/40 text-accent'
                 : 'bg-[#1a0a0a] border-[#FF4444]/40 text-[#FF4444]'
               }`}
           >
@@ -976,15 +976,15 @@ export default function EditDeck() {
       <div className="flex-shrink-0 h-16 bg-[#111] border-b border-[#1e1e1e] flex items-center px-6 gap-4">
         <button
           onClick={() => navigate('/study')}
-          className="flex items-center gap-2 text-[#888] hover:text-[#E8E8E8] transition-colors font-['Rajdhani'] uppercase tracking-widest text-sm"
+          className="flex items-center gap-2 text-text-muted hover:text-text-primary transition-colors font-['Rajdhani'] uppercase tracking-widest text-sm"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>
 
         <div className="flex-1 text-center">
-          <h1 className="font-['Orbitron'] font-bold text-lg tracking-[0.2em] text-[#E8E8E8] uppercase">
-            Edit <span className="text-[#00FF41]">Deck</span>
+          <h1 className="font-['Orbitron'] font-bold text-lg tracking-[0.2em] text-text-primary uppercase">
+            Edit <span className="text-accent">Deck</span>
           </h1>
         </div>
 
@@ -992,8 +992,8 @@ export default function EditDeck() {
           onClick={handleSave}
           disabled={isSaving}
           className={`flex items-center gap-2 px-5 py-2 font-['Rajdhani'] font-bold uppercase tracking-widest text-sm rounded transition-all ${isSaving
-              ? 'bg-[#00FF41]/40 text-black/60 cursor-not-allowed'
-              : 'bg-[#00FF41] text-black hover:bg-[rgba(0,255,65,0.85)] shadow-[0_0_12px_rgba(0,255,65,0.25)]'
+              ? 'bg-accent/40 text-black/60 cursor-not-allowed'
+              : 'bg-accent text-black hover:bg-[rgba(0,255,65,0.85)] shadow-[0_0_12px_rgba(0,255,65,0.25)]'
             }`}
         >
           <Save className="w-4 h-4" />
@@ -1007,13 +1007,13 @@ export default function EditDeck() {
 
           {/* ── Metadata Section — Pane 1 (sticky left 1/3) */}
           <div className="w-full max-w-4xl xl:max-w-none xl:col-span-1 xl:sticky xl:top-6 bg-[#111] border border-zinc-800 rounded-xl p-6 flex flex-col gap-5">
-            <h2 className="font-['Rajdhani'] font-bold uppercase tracking-widest text-[#888] text-xs">Deck Info</h2>
+            <h2 className="font-['Rajdhani'] font-bold uppercase tracking-widest text-text-muted text-xs">Deck Info</h2>
 
             <div>
               <div className="relative">
                 <input
                   type="text"
-                  className="w-full bg-transparent text-[#E8E8E8] text-[1.15rem] font-['Orbitron'] border-b-2 border-[#333] focus:border-[#00FF41] pb-3 focus:outline-none placeholder:text-[#555] transition-colors tracking-wide pr-16"
+                  className="w-full bg-transparent text-text-primary text-[1.15rem] font-['Orbitron'] border-b-2 border-[#333] focus:border-accent pb-3 focus:outline-none placeholder:text-[#555] transition-colors tracking-wide pr-16"
                   value={deckMeta.title}
                   onChange={e => setDeckMeta(m => ({ ...m, title: e.target.value }))}
                   placeholder="Deck title..."
@@ -1042,7 +1042,7 @@ export default function EditDeck() {
                 <div className="relative flex items-center">
                   <input
                     type="text"
-                    className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-[#E8E8E8] font-['IBM_Plex_Mono'] text-sm focus:border-[#00FF41] focus:bg-[#111] outline-none transition-colors pr-16 placeholder-[#555]"
+                    className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-text-primary font-['IBM_Plex_Mono'] text-sm focus:border-accent focus:bg-[#111] outline-none transition-colors pr-16 placeholder-[#555]"
                     value={deckMeta.folderName}
                     onChange={e => {
                       setDeckMeta(m => ({ ...m, folderName: e.target.value }))
@@ -1059,7 +1059,7 @@ export default function EditDeck() {
                           setDeckMeta(m => ({ ...m, folderName: '' }))
                           setShowFolderDropdown(true)
                         }}
-                        className="p-1 text-[#444] hover:text-[#00FF41] transition-colors"
+                        className="p-1 text-[#444] hover:text-accent transition-colors"
                         title="Clear folder"
                       >
                         <X size={14} />
@@ -1068,7 +1068,7 @@ export default function EditDeck() {
                     <button
                       type="button"
                       onClick={() => setShowFolderDropdown(prev => !prev)}
-                      className="p-1 text-[#666] hover:text-[#00FF41] transition-colors"
+                      className="p-1 text-[#666] hover:text-accent transition-colors"
                       title="Toggle folder list"
                     >
                       <ChevronDown size={14} className={`transform transition-transform ${showFolderDropdown ? 'rotate-180' : ''}`} />
@@ -1083,7 +1083,7 @@ export default function EditDeck() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -5 }}
                       transition={{ duration: 0.15 }}
-                      className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-[#161616] border border-[#333] rounded-lg shadow-2xl max-h-48 overflow-y-auto custom-scrollbar"
+                      className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-surface-2 border border-[#333] rounded-lg shadow-2xl max-h-48 overflow-y-auto custom-scrollbar"
                     >
                       {existingFolders.length === 0 ? (
                         <div className="p-3 text-xs text-[#666] font-['IBM_Plex_Mono'] text-center">
@@ -1101,27 +1101,27 @@ export default function EditDeck() {
                                   setDeckMeta(m => ({ ...m, folderName: f }))
                                   setShowFolderDropdown(false)
                                 }}
-                                className="w-full text-left px-3 py-2 text-xs font-['IBM_Plex_Mono'] text-[#ccc] hover:bg-[#222] hover:text-[#00FF41] transition-colors flex items-center justify-between"
+                                className="w-full text-left px-3 py-2 text-xs font-['IBM_Plex_Mono'] text-[#ccc] hover:bg-border-base hover:text-accent transition-colors flex items-center justify-between"
                               >
                                 <span>{f}</span>
                                 {deckMeta.folderName.toLowerCase() === f.toLowerCase() && (
-                                  <span className="w-1.5 h-1.5 rounded-full bg-[#00FF41]" />
+                                  <span className="w-1.5 h-1.5 rounded-full bg-accent" />
                                 )}
                               </button>
                             ))}
                           {existingFolders.filter(f => f.toLowerCase().includes(deckMeta.folderName.toLowerCase())).length === 0 && (
                             <div
-                              className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-[#1a1a1a] transition-colors"
+                              className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-surface transition-colors"
                               onClick={() => { setShowFolderDropdown(false) }}
                             >
-                              <span className="font-['IBM_Plex_Mono'] text-xs text-[#00FF41]">
+                              <span className="font-['IBM_Plex_Mono'] text-xs text-accent">
                                 Create "{deckMeta.folderName}"
                               </span>
                               <button
-                                className="flex items-center justify-center w-5 h-5 rounded bg-[#00FF41]/10 border border-[#00FF41]/30 hover:bg-[#00FF41]/20 transition-colors"
+                                className="flex items-center justify-center w-5 h-5 rounded bg-accent/10 border border-accent/30 hover:bg-accent/20 transition-colors"
                                 title="Confirm new folder name"
                               >
-                                <Plus size={12} className="text-[#00FF41]" />
+                                <Plus size={12} className="text-accent" />
                               </button>
                             </div>
                           )}
@@ -1168,7 +1168,7 @@ export default function EditDeck() {
             </div>
 
             <div>
-              <label className="text-[11px] text-[#00FF41] font-['Rajdhani'] font-bold uppercase tracking-widest mb-3 block">
+              <label className="text-[11px] text-accent font-['Rajdhani'] font-bold uppercase tracking-widest mb-3 block">
                 Source Tags
               </label>
               <div className="flex flex-wrap gap-2 mb-3">
@@ -1185,8 +1185,8 @@ export default function EditDeck() {
                         setDeckMeta(m => ({ ...m, tags: next.join(', ') }))
                       }}
                       className={`px-4 py-2 rounded-full font-['Rajdhani'] uppercase tracking-wider text-xs font-bold transition-all border ${isSelected
-                          ? 'bg-[#00FF41]/10 border-[#00FF41] text-[#00FF41]'
-                          : 'bg-[#161616] border-[#333] text-[#888] hover:border-[#555] hover:text-[#E8E8E8]'
+                          ? 'bg-accent/10 border-accent text-accent'
+                          : 'bg-surface-2 border-[#333] text-text-muted hover:border-[#555] hover:text-text-primary'
                         }`}
                     >
                       {tag}
@@ -1212,7 +1212,7 @@ export default function EditDeck() {
                       }
                     }
                   }}
-                  className="flex-1 bg-[#111] border border-[#333] rounded px-3 py-2 text-sm text-[#E8E8E8] placeholder-[#555] focus:border-[#00FF41] focus:outline-none font-['Rajdhani'] uppercase tracking-wider transition-colors h-[38px]"
+                  className="flex-1 bg-[#111] border border-[#333] rounded px-3 py-2 text-sm text-text-primary placeholder-[#555] focus:border-accent focus:outline-none font-['Rajdhani'] uppercase tracking-wider transition-colors h-[38px]"
                 />
                 <button
                   type="button"
@@ -1225,7 +1225,7 @@ export default function EditDeck() {
                       setCustomTagInput('');
                     }
                   }}
-                  className="w-[38px] h-[38px] bg-[#111] border border-[#333] text-[#888] flex items-center justify-center rounded hover:text-[#00FF41] hover:border-[#00FF41] transition-colors shrink-0"
+                  className="w-[38px] h-[38px] bg-[#111] border border-[#333] text-text-muted flex items-center justify-center rounded hover:text-accent hover:border-accent transition-colors shrink-0"
                 >
                   <Plus size={18} />
                 </button>
@@ -1239,7 +1239,7 @@ export default function EditDeck() {
                 disabled={isExporting}
                 className={`w-full flex items-center justify-center gap-2 px-5 py-3 rounded-lg border font-['Rajdhani'] font-bold uppercase tracking-widest text-xs transition-all duration-200 ${isExporting
                     ? 'bg-zinc-900 border-zinc-800 text-zinc-600 cursor-not-allowed'
-                    : 'bg-[#111] hover:bg-[#00FF41]/5 border-zinc-800 hover:border-[#00FF41]/40 text-[#888] hover:text-[#00FF41] shadow-md hover:shadow-[0_0_15px_rgba(0,255,65,0.1)]'
+                    : 'bg-[#111] hover:bg-accent/5 border-zinc-800 hover:border-accent/40 text-text-muted hover:text-accent shadow-md hover:shadow-[0_0_15px_rgba(0,255,65,0.1)]'
                   }`}
               >
                 <FileText className="w-4 h-4" />
@@ -1252,7 +1252,7 @@ export default function EditDeck() {
           <div className="w-full max-w-4xl xl:max-w-none xl:col-span-2 flex flex-col gap-4">
             <div className="flex flex-col gap-3">
               <div className="flex items-center justify-between">
-                <h2 className="font-['Rajdhani'] font-bold uppercase tracking-widest text-[#888] text-xs">
+                <h2 className="font-['Rajdhani'] font-bold uppercase tracking-widest text-text-muted text-xs">
                   Questions
                 </h2>
                 <span className="text-[#555] font-['IBM_Plex_Mono'] text-xs">
@@ -1300,7 +1300,7 @@ export default function EditDeck() {
                 {historyStack.length > 0 && (
                   <button
                     onClick={undo}
-                    className="flex items-center justify-center p-2 rounded border border-[#666] text-[#666] hover:text-[#00FF41] hover:border-[#00FF41] transition-colors"
+                    className="flex items-center justify-center p-2 rounded border border-[#666] text-[#666] hover:text-accent hover:border-accent transition-colors"
                     title="Undo (Ctrl+Z)"
                   >
                     <RotateCcw className="w-4 h-4" />
@@ -1308,7 +1308,7 @@ export default function EditDeck() {
                 )}
                 <button
                   onClick={() => addCard('flashcard')}
-                  className="flex items-center gap-2 px-4 py-2 rounded border border-[#333] bg-[#161616] text-[#888] hover:text-[#00FF41] hover:border-[#00FF41]/50 font-['Rajdhani'] uppercase tracking-widest text-sm transition-all"
+                  className="flex items-center gap-2 px-4 py-2 rounded border border-[#333] bg-surface-2 text-text-muted hover:text-accent hover:border-accent/50 font-['Rajdhani'] uppercase tracking-widest text-sm transition-all"
                 >
                   <Plus className="w-4 h-4" />
                   Add Flashcard
@@ -1322,7 +1322,7 @@ export default function EditDeck() {
                 </button>
                 <button
                   onClick={() => addCard('mcq')}
-                  className="flex items-center gap-2 px-4 py-2 rounded border border-[#00FF41]/40 bg-[#00FF41]/5 text-[#00FF41] hover:bg-[#00FF41]/10 font-['Rajdhani'] uppercase tracking-widest text-sm transition-all"
+                  className="flex items-center gap-2 px-4 py-2 rounded border border-accent/40 bg-accent/5 text-accent hover:bg-accent/10 font-['Rajdhani'] uppercase tracking-widest text-sm transition-all"
                 >
                   <Plus className="w-4 h-4" />
                   Add MCQ

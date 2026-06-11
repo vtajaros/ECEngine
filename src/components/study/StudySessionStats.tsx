@@ -39,7 +39,7 @@ export const StudySessionStats: React.FC<StudySessionStatsProps> = ({
 
       {/* Correct / Total Tag */}
       <div className="flex items-center gap-2 bg-[#111] border border-[#333] px-3 py-1.5 rounded-lg">
-        <CheckCircle size={14} className="text-[#00FF41]" />
+        <CheckCircle size={14} className="text-accent" />
         <span className="text-xs font-['IBM_Plex_Mono'] text-[#aaa] uppercase tracking-wider">
           Correct
         </span>

@@ -28,7 +28,7 @@ export const StudyHeader: React.FC<StudyHeaderProps> = ({
             <ArrowLeft size={16} /> Exit Session
           </button>
           <h2 className="text-xl font-['Rajdhani'] font-bold text-white uppercase tracking-widest mt-2">{topicName}</h2>
-          <span className="text-[#888] font-['IBM_Plex_Mono'] text-sm tracking-wider uppercase">
+          <span className="text-text-muted font-['IBM_Plex_Mono'] text-sm tracking-wider uppercase">
             Card {Math.min(currentCardIndex + 1, totalCards)} / {totalCards}
           </span>
         </div>

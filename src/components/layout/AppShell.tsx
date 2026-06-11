@@ -61,7 +61,7 @@ export const AppShell: React.FC = () => {
   ]
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-[#0D0D0D] text-[var(--text-primary)] font-['IBM_Plex_Mono']">
+    <div className="flex flex-col h-screen overflow-hidden bg-engine-black text-[var(--text-primary)] font-['IBM_Plex_Mono']">
       <TitleBar
         isCollapsed={isCollapsed}
         onToggleSidebar={() => setIsCollapsed(!isCollapsed)}
@@ -71,7 +71,7 @@ export const AppShell: React.FC = () => {
         {/* Sidebar */}
         <aside
           className={`${isCollapsed ? 'w-16' : 'w-[150px]'
-            } h-full bg-[#1A1A1A] border-r border-[#222] flex flex-col transition-all duration-300 shrink-0`}
+            } h-full bg-surface border-r border-border-base flex flex-col transition-all duration-300 shrink-0`}
         >
           {/* Logo + collapse toggle */}
           <div className="h-10 w-full shrink-0 flex items-center justify-between px-2">
@@ -89,13 +89,13 @@ export const AppShell: React.FC = () => {
                   }}
                 />
                 <span className="font-['Rajdhani'] font-bold tracking-wider text-white text-sm">
-                  <span className="text-[#00FF41]">ECE</span>ngine
+                  <span className="text-accent">ECE</span>ngine
                 </span>
               </div>
             )}
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className={`${isCollapsed ? 'mx-auto' : 'ml-auto'} w-7 h-7 flex items-center justify-center hover:bg-[#222] rounded-md text-gray-500 hover:text-[#00FF41] transition-colors`}
+              className={`${isCollapsed ? 'mx-auto' : 'ml-auto'} w-7 h-7 flex items-center justify-center hover:bg-border-base rounded-md text-gray-500 hover:text-accent transition-colors`}
               title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
               <svg
@@ -125,7 +125,7 @@ export const AppShell: React.FC = () => {
                   `flex items-center h-10 transition-all duration-200 group relative
                   ${isActive
                     ? 'bg-gradient-to-r from-[#00FF41]/10 to-transparent text-white'
-                    : 'text-gray-400 hover:bg-[#222] hover:text-gray-300'
+                    : 'text-gray-400 hover:bg-border-base hover:text-gray-300'
                   }`
                 }
                 title={item.label}
@@ -133,7 +133,7 @@ export const AppShell: React.FC = () => {
                 {({ isActive }) => (
                   <>
                     {isActive && (
-                      <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[#00FF41] shadow-[0_0_10px_#00FF41]" />
+                      <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-accent shadow-[0_0_10px_#00FF41]" />
                     )}
                     <div className={`${isCollapsed ? 'w-16' : 'w-12'} flex justify-center shrink-0`}>
                       <item.icon size={18} />
