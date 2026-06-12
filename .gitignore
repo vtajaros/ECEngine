@@ -15,3 +15,4 @@ electron.vite.config.*.mjs
 .env.*.local
 *.pdf
 .env.local
+src/styles/output.css

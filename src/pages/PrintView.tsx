@@ -516,7 +516,7 @@ export default function PrintView() {
           onError={(e) => {
             const img = e.currentTarget
             if (img.src.includes('favicon.png')) {
-              img.src = 'ecengine_icon.png'
+              img.src = '/ecengine_icon.png'
             }
           }}
         />
