@@ -3,6 +3,16 @@ import { Settings as SettingsIcon, Monitor, Bell, Database, Shield, CheckCircle,
 import { motion, AnimatePresence } from 'framer-motion'
 import { dbService } from '../services/db.service'
 import { getCustomWrongSoundEnabled, setCustomWrongSoundEnabled } from '../hooks/useSound'
+import { SUBJECT_MAP, getSubjectBadgeClasses } from '../lib/subjectColors'
+
+function topicHasType(topic: { types?: string }, filter: 'ALL' | 'FC' | 'MCQ'): boolean {
+  if (filter === 'ALL') return true
+  if (!topic.types) return false
+  const types = topic.types.split(',')
+  if (filter === 'FC') return types.includes('flashcard') || types.includes('formula')
+  if (filter === 'MCQ') return types.includes('mcq')
+  return true
+}
 
 export default function Settings() {
 
@@ -15,6 +25,17 @@ export default function Settings() {
   const [showFormulaBank, setShowFormulaBank] = useState(
     () => localStorage.getItem('ecengine:show-formula-bank') === 'true'
   )
+
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => localStorage.getItem('ecengine:sidebar-collapsed') === 'true'
+  )
+
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [allTopics, setAllTopics] = useState<{ id: string; name: string; subject: string; types?: string }[]>([]);
+  const [selectedTopicIds, setSelectedTopicIds] = useState<Set<string>>(new Set());
+  const [exportMode, setExportMode] = useState<'all' | 'select'>('all');
+  const [exportSubjectFilter, setExportSubjectFilter] = useState<string>('ALL');
+  const [exportTypeFilter, setExportTypeFilter] = useState<'ALL' | 'FC' | 'MCQ'>('ALL');
 
   // TTS voice selection
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([])
@@ -89,10 +110,16 @@ export default function Settings() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleResetProgress = () => {
-    setResetResetMenuOpen(false);
-    setToastMessage('Progress successfully reset!');
-    setTimeout(() => setToastMessage(null), 3000);
+  const handleResetProgress = async () => {
+    try {
+      await dbService.resetProgress();
+      setResetResetMenuOpen(false);
+      setToastMessage('Mastery progress reset successfully!');
+      setTimeout(() => setToastMessage(null), 3000);
+    } catch (error) {
+      setToastMessage((error as Error).message);
+      setTimeout(() => setToastMessage(null), 3000);
+    }
   };
 
   const handleClearAllDecks = async () => {
@@ -104,12 +131,22 @@ export default function Settings() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const handleExportDecks = async () => {
+  const handleConfirmExport = async () => {
     try {
-      const dataStr = await dbService.exportDecks();
+      let dataStr = '';
+      if (exportMode === 'all') {
+        dataStr = await dbService.exportDecks();
+      } else {
+        if (selectedTopicIds.size === 0) return;
+        dataStr = await dbService.exportSelectedDecks(Array.from(selectedTopicIds));
+      }
+
       const res = await window.electron.file.export(dataStr);
       if (res.success) {
         setToastMessage('Database exported successfully!');
+        setShowExportModal(false);
+        setExportSubjectFilter('ALL');
+        setExportTypeFilter('ALL');
         setTimeout(() => setToastMessage(null), 3000);
       } else if (!res.canceled) {
         setToastMessage(res.error || 'Export failed.');
@@ -143,11 +180,22 @@ export default function Settings() {
     }
   };
 
+  const filteredBySubject = exportSubjectFilter === 'ALL'
+    ? allTopics
+    : allTopics.filter(t => (SUBJECT_MAP[t.subject] ?? t.subject) === exportSubjectFilter);
+
+  const filteredTopics = filteredBySubject.filter(t => topicHasType(t, exportTypeFilter));
+
   const sections = [
     {
       title: 'Data & Sync',
       icon: <Database size={20} className="text-accent" />,
       options: [
+        {
+          label: 'Minimize Sidebar on Start',
+          type: 'custom-toggle',
+          actionId: 'sidebar-collapse-toggle'
+        },
         {
           label: 'Show Formula Bank',
           description: 'Show the Formula Bank page in the sidebar navigation.',
@@ -329,6 +377,20 @@ export default function Settings() {
                         </button>
                       )}
 
+                      {opt.type === 'custom-toggle' && (opt as any).actionId === 'sidebar-collapse-toggle' && (
+                        <button
+                          onClick={() => {
+                            const next = !sidebarCollapsed
+                            setSidebarCollapsed(next)
+                            localStorage.setItem('ecengine:sidebar-collapsed', String(next))
+                            window.dispatchEvent(new Event('ecengine:settings-changed'))
+                          }}
+                          className={`w-14 h-7 rounded-full p-1 transition-colors ${sidebarCollapsed ? 'bg-[rgba(0,255,65,0.2)] border border-accent' : 'bg-surface-2 border border-border-base'} focus:outline-none relative shadow-inner`}
+                        >
+                          <span className={`block w-5 h-5 rounded-full shadow-md transform transition-transform ${sidebarCollapsed ? 'bg-accent translate-x-7 shadow-[0_0_8px_rgba(0,255,65,0.8)]' : 'bg-[#555] translate-x-0'}`} />
+                        </button>
+                      )}
+
                       {opt.type === 'custom-toggle' && (opt as any).actionId === 'formula-bank-toggle' && (
                         <button
                           onClick={() => {
@@ -357,7 +419,14 @@ export default function Settings() {
                             } else if ((opt as any).actionId === 'clear-all') {
                               setShowClearModal(true);
                             } else if ((opt as any).actionId === 'export') {
-                              handleExportDecks();
+                              const fetchTopics = async () => {
+                                const res = await window.electron.decks.getTopicsWithCardCounts();
+                                if (res.success && res.data) {
+                                  setAllTopics(res.data);
+                                }
+                              };
+                              fetchTopics();
+                              setShowExportModal(true);
                             } else if ((opt as any).actionId === 'import') {
                               handleImportDecks();
                             }
@@ -440,6 +509,173 @@ export default function Settings() {
               </div>
               <button
                 onClick={() => setResetResetMenuOpen(false)}
+                className="absolute top-4 right-4 text-[#444] hover:text-white transition-colors p-1"
+              >
+                <X size={20} />
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Export Decks Modal */}
+      <AnimatePresence>
+        {showExportModal && (
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                setShowExportModal(false);
+                setExportSubjectFilter('ALL');
+                setExportTypeFilter('ALL');
+              }}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-lg bg-[#111] border border-[#333] rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col overflow-hidden max-h-[80vh]"
+            >
+              <div className="h-1 w-full shrink-0 bg-gradient-to-r from-transparent via-[var(--accent-primary)] to-transparent" />
+              <div className="p-8 flex flex-col flex-1 overflow-hidden">
+                <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-6 tracking-widest uppercase text-center shrink-0">
+                  EXPORT DECKS
+                </h3>
+                
+                <div className="flex bg-[#222] rounded-lg p-1 mb-6 shrink-0">
+                  <button
+                    onClick={() => setExportMode('all')}
+                    className={`flex-1 py-2 text-sm font-['Rajdhani'] font-bold uppercase tracking-widest rounded-md transition-colors ${exportMode === 'all' ? 'bg-[var(--accent-primary)] text-black shadow-md' : 'text-gray-400 hover:text-white'}`}
+                  >
+                    EXPORT ALL
+                  </button>
+                  <button
+                    onClick={() => setExportMode('select')}
+                    className={`flex-1 py-2 text-sm font-['Rajdhani'] font-bold uppercase tracking-widest rounded-md transition-colors ${exportMode === 'select' ? 'bg-[var(--accent-primary)] text-black shadow-md' : 'text-gray-400 hover:text-white'}`}
+                  >
+                    SELECT DECKS
+                  </button>
+                </div>
+
+                {exportMode === 'all' ? (
+                  <div className="flex-1 flex items-center justify-center min-h-[150px]">
+                    <p className="text-gray-400 font-['IBM_Plex_Mono'] text-center px-4">
+                      This will export all decks, flashcards, and your entire study progress into a single JSON file.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex-1 flex flex-col overflow-hidden">
+                    <div className="flex gap-2 mb-2 shrink-0 flex-wrap">
+                      {['ALL', 'MATH', 'GEAS', 'ELECS', 'EST'].map((filter) => (
+                        <button
+                          key={filter}
+                          onClick={() => setExportSubjectFilter(filter)}
+                          className={`font-['Rajdhani'] text-[11px] uppercase tracking-widest px-3 py-1 rounded-full transition-colors ${
+                            exportSubjectFilter === filter
+                              ? 'bg-[var(--accent-primary)] text-black'
+                              : 'border border-[#333] text-gray-400 hover:border-accent hover:text-accent'
+                          }`}
+                        >
+                          {filter}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex gap-2 mb-4 shrink-0 flex-wrap">
+                      {['ALL', 'FC', 'MCQ'].map((filter) => (
+                        <button
+                          key={filter}
+                          onClick={() => setExportTypeFilter(filter as 'ALL' | 'FC' | 'MCQ')}
+                          className={`font-['Rajdhani'] text-[11px] uppercase tracking-widest px-3 py-1 rounded-full transition-colors ${
+                            exportTypeFilter === filter
+                              ? 'bg-[var(--accent-primary)] text-black'
+                              : 'border border-[#333] text-gray-400 hover:border-accent hover:text-accent'
+                          }`}
+                        >
+                          {filter}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex justify-between items-center mb-4 shrink-0">
+                      <span className="text-gray-400 text-sm font-['IBM_Plex_Mono']">
+                        {selectedTopicIds.size} deck{selectedTopicIds.size !== 1 ? 's' : ''} selected
+                      </span>
+                      <button
+                        onClick={() => {
+                          const allFilteredSelected = filteredTopics.length > 0 && filteredTopics.every(t => selectedTopicIds.has(t.id));
+                          if (allFilteredSelected) {
+                            const next = new Set(selectedTopicIds);
+                            filteredTopics.forEach(t => next.delete(t.id));
+                            setSelectedTopicIds(next);
+                          } else {
+                            const next = new Set(selectedTopicIds);
+                            filteredTopics.forEach(t => next.add(t.id));
+                            setSelectedTopicIds(next);
+                          }
+                        }}
+                        className="text-[var(--accent-primary)] text-sm font-['Rajdhani'] uppercase tracking-widest hover:underline"
+                      >
+                        {(filteredTopics.length > 0 && filteredTopics.every(t => selectedTopicIds.has(t.id))) ? 'Deselect All' : 'Select All'}
+                      </button>
+                    </div>
+                    <div className="flex-1 overflow-y-auto show-scrollbar border border-[#333] rounded-lg p-2 space-y-1">
+                      {filteredTopics.map(topic => {
+                        const shortCode = SUBJECT_MAP[topic.subject] ?? topic.subject;
+                        return (
+                          <label key={topic.id} className="flex items-center gap-3 p-3 hover:bg-[#222] rounded-lg cursor-pointer transition-colors group">
+                            <input
+                              type="checkbox"
+                              checked={selectedTopicIds.has(topic.id)}
+                              onChange={(e) => {
+                                const next = new Set(selectedTopicIds);
+                                if (e.target.checked) next.add(topic.id);
+                                else next.delete(topic.id);
+                                setSelectedTopicIds(next);
+                              }}
+                              className="w-4 h-4 rounded border-gray-600 bg-black text-[var(--accent-primary)] focus:ring-[var(--accent-primary)] focus:ring-offset-black"
+                            />
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <span className="text-white font-['IBM_Plex_Mono'] text-sm truncate">{topic.name}</span>
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest border ${getSubjectBadgeClasses(shortCode)}`}>
+                                {shortCode}
+                              </span>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-3 mt-8 shrink-0">
+                  <button
+                    onClick={() => {
+                      setShowExportModal(false);
+                      setExportSubjectFilter('ALL');
+                      setExportTypeFilter('ALL');
+                    }}
+                    className="flex-1 py-3 bg-surface border border-[#333] hover:border-[#555] text-text-muted hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleConfirmExport}
+                    disabled={exportMode === 'select' && selectedTopicIds.size === 0}
+                    className="flex-1 py-3 bg-[rgba(0,255,65,0.1)] border border-accent text-accent hover:bg-[rgba(0,255,65,0.2)] hover:shadow-[0_0_15px_rgba(0,255,65,0.4)] disabled:opacity-50 disabled:cursor-not-allowed rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
+                  >
+                    Export
+                  </button>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowExportModal(false);
+                  setExportSubjectFilter('ALL');
+                  setExportTypeFilter('ALL');
+                }}
                 className="absolute top-4 right-4 text-[#444] hover:text-white transition-colors p-1"
               >
                 <X size={20} />

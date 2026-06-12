@@ -47,7 +47,9 @@ declare global {
         getSubjectProgress: () => Promise<{ success: boolean; data?: any; error?: string }>
         getGlobalStats: () => Promise<{ success: boolean; data?: any; error?: string }>
         clearAllData: () => Promise<{ success: boolean; error?: string }>
+        resetProgress: () => Promise<{ success: boolean; error?: string }>
         exportDecks: () => Promise<{ success: boolean; data?: string; error?: string }>
+        exportSelectedDecks: (topicIds: string[]) => Promise<{ success: boolean; data?: string; error?: string }>
         importDecks: (parsed: unknown) => Promise<{ success: boolean; data?: string; error?: string }>
         getAllCardsByTopic: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
         getCardsPrioritized: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>

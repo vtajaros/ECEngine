@@ -127,8 +127,7 @@ function runMigrations(db: Database.Database) {
         // This is expected for users upgrading from the old try/catch migration system
         // where columns may already have been applied on a previous launch.
         if (e?.message?.includes('duplicate column name')) continue;
-        // Any other error is unexpected — log it but don't crash the app.
-        console.warn(`[Migration v${migration.version}] Failed: ${sql}\n${e?.message}`);
+        throw new Error(`[Migration v${migration.version}] Fatal: ${sql}\n${e?.message}`);
       }
     }
     db.pragma(`user_version = ${migration.version}`);
@@ -188,7 +187,7 @@ function initSchema() {
     const schema = fs.readFileSync(resolvedSchemaPath, 'utf8');
     db.exec(schema);
   } else {
-    console.error('schema.sql not found at', resolvedSchemaPath);
+    throw new Error(`schema.sql not found. Tried:\n  ${schemaPath}\n  ${resolvedSchemaPath}`);
   }
 }
 

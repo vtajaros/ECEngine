@@ -347,9 +347,20 @@ export const dbService = {
     if (!r.success) throw new Error(`Database Operation Failed: ${r.error || 'Failed to clear all data'}`)
   },
 
+  resetProgress: async (): Promise<void> => {
+    const r = await window.electron.data.resetProgress()
+    if (!r.success) throw new Error(`Database Operation Failed: ${r.error || 'Failed to reset progress'}`)
+  },
+
   exportDecks: async (): Promise<string> => {
     const r = await window.electron.data.exportDecks()
     if (!r.success || !r.data) throw new Error(`Database Operation Failed: ${r.error || 'Failed to export decks'}`)
+    return r.data
+  },
+
+  exportSelectedDecks: async (topicIds: string[]): Promise<string> => {
+    const r = await window.electron.data.exportSelectedDecks(topicIds)
+    if (!r.success || !r.data) throw new Error(r.error || 'Failed to export selected decks')
     return r.data
   },
 

@@ -135,6 +135,28 @@ export function registerExportHandlers(): void {
     }
   })
 
+  ipcMain.handle('data:exportSelectedDecks', async (_, topicIds: string[]) => {
+    try {
+      if (!Array.isArray(topicIds) || topicIds.length === 0) {
+        return { success: false, error: 'No decks selected' }
+      }
+      const placeholders = topicIds.map(() => '?').join(',')
+      const topics = queryAll(`SELECT * FROM topics WHERE id IN (${placeholders})`, topicIds)
+      const cards = queryAll(`SELECT * FROM cards WHERE topic_id IN (${placeholders})`, topicIds)
+      const progress = queryAll(`SELECT p.* FROM progress p INNER JOIN cards c ON p.card_id = c.id WHERE c.topic_id IN (${placeholders})`, topicIds)
+      
+      const exportData = {
+        version: 1,
+        topics: topics || [],
+        cards: cards || [],
+        progress: progress || []
+      }
+      return { success: true, data: JSON.stringify(exportData, null, 2) }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
   ipcMain.handle('data:importDecks', async (_, parsed: unknown) => {
     try {
       const result = ImportPayloadSchema.safeParse(parsed)
@@ -171,6 +193,29 @@ export function registerExportHandlers(): void {
         }
       })()
       return { success: true, data: 'Decks and progress imported successfully' }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('data:resetProgress', async () => {
+    try {
+      const dbPath = app.getPath('userData')
+      const src = path.join(dbPath, 'ecengine.sqlite')
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+      const dest = path.join(dbPath, `ecengine_backup_${timestamp}.sqlite`)
+      try {
+        await fsp.copyFile(src, dest)
+      } catch {
+        // src does not exist — skip backup silently
+      }
+
+      getDB().transaction(() => {
+        execute('DELETE FROM progress')
+        execute('DELETE FROM study_activity')
+        execute('DELETE FROM exam_sessions')
+      })()
+      return { success: true }
     } catch (error) {
       return { success: false, error: (error as Error).message }
     }

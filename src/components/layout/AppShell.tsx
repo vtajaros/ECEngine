@@ -21,7 +21,9 @@ type NavItem = {
 }
 
 export const AppShell: React.FC = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(() =>
+    localStorage.getItem('ecengine:sidebar-collapsed') === 'true'
+  )
   const [showFormulaBank, setShowFormulaBank] = useState(() =>
     localStorage.getItem('ecengine:show-formula-bank') === 'true'
   )
@@ -64,7 +66,11 @@ export const AppShell: React.FC = () => {
     <div className="flex flex-col h-screen overflow-hidden bg-engine-black text-[var(--text-primary)] font-['IBM_Plex_Mono']">
       <TitleBar
         isCollapsed={isCollapsed}
-        onToggleSidebar={() => setIsCollapsed(!isCollapsed)}
+        onToggleSidebar={() => {
+          const next = !isCollapsed;
+          setIsCollapsed(next);
+          localStorage.setItem('ecengine:sidebar-collapsed', String(next));
+        }}
       />
 
       <div className="flex flex-row flex-1 overflow-hidden">
@@ -94,7 +100,11 @@ export const AppShell: React.FC = () => {
               </div>
             )}
             <button
-              onClick={() => setIsCollapsed(!isCollapsed)}
+              onClick={() => {
+                const next = !isCollapsed;
+                setIsCollapsed(next);
+                localStorage.setItem('ecengine:sidebar-collapsed', String(next));
+              }}
               className={`${isCollapsed ? 'mx-auto' : 'ml-auto'} w-7 h-7 flex items-center justify-center hover:bg-border-base rounded-md text-gray-500 hover:text-accent transition-colors`}
               title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
