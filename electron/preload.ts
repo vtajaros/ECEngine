@@ -17,6 +17,14 @@ contextBridge.exposeInMainWorld('electron', {
     updateFolderOrder: (folderOrders: Array<{ folderName: string, orderIndex: number }>) =>
       ipcRenderer.invoke('decks:updateFolderOrder', { folderOrders }),
   },
+  folders: {
+    getAll:    ():                                          Promise<any> => ipcRenderer.invoke('folders:getAll'),
+    create:    (name: string, parentId?: string | null):   Promise<any> => ipcRenderer.invoke('folders:create', { name, parentId }),
+    delete:    (folderId: string):                         Promise<any> => ipcRenderer.invoke('folders:delete', folderId),
+    setParent: (folderId: string, parentId: string | null):Promise<any> => ipcRenderer.invoke('folders:setParent', { folderId, parentId }),
+    reorder:   (orders: Array<{ id: string; order_index: number }>): Promise<any> => ipcRenderer.invoke('folders:reorder', { orders }),
+    rename:    (folderId: string, newName: string):                  Promise<any> => ipcRenderer.invoke('folders:rename', { folderId, newName }),
+  },
   data: {
     getCards: (topicId?: string) => ipcRenderer.invoke('data:getCards', topicId),
     getCardsWithProgress: (topicId: string) => ipcRenderer.invoke('data:getCardsWithProgress', topicId),

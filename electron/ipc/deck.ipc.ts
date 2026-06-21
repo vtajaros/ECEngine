@@ -29,13 +29,14 @@ export function registerDeckHandlers(): void {
     description: string,
     tags: string,
     folderName: string,
+    folderId?: string | null,       // ← add
     cards: Array<{id: string, type: string, data: string, is_custom: number}>
   }) => {
     try {
       getDB().transaction(() => {
         execute(
-          `INSERT INTO topics (id, name, subject, description, tags, folder_name) VALUES (?, ?, ?, ?, ?, ?)`,
-          [payload.topicId, payload.name, payload.subject, payload.description, payload.tags, payload.folderName]
+          `INSERT INTO topics (id, name, subject, description, tags, folder_name, folder_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+          [payload.topicId, payload.name, payload.subject, payload.description, payload.tags, payload.folderName, payload.folderId ?? null]
         )
 
         for (const card of payload.cards) {
@@ -135,7 +136,7 @@ export function registerDeckHandlers(): void {
   ipcMain.handle('decks:getTopicsWithCardCounts', async () => {
     try {
       const rows = queryAll(`
-        SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags, t.folder_name, t.order_index,
+        SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags, t.folder_name, t.folder_id, t.order_index,
                COUNT(c.id) as card_count,
                GROUP_CONCAT(DISTINCT c.type) as types
         FROM topics t LEFT JOIN cards c ON c.topic_id = t.id
@@ -150,7 +151,7 @@ export function registerDeckHandlers(): void {
   ipcMain.handle('decks:getFormulaTopics', async () => {
     try {
       const rows = queryAll(`
-        SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags, t.folder_name, t.order_index,
+        SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags, t.folder_name, t.folder_id, t.order_index,
                COUNT(c.id) as card_count,
                GROUP_CONCAT(DISTINCT c.type) as types
         FROM topics t
@@ -188,6 +189,7 @@ export function registerDeckHandlers(): void {
     description: string,
     tags: string,
     folderName: string,
+    folderId?: string | null,
     cards: Array<{ id: string, type: string, data: string, isNew: boolean }>,
     deletedCardIds: string[]
   }) => {
@@ -203,8 +205,8 @@ export function registerDeckHandlers(): void {
 
       db.transaction(() => {
         execute(
-          `UPDATE topics SET name = ?, subject = ?, description = ?, tags = ?, folder_name = ? WHERE id = ?`,
-          [payload.title, payload.subject, payload.description, payload.tags, payload.folderName, payload.deckId]
+          `UPDATE topics SET name = ?, subject = ?, description = ?, tags = ?, folder_name = ?, folder_id = ? WHERE id = ?`,
+          [payload.title, payload.subject, payload.description, payload.tags, payload.folderName, payload.folderId ?? null, payload.deckId]
         )
         for (const card of payload.cards) {
           if (card.isNew) {
@@ -250,6 +252,111 @@ export function registerDeckHandlers(): void {
           )
         }
       })()
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  // ── Folder handlers (v4) ──────────────────────────────────────────────────
+
+  ipcMain.handle('folders:getAll', async () => {
+    try {
+      const rows = queryAll(`SELECT id, name, parent_id, order_index FROM folders ORDER BY order_index ASC, name ASC`)
+      return { success: true, data: rows }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('folders:create', async (_, payload: { name: string; parentId?: string | null }) => {
+    try {
+      const id = crypto.randomUUID()
+      const maxOrder = (queryAll(
+        `SELECT COALESCE(MAX(order_index), -1) AS m FROM folders WHERE parent_id IS ?`,
+        [payload.parentId ?? null]
+      )[0]?.m ?? -1) as number
+      execute(
+        `INSERT INTO folders (id, name, parent_id, order_index) VALUES (?, ?, ?, ?)`,
+        [id, payload.name, payload.parentId ?? null, maxOrder + 1]
+      )
+      return { success: true, data: { id, name: payload.name, parent_id: payload.parentId ?? null, order_index: maxOrder + 1 } }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('folders:delete', async (_, folderId: string) => {
+    try {
+      const db = getDB()
+      db.transaction(() => {
+        // Determine parent (null = top-level)
+        const folder = db.prepare(`SELECT parent_id FROM folders WHERE id = ?`).get(folderId) as { parent_id: string | null } | undefined
+
+        if (!folder) return
+
+        const parentId = folder.parent_id
+
+        if (parentId === null) {
+          // Deleting a top-level folder:
+          // • Promote child folders to top-level
+          execute(`UPDATE folders SET parent_id = NULL WHERE parent_id = ?`, [folderId])
+          // • Move decks to Uncategorized (null folder_id)
+          execute(`UPDATE topics SET folder_id = NULL, folder_name = 'Uncategorized' WHERE folder_id = ?`, [folderId])
+        } else {
+          // Deleting a subfolder:
+          // • Move decks up to parent folder
+          const parentFolder = db.prepare(`SELECT name FROM folders WHERE id = ?`).get(parentId) as { name: string } | undefined
+          execute(
+            `UPDATE topics SET folder_id = ?, folder_name = ? WHERE folder_id = ?`,
+            [parentId, parentFolder?.name ?? 'Uncategorized', folderId]
+          )
+          // Subfolders can't exist (max depth = 1), so no child promotion needed
+        }
+
+        execute(`DELETE FROM folders WHERE id = ?`, [folderId])
+      })()
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('folders:setParent', async (_, payload: { folderId: string; parentId: string | null }) => {
+    try {
+      // Enforce max depth = 1: if parentId itself has a parent, reject
+      if (payload.parentId !== null) {
+        const parent = queryAll(`SELECT parent_id FROM folders WHERE id = ?`, [payload.parentId])[0]
+        if (parent?.parent_id !== null && parent?.parent_id !== undefined) {
+          return { success: false, error: 'Max folder depth is 1. Cannot nest deeper.' }
+        }
+      }
+      execute(`UPDATE folders SET parent_id = ? WHERE id = ?`, [payload.parentId, payload.folderId])
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('folders:reorder', async (_, payload: { orders: Array<{ id: string; order_index: number }> }) => {
+    try {
+      getDB().transaction(() => {
+        for (const { id, order_index } of payload.orders) {
+          execute(`UPDATE folders SET order_index = ? WHERE id = ?`, [order_index, id])
+        }
+      })()
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('folders:rename', async (_, payload: { folderId: string; newName: string }) => {
+    try {
+      if (!payload.newName?.trim()) {
+        return { success: false, error: 'Folder name cannot be empty.' }
+      }
+      execute(`UPDATE folders SET name = ? WHERE id = ?`, [payload.newName.trim(), payload.folderId])
       return { success: true }
     } catch (error) {
       return { success: false, error: (error as Error).message }

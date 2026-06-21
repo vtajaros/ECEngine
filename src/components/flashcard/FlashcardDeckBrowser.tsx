@@ -38,6 +38,11 @@ export interface FlashcardDeckBrowserProps {
   decks: DeckInfo[]
   filteredDecks: DeckInfo[]
   folders: string[]
+  folderRows?: import('../../types/window').FolderRow[]
+  onCreateFolder?: (name: string, parentId?: string | null) => Promise<void>
+  onPromoteFolder?: (folderId: string) => Promise<void>
+  onNestFolder?: (folderId: string, parentId: string) => Promise<void>
+  onRenameFolder?: (folderId: string, newName: string) => Promise<void>
   deckCountByFolder: Record<string, number>
   activeFolder: string | 'all'
   activeSubject: FilterSubject
@@ -80,6 +85,11 @@ export function FlashcardDeckBrowser({
   decks,
   filteredDecks,
   folders,
+  folderRows,
+  onCreateFolder,
+  onPromoteFolder,
+  onNestFolder,
+  onRenameFolder,
   deckCountByFolder,
   activeFolder,
   activeSubject,
@@ -121,6 +131,7 @@ export function FlashcardDeckBrowser({
     <div className="flex flex-col h-full w-full">
       <div className="flex flex-row flex-1 w-full overflow-hidden">
         <FolderPanel
+          folderRows={folderRows}
           folders={folders}
           deckCountByFolder={deckCountByFolder}
           totalDeckCount={decks.length}
@@ -128,6 +139,10 @@ export function FlashcardDeckBrowser({
           onSelect={onFolderSelect}
           onDeleteFolder={onDeleteFolder}
           onReorderFolders={onReorderFolders}
+          onCreateFolder={onCreateFolder}
+          onPromoteFolder={onPromoteFolder}
+          onNestFolder={onNestFolder}
+          onRenameFolder={onRenameFolder}
         />
 
         <div className="flex flex-col flex-1 min-w-0 overflow-y-auto show-scrollbar">

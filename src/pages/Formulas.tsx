@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import FolderPanel from '@/components/ui/FolderPanel'
+import { useFolderState } from '../hooks/useFolderState'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate, useBlocker } from 'react-router-dom'
 import {
@@ -50,6 +51,7 @@ interface DeckInfo {
   tags?: string[]
   createdAt?: number
   folderName?: string
+  folderId?: string
   order_index?: number
 }
 
@@ -206,6 +208,7 @@ export default function Formulas() {
                 tags: parsedTags,
                 createdAt: row.created_at || Date.now(),
                 folderName: row.folder_name || 'Uncategorized',
+                folderId: row.folder_id || null,
                 order_index: row.order_index,
               }
             })
@@ -214,6 +217,17 @@ export default function Formulas() {
     } catch (e) { console.error('Failed to load decks', e) }
     finally { setIsLoading(false) }
   }
+
+  const {
+    folderRows,
+    onCreateFolder,
+    onDeleteFolder: handleDeleteFolder,
+    onReorderFolders: handleReorderFolders,
+    onPromoteFolder,
+    onNestFolder,
+    onRenameFolder,
+    subtreeIds,
+  } = useFolderState(loadDecks)
 
   useEffect(() => {
     loadDecks()
@@ -408,10 +422,12 @@ export default function Formulas() {
   const filteredDecks = useMemo(() => {
     // Formula type filter is already applied at DB level (HAVING clause)
     // Folder filter → subject filter → type filter → tag filter → sort
-    const folderFiltered =
-      activeFolder === 'all'
+    const folderFiltered = activeFolder === 'all'
         ? decks
-        : decks.filter((d) => (d.folderName || 'Uncategorized') === activeFolder)
+        : decks.filter(d => {
+            const ids = subtreeIds(activeFolder)
+            return d.folderId ? ids.includes(d.folderId) : activeFolder === 'Uncategorized'
+          })
 
     let result = folderFiltered.filter(
       (d) => activeSubject === 'ALL' || d.subject === activeSubject
@@ -538,29 +554,13 @@ export default function Formulas() {
   // ══════════════════════════════════════════════
   // RENDER — Deck Listing
   // ══════════════════════════════════════════════
-  const handleDeleteFolder = async (folderName: string) => {
-    const result = await dbService.updateDecksFolder(folderName, 'Uncategorized')
-    if (result.success) {
-      await loadDecks()
-    }
-  }
-
-  const handleReorderFolders = async (newOrder: string[]) => {
-    const folderOrders = newOrder.map((folderName, index) => ({
-      folderName,
-      orderIndex: index,
-    }))
-    const result = await dbService.updateFolderOrder(folderOrders)
-    if (result.success) {
-      await loadDecks()
-    }
-  }
 
   return (
     <div className="flex flex-col h-full w-full">
       {/* Folder Panel + Deck Grid */}
       <div className="flex flex-row flex-1 w-full overflow-hidden">
         <FolderPanel
+          folderRows={folderRows}
           folders={folders}
           deckCountByFolder={deckCountByFolder}
           totalDeckCount={decks.length}
@@ -568,6 +568,10 @@ export default function Formulas() {
           onSelect={setActiveFolder}
           onDeleteFolder={handleDeleteFolder}
           onReorderFolders={handleReorderFolders}
+          onCreateFolder={onCreateFolder}
+          onPromoteFolder={onPromoteFolder}
+          onNestFolder={onNestFolder}
+          onRenameFolder={onRenameFolder}
         />
         <div className="flex flex-col flex-1 min-w-0 overflow-y-auto show-scrollbar">
           {/* Header centered above decks */}

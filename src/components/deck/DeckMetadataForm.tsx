@@ -50,11 +50,15 @@ export default function DeckMetadataForm({ metadata, setMetadata }: DeckMetadata
   // Fetch existing folders for autocomplete
   useEffect(() => {
     async function fetchFolders() {
-      const r = await window.electron.decks.getTopics()
-      const folderNames = [...new Set(
-        (r.data || []).map((row: any) => row.folder_name).filter(Boolean)
-      )].sort() as string[]
-      setMetadata(prev => ({ ...prev, existingFolders: folderNames }))
+      try {
+        const res = await window.electron.folders.getAll()
+        const folderNames = res.success && res.data
+          ? [...new Set(res.data.map((f: any) => f.name))].sort() as string[]
+          : []
+        setMetadata(prev => ({ ...prev, existingFolders: folderNames }))
+      } catch {
+        setMetadata(prev => ({ ...prev, existingFolders: [] }))
+      }
     }
     fetchFolders()
   }, [setMetadata])

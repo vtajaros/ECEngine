@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import FolderPanel from '@/components/ui/FolderPanel'
+import { useFolderState } from '../hooks/useFolderState'
 import { useNavigate, useBlocker } from 'react-router-dom'
 import { FlashDeck } from '../components/flashcard/FlashDeck'
 import { MCQDeck } from '../components/mcq/MCQDeck'
@@ -43,6 +44,7 @@ interface StudySet {
   tags?: string[]
   createdAt?: number
   folderName?: string
+  folderId?: string
   order_index?: number
 }
 
@@ -108,6 +110,7 @@ export default function LooksFamStudy() {
             tags: parsedTags,
             createdAt: row.created_at || Date.now(),
             folderName: row.folder_name || 'Uncategorized',
+            folderId: row.folder_id || null,
             order_index: row.order_index
           }
         }).filter((s: StudySet | null): s is StudySet => s !== null)
@@ -141,6 +144,17 @@ export default function LooksFamStudy() {
       setIsLoading(false)
     }
   }
+
+  const {
+    folderRows,
+    onCreateFolder,
+    onDeleteFolder: handleDeleteFolder,
+    onReorderFolders: handleReorderFolders,
+    onPromoteFolder,
+    onNestFolder,
+    onRenameFolder,
+    subtreeIds,
+  } = useFolderState(loadDBSets)
 
   useEffect(() => {
     loadDBSets()
@@ -207,7 +221,10 @@ export default function LooksFamStudy() {
   const filteredAndSortedSets = useMemo(() => {
     const folderFiltered = activeFolder === 'all'
       ? allSets
-      : allSets.filter(d => (d.folderName || 'Uncategorized') === activeFolder)
+      : allSets.filter(d => {
+          const ids = subtreeIds(activeFolder)
+          return d.folderId ? ids.includes(d.folderId) : activeFolder === 'Uncategorized'
+        })
 
     let result = folderFiltered.filter(s => activeSubject === 'ALL' || s.subject === activeSubject)
 
@@ -582,24 +599,6 @@ export default function LooksFamStudy() {
 
   const progress = currentDeck.length > 0 ? (currentIndex / currentDeck.length) * 100 : 0
 
-  const handleDeleteFolder = async (folderName: string) => {
-    const result = await dbService.updateDecksFolder(folderName, 'Uncategorized')
-    if (result.success) {
-      await loadDBSets()
-    }
-  }
-
-  const handleReorderFolders = async (newOrder: string[]) => {
-    const folderOrders = newOrder.map((folderName, index) => ({
-      folderName,
-      orderIndex: index,
-    }))
-    const result = await dbService.updateFolderOrder(folderOrders)
-    if (result.success) {
-      await loadDBSets()
-    }
-  }
-
   if (isSessionActive) {
     if (mode === 'learn') {
       return (
@@ -702,6 +701,7 @@ export default function LooksFamStudy() {
 
       <div className="flex flex-row flex-1 w-full overflow-hidden">
         <FolderPanel
+          folderRows={folderRows}
           folders={folders}
           deckCountByFolder={deckCountByFolder}
           totalDeckCount={allSets.length}
@@ -709,6 +709,10 @@ export default function LooksFamStudy() {
           onSelect={setActiveFolder}
           onDeleteFolder={handleDeleteFolder}
           onReorderFolders={handleReorderFolders}
+          onCreateFolder={onCreateFolder}
+          onPromoteFolder={onPromoteFolder}
+          onNestFolder={onNestFolder}
+          onRenameFolder={onRenameFolder}
         />
         <div ref={scrollContainerRef} className="flex flex-col flex-1 min-w-0 overflow-y-auto show-scrollbar">
           <div className="flex flex-col items-center w-full pt-6 pb-0 px-6">

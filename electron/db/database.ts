@@ -53,6 +53,35 @@ const MIGRATIONS: Array<{ version: number; sql: string | string[] }> = [
       "ALTER TABLE study_activity ADD COLUMN total_count INTEGER DEFAULT 0",
     ],
   },
+  {
+    // v4: Folder hierarchy. Creates a dedicated `folders` table and adds
+    // `folder_id` to topics. `folder_name` is kept intact (no DROP).
+    version: 4,
+    sql: [
+      `CREATE TABLE IF NOT EXISTS folders (
+        id           TEXT PRIMARY KEY,
+        name         TEXT NOT NULL,
+        parent_id    TEXT REFERENCES folders(id),
+        order_index  INTEGER DEFAULT 0
+      )`,
+      // Seed one row per distinct folder_name string already in topics
+      `INSERT OR IGNORE INTO folders (id, name)
+       SELECT LOWER(HEX(RANDOMBLOB(8))), folder_name
+       FROM topics
+       WHERE folder_name IS NOT NULL AND folder_name != ''
+       GROUP BY folder_name`,
+      // Add the FK column
+      `ALTER TABLE topics ADD COLUMN folder_id TEXT REFERENCES folders(id)`,
+      // Backfill folder_id by matching the legacy folder_name string
+      `UPDATE topics
+       SET folder_id = (
+         SELECT id FROM folders WHERE folders.name = topics.folder_name LIMIT 1
+       )
+       WHERE folder_name IS NOT NULL`,
+      // Index for fast folder lookups
+      `CREATE INDEX IF NOT EXISTS idx_topics_folder_id ON topics(folder_id)`,
+    ],
+  },
   // Add future migrations here as { version: N, sql: [...] }
 ]
 

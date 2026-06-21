@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS topics (
   tags TEXT,
   created_at INTEGER DEFAULT (strftime('%s', 'now')),
   folder_name TEXT DEFAULT 'Uncategorized',
+  folder_id   TEXT REFERENCES folders(id),
   FOREIGN KEY(parent_id) REFERENCES topics(id)
 );
 
@@ -49,3 +50,12 @@ CREATE TABLE IF NOT EXISTS exam_sessions (
 CREATE INDEX IF NOT EXISTS idx_next_review ON progress(next_review);
 CREATE INDEX IF NOT EXISTS idx_last_reviewed ON progress(last_reviewed);
 CREATE INDEX IF NOT EXISTS idx_cards_topic_id ON cards(topic_id);
+
+CREATE TABLE IF NOT EXISTS folders (
+  id          TEXT PRIMARY KEY,
+  name        TEXT NOT NULL,
+  parent_id   TEXT REFERENCES folders(id),
+  order_index INTEGER DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_topics_folder_id ON topics(folder_id);

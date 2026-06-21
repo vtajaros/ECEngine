@@ -4,6 +4,13 @@
 
 export { }  // ensure this is treated as a module
 
+export interface FolderRow {
+  id:          string
+  name:        string
+  parent_id:   string | null
+  order_index: number
+}
+
 declare global {
   interface Window {
     electron: {
@@ -32,6 +39,14 @@ declare global {
         }) => Promise<{ success: boolean; error?: string }>
         updateDecksFolder: (fromFolder: string, toFolder: string) => Promise<{ success: boolean; error?: string }>
         updateFolderOrder: (folderOrders: Array<{ folderName: string, orderIndex: number }>) => Promise<{ success: boolean; error?: string }>
+      }
+      folders: {
+        getAll():                                                    Promise<{ success: boolean; data?: FolderRow[];    error?: string }>
+        create(name: string, parentId?: string | null):             Promise<{ success: boolean; data?: FolderRow;     error?: string }>
+        delete(folderId: string):                                    Promise<{ success: boolean;                       error?: string }>
+        setParent(folderId: string, parentId: string | null):       Promise<{ success: boolean;                       error?: string }>
+        reorder(orders: Array<{ id: string; order_index: number }>):Promise<{ success: boolean;                       error?: string }>
+        rename(folderId: string, newName: string):                   Promise<{ success: boolean;                       error?: string }>
       }
       data: {
         getCards: (topicId?: string) => Promise<{ success: boolean; data?: any; error?: string }>
