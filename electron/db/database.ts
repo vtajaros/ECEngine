@@ -82,7 +82,26 @@ const MIGRATIONS: Array<{ version: number; sql: string | string[] }> = [
       `CREATE INDEX IF NOT EXISTS idx_topics_folder_id ON topics(folder_id)`,
     ],
   },
-  // Add future migrations here as { version: N, sql: [...] }
+  {
+    // v5: Folder namespacing. Adds `scope` to folders table.
+    version: 5,
+    sql: [
+      "ALTER TABLE folders ADD COLUMN scope TEXT NOT NULL DEFAULT 'study'",
+      // Insert a dedicated Uncategorized folder for the formula scope.
+      "INSERT INTO folders (id, name, parent_id, order_index, scope) VALUES (LOWER(HEX(RANDOMBLOB(8))), 'Uncategorized', NULL, 0, 'formula')"
+    ]
+  },
+  {
+    // v6: Fix folder_name desync by treating folder_id as the source of truth.
+    version: 6,
+    sql: [
+      `UPDATE topics
+       SET folder_name = (SELECT name FROM folders WHERE folders.id = topics.folder_id)
+       WHERE folder_id IS NOT NULL
+         AND folder_id IN (SELECT id FROM folders)
+         AND folder_name != (SELECT name FROM folders WHERE folders.id = topics.folder_id)`
+    ]
+  }
 ]
 
 /**

@@ -146,6 +146,14 @@ export default function Formulas() {
     }
   }, [blocker])
 
+  useEffect(() => {
+    const saved = sessionStorage.getItem('ecengine:returnScroll:/formulas')
+    if (saved) {
+      window.scrollTo(0, parseInt(saved, 10))
+      sessionStorage.removeItem('ecengine:returnScroll:/formulas')
+    }
+  }, [])
+
   // Safe exit: reset any active blocker before handing control to parent
   const handleExit = () => {
     if (blocker.state === 'blocked') blocker.reset()
@@ -227,7 +235,7 @@ export default function Formulas() {
     onNestFolder,
     onRenameFolder,
     subtreeIds,
-  } = useFolderState(loadDecks)
+  } = useFolderState(loadDecks, 'formula')
 
   useEffect(() => {
     loadDecks()
@@ -407,17 +415,26 @@ export default function Formulas() {
     return names
   }, [decks])
 
-  const deckCountByFolder = useMemo(
-    () =>
-      folders.reduce(
-        (acc, f) => ({
-          ...acc,
-          [f]: decks.filter((d) => (d.folderName || 'Uncategorized') === f).length,
-        }),
-        {} as Record<string, number>
-      ),
-    [decks, folders]
-  )
+  const deckCountByFolder = useMemo(() => {
+    const acc: Record<string, number> = {}
+    const uncategorized = folderRows.find(f => f.name === 'Uncategorized')
+    const uncategorizedId = uncategorized?.id
+    
+    for (const folder of folderRows) {
+      let count = 0
+      if (folder.name === 'Uncategorized') {
+        count = decks.filter(d => d.folderId === null || d.folderId === uncategorizedId).length
+      } else {
+        count = decks.filter(d => {
+          const ids = subtreeIds(folder.id)
+          return d.folderId ? ids.includes(d.folderId) : false
+        }).length
+      }
+      acc[folder.id] = count
+      acc[folder.name] = count // for legacy mode fallback
+    }
+    return acc
+  }, [decks, folderRows, subtreeIds])
 
   const filteredDecks = useMemo(() => {
     // Formula type filter is already applied at DB level (HAVING clause)
@@ -815,7 +832,10 @@ export default function Formulas() {
                       deck={deck}
                       onLearn={(id) => openDeck(decks.find(d => d.id === id)!)}
                       onPreview={(id) => openDeck(decks.find(d => d.id === id)!)}
-                      onEdit={(id) => navigate(`/edit-deck/${id}`)}
+                      onEdit={(id) => {
+                        sessionStorage.setItem('ecengine:returnScroll:/formulas', String(window.scrollY))
+                        navigate(`/edit-deck/${id}?returnTo=/formulas`)
+                      }}
                       onDelete={setSetToDelete}
                       onPrint={(id, title) => window.electron.print.open(id, title)}
                     />

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   LayoutGrid, Folder, FolderOpen, Trash2, GripVertical,
   Pencil, Check, X, AlertTriangle, ChevronRight, Plus, FolderPlus,
+  AlertCircle,
 } from 'lucide-react'
 import {
   DndContext, closestCenter, PointerSensor,
@@ -30,8 +31,8 @@ export interface FolderPanelProps {
   onDeleteFolder?: (folderIdOrName: string) => void
   onReorderFolders?: (newOrder: string[]) => void
   onCreateFolder?: (name: string, parentId?: string | null) => void
-  onPromoteFolder?: (folderId: string) => void
-  onNestFolder?: (folderId: string, parentId: string) => void
+  onPromoteFolder?: (folderId: string) => Promise<void>
+  onNestFolder?: (folderId: string, parentId: string) => Promise<void>
   onRenameFolder?: (folderId: string, newName: string) => void
 }
 
@@ -89,6 +90,46 @@ function subtreeCount(node: TreeNode, countMap: Record<string, number>): number 
 let countMap: Record<string, number> = {}
 
 const TOP_LEVEL_DROP_ID = '__TOP_LEVEL_DROP__'
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Pure helper — computes drop intent from live event geometry.
+// Used by BOTH onDragOver (for highlight state) and handleDragEnd (for action).
+// Never reading from React state avoids the race where onDragEnd fires before
+// the async state updates from the last onDragOver have committed.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function computeDropInfo(
+  active: { id: unknown; rect: { current: { translated: DOMRect | null | undefined } } },
+  over: { id: unknown; rect: DOMRect } | null | undefined,
+  folderRows: FolderRow[]
+): { targetId: string | null; intent: DropIntent | null; isTopLevel: boolean } {
+  if (!over) return { targetId: null, intent: null, isTopLevel: false }
+
+  const overId = over.id as string
+
+  if (overId === TOP_LEVEL_DROP_ID) {
+    return { targetId: null, intent: null, isTopLevel: true }
+  }
+
+  // Only root-level folders are valid positional drop targets
+  const overNode = folderRows.find(r => r.id === overId)
+  if (!overNode || overNode.parent_id !== null) {
+    return { targetId: null, intent: null, isTopLevel: false }
+  }
+
+  const overRect = over.rect
+  const activeRect = active.rect.current.translated
+  let intent: DropIntent = 'into'
+  if (overRect && activeRect) {
+    // The visual center of the dragged row (ignoring its children) is ~16px down from the top.
+    // Using full activeRect.height would skew the center for expanded folders.
+    const activeVisualCenterY = activeRect.top + 16
+    const relativeY = (activeVisualCenterY - overRect.top) / overRect.height
+    intent = relativeY < 0.25 ? 'before' : relativeY > 0.75 ? 'after' : 'into'
+  }
+
+  return { targetId: overId, intent, isTopLevel: false }
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Inline rename input — same visual style as CreateFolderInput
@@ -571,6 +612,12 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
   const [dropTargetId, setDropTargetId] = useState<string | null>(null)
   const [dropIntent, setDropIntent] = useState<DropIntent | null>(null)
   const [overTopLevel, setOverTopLevel] = useState(false)
+  const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
+  const handleError = (err: any) => {
+    setErrorMsg(err.message)
+    setTimeout(() => setErrorMsg(null), 4000)
+  }
 
   countMap = deckCountByFolder
 
@@ -600,106 +647,105 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
       setDropTargetId(null)
       setDropIntent(null)
       setOverTopLevel(false)
-      // Determine depth of dragged node
       const node = folderRows.find(r => r.id === id)
       setActiveDragDepth(node?.parent_id ? 1 : 0)
     }
 
     const handleDragOver = (e: DragOverEvent) => {
-      const overId = e.over?.id as string | undefined
-      if (!overId) {
-        setDropTargetId(null)
-        setDropIntent(null)
-        setOverTopLevel(false)
-        return
-      }
-
-      if (overId === TOP_LEVEL_DROP_ID) {
-        setOverTopLevel(true)
-        setDropTargetId(null)
-        setDropIntent(null)
-        return
-      }
-
-      setOverTopLevel(false)
-
-      // Only root-level folders are valid positional drop targets
-      const overNode = folderRows.find(r => r.id === overId)
-      if (!overNode || overNode.parent_id !== null) {
-        setDropTargetId(null)
-        setDropIntent(null)
-        return
-      }
-
-      // Compute position-based intent using active/over rects
-      const overRect = e.over?.rect
-      const activeRect = (e.active.rect.current as any)?.translated
-      if (overRect && activeRect) {
-        const activeCenterY = activeRect.top + activeRect.height / 2
-        const relativeY = (activeCenterY - overRect.top) / overRect.height
-        const intent: DropIntent = relativeY < 0.25 ? 'before' : relativeY > 0.75 ? 'after' : 'into'
-        setDropTargetId(overId)
-        setDropIntent(intent)
-      } else {
-        setDropTargetId(overId)
-        setDropIntent('into')
-      }
+      // computeDropInfo for the visual highlight state only.
+      // handleDragEnd recomputes fresh — never reads this state for its action.
+      const { targetId, intent, isTopLevel } = computeDropInfo(
+        e.active as any, e.over as any, folderRows
+      )
+      console.log('[DEBUG] DRAG_OVER -> over?.id:', e.over?.id, '| compute:', { targetId, intent, isTopLevel }, '| overNode.parent_id:', folderRows.find(r => r.id === e.over?.id)?.parent_id)
+      setOverTopLevel(isTopLevel)
+      setDropTargetId(targetId)
+      setDropIntent(intent)
     }
 
     const handleDragEnd = (e: DragEndEvent) => {
       const { active, over } = e
       const activeId = active.id as string
-      const currentIntent = dropIntent
-      const currentTarget = dropTargetId
 
+      console.log('[DEBUG] DRAG_END -> over?.id:', over?.id, '| activeId:', activeId)
+
+      // ── Clear all visual highlight state first ────────────────────────────
       setActiveDragId(null)
       setActiveDragDepth(null)
       setDropTargetId(null)
       setDropIntent(null)
       setOverTopLevel(false)
 
-      if (!over) return
+      if (!over) {
+        console.log('[DEBUG] DRAG_END -> BAIL: !over')
+        return
+      }
       const overId = over.id as string
 
       // Dropped on TOP_LEVEL_DROP_ID → promote to root
       if (overId === TOP_LEVEL_DROP_ID) {
-        onPromoteFolder?.(activeId)
+        console.log('[DEBUG] DRAG_END -> PROMOTING to root')
+        onPromoteFolder?.(activeId).catch(handleError)
         return
       }
 
-      if (!currentTarget) return
+      // ── Recompute intent FRESH from the event — never from React state ────
+      // State written by onDragOver may not have committed by the time
+      // onDragEnd fires (async batching), so reading dropTargetId/dropIntent
+      // state here would often return stale null values and silently bail.
+      const { targetId, intent } = computeDropInfo(
+        active as any, over as any, folderRows
+      )
+      console.log('[DEBUG] DRAG_END -> computeDropInfo:', { targetId, intent }, '| overNode.parent_id:', folderRows.find(r => r.id === overId)?.parent_id)
+      
+      if (!targetId) {
+        console.log('[DEBUG] DRAG_END -> BAIL: !targetId (computeDropInfo returned null)')
+        return
+      }
 
-      const activeIsSubfolder = activeDragDepth === 1 || (folderRows.find(r => r.id === activeId)?.parent_id !== null)
+      const activeIsSubfolder =
+        activeDragDepth === 1 ||
+        (folderRows.find(r => r.id === activeId)?.parent_id !== null)
 
       if (activeIsSubfolder) {
-        // Subfolders always reparent to the target root folder, regardless of intent
-        onNestFolder?.(activeId, currentTarget)
-        setExpandedIds(prev => new Set([...prev, currentTarget]))
+        // Subfolders always reparent to the target root folder
+        onNestFolder?.(activeId, targetId).catch(handleError)
+        setExpandedIds(prev => new Set([...prev, targetId]))
         return
       }
 
       // Active is a root folder
-      if (currentIntent === 'into') {
-        // Nest into target
-        if (currentTarget !== activeId) {
-          onNestFolder?.(activeId, currentTarget)
-          setExpandedIds(prev => new Set([...prev, currentTarget]))
+      if (intent === 'into') {
+        if (targetId !== activeId) {
+          onNestFolder?.(activeId, targetId).catch(handleError)
+          setExpandedIds(prev => new Set([...prev, targetId]))
         }
       } else {
-        // Reorder roots (before / after)
+        // Reorder: before → insert at newIdx, after → insert at newIdx + 1
         const oldIdx = rootIds.indexOf(activeId)
-        const newIdx = rootIds.indexOf(currentTarget)
+        const newIdx = rootIds.indexOf(targetId)
         if (oldIdx === -1 || newIdx === -1) return
-        let targetIdx = newIdx
-        if (currentIntent === 'after') targetIdx = newIdx
-        const reordered = arrayMove(rootIds, oldIdx, targetIdx)
+        // arrayMove removes the item from oldIdx then inserts at targetIdx.
+        // For 'after': the insertion point is newIdx + 1, but we must account
+        // for the removal of the active item shifting indices when oldIdx < newIdx.
+        const insertAt = intent === 'after'
+          ? (oldIdx < newIdx ? newIdx : newIdx + 1)
+          : (oldIdx < newIdx ? Math.max(0, newIdx - 1) : newIdx)
+        const reordered = arrayMove(rootIds, oldIdx, insertAt)
         onReorderFolders?.(reordered)
       }
     }
 
     return (
-      <div className="flex-shrink-0 bg-[var(--bg-primary)] overflow-y-auto overflow-x-hidden flex flex-col w-[200px] h-full border-r border-[var(--bg-card)] py-4 px-2">
-        <div className="flex flex-col items-stretch gap-0 px-1">
+      <div className="relative flex-shrink-0 w-[200px] h-full z-40">
+        <motion.div
+          animate={{ width: isEditing ? 320 : 200 }}
+          transition={{ duration: 0.2, ease: 'easeInOut' }}
+          className={`absolute top-0 left-0 h-full bg-[var(--bg-primary)] overflow-y-auto overflow-x-hidden flex flex-col border-r border-[var(--bg-card)] py-4 px-2 ${
+            isEditing ? 'z-40 shadow-2xl shadow-black/50 border-r-2' : 'z-0'
+          }`}
+        >
+          <div className="flex flex-col items-stretch gap-0 px-1 w-full">
 
           {/* Header */}
           <div className="flex justify-between items-center mb-3 px-1">
@@ -726,6 +772,23 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
               </button>
             </div>
           </div>
+
+          {/* Error Banner */}
+          <AnimatePresence>
+            {errorMsg && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden mb-2 px-1"
+              >
+                <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-[10px] px-2 py-1.5 rounded-md flex items-start gap-1.5">
+                  <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
+                  <span className="leading-tight">{errorMsg}</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* All row */}
           <motion.button
@@ -832,13 +895,14 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
             </motion.button>
           )}
 
-        </div>
+          </div>
 
-        <DeleteConfirmModal
-          target={folderToDelete}
-          onConfirm={() => { if (folderToDelete) { onDeleteFolder?.(folderToDelete.id); setFolderToDelete(null) } }}
-          onCancel={() => setFolderToDelete(null)}
-        />
+          <DeleteConfirmModal
+            target={folderToDelete}
+            onConfirm={() => { if (folderToDelete) { onDeleteFolder?.(folderToDelete.id); setFolderToDelete(null) } }}
+            onCancel={() => setFolderToDelete(null)}
+          />
+        </motion.div>
       </div>
     )
   }
@@ -858,8 +922,15 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
   }
 
   return (
-    <div className="flex-shrink-0 bg-[var(--bg-primary)] overflow-y-auto overflow-x-hidden flex flex-col w-[200px] h-full border-r border-[var(--bg-card)] py-4 px-2">
-      <div className="flex flex-col items-stretch gap-0 px-4">
+    <div className="relative flex-shrink-0 w-[200px] h-full z-40">
+      <motion.div
+        animate={{ width: isEditing ? 320 : 200 }}
+        transition={{ duration: 0.2, ease: 'easeInOut' }}
+        className={`absolute top-0 left-0 h-full bg-[var(--bg-primary)] overflow-y-auto overflow-x-hidden flex flex-col border-r border-[var(--bg-card)] py-4 px-2 ${
+          isEditing ? 'z-40 shadow-2xl shadow-black/50 border-r-2' : 'z-0'
+        }`}
+      >
+        <div className="flex flex-col items-stretch gap-0 px-4 w-full">
         <div className="flex justify-between items-center mb-4 px-1">
           <h2 className="text-[var(--text-secondary)] text-[10px] uppercase tracking-[0.15em] font-bold">FOLDERS</h2>
           <button
@@ -913,13 +984,14 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
             />
           )}
         </motion.div>
-      </div>
-
-      <DeleteConfirmModal
-        target={folderToDelete}
-        onConfirm={() => { if (folderToDelete) { onDeleteFolder?.(folderToDelete.id); setFolderToDelete(null) } }}
-        onCancel={() => setFolderToDelete(null)}
-      />
+        </div>
+      
+        <DeleteConfirmModal
+          target={folderToDelete}
+          onConfirm={() => { if (folderToDelete) { onDeleteFolder?.(folderToDelete.id); setFolderToDelete(null) } }}
+          onCancel={() => setFolderToDelete(null)}
+        />
+      </motion.div>
     </div>
   )
 }

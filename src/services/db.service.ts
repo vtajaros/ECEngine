@@ -424,9 +424,7 @@ export const dbService = {
     return z.array(CardWithProgressRowSchema).parse(result.data ?? []).map(row => parseCardRow(row, topicId))
   },
 
-  updateDecksFolder: async (fromFolder: string, toFolder: string): Promise<{ success: boolean; error?: string }> => {
-    return window.electron.decks.updateDecksFolder(fromFolder, toFolder)
-  },
+
 
   updateFolderOrder: async (
     folderOrders: Array<{ folderName: string; orderIndex: number }>

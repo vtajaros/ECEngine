@@ -55,10 +55,9 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       const currentCard = state.currentDeck[state.currentIndex]
 
       // Load prior SM2 state from DB; fall back to defaults on first review
-      const prior = await dbService.getProgress(currentCard.id)
-      const previousRepetitions = prior?.repetitions ?? 0
-      const previousInterval    = prior?.interval    ?? 1
-      const previousEaseFactor  = prior?.easeFactor  ?? 2.5
+      const previousRepetitions = currentCard.repetitions ?? 0
+      const previousInterval    = currentCard.interval    ?? 1
+      const previousEaseFactor  = currentCard.easeFactor  ?? 2.5
 
       const { interval, repetitions, easeFactor } = calculateSM2(
         quality,

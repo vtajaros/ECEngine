@@ -6,7 +6,6 @@ import { Card } from '../types'
 // Mock dbService
 vi.mock('../services/db.service', () => ({
   dbService: {
-    getProgress: vi.fn(),
     saveProgress: vi.fn()
   }
 }))
@@ -26,8 +25,6 @@ const createMockCard = (id: string): Card => ({
 describe('useSessionStore', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    // dbService.getProgress defaults to null on first review
-    vi.mocked(dbService.getProgress).mockResolvedValue(null)
     vi.mocked(dbService.saveProgress).mockResolvedValue(undefined)
   })
 
@@ -70,7 +67,6 @@ describe('useSessionStore', () => {
     expect(state.sessionStats.easy).toBe(1)
     expect(state.isFinished).toBe(true)
     expect(state.isSubmitting).toBe(false)
-    expect(dbService.getProgress).toHaveBeenCalledWith('c1')
     expect(dbService.saveProgress).toHaveBeenCalledWith('c1', expect.any(Object), true)
   })
 
@@ -117,7 +113,6 @@ describe('useSessionStore', () => {
     
     await useSessionStore.getState().rateCard(4)
     
-    expect(dbService.getProgress).not.toHaveBeenCalled()
     expect(dbService.saveProgress).not.toHaveBeenCalled()
   })
 

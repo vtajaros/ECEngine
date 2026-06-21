@@ -23,7 +23,8 @@ export type DeckMetadata = {
   subject: Subject
   customTagInput: string
   folderName: string
-  existingFolders: string[]
+  folderId: string | null
+  existingFolders: { id: string, name: string }[]
   showFolderDropdown: boolean
   deckTags: string[]
 }
@@ -31,9 +32,10 @@ export type DeckMetadata = {
 interface DeckMetadataFormProps {
   metadata: DeckMetadata
   setMetadata: React.Dispatch<React.SetStateAction<DeckMetadata>>
+  scope: 'study' | 'formula'
 }
 
-export default function DeckMetadataForm({ metadata, setMetadata }: DeckMetadataFormProps) {
+export default function DeckMetadataForm({ metadata, setMetadata, scope }: DeckMetadataFormProps) {
   const folderDropdownRef = React.useRef<HTMLDivElement>(null)
 
   // Close dropdown when clicking outside
@@ -47,21 +49,24 @@ export default function DeckMetadataForm({ metadata, setMetadata }: DeckMetadata
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [setMetadata])
 
-  // Fetch existing folders for autocomplete
+  // Fetch existing folders for autocomplete whenever the dropdown is opened.
+  // Triggering on showFolderDropdown (not just mount) ensures folders created
+  // in the sidebar after this page first loaded are always visible here.
   useEffect(() => {
+    if (!metadata.showFolderDropdown) return
     async function fetchFolders() {
       try {
-        const res = await window.electron.folders.getAll()
-        const folderNames = res.success && res.data
-          ? [...new Set(res.data.map((f: any) => f.name))].sort() as string[]
+        const res = await window.electron.folders.getAll({ scope })
+        const folders = res.success && res.data
+          ? res.data.map((f: any) => ({ id: f.id, name: f.name })).sort((a: any, b: any) => a.name.localeCompare(b.name))
           : []
-        setMetadata(prev => ({ ...prev, existingFolders: folderNames }))
+        setMetadata(prev => ({ ...prev, existingFolders: folders }))
       } catch {
         setMetadata(prev => ({ ...prev, existingFolders: [] }))
       }
     }
     fetchFolders()
-  }, [setMetadata])
+  }, [metadata.showFolderDropdown, setMetadata, scope])
 
   return (
     <section className="w-full max-w-4xl xl:max-w-none xl:col-span-1 xl:sticky xl:top-20 flex flex-col gap-6 bg-[#111] border border-zinc-800 p-6 rounded-xl">
@@ -93,7 +98,7 @@ export default function DeckMetadataForm({ metadata, setMetadata }: DeckMetadata
               <input
                 type="text"
                 value={metadata.folderName}
-                onChange={e => setMetadata(prev => ({ ...prev, folderName: e.target.value, showFolderDropdown: true }))}
+                onChange={e => setMetadata(prev => ({ ...prev, folderName: e.target.value, folderId: null, showFolderDropdown: true }))}
                 onFocus={() => setMetadata(prev => ({ ...prev, showFolderDropdown: true }))}
                 placeholder="e.g. Select or type folder name..."
                 className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-text-primary text-sm font-['IBM_Plex_Mono'] focus:border-accent focus:bg-[#111] outline-none transition-colors pr-16 placeholder-[#555]"
@@ -102,7 +107,7 @@ export default function DeckMetadataForm({ metadata, setMetadata }: DeckMetadata
                 {metadata.folderName && (
                   <button
                     type="button"
-                    onClick={() => setMetadata(prev => ({ ...prev, folderName: '', showFolderDropdown: true }))}
+                    onClick={() => setMetadata(prev => ({ ...prev, folderName: '', folderId: null, showFolderDropdown: true }))}
                     className="p-1 text-[#444] hover:text-accent transition-colors"
                     title="Clear folder"
                   >
@@ -136,21 +141,21 @@ export default function DeckMetadataForm({ metadata, setMetadata }: DeckMetadata
                   ) : (
                     <div className="flex flex-col py-1">
                       {metadata.existingFolders
-                        .filter(f => f.toLowerCase().includes(metadata.folderName.toLowerCase()))
+                        .filter(f => f.name.toLowerCase().includes(metadata.folderName.toLowerCase()))
                         .map(f => (
                           <button
-                            key={f}
+                            key={f.id}
                             type="button"
-                            onClick={() => setMetadata(prev => ({ ...prev, folderName: f, showFolderDropdown: false }))}
+                            onClick={() => setMetadata(prev => ({ ...prev, folderName: f.name, folderId: f.id, showFolderDropdown: false }))}
                             className="w-full text-left px-3 py-2 text-xs font-['IBM_Plex_Mono'] text-[#ccc] hover:bg-border-base hover:text-accent transition-colors flex items-center justify-between"
                           >
-                            <span>{f}</span>
-                            {metadata.folderName.toLowerCase() === f.toLowerCase() && (
+                            <span>{f.name}</span>
+                            {metadata.folderName.toLowerCase() === f.name.toLowerCase() && (
                               <span className="w-1.5 h-1.5 rounded-full bg-accent" />
                             )}
                           </button>
                         ))}
-                      {metadata.existingFolders.filter(f => f.toLowerCase().includes(metadata.folderName.toLowerCase())).length === 0 && (
+                      {metadata.existingFolders.filter(f => f.name.toLowerCase().includes(metadata.folderName.toLowerCase())).length === 0 && (
                         <div
                           className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-surface transition-colors"
                           onClick={() => setMetadata(prev => ({ ...prev, showFolderDropdown: false }))}

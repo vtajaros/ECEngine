@@ -55,7 +55,8 @@ CREATE TABLE IF NOT EXISTS folders (
   id          TEXT PRIMARY KEY,
   name        TEXT NOT NULL,
   parent_id   TEXT REFERENCES folders(id),
-  order_index INTEGER DEFAULT 0
+  order_index INTEGER DEFAULT 0,
+  scope       TEXT NOT NULL DEFAULT 'study'
 );
 
 CREATE INDEX IF NOT EXISTS idx_topics_folder_id ON topics(folder_id);

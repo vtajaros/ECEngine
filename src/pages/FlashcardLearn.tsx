@@ -156,6 +156,14 @@ export default function FlashcardLearn() {
     }
   }, [blocker])
 
+  useEffect(() => {
+    const saved = sessionStorage.getItem('ecengine:returnScroll:/flashcards')
+    if (saved) {
+      window.scrollTo(0, parseInt(saved, 10))
+      sessionStorage.removeItem('ecengine:returnScroll:/flashcards')
+    }
+  }, [])
+
   // Safe exit: reset any active blocker before handing control to parent
   const handleExit = () => {
     if (blocker.state === 'blocked') blocker.reset()
@@ -240,7 +248,7 @@ export default function FlashcardLearn() {
     onNestFolder,
     onRenameFolder,
     subtreeIds,
-  } = useFolderState(loadDecks)
+  } = useFolderState(loadDecks, 'study')
 
   useEffect(() => {
     loadDecks()
@@ -643,14 +651,26 @@ Provide a thorough explanation covering ALL of the following:
     return names
   }, [decks])
 
-  const deckCountByFolder = useMemo(() =>
-    folders.reduce((acc, f) => ({
-      ...acc,
-      [f]: decks.filter(d =>
-        (d.folderName || 'Uncategorized') === f
-      ).length
-    }), {} as Record<string, number>)
-    , [decks, folders])
+  const deckCountByFolder = useMemo(() => {
+    const acc: Record<string, number> = {}
+    const uncategorized = folderRows.find(f => f.name === 'Uncategorized')
+    const uncategorizedId = uncategorized?.id
+    
+    for (const folder of folderRows) {
+      let count = 0
+      if (folder.name === 'Uncategorized') {
+        count = decks.filter(d => d.folderId === null || d.folderId === uncategorizedId).length
+      } else {
+        count = decks.filter(d => {
+          const ids = subtreeIds(folder.id)
+          return d.folderId ? ids.includes(d.folderId) : false
+        }).length
+      }
+      acc[folder.id] = count
+      acc[folder.name] = count // for legacy mode fallback
+    }
+    return acc
+  }, [decks, folderRows, subtreeIds])
 
   const filteredDecks = useMemo(() => {
     const folderFiltered = activeFolder === 'all'
@@ -835,7 +855,10 @@ Provide a thorough explanation covering ALL of the following:
       onShowAdvancedFilters={setShowAdvancedFilters}
       onLearnDeck={(id) => setShowFlashModal({ isOpen: true, deckId: id })}
       onPreviewDeck={handlePreviewStart}
-      onEditDeck={(id) => navigate(`/edit-deck/${id}`)}
+      onEditDeck={(id) => {
+        sessionStorage.setItem('ecengine:returnScroll:/flashcards', String(window.scrollY))
+        navigate(`/edit-deck/${id}?returnTo=/flashcards`)
+      }}
       onDeleteDeck={setSetToDelete}
       onPrintDeck={(id, title) => window.electron.print.open(id, title)}
       onConfirmDelete={handleConfirmDelete}

@@ -4,6 +4,7 @@ import { serializeMcqCard } from './mcq.serializer'
 import * as fsp from 'fs/promises'
 import * as path from 'path'
 import { z } from 'zod'
+import crypto from 'crypto'
 
 const TopicSchema = z.object({
   id: z.string(),
@@ -42,6 +43,21 @@ const ImportPayloadSchema = z.object({
   cards: z.array(CardSchema),
   progress: z.array(ProgressSchema).optional(),
 })
+
+function resolveOrCreateFolderIdLocal(
+  db: any,
+  folderName: string,
+  scope: string = 'study'
+): string | null {
+  if (!folderName || folderName === 'Uncategorized') return null
+  const existing = db
+    .prepare(`SELECT id FROM folders WHERE name = ? COLLATE NOCASE AND scope = ? LIMIT 1`)
+    .get(folderName, scope) as { id: string } | undefined
+  if (existing) return existing.id
+  const newId = crypto.randomUUID()
+  db.prepare(`INSERT INTO folders (id, name, scope) VALUES (?, ?, ?)`).run(newId, folderName, scope)
+  return newId
+}
 
 export function registerExportHandlers(): void {
   ipcMain.handle('decks:exportToText', async (_, topicId: string | number, topicName: string) => {
@@ -167,12 +183,22 @@ export function registerExportHandlers(): void {
         return { success: false, error: `Invalid backup format — ${message}` }
       }
       const { topics, cards, progress } = result.data
-      getDB().transaction(() => {
+      const db = getDB()
+      db.transaction(() => {
         for (const t of topics) {
-          execute(
-            `INSERT OR REPLACE INTO topics (id, name, subject, created_at, description, folder_name, tags)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [t.id, t.name, t.subject, t.created_at ?? Date.now()/1000, t.description ?? '', t.folder_name ?? 'Uncategorized', t.tags ?? '[]']
+          const importFolderId = resolveOrCreateFolderIdLocal(db, t.folder_name ?? 'Uncategorized')
+          db.prepare(
+            `INSERT OR REPLACE INTO topics (id, name, subject, created_at, description, folder_name, folder_id, tags)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+          ).run(
+            t.id,
+            t.name,
+            t.subject,
+            t.created_at ?? Date.now() / 1000,
+            t.description ?? '',
+            t.folder_name ?? 'Uncategorized',
+            importFolderId,
+            t.tags ?? '[]'
           )
         }
         for (const c of cards) {

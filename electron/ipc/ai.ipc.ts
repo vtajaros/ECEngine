@@ -135,45 +135,46 @@ STRICT FORMATTING RULES:
     const endpoint = 'https://api.groq.com/openai/v1/chat/completions'
 
     try {
-      const req = net.request({ method: 'POST', url: endpoint })
-      const responseText = await new Promise<string>((resolve, reject) => {
-        req.on('response', (response) => {
-          let body = ''
-          response.on('data', (chunk) => { body += chunk.toString() })
-          response.on('end', () => {
-            clearTimeout(timer)
-            if (response.statusCode && response.statusCode >= 400) {
-              reject({ status: response.statusCode, body })
-            } else {
-              resolve(body)
-            }
-          })
-          response.on('error', reject)
-        })
-        req.on('error', reject)
-        const timer = setTimeout(() => {
-          req.abort()
-          reject({ timeout: true })
-        }, 15000)
-        req.setHeader('Content-Type', 'application/json')
-        req.setHeader('Authorization', `Bearer ${apiKey}`)
-        req.write(JSON.stringify({
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 15000)
+      const response = await net.fetch(endpoint, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
           model: 'llama-3.3-70b-versatile',
           messages: [{ role: 'user', content: userPrompt }],
           max_tokens: 300,
           temperature: 0.4,
-        }))
-        req.end()
+        }),
       })
 
-      const parsed: GroqResponse = JSON.parse(responseText)
-      const text = parsed.choices?.[0]?.message?.content?.trim()
-      if (!text) return { error: 'API_ERROR' }
-      return { text }
-    } catch (err: any) {
-      if (err?.timeout) return { error: 'TIMEOUT' }
-      if (err?.status) return { error: 'API_ERROR', status: err.status }
-      return { error: 'NETWORK_ERROR' }
+      clearTimeout(timeout)
+
+      if (!response.ok) {
+        if (response.status === 401) return { error: 'INVALID_KEY' }
+        if (response.status === 429) return { error: 'RATE_LIMITED' }
+        const errBody = await response.text().catch(() => '')
+        console.error('[ai:explainFlashcard] Groq error:', response.status, errBody)
+        return { error: 'API_ERROR', status: response.status, detail: errBody }
+      }
+
+      const data = (await response.json()) as GroqResponse
+      const text = data?.choices?.[0]?.message?.content
+
+      if (!text) return { error: 'API_ERROR', status: 200, detail: 'Empty response from model' }
+
+      return { text: text.trim() }
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return { error: 'TIMEOUT' }
+      }
+      const message = err instanceof Error ? err.message : String(err)
+      console.error('[ai:explainFlashcard] Network error:', message)
+      return { error: 'NETWORK_ERROR', detail: message }
     }
   })
 }

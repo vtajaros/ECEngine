@@ -16,12 +16,12 @@ export interface UseFolderStateReturn {
   subtreeIds: (folderId: string) => string[]
 }
 
-export function useFolderState(onReload: () => Promise<void>): UseFolderStateReturn {
+export function useFolderState(onReload: () => Promise<void>, scope: 'study' | 'formula' = 'study'): UseFolderStateReturn {
   const [folderRows, setFolderRows] = useState<FolderRow[]>([])
 
   const reloadFolders = useCallback(async () => {
     try {
-      const res = await window.electron.folders.getAll()
+      const res = await window.electron.folders.getAll({ scope })
       if (res.success && res.data) setFolderRows(res.data)
     } catch (e) {
       console.error('[useFolderState] Failed to load folders:', e)
@@ -44,17 +44,17 @@ export function useFolderState(onReload: () => Promise<void>): UseFolderStateRet
   )
 
   const onCreateFolder = useCallback(async (name: string, parentId?: string | null) => {
-    const res = await window.electron.folders.create(name, parentId)
+    const res = await window.electron.folders.create({ name, parentId, scope })
     if (res.success) {
       await reloadFolders()
       await onReload()
     } else {
       console.error('[useFolderState] Create folder failed:', res.error)
     }
-  }, [reloadFolders, onReload])
+  }, [reloadFolders, onReload, scope])
 
   const onDeleteFolder = useCallback(async (folderId: string) => {
-    const res = await window.electron.folders.delete(folderId)
+    const res = await window.electron.folders.delete({ folderId, scope })
     if (res.success) {
       await reloadFolders()
       await onReload()
@@ -74,7 +74,7 @@ export function useFolderState(onReload: () => Promise<void>): UseFolderStateRet
   }, [reloadFolders])
 
   const onPromoteFolder = useCallback(async (folderId: string) => {
-    const res = await window.electron.folders.setParent(folderId, null)
+    const res = await window.electron.folders.setParent({ folderId, parentId: null, scope })
     if (res.success) {
       await reloadFolders()
     } else {
@@ -83,11 +83,12 @@ export function useFolderState(onReload: () => Promise<void>): UseFolderStateRet
   }, [reloadFolders])
 
   const onNestFolder = useCallback(async (folderId: string, parentId: string) => {
-    const res = await window.electron.folders.setParent(folderId, parentId)
+    const res = await window.electron.folders.setParent({ folderId, parentId, scope })
     if (res.success) {
       await reloadFolders()
     } else {
       console.error('[useFolderState] Nest failed:', res.error)
+      throw new Error(res.error)
     }
   }, [reloadFolders])
 

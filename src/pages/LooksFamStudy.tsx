@@ -154,10 +154,18 @@ export default function LooksFamStudy() {
     onNestFolder,
     onRenameFolder,
     subtreeIds,
-  } = useFolderState(loadDBSets)
+  } = useFolderState(loadDBSets, 'study')
 
   useEffect(() => {
     loadDBSets()
+  }, [])
+
+  useEffect(() => {
+    const saved = sessionStorage.getItem('ecengine:returnScroll:/study')
+    if (saved) {
+      window.scrollTo(0, parseInt(saved, 10))
+      sessionStorage.removeItem('ecengine:returnScroll:/study')
+    }
   }, [])
 
   useEffect(() => {
@@ -209,14 +217,26 @@ export default function LooksFamStudy() {
     return names
   }, [allSets])
 
-  const deckCountByFolder = useMemo(() =>
-    folders.reduce((acc, f) => ({
-      ...acc,
-      [f]: allSets.filter(d =>
-        (d.folderName || 'Uncategorized') === f
-      ).length
-    }), {} as Record<string, number>)
-    , [allSets, folders])
+  const deckCountByFolder = useMemo(() => {
+    const acc: Record<string, number> = {}
+    const uncategorized = folderRows.find(f => f.name === 'Uncategorized')
+    const uncategorizedId = uncategorized?.id
+    
+    for (const folder of folderRows) {
+      let count = 0
+      if (folder.name === 'Uncategorized') {
+        count = allSets.filter(d => d.folderId === null || d.folderId === uncategorizedId).length
+      } else {
+        count = allSets.filter(d => {
+          const ids = subtreeIds(folder.id)
+          return d.folderId ? ids.includes(d.folderId) : false
+        }).length
+      }
+      acc[folder.id] = count
+      acc[folder.name] = count // for legacy mode fallback
+    }
+    return acc
+  }, [allSets, folderRows, subtreeIds])
 
   const filteredAndSortedSets = useMemo(() => {
     const folderFiltered = activeFolder === 'all'
@@ -1032,7 +1052,11 @@ export default function LooksFamStudy() {
                             </button>
                           )}
                           <button
-                            onClick={(e) => { e.stopPropagation(); safeNavigate(`/edit-deck/${set.id}`) }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              sessionStorage.setItem('ecengine:returnScroll:/study', String(window.scrollY))
+                              safeNavigate(`/edit-deck/${set.id}?returnTo=/study`)
+                            }}
                             className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
                             title="Edit Deck"
                           >

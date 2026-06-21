@@ -144,6 +144,7 @@ export default function AddDeck() {
     subject: 'Electronics Engineering',
     customTagInput: '',
     folderName: '',
+    folderId: null,
     existingFolders: [],
     showFolderDropdown: false,
     deckTags: [],
@@ -285,6 +286,11 @@ export default function AddDeck() {
     }
 
     setDeckType(newType)
+    const newScope = newType === 'formula' ? 'formula' : 'study'
+    const oldScope = deckType === 'formula' ? 'formula' : 'study'
+    if (newScope !== oldScope) {
+      setMetadata(prev => ({ ...prev, folderName: '' }))
+    }
     const initialCards: EditCard[] = Array.from({ length: 3 }).map(() => ({
       id: uid(),
       type: newType,
@@ -308,6 +314,11 @@ export default function AddDeck() {
     const newType = pendingType
 
     setDeckType(newType)
+    const newScope = newType === 'formula' ? 'formula' : 'study'
+    const oldScope = deckType === 'formula' ? 'formula' : 'study'
+    if (newScope !== oldScope) {
+      setMetadata(prev => ({ ...prev, folderName: '' }))
+    }
     const initialCards: EditCard[] = Array.from({ length: 3 }).map(() => ({
       id: uid(),
       type: newType,
@@ -450,6 +461,8 @@ export default function AddDeck() {
         description: description.trim(),
         tags: JSON.stringify(deckTags),
         folderName: folderName.trim(),
+        folderId: metadata.folderId,
+        scope: deckType === 'formula' ? 'formula' : 'study',
         cards: validCards.map(card => {
           const cardId = 'card_' + Math.random().toString(36).substr(2, 9)
           const cleanedData = stripPlaceholders(card.data)
@@ -532,7 +545,7 @@ export default function AddDeck() {
       <div className="w-full px-6 py-8 xl:grid xl:grid-cols-3 xl:gap-6 flex flex-col gap-8 pb-32 items-center xl:items-start">
 
         {/* 1. Metadata & Tags — Pane 1 (sticky left) */}
-        <DeckMetadataForm metadata={metadata} setMetadata={setMetadata} />
+        <DeckMetadataForm metadata={metadata} setMetadata={setMetadata} scope={deckType === 'formula' ? 'formula' : 'study'} />
 
         {/* 2 & 3. Cards Pane — Pane 2 (right, 2/3 wide) */}
         <div className="w-full max-w-4xl xl:max-w-none xl:col-span-2 flex flex-col gap-6">

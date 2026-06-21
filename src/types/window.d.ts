@@ -24,6 +24,8 @@ declare global {
           description: string
           tags: string
           folderName: string
+          folderId: string | null
+          scope: string
           cards: Array<{ id: string; type: string; data: string; is_custom: number }>
         }) => Promise<{ success: boolean; error?: string }>
         deleteTopic: (topicId: string) => Promise<{ success: boolean; error?: string }>
@@ -33,18 +35,19 @@ declare global {
         getFormulaMastery: () => Promise<{ success: boolean; data?: any; error?: string }>
         updateDeckWithCards: (payload: {
           deckId: string, title: string, subject: string, description: string,
-          tags: string, folderName: string,
+          tags: string, folderName: string, folderId: string | null, scope: string,
           cards: Array<{ id: string, type: string, data: string, isNew: boolean }>,
           deletedCardIds: string[]
         }) => Promise<{ success: boolean; error?: string }>
-        updateDecksFolder: (fromFolder: string, toFolder: string) => Promise<{ success: boolean; error?: string }>
+
+        /** @deprecated Legacy deck order by folder name. Use folders.reorder for folder ordering. */
         updateFolderOrder: (folderOrders: Array<{ folderName: string, orderIndex: number }>) => Promise<{ success: boolean; error?: string }>
       }
       folders: {
-        getAll():                                                    Promise<{ success: boolean; data?: FolderRow[];    error?: string }>
-        create(name: string, parentId?: string | null):             Promise<{ success: boolean; data?: FolderRow;     error?: string }>
-        delete(folderId: string):                                    Promise<{ success: boolean;                       error?: string }>
-        setParent(folderId: string, parentId: string | null):       Promise<{ success: boolean;                       error?: string }>
+        getAll(payload?: { scope?: string }):                        Promise<{ success: boolean; data?: FolderRow[];    error?: string }>
+        create(payload: { name: string, parentId?: string | null, scope?: string }): Promise<{ success: boolean; data?: FolderRow;     error?: string }>
+        delete(payload: { folderId: string, scope?: string } | string): Promise<{ success: boolean;                       error?: string }>
+        setParent(payload: { folderId: string, parentId: string | null, scope?: string }): Promise<{ success: boolean;                       error?: string }>
         reorder(orders: Array<{ id: string; order_index: number }>):Promise<{ success: boolean;                       error?: string }>
         rename(folderId: string, newName: string):                   Promise<{ success: boolean;                       error?: string }>
       }

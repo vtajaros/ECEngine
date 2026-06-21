@@ -12,16 +12,15 @@ contextBridge.exposeInMainWorld('electron', {
     getFormulaTopics: () => ipcRenderer.invoke('decks:getFormulaTopics'),
     getFormulaMastery: () => ipcRenderer.invoke('decks:getFormulaMastery'),
     updateDeckWithCards: (payload: any) => ipcRenderer.invoke('decks:updateDeckWithCards', payload),
-    updateDecksFolder: (fromFolder: string, toFolder: string) =>
-      ipcRenderer.invoke('decks:updateDecksFolder', { fromFolder, toFolder }),
+
     updateFolderOrder: (folderOrders: Array<{ folderName: string, orderIndex: number }>) =>
       ipcRenderer.invoke('decks:updateFolderOrder', { folderOrders }),
   },
   folders: {
-    getAll:    ():                                          Promise<any> => ipcRenderer.invoke('folders:getAll'),
-    create:    (name: string, parentId?: string | null):   Promise<any> => ipcRenderer.invoke('folders:create', { name, parentId }),
-    delete:    (folderId: string):                         Promise<any> => ipcRenderer.invoke('folders:delete', folderId),
-    setParent: (folderId: string, parentId: string | null):Promise<any> => ipcRenderer.invoke('folders:setParent', { folderId, parentId }),
+    getAll:    (payload?: { scope?: string }):              Promise<any> => ipcRenderer.invoke('folders:getAll', payload),
+    create:    (payload: { name: string, parentId?: string | null, scope?: string }): Promise<any> => ipcRenderer.invoke('folders:create', payload),
+    delete:    (payload: { folderId: string, scope?: string } | string): Promise<any> => ipcRenderer.invoke('folders:delete', payload),
+    setParent: (payload: { folderId: string, parentId: string | null, scope?: string }): Promise<any> => ipcRenderer.invoke('folders:setParent', payload),
     reorder:   (orders: Array<{ id: string; order_index: number }>): Promise<any> => ipcRenderer.invoke('folders:reorder', { orders }),
     rename:    (folderId: string, newName: string):                  Promise<any> => ipcRenderer.invoke('folders:rename', { folderId, newName }),
   },

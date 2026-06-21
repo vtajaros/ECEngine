@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, Save, ChevronDown, ChevronUp, Trash2, GripVertical, Plus,
@@ -59,6 +59,7 @@ interface DeckMeta {
   subject: Subject
   tags: string
   folderName: string
+  folderId: string | null
 }
 
 interface EditCard {
@@ -668,6 +669,8 @@ const SortableQuestionRow: React.FC<CardRowProps> = (props) => {
 export default function EditDeck() {
   const { deckId } = useParams<{ deckId: string }>()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const returnTo = searchParams.get('returnTo') || '/study'
 
 
   const sensors = useSensors(
@@ -680,7 +683,8 @@ export default function EditDeck() {
     description: '',
     subject: 'Electronics Engineering',
     tags: '',
-    folderName: ''
+    folderName: '',
+    folderId: null
   })
   const [cards, setCards] = useState<EditCard[]>([])
   const [loading, setLoading] = useState(true)
@@ -688,6 +692,9 @@ export default function EditDeck() {
   const [isExporting, setIsExporting] = useState(false)
   const [originalCardIds, setOriginalCardIds] = useState<Set<string>>(new Set())
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+
+  const isFormulaDeck = cards.length > 0 && cards.every(c => c.type === 'formula')
+  const scope = isFormulaDeck ? 'formula' : 'study'
 
   const handleExportToText = async () => {
     if (!deckId || isExporting) return
@@ -765,15 +772,18 @@ export default function EditDeck() {
   // Fetch folders for autocomplete
   useEffect(() => {
     async function fetchFolders() {
-      let folderNames: string[] = []
-      const r = await window.electron.decks.getTopics()
-      folderNames = [...new Set(
-        (r.data || []).map((row: any) => row.folder_name).filter(Boolean)
-      )].sort() as string[]
-      setExistingFolders(folderNames)
+      try {
+        const res = await window.electron.folders.getAll({ scope })
+        const folderNames = res.success && res.data
+          ? [...new Set(res.data.map((f: any) => f.name))].sort() as string[]
+          : []
+        setExistingFolders(folderNames)
+      } catch {
+        setExistingFolders([])
+      }
     }
     fetchFolders()
-  }, [])
+  }, [scope])
 
   // ── Load from DB ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -793,7 +803,8 @@ export default function EditDeck() {
               description: t.description || '',
               subject: t.subject as Subject || 'Electronics Engineering',
               tags: parsedTags,
-              folderName: (!t.folder_name || t.folder_name === 'Uncategorized') ? '' : t.folder_name
+              folderName: (!t.folder_name || t.folder_name === 'Uncategorized') ? '' : t.folder_name,
+              folderId: t.folder_id || null
             })
           }
 
@@ -921,6 +932,8 @@ export default function EditDeck() {
         description: deckMeta.description.trim(),
         tags: JSON.stringify(tagsArr),
         folderName: deckMeta.folderName.trim(),
+        folderId: deckMeta.folderId,
+        scope,
         cards: cards.map(card => ({
           id: card.id,
           type: card.type,
@@ -975,7 +988,7 @@ export default function EditDeck() {
       {/* ── Top Bar ── */}
       <div className="flex-shrink-0 h-16 bg-[#111] border-b border-[#1e1e1e] flex items-center px-6 gap-4">
         <button
-          onClick={() => navigate('/study')}
+          onClick={() => navigate(returnTo)}
           className="flex items-center gap-2 text-text-muted hover:text-text-primary transition-colors font-['Rajdhani'] uppercase tracking-widest text-sm"
         >
           <ArrowLeft className="w-4 h-4" />

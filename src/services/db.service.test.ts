@@ -32,7 +32,7 @@ const mockElectron = {
     getCardsWithProgress: vi.fn(),
   },
   decks: {
-    updateDecksFolder: vi.fn(),
+
     updateFolderOrder: vi.fn(),
     getFormulaMastery: vi.fn(),
   },
