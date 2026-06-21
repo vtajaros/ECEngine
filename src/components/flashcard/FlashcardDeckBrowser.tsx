@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Layers, X, AlertTriangle, Trophy, ScrollText, Play, Pencil, Trash2, Search, SlidersHorizontal } from 'lucide-react'
+import { Layers, X, AlertTriangle, ScrollText, Play, Pencil, Trash2, Search, SlidersHorizontal, Eye } from 'lucide-react'
 import FolderPanel from '@/components/ui/FolderPanel'
 import { AdvancedFiltersPopover } from '../deck/AdvancedFiltersPopover'
 import { DeckCard } from '../deck/DeckCard'
@@ -18,7 +18,7 @@ export interface DeckInfo {
   title: string
   subject: Subject
   cardCount: number
-  deckType: 'mcq' | 'flashcard' | 'mixed'
+  deckType: 'mcq' | 'flashcard' | 'formula' | 'mixed'
   description: string
   tags?: string[]
   createdAt?: number
@@ -58,6 +58,7 @@ export interface FlashcardDeckBrowserProps {
   onSubjectSelect: (s: FilterSubject) => void
   onShowAdvancedFilters: (v: boolean) => void
   onLearnDeck: (deckId: string) => void
+  onPreviewDeck: (deckId: string) => void
   onEditDeck: (deckId: string) => void
   onDeleteDeck: (deck: DeckInfo) => void
   onPrintDeck: (deckId: string, title: string) => void
@@ -99,6 +100,7 @@ export function FlashcardDeckBrowser({
   onSubjectSelect,
   onShowAdvancedFilters,
   onLearnDeck,
+  onPreviewDeck,
   onEditDeck,
   onDeleteDeck,
   onPrintDeck,
@@ -214,7 +216,7 @@ export function FlashcardDeckBrowser({
                   <Play className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Learn Mode
                 </span>
                 <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                  <Trophy className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Test Mode
+                  <Eye className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Preview Mode
                 </span>
                 <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
                   <ScrollText className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Test Paper View
@@ -238,6 +240,7 @@ export function FlashcardDeckBrowser({
                       key={deck.id}
                       deck={deck}
                       onLearn={onLearnDeck}
+                      onPreview={onPreviewDeck}
                       onEdit={onEditDeck}
                       onDelete={onDeleteDeck}
                       onPrint={onPrintDeck}

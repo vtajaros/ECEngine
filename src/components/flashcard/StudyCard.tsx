@@ -16,8 +16,21 @@ export function getFrontText(card: Card, swapTermDef: boolean): string {
   }
   if (card.type === 'formula') {
     const f = card.data as FormulaData
-    const frontStr = f.name + (f.latex ? `\n\n$$${f.latex}$$` : '')
-    const backStr = [f.description, f.variables].filter(Boolean).join('\n\n')
+    const frontStr = f.name ?? ''
+    let descVars = ''
+    if (typeof f.variables === 'string') {
+      descVars = [f.description, f.variables].filter(Boolean).join('\n\n')
+    } else if (f.variables && typeof f.variables === 'object') {
+      const varsStrings = Object.entries(f.variables).map(([key, val]) => {
+        const v = String(val)
+        const wrappedVal = /\\[a-zA-Z]/.test(v) ? `$${v}$` : v
+        return `$${key}$: ${wrappedVal}`
+      })
+      descVars = [f.description, varsStrings.join('\n')].filter(Boolean).join('\n\n')
+    } else {
+      descVars = f.description || ''
+    }
+    const backStr = [f.latex ? `$$${f.latex}$$` : '', descVars].filter(Boolean).join('\n\n')
     return swapTermDef ? backStr : frontStr
   }
   return swapTermDef ? (card.data as FlashcardData).back : (card.data as FlashcardData).front
@@ -31,8 +44,21 @@ function getBackContent(card: Card, swapTermDef: boolean): React.ReactNode {
   }
   if (card.type === 'formula') {
     const f = card.data as FormulaData
-    const frontStr = f.name + (f.latex ? `\n\n$$${f.latex}$$` : '')
-    const backStr = [f.description, f.variables].filter(Boolean).join('\n\n')
+    const frontStr = f.name ?? ''
+    let descVars = ''
+    if (typeof f.variables === 'string') {
+      descVars = [f.description, f.variables].filter(Boolean).join('\n\n')
+    } else if (f.variables && typeof f.variables === 'object') {
+      const varsStrings = Object.entries(f.variables).map(([key, val]) => {
+        const v = String(val)
+        const wrappedVal = /\\[a-zA-Z]/.test(v) ? `$${v}$` : v
+        return `$${key}$: ${wrappedVal}`
+      })
+      descVars = [f.description, varsStrings.join('\n')].filter(Boolean).join('\n\n')
+    } else {
+      descVars = f.description || ''
+    }
+    const backStr = [f.latex ? `$$${f.latex}$$` : '', descVars].filter(Boolean).join('\n\n')
     const text = swapTermDef ? frontStr : backStr
     return <div className={`leading-relaxed ${getDynamicFontSize(text)} font-['Rajdhani'] font-bold text-text-primary`} dangerouslySetInnerHTML={{ __html: renderMath(text) }} />
   }
@@ -48,8 +74,21 @@ export function getCorrectAnswer(card: Card, swapTermDef: boolean): string {
   }
   if (card.type === 'formula') {
     const f = card.data as FormulaData
-    const frontStr = f.name + (f.latex ? `\n\n$$${f.latex}$$` : '')
-    const backStr = [f.description, f.variables].filter(Boolean).join('\n\n')
+    const frontStr = f.name ?? ''
+    let descVars = ''
+    if (typeof f.variables === 'string') {
+      descVars = [f.description, f.variables].filter(Boolean).join('\n\n')
+    } else if (f.variables && typeof f.variables === 'object') {
+      const varsStrings = Object.entries(f.variables).map(([key, val]) => {
+        const v = String(val)
+        const wrappedVal = /\\[a-zA-Z]/.test(v) ? `$${v}$` : v
+        return `$${key}$: ${wrappedVal}`
+      })
+      descVars = [f.description, varsStrings.join('\n')].filter(Boolean).join('\n\n')
+    } else {
+      descVars = f.description || ''
+    }
+    const backStr = [f.latex ? `$$${f.latex}$$` : '', descVars].filter(Boolean).join('\n\n')
     return swapTermDef ? frontStr : backStr
   }
   const fc = card.data as FlashcardData

@@ -35,7 +35,7 @@ interface DeckInfo {
   title: string
   subject: Subject
   cardCount: number
-  deckType: 'mcq' | 'flashcard' | 'mixed'
+  deckType: 'mcq' | 'flashcard' | 'formula' | 'mixed'
   description: string
   tags?: string[]
   createdAt?: number
@@ -109,6 +109,7 @@ export default function FlashcardLearn() {
   const [showSettings, setShowSettings] = useState(false)
   const [settings, setSettings] = useState<FCSettings>({ shuffle: false, bookmarkedOnly: false, swapTermDef: false, writtenMode: false })
   const [isAutoplay, setIsAutoplay] = useState(false)
+  const [sessionMode, setSessionMode] = useState<'study' | 'preview'>('study')
 
   const autoplayRef = useRef<{
     timer: ReturnType<typeof setTimeout> | null
@@ -488,11 +489,32 @@ Provide a thorough explanation covering ALL of the following:
     setActiveDeck({ id: deck.id, title: deck.title, cards })
 
     // Initialize SM-2 session so rateCard() writes to DB
+    setSessionMode('study')
     startSession(cards)
   }
 
   // ── Helpers ──
   const currentCard = sessionCards[currentIndex] || null
+
+  // ── Preview handler ──
+  const handlePreviewStart = async (deckId: string) => {
+    const deck = decks.find(d => d.id === deckId)
+    if (!deck) return
+    let cards: Card[] = []
+    try {
+      cards = await dbService.getAllCardsByTopic(deckId)
+      if (cards.length === 0) return
+    } catch (e) {
+      console.error('[FlashcardLearn] Failed to load preview cards:', e)
+      return
+    }
+    setSessionMode('preview')
+    setCurrentIndex(0)
+    setIsFlipped(false)
+    setSessionCards(cards)
+    setActiveDeck({ id: deck.id, title: deck.title, cards })
+    // Deliberately no startSession() call — preview never touches SM-2/progress table
+  }
 
   // ── TTS: read front face when card changes ─────────────────────────────────
   useEffect(() => {
@@ -677,6 +699,9 @@ Provide a thorough explanation covering ALL of the following:
         showExitConfirm={showExitConfirm}
         blockerState={blocker.state}
         progress={progress}
+        mode={sessionMode}
+        enableTTS={true}
+        enableAutoplay={sessionMode === 'study'}
         onExit={handleExit}
         onBlockerProceed={() => { stop(); blocker.proceed && blocker.proceed() }}
         onBlockerReset={() => blocker.reset && blocker.reset()}
@@ -705,12 +730,12 @@ Provide a thorough explanation covering ALL of the following:
         onViewCard={() => setIsFlipped(true)}
         onZoomImage={setZoomedImage}
         onShowContext={setShowContext}
-        onRateCard={async (rating) => {
+        onRateCard={sessionMode === 'preview' ? async () => {} : async (rating) => {
           await rateCard(rating)
           if (useSessionStore.getState().isFinished) { exitSession() }
         }}
         onGetContext={handleGetContext}
-        onGoNext={() => {
+        onGoNext={sessionMode === 'preview' ? goNext : () => {
           const nextIdx = useSessionStore.getState().currentIndex
           if (useSessionStore.getState().isFinished) { exitSession(); return }
           setCurrentIndex(nextIdx)
@@ -804,6 +829,7 @@ Provide a thorough explanation covering ALL of the following:
       onSubjectSelect={setActiveSubject}
       onShowAdvancedFilters={setShowAdvancedFilters}
       onLearnDeck={(id) => setShowFlashModal({ isOpen: true, deckId: id })}
+      onPreviewDeck={handlePreviewStart}
       onEditDeck={(id) => navigate(`/edit-deck/${id}`)}
       onDeleteDeck={setSetToDelete}
       onPrintDeck={(id, title) => window.electron.print.open(id, title)}

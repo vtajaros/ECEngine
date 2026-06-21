@@ -31,12 +31,15 @@ export interface FlashcardSessionProps {
   writtenSubmitted: boolean
   writtenCorrect: boolean | null
   writtenStats: { correct: number; total: number }
-  showContext: boolean
+  showContext?: boolean
   zoomedImage: string | null
-  showToast: boolean
+  showToast?: boolean
   showExitConfirm: boolean
   blockerState: 'unblocked' | 'blocked' | 'proceeding'
   progress: number
+  mode?: 'study' | 'preview'
+  enableTTS?: boolean
+  enableAutoplay?: boolean
   onExit: () => void
   onBlockerProceed: () => void
   onBlockerReset: () => void
@@ -52,9 +55,9 @@ export interface FlashcardSessionProps {
   onWrittenSubmit: () => void
   onViewCard: () => void
   onZoomImage: (path: string | null) => void
-  onShowContext: (v: boolean) => void
+  onShowContext?: (v: boolean) => void
   onRateCard: (rating: number) => void
-  onGetContext: () => void
+  onGetContext?: () => void
   onGoNext: () => void
   onGoPrev: () => void
   stop: () => void
@@ -111,10 +114,15 @@ export function FlashcardSession({
   onGoPrev,
   stop,
   autoplayRef,
-  autoplaySpeechDoneRef
+  autoplaySpeechDoneRef,
+  mode = 'study',
+  enableTTS = true,
+  enableAutoplay = true,
 }: FlashcardSessionProps) {
   const [selectedRating, setSelectedRating] = useState<number | null>(null)
   const [showRatingFeedback, setShowRatingFeedback] = useState(false)
+
+  const utilityVisible = (isFlipped || (settings.writtenMode && writtenSubmitted)) && !isAutoplay
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -180,7 +188,7 @@ export function FlashcardSession({
             <RotateCcw className="w-3.5 h-3.5" />
             {settings.swapTermDef ? 'SWAPPED' : 'SWAP'}
           </button>
-          {!settings.writtenMode && (
+          {enableAutoplay && !settings.writtenMode && (
             <button
               onClick={onToggleAutoplay}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${isAutoplay
@@ -193,6 +201,7 @@ export function FlashcardSession({
               AUTO
             </button>
           )}
+          {enableTTS && (
           <button
             onClick={onToggleTTS}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${fcTtsEnabled ? 'border-accent text-accent bg-accent/10' : 'border-[#333] text-text-muted hover:text-text-primary hover:border-[#555]'}`}
@@ -200,6 +209,7 @@ export function FlashcardSession({
           >
             {fcTtsEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
           </button>
+          )}
           <button
             onClick={onToggleSettings}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${showSettings ? 'bg-accent/10 text-accent border-accent' : 'bg-surface text-text-muted border-[#333] hover:border-[#555] hover:text-text-primary'}`}
@@ -292,7 +302,8 @@ export function FlashcardSession({
             />
           </AnimatePresence>
 
-          {/* Rating row — opacity toggle, no layout shift */}
+          {/* Rating row — only in study mode, opacity toggle, no layout shift */}
+          {mode === 'study' && (
           <div className="h-[84px] flex items-center justify-center w-full">
             <div className={`flex gap-3 transition-opacity duration-150 ${(isFlipped || (settings.writtenMode && writtenSubmitted)) && !isAutoplay ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
               {[
@@ -332,8 +343,9 @@ export function FlashcardSession({
               )}
             </div>
           </div>
+          )}
 
-          {showRatingFeedback && selectedRating !== null && (
+          {mode === 'study' && showRatingFeedback && selectedRating !== null && (
             <div className="flex justify-center">
               <button
                 onClick={() => {
@@ -357,28 +369,32 @@ export function FlashcardSession({
 
           {/* Utility row — opacity toggle, no layout shift */}
           <div className="h-[40px] flex items-center justify-center gap-3 w-full">
-            <div className={`flex items-center gap-3 transition-opacity duration-150 ${(isFlipped || (settings.writtenMode && writtenSubmitted)) && !isAutoplay ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+            <div className={`flex items-center gap-3 transition-opacity duration-150 ${utilityVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
               <button onClick={onGoPrev} disabled={currentIndex === 0}
                 className="flex items-center gap-2 px-4 py-2 bg-[#111] border border-[#333] rounded text-text-muted font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-border-base hover:border-[#555] transition-all disabled:opacity-30 disabled:cursor-default text-xs">
                 <ArrowLeft className="w-3 h-3" /> Prev
               </button>
+              {onGetContext && (
               <button onClick={onGetContext}
                 className="flex items-center gap-2 px-4 py-2 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-text-muted transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs">
                 <Copy className="w-3.5 h-3.5" /> Get Context
               </button>
+              )}
+              {onGetContext && onShowContext && (
               <button onClick={() => onShowContext(!showContext)}
                 className="flex items-center gap-2 px-4 py-2 border border-[rgba(0,255,65,0.3)] rounded text-accent hover:bg-[rgba(0,255,65,0.08)] hover:border-accent transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs">
                 <Sparkles className="w-3.5 h-3.5" /> Explain
               </button>
+              )}
               <button onClick={onGoNext} disabled={currentIndex === sessionCards.length - 1}
                 className="flex items-center gap-2 px-4 py-2 bg-[#111] border border-[#333] rounded text-text-muted font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-border-base hover:border-[#555] transition-all disabled:opacity-30 disabled:cursor-default text-xs">
-                Skip <ArrowRight className="w-3 h-3" />
+                Next <ArrowRight className="w-3 h-3" />
               </button>
             </div>
           </div>
 
           {/* AI Context Panel — below buttons */}
-          {showContext && isFlipped && currentCard && !settings.writtenMode && (() => {
+          {showContext && onShowContext && isFlipped && currentCard && !settings.writtenMode && (() => {
             const term = getFrontText(currentCard, settings.swapTermDef)
             const definition = getCorrectAnswer(currentCard, settings.swapTermDef)
             return <FlashcardContextPanel term={term} definition={definition} onClose={() => onShowContext(false)} />

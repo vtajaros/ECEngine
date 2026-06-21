@@ -1,5 +1,5 @@
 import React from 'react'
-import { Play, ScrollText, Pencil, Trash2 } from 'lucide-react'
+import { Play, ScrollText, Pencil, Trash2, Eye } from 'lucide-react'
 import { getSubjectBadgeClasses } from '../../lib/subjectColors'
 
 type Subject = 'MATH' | 'GEAS' | 'ELECS' | 'EST'
@@ -9,7 +9,7 @@ interface DeckInfo {
   title: string
   subject: Subject
   cardCount: number
-  deckType: 'mcq' | 'flashcard' | 'mixed'
+  deckType: 'mcq' | 'flashcard' | 'formula' | 'mixed'
   description: string
   tags?: string[]
   createdAt?: number
@@ -21,12 +21,13 @@ interface DeckInfo {
 interface DeckCardProps {
   deck: DeckInfo
   onLearn: (deckId: string) => void
+  onPreview: (deckId: string) => void
   onEdit: (deckId: string) => void
   onDelete: (deck: DeckInfo) => void
   onPrint: (deckId: string, title: string) => void
 }
 
-export const DeckCard = React.memo(function DeckCard({ deck, onLearn, onEdit, onDelete, onPrint }: DeckCardProps) {
+export const DeckCard = React.memo(function DeckCard({ deck, onLearn, onPreview, onEdit, onDelete, onPrint }: DeckCardProps) {
   return (
     <div
       className="relative isolate group transition-all duration-300 border border-[#333] bg-surface p-5 flex flex-col w-full min-h-[180px] justify-between hover:-translate-x-[6px] hover:-translate-y-[6px] rounded-xl before:absolute before:w-full before:h-full before:top-0 before:left-0 before:bg-surface before:border before:border-[#333] before:rounded-xl before:translate-x-[6px] before:translate-y-[6px] before:z-[-1] before:transition-transform before:duration-300 group-hover:before:translate-x-[12px] group-hover:before:translate-y-[12px] after:absolute after:w-full after:h-full after:top-0 after:left-0 after:bg-surface after:border after:border-[#333] after:rounded-xl after:translate-x-[12px] after:translate-y-[12px] after:z-[-2] after:transition-transform after:duration-300 group-hover:after:translate-x-[18px] group-hover:after:translate-y-[18px]"
@@ -47,7 +48,7 @@ export const DeckCard = React.memo(function DeckCard({ deck, onLearn, onEdit, on
           {/* Tag Row: Type & Custom Tags (Aligned with Date) */}
           <div className="flex flex-wrap items-center gap-2 mt-0.5">
             <span className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]">
-              {deck.deckType === 'mixed' ? 'MIX' : deck.deckType === 'mcq' ? 'MCQ' : 'FC'}
+              {deck.deckType === 'mixed' ? 'MIX' : deck.deckType === 'mcq' ? 'MCQ' : deck.deckType === 'formula' ? 'FM' : 'FC'}
             </span>
             {deck.tags && deck.tags.length > 0 && deck.tags.map(tag => (
               <span
@@ -81,7 +82,7 @@ export const DeckCard = React.memo(function DeckCard({ deck, onLearn, onEdit, on
       )}
 
       {/* Bottom Row: Progress and Actions */}
-      <div className="flex items-center gap-6 w-full mt-4">
+      <div className="flex items-center gap-4 w-full mt-4">
         {/* MASTERY label — fixed, does not grow */}
         <span className="text-[10px] font-rajdhani tracking-widest uppercase text-gray-500 shrink-0">
           Mastery
@@ -114,6 +115,15 @@ export const DeckCard = React.memo(function DeckCard({ deck, onLearn, onEdit, on
           >
             <Play className="w-3 h-3" />
             <span className="hidden xl:inline">Learn</span>
+          </button>
+
+          <button
+            onClick={(e) => { e.stopPropagation(); onPreview(deck.id); }}
+            className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
+            title="Preview (no progress tracking)"
+            aria-label="Preview"
+          >
+            <Eye className="w-4 h-4" />
           </button>
 
           {deck.id.startsWith('topic_') && (
