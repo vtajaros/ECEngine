@@ -7,6 +7,7 @@ import { StudyCard, getFrontText, getCorrectAnswer } from './StudyCard'
 import { FlashcardContextPanel } from './FlashcardContextPanel'
 import { useSessionStore } from '../../store/useSessionStore'
 import type { Card } from '../../types'
+import { useSound } from '../../hooks/useSound'
 
 interface FCSettings {
   shuffle: boolean
@@ -122,6 +123,7 @@ export function FlashcardSession({
   const [selectedRating, setSelectedRating] = useState<number | null>(null)
   const [showRatingFeedback, setShowRatingFeedback] = useState(false)
   const [explanationOpen, setExplanationOpen] = useState(false)
+  const { play } = useSound()
 
   const utilityVisible = (isFlipped || (settings.writtenMode && writtenSubmitted)) && !isAutoplay
 
@@ -321,6 +323,11 @@ export function FlashcardSession({
                     if (selectedRating !== null) return
                     setSelectedRating(rating)
                     setShowRatingFeedback(true)
+                    if (rating === 1) {
+                      play('wrong')
+                    } else {
+                      play('correct')
+                    }
                     await onRateCard(rating)
                   }}
                   disabled={isSubmitting || (selectedRating !== null && selectedRating !== rating)}
