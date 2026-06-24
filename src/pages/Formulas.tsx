@@ -3,6 +3,7 @@ import FolderPanel from '@/components/ui/FolderPanel'
 import { useFolderState } from '../hooks/useFolderState'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate, useBlocker } from 'react-router-dom'
+import { useSessionStore } from '../store/useSessionStore'
 import {
   Sigma,
   Layers,
@@ -80,7 +81,7 @@ function saveFCBookmarks(set: Set<string>) {
 
 export default function Formulas() {
   const navigate = useNavigate()
-
+  const { startSession, rateCard, isSubmitting } = useSessionStore()
 
   // ── Deck listing state ──
   const [activeSubject, setActiveSubject] = useState<FilterSubject>('ALL')
@@ -276,6 +277,7 @@ export default function Formulas() {
       if (cards.length === 0) return
       setActiveDeck({ id: deck.id, title: deck.title, cards })
       applySettings(cards, settings)
+      startSession(cards)  // ADD THIS LINE
     } catch (e) {
       console.error('Failed to load cards', e)
     }
@@ -493,7 +495,7 @@ export default function Formulas() {
         isFlipped={isFlipped}
         isAutoplay={false}
         isBookmarked={currentCard ? bookmarks.has(`fc_bookmark_${currentCard.id}`) : false}
-        isSubmitting={false}
+        isSubmitting={isSubmitting}
         fcTtsEnabled={false}
         showSettings={showSettings}
         settings={settings}
@@ -505,7 +507,7 @@ export default function Formulas() {
         showExitConfirm={showExitConfirm}
         blockerState={blocker.state}
         progress={sessionCards.length > 0 ? ((currentIndex + 1) / sessionCards.length) * 100 : 0}
-        mode="preview"
+        mode="study"
         enableTTS={false}
         enableAutoplay={false}
         onExit={handleExit}
@@ -526,7 +528,13 @@ export default function Formulas() {
         onWrittenSubmit={handleWrittenSubmit}
         onViewCard={() => setIsFlipped(true)}
         onZoomImage={setZoomedImage}
-        onRateCard={async () => {}}
+        onRateCard={async (rating) => {
+          await rateCard(rating)
+          // rateCard advances currentIndex internally in the store,
+          // but Formulas.tsx drives sessionCards from its own local state.
+          // Advance local index to stay in sync.
+          goNext()
+        }}
         onGoNext={goNext}
         onGoPrev={goPrev}
         stop={() => {}}

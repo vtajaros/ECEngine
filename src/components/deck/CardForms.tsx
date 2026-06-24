@@ -19,6 +19,8 @@ export interface FormulaEdit {
   latex: string
   description: string
   variables: string
+  explanation?: string           // ADD
+  explanationImagePath?: string  // ADD
 }
 
 export interface MCQEdit {
@@ -34,6 +36,8 @@ export interface FlashcardEdit {
   front: string
   back: string
   imagePath?: string
+  explanation?: string           // ADD
+  explanationImagePath?: string  // ADD
 }
 
 const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -346,36 +350,39 @@ export const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; 
 }
 
 export const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit) => void; isNew?: boolean; onError?: (msg: string) => void }> = ({ data, onChange, onError }) => {
+  const [showExplanation, setShowExplanation] = useState(!!(data.explanation || data.explanationImagePath))
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-
-    // 10MB limit guardrail
-    if (file.size > 10 * 1024 * 1024) {
-      if (onError) onError('Image exceeds 10MB limit.')
-      e.target.value = ''
-      return
-    }
-
+    if (file.size > 10 * 1024 * 1024) { onError?.('Image exceeds 10MB limit.'); e.target.value = ''; return }
     const path = (file as any).path
     if (!path) return
     try {
       const result = await window.electron.saveImage(path)
-      if (result.success && result.filename) {
-        onChange({ ...data, imagePath: result.filename })
-      } else {
-        if (onError) onError(result.error || 'Failed to save image')
-      }
-    } catch (err: any) {
-      console.error(err)
-      if (onError) onError('Error saving image: ' + err.message)
-    }
+      if (result.success && result.filename) onChange({ ...data, imagePath: result.filename })
+      else onError?.(result.error || 'Failed to save image')
+    } catch (err: any) { onError?.('Error saving image: ' + err.message) }
+    e.target.value = ''
+  }
+
+  const handleExplanationImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) { onError?.('Image exceeds 10MB limit.'); e.target.value = ''; return }
+    const path = (file as any).path
+    if (!path) return
+    try {
+      const result = await window.electron.saveImage(path)
+      if (result.success && result.filename) onChange({ ...data, explanationImagePath: result.filename })
+      else onError?.(result.error || 'Failed to save image')
+    } catch (err: any) { onError?.('Error saving image: ' + err.message) }
     e.target.value = ''
   }
 
   return (
     <div className="flex flex-col gap-4">
-      {/* FRONT (full width) */}
+      {/* FRONT */}
       <div className="relative w-full">
         <div className="flex items-center justify-between mb-1">
           <Label>Front / Term</Label>
@@ -383,9 +390,7 @@ export const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: Flashc
             {data.imagePath ? (
               <div className="relative group flex items-center justify-center">
                 <img src={`ece-app://${data.imagePath}`} className="w-5 h-5 object-cover rounded border border-[#333]" />
-                <button type="button" onClick={() => onChange({ ...data, imagePath: undefined })} className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" title="Remove image">
-                  <X size={10} />
-                </button>
+                <button type="button" onClick={() => onChange({ ...data, imagePath: undefined })} className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"><X size={10} /></button>
               </div>
             ) : (
               <label className="cursor-pointer text-text-muted hover:text-accent transition-colors" title="Add Image">
@@ -395,25 +400,45 @@ export const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: Flashc
             )}
           </div>
         </div>
-        <MathInputField
-          value={data.front}
-          onChange={val => onChange({ ...data, front: val })}
-          placeholder="Term or question..."
-          rows={5}
-          multiline={true}
-        />
+        <MathInputField value={data.front} onChange={val => onChange({ ...data, front: val })} placeholder="Term or question..." rows={5} multiline={true} />
       </div>
 
-      {/* BACK (full width) */}
+      {/* BACK */}
       <div className="relative w-full">
         <Label>Back / Definition</Label>
-        <MathInputField
-          value={data.back}
-          onChange={val => onChange({ ...data, back: val })}
-          placeholder="Definition or answer..."
-          rows={5}
-          multiline={true}
-        />
+        <MathInputField value={data.back} onChange={val => onChange({ ...data, back: val })} placeholder="Definition or answer..." rows={5} multiline={true} />
+      </div>
+
+      {/* EXPLANATION */}
+      <div className="w-full">
+        {!showExplanation ? (
+          <button type="button" onClick={() => setShowExplanation(true)}
+            className="text-[11px] font-['Rajdhani'] uppercase tracking-widest text-text-muted hover:text-accent transition-colors font-bold">
+            + Add Explanation
+          </button>
+        ) : (
+          <>
+            <Label>Explanation / Notes</Label>
+            <MathInputField value={data.explanation || ''} onChange={val => onChange({ ...data, explanation: val })} placeholder="Explain the answer, derivation, or additional notes..." rows={6} multiline={true} />
+            <div className="mt-3">
+              {data.explanationImagePath ? (
+                <div className="relative group inline-block">
+                  <img src={`ece-app://${data.explanationImagePath}`} alt="Explanation image" className="w-24 h-24 object-cover rounded border border-[#333]" />
+                  <button type="button" onClick={() => onChange({ ...data, explanationImagePath: undefined })}
+                    className="absolute -top-2 -right-2 bg-[#FF4B4B] text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : (
+                <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#333] hover:border-accent hover:text-accent text-text-muted rounded transition-colors bg-[#0a0a0a]">
+                  <ImageIcon size={24} />
+                  <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest mt-2 font-bold text-center leading-tight">Add<br />Image</span>
+                  <input type="file" accept="image/*" className="hidden" onChange={handleExplanationImageUpload} />
+                </label>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
@@ -424,24 +449,66 @@ export const FormulaForm: React.FC<{
   onChange: (d: FormulaEdit) => void
   isNew?: boolean
   onError?: (msg: string) => void
-}> = ({ data, onChange, isNew, onError }) => {
-  const mappedData: FlashcardEdit = {
-    front: data.name,
-    back: data.latex,
-    imagePath: undefined,
+}> = ({ data, onChange, onError }) => {
+  const [showExplanation, setShowExplanation] = useState(!!(data.explanation || data.explanationImagePath))
+
+  const handleExplanationImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) { onError?.('Image exceeds 10MB limit.'); e.target.value = ''; return }
+    const path = (file as any).path
+    if (!path) return
+    try {
+      const result = await window.electron.saveImage(path)
+      if (result.success && result.filename) onChange({ ...data, explanationImagePath: result.filename })
+      else onError?.(result.error || 'Failed to save image')
+    } catch (err: any) { onError?.('Error saving image: ' + err.message) }
+    e.target.value = ''
   }
 
   return (
-    <FlashcardForm
-      data={mappedData}
-      isNew={isNew}
-      onError={onError}
-      onChange={(next) => onChange({
-        ...data,
-        name: next.front,
-        latex: next.back,
-      })}
-    />
+    <div className="flex flex-col gap-4">
+      <div className="relative w-full">
+        <Label>Front / Term (formula name)</Label>
+        <MathInputField value={data.name} onChange={val => onChange({ ...data, name: val })} placeholder="Formula name, e.g. Inverse Sine..." rows={3} multiline={true} />
+      </div>
+      <div className="relative w-full">
+        <Label>Back / LaTeX (equation)</Label>
+        <MathInputField value={data.latex} onChange={val => onChange({ ...data, latex: val })} placeholder="LaTeX equation..." rows={5} multiline={true} defaultMathMode={true} />
+      </div>
+
+      {/* EXPLANATION */}
+      <div className="w-full">
+        {!showExplanation ? (
+          <button type="button" onClick={() => setShowExplanation(true)}
+            className="text-[11px] font-['Rajdhani'] uppercase tracking-widest text-text-muted hover:text-accent transition-colors font-bold">
+            + Add Explanation
+          </button>
+        ) : (
+          <>
+            <Label>Explanation / Notes</Label>
+            <MathInputField value={data.explanation || ''} onChange={val => onChange({ ...data, explanation: val })} placeholder="Explain the formula, derivation, variable meanings..." rows={6} multiline={true} />
+            <div className="mt-3">
+              {data.explanationImagePath ? (
+                <div className="relative group inline-block">
+                  <img src={`ece-app://${data.explanationImagePath}`} alt="Explanation image" className="w-24 h-24 object-cover rounded border border-[#333]" />
+                  <button type="button" onClick={() => onChange({ ...data, explanationImagePath: undefined })}
+                    className="absolute -top-2 -right-2 bg-[#FF4B4B] text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+                    <X size={12} />
+                  </button>
+                </div>
+              ) : (
+                <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#333] hover:border-accent hover:text-accent text-text-muted rounded transition-colors bg-[#0a0a0a]">
+                  <ImageIcon size={24} />
+                  <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest mt-2 font-bold text-center leading-tight">Add<br />Image</span>
+                  <input type="file" accept="image/*" className="hidden" onChange={handleExplanationImageUpload} />
+                </label>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   )
 }
 

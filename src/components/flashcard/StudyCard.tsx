@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Bookmark, Check, XCircle } from 'lucide-react'
+import { Bookmark, Check, XCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { renderMath } from '../../lib/latex'
 import { getDynamicFontSize } from '../../lib/textUtils'
 import type { Card, MCQData, FlashcardData } from '../../types'
@@ -95,6 +95,64 @@ export function getCorrectAnswer(card: Card, swapTermDef: boolean): string {
   return swapTermDef ? fc.front : fc.back
 }
 
+function getExplanation(card: Card): { text?: string; imagePath?: string } | null {
+  if (card.type === 'mcq') {
+    const mcq = card.data as MCQData
+    return mcq.explanation ? { text: mcq.explanation, imagePath: (mcq as any).solutionImagePath } : null
+  }
+  if (card.type === 'flashcard') {
+    const fc = card.data as FlashcardData
+    return (fc.explanation || fc.explanationImagePath)
+      ? { text: fc.explanation, imagePath: fc.explanationImagePath }
+      : null
+  }
+  if (card.type === 'formula') {
+    const f = card.data as FormulaData
+    return (f.explanation || f.explanationImagePath)
+      ? { text: f.explanation, imagePath: f.explanationImagePath }
+      : null
+  }
+  return null
+}
+
+const ExplanationBlock: React.FC<{ card: Card; onZoomImage: (path: string) => void; onOpenChange?: (open: boolean) => void }> = ({ card, onZoomImage, onOpenChange }) => {
+  const [open, setOpen] = React.useState(false)
+  const explanation = getExplanation(card)
+  if (!explanation) return null
+
+  return (
+    <div className="border-t border-[#222] mt-4 pt-3 px-8 pb-4" onClick={e => e.stopPropagation()}>
+      <button
+        onClick={() => setOpen(o => { const next = !o; onOpenChange?.(next); return next })}
+        className="flex items-center gap-2 text-[11px] font-['Rajdhani'] uppercase tracking-widest text-text-muted hover:text-accent transition-colors font-bold w-full text-left"
+      >
+        {open ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+        Explanation
+      </button>
+      {open && (
+        <div className="mt-3 flex flex-col gap-3">
+          {explanation.text && (
+            <div
+              className="text-sm font-['IBM_Plex_Mono'] text-text-muted leading-relaxed text-left"
+              dangerouslySetInnerHTML={{ __html: renderMath(explanation.text) }}
+            />
+          )}
+          {explanation.imagePath && (
+            <div className="w-full flex justify-start">
+              <img
+                src={`ece-app://${explanation.imagePath}`}
+                alt="Explanation diagram"
+                className="max-w-full max-h-[160px] object-contain rounded border border-[#333] cursor-zoom-in hover:border-accent transition-all"
+                onClick={(e) => { e.stopPropagation(); onZoomImage(explanation.imagePath!) }}
+              />
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── Component ──────────────────────────────────────────────────────────────
 
 interface StudyCardProps {
@@ -114,6 +172,7 @@ interface StudyCardProps {
   onWrittenSubmit: () => void
   onViewCard: () => void
   onZoomImage: (path: string) => void
+  onExplanationOpen?: (open: boolean) => void
 }
 
 export const StudyCard = React.memo(function StudyCard({
@@ -133,6 +192,7 @@ export const StudyCard = React.memo(function StudyCard({
   onWrittenSubmit,
   onViewCard,
   onZoomImage,
+  onExplanationOpen,
 }: StudyCardProps) {
   return (
     <motion.div key={`${card.id}-${currentIndex}`} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.2, ease: 'easeOut' }}>
@@ -146,7 +206,6 @@ export const StudyCard = React.memo(function StudyCard({
           style={{
             position: 'relative',
             width: '100%',
-            height: '100%',
             minHeight: '350px',
             transformStyle: 'preserve-3d',
             transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -159,7 +218,10 @@ export const StudyCard = React.memo(function StudyCard({
             className="bg-surface-2 border border-border-base rounded-xl shadow-2xl flex flex-col"
             style={{
               position: 'absolute',
-              inset: 0,
+              left: 0,
+              right: 0,
+              top: 0,
+              minHeight: '100%',
               backfaceVisibility: 'hidden',
               WebkitBackfaceVisibility: 'hidden',
             }}
@@ -200,7 +262,10 @@ export const StudyCard = React.memo(function StudyCard({
             className="bg-surface-2 border border-border-base rounded-xl shadow-2xl flex flex-col"
             style={{
               position: 'absolute',
-              inset: 0,
+              left: 0,
+              right: 0,
+              top: 0,
+              minHeight: '100%',
               backfaceVisibility: 'hidden',
               WebkitBackfaceVisibility: 'hidden',
               transform: 'rotateY(180deg)',
@@ -214,11 +279,14 @@ export const StudyCard = React.memo(function StudyCard({
             </div>
 
             {/* Back Content */}
-            <div className="flex-1 flex items-center justify-center px-8 pb-8">
+            <div className="flex-1 flex items-center justify-center px-8 pb-4">
               <div className="text-center w-full text-text-primary">
                 {getBackContent(card, swapTermDef)}
               </div>
             </div>
+
+            {/* Explanation — collapsible, only when card has one */}
+            <ExplanationBlock card={card} onZoomImage={onZoomImage} onOpenChange={onExplanationOpen} />
           </div>
         </div>
       </div>

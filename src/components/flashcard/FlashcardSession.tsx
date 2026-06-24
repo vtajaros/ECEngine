@@ -121,6 +121,7 @@ export function FlashcardSession({
 }: FlashcardSessionProps) {
   const [selectedRating, setSelectedRating] = useState<number | null>(null)
   const [showRatingFeedback, setShowRatingFeedback] = useState(false)
+  const [explanationOpen, setExplanationOpen] = useState(false)
 
   const utilityVisible = (isFlipped || (settings.writtenMode && writtenSubmitted)) && !isAutoplay
 
@@ -128,6 +129,7 @@ export function FlashcardSession({
     const t = setTimeout(() => {
       setSelectedRating(null)
       setShowRatingFeedback(false)
+      setExplanationOpen(false)
     }, 50)
     return () => clearTimeout(t)
   }, [currentIndex])
@@ -299,12 +301,13 @@ export function FlashcardSession({
               onWrittenSubmit={onWrittenSubmit}
               onViewCard={onViewCard}
               onZoomImage={onZoomImage}
+              onExplanationOpen={setExplanationOpen}
             />
           </AnimatePresence>
 
           {/* Rating row — only in study mode, opacity toggle, no layout shift */}
           {mode === 'study' && (
-          <div className="h-[84px] flex items-center justify-center w-full">
+          <div className={`h-[84px] flex items-center justify-center w-full transition-opacity duration-200 ${explanationOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
             <div className={`flex gap-3 transition-opacity duration-150 ${(isFlipped || (settings.writtenMode && writtenSubmitted)) && !isAutoplay ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
               {[
                 { rating: 1, label: 'Again', sub: '< 1m', hint: 'Wrong or blank',         color: '#FF3333' },
@@ -345,7 +348,7 @@ export function FlashcardSession({
           </div>
           )}
 
-          {mode === 'study' && showRatingFeedback && selectedRating !== null && (
+          {mode === 'study' && showRatingFeedback && selectedRating !== null && !explanationOpen && (
             <div className="flex justify-center">
               <button
                 onClick={() => {
@@ -368,7 +371,7 @@ export function FlashcardSession({
           )}
 
           {/* Utility row — opacity toggle, no layout shift */}
-          <div className="h-[40px] flex items-center justify-center gap-3 w-full">
+          <div className={`h-[40px] flex items-center justify-center gap-3 w-full transition-opacity duration-200 ${explanationOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
             <div className={`flex items-center gap-3 transition-opacity duration-150 ${utilityVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
               <button onClick={onGoPrev} disabled={currentIndex === 0}
                 className="flex items-center gap-2 px-4 py-2 bg-[#111] border border-[#333] rounded text-text-muted font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-border-base hover:border-[#555] transition-all disabled:opacity-30 disabled:cursor-default text-xs">

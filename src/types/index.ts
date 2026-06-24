@@ -29,6 +29,8 @@ export interface FlashcardData {
   imageFront?: string
   imageBack?: string
   imagePath?: string
+  explanation?: string
+  explanationImagePath?: string
 }
 
 export interface MCQData {
@@ -47,6 +49,8 @@ export interface FormulaData {
   variables: Record<string, string>
   imagePath?: string
   description?: string
+  explanation?: string
+  explanationImagePath?: string
 }
 
 export interface ConceptData {

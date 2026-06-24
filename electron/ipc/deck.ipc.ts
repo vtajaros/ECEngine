@@ -378,6 +378,13 @@ export function registerDeckHandlers(): void {
       FolderDeleteSchema.parse({ folderId, scope })
 
       const db = getDB()
+      
+      // Guard: never allow deleting the Uncategorized folder
+      const targetFolder = db.prepare(`SELECT name FROM folders WHERE id = ?`).get(folderId) as { name: string } | undefined
+      if (targetFolder?.name === 'Uncategorized') {
+        return { success: false, error: 'Cannot delete the Uncategorized folder.' }
+      }
+
       db.transaction(() => {
         // Determine parent (null = top-level)
         const folder = db.prepare(`SELECT parent_id FROM folders WHERE id = ? AND scope = ?`).get(folderId, scope) as { parent_id: string | null } | undefined
@@ -393,8 +400,14 @@ export function registerDeckHandlers(): void {
           // • Move decks to Uncategorized — use the real Uncategorized folder id so
           //   subtreeIds() and folder filters can still find them (folder_id = NULL
           //   matches no filter, including Uncategorized's own filter).
-          const uncatRow = db.prepare(`SELECT id FROM folders WHERE name = 'Uncategorized' AND scope = ? LIMIT 1`).get(scope) as { id: string } | undefined
-          const uncatId = uncatRow?.id ?? null
+          let uncatRow = db.prepare(`SELECT id FROM folders WHERE name = 'Uncategorized' AND scope = ? LIMIT 1`).get(scope) as { id: string } | undefined
+          if (!uncatRow) {
+            // Uncategorized was deleted — recreate it so topics always have a valid home
+            const newUncatId = `folder_uncat_${scope}_${Date.now()}`
+            db.prepare(`INSERT INTO folders (id, name, parent_id, order_index, scope) VALUES (?, 'Uncategorized', NULL, 9999, ?)`).run(newUncatId, scope)
+            uncatRow = { id: newUncatId }
+          }
+          const uncatId = uncatRow.id
           execute(`UPDATE topics SET folder_id = ?, folder_name = 'Uncategorized' WHERE folder_id = ?`, [uncatId, folderId])
         } else {
           // Deleting a subfolder:
