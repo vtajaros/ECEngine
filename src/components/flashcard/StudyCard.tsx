@@ -143,7 +143,8 @@ const ExplanationBlock: React.FC<{ card: Card; onZoomImage: (path: string) => vo
                 src={`ece-app://${explanation.imagePath}`}
                 alt="Explanation diagram"
                 className="max-w-full max-h-[160px] object-contain rounded border border-[#333] cursor-zoom-in hover:border-accent transition-all"
-                onClick={(e) => { e.stopPropagation(); onZoomImage(explanation.imagePath!) }}
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => { e.stopPropagation(); e.preventDefault(); onZoomImage(explanation.imagePath!) }}
               />
             </div>
           )}

@@ -477,7 +477,7 @@ export default function AddDeck() {
 
       const res = await window.electron.decks.addDeckWithCards(payload)
       if (!res.success) throw new Error(res.error)
-      navigate('/study')
+      navigate(deckType === 'formula' ? '/formulas' : '/study')
     } catch (err: any) {
       console.error('Save failed', err)
       alert('Failed to save: ' + err.message)

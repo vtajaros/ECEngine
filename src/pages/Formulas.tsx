@@ -530,10 +530,6 @@ export default function Formulas() {
         onZoomImage={setZoomedImage}
         onRateCard={async (rating) => {
           await rateCard(rating)
-          // rateCard advances currentIndex internally in the store,
-          // but Formulas.tsx drives sessionCards from its own local state.
-          // Advance local index to stay in sync.
-          goNext()
         }}
         onGoNext={goNext}
         onGoPrev={goPrev}

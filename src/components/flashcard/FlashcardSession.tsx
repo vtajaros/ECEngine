@@ -350,23 +350,37 @@ export function FlashcardSession({
 
           {mode === 'study' && showRatingFeedback && selectedRating !== null && !explanationOpen && (
             <div className="flex justify-center">
-              <button
-                onClick={() => {
-                  onGoNext()
-                  setTimeout(() => {
-                    setSelectedRating(null)
-                    setShowRatingFeedback(false)
-                  }, 250)
-                }}
-                className="flex items-center gap-2 px-8 py-3 rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest text-sm border-2 transition-all hover:opacity-80 bg-[#111]"
-                style={{
-                  borderColor: '#00FF41',
-                  color: '#00FF41',
-                  boxShadow: '0 0 12px rgba(0,255,65,0.2)'
-                }}
-              >
-                Next Card <ArrowRight className="w-4 h-4" />
-              </button>
+              {currentIndex < sessionCards.length - 1 ? (
+                <button
+                  onClick={() => {
+                    onGoNext()
+                    setTimeout(() => {
+                      setSelectedRating(null)
+                      setShowRatingFeedback(false)
+                    }, 250)
+                  }}
+                  className="flex items-center gap-2 px-8 py-3 rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest text-sm border-2 transition-all hover:opacity-80 bg-[#111]"
+                  style={{
+                    borderColor: '#00FF41',
+                    color: '#00FF41',
+                    boxShadow: '0 0 12px rgba(0,255,65,0.2)'
+                  }}
+                >
+                  Next Card <ArrowRight className="w-4 h-4" />
+                </button>
+              ) : (
+                <button
+                  onClick={onExit}
+                  className="flex items-center gap-2 px-8 py-3 rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest text-sm border-2 transition-all hover:opacity-80 bg-[#111]"
+                  style={{
+                    borderColor: '#00FF41',
+                    color: '#00FF41',
+                    boxShadow: '0 0 12px rgba(0,255,65,0.2)'
+                  }}
+                >
+                  Finish <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
             </div>
           )}
 

@@ -15,206 +15,113 @@
 
 ---
 
-**ECEngine** is a high-performance, cyberpunk-inspired offline-first desktop study ecosystem specifically engineered for examinees preparing for the Philippine Electronics Engineering (ECE) and Electronics Technician (ECT) Licensure Exams. It transforms traditional review into a high-octane tactical workflow, empowering you to dominate the board exams with native desktop capabilities, advanced spaced repetition (SM-2), granular performance analytics, and dynamic formula reference tools.
+ECEngine is an offline-first desktop application engineered for examinees preparing for the Philippine Electronics Engineering (ECE) and Electronics Technician (ECT) Licensure Exams. It combines a local SQLite database with advanced spaced repetition (SM-2) algorithms to provide an integrated study environment. The application supports standard flashcards, multiple-choice questions (MCQs), and LaTeX-rendered formula sets, utilizing a tech stack comprised of Electron, React 18, TypeScript, and Vite. State management is handled by Zustand, styling via Tailwind CSS with custom CSS properties, and animations by Framer Motion. 
 
 ---
 
-## 📑 Table of Contents
+## 🚀 Features
 
-- [⚡ ECEngine](#-ecengine)
-  - [📑 Table of Contents](#-table-of-contents)
-  - [🚀 Core Capabilities \& Feature Modules](#-core-capabilities--feature-modules)
-    - [📊 Tactical Dashboard \& Telemetry](#-tactical-dashboard--telemetry)
-    - [🧠 LooksFam Study Engine](#-looksfam-study-engine)
-    - [📝 Exam Simulation Mode](#-exam-simulation-mode)
-    - [🧪 Formulas \& Reference Laboratory](#-formulas--reference-laboratory)
-    - [📥 Manifest Management (Import Pipeline)](#-manifest-management-import-pipeline)
-  - [🔧 Recent Operational Changes \& UX Enhancements](#-recent-operational-changes--ux-enhancements)
-  - [🏗 System Architecture \& Data Routing](#-system-architecture--data-routing)
-    - [Database Service Layer](#database-service-layer)
-    - [Data Models \& Schema Overview](#data-models--schema-overview)
-  - [📂 Project Directory Layout](#-project-directory-layout)
-  - [🛠 Getting Started \& Developer Guide](#-getting-started--developer-guide)
-    - [Prerequisites](#prerequisites)
-    - [Installation \& Seeding](#installation--seeding)
-    - [Developer Execution Reference](#developer-execution-reference)
-  - [🗺 Roadmap \& Future Strategic Improvements](#-roadmap--future-strategic-improvements)
-  - [🤖 AI Auditor & Developer Manifesto](#-ai-auditor--developer-manifesto)
+### Study Modes
+* **Spaced Repetition**: Flashcard and formula sets utilize the SM-2 algorithm, providing Again / Hard / Good / Easy rating buttons to schedule reviews.
+* **Preview Mode**: Browse formula sets without writing SM-2 progress data.
+* **Written Mode**: Require typing the exact answer before flipping the flashcard.
+* **Autoplay Mode**: Hands-free flashcard review loop powered by Web Speech API for Text-to-Speech (TTS), requiring no external dependencies.
+* **Additional Controls**: Swap Term/Definition toggle, shuffle toggle, and bookmarking for filtered reviews.
+* **Keyboard Shortcuts**: Use `Space`, `ArrowUp`, or `ArrowDown` to flip cards; `1-4` to select an SM-2 rating; and left/right arrow keys to navigate.
 
----
+### Card Types
+* **Flashcard**: Standard front/back layout with an optional image and an optional explanation field (with optional image).
+* **MCQ**: Structured with a question, 4 multiple-choice choices, correct answer, optional image, and an optional solution field (with optional image).
+* **Formula**: Specialized layout containing the formula name, LaTeX equation (rendered via KaTeX and MathLive), description, variables, and an optional explanation field (with optional image).
+* **Explanation Field**: A collapsible section available on the back face of flashcard, formula, and MCQ card types. It supports text with LaTeX rendering and an optional image. When expanded, the SM-2 rating buttons and navigation buttons are hidden to maximize reading space.
 
-## 🚀 Core Capabilities & Feature Modules
+### Deck Management
+* **Add Decks**: Create MCQ, Flashcard, or Formula sets with features including drag-and-drop card reordering (via DnD Kit), undo history, bulk import for MCQs and Flashcards, and MathLive equation editors for individual fields.
+* **Edit Deck**: Provides the same comprehensive capabilities as the Add Decks interface for modifying existing decks.
+* **Folder System**: Support for nested folders (maximum depth of 1), independently scoped for the study and formula tabs.
+* **Smart Routing**: After saving, the application automatically redirects to the correct tab based on the deck type (Formula decks route to the Formulas tab, others route to Flashcards).
+* **Source Tags**: Pre-configured source tags include Excel, Edge, TOP, Pinoybix, Indiabix, EST Superbook, and Cuervo, alongside custom user-defined tags.
 
-### 📊 Tactical Dashboard & Telemetry
-The Home Dashboard serves as your mission control, packing high-density study metrics into a consolidated cyberpunk console:
-* **Heartbeat Heatmap**: A GitHub-style activity grid tracking active study time over a 6-month window leading up to your exam date. Color intensities transition dynamically from deep green (under 1 hour) to neon green (4+ hours).
-* **Performance Telemetry Charting**: Real-time area and line charts (powered by Recharts) that map your historical accuracy scores. It automatically switches contexts between overall stats (`ALL`) and cumulative accuracy per specific engineering subject.
-* **Core Subject Mastery Intelligence**: Dynamic calculation of mastery percentages for the four core ECE board subjects:
-  1. **MATH**: Mathematics (Algebra, Calculus, Probability, Differential Equations, etc.)
-  2. **GEAS**: General Engineering & Applied Sciences (Economy, Management, Thermodynamics, Materials, etc.)
-  3. **ELECS**: Electronics Engineering (Semiconductors, Amplifiers, Circuits, Digital Logic, etc.)
-  4. **EST**: Electronics Systems and Technologies (Analog/Digital Communications, Antennas, Fiber Optics, etc.)
-* **Precision Mission Countdown**: A microsecond-accurate countdown timer pointing towards your designated Board Exam date, instilling focus and pacing.
+### Analytics & Progress
+* **Dashboard Heatmap**: A visual study activity heatmap plotting activity over a 6-month window.
+* **Accuracy Trends**: Line charts mapping accuracy trends across the core subjects (MATH, GEAS, ELECS, EST).
+* **Mastery Intelligence**: Mastery percentage calculated per subject and per individual deck, derived directly from SM-2 progress data.
+* **Board Exam Countdown**: A built-in timer counting down to the user's exam date.
 
-### 🧠 LooksFam Study Engine
-The heart of active recall and spaced repetition in ECEngine:
-* **SM-2 Algorithmic Scheduling**: Integrates the SuperMemo-2 spaced repetition algorithm (`src/lib/sm2.ts`) to programmatically calculate optimal review intervals based on user feedback (`Again`, `Hard`, `Good`, `Easy`). It automatically updates `ease_factor`, `repetitions`, `interval`, and the `next_review` timestamp.
-* **Unified Decks Structure**: Custom and preloaded decks can contain multiple card types, including traditional Flashcards, Multiple-Choice Questions (MCQs), and Formula sheets.
-* **Partitioned Learning (Learn Mode)**: Focuses your review into manageable 5-card batches, enforcing perfect mastery by looping through incorrect cards until they are correctly answered before unlocking the next batch.
-* **Zero-Lag Navigation (Test Mode)**: High-density scroll tracking keeps your position perfectly synced in extensive mock question banks, supporting frame-perfect interactions.
-* **AI Explanation Sidebar**: Powered by Grok Llama-3.3-70B, it instantly deconstructs questions into theoretical foundations, step-by-step mathematical derivations, and distractor option rationales.
-* **Standardized Choice Layouts**: Multiple-choice options consistently map to A/C on the top row and B/D on the bottom row, mirroring the format of actual Professional Regulation Commission (PRC) exam papers.
+### AI Integration
+* **Groq Llama-3.3-70B Integration**: Features an explain button on MCQ cards in Learn and Test modes. Requires a user-supplied API key configured in the Settings.
+* **Context Extraction**: A "Get Context" button instantly copies a structured prompt to the clipboard for use in external AI tools like ChatGPT or Claude.
 
-### 📝 Exam Simulation Mode
-Build test-taking stamina by simulating actual Professional Regulation Commission (PRC) exam conditions:
-* **Custom Configurator**: Multi-select topics from the hierarchical ECE taxonomy, define question volume (25, 50, or 100 items), and allocate time limits.
-* **Authentic Mock Conditions**: Randomizes question order and shuffles choice sequences. Features strict mode, time limits (1h to 4h), and subject-specific filtering (Math, GEAS, ELECS, EST). Answers are entirely hidden during the exam with active "Mark for Review" selectors.
-* **Interactive Post-Exam Diagnostics**: Instant results breakdown featuring overall score, passing telemetry, detailed analysis of missed concepts, and the option to instantly re-run a customized session isolating only incorrect items.
-
-### 🖨️ Test Paper Generator & PDF Export
-Generate printable test papers and study guides dynamically from your decks:
-* **Multiple Layouts**: Toggle between Glossary, Table, and Q&A formats to suit different review styles.
-* **Print Themes**: Optimize readability with native Light, Sepia, and Dark themes.
-* **Direct PDF Export**: Render high-fidelity PDFs instantly for offline study or physical printing.
-* **Interactive Scaling**: Sumatra-style right-click zoom and scaling to adjust document proportions dynamically.
-
-### 🧪 Formulas & Reference Laboratory
-A comprehensive mathematical vault for engineering relations:
-* **Robust KaTeX Engine**: Fast, offline-first mathematical typesetting rendering complex multi-line integrals, Maxwell's relations, and communications formulas seamlessly. Includes automatic translation of unsupported LaTeX commands.
-* **Hardened SVG & DOM Rendering**: Configured DOMPurify profiles that prevent complex radicals, fractions, and symbols from being stripped or deformed.
-* **Granular Mastery Mapping**: Formulas carry their own spaced-repetition records, letting you track equation memorization on the same visual scale as standard conceptual flashcards.
-
-### 📥 Manifest Management (Import Pipeline)
-Easily import high-quality study materials:
-* **Flexible Parser**: Ingests raw text, Anki-style tab-separated values (TSV), structured native JSON schemas, and formatted text blocks.
-* **Cyberpunk Folder Hierarchy**: Categorize custom decks into nested folders complete with customizable color tags.
-* **Navigation Protection**: Integrates React Router `useBlocker` handlers, warning you and blocking accidental navigation that would lose progress during active study or deck configuration.
+### Print & Export
+* **Print Views**: Generate layouts optimized for Glossary, Table, or Q&A formats.
+* **Theming**: Select between Light, Sepia, and Dark print themes.
+* **Direct Export**: Native capability to export directly to PDF or export deck contents to a raw text file.
 
 ---
 
-## 🔧 Recent Operational Changes & UX Enhancements
-
-We have recently refactored the UI and added highly requested functional capabilities to polish the desktop experience:
-
-1. **Integrated Deck Keyword Search & Sorting**:
-   * Added a real-time keyword search bar at the top of the deck browser, matching characters against deck and folder names.
-   * Introduced comprehensive sorting options, enabling developers and students to sort decks dynamically by **Date Ascending** or **Date Descending** to manage growing libraries.
-2. **Visual Layout Refinements & Standardization**:
-   * Adjusted folder navigation icon heights, making the pencil/edit icon perfectly proportional to the folder name text size.
-   * Standardized Multiple-Choice layout grids (A & C on top, B & D on bottom) across Learn, Test, Exam, and Print modes to mimic standard board exam papers.
-   * Tightened vertical gaps: removed the excessive spacing between the first row of decks and the legend/controls header. This layout adjustment is uniformly applied across **LooksFam**, **Flashcards**, and **Formulas** views.
-   * Spaced out navigation tabs in the main sidebar to provide a cleaner, more readable hierarchy.
-3. **Advanced Integrations (AI & PDF)**:
-   * **Grok Llama-3.3-70B Integration**: Embedded AI context generation for instant, localized AI explanations of complex questions without breaking focus.
-   * **Native PDF Export**: Added `PrintView` to generate stylized, downloadable PDFs directly from deck data.
-4. **Adaptive Desktop View Optimization**:
-   * Centered and balanced deck builder blocks when large or medium landscape screens are detected, preserving clean visual symmetry.
-   * Aligned cancel and save button heights for symmetrical tactile inputs.
-   * Stacked deck creation type selectors (MCQ, Flashcard, and Formula buttons) dynamically to ensure clarity without text clipping.
-5. **Context-Aware Save Prompts**:
-   * The warning instructing users to add a title and at least one card is now elegant and contextual: it is hidden by default and only triggers on hover over the disabled Save button or when an incomplete save is actively attempted.
-6. **Robust Database Loading Protections**:
-   * Integrated `isLoading` state handling across **LooksFam (FlashcardStudy)**, **FlashcardViewer**, and **Formulas** deck browsers to gracefully prevent initial "No decks found" empty-state flashes while query promises resolve.
-7. **TTS Engine Cleanup**:
-   * Removed all dead Kokoro and Groq TTS engine code from `Settings.tsx` — dead state variables, IPC calls, voice arrays, and button groups are gone.
-   * `useTTS.ts` now exclusively uses the Web Speech API (`window.speechSynthesis`) built into Chromium/Electron. No external API key or IPC bridge is required for TTS.
-   * Added `speakWithCallback(text, onEnd)` to `useTTS.ts` — identical to `speak()` but fires an `onEnd` callback when the utterance finishes (or errors), enabling speech-aware sequencing.
-8. **Flashcard Viewer — Autoplay Mode**:
-   * New **AUTO** button (Play/Pause) in the FlashcardViewer top bar triggers a hands-free card review loop.
-   * Sequence: card appears → TTS reads front → 1 s pause → flip → TTS reads back → 1 s pause → next card (2 s gap between cards). All timers start **after** TTS finishes, eliminating mid-speech cutoffs.
-   * Manual navigation (arrow keys, Space, Prev/Next buttons) immediately stops autoplay. Written mode hides the AUTO button entirely.
-   * Implemented with a single sequencer `useEffect` and a `autoplaySpeechDoneRef` continuation ref to prevent stale-closure race conditions.
-9. **Flashcard Viewer — Keyboard Shortcuts**:
-   * `ArrowUp` and `ArrowDown` now flip the card, in addition to the existing Space shortcut.
-10. **Flashcard Viewer — 3D Card Flip Animation**:
-    * The card flips like a physical flashcard using CSS 3D transforms (`rotateY`, `transformStyle: preserve-3d`).
-    * Both front and back faces are always in the DOM (no conditional render), hidden via `backfaceVisibility: hidden` + `WebkitBackfaceVisibility: hidden` for Chromium compatibility.
-    * Card-to-card transitions slide horizontally via `AnimatePresence` (`x: ±30`, 0.2 s `easeOut`).
-11. **Flashcard Viewer — Visual Fixes**:
-    * Nav Prev/Next buttons are wrapped in a persistent `h-[52px]` container so the card never shifts when they appear or disappear.
-    * TTS and Settings icon buttons in the top bar use matching `px-3 py-1.5` padding to sit at the same height as the SWAP and AUTO buttons.
-12. **Navigation State Stability**:
-    * Resolved a navigation locking issue where `useBlocker` would get stuck in a 'blocked' state when a user prematurely exits a session. Blocker resets are now synchronous and atomic across `FlashcardViewer`, `Formulas`, and `FlashcardStudy`.
-13. **Asynchronous File I/O Optimization**:
-    * Replaced all synchronous file system calls (`fs.writeFileSync`, `fs.copyFileSync`, `fs.readFileSync`) within `ipcMain.handle` boundaries across `db.ipc.ts`, `config.ipc.ts`, `file.ipc.ts`, and `print.ipc.ts` with their `fs/promises` async equivalents. This prevents blocking the main Electron process thread during large database backups and JSON file exports.
-14. **Component Decomposition (FlashcardLearn)**:
-    * Decomposed the massive 1,500+ line `FlashcardLearn.tsx` into modular components (`FlashcardSession`, `FlashcardDeckBrowser`, `StudyCard`, `AdvancedFiltersPopover`, `DeckCard`).
-    * Reduced the main file to 821 lines, acting strictly as a state orchestrator rather than a monolithic render engine.
-15. **Tailwind Token Unification**:
-    * Unified hardcoded hex colors across 49 files and 1,127 instances into a standardized semantic token system in `tailwind.config.ts`.
-    * Introduced tokens like `surface`, `surface-2`, `border-base`, `border-subtle`, `text-primary`, `text-muted`, `accent`, `warn`, and `danger` for a consistent theme implementation while preserving intentional component-specific residuals.
-
----
-
-## 🏗 System Architecture & Data Routing
+## 🏗 System Architecture
 
 ECEngine runs as a native desktop application powered by React 18, Vite, Electron, and a local SQLite database compiled for desktop distribution.
 
 ```mermaid
 flowchart TD
     subgraph UI_Layer [React 18 Renderer Layer]
-        A[Pages: Dashboard / Study / Exam] --> B[Zustand Stores: useSessionStore / useProgressStore]
+        A[Pages: Dashboard / Study / Exam] --> B[Zustand Stores]
         B --> C[Database Service Layer: db.service.ts]
     end
 
     subgraph Desktop_Backend [Electron Main Process]
-        C --> D[IPC Bridge: window.electron.db]
-        D --> F[Better-SQLite3 Database Adapter]
+        C --> D[IPC Bridge: window.electron.*]
+        D --> F[better-sqlite3 Database Adapter]
         F --> G[(ecengine.sqlite)]
     end
 ```
 
-### Database Service Layer
-All state actions fetch and write database records using the database interface API in `src/services/db.service.ts`. This service acts as the direct proxy routing operations directly to the Electron IPC bridge:
-
-```typescript
-// db.service.ts implementation pattern
-export interface DBAdapter {
-  getCards(topicId: string, type?: CardType): Promise<Card[]>;
-  getProgress(cardId: string): Promise<Progress | null>;
-  saveProgress(progress: Progress): Promise<void>;
-  getTopics(): Promise<Topic[]>;
-  importCards(cards: Card[]): Promise<void>;
-  getExamSession(id: string): Promise<ExamSession>;
-  saveExamSession(session: ExamSession): Promise<void>;
-}
-```
-
-### Data Models & Schema Overview
-Source content is saved in structured JSON blocks under `content/` before compiling into the SQLite structure:
+### Database Schema
 
 ```sql
--- Core Topic Directory
 CREATE TABLE topics (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   subject TEXT NOT NULL,
-  parent_id TEXT REFERENCES topics(id),
-  order_index INTEGER
+  description TEXT,
+  parent_id TEXT,
+  order_index INTEGER DEFAULT 0,
+  tags TEXT,
+  created_at INTEGER DEFAULT (strftime('%s', 'now')),
+  folder_name TEXT DEFAULT 'Uncategorized',
+  folder_id TEXT REFERENCES folders(id) ON DELETE SET NULL,
+  FOREIGN KEY(parent_id) REFERENCES topics(id)
 );
 
--- Flexible JSON Cards Table
 CREATE TABLE cards (
   id TEXT PRIMARY KEY,
-  topic_id TEXT REFERENCES topics(id),
-  type TEXT CHECK(type IN ('flashcard','mcq','formula','concept')),
-  data JSON NOT NULL,
+  topic_id TEXT NOT NULL,
+  type TEXT NOT NULL,
+  data TEXT NOT NULL,
   difficulty TEXT,
   tags TEXT,
-  is_custom INTEGER DEFAULT 0,
-  created_at TEXT DEFAULT CURRENT_TIMESTAMP
+  is_custom BOOLEAN DEFAULT 0,
+  created_at INTEGER DEFAULT (strftime('%s', 'now')),
+  FOREIGN KEY(topic_id) REFERENCES topics(id)
 );
 
--- SM-2 Spaced Repetition Analytics Tracker
 CREATE TABLE progress (
-  card_id TEXT REFERENCES cards(id),
-  user_id TEXT DEFAULT 'local',
+  card_id TEXT PRIMARY KEY,
   ease_factor REAL DEFAULT 2.5,
   interval INTEGER DEFAULT 1,
   repetitions INTEGER DEFAULT 0,
   next_review TEXT,
   last_reviewed TEXT,
-  PRIMARY KEY (card_id, user_id)
+  FOREIGN KEY(card_id) REFERENCES cards(id)
+);
+
+CREATE TABLE folders (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  parent_id TEXT REFERENCES folders(id),
+  order_index INTEGER DEFAULT 0,
+  scope TEXT NOT NULL DEFAULT 'study'
 );
 ```
 
@@ -224,33 +131,28 @@ CREATE TABLE progress (
 
 ```text
 ecengine/
-├── content/                     # Source of truth JSON files (Topics, MCQs, Formulas)
-│   ├── README.md                # Markdown documentation for content schema
-│   ├── mathematics/             # Seeding JSONs for Algebra, Calculus, etc.
-│   ├── electronics/             # Semiconductors, digital electronics, etc.
-│   ├── communications/          # Analog/Digital systems, antennas, fiber
-│   └── general-engineering/     # Economy, Management, and Laws
 ├── electron/                    # Electron Shell Files
-│   ├── main.ts                  # App launch entry point, window, and security configurations
-│   ├── preload.ts               # Secure contextBridge IPC boundaries
+│   ├── main.ts                  # App launch entry point, window configuration
+│   ├── preload.ts               # contextBridge IPC boundaries
 │   ├── ipc/                     # DB, file system, and system IPC handlers
-│   └── db/                      # Schema, initialization queries, and SQLite connections
+│   └── db/                      # Schema and SQLite connections
 ├── src/                         # React Frontend Renderer Process
-│   ├── assets/                  # Fonts (Orbitron, Rajdhani, IBM Plex Mono), SVGs, Icons
+│   ├── assets/                  # Fonts, SVGs, Icons
 │   ├── components/              # UI Components
-│   │   ├── ui/                  # Visual units (Buttons, Cards, Modals)
-│   │   ├── mcq/                 # MCQ cards, multiple choice buttons, explanations
-│   │   ├── flashcard/           # Flippers, SM-2 selectors
-│   │   ├── formula/             # KaTeX math render cards
-│   │   └── layout/              # Sidebars, TitleBar, and Navigation units
-│   ├── hooks/                   # Custom business logic React hooks (SM-2, timer, platform)
-│   ├── pages/                   # Main page layout views (Dashboard, ExamMode, Study)
+│   │   ├── ui/                  # Reusable visual units
+│   │   ├── mcq/                 # MCQ components
+│   │   ├── flashcard/           # Flashcard and SM-2 components
+│   │   ├── formula/             # Formula rendering components
+│   │   ├── deck/                # Deck building and forms
+│   │   └── layout/              # Sidebars and Navigation
+│   ├── hooks/                   # Custom business logic React hooks
+│   ├── pages/                   # Main page layout views
 │   ├── services/                # Database Service Layer & connectors
-│   ├── store/                   # Zustand store slices (Session, Preferences, Progress)
-│   └── styles/                  # Tailwind base styling and theme variable configuration
-├── scripts/                     # Operational scripts (seeding DB, schema validators)
-├── package.json                 # Project manifest, dependencies, and execution scripts
-└── electron.vite.config.ts      # Unified compilation and hot module replacement config
+│   ├── store/                   # Zustand store slices
+│   └── styles/                  # Tailwind styling and CSS custom properties
+├── scripts/                     # Operational scripts
+├── package.json                 # Project manifest and dependencies
+└── electron.vite.config.ts      # Vite build configuration
 ```
 
 ---
@@ -296,25 +198,12 @@ Use the following commands inside your terminal to launch, build, or test variou
 
 ---
 
-## 🗺 Roadmap & Future Strategic Improvements
+## ⚠️ Known Limitations
 
-We are mapping out additions across four core phases:
-
-### Phase 1: Portability & Syncing (🔥 Active Objective)
-* **Desktop Encrypted Syncing**: Integrate cloud database options to securely backup and sync study progress, custom decks, and statistics dynamically across different workstation environments.
-
-### Phase 2: Gamification & Engagement Mechanics
-* **XP and Daily Streaks**: Gain experience points (XP) for successfully reviewed cards, leveling up rank titles from "Apprentice Technician" to "Master Systems Engineer".
-* **Wrong Answer Log**: Automatically archive incorrect choices into a specialized review folder for targeting weak concepts.
-* **Past Board Exam Filters**: Tag cards and questions with `year_asked` descriptors to easily filter questions from previous licensure tests.
-
-### Phase 3: Content Expansion & Advanced Tooling
-* **Public Manifest Gallery**: A communal deck repository allowing teachers and students to publish, vote on, and download customized flashcard decks.
-* **Equation Solver Workstation**: Integrated math scripts to show step-by-step calculations for circuit, wave propagation, and engineering economics problems.
-
-### Phase 4: UI/UX Aesthetic customizers
-* **Visual Terminal Themes**: A selection of custom cyberpunk terminal presets (e.g., "Night City Neon", "Matrix Green", "Netrunner Amber").
-* **Circuits 3D Visualizer**: Render complex circuitry using Three.js directly within the card explanation panel to provide visual context.
+* **Technical Debt in FlashCard.tsx**: The older LooksFam 3D flip view uses `FlashCard.tsx`, which does not have the SM-2 algorithm wired.
+* **No Cloud Sync/Backup**: There is no automatic backup or cloud syncing. Data relies entirely on the local SQLite file.
+* **Empty Formula Bank**: The formula bank content is not pre-populated. Users must create their own formula decks from scratch.
+* **AI Provider Support**: Only the Groq API is implemented and wired. Mentioned support for Gemini or other multi-provider interfaces in older notes is not present.
 
 ---
 
@@ -325,6 +214,7 @@ These instructions govern all future modifications to this repository:
 2. **Access Proxying**: Direct browser `window.electron` calls inside React components should be avoided when possible. Route DB activities through `src/services/db.service.ts` for cleaner separation of concerns.
 3. **Typography Standards**: Preserve monospaced readability. Titles must utilize `Orbitron` or `Rajdhani`, and data containers should display body copy in `IBM Plex Mono` or `JetBrains Mono`. No soft pastel or rounded visuals.
 4. **TypeScript Rigidness**: Avoid typing bypasses (`any`). Ensure custom payloads are typed correctly within `src/types/` to prevent silent database runtime failures.
+5. **Shared Study Views**: Formula sets and Flashcard sets share the `FlashcardSession` component — UI changes to the study view affect both.
 
 ---
 
