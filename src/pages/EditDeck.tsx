@@ -1078,13 +1078,12 @@ export default function EditDeck() {
   }, [scope])
 
   // ── Load from DB ──────────────────────────────────────────────────────────
-  useEffect(() => {
+  const loadCards = useCallback(async () => {
     if (!deckId) return
-    async function load() {
-      try {
-        setLoading(true)
-        // ── Electron: load via IPC ──
-        const topicsRes = await window.electron.decks.getTopics()
+    try {
+      setLoading(true)
+      // ── Electron: load via IPC ──
+      const topicsRes = await window.electron.decks.getTopics()
           const topicRow = (topicsRes.data || []).find((t: any) => t.id === deckId)
           if (topicRow) {
             const t = topicRow
@@ -1170,18 +1169,20 @@ export default function EditDeck() {
                 if (parsed.explanationImagePath) d.explanationImagePath = parsed.explanationImagePath
                 return { id: row.id, type: 'flashcard', data: d } as EditCard
               }
-            })
-            setCards(loaded)
-            setOriginalCardIds(new Set(loaded.map(c => c.id)))
-        }
-      } catch (err) {
-        console.error('[EditDeck] Load error', err)
-      } finally {
-        setLoading(false)
+        })
+        setCards(loaded)
+        setOriginalCardIds(new Set(loaded.map(c => c.id)))
       }
+    } catch (err) {
+      console.error('[EditDeck] Load error', err)
+    } finally {
+      setLoading(false)
     }
-    load()
   }, [deckId])
+
+  useEffect(() => {
+    loadCards()
+  }, [loadCards])
 
   // ── Card mutations ────────────────────────────────────────────────────────
   const updateCard = useCallback((id: string, patch: Partial<EditCard>) => {
@@ -1242,6 +1243,7 @@ export default function EditDeck() {
         deletedCardIds
       })
       if (!res.success) throw new Error(res.error)
+      await loadCards()
       setToast({ type: 'success', msg: 'Deck saved successfully!' })
       setTimeout(() => setToast(null), 3000)
     } catch (err) {

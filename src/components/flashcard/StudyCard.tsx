@@ -138,7 +138,7 @@ const ExplanationBlock: React.FC<{ card: Card; onZoomImage: (path: string) => vo
             />
           )}
           {explanation.imagePath && (
-            <div className="w-full flex justify-start">
+            <div className="w-full flex justify-center mt-2">
               <img
                 src={`ece-app://${explanation.imagePath}`}
                 alt="Explanation diagram"

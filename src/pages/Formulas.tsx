@@ -112,6 +112,7 @@ export default function Formulas() {
   )
   const [sessionCards, setSessionCards] = useState<Card[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [sessionMode, setSessionMode] = useState<'study' | 'preview'>('study')
   const [isFlipped, setIsFlipped] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [settings, setSettings] = useState<FCSettings>({
@@ -271,13 +272,16 @@ export default function Formulas() {
   }
 
   // ── Open a deck ──
-  const openDeck = async (deck: DeckInfo) => {
+  const openDeck = async (deck: DeckInfo, mode: 'study' | 'preview') => {
     try {
       const cards = await dbService.getAllCardsByTopic(deck.id)
       if (cards.length === 0) return
+      setSessionMode(mode)
       setActiveDeck({ id: deck.id, title: deck.title, cards })
       applySettings(cards, settings)
-      startSession(cards)  // ADD THIS LINE
+      if (mode === 'study') {
+        startSession(cards)
+      }
     } catch (e) {
       console.error('Failed to load cards', e)
     }
@@ -507,7 +511,7 @@ export default function Formulas() {
         showExitConfirm={showExitConfirm}
         blockerState={blocker.state}
         progress={sessionCards.length > 0 ? ((currentIndex + 1) / sessionCards.length) * 100 : 0}
-        mode="study"
+        mode={sessionMode}
         enableTTS={false}
         enableAutoplay={false}
         onExit={handleExit}
@@ -528,7 +532,7 @@ export default function Formulas() {
         onWrittenSubmit={handleWrittenSubmit}
         onViewCard={() => setIsFlipped(true)}
         onZoomImage={setZoomedImage}
-        onRateCard={async (rating) => {
+        onRateCard={sessionMode === 'preview' ? async () => {} : async (rating) => {
           await rateCard(rating)
         }}
         onGoNext={goNext}
@@ -834,8 +838,8 @@ export default function Formulas() {
                     <DeckCard
                       key={deck.id}
                       deck={deck}
-                      onLearn={(id) => openDeck(decks.find(d => d.id === id)!)}
-                      onPreview={(id) => openDeck(decks.find(d => d.id === id)!)}
+                      onLearn={(id) => openDeck(decks.find(d => d.id === id)!, 'study')}
+                      onPreview={(id) => openDeck(decks.find(d => d.id === id)!, 'preview')}
                       onEdit={(id) => {
                         sessionStorage.setItem('ecengine:returnScroll:/formulas', String(window.scrollY))
                         navigate(`/edit-deck/${id}?returnTo=/formulas`)
