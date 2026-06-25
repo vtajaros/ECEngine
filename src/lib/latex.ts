@@ -91,6 +91,32 @@ const PURIFY_OPTS_FULL = {
 }
 
 /**
+ * Applies Markdown-style inline formatting markers to HTML.
+ * Called on plain-text segments ONLY — never passed into KaTeX.
+ * Order: bold before italic to prevent partial marker matches.
+ *
+ *   **text**  →  <strong>text</strong>
+ *   *text*    →  <em>text</em>
+ *   __text__  →  <u>text</u>
+ */
+function applyInlineFormatting(text: string): string {
+  let result = text
+    .replace(/\*\*(.*?)\*\*/gs, '<strong>$1</strong>')
+    .replace(/(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)/gs, '<em>$1</em>')
+    .replace(/__(.*?)__/gs, '<u>$1</u>')
+
+  // Superscript: ^{multi} or ^x (single non-space char)
+  result = result.replace(/\^\{([^}]+)\}/g, '<sup>$1</sup>')
+  result = result.replace(/\^([^\s{])/g, '<sup>$1</sup>')
+
+  // Subscript: _{multi} or _x (single non-space char)
+  result = result.replace(/\_\{([^}]+)\}/g, '<sub>$1</sub>')
+  result = result.replace(/(?<!\*\*?)_(?!\*\*?)([^\s_{])/g, '<sub>$1</sub>')
+
+  return result
+}
+
+/**
  * Render inline LaTeX math expressions within text.
  * Handles three cases:
  *   Path A — pure raw LaTeX (no $ delimiters): render entire string as display math.
@@ -141,7 +167,7 @@ export const renderMath = (text: string): string => {
     while ((match = delimRegex.exec(t)) !== null) {
       // Text before this delimiter block
       if (match.index > lastIndex) {
-        segments.push(renderSegment(t.slice(lastIndex, match.index)))
+        segments.push(applyInlineFormatting(renderSegment(t.slice(lastIndex, match.index))))
       }
       // The delimited block itself — strip delimiters and render
       const isDisplay = match[0].startsWith('$$')
@@ -161,7 +187,7 @@ export const renderMath = (text: string): string => {
 
     // Remaining text after last delimiter
     if (lastIndex < t.length) {
-      segments.push(renderSegment(t.slice(lastIndex)))
+      segments.push(applyInlineFormatting(renderSegment(t.slice(lastIndex))))
     }
 
     return DOMPurify.sanitize(segments.join('').replace(/\n/g, '<br>'), PURIFY_OPTS_FULL)
@@ -172,6 +198,15 @@ export const renderMath = (text: string): string => {
   // isPureMath was too restrictive — it rejected valid equations containing spaces
   // (e.g. "I_{CEO}=\alpha\cdot I_{CBO}") because stripped text had whitespace.
   if (isRawLatex(t) && !t.includes('$')) {
+    // If the string contains inline formatting markers, treat as prose — not raw LaTeX.
+    // KaTeX cannot handle ** or __ and will error on them.
+    const hasFormatting = /\*\*|\*[^*]|__/.test(t)
+    if (hasFormatting) {
+      return DOMPurify.sanitize(
+        applyInlineFormatting(t.replace(/\n/g, '<br>')),
+        PURIFY_OPTS_FULL
+      )
+    }
     try {
       const rendered = katex.renderToString(t, {
         throwOnError: false,
@@ -214,9 +249,8 @@ export const renderMath = (text: string): string => {
     }
   })
 
-  // Markdown bolding **text**
-  rendered = rendered.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-
+  // Markdown bolding, italic, underline
+  rendered = applyInlineFormatting(rendered)
   return DOMPurify.sanitize(rendered.replace(/\n/g, '<br>'), PURIFY_OPTS_FULL)
 }
 

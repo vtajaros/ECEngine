@@ -125,16 +125,19 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting
                 className={`${getDynamicFontSize(data.front)} font-['Rajdhani'] font-semibold leading-snug text-center break-words w-full`}
                 dangerouslySetInnerHTML={{ __html: renderMath(data.front) }}
               />
-              {data.imagePath && (
-                <div className="mt-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-accent transition-all">
-                  <img
-                    src={`ece-app://${data.imagePath}`}
-                    alt="Flashcard diagram"
-                    className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
-                    onClick={(e) => { e.stopPropagation(); setZoomedImage(data.imagePath!); }}
-                  />
-                </div>
-              )}
+              {(data.imageFront || data.imagePath) && (() => {
+                const frontImg = data.imageFront || data.imagePath!
+                return (
+                  <div className="mt-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-accent transition-all">
+                    <img
+                      src={`ece-app://${frontImg}`}
+                      alt="Flashcard diagram"
+                      className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
+                      onClick={(e) => { e.stopPropagation(); setZoomedImage(frontImg) }}
+                    />
+                  </div>
+                )
+              })()}
             </div>
 
             <div className="text-center text-text-muted text-sm mt-4 font-['Rajdhani']">
@@ -150,11 +153,21 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting
             <div className="text-center text-text-muted text-sm mb-4 font-['Rajdhani'] uppercase tracking-widest border-b border-[#111111] pb-2">
               Answer
             </div>
-            <div className="flex-1 flex items-center justify-center text-center overflow-y-auto w-full">
+            <div className="flex-1 flex flex-col items-center justify-center text-center overflow-y-auto w-full gap-4">
               <div
                 className={`${getDynamicFontSize(data.back)} font-['Rajdhani'] font-medium leading-snug text-center break-words w-full`}
                 dangerouslySetInnerHTML={{ __html: renderMath(data.back) }}
               />
+              {data.imageBack && (
+                <div className="w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-accent transition-all">
+                  <img
+                    src={`ece-app://${data.imageBack}`}
+                    alt="Flashcard back diagram"
+                    className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
+                    onClick={(e) => { e.stopPropagation(); setZoomedImage(data.imageBack!) }}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </motion.div>

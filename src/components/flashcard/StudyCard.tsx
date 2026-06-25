@@ -133,7 +133,7 @@ const ExplanationBlock: React.FC<{ card: Card; onZoomImage: (path: string) => vo
         <div className="mt-3 flex flex-col gap-3">
           {explanation.text && (
             <div
-              className="text-sm font-['IBM_Plex_Mono'] text-text-muted leading-relaxed text-left"
+              className="text-sm font-['IBM_Plex_Mono'] text-[#d4d4d4] leading-relaxed text-left"
               dangerouslySetInnerHTML={{ __html: renderMath(explanation.text) }}
             />
           )}
@@ -195,13 +195,15 @@ export const StudyCard = React.memo(function StudyCard({
   onZoomImage,
   onExplanationOpen,
 }: StudyCardProps) {
+  const [explanationOpen, setExplanationOpen] = React.useState(false)
+
   return (
     <motion.div key={`${card.id}-${currentIndex}`} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.2, ease: 'easeOut' }}>
       {/* 3D Flip Card Container */}
       <div
         className="w-full cursor-pointer"
         style={{ perspective: '1200px', minHeight: '350px' }}
-        onClick={onFlip}
+        onClick={explanationOpen ? undefined : onFlip}
       >
         <div
           style={{
@@ -243,16 +245,19 @@ export const StudyCard = React.memo(function StudyCard({
             <div className="flex-1 flex items-center justify-center px-8 pb-8">
               <div className="text-center w-full">
                 <div className={`${getDynamicFontSize(getFrontText(card, swapTermDef))} font-['Rajdhani'] font-bold text-text-primary leading-relaxed`} dangerouslySetInnerHTML={{ __html: renderMath(getFrontText(card, swapTermDef)) }} />
-                {card.data.imagePath && (
-                  <div className="mt-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-accent transition-all">
-                    <img
-                      src={`ece-app://${card.data.imagePath}`}
-                      alt="Card diagram"
-                      className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
-                      onClick={(e) => { e.stopPropagation(); onZoomImage(card.data.imagePath!); }}
-                    />
-                  </div>
-                )}
+                {((card.data as any).imagePathFront || card.data.imagePath) && (() => {
+                  const frontImg = (card.data as any).imagePathFront || card.data.imagePath!
+                  return (
+                    <div className="mt-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-accent transition-all">
+                      <img
+                        src={`ece-app://${frontImg}`}
+                        alt="Card diagram"
+                        className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
+                        onClick={(e) => { e.stopPropagation(); onZoomImage(frontImg) }}
+                      />
+                    </div>
+                  )
+                })()}
                 {!writtenMode && <p className="text-[#555] text-sm mt-6 font-['Rajdhani']">Click or press Space to flip</p>}
               </div>
             </div>
@@ -281,13 +286,30 @@ export const StudyCard = React.memo(function StudyCard({
 
             {/* Back Content */}
             <div className="flex-1 flex items-center justify-center px-8 pb-4">
-              <div className="text-center w-full text-text-primary">
+              <div className="text-center w-full text-text-primary flex flex-col items-center gap-4">
                 {getBackContent(card, swapTermDef)}
+                {(card.data as any).imageBack && (
+                  <div className="w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-accent transition-all">
+                    <img
+                      src={`ece-app://${(card.data as any).imageBack}`}
+                      alt="Card back diagram"
+                      className="w-full h-full max-h-[300px] object-contain cursor-zoom-in"
+                      onClick={(e) => { e.stopPropagation(); onZoomImage((card.data as any).imageBack) }}
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Explanation — collapsible, only when card has one */}
-            <ExplanationBlock card={card} onZoomImage={onZoomImage} onOpenChange={onExplanationOpen} />
+            <ExplanationBlock
+              card={card}
+              onZoomImage={onZoomImage}
+              onOpenChange={(open) => {
+                setExplanationOpen(open)
+                onExplanationOpen?.(open)
+              }}
+            />
           </div>
         </div>
       </div>

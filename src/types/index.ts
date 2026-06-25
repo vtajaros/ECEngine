@@ -47,7 +47,8 @@ export interface FormulaData {
   name: string
   latex: string
   variables: Record<string, string>
-  imagePath?: string
+  imagePath?: string           // legacy: explanation-area image, kept for backward compat
+  imagePathFront?: string      // NEW: image shown on the front (name) face
   description?: string
   explanation?: string
   explanationImagePath?: string

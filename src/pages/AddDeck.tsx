@@ -1,4 +1,4 @@
-import { MCQForm, FlashcardForm, FormulaForm, MCQEdit, FlashcardEdit, FormulaEdit } from '../components/deck/CardForms'
+import { MCQForm, FlashcardForm, FormulaForm, MCQEdit, FlashcardEdit, FormulaEdit, FormattingGuideModal } from '../components/deck/CardForms'
 import DeckMetadataForm, { DeckMetadata } from '../components/deck/DeckMetadataForm'
 
 import { ImportModal, ImportFlashcardsModal } from '../components/deck/ImportModals'
@@ -165,6 +165,7 @@ export default function AddDeck() {
 
   const [importModalType, setImportModalType] = useState<'none' | 'mcq' | 'flashcard'>('none')
   const [saving, setSaving] = useState(false)
+  const [showFormattingGuide, setShowFormattingGuide] = useState(false)
 
   const [showConfirmTypeModal, setShowConfirmTypeModal] = useState(false)
   const [pendingType, setPendingType] = useState<'mcq' | 'flashcard' | 'formula' | null>(null)
@@ -507,7 +508,23 @@ export default function AddDeck() {
       {/* Top Bar */}
       <div className="sticky top-0 z-30 bg-engine-black/90 backdrop-blur-md border-b border-surface shrink-0">
         <div className="w-full px-6 py-4 flex items-center justify-between relative">
-          <div className="w-1/3"></div>
+          <div className="w-1/3 flex items-center gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2 text-text-muted hover:text-text-primary transition-colors font-['Rajdhani'] uppercase tracking-widest text-sm"
+            >
+              <X className="w-4 h-4" />
+              Cancel
+            </button>
+            <button
+              onClick={() => setShowFormattingGuide(true)}
+              className="flex items-center gap-2 px-3 py-1.5 rounded border border-[#2a2a2a] bg-[#111] text-text-muted hover:text-accent hover:border-accent/40 transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs font-bold"
+              title="Formatting Guide"
+            >
+              <Type className="w-3.5 h-3.5" />
+              Format Guide
+            </button>
+          </div>
 
           <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center gap-3 pointer-events-none">
             <PlusCircle className="text-[var(--accent-primary)]" size={28} />
@@ -517,10 +534,6 @@ export default function AddDeck() {
           </div>
 
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate(-1)}
-              className="px-6 py-2.5 flex items-center justify-center rounded border border-[#333] text-text-muted hover:text-text-primary hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-widest font-bold text-sm whitespace-nowrap">
-              Cancel
-            </button>
             <div className="relative group">
               <button
                 onClick={handleSave}
@@ -705,6 +718,10 @@ export default function AddDeck() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {showFormattingGuide && (
+        <FormattingGuideModal onClose={() => setShowFormattingGuide(false)} />
+      )}
     </div>
   )
 }

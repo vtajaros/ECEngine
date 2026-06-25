@@ -4,8 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowLeft, Save, ChevronDown, ChevronUp, Trash2, GripVertical, Plus,
   CheckCircle2, AlertCircle, RotateCcw, ImageIcon, X, Sigma,
-  Calculator, FlaskConical, Zap, Cpu, FileText
+  Calculator, FlaskConical, Zap, Cpu, FileText, Type, Eye, EyeOff
 } from 'lucide-react'
+import { FormattingGuideModal } from '../components/deck/CardForms'
 import { renderMath, isRawLatex } from '../lib/latex'
 import { getSubjectFilterClasses } from '../lib/subjectColors'
 import { TOS_SUBJECT_COLORS } from '../lib/tosData'
@@ -82,6 +83,7 @@ interface FlashcardEdit {
   front: string
   back: string
   imagePath?: string
+  imageBack?: string
   explanation?: string           // ADD
   explanationImagePath?: string  // ADD
 }
@@ -91,8 +93,10 @@ interface FormulaEdit {
   latex: string
   description: string
   variables: string
-  explanation?: string           // ADD
-  explanationImagePath?: string  // ADD
+  imagePathFront?: string
+  imageBack?: string
+  explanation?: string
+  explanationImagePath?: string
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -181,6 +185,54 @@ const MathInputField: React.FC<MathInputFieldProps> = ({
     }
   }, [value, mathMode])
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    const el = e.currentTarget
+    const start = el.selectionStart
+    const end = el.selectionEnd
+    const selected = value.slice(start, end)
+
+    if (e.key === 'Tab') {
+      e.preventDefault()
+      const next = value.slice(0, start) + '    ' + value.slice(end)
+      onChange(next)
+      requestAnimationFrame(() => { el.selectionStart = el.selectionEnd = start + 4 })
+      return
+    }
+
+    if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+      e.preventDefault()
+      const wrapped = selected ? `**${selected}**` : '****'
+      onChange(value.slice(0, start) + wrapped + value.slice(end))
+      requestAnimationFrame(() => {
+        el.selectionStart = selected ? start : start + 2
+        el.selectionEnd = selected ? start + wrapped.length : start + 2
+      })
+      return
+    }
+
+    if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+      e.preventDefault()
+      const wrapped = selected ? `*${selected}*` : '**'
+      onChange(value.slice(0, start) + wrapped + value.slice(end))
+      requestAnimationFrame(() => {
+        el.selectionStart = selected ? start : start + 1
+        el.selectionEnd = selected ? start + wrapped.length : start + 1
+      })
+      return
+    }
+
+    if ((e.ctrlKey || e.metaKey) && e.key === 'u') {
+      e.preventDefault()
+      const wrapped = selected ? `__${selected}__` : '____'
+      onChange(value.slice(0, start) + wrapped + value.slice(end))
+      requestAnimationFrame(() => {
+        el.selectionStart = selected ? start : start + 2
+        el.selectionEnd = selected ? start + wrapped.length : start + 2
+      })
+      return
+    }
+  }
+
   return (
     <div className="relative flex flex-col gap-2 w-full flex-1">
       <button
@@ -199,6 +251,7 @@ const MathInputField: React.FC<MathInputFieldProps> = ({
             rows={rows}
             value={value}
             onChange={e => onChange(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder={placeholder}
             className={`${textareaCls} pr-10`}
             style={{ resize: 'none', overflow: 'hidden' }}
@@ -258,6 +311,7 @@ const MathInputField: React.FC<MathInputFieldProps> = ({
 // ── FormulaForm: maps name→front, latex→back ──────────────────────────────────
 const FormulaForm: React.FC<{ data: FormulaEdit; onChange: (d: FormulaEdit) => void; isNew?: boolean; onError?: (msg: string) => void }> = ({ data, onChange, onError }) => {
   const [showExplanation, setShowExplanation] = useState(!!(data.explanation || data.explanationImagePath))
+  const [showExplanationPreview, setShowExplanationPreview] = useState(false)
 
   const handleExplanationImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -273,10 +327,56 @@ const FormulaForm: React.FC<{ data: FormulaEdit; onChange: (d: FormulaEdit) => v
     e.target.value = ''
   }
 
+  const handleFrontImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) { onError?.('Image exceeds 10MB limit.'); e.target.value = ''; return }
+    const path = (file as any).path
+    if (!path) return
+    try {
+      const result = await window.electron.saveImage(path)
+      if (result.success && result.filename) onChange({ ...data, imagePathFront: result.filename })
+      else onError?.(result.error || 'Failed to save image')
+    } catch (err: any) { onError?.('Error saving image: ' + err.message) }
+    e.target.value = ''
+  }
+
+  const handleBackImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) { onError?.('Image exceeds 10MB limit.'); e.target.value = ''; return }
+    const path = (file as any).path
+    if (!path) return
+    try {
+      const result = await window.electron.saveImage(path)
+      if (result.success && result.filename) onChange({ ...data, imageBack: result.filename })
+      else onError?.(result.error || 'Failed to save image')
+    } catch (err: any) { onError?.('Error saving image: ' + err.message) }
+    e.target.value = ''
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="relative w-full">
-        <Label>Front / Term (formula name)</Label>
+        <div className="flex items-center justify-between mb-1">
+          <Label>Front / Term (formula name)</Label>
+          <div className="mr-[6px]">
+            {data.imagePathFront ? (
+              <div className="relative group flex items-center justify-center">
+                <img src={`ece-app://${data.imagePathFront}`} className="w-5 h-5 object-cover rounded border border-[#333]" alt="Front image" />
+                <button type="button" onClick={() => onChange({ ...data, imagePathFront: undefined })}
+                  className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                  <X size={10} />
+                </button>
+              </div>
+            ) : (
+              <label className="cursor-pointer text-text-muted hover:text-accent transition-colors" title="Add Front Image">
+                <ImageIcon size={16} />
+                <input type="file" accept="image/*" className="hidden" onChange={handleFrontImageUpload} />
+              </label>
+            )}
+          </div>
+        </div>
         <MathInputField
           value={data.name || ''}
           onChange={val => onChange({ ...data, name: val })}
@@ -287,7 +387,25 @@ const FormulaForm: React.FC<{ data: FormulaEdit; onChange: (d: FormulaEdit) => v
         />
       </div>
       <div className="relative w-full">
-        <Label>Back / LaTeX (equation)</Label>
+        <div className="flex items-center justify-between mb-1">
+          <Label>Back / LaTeX (equation)</Label>
+          <div className="mr-[6px]">
+            {data.imageBack ? (
+              <div className="relative group flex items-center justify-center">
+                <img src={`ece-app://${data.imageBack}`} className="w-5 h-5 object-cover rounded border border-[#333]" alt="Back image" />
+                <button type="button" onClick={() => onChange({ ...data, imageBack: undefined })}
+                  className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                  <X size={10} />
+                </button>
+              </div>
+            ) : (
+              <label className="cursor-pointer text-text-muted hover:text-accent transition-colors" title="Add Back Image">
+                <ImageIcon size={16} />
+                <input type="file" accept="image/*" className="hidden" onChange={handleBackImageUpload} />
+              </label>
+            )}
+          </div>
+        </div>
         <MathInputField
           value={data.latex || ''}
           onChange={val => onChange({ ...data, latex: val })}
@@ -308,25 +426,43 @@ const FormulaForm: React.FC<{ data: FormulaEdit; onChange: (d: FormulaEdit) => v
           </button>
         ) : (
           <>
-            <Label>Explanation / Notes</Label>
-            <MathInputField value={data.explanation || ''} onChange={val => onChange({ ...data, explanation: val })} placeholder="Explain the formula, derivation, variable meanings..." rows={6} multiline={true} />
-            <div className="mt-3">
-              {data.explanationImagePath ? (
-                <div className="relative group inline-block">
-                  <img src={`ece-app://${data.explanationImagePath}`} alt="Explanation image" className="w-24 h-24 object-cover rounded border border-[#333]" />
-                  <button type="button" onClick={() => onChange({ ...data, explanationImagePath: undefined })}
-                    className="absolute -top-2 -right-2 bg-[#FF4B4B] text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
-                    <X size={12} />
-                  </button>
-                </div>
-              ) : (
-                <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#333] hover:border-accent hover:text-accent text-text-muted rounded transition-colors bg-[#0a0a0a]">
-                  <ImageIcon size={24} />
-                  <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest mt-2 font-bold text-center leading-tight">Add<br />Image</span>
-                  <input type="file" accept="image/*" className="hidden" onChange={handleExplanationImageUpload} />
-                </label>
-              )}
+            <div className="flex items-center justify-between mb-1">
+              <Label>Explanation / Notes</Label>
+              <div className="flex items-center gap-2 mr-[6px]">
+                <button
+                  type="button"
+                  onClick={() => setShowExplanationPreview(p => !p)}
+                  className="text-text-muted hover:text-accent transition-colors"
+                  title={showExplanationPreview ? 'Hide preview' : 'Preview formatting'}
+                >
+                  {showExplanationPreview ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+                {data.explanationImagePath ? (
+                  <div className="relative group flex items-center justify-center">
+                    <img src={`ece-app://${data.explanationImagePath}`} className="w-5 h-5 object-cover rounded border border-[#333]" alt="Explanation image" />
+                    <button type="button" onClick={() => onChange({ ...data, explanationImagePath: undefined })}
+                      className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                      <X size={10} />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer text-text-muted hover:text-accent transition-colors" title="Add Explanation Image">
+                    <ImageIcon size={16} />
+                    <input type="file" accept="image/*" className="hidden" onChange={handleExplanationImageUpload} />
+                  </label>
+                )}
+              </div>
             </div>
+            <MathInputField value={data.explanation || ''} onChange={val => onChange({ ...data, explanation: val })} placeholder="Explain the formula, derivation, variable meanings..." rows={6} multiline={true} />
+            {showExplanationPreview && (data.explanation || '').trim().length > 0 && (
+              <div className="bg-[#0d0d0d] border border-[rgba(0,255,65,0.1)] rounded-lg p-3 mt-1">
+                <div className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-text-muted mb-2">Preview</div>
+                <div
+                  className="text-sm font-['IBM_Plex_Mono'] text-[#d4d4d4] leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: renderMath(data.explanation || '') }}
+                />
+              </div>
+            )}
           </>
         )}
       </div>
@@ -344,6 +480,7 @@ interface CardRowProps {
 
 const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?: boolean; onError?: (msg: string) => void }> = ({ data, onChange, isNew, onError }) => {
   const [showSolution, setShowSolution] = useState(!!data.explanation)
+  const [showSolutionPreview, setShowSolutionPreview] = useState(false)
   const set = (patch: Partial<MCQEdit>) => onChange({ ...data, ...patch })
   const setChoice = (i: number, val: string) => {
     const choices = [...data.choices] as MCQEdit['choices']
@@ -477,7 +614,33 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
           </button>
         ) : (
           <>
-            <Label>Solution</Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label>Solution</Label>
+              <div className="flex items-center gap-2 mr-[6px]">
+                <button
+                  type="button"
+                  onClick={() => setShowSolutionPreview(p => !p)}
+                  className="text-text-muted hover:text-accent transition-colors"
+                  title={showSolutionPreview ? 'Hide preview' : 'Preview formatting'}
+                >
+                  {showSolutionPreview ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+                {data.solutionImagePath ? (
+                  <div className="relative group flex items-center justify-center">
+                    <img src={`ece-app://${data.solutionImagePath}`} className="w-5 h-5 object-cover rounded border border-[#333]" alt="Solution image" />
+                    <button type="button" onClick={() => set({ solutionImagePath: undefined })}
+                      className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                      <X size={10} />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer text-text-muted hover:text-accent transition-colors" title="Add Solution Image">
+                    <ImageIcon size={16} />
+                    <input type="file" accept="image/*" className="hidden" onChange={handleSolutionImageUpload} />
+                  </label>
+                )}
+              </div>
+            </div>
             <MathInputField
               value={data.explanation || ''}
               onChange={val => set({ explanation: val })}
@@ -486,26 +649,15 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
               multiline={true}
               defaultMathMode={false}
             />
-            <div className="mt-3">
-              {data.solutionImagePath ? (
-                <div className="relative group inline-block">
-                  <img src={`ece-app://${data.solutionImagePath}`} alt="Solution image" className="w-24 h-24 object-cover rounded border border-[#333]" />
-                  <button
-                    type="button"
-                    onClick={() => set({ solutionImagePath: undefined })}
-                    className="absolute -top-2 -right-2 bg-[#FF4B4B] text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-                  >
-                    <X size={12} />
-                  </button>
-                </div>
-              ) : (
-                <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#333] hover:border-accent hover:text-accent text-text-muted rounded transition-colors bg-[#0a0a0a]">
-                  <ImageIcon size={24} />
-                  <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest mt-2 font-bold text-center leading-tight">Add<br />Image</span>
-                  <input type="file" accept="image/*" className="hidden" onChange={handleSolutionImageUpload} />
-                </label>
-              )}
-            </div>
+            {showSolutionPreview && (data.explanation || '').trim().length > 0 && (
+              <div className="bg-[#0d0d0d] border border-[rgba(0,255,65,0.1)] rounded-lg p-3 mt-1">
+                <div className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-text-muted mb-2">Preview</div>
+                <div
+                  className="text-sm font-['IBM_Plex_Mono'] text-[#d4d4d4] leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: renderMath(data.explanation || '') }}
+                />
+              </div>
+            )}
           </>
         )}
       </div>
@@ -515,6 +667,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
 
 const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit) => void; isNew?: boolean; onError?: (msg: string) => void }> = ({ data, onChange, isNew, onError }) => {
   const [showExplanation, setShowExplanation] = useState(!!(data.explanation || data.explanationImagePath))
+  const [showExplanationPreview, setShowExplanationPreview] = useState(false)
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -557,6 +710,20 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
     e.target.value = ''
   }
 
+  const handleBackImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 10 * 1024 * 1024) { onError?.('Image exceeds 10MB limit.'); e.target.value = ''; return }
+    const path = (file as any).path
+    if (!path) return
+    try {
+      const result = await window.electron.saveImage(path)
+      if (result.success && result.filename) onChange({ ...data, imageBack: result.filename })
+      else onError?.(result.error || 'Failed to save image')
+    } catch (err: any) { onError?.('Error saving image: ' + err.message) }
+    e.target.value = ''
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-start gap-4">
@@ -567,7 +734,25 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
               onChange={e => onChange({ ...data, front: e.target.value })} placeholder="Term or question..." />
           </div>
           <div>
-            <Label>Back / Definition</Label>
+            <div className="flex items-center justify-between mb-1">
+              <Label>Back / Definition</Label>
+              <div className="mr-[6px]">
+                {data.imageBack ? (
+                  <div className="relative group flex items-center justify-center">
+                    <img src={`ece-app://${data.imageBack}`} className="w-5 h-5 object-cover rounded border border-[#333]" alt="Back image" />
+                    <button type="button" onClick={() => onChange({ ...data, imageBack: undefined })}
+                      className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                      <X size={10} />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer text-text-muted hover:text-accent transition-colors" title="Add Back Image">
+                    <ImageIcon size={16} />
+                    <input type="file" accept="image/*" className="hidden" onChange={handleBackImageUpload} />
+                  </label>
+                )}
+              </div>
+            </div>
             <textarea rows={8} className={textareaCls} value={data.back}
               onChange={e => onChange({ ...data, back: e.target.value })} placeholder="Definition or answer..." />
           </div>
@@ -602,25 +787,43 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
           </button>
         ) : (
           <>
-            <Label>Explanation / Notes</Label>
-            <MathInputField value={data.explanation || ''} onChange={val => onChange({ ...data, explanation: val })} placeholder="Explain the answer, derivation, or additional notes..." rows={6} multiline={true} />
-            <div className="mt-3">
-              {data.explanationImagePath ? (
-                <div className="relative group inline-block">
-                  <img src={`ece-app://${data.explanationImagePath}`} alt="Explanation image" className="w-24 h-24 object-cover rounded border border-[#333]" />
-                  <button type="button" onClick={() => onChange({ ...data, explanationImagePath: undefined })}
-                    className="absolute -top-2 -right-2 bg-[#FF4B4B] text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
-                    <X size={12} />
-                  </button>
-                </div>
-              ) : (
-                <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#333] hover:border-accent hover:text-accent text-text-muted rounded transition-colors bg-[#0a0a0a]">
-                  <ImageIcon size={24} />
-                  <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest mt-2 font-bold text-center leading-tight">Add<br />Image</span>
-                  <input type="file" accept="image/*" className="hidden" onChange={handleExplanationImageUpload} />
-                </label>
-              )}
+            <div className="flex items-center justify-between mb-1">
+              <Label>Explanation / Notes</Label>
+              <div className="flex items-center gap-2 mr-[6px]">
+                <button
+                  type="button"
+                  onClick={() => setShowExplanationPreview(p => !p)}
+                  className="text-text-muted hover:text-accent transition-colors"
+                  title={showExplanationPreview ? 'Hide preview' : 'Preview formatting'}
+                >
+                  {showExplanationPreview ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
+                {data.explanationImagePath ? (
+                  <div className="relative group flex items-center justify-center">
+                    <img src={`ece-app://${data.explanationImagePath}`} className="w-5 h-5 object-cover rounded border border-[#333]" alt="Explanation image" />
+                    <button type="button" onClick={() => onChange({ ...data, explanationImagePath: undefined })}
+                      className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                      <X size={10} />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer text-text-muted hover:text-accent transition-colors" title="Add Explanation Image">
+                    <ImageIcon size={16} />
+                    <input type="file" accept="image/*" className="hidden" onChange={handleExplanationImageUpload} />
+                  </label>
+                )}
+              </div>
             </div>
+            <MathInputField value={data.explanation || ''} onChange={val => onChange({ ...data, explanation: val })} placeholder="Explain the answer, derivation, or additional notes..." rows={6} multiline={true} />
+            {showExplanationPreview && (data.explanation || '').trim().length > 0 && (
+              <div className="bg-[#0d0d0d] border border-[rgba(0,255,65,0.1)] rounded-lg p-3 mt-1">
+                <div className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-text-muted mb-2">Preview</div>
+                <div
+                  className="text-sm font-['IBM_Plex_Mono'] text-[#d4d4d4] leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: renderMath(data.explanation || '') }}
+                />
+              </div>
+            )}
           </>
         )}
       </div>
@@ -777,6 +980,7 @@ export default function EditDeck() {
   const [cards, setCards] = useState<EditCard[]>([])
   const [loading, setLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
+  const [showFormattingGuide, setShowFormattingGuide] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const [originalCardIds, setOriginalCardIds] = useState<Set<string>>(new Set())
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
@@ -952,6 +1156,8 @@ export default function EditDeck() {
                 }
                 if (parsed.explanation) d.explanation = parsed.explanation
                 if (parsed.explanationImagePath) d.explanationImagePath = parsed.explanationImagePath
+                if (parsed.imagePathFront) d.imagePathFront = parsed.imagePathFront
+                if (parsed.imageBack) d.imageBack = parsed.imageBack
                 return { id: row.id, type: 'formula', data: d } as EditCard
               } else {
                 const d: FlashcardEdit = {
@@ -959,6 +1165,7 @@ export default function EditDeck() {
                   back: parsed.back ?? '',
                 }
                 if (parsed.imagePath) d.imagePath = parsed.imagePath
+                if (parsed.imageBack) d.imageBack = parsed.imageBack
                 if (parsed.explanation) d.explanation = parsed.explanation
                 if (parsed.explanationImagePath) d.explanationImagePath = parsed.explanationImagePath
                 return { id: row.id, type: 'flashcard', data: d } as EditCard
@@ -991,7 +1198,7 @@ export default function EditDeck() {
     const data: EditCard = type === 'mcq'
       ? { id, type, data: { question: '', choices: ['', '', '', ''], answer: 0, explanation: '' }, isNew: true }
       : type === 'formula'
-        ? { id, type, data: { name: '', latex: '', description: '', variables: '', explanation: '', explanationImagePath: undefined }, isNew: true }
+        ? { id, type, data: { name: '', latex: '', description: '', variables: '', explanation: '', explanationImagePath: undefined, imageBack: undefined }, isNew: true }
         : { id, type, data: { front: '', back: '' }, isNew: true }
     setCards(prev => [...prev, data])
   }
@@ -1079,13 +1286,23 @@ export default function EditDeck() {
 
       {/* ── Top Bar ── */}
       <div className="flex-shrink-0 h-16 bg-[#111] border-b border-[#1e1e1e] flex items-center px-6 gap-4">
-        <button
-          onClick={() => navigate(returnTo)}
-          className="flex items-center gap-2 text-text-muted hover:text-text-primary transition-colors font-['Rajdhani'] uppercase tracking-widest text-sm"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(returnTo)}
+            className="flex items-center gap-2 text-text-muted hover:text-text-primary transition-colors font-['Rajdhani'] uppercase tracking-widest text-sm"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </button>
+          <button
+            onClick={() => setShowFormattingGuide(true)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded border border-[#2a2a2a] bg-[#111] text-text-muted hover:text-accent hover:border-accent/40 transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs font-bold"
+            title="Formatting Guide"
+          >
+            <Type className="w-3.5 h-3.5" />
+            Format Guide
+          </button>
+        </div>
 
         <div className="flex-1 text-center">
           <h1 className="font-['Orbitron'] font-bold text-lg tracking-[0.2em] text-text-primary uppercase">
@@ -1439,6 +1656,10 @@ export default function EditDeck() {
 
         </div>
       </div>
+
+      {showFormattingGuide && (
+        <FormattingGuideModal onClose={() => setShowFormattingGuide(false)} />
+      )}
     </div>
   )
 }
