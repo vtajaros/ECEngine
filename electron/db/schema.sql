@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS cards (
   difficulty TEXT,
   tags TEXT, -- JSON string
   is_custom BOOLEAN DEFAULT 0,
+  order_index INTEGER DEFAULT 0,
   created_at INTEGER DEFAULT (strftime('%s', 'now')),
   FOREIGN KEY(topic_id) REFERENCES topics(id)
 );

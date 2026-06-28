@@ -191,10 +191,10 @@ export function registerDeckHandlers(): void {
   ipcMain.handle('data:getAllCardsByTopic', async (_, topicId: string) => {
     try {
       const rows = queryAll(`
-        SELECT id, topic_id, type, data, tags, difficulty, is_custom, created_at
+        SELECT id, topic_id, type, data, tags, difficulty, is_custom, order_index, created_at
         FROM cards
         WHERE topic_id = ?
-        ORDER BY created_at ASC
+        ORDER BY order_index ASC, created_at ASC
       `, [topicId])
       return { success: true, data: rows }
     } catch (error) {
@@ -205,7 +205,7 @@ export function registerDeckHandlers(): void {
   ipcMain.handle('data:getCardsWithProgress', async (_, topicId: string) => {
     try {
       const rows = queryAll(
-        `SELECT c.id, c.topic_id, c.type, c.data, c.tags, c.difficulty, c.is_custom, c.created_at,
+        `SELECT c.id, c.topic_id, c.type, c.data, c.tags, c.difficulty, c.is_custom, c.order_index, c.created_at,
                 COALESCE(p.ease_factor, 2.5)    AS ease_factor,
                 COALESCE(p.repetitions, 0)      AS repetitions,
                 COALESCE(p.interval, 1)         AS interval,
@@ -215,7 +215,7 @@ export function registerDeckHandlers(): void {
          FROM cards c
          LEFT JOIN progress p ON c.id = p.card_id
          WHERE c.topic_id = ?
-         ORDER BY c.created_at ASC`,
+         ORDER BY c.order_index ASC, c.created_at ASC`,
         [topicId]
       )
       return { success: true, data: rows }
@@ -289,10 +289,10 @@ export function registerDeckHandlers(): void {
       UpdateDeckPayloadSchema.parse(payload)
       const db = getDB()
       const insertCard = db.prepare(
-        'INSERT INTO cards (id, topic_id, type, data, difficulty, tags) VALUES (?, ?, ?, ?, ?, ?)'
+        'INSERT INTO cards (id, topic_id, type, data, difficulty, tags, order_index) VALUES (?, ?, ?, ?, ?, ?, ?)'
       )
       const updateCard = db.prepare(
-        'UPDATE cards SET type = ?, data = ? WHERE id = ?'
+        'UPDATE cards SET type = ?, data = ?, order_index = ? WHERE id = ?'
       )
       const deleteCard = db.prepare('DELETE FROM cards WHERE id = ?')
 
@@ -302,11 +302,12 @@ export function registerDeckHandlers(): void {
           `UPDATE topics SET name = ?, subject = ?, description = ?, tags = ?, folder_name = ?, folder_id = ? WHERE id = ?`,
           [payload.title, payload.subject, payload.description, payload.tags, payload.folderName, finalFolderId, payload.deckId]
         )
-        for (const card of payload.cards) {
+        for (let i = 0; i < payload.cards.length; i++) {
+          const card = payload.cards[i]
           if (card.isNew) {
-            insertCard.run(crypto.randomUUID(), payload.deckId, card.type, card.data, 'medium', '[]')
+            insertCard.run(crypto.randomUUID(), payload.deckId, card.type, card.data, 'medium', '[]', i)
           } else {
-            updateCard.run(card.type, card.data, card.id)
+            updateCard.run(card.type, card.data, i, card.id)
           }
         }
         for (const cardId of payload.deletedCardIds) {

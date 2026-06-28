@@ -101,6 +101,13 @@ const MIGRATIONS: Array<{ version: number; sql: string | string[] }> = [
          AND folder_id IN (SELECT id FROM folders)
          AND folder_name != (SELECT name FROM folders WHERE folders.id = topics.folder_id)`
     ]
+  },
+  {
+    // v7: Add order_index to cards so manual reordering is persisted.
+    version: 7,
+    sql: [
+      "ALTER TABLE cards ADD COLUMN order_index INTEGER DEFAULT 0"
+    ]
   }
 ]
 

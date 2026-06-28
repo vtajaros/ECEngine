@@ -5,6 +5,7 @@ import { renderMath } from '../../lib/latex'
 import { getDynamicFontSize } from '../../lib/textUtils'
 import type { Card, MCQData, FlashcardData } from '../../types'
 import type { FormulaData } from '../../types'
+import { AutoFitText } from '../ui/AutoFitText'
 
 // ── Pure helper functions (extracted from FlashcardLearn) ──────────────────
 // These are exported so FlashcardLearn.tsx can use them in its TTS/autoplay effects.
@@ -40,7 +41,7 @@ function getBackContent(card: Card, swapTermDef: boolean): React.ReactNode {
   if (card.type === 'mcq') {
     const mcq = card.data as MCQData
     const text = swapTermDef ? mcq.question : mcq.choices[mcq.answer]
-    return <div className={`${getDynamicFontSize(text)} leading-relaxed font-['Rajdhani'] font-bold text-text-primary`} dangerouslySetInnerHTML={{ __html: renderMath(text) }} />
+    return <AutoFitText className={`${getDynamicFontSize(text)} leading-relaxed font-['Rajdhani'] font-bold text-text-primary`} html={renderMath(text)} />
   }
   if (card.type === 'formula') {
     const f = card.data as FormulaData
@@ -60,11 +61,11 @@ function getBackContent(card: Card, swapTermDef: boolean): React.ReactNode {
     }
     const backStr = [f.latex ? `$$${f.latex}$$` : '', descVars].filter(Boolean).join('\n\n')
     const text = swapTermDef ? frontStr : backStr
-    return <div className={`leading-relaxed ${getDynamicFontSize(text)} font-['Rajdhani'] font-bold text-text-primary`} dangerouslySetInnerHTML={{ __html: renderMath(text) }} />
+    return <AutoFitText className={`leading-relaxed ${getDynamicFontSize(text)} font-['Rajdhani'] font-bold text-text-primary text-center`} html={renderMath(text)} />
   }
   const fc = card.data as FlashcardData
   const text = swapTermDef ? fc.front : fc.back
-  return <div className={`${getDynamicFontSize(text)} font-['Rajdhani'] font-bold leading-relaxed text-text-primary`} dangerouslySetInnerHTML={{ __html: renderMath(text) }} />
+  return <AutoFitText className={`${getDynamicFontSize(text)} font-['Rajdhani'] font-bold leading-relaxed text-text-primary text-center`} html={renderMath(text)} />
 }
 
 export function getCorrectAnswer(card: Card, swapTermDef: boolean): string {
@@ -291,9 +292,9 @@ export const StudyCard = React.memo(function StudyCard({
             </div>
 
             {/* Front Content */}
-            <div className="flex-1 flex items-center justify-center px-8 pb-8">
-              <div className="text-center w-full">
-                <div className={`${getDynamicFontSize(getFrontText(card, swapTermDef))} font-['Rajdhani'] font-bold text-text-primary leading-relaxed`} dangerouslySetInnerHTML={{ __html: renderMath(getFrontText(card, swapTermDef)) }} />
+            <div className="flex-1 flex items-center justify-center px-8 pb-8 overflow-hidden w-full max-w-full">
+              <div className="text-center w-full max-w-full">
+                <AutoFitText className={`${getDynamicFontSize(getFrontText(card, swapTermDef))} font-['Rajdhani'] font-bold text-text-primary leading-relaxed text-center`} html={renderMath(getFrontText(card, swapTermDef))} />
                 {((card.data as any).imagePathFront || card.data.imagePath) && (() => {
                   const frontImg = (card.data as any).imagePathFront || card.data.imagePath!
                   return (
@@ -334,8 +335,8 @@ export const StudyCard = React.memo(function StudyCard({
             </div>
 
             {/* Back Content */}
-            <div className="flex-1 flex items-center justify-center px-8 pb-4">
-              <div className="text-center w-full text-text-primary flex flex-col items-center gap-4">
+            <div className="flex-1 flex items-center justify-center px-8 pb-4 overflow-hidden w-full max-w-full">
+              <div className="text-center w-full text-text-primary flex flex-col items-center gap-4 max-w-full">
                 {getBackContent(card, swapTermDef)}
                 {(card.data as any).imageBack && (
                   <div className="w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-accent transition-all">
