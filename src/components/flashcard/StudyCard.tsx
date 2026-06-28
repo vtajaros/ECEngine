@@ -115,41 +115,88 @@ function getExplanation(card: Card): { text?: string; imagePath?: string } | nul
   return null
 }
 
-const ExplanationBlock: React.FC<{ card: Card; onZoomImage: (path: string) => void; onOpenChange?: (open: boolean) => void }> = ({ card, onZoomImage, onOpenChange }) => {
+const ExplanationBlock: React.FC<{
+  card: Card
+  onZoomImage: (path: string) => void
+  onOpenChange?: (open: boolean, measuredPx: number, hasImage: boolean) => void
+  forceOpen?: boolean
+}> = ({ card, onZoomImage, onOpenChange, forceOpen }) => {
   const [open, setOpen] = React.useState(false)
+  const sizerRef = React.useRef<HTMLDivElement>(null)
   const explanation = getExplanation(card)
   if (!explanation) return null
+
+  // Sync with external forceOpen (arrow key control)
+  React.useEffect(() => {
+    if (forceOpen === undefined) return
+    if (forceOpen === open) return
+    const h = sizerRef.current?.offsetHeight ?? 0
+    setOpen(forceOpen)
+    onOpenChange?.(forceOpen, forceOpen ? h : 0, Boolean(explanation.imagePath))
+  }, [forceOpen])
+
+  const toggle = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    const next = !open
+    const h = sizerRef.current?.offsetHeight ?? 0
+    setOpen(next)
+    onOpenChange?.(next, next ? h : 0, Boolean(explanation.imagePath))
+  }
+
+  const explanationContent = (
+    <>
+      {explanation.text && (
+        <div
+          className="text-sm font-['IBM_Plex_Mono'] text-[#d4d4d4] leading-relaxed text-left"
+          dangerouslySetInnerHTML={{ __html: renderMath(explanation.text) }}
+        />
+      )}
+      {explanation.imagePath && (
+        <div className="w-full flex justify-center mt-2">
+          <img
+            src={`ece-app://${explanation.imagePath}`}
+            alt="Explanation diagram"
+            className="max-w-full max-h-[160px] object-contain rounded border border-[#333] cursor-zoom-in hover:border-accent transition-all"
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => { e.stopPropagation(); e.preventDefault(); onZoomImage(explanation.imagePath!) }}
+          />
+        </div>
+      )}
+    </>
+  )
 
   return (
     <div className="border-t border-[#222] mt-4 pt-3 px-8 pb-4" onClick={e => e.stopPropagation()}>
       <button
-        onClick={() => setOpen(o => { const next = !o; onOpenChange?.(next); return next })}
+        onClick={toggle}
         className="flex items-center gap-2 text-[11px] font-['Rajdhani'] uppercase tracking-widest text-text-muted hover:text-accent transition-colors font-bold w-full text-left"
       >
         {open ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         Explanation
       </button>
-      {open && (
-        <div className="mt-3 flex flex-col gap-3">
-          {explanation.text && (
-            <div
-              className="text-sm font-['IBM_Plex_Mono'] text-[#d4d4d4] leading-relaxed text-left"
-              dangerouslySetInnerHTML={{ __html: renderMath(explanation.text) }}
-            />
-          )}
-          {explanation.imagePath && (
-            <div className="w-full flex justify-center mt-2">
-              <img
-                src={`ece-app://${explanation.imagePath}`}
-                alt="Explanation diagram"
-                className="max-w-full max-h-[160px] object-contain rounded border border-[#333] cursor-zoom-in hover:border-accent transition-all"
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={(e) => { e.stopPropagation(); e.preventDefault(); onZoomImage(explanation.imagePath!) }}
-              />
-            </div>
-          )}
-        </div>
-      )}
+
+      {/* Hidden sizer — always rendered at natural height, invisible, zero-height in flow */}
+      <div
+        ref={sizerRef}
+        aria-hidden="true"
+        style={{ visibility: 'hidden', position: 'absolute', top: 0, left: 0, width: '100%', pointerEvents: 'none' }}
+        className="flex flex-col gap-3 mt-3"
+      >
+        {explanationContent}
+      </div>
+
+      {/* Animated reveal */}
+      <div
+        style={{
+          maxHeight: open ? '600px' : '0px',
+          opacity: open ? 1 : 0,
+          overflow: 'hidden',
+          transition: 'max-height 0.28s ease-in-out, opacity 0.22s ease-in-out',
+        }}
+        className="flex flex-col gap-3 mt-3"
+      >
+        {explanationContent}
+      </div>
     </div>
   )
 }
@@ -173,7 +220,8 @@ interface StudyCardProps {
   onWrittenSubmit: () => void
   onViewCard: () => void
   onZoomImage: (path: string) => void
-  onExplanationOpen?: (open: boolean) => void
+  onExplanationOpen?: (open: boolean, measuredPx: number, hasImage: boolean) => void
+  forceExplanationOpen?: boolean
 }
 
 export const StudyCard = React.memo(function StudyCard({
@@ -194,14 +242,15 @@ export const StudyCard = React.memo(function StudyCard({
   onViewCard,
   onZoomImage,
   onExplanationOpen,
+  forceExplanationOpen,
 }: StudyCardProps) {
   const [explanationOpen, setExplanationOpen] = React.useState(false)
 
   return (
-    <motion.div key={`${card.id}-${currentIndex}`} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} transition={{ duration: 0.2, ease: 'easeOut' }}>
+    <motion.div key={`${card.id}-${currentIndex}`} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30, pointerEvents: 'none' } as any} transition={{ duration: 0.2, ease: 'easeOut' }}>
       {/* 3D Flip Card Container */}
       <div
-        className="w-full cursor-pointer"
+        className={`w-full ${explanationOpen ? 'cursor-default' : 'cursor-pointer'}`}
         style={{ perspective: '1200px', minHeight: '350px' }}
         onClick={explanationOpen ? undefined : onFlip}
       >
@@ -305,9 +354,10 @@ export const StudyCard = React.memo(function StudyCard({
             <ExplanationBlock
               card={card}
               onZoomImage={onZoomImage}
-              onOpenChange={(open) => {
+              forceOpen={forceExplanationOpen}
+              onOpenChange={(open, measuredPx, hasImage) => {
                 setExplanationOpen(open)
-                onExplanationOpen?.(open)
+                onExplanationOpen?.(open, measuredPx, hasImage)
               }}
             />
           </div>

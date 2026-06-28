@@ -123,16 +123,81 @@ export function FlashcardSession({
   const [selectedRating, setSelectedRating] = useState<number | null>(null)
   const [showRatingFeedback, setShowRatingFeedback] = useState(false)
   const [explanationOpen, setExplanationOpen] = useState(false)
+  const [explanationVisible, setExplanationVisible] = useState(false)
+  const [alignTop, setAlignTop] = useState(false)
+  const [forceExplanationOpen, setForceExplanationOpen] = useState<boolean | undefined>(undefined)
+  const [isNavigating, setIsNavigating] = useState(false)
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (explanationOpen) {
+      setExplanationVisible(true)
+    } else {
+      const t = setTimeout(() => setExplanationVisible(false), 280)
+      return () => clearTimeout(t)
+    }
+  }, [explanationOpen])
+
+  // alignTop is set externally via onExplanationOpen — no effect needed here
+
+  // Arrow Down = open explanation, Arrow Up = close explanation, block flip if open
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+
+      if (explanationOpen) {
+        if (e.key === 'ArrowUp') {
+          e.preventDefault()
+          e.stopPropagation()
+          setForceExplanationOpen(false)
+        } else if (e.key === ' ' || e.code === 'Space' || e.key === 'ArrowDown') {
+          e.preventDefault()
+          e.stopPropagation()
+        }
+        return
+      }
+
+      if (e.key === 'ArrowDown' && isFlipped && !explanationOpen) {
+        e.preventDefault()
+        e.stopPropagation()
+        setForceExplanationOpen(true)
+      }
+    }
+    // Use capture phase to intercept before parent components
+    window.addEventListener('keydown', handleKey, { capture: true })
+    return () => window.removeEventListener('keydown', handleKey, { capture: true })
+  }, [isFlipped, explanationOpen])
+
+  // Reset forceExplanationOpen after it has been consumed by ExplanationBlock
+  useEffect(() => {
+    if (forceExplanationOpen === undefined) return
+    const t = setTimeout(() => setForceExplanationOpen(undefined), 50)
+    return () => clearTimeout(t)
+  }, [forceExplanationOpen])
+
   const { play } = useSound()
+
+  // Gate flip — block when explanation is open via click
+  const gatedFlip = React.useCallback(() => {
+    if (explanationOpen) return
+    onFlip()
+  }, [explanationOpen, onFlip])
 
   const utilityVisible = (isFlipped || (settings.writtenMode && writtenSubmitted)) && !isAutoplay
 
   useEffect(() => {
+    setIsNavigating(true)
     const t = setTimeout(() => {
       setSelectedRating(null)
       setShowRatingFeedback(false)
       setExplanationOpen(false)
-    }, 50)
+      setForceExplanationOpen(undefined)
+      setAlignTop(false)
+      
+      // Re-enable transition after snap
+      setTimeout(() => setIsNavigating(false), 50)
+    }, 200) // Match Framer Motion exit duration (0.2s)
+    
     return () => clearTimeout(t)
   }, [currentIndex])
 
@@ -255,8 +320,15 @@ export function FlashcardSession({
       </AnimatePresence>
 
       {/* Card Area — single centered column, card + buttons + AI panel stacked together */}
-      <div className="flex-1 flex items-center justify-center min-h-0 px-6 lg:px-10 py-4 overflow-y-auto">
-        <div className="w-full max-w-3xl flex flex-col gap-4">
+      <div ref={scrollContainerRef} className="flex-1 flex items-start justify-center min-h-0 px-6 lg:px-10 overflow-y-auto">
+        <div
+          className="w-full max-w-3xl flex flex-col gap-4"
+          style={{
+            marginTop: alignTop ? '1rem' : 'auto',
+            marginBottom: 'auto',
+            transition: isNavigating ? 'none' : 'margin-top 0.3s ease-in-out',
+          }}
+        >
 
           <AnimatePresence>
             {showRatingFeedback && selectedRating !== null && (() => {
@@ -287,6 +359,7 @@ export function FlashcardSession({
 
           <AnimatePresence mode="wait">
             <StudyCard
+              key={`studycard-${currentCard.id}-${currentIndex}`}
               card={currentCard}
               currentIndex={currentIndex}
               isFlipped={isFlipped}
@@ -297,19 +370,28 @@ export function FlashcardSession({
               writtenCorrect={writtenCorrect}
               isAutoplay={isAutoplay}
               isBookmarked={isBookmarked}
-              onFlip={onFlip}
+              onFlip={gatedFlip}
               onBookmarkToggle={onBookmarkToggle}
               onWrittenChange={onWrittenChange}
               onWrittenSubmit={onWrittenSubmit}
               onViewCard={onViewCard}
               onZoomImage={onZoomImage}
-              onExplanationOpen={setExplanationOpen}
+              forceExplanationOpen={forceExplanationOpen}
+              onExplanationOpen={(open, _measuredPx, hasImage) => {
+                setExplanationOpen(open)
+                if (!open) {
+                  setTimeout(() => setAlignTop(false), 300)
+                  return
+                }
+                // Shift up for image explanations or tall text (>120px ~ 4+ lines)
+                setAlignTop(hasImage || _measuredPx > 120)
+              }}
             />
           </AnimatePresence>
 
           {/* Rating row — only in study mode, opacity toggle, no layout shift */}
           {mode === 'study' && (
-          <div className={`h-[84px] flex items-center justify-center w-full transition-opacity duration-200 ${explanationOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+          <div className={`h-[84px] flex items-center justify-center w-full transition-opacity duration-100 ${explanationVisible ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
             <div className={`flex gap-3 transition-opacity duration-150 ${(isFlipped || (settings.writtenMode && writtenSubmitted)) && !isAutoplay ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
               {[
                 { rating: 1, label: 'Again', sub: '< 1m', hint: 'Wrong or blank',         color: '#FF3333' },
@@ -359,13 +441,7 @@ export function FlashcardSession({
             <div className="flex justify-center">
               {currentIndex < sessionCards.length - 1 ? (
                 <button
-                  onClick={() => {
-                    onGoNext()
-                    setTimeout(() => {
-                      setSelectedRating(null)
-                      setShowRatingFeedback(false)
-                    }, 250)
-                  }}
+                  onClick={onGoNext}
                   className="flex items-center gap-2 px-8 py-3 rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest text-sm border-2 transition-all hover:opacity-80 bg-[#111]"
                   style={{
                     borderColor: '#00FF41',
@@ -392,7 +468,7 @@ export function FlashcardSession({
           )}
 
           {/* Utility row — opacity toggle, no layout shift */}
-          <div className={`h-[40px] flex items-center justify-center gap-3 w-full transition-opacity duration-200 ${explanationOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+          <div className={`h-[40px] flex items-center justify-center gap-3 w-full transition-opacity duration-100 ${explanationVisible ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
             <div className={`flex items-center gap-3 transition-opacity duration-150 ${utilityVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
               <button onClick={onGoPrev} disabled={currentIndex === 0}
                 className="flex items-center gap-2 px-4 py-2 bg-[#111] border border-[#333] rounded text-text-muted font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-border-base hover:border-[#555] transition-all disabled:opacity-30 disabled:cursor-default text-xs">

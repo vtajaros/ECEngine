@@ -96,3 +96,51 @@ input[type='number'] {
   text-align: left !important;
   margin: 0 !important;
 }
+
+/* ── KaTeX + Tailwind compatibility fixes ──────────────────────────────────
+   KaTeX uses position:absolute SVGs clipped by overflow:hidden containers
+   (.hide-tail, .stretchy) to render symbols like \sqrt. The SVG is 400em wide
+   and gets clipped to the correct width by the parent.
+
+   Tailwind preflight sets `svg { display:block; vertical-align:middle }` which
+   is fine (KaTeX's own CSS also sets display:block on .katex svg). But inside
+   flex/centered containers the width:100% on .hide-tail can collapse to 0
+   if the .mord.sqrt isn't properly sized.
+
+   Fix: ensure .katex-html elements get inline-block so they size correctly
+   inside flex parents, and that the SVG rules match KaTeX's expectations. */
+
+/* Ensure KaTeX root elements don't collapse in flex containers */
+.katex .katex-html {
+  display: inline-block;
+}
+
+/* Restore KaTeX's exact SVG rules with enough specificity to beat preflight */
+.katex svg {
+  display: block !important;
+  position: absolute !important;
+  width: 100% !important;
+  height: inherit !important;
+  fill: currentColor;
+  stroke: currentColor;
+}
+
+/* KaTeX fraction lines and borders need currentColor (Tailwind resets border-color) */
+.katex * {
+  border-color: currentColor;
+}
+
+/* Prevent 3D rendering contexts (e.g. flip-card preserve-3d) from breaking
+   KaTeX's position:absolute SVG positioning inside .hide-tail containers */
+.katex {
+  transform-style: flat !important;
+}
+
+/* Disable focus rings app-wide — desktop-only app, keyboard nav not needed */
+*:focus {
+  outline: none !important;
+}
+
+*:focus-visible {
+  outline: none !important;
+}

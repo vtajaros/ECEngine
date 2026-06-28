@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { Play, Clock, FileText, Settings2, SkipForward } from 'lucide-react'
 import { useSessionStore } from '../store/useSessionStore'
 import { useExamTimer } from '../hooks/useExamTimer'
+import { useIdleAwareTimer } from '../hooks/useIdleAwareTimer'
 import { renderMath } from '../lib/latex'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MOCK_MCQS } from '../lib/mockData'
@@ -11,6 +12,8 @@ export default function ExamMode() {
   const [isStarted, setIsStarted] = useState(false)
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null)
   const [isRevealed, setIsRevealed] = useState(false)
+  
+  useIdleAwareTimer(isStarted)
   
   const [subjectFilter, setSubjectFilter] = useState('full')
   const [timeLimit, setTimeLimit] = useState('4h')

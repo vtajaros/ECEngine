@@ -31,12 +31,7 @@ export const AppShell: React.FC = () => {
 
 
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      dbService.updateTimeSpent(1)
-    }, 60000)
-    return () => clearInterval(interval)
-  }, [])
+
 
   useEffect(() => {
     const handler = () => {

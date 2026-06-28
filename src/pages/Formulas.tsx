@@ -22,6 +22,7 @@ import {
 import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
 import { FlashcardSession } from '../components/flashcard/FlashcardSession'
 import type { Card, CardData, CardType } from '../types'
+import { useIdleAwareTimer } from '../hooks/useIdleAwareTimer'
 import { DeckCard } from '../components/deck/DeckCard'
 import { SUBJECT_MAP } from '../lib/subjectColors'
 import { TOS_SUBJECT_COLORS } from '../lib/tosData'
@@ -113,6 +114,8 @@ export default function Formulas() {
   const [sessionCards, setSessionCards] = useState<Card[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [sessionMode, setSessionMode] = useState<'study' | 'preview'>('study')
+
+  useIdleAwareTimer(activeDeck !== null)
   const [isFlipped, setIsFlipped] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [settings, setSettings] = useState<FCSettings>({
