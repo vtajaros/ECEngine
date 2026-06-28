@@ -453,8 +453,12 @@ export default function PrintView() {
   // Fires only in PDF mode, after cards have loaded and React has committed the DOM.
   useEffect(() => {
     if (!isPdfMode || loading) return
-    ;(window as any).__pdfReady = true
-    window.dispatchEvent(new Event('pdf-ready'))
+    document.fonts.ready.then(() => {
+      setTimeout(() => {
+        ;(window as any).__pdfReady = true
+        window.dispatchEvent(new Event('pdf-ready'))
+      }, 500)
+    })
   }, [isPdfMode, loading])
 
 
