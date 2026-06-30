@@ -1,7 +1,48 @@
 import { ipcMain } from 'electron'
 import { queryAll, execute } from '../db/database'
+import { z } from 'zod'
+
+// ── Zod schemas ───────────────────────────────────────────────────────────────
+
+const RecordCardResultSchema = z.object({
+  cardId: z.string().min(1),
+  isCorrect: z.boolean(),
+})
 
 export function registerProgressHandlers(): void {
+  /**
+   * data:recordCardResult
+   * Lightweight MCQ progress write. Only updates correct_count, total_count,
+   * and last_result. SM-2 fields (ease_factor, interval, repetitions,
+   * next_review) are intentionally left untouched so MCQ cards never appear
+   * in getDueCards / getCardsPrioritized scheduling queries.
+   *
+   * On first encounter (no existing progress row) the SM-2 defaults
+   * (ease_factor=2.5, interval=1, repetitions=0) are written so the row is
+   * valid \u2014 consistent with how data:saveProgress handles new rows.
+   */
+  ipcMain.handle('data:recordCardResult', async (_, payload: unknown) => {
+    try {
+      const { cardId, isCorrect } = RecordCardResultSchema.parse(payload)
+      const correctInc = isCorrect ? 1 : 0
+      const lastResult = isCorrect ? 'correct' : 'wrong'
+
+      const sql = `
+        INSERT INTO progress
+          (card_id, ease_factor, interval, repetitions,
+           correct_count, total_count, last_result)
+        VALUES (?, 2.5, 1, 0, ?, 1, ?)
+        ON CONFLICT(card_id) DO UPDATE SET
+          total_count   = total_count + 1,
+          correct_count = correct_count + ?,
+          last_result   = excluded.last_result
+      `
+      execute(sql, [cardId, correctInc, lastResult, correctInc])
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
   ipcMain.handle('data:saveProgress', async (_, payload: { cardId: string, easeFactor: number, interval: number, repetitions: number, nextReview: string, lastReviewed: string, correctIncrement: number, lastResult: string }) => {
     try {
       const sql = `

@@ -260,12 +260,44 @@ export function registerDeckHandlers(): void {
 
   ipcMain.handle('decks:getFormulaMastery', async () => {
     try {
+      // ── Type-scoped mastery ────────────────────────────────────────────────
+      // Mastery is computed only from cards of the "primary type" of each topic
+      // so that different study modalities don't bleed into each other:
+      //
+      //   • MCQ deck (or mixed MCQ+flashcard)
+      //       → only MCQ card progress counts  (written by LooksFam Learn/Test)
+      //   • Pure flashcard deck
+      //       → only flashcard card progress counts  (written by SM-2 rating)
+      //   • Pure formula / concept deck
+      //       → only those card types count  (written by SM-2 rating)
+      //
+      // Rule: if a topic has ANY mcq cards, MCQ is the primary type.
+      //       Otherwise, use whichever non-mcq type the topic actually has.
+      //       This prevents SM-2 flashcard data from diluting MCQ mastery
+      //       and vice-versa.
       const rows = queryAll(`
+        WITH topic_flags AS (
+          SELECT topic_id,
+                 MAX(CASE WHEN type = 'mcq'       THEN 1 ELSE 0 END) AS has_mcq,
+                 MAX(CASE WHEN type = 'flashcard'  THEN 1 ELSE 0 END) AS has_flashcard
+          FROM   cards
+          GROUP  BY topic_id
+        )
         SELECT c.topic_id,
                CAST(SUM(p.correct_count) AS REAL) / NULLIF(SUM(p.total_count), 0) AS mastery
-        FROM cards c
-        LEFT JOIN progress p ON c.id = p.card_id
-        GROUP BY c.topic_id
+        FROM   cards       c
+        JOIN   topic_flags tf ON c.topic_id = tf.topic_id
+        LEFT   JOIN progress p ON c.id = p.card_id
+        WHERE
+          -- MCQ deck or mixed deck: only MCQ cards drive mastery
+          (tf.has_mcq = 1 AND c.type = 'mcq')
+          OR
+          -- Pure flashcard deck (no MCQ cards): only flashcard cards
+          (tf.has_mcq = 0 AND tf.has_flashcard = 1 AND c.type = 'flashcard')
+          OR
+          -- Formula / concept only deck (no MCQ, no flashcard): count those types
+          (tf.has_mcq = 0 AND tf.has_flashcard = 0 AND c.type NOT IN ('mcq', 'flashcard'))
+        GROUP  BY c.topic_id
       `)
       return { success: true, data: rows }
     } catch (error) {

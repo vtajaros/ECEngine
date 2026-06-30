@@ -14,6 +14,13 @@ export interface Card {
   tags: string[]
   isCustom: boolean
   createdAt: string
+  /**
+   * Set to `true` on MCQ cards synthesised from flashcards via generateMCQs().
+   * These cards reuse the source flashcard's DB id — writing progress into that
+   * row would corrupt the flashcard's own SM-2 state. Never write progress when
+   * this flag is present and true.
+   */
+  isGenerated?: boolean
   // Progress fields — populated when fetched via getCardsWithProgress, absent otherwise
   easeFactor?: number
   repetitions?: number

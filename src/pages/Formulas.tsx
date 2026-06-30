@@ -394,6 +394,8 @@ export default function Formulas() {
     setShowSettings(false)
     setSettings((s) => ({ ...s, bookmarkedOnly: false })) // Reset bookmark filter on exit
     setWrittenStats({ correct: 0, total: 0 })
+    // Re-fetch mastery so the deck list shows updated SM-2 progress after study.
+    loadDecks()
   }
 
   // ── Helpers ──

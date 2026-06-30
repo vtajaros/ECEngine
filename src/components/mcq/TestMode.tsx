@@ -489,10 +489,35 @@ Please explain:
       const mcq = card.data as MCQData
       if (answers[card.id] === mcq.answer) correct++
     })
+
+    // ── Progress writes (batched at submission) ─────────────────────────────
+    // Test Mode is an exam simulation: the user submits all answers at once
+    // and sees no per-question feedback during the test (unless instantChecking
+    // is on, but even then answers are locked after first pick). Correctness
+    // is only authoritative here at handleSubmit, so we batch writes now.
+    // If the user abandons mid-test, no partial progress is recorded — which
+    // is the correct behaviour for an exam-style mode.
+    //
+    // Guard: only native DB MCQ cards (type === 'mcq' && !isGenerated).
+    // Generated cards reuse a flashcard's DB id; writing here would corrupt
+    // that flashcard's SM-2 state (ease_factor, repetitions, etc.).
+    const progressWrites: Promise<void>[] = []
     for (const card of testCards) {
+      if (card.type !== 'mcq' || card.isGenerated) continue
       const mcq = card.data as MCQData
+      const userAnswered = answers[card.id] !== undefined
+      // Only record attempted questions — unanswered cards don't count
+      if (!userAnswered) continue
       const isCorrect = answers[card.id] === mcq.answer
+      progressWrites.push(
+        dbService.recordCardResult(card.id, isCorrect).catch(err => {
+          console.warn('[TestMode] Failed to record card result:', err)
+        })
+      )
     }
+    // Fire all writes concurrently; don't block UI transition on completion
+    Promise.all(progressWrites).catch(() => { /* already caught per-item above */ })
+
     setScore({ correct, total: testCards.length })
     setViewState('summary')
     play('finish')

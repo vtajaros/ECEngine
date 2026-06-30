@@ -424,6 +424,20 @@ export const dbService = {
     return z.array(CardWithProgressRowSchema).parse(result.data ?? []).map(row => parseCardRow(row, topicId))
   },
 
+  /**
+   * Record a single MCQ answer without touching SM-2 scheduling fields.
+   * Only call this for native DB MCQ cards (card.type === 'mcq' && !card.isGenerated).
+   * Also records activity for dashboard streak tracking.
+   */
+  recordCardResult: async (cardId: string, isCorrect: boolean): Promise<void> => {
+    const result = await window.electron.data.recordCardResult({ cardId, isCorrect })
+    if (!result.success) {
+      throw new Error(`Database Operation Failed: ${result.error || 'Failed to record card result'}`)
+    }
+    // Count MCQ answers toward daily activity / streak, consistent with flashcard sessions.
+    await dbService.recordActivity(isCorrect)
+  },
+
 
 
   updateFolderOrder: async (

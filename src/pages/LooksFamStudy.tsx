@@ -418,6 +418,10 @@ export default function LooksFamStudy() {
         difficulty: 'medium',
         tags: [],
         isCustom: true,
+        // isGenerated=true marks this as a synthetic card built from a flashcard.
+        // Its id is the source flashcard's real DB id \u2014 we must NEVER write MCQ
+        // correctness into that progress row or we corrupt the flashcard's SM-2 state.
+        isGenerated: true,
         createdAt: new Date().toISOString(),
         data: {
           question: fc.front,
@@ -632,6 +636,8 @@ export default function LooksFamStudy() {
           onExit={() => {
             if (blocker.state === 'blocked') blocker.reset()
             setIsSessionActive(false)
+            // Re-fetch mastery now that per-answer progress has been written.
+            loadDBSets()
           }}
         />
       )
@@ -649,6 +655,9 @@ export default function LooksFamStudy() {
           onExit={() => {
             if (blocker.state === 'blocked') blocker.reset()
             setIsSessionActive(false)
+            // TestMode batches writes at submit and fires them concurrently;
+            // give SQLite ~300 ms to commit before re-fetching mastery.
+            setTimeout(() => loadDBSets(), 300)
           }}
         />
       )

@@ -48,6 +48,8 @@ contextBridge.exposeInMainWorld('electron', {
     getDueCards: (topicId: string) => ipcRenderer.invoke('data:getDueCards', topicId),
     getDueCardCount: (topicId: string) => ipcRenderer.invoke('data:getDueCardCount', topicId),
     getDueBySubject: () => ipcRenderer.invoke('data:getDueBySubject'),
+    recordCardResult: (payload: { cardId: string; isCorrect: boolean }) =>
+      ipcRenderer.invoke('data:recordCardResult', payload),
   },
   file: {
     import: (filePath?: string) => ipcRenderer.invoke('file:import', filePath),

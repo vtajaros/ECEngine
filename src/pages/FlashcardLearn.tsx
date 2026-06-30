@@ -420,6 +420,10 @@ export default function FlashcardLearn() {
     setShowContext(false)
     setShowToast(false)
     stop()
+    // Re-fetch mastery so the deck list shows updated SM-2 progress.
+    // SM-2 writes are per-card and synchronous (rateCard awaits before
+    // advancing), so all writes are committed by the time we exit.
+    loadDecks()
   }
 
   const handleGetContext = () => {
