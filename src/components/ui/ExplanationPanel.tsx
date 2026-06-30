@@ -4,9 +4,6 @@ import { Link } from 'react-router-dom';
 import { getExplanation } from '../../services/explain.service';
 import { renderMath } from '../../lib/latex';
 
-function renderMarkdownBold(text: string): string {
-  return text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-}
 
 export interface ExplanationPanelProps {
   question: string;
@@ -87,7 +84,7 @@ export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({
             {explanation.trim().split(/\n\s*\n/).filter(p => p.trim()).map((paragraph, idx) => (
               <div
                 key={idx}
-                dangerouslySetInnerHTML={{ __html: renderMath(renderMarkdownBold(paragraph.trim())) }}
+                dangerouslySetInnerHTML={{ __html: renderMath(paragraph.trim()) }}
               />
             ))}
           </div>

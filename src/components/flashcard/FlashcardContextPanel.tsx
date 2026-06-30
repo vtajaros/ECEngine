@@ -4,9 +4,6 @@ import { Link } from 'react-router-dom'
 import { getFlashcardExplanation } from '../../services/explain.service'
 import { renderMath } from '../../lib/latex'
 
-function renderMarkdownBold(text: string): string {
-  return text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-}
 
 interface FlashcardContextPanelProps {
   term: string
@@ -71,7 +68,7 @@ export const FlashcardContextPanel: React.FC<FlashcardContextPanelProps> = ({
             {explanation.trim().split(/\n\s*\n/).filter(p => p.trim()).map((paragraph, idx) => (
               <div
                 key={idx}
-                dangerouslySetInnerHTML={{ __html: renderMath(renderMarkdownBold(paragraph.trim())) }}
+                dangerouslySetInnerHTML={{ __html: renderMath(paragraph.trim()) }}
               />
             ))}
           </div>
