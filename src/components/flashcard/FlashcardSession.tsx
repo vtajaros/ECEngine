@@ -187,17 +187,16 @@ export function FlashcardSession({
 
   useEffect(() => {
     setIsNavigating(true)
-    const t = setTimeout(() => {
-      setSelectedRating(null)
-      setShowRatingFeedback(false)
-      setExplanationOpen(false)
-      setForceExplanationOpen(undefined)
-      setAlignTop(false)
-      
-      // Re-enable transition after snap
-      setTimeout(() => setIsNavigating(false), 50)
-    }, 200) // Match Framer Motion exit duration (0.2s)
-    
+    // Reset ALL layout-affecting state in one batch so the column
+    // reaches its final scanning-mode height before the card animation starts.
+    setSelectedRating(null)
+    setShowRatingFeedback(false)
+    setExplanationOpen(false)
+    setForceExplanationOpen(undefined)
+    setAlignTop(false)
+
+    // Re-enable margin transitions after card exit/enter settles
+    const t = setTimeout(() => setIsNavigating(false), 300)
     return () => clearTimeout(t)
   }, [currentIndex])
 
@@ -330,32 +329,29 @@ export function FlashcardSession({
           }}
         >
 
-          <AnimatePresence>
-            {showRatingFeedback && selectedRating !== null && (() => {
-              const fb = RATING_FEEDBACK[selectedRating]
-              return (
-                <motion.div
-                  key="rating-feedback"
-                  initial={{ opacity: 0, y: -8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.2 }}
-                  className="flex items-center gap-3 px-5 py-3 rounded-lg border bg-[#111]"
-                  style={{ borderColor: fb.color }}
+          {showRatingFeedback && selectedRating !== null && (() => {
+            const fb = RATING_FEEDBACK[selectedRating]
+            return (
+              <motion.div
+                key="rating-feedback"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2 }}
+                className="flex items-center gap-3 px-5 py-3 rounded-lg border bg-[#111]"
+                style={{ borderColor: fb.color }}
+              >
+                <span
+                  className="font-['Rajdhani'] font-bold uppercase tracking-widest text-sm"
+                  style={{ color: fb.color }}
                 >
-                  <span
-                    className="font-['Rajdhani'] font-bold uppercase tracking-widest text-sm"
-                    style={{ color: fb.color }}
-                  >
-                    {fb.label}
-                  </span>
-                  <span className="text-[#888] font-['IBM_Plex_Mono'] text-xs">
-                    {fb.message}
-                  </span>
-                </motion.div>
-              )
-            })()}
-          </AnimatePresence>
+                  {fb.label}
+                </span>
+                <span className="text-[#888] font-['IBM_Plex_Mono'] text-xs">
+                  {fb.message}
+                </span>
+              </motion.div>
+            )
+          })()}
 
           <AnimatePresence mode="wait">
             <StudyCard
@@ -391,8 +387,8 @@ export function FlashcardSession({
 
           {/* Rating row — only in study mode, opacity toggle, no layout shift */}
           {mode === 'study' && (
-          <div className={`h-[84px] flex items-center justify-center w-full transition-opacity duration-100 ${explanationVisible ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-            <div className={`flex gap-3 transition-opacity duration-150 ${(isFlipped || (settings.writtenMode && writtenSubmitted)) && !isAutoplay ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+          <div className={`h-[84px] flex items-center justify-center w-full transition-opacity duration-100 ${explanationVisible ? 'opacity-0' : 'opacity-100'}`} {...(explanationOpen ? { inert: '' } : {})}>
+            <div className={`flex gap-3 transition-opacity duration-150 ${(isFlipped || (settings.writtenMode && writtenSubmitted)) && !isAutoplay && !explanationOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
               {[
                 { rating: 1, label: 'Again', sub: '< 1m', hint: 'Wrong or blank',         color: '#FF3333' },
                 { rating: 2, label: 'Hard',  sub: '~5m',  hint: 'Right but struggled',    color: '#FFB800' },
@@ -468,8 +464,8 @@ export function FlashcardSession({
           )}
 
           {/* Utility row — opacity toggle, no layout shift */}
-          <div className={`h-[40px] flex items-center justify-center gap-3 w-full transition-opacity duration-100 ${explanationVisible ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-            <div className={`flex items-center gap-3 transition-opacity duration-150 ${utilityVisible ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+          <div className={`h-[40px] flex items-center justify-center gap-3 w-full transition-opacity duration-100 ${explanationVisible ? 'opacity-0' : 'opacity-100'}`} {...(explanationOpen ? { inert: '' } : {})}>
+            <div className={`flex items-center gap-3 transition-opacity duration-150 ${utilityVisible && !explanationOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
               <button onClick={onGoPrev} disabled={currentIndex === 0}
                 className="flex items-center gap-2 px-4 py-2 bg-[#111] border border-[#333] rounded text-text-muted font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-border-base hover:border-[#555] transition-all disabled:opacity-30 disabled:cursor-default text-xs">
                 <ArrowLeft className="w-3 h-3" /> Prev

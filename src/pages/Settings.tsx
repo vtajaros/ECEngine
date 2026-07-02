@@ -63,7 +63,13 @@ export default function Settings() {
       const voices = window.speechSynthesis.getVoices()
       if (voices.length === 0) return
       voicesLoadedRef.current = true
-      const englishVoices = voices.filter(v => v.lang.startsWith('en'))
+      const englishVoices = voices.filter(v => v.lang.startsWith('en')).sort((a, b) => {
+        const aMark = a.name.includes('Microsoft Mark')
+        const bMark = b.name.includes('Microsoft Mark')
+        if (aMark && !bMark) return -1
+        if (bMark && !aMark) return 1
+        return a.name.localeCompare(b.name)
+      })
       setAvailableVoices(englishVoices)
   
       // Auto-select Microsoft Mark if user has no saved preference

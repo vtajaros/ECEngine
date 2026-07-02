@@ -55,10 +55,17 @@ function cleanTextForSpeech(text: string): string {
 }
 
 // ── Helper: resolve voice from saved preference ────────────────────────────────
-function resolveVoice(savedVoiceName: string | null): SpeechSynthesisVoice | null {
-  if (!savedVoiceName) return null
+function getExactVoice(name: string): SpeechSynthesisVoice | null {
+  return window.speechSynthesis.getVoices().find(v => v.name === name) ?? null
+}
+
+function getBestVoice(savedName: string | null): SpeechSynthesisVoice | null {
   const voices = window.speechSynthesis.getVoices()
-  return voices.find(v => v.name === savedVoiceName) ?? null
+  if (savedName) {
+    const exact = voices.find(v => v.name === savedName)
+    if (exact) return exact
+  }
+  return voices.find(v => v.name.includes('Microsoft Mark')) ?? voices[0] ?? null
 }
 
 export function useTTS(ttsEnabled: boolean) {
@@ -96,22 +103,25 @@ export function useTTS(ttsEnabled: boolean) {
       window.speechSynthesis.cancel()
 
       const savedVoiceName = localStorage.getItem('ecengine:tts:voice')
-      const voices = window.speechSynthesis.getVoices()
 
-      if (savedVoiceName && voices.length === 0) {
-        // Voices not loaded yet — defer until ready
+      if ((savedVoiceName && !getExactVoice(savedVoiceName)) || window.speechSynthesis.getVoices().length === 0) {
+        // Voices not loaded yet, or specific voice not available yet — defer until ready
+        let fired = false
         const onVoicesReady = () => {
+          if (fired) return
+          fired = true
           window.speechSynthesis.removeEventListener('voiceschanged', onVoicesReady)
           pendingVoicesListenerRef.current = null
           const utterance = new SpeechSynthesisUtterance(clean)
           utterance.rate = 0.95
           utterance.pitch = 1
           utterance.volume = 1
-          utterance.voice = resolveVoice(savedVoiceName)
+          utterance.voice = getBestVoice(savedVoiceName)
           window.speechSynthesis.speak(utterance)
         }
         pendingVoicesListenerRef.current = onVoicesReady
         window.speechSynthesis.addEventListener('voiceschanged', onVoicesReady)
+        setTimeout(() => { if (!fired) onVoicesReady() }, 500)
         return
       }
 
@@ -119,7 +129,7 @@ export function useTTS(ttsEnabled: boolean) {
       utterance.rate = 0.95
       utterance.pitch = 1
       utterance.volume = 1
-      utterance.voice = resolveVoice(savedVoiceName)
+      utterance.voice = getBestVoice(savedVoiceName)
       utteranceRef.current = utterance
       window.speechSynthesis.speak(utterance)
     },
@@ -143,11 +153,13 @@ export function useTTS(ttsEnabled: boolean) {
       window.speechSynthesis.cancel()
 
       const savedVoiceName = localStorage.getItem('ecengine:tts:voice')
-      const voices = window.speechSynthesis.getVoices()
 
-      if (savedVoiceName && voices.length === 0) {
-        // Voices not loaded yet — defer until ready
+      if ((savedVoiceName && !getExactVoice(savedVoiceName)) || window.speechSynthesis.getVoices().length === 0) {
+        // Voices not loaded yet, or specific voice not available yet — defer until ready
+        let fired = false
         const onVoicesReady = () => {
+          if (fired) return
+          fired = true
           window.speechSynthesis.removeEventListener('voiceschanged', onVoicesReady)
           pendingVoicesListenerRef.current = null
           const utterance = new SpeechSynthesisUtterance(clean)
@@ -156,11 +168,12 @@ export function useTTS(ttsEnabled: boolean) {
           utterance.volume = 1
           utterance.onend = () => onEnd()
           utterance.onerror = () => onEnd()
-          utterance.voice = resolveVoice(savedVoiceName)
+          utterance.voice = getBestVoice(savedVoiceName)
           window.speechSynthesis.speak(utterance)
         }
         pendingVoicesListenerRef.current = onVoicesReady
         window.speechSynthesis.addEventListener('voiceschanged', onVoicesReady)
+        setTimeout(() => { if (!fired) onVoicesReady() }, 500)
         return
       }
 
@@ -170,7 +183,7 @@ export function useTTS(ttsEnabled: boolean) {
       utterance.volume = 1
       utterance.onend = () => onEnd()
       utterance.onerror = () => onEnd()
-      utterance.voice = resolveVoice(savedVoiceName)
+      utterance.voice = getBestVoice(savedVoiceName)
       utteranceRef.current = utterance
       window.speechSynthesis.speak(utterance)
     },
