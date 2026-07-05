@@ -48,10 +48,15 @@ export default function Dashboard() {
     MATH: '#FB923C', GEAS: '#60A5FA', ELECS: '#F87171', EST: '#22C55E'
   }
 
-  const [examDate, setExamDate] = useState(localStorage.getItem('ecengine_exam_date') || '2026-10-16')
-  const [preboardDate, setPreboardDate] = useState<string | null>(
-    localStorage.getItem('ecengine_preboard_date') || null
-  )
+  const [examDate, setExamDate] = useState('2026-10-16')
+  const [preboardDate, setPreboardDate] = useState<string | null>(null)
+
+  useEffect(() => {
+    window.electron.config.getSettings().then((settings) => {
+      if (settings.examDate) setExamDate(settings.examDate)
+      setPreboardDate(settings.preboardDate ?? null)
+    }).catch(err => console.error('Failed to load settings', err))
+  }, [])
 
   useEffect(() => {
     setTrendLoading(true)
@@ -117,16 +122,12 @@ export default function Dashboard() {
 
   const handleExamDateChange = (date: string) => {
     setExamDate(date)
-    localStorage.setItem('ecengine_exam_date', date)
+    window.electron.config.updateSettings({ examDate: date }).catch(err => console.error('Failed to save examDate', err))
   }
 
   const handlePreboardDateChange = (date: string | null) => {
-    if (date) {
-      localStorage.setItem('ecengine_preboard_date', date)
-    } else {
-      localStorage.removeItem('ecengine_preboard_date')
-    }
     setPreboardDate(date)
+    window.electron.config.updateSettings({ preboardDate: date }).catch(err => console.error('Failed to save preboardDate', err))
   }
 
   const getSubjectClasses = (subject: string) => {

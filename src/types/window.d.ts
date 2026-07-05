@@ -95,6 +95,8 @@ declare global {
       config: {
         setApiKey: (key: string) => Promise<{ success: boolean; error?: string }>
         getApiKeyStatus: () => Promise<{ configured: boolean }>
+        getSettings: () => Promise<{ examDate?: string; preboardDate?: string | null }>
+        updateSettings: (settings: { examDate?: string; preboardDate?: string | null }) => Promise<{ success: boolean; error?: string }>
       }
       shell: {
         openExternal: (url: string) => Promise<void>

@@ -5,8 +5,10 @@ import path from 'path'
 
 let cachedGroqApiKey: string | undefined | null = null // null = not yet loaded
 
-interface AppConfig {
+export interface AppConfig {
   groqApiKey?: string
+  examDate?: string
+  preboardDate?: string | null
 }
 
 function getConfigPath(): string {
@@ -73,6 +75,35 @@ export function registerConfigHandlers(): void {
   ipcMain.handle('config:getApiKey', async () => {
     const key = resolveGroqApiKey()
     return { configured: Boolean(key && key.length > 0) }
+  })
+
+  /**
+   * 'config:getSettings' - returns general settings like exam dates.
+   */
+  ipcMain.handle('config:getSettings', async () => {
+    const config = readConfig()
+    return {
+      examDate: config.examDate,
+      preboardDate: config.preboardDate
+    }
+  })
+
+  /**
+   * 'config:updateSettings' - updates general settings.
+   */
+  ipcMain.handle('config:updateSettings', async (_event, settings: Partial<AppConfig>) => {
+    try {
+      const config = readConfig()
+      // Merge updates
+      if (settings.examDate !== undefined) config.examDate = settings.examDate
+      if (settings.preboardDate !== undefined) config.preboardDate = settings.preboardDate
+      
+      await fsp.writeFile(getConfigPath(), JSON.stringify(config, null, 2), 'utf8')
+      return { success: true }
+    } catch (err) {
+      console.error('[config:updateSettings] Error:', err)
+      return { success: false, error: (err as Error).message }
+    }
   })
 
   /**

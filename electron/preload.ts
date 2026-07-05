@@ -73,6 +73,10 @@ contextBridge.exposeInMainWorld('electron', {
     /** Returns whether an API key is configured — never returns the key value */
     getApiKeyStatus: (): Promise<{ configured: boolean }> =>
       ipcRenderer.invoke('config:getApiKey'),
+    getSettings: (): Promise<{ examDate?: string; preboardDate?: string | null }> =>
+      ipcRenderer.invoke('config:getSettings'),
+    updateSettings: (settings: { examDate?: string; preboardDate?: string | null }): Promise<{ success: boolean; error?: string }> =>
+      ipcRenderer.invoke('config:updateSettings', settings),
   },
   shell: {
     openExternal: (url: string) => ipcRenderer.invoke('shell:openExternal', url),
