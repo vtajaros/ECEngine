@@ -12,6 +12,12 @@
     "paths": { "@/*": ["src/*"] },
     "types": ["node", "electron"]
   },
+  "ts-node": {
+    "compilerOptions": {
+      "module": "CommonJS",
+      "moduleResolution": "node"
+    }
+  },
   "include": ["src/**/*", "electron/**/*"],
   "exclude": ["node_modules", "out", "dist"]
 }
