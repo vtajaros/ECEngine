@@ -3,13 +3,14 @@ import { existsSync, mkdirSync } from 'fs'
 import { join, extname, basename, resolve, sep } from 'path'
 import { pathToFileURL } from 'url'
 import sharp from 'sharp'
+import { resolveImagesPath } from './config.ipc'
 
 // ── Allowed source extensions ──────────────────────────────────────
 const ALLOWED_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp'])
 const MAX_EDGE_PX = 1280
 
 function getImagesDir(): string {
-  const dir = join(app.getPath('userData'), 'ece-images')
+  const dir = resolveImagesPath()
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true })
   }
@@ -75,7 +76,7 @@ export function registerImageProtocolScheme() {
   ])
 }
 
-import { createReadStream } from 'fs'
+import { createReadStream, readdirSync } from 'fs'
 import { Readable } from 'node:stream'
 
 // ── Protocol handler (after app ready) ────────────────────────────
@@ -83,9 +84,21 @@ export function handleImageProtocol() {
   protocol.handle('ece-app', (request) => {
     try {
       const url = new URL(request.url)
-      const filename = decodeURIComponent(url.host + url.pathname).replace(/^\//, '')
-      const imagesDir = join(app.getPath('userData'), 'ece-images')
-      const filePath = join(imagesDir, filename)
+      const requestedFilename = decodeURIComponent(url.host + url.pathname).replace(/^\//, '').replace(/\/$/, '')
+      const imagesDir = resolveImagesPath()
+      
+      // Fix for Linux/macOS: URL host gets lowercased by Chromium, so we need a case-insensitive lookup
+      let actualFilename = requestedFilename
+      if (process.platform !== 'win32') {
+        try {
+          const files = readdirSync(imagesDir)
+          const lowerRequested = requestedFilename.toLowerCase()
+          const match = files.find(f => f.toLowerCase() === lowerRequested)
+          if (match) actualFilename = match
+        } catch (e) {}
+      }
+
+      const filePath = join(imagesDir, actualFilename)
 
       // Guard against path traversal: resolved path must stay within imagesDir
       const resolvedPath = resolve(filePath)

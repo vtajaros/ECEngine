@@ -57,6 +57,10 @@ ECEngine is an offline-first desktop application engineered for examinees prepar
 * **Theming**: Select between Light, Sepia, and Dark print themes.
 * **Direct Export**: Native capability to export directly to PDF or export deck contents to a raw text file.
 
+### Settings & Customization
+* **Custom Images Storage Path**: Configure a custom directory for image files (such as card diagrams and explanation images). Fully supports native folder browsing as well as direct text path copy-pasting. (Available under Settings → Data & Sync → Unlock Advanced).
+* **Linux Platform Compatibility**: Features case-insensitive file resolution for image protocol handlers (`ece-app://`), correcting Chromium's automatic hostname lowercasing on case-sensitive Linux filesystems.
+
 ---
 
 ## 🏗 System Architecture

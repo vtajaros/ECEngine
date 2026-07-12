@@ -1,4 +1,4 @@
-import { ipcMain, app, shell } from 'electron'
+import { ipcMain, app, shell, dialog, BrowserWindow } from 'electron'
 import fs from 'fs'
 import fsp from 'fs/promises'
 import path from 'path'
@@ -9,6 +9,15 @@ export interface AppConfig {
   groqApiKey?: string
   examDate?: string
   preboardDate?: string | null
+  imagesPath?: string
+}
+
+export function resolveImagesPath(): string {
+  const config = readConfig()
+  if (config.imagesPath && config.imagesPath.trim()) {
+    return config.imagesPath.trim()
+  }
+  return process.env.ECE_IMAGES_PATH || path.join(app.getPath('userData'), 'ece-images')
 }
 
 function getConfigPath(): string {
@@ -102,6 +111,56 @@ export function registerConfigHandlers(): void {
       return { success: true }
     } catch (err) {
       console.error('[config:updateSettings] Error:', err)
+      return { success: false, error: (err as Error).message }
+    }
+  })
+
+  /**
+   * 'config:getImagesPath' - returns the resolved images path.
+   */
+  ipcMain.handle('config:getImagesPath', async () => {
+    return { imagesPath: resolveImagesPath() }
+  })
+
+  /**
+   * 'config:selectImagesPath' - opens directory selection dialog and saves the selection.
+   */
+  ipcMain.handle('config:selectImagesPath', async () => {
+    const win = BrowserWindow.getFocusedWindow()
+    if (!win) return { success: false, error: 'No focused window' }
+
+    const { canceled, filePaths } = await dialog.showOpenDialog(win, {
+      title: 'Select Images Storage Directory',
+      properties: ['openDirectory', 'createDirectory']
+    })
+
+    if (canceled || filePaths.length === 0) {
+      return { success: false, canceled: true }
+    }
+
+    try {
+      const selectedPath = filePaths[0]
+      const config = readConfig()
+      config.imagesPath = selectedPath
+      await fsp.writeFile(getConfigPath(), JSON.stringify(config, null, 2), 'utf8')
+      return { success: true, imagesPath: selectedPath }
+    } catch (err) {
+      console.error('[config:selectImagesPath] Error:', err)
+      return { success: false, error: (err as Error).message }
+    }
+  })
+
+  /**
+   * 'config:setImagesPath' - saves a manually provided images path.
+   */
+  ipcMain.handle('config:setImagesPath', async (_event, imagesPath: string) => {
+    try {
+      const config = readConfig()
+      config.imagesPath = imagesPath.trim() || undefined
+      await fsp.writeFile(getConfigPath(), JSON.stringify(config, null, 2), 'utf8')
+      return { success: true, imagesPath: config.imagesPath }
+    } catch (err) {
+      console.error('[config:setImagesPath] Error:', err)
       return { success: false, error: (err as Error).message }
     }
   })

@@ -47,11 +47,17 @@ export default function Settings() {
   // API Key State — stored main-process-only; renderer only learns if it is configured
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [apiKeyConfigured, setApiKeyConfigured] = useState(false);
-
+  const [imagesPath, setImagesPath] = useState('');
+ 
   useEffect(() => {
     const check = async () => {
       const result = await window.electron.config.getApiKeyStatus();
       setApiKeyConfigured(result?.configured ?? false);
+
+      const pathRes = await window.electron.config.getImagesPath();
+      if (pathRes?.imagesPath) {
+        setImagesPath(pathRes.imagesPath);
+      }
     };
     check();
   }, []);
@@ -112,6 +118,17 @@ export default function Settings() {
       setToastMessage('API Key saved successfully!');
     } else {
       setToastMessage('Failed to save API Key.');
+    }
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleSelectImagesPath = async () => {
+    const res = await window.electron.config.selectImagesPath();
+    if (res && res.success && res.imagesPath) {
+      setImagesPath(res.imagesPath);
+      setToastMessage('Images path updated successfully!');
+    } else if (res && !res.canceled) {
+      setToastMessage(res.error || 'Failed to update path.');
     }
     setTimeout(() => setToastMessage(null), 3000);
   };
@@ -210,6 +227,7 @@ export default function Settings() {
           actionId: 'formula-bank-toggle'
         },
         { label: 'Auto-Backup Progress Locally', type: 'toggle', current: true, advanced: true },
+        { label: 'Images Storage Path', type: 'custom-path-picker', advanced: true },
         { label: 'Import Decks', type: 'action', buttonText: 'IMPORT JSON', actionId: 'import', advanced: true },
         { label: 'Export Decks', type: 'action', buttonText: 'EXPORT JSON', actionId: 'export', advanced: true },
         { label: 'Reset Mastery Progress', type: 'action', buttonText: 'Reset Progress', actionId: 'reset-progress', advanced: true },
@@ -373,7 +391,7 @@ export default function Settings() {
 
                   return (
                     <div key={idy} className={`flex flex-row items-center justify-between gap-4 transition-all duration-300 ${isDisabled ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
-                      <div className="font-['IBM_Plex_Mono'] text-text-primary text-sm md:text-base">
+                      <div className="font-['IBM_Plex_Mono'] text-text-primary text-sm md:text-base shrink-0">
                         {opt.label}
                       </div>
 
@@ -415,6 +433,38 @@ export default function Settings() {
                         <select className="bg-surface-2 border border-border-base rounded px-4 py-2 text-sm text-text-primary focus:border-accent outline-none font-['Rajdhani'] uppercase tracking-wider">
                           <option>{opt.current}</option>
                         </select>
+                      )}
+
+                      {opt.type === 'custom-path-picker' && (
+                        <div className="flex items-center gap-4 flex-1 justify-end min-w-0">
+                          <input
+                            type="text"
+                            value={imagesPath}
+                            onChange={(e) => setImagesPath(e.target.value)}
+                            onBlur={async () => {
+                              const res = await window.electron.config.setImagesPath(imagesPath);
+                              if (res && res.success && res.imagesPath !== undefined) {
+                                setImagesPath(res.imagesPath);
+                                setToastMessage('Images path saved!');
+                              } else if (res && res.error) {
+                                setToastMessage(`Error saving path: ${res.error}`);
+                              }
+                              setTimeout(() => setToastMessage(null), 3000);
+                            }}
+                            onKeyDown={async (e) => {
+                              if (e.key === 'Enter') {
+                                (e.target as HTMLInputElement).blur();
+                              }
+                            }}
+                            className="font-['IBM_Plex_Mono'] text-[#999] text-xs bg-[#0D0D0D] border border-surface-2 focus:border-accent outline-none rounded px-3 py-1.5 w-full max-w-[480px]"
+                          />
+                          <button
+                            onClick={handleSelectImagesPath}
+                            className="px-4 py-2 border border-accent text-accent hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)] rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all shrink-0"
+                          >
+                            Browse
+                          </button>
+                        </div>
                       )}
 
                       {opt.type === 'action' && (

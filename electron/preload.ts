@@ -77,6 +77,12 @@ contextBridge.exposeInMainWorld('electron', {
       ipcRenderer.invoke('config:getSettings'),
     updateSettings: (settings: { examDate?: string; preboardDate?: string | null }): Promise<{ success: boolean; error?: string }> =>
       ipcRenderer.invoke('config:updateSettings', settings),
+    getImagesPath: (): Promise<{ imagesPath: string }> =>
+      ipcRenderer.invoke('config:getImagesPath'),
+    selectImagesPath: (): Promise<{ success: boolean; canceled?: boolean; imagesPath?: string; error?: string }> =>
+      ipcRenderer.invoke('config:selectImagesPath'),
+    setImagesPath: (imagesPath: string): Promise<{ success: boolean; imagesPath?: string; error?: string }> =>
+      ipcRenderer.invoke('config:setImagesPath', imagesPath),
   },
   shell: {
     openExternal: (url: string) => ipcRenderer.invoke('shell:openExternal', url),
