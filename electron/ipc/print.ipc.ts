@@ -4,7 +4,7 @@ import fsp from 'fs/promises'
 
 let printWindow: BrowserWindow | null = null
 
-export function registerPrintHandlers(): void {
+export function registerPrintHandlers(getMainWindow: () => Electron.BrowserWindow | null): void {
   ipcMain.handle('print:open', async (_event, topicId: string, title: string) => {
     try {
       // Focus existing window instead of opening a duplicate
@@ -20,6 +20,8 @@ export function registerPrintHandlers(): void {
         ? join(process.resourcesPath, 'ecengine_icon.ico')
         : join(__dirname, '../../resources/ecengine_icon.ico')
 
+      const parent = getMainWindow() ?? undefined
+
       printWindow = new BrowserWindow({
         width: 900,
         height: 800,
@@ -28,6 +30,12 @@ export function registerPrintHandlers(): void {
         title: `Test Paper View — ${title}`,
         autoHideMenuBar: true,
         icon: iconPath,
+        // Attach as a child of the main window so Linux window managers
+        // (KDE/KWin + Polonium) treat it as a transient/companion window
+        // rather than an independent top-level window.
+        ...(parent ? { parent, modal: false } : {}),
+        alwaysOnTop: true,
+        show: false,
         webPreferences: {
           preload: join(__dirname, '../preload/index.js'),
           contextIsolation: true,
@@ -46,6 +54,7 @@ export function registerPrintHandlers(): void {
       // Hooking did-finish-load guarantees our title wins every time.
       printWindow.webContents.on('did-finish-load', () => {
         printWindow?.setTitle(`Test Paper View — ${title}`)
+        printWindow?.show()
       })
 
       if (process.env['ELECTRON_RENDERER_URL']) {

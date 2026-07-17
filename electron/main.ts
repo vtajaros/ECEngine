@@ -8,6 +8,9 @@ import { registerConfigHandlers } from './ipc/config.ipc'
 import { registerPrintHandlers } from './ipc/print.ipc'
 import { flushDB } from './db/database'
 
+// Exported so sibling IPC modules can reference the main window (e.g. as a parent).
+export let mainWindow: BrowserWindow | null = null
+
 // Register custom protocol BEFORE app is ready (Electron requirement)
 registerImageProtocolScheme()
 
@@ -17,7 +20,7 @@ registerImageProtocolScheme()
 app.commandLine.appendSwitch('disable-features', 'OverlayScrollbar')
 
 function createWindow() {
-  const win = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
     minWidth: 1280,
@@ -35,7 +38,7 @@ function createWindow() {
     },
   })
 
-  win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+  mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
@@ -47,13 +50,17 @@ function createWindow() {
   })
 
   // Show window smoothly once React/Vite has loaded the UI initially
-  win.once('ready-to-show', () => {
-    win.maximize()
-    win.show()
+  mainWindow.once('ready-to-show', () => {
+    mainWindow!.maximize()
+    mainWindow!.show()
+  })
+
+  mainWindow.on('closed', () => {
+    mainWindow = null
   })
 
   // Disable built-in pinch/ctrl+wheel zoom so PrintView can handle it
-  win.webContents.setVisualZoomLevelLimits(1, 1)
+  mainWindow.webContents.setVisualZoomLevelLimits(1, 1)
 
   // Disable unnecessary permissions for privacy/security
   session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {
@@ -65,17 +72,17 @@ function createWindow() {
   });
 
   if (process.env['ELECTRON_RENDERER_URL']) {
-    win.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    win.loadFile(join(__dirname, '../renderer/index.html'))
+    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
   // Inject scrollbar styles after every page load.
   // webContents.insertCSS() has the highest priority and cannot be
   // overridden by any renderer-side CSS, solving the Electron/Chromium
   // overlay-scrollbar issue where ::-webkit-scrollbar CSS is ignored.
-  win.webContents.on('did-finish-load', () => {
-    win.webContents.insertCSS(`
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow!.webContents.insertCSS(`
       ::-webkit-scrollbar { width: 4px !important; height: 4px !important; }
       ::-webkit-scrollbar-track { background: #0D0D0D !important; border-radius: 4px !important; }
       ::-webkit-scrollbar-thumb { background: #00FF41 !important; border-radius: 4px !important; }
@@ -91,7 +98,7 @@ app.whenReady().then(() => {
   registerAIHandlers()
   registerFileHandlers()
   registerConfigHandlers()
-  registerPrintHandlers()
+  registerPrintHandlers(() => mainWindow)
   handleImageProtocol()
 
   // Window Control Handlers
