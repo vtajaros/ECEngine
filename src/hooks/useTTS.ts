@@ -1,7 +1,12 @@
 import { useEffect, useRef, useCallback } from 'react'
 
 /**
- * useTTS — Web Speech API wrapper for Electron renderer.
+ * useTTS — Cross-platform TTS hook for Electron renderer.
+ *
+ * On Linux: bypasses Web Speech API entirely and shells out to `spd-say`
+ * via the main process IPC bridge (electron/ipc/tts.ipc.ts).
+ *
+ * On Windows/macOS: uses the existing Web Speech API path unchanged.
  *
  * Guarantees:
  * - Only one utterance plays at a time. A new speak() cancels any in-flight speech.
@@ -10,6 +15,8 @@ import { useEffect, useRef, useCallback } from 'react'
  * - ttsEnabled=false short-circuits immediately.
  * - voiceschanged listeners are always cleaned up (no leak on unmount or stop).
  */
+
+const isLinux = typeof window !== 'undefined' && window.electron?.platform === 'linux'
 
 // ── Shared text cleaning pipeline (Fix 4) ─────────────────────────────────────
 // Single source of truth for LaTeX stripping + symbol normalization.
@@ -54,7 +61,7 @@ function cleanTextForSpeech(text: string): string {
     .trim()
 }
 
-// ── Helper: resolve voice from saved preference ────────────────────────────────
+// ── Helper: resolve voice from saved preference (non-Linux only) ───────────────
 function getExactVoice(name: string): SpeechSynthesisVoice | null {
   return window.speechSynthesis.getVoices().find(v => v.name === name) ?? null
 }
@@ -65,17 +72,34 @@ function getBestVoice(savedName: string | null): SpeechSynthesisVoice | null {
     const exact = voices.find(v => v.name === savedName)
     if (exact) return exact
   }
-  return voices.find(v => v.name.includes('Microsoft Mark')) ?? voices[0] ?? null
+  // No cross-platform way to rank voice "quality" via Web Speech API.
+  // Prefer a local (non-network) English voice if one exists, else first voice available.
+  const localEnglish = voices.find(v => v.localService && v.lang.startsWith('en'))
+  return localEnglish ?? voices[0] ?? null
 }
 
 export function useTTS(ttsEnabled: boolean) {
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
   // Fix 6: track pending voiceschanged listeners so they can be torn down
   const pendingVoicesListenerRef = useRef<(() => void) | null>(null)
+  // Linux: track pending tts:ended unsubscribe function
+  const pendingTtsEndedUnsubRef = useRef<(() => void) | null>(null)
 
-  // Cancel in-flight speech and any pending voiceschanged listener on unmount
+  // ── Linux: helper to tear down any pending onEnded listener ──────────────
+  const cleanupLinuxListener = useCallback(() => {
+    if (pendingTtsEndedUnsubRef.current) {
+      pendingTtsEndedUnsubRef.current()
+      pendingTtsEndedUnsubRef.current = null
+    }
+  }, [])
+
+  // Cancel in-flight speech and any pending listeners on unmount
   useEffect(() => {
     return () => {
+      if (isLinux) {
+        cleanupLinuxListener()
+        window.electron.tts.stop()
+      }
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         if (pendingVoicesListenerRef.current) {
           window.speechSynthesis.removeEventListener('voiceschanged', pendingVoicesListenerRef.current)
@@ -84,15 +108,24 @@ export function useTTS(ttsEnabled: boolean) {
         window.speechSynthesis.cancel()
       }
     }
-  }, [])
+  }, [cleanupLinuxListener])
 
   const speak = useCallback(
     (text: string) => {
       if (!ttsEnabled) return
-      if (typeof window === 'undefined' || !window.speechSynthesis) return
 
       const clean = cleanTextForSpeech(text)
       if (!clean) return
+
+      // ── Linux path: spd-say via IPC ──────────────────────────────────────
+      if (isLinux) {
+        cleanupLinuxListener()
+        window.electron.tts.speak(clean)
+        return
+      }
+
+      // ── Non-Linux path: Web Speech API (unchanged) ───────────────────────
+      if (typeof window === 'undefined' || !window.speechSynthesis) return
 
       // Cancel any pending deferred listener before starting fresh
       if (pendingVoicesListenerRef.current) {
@@ -133,16 +166,34 @@ export function useTTS(ttsEnabled: boolean) {
       utteranceRef.current = utterance
       window.speechSynthesis.speak(utterance)
     },
-    [ttsEnabled]
+    [ttsEnabled, cleanupLinuxListener]
   )
 
   const speakWithCallback = useCallback(
     (text: string, onEnd: () => void) => {
       if (!ttsEnabled) { onEnd(); return }
-      if (typeof window === 'undefined' || !window.speechSynthesis) { onEnd(); return }
 
       const clean = cleanTextForSpeech(text)
       if (!clean) { onEnd(); return }
+
+      // ── Linux path: spd-say via IPC with onEnded listener ────────────────
+      if (isLinux) {
+        cleanupLinuxListener()
+        // Register a one-shot listener BEFORE speaking so we don't miss a fast exit
+        const unsub = window.electron.tts.onEnded(() => {
+          unsub()
+          if (pendingTtsEndedUnsubRef.current === unsub) {
+            pendingTtsEndedUnsubRef.current = null
+          }
+          onEnd()
+        })
+        pendingTtsEndedUnsubRef.current = unsub
+        window.electron.tts.speak(clean)
+        return
+      }
+
+      // ── Non-Linux path: Web Speech API (unchanged) ───────────────────────
+      if (typeof window === 'undefined' || !window.speechSynthesis) { onEnd(); return }
 
       // Cancel any pending deferred listener before starting fresh
       if (pendingVoicesListenerRef.current) {
@@ -187,10 +238,16 @@ export function useTTS(ttsEnabled: boolean) {
       utteranceRef.current = utterance
       window.speechSynthesis.speak(utterance)
     },
-    [ttsEnabled]
+    [ttsEnabled, cleanupLinuxListener]
   )
 
   const stop = useCallback(() => {
+    // Linux: kill spd-say child process
+    if (isLinux) {
+      cleanupLinuxListener()
+      window.electron.tts.stop()
+    }
+    // Non-Linux (and always safe to call): cancel Web Speech API
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       // Fix 6: tear down any pending deferred listener on explicit stop
       if (pendingVoicesListenerRef.current) {
@@ -199,7 +256,7 @@ export function useTTS(ttsEnabled: boolean) {
       }
       window.speechSynthesis.cancel()
     }
-  }, [])
+  }, [cleanupLinuxListener])
 
   return { speak, stop, speakWithCallback }
 }

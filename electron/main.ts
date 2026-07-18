@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell, session, ipcMain } from 'electron'
+import { app, BrowserWindow, shell, session, ipcMain, nativeImage } from 'electron'
 import { join } from 'path'
 import { registerDBHandlers } from './ipc/db.ipc'
 import { registerImageHandlers, registerImageProtocolScheme, handleImageProtocol } from './ipc/image.ipc'
@@ -6,6 +6,7 @@ import { registerAIHandlers } from './ipc/ai.ipc'
 import { registerFileHandlers } from './ipc/file.ipc'
 import { registerConfigHandlers } from './ipc/config.ipc'
 import { registerPrintHandlers } from './ipc/print.ipc'
+import { registerTTSHandlers } from './ipc/tts.ipc'
 import { flushDB } from './db/database'
 
 // Exported so sibling IPC modules can reference the main window (e.g. as a parent).
@@ -20,6 +21,10 @@ registerImageProtocolScheme()
 app.commandLine.appendSwitch('disable-features', 'OverlayScrollbar')
 
 function createWindow() {
+  const iconExt = process.platform === 'win32' ? 'ico' : 'png'
+  const iconPath = join(__dirname, `../../resources/ecengine_icon.${iconExt}`)
+  const appIcon = nativeImage.createFromPath(iconPath)
+
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -30,7 +35,7 @@ function createWindow() {
     title: 'ECEngine',
     autoHideMenuBar: true,
     frame: false,
-    icon: join(__dirname, '../../resources/ecengine_icon.ico'),
+    icon: appIcon,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
@@ -92,6 +97,11 @@ function createWindow() {
   })
 }
 
+app.setName('ECEngine')
+if (process.platform === 'win32') {
+  app.setAppUserModelId('com.ecengine.app')
+}
+
 app.whenReady().then(() => {
   registerDBHandlers()
   registerImageHandlers()
@@ -99,6 +109,7 @@ app.whenReady().then(() => {
   registerFileHandlers()
   registerConfigHandlers()
   registerPrintHandlers(() => mainWindow)
+  registerTTSHandlers()
   handleImageProtocol()
 
   // Window Control Handlers

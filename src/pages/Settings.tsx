@@ -38,11 +38,14 @@ export default function Settings() {
   const [exportTypeFilter, setExportTypeFilter] = useState<'ALL' | 'FC' | 'MCQ'>('ALL');
 
   // TTS voice selection
+  const isLinux = window.electron?.platform === 'linux'
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([])
   const [selectedSystemVoice, setSelectedSystemVoice] = useState<string>(
     () => localStorage.getItem('ecengine:tts:voice') ?? ''
   )
   const voicesLoadedRef = useRef(false)
+  const [voicesTimedOut, setVoicesTimedOut] = useState(false)
+  const [spdSayAvailable, setSpdSayAvailable] = useState<boolean | null>(null)
 
   // API Key State — stored main-process-only; renderer only learns if it is configured
   const [apiKeyInput, setApiKeyInput] = useState('');
@@ -63,35 +66,44 @@ export default function Settings() {
   }, []);
 
   // Load available TTS voices — getVoices() is async in Chromium, fires voiceschanged event
+  // On Linux, skip entirely — we use spd-say instead of Web Speech API.
   useEffect(() => {
+    if (isLinux) {
+      window.electron.tts.isAvailable().then(setSpdSayAvailable)
+      return
+    }
     const load = () => {
       if (voicesLoadedRef.current) return
       const voices = window.speechSynthesis.getVoices()
       if (voices.length === 0) return
       voicesLoadedRef.current = true
+      // Sort local (non-network) voices first — the only cross-platform quality signal available.
       const englishVoices = voices.filter(v => v.lang.startsWith('en')).sort((a, b) => {
-        const aMark = a.name.includes('Microsoft Mark')
-        const bMark = b.name.includes('Microsoft Mark')
-        if (aMark && !bMark) return -1
-        if (bMark && !aMark) return 1
+        if (a.localService && !b.localService) return -1
+        if (b.localService && !a.localService) return 1
         return a.name.localeCompare(b.name)
       })
       setAvailableVoices(englishVoices)
   
-      // Auto-select Microsoft Mark if user has no saved preference
+      // Auto-select first available voice if user has no saved preference
       const saved = localStorage.getItem('ecengine:tts:voice')
-      if (!saved) {
-        const mark = englishVoices.find(v => v.name.includes('Microsoft Mark'))
-        if (mark) {
-          localStorage.setItem('ecengine:tts:voice', mark.name)
-          setSelectedSystemVoice(mark.name)
-        }
+      if (!saved && englishVoices.length > 0) {
+        localStorage.setItem('ecengine:tts:voice', englishVoices[0].name)
+        setSelectedSystemVoice(englishVoices[0].name)
       }
     }
     load()
     window.speechSynthesis.addEventListener('voiceschanged', load)
-    return () => window.speechSynthesis.removeEventListener('voiceschanged', load)
-  }, [])
+
+    const timeoutId = setTimeout(() => {
+      if (!voicesLoadedRef.current) setVoicesTimedOut(true)
+    }, 4000)
+
+    return () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', load)
+      clearTimeout(timeoutId)
+    }
+  }, [isLinux])
 
   // ── Countdown for delete ──
   useEffect(() => {
@@ -313,27 +325,37 @@ export default function Settings() {
                     Reading Voice
                   </span>
                   <span className="font-['Rajdhani'] text-[#999] text-xs uppercase tracking-widest text-left">
-                    {availableVoices.length > 0
-                      ? `${availableVoices.length} English voices available — Microsoft Mark recommended`
-                      : 'Loading voices…'}
+                    {isLinux
+                      ? (spdSayAvailable === null
+                          ? 'Checking speech-dispatcher...'
+                          : spdSayAvailable
+                            ? 'Using system speech-dispatcher (spd-say)'
+                            : 'spd-say not found — install speech-dispatcher and a TTS backend (e.g. espeak-ng) to enable text-to-speech.')
+                      : (availableVoices.length > 0
+                          ? `${availableVoices.length} English voices available`
+                          : voicesTimedOut
+                            ? 'No system voices detected — TTS unavailable. See docs for enabling speech-dispatcher on Linux.'
+                            : 'Loading voices...')}
                   </span>
                 </div>
-                <select
-                  value={selectedSystemVoice}
-                  onChange={(e) => {
-                    setSelectedSystemVoice(e.target.value)
-                    localStorage.setItem('ecengine:tts:voice', e.target.value)
-                  }}
-                  disabled={availableVoices.length === 0}
-                  className="bg-surface-2 border border-border-base focus:border-accent rounded px-4 py-2 text-sm text-text-primary outline-none font-['Rajdhani'] uppercase tracking-wider max-w-[220px] disabled:opacity-40"
-                >
-                  <option value="">System Default</option>
-                  {availableVoices.map(v => (
-                    <option key={v.name} value={v.name}>
-                      {v.name}{v.name.includes('Microsoft Mark') ? ' ★' : ''}
-                    </option>
-                  ))}
-                </select>
+                {!isLinux && (
+                  <select
+                    value={selectedSystemVoice}
+                    onChange={(e) => {
+                      setSelectedSystemVoice(e.target.value)
+                      localStorage.setItem('ecengine:tts:voice', e.target.value)
+                    }}
+                    disabled={availableVoices.length === 0}
+                    className="bg-surface-2 border border-border-base focus:border-accent rounded px-4 py-2 text-sm text-text-primary outline-none font-['Rajdhani'] uppercase tracking-wider max-w-[220px] disabled:opacity-40"
+                  >
+                    <option value="">System Default</option>
+                    {availableVoices.map(v => (
+                      <option key={v.name} value={v.name}>
+                        {v.name}
+                      </option>
+                    ))}
+                  </select>
+                )}
               </div>
               <div className="border-t border-surface-2 pt-6 flex flex-row items-center justify-between gap-4">
                 <div className="flex flex-col gap-1">

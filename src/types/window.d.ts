@@ -14,6 +14,7 @@ export interface FolderRow {
 declare global {
   interface Window {
     electron: {
+      platform: string
       decks: {
         getTopics: () => Promise<{ success: boolean; data?: any; error?: string }>
         getCardsByTopic: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
@@ -103,6 +104,12 @@ declare global {
       }
       shell: {
         openExternal: (url: string) => Promise<void>
+      }
+      tts: {
+        speak: (text: string) => Promise<void>
+        stop: () => Promise<void>
+        isAvailable: () => Promise<boolean>
+        onEnded: (callback: () => void) => () => void
       }
       windowControls: {
         minimize: () => void

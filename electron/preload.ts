@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 
 contextBridge.exposeInMainWorld('electron', {
+  platform: process.platform,
 
   decks: {
     getTopics: () => ipcRenderer.invoke('decks:getTopics'),
@@ -86,6 +87,16 @@ contextBridge.exposeInMainWorld('electron', {
   },
   shell: {
     openExternal: (url: string) => ipcRenderer.invoke('shell:openExternal', url),
+  },
+  tts: {
+    speak: (text: string): Promise<void> => ipcRenderer.invoke('tts:speak', text),
+    stop: (): Promise<void> => ipcRenderer.invoke('tts:stop'),
+    isAvailable: (): Promise<boolean> => ipcRenderer.invoke('tts:isAvailable'),
+    onEnded: (callback: () => void) => {
+      const listener = () => callback()
+      ipcRenderer.on('tts:ended', listener)
+      return () => { ipcRenderer.removeListener('tts:ended', listener) }
+    },
   },
   windowControls: {
     minimize: () => ipcRenderer.send('window-minimize'),
