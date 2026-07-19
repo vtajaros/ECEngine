@@ -219,11 +219,17 @@ Use the following commands inside your terminal to launch, build, or test variou
 
 ## ⚠️ Known Limitations
 
-* **Technical Debt in FlashCard.tsx**: The older LooksFam 3D flip view uses `FlashCard.tsx`, which does not have the SM-2 algorithm wired.
+* **Technical Debt in FlashCard.tsx**: `FlashCard.tsx` (used by the older LooksFam 3D flip view) is an independent third flip-card implementation separate from the primary `FlashcardSession.tsx`, representing UI duplication.
 * **No Cloud Sync/Backup**: There is no automatic backup or cloud syncing. Data relies entirely on the local SQLite file.
 * **Empty Formula Bank**: The formula bank content is not pre-populated. Users must create their own formula decks from scratch.
 * **AI Provider Support**: Only the Groq API is implemented and wired. Mentioned support for Gemini or other multi-provider interfaces in older notes is not present.
 * **No Bundled TTS on Linux**: Unlike Windows/macOS (which use the OS's built-in Web Speech API with zero setup), Linux TTS requires the user to separately install Piper and a voice model — this is a deliberate scope decision (see Linux TTS Setup), not a bug.
+
+---
+
+## 📐 Design Decisions
+
+* **SM-2 Scoped to Flashcards & Formulas Only**: Spaced repetition intentionally does not apply to MCQs (including LooksFam). MCQ banks can run into the thousands of questions per subject, which doesn't fit the spaced-repetition model — SM-2 is designed for a bounded set of items being progressively memorized, not for sampling across a large question pool. Flashcards and formula sets are the actual memorization-oriented content, so SM-2 applies there. This is a deliberate scope decision, not unfinished work.
 
 ---
 
