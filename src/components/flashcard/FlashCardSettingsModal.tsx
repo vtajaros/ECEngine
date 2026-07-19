@@ -152,7 +152,11 @@ export const FlashCardSettingsModal: React.FC<FlashCardSettingsModalProps> = ({
                   {renderToggle('ttsEnabled', 'Read Terms Aloud (Text To Speech)', ({ className }) => <Volume2 className={className} />)}
                 </div>
                 {settings.ttsEnabled && (() => {
-                  const voiceName = localStorage.getItem('ecengine:tts:voice')
+                  const isLinux = window.electron?.platform === 'linux'
+                  const rawVoice = isLinux
+                    ? localStorage.getItem('ecengine:tts:piperModelPath')
+                    : localStorage.getItem('ecengine:tts:voice')
+                  const voiceName = isLinux && rawVoice ? rawVoice.split('/').pop() : rawVoice
                   return voiceName ? (
                     <p className="text-[10px] text-[#555] font-['IBM_Plex_Mono'] leading-relaxed">
                       Voice: <span className="text-accent">{voiceName}</span>. The front face of each card is read aloud when it appears.

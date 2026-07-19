@@ -89,9 +89,11 @@ contextBridge.exposeInMainWorld('electron', {
     openExternal: (url: string) => ipcRenderer.invoke('shell:openExternal', url),
   },
   tts: {
-    speak: (text: string): Promise<void> => ipcRenderer.invoke('tts:speak', text),
+    speak: (text: string, modelPath: string): Promise<void> => ipcRenderer.invoke('tts:speak', text, modelPath),
     stop: (): Promise<void> => ipcRenderer.invoke('tts:stop'),
-    isAvailable: (): Promise<boolean> => ipcRenderer.invoke('tts:isAvailable'),
+    isAvailable: (modelPath?: string): Promise<{ piperInstalled: boolean; modelConfigured: boolean }> => ipcRenderer.invoke('tts:isAvailable', modelPath),
+    selectVoiceModel: (): Promise<{ success: boolean; canceled?: boolean; filePath?: string; error?: string }> =>
+      ipcRenderer.invoke('tts:selectVoiceModel'),
     onEnded: (callback: () => void) => {
       const listener = () => callback()
       ipcRenderer.on('tts:ended', listener)

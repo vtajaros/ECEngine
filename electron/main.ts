@@ -6,7 +6,7 @@ import { registerAIHandlers } from './ipc/ai.ipc'
 import { registerFileHandlers } from './ipc/file.ipc'
 import { registerConfigHandlers } from './ipc/config.ipc'
 import { registerPrintHandlers } from './ipc/print.ipc'
-import { registerTTSHandlers } from './ipc/tts.ipc'
+import { registerTTSHandlers, killAllTTSChildren } from './ipc/tts.ipc'
 import { flushDB } from './db/database'
 
 // Exported so sibling IPC modules can reference the main window (e.g. as a parent).
@@ -130,4 +130,5 @@ app.whenReady().then(() => {
   createWindow()
 })
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit() })
+app.on('before-quit', () => { killAllTTSChildren() })
 app.on('will-quit', flushDB)

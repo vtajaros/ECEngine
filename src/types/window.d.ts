@@ -106,9 +106,10 @@ declare global {
         openExternal: (url: string) => Promise<void>
       }
       tts: {
-        speak: (text: string) => Promise<void>
+        speak: (text: string, modelPath: string) => Promise<void>
         stop: () => Promise<void>
-        isAvailable: () => Promise<boolean>
+        isAvailable: (modelPath?: string) => Promise<{ piperInstalled: boolean; modelConfigured: boolean }>
+        selectVoiceModel: () => Promise<{ success: boolean; canceled?: boolean; filePath?: string; error?: string }>
         onEnded: (callback: () => void) => () => void
       }
       windowControls: {

@@ -45,7 +45,13 @@ export default function Settings() {
   )
   const voicesLoadedRef = useRef(false)
   const [voicesTimedOut, setVoicesTimedOut] = useState(false)
-  const [spdSayAvailable, setSpdSayAvailable] = useState<boolean | null>(null)
+
+  // Linux Piper TTS state
+  const [piperStatus, setPiperStatus] = useState<{ piperInstalled: boolean; modelConfigured: boolean } | null>(null)
+  const [piperModelPath, setPiperModelPath] = useState<string>(
+    () => localStorage.getItem('ecengine:tts:piperModelPath') ?? ''
+  )
+  const [piperModelError, setPiperModelError] = useState<string | null>(null)
 
   // API Key State — stored main-process-only; renderer only learns if it is configured
   const [apiKeyInput, setApiKeyInput] = useState('');
@@ -66,10 +72,11 @@ export default function Settings() {
   }, []);
 
   // Load available TTS voices — getVoices() is async in Chromium, fires voiceschanged event
-  // On Linux, skip entirely — we use spd-say instead of Web Speech API.
+  // On Linux, skip Web Speech API entirely — we use Piper TTS instead.
   useEffect(() => {
     if (isLinux) {
-      window.electron.tts.isAvailable().then(setSpdSayAvailable)
+      const modelPath = localStorage.getItem('ecengine:tts:piperModelPath') ?? undefined
+      window.electron.tts.isAvailable(modelPath).then(setPiperStatus)
       return
     }
     const load = () => {
@@ -319,26 +326,138 @@ export default function Settings() {
               <span className="ml-3">Sound & Feedback</span>
             </h2>
             <div className="bg-[#111111] p-6 lg:p-8 rounded-lg border border-surface-2 shadow-lg space-y-6">
-              <div className="flex flex-row items-center justify-between gap-4">
-                <div className="flex flex-col gap-1">
-                  <span className="font-['IBM_Plex_Mono'] text-text-primary text-sm md:text-base">
-                    Reading Voice
-                  </span>
-                  <span className="font-['Rajdhani'] text-[#999] text-xs uppercase tracking-widest text-left">
-                    {isLinux
-                      ? (spdSayAvailable === null
-                          ? 'Checking speech-dispatcher...'
-                          : spdSayAvailable
-                            ? 'Using system speech-dispatcher (spd-say)'
-                            : 'spd-say not found — install speech-dispatcher and a TTS backend (e.g. espeak-ng) to enable text-to-speech.')
-                      : (availableVoices.length > 0
-                          ? `${availableVoices.length} English voices available`
-                          : voicesTimedOut
-                            ? 'No system voices detected — TTS unavailable. See docs for enabling speech-dispatcher on Linux.'
-                            : 'Loading voices...')}
-                  </span>
+              {isLinux ? (
+                /* ── Linux: Piper TTS configuration ─────────────────────────── */
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-row items-center justify-between gap-4">
+                    <div className="flex flex-col gap-1">
+                      <span className="font-['IBM_Plex_Mono'] text-text-primary text-sm md:text-base">
+                        Reading Voice (Piper TTS)
+                      </span>
+                      <span className="font-['Rajdhani'] text-text-muted text-xs uppercase tracking-widest text-left">
+                        {piperStatus === null
+                          ? 'Checking Piper...'
+                          : piperStatus.piperInstalled && piperStatus.modelConfigured
+                            ? 'Piper voice ready'
+                            : piperStatus.piperInstalled
+                              ? 'Piper installed — select a voice model below'
+                              : 'Piper not installed'}
+                      </span>
+                    </div>
+                    {piperStatus?.piperInstalled && piperStatus?.modelConfigured && (
+                      <div className="flex items-center gap-2">
+                        <CheckCircle size={16} className="text-accent shrink-0" />
+                        <span className="font-['IBM_Plex_Mono'] text-accent text-xs">Ready</span>
+                      </div>
+                    )}
+                    {piperStatus !== null && !piperStatus.piperInstalled && (
+                      <button
+                        onClick={() => {
+                          const modelPath = localStorage.getItem('ecengine:tts:piperModelPath') ?? undefined
+                          window.electron.tts.isAvailable(modelPath).then(setPiperStatus)
+                        }}
+                        className="px-4 py-2 border border-accent text-accent hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)] rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all shrink-0"
+                      >
+                        Check Again
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Install instructions — only shown when piper is not found */}
+                  {piperStatus !== null && !piperStatus.piperInstalled && (
+                    <div className="bg-surface-2 border border-border-base rounded-lg p-4 flex flex-col gap-2">
+                      <span className="font-['Rajdhani'] text-text-muted text-xs uppercase tracking-widest">Install Piper</span>
+                      <code className="font-['IBM_Plex_Mono'] text-accent text-xs bg-[#0D0D0D] border border-surface-2 rounded px-3 py-2 block">
+                        yay -S piper-tts-bin
+                      </code>
+                      <span className="font-['Rajdhani'] text-text-muted text-xs uppercase tracking-widest mt-1">
+                        On other distros, build or install Piper per{' '}
+                        <button
+                          type="button"
+                          onClick={() => window.electron.shell.openExternal('https://github.com/rhasspy/piper')}
+                          className="text-accent hover:underline transition-all bg-transparent border-none p-0 inline font-inherit cursor-pointer"
+                        >
+                          github.com/rhasspy/piper
+                        </button>
+                        {' '}— no auto-download is provided.
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Model path picker — shown when piper is installed */}
+                  {piperStatus?.piperInstalled && (
+                    <div className="flex flex-col gap-2">
+                      <span className="font-['Rajdhani'] text-text-muted text-xs uppercase tracking-widest">
+                        Voice Model (.onnx)
+                      </span>
+                      <div className="flex items-center gap-4 flex-1 justify-end min-w-0">
+                        <input
+                          type="text"
+                          value={piperModelPath}
+                          onChange={(e) => setPiperModelPath(e.target.value)}
+                          onBlur={async () => {
+                            if (!piperModelPath.trim()) return
+                            const modelPath = piperModelPath.trim()
+                            const status = await window.electron.tts.isAvailable(modelPath)
+                            if (!status.modelConfigured) {
+                              setPiperModelError('Model not found — ensure the .onnx and .onnx.json sidecar both exist at this path.')
+                            } else {
+                              setPiperModelError(null)
+                              localStorage.setItem('ecengine:tts:piperModelPath', modelPath)
+                              setPiperStatus(status)
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                          }}
+                          placeholder="e.g. ~/.local/share/piper-voices/en_US-ryan-medium.onnx"
+                          className="font-['IBM_Plex_Mono'] text-text-muted text-xs bg-[#0D0D0D] border border-surface-2 focus:border-accent outline-none rounded px-3 py-1.5 w-full max-w-[480px]"
+                        />
+                        <button
+                          onClick={async () => {
+                            const res = await window.electron.tts.selectVoiceModel()
+                            if (res.success && res.filePath) {
+                              const modelPath = res.filePath
+                              const status = await window.electron.tts.isAvailable(modelPath)
+                              if (!status.modelConfigured) {
+                                setPiperModelPath(modelPath)
+                                setPiperModelError('Model not found — ensure the .onnx.json sidecar exists alongside the selected file.')
+                              } else {
+                                setPiperModelPath(modelPath)
+                                setPiperModelError(null)
+                                localStorage.setItem('ecengine:tts:piperModelPath', modelPath)
+                                setPiperStatus(status)
+                              }
+                            }
+                          }}
+                          className="px-4 py-2 border border-accent text-accent hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)] rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all shrink-0"
+                        >
+                          Browse
+                        </button>
+                      </div>
+                      {piperModelError && (
+                        <span className="font-['Rajdhani'] text-[var(--color-wrong)] text-xs uppercase tracking-widest">
+                          {piperModelError}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
-                {!isLinux && (
+              ) : (
+                /* ── Non-Linux: Web Speech API voice dropdown (unchanged) ───── */
+                <div className="flex flex-row items-center justify-between gap-4">
+                  <div className="flex flex-col gap-1">
+                    <span className="font-['IBM_Plex_Mono'] text-text-primary text-sm md:text-base">
+                      Reading Voice
+                    </span>
+                    <span className="font-['Rajdhani'] text-text-muted text-xs uppercase tracking-widest text-left">
+                      {availableVoices.length > 0
+                        ? `${availableVoices.length} English voices available`
+                        : voicesTimedOut
+                          ? 'No system voices detected — TTS unavailable.'
+                          : 'Loading voices...'}
+                    </span>
+                  </div>
                   <select
                     value={selectedSystemVoice}
                     onChange={(e) => {
@@ -355,8 +474,8 @@ export default function Settings() {
                       </option>
                     ))}
                   </select>
-                )}
-              </div>
+                </div>
+              )}
               <div className="border-t border-surface-2 pt-6 flex flex-row items-center justify-between gap-4">
                 <div className="flex flex-col gap-1">
                   <span className="font-['IBM_Plex_Mono'] text-text-primary text-sm md:text-base">

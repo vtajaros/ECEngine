@@ -231,7 +231,7 @@ const TestQuestionCard = memo(({
             </button>
           </Tooltip>
 
-          <Tooltip position="right" content="Explain using Llama-3.3-70B">
+          <Tooltip position="right" content="Explain using GPT-OSS-120B">
             <button
               onClick={(e) => { e.stopPropagation(); onToggleExplanation(index) }}
               className={`flex items-center gap-1.5 px-3 py-1.5 border rounded transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem] ${openExplanationId === index

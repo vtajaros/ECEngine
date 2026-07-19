@@ -3,8 +3,10 @@ import { useEffect, useRef, useCallback } from 'react'
 /**
  * useTTS — Cross-platform TTS hook for Electron renderer.
  *
- * On Linux: bypasses Web Speech API entirely and shells out to `spd-say`
- * via the main process IPC bridge (electron/ipc/tts.ipc.ts).
+ * On Linux: bypasses Web Speech API entirely and shells out to `piper`
+ * via a piper→aplay pipeline in the main process (electron/ipc/tts.ipc.ts).
+ * The configured .onnx model path is read from localStorage here in the
+ * renderer and passed as an argument — main process does not read localStorage.
  *
  * On Windows/macOS: uses the existing Web Speech API path unchanged.
  *
@@ -13,6 +15,7 @@ import { useEffect, useRef, useCallback } from 'react'
  * - stop() is called on component unmount to prevent orphaned speech.
  * - LaTeX/HTML markup is stripped before speaking.
  * - ttsEnabled=false short-circuits immediately.
+ * - No model path set → short-circuits immediately (no hanging spawn).
  * - voiceschanged listeners are always cleaned up (no leak on unmount or stop).
  */
 
@@ -117,10 +120,12 @@ export function useTTS(ttsEnabled: boolean) {
       const clean = cleanTextForSpeech(text)
       if (!clean) return
 
-      // ── Linux path: spd-say via IPC ──────────────────────────────────────
+      // ── Linux path: piper→aplay via IPC ──────────────────────────────────
       if (isLinux) {
         cleanupLinuxListener()
-        window.electron.tts.speak(clean)
+        const modelPath = localStorage.getItem('ecengine:tts:piperModelPath')
+        if (!modelPath) return // No model configured — short-circuit, nothing hangs
+        window.electron.tts.speak(clean, modelPath)
         return
       }
 
@@ -176,9 +181,11 @@ export function useTTS(ttsEnabled: boolean) {
       const clean = cleanTextForSpeech(text)
       if (!clean) { onEnd(); return }
 
-      // ── Linux path: spd-say via IPC with onEnded listener ────────────────
+      // ── Linux path: piper→aplay via IPC with onEnded listener ────────────
       if (isLinux) {
         cleanupLinuxListener()
+        const modelPath = localStorage.getItem('ecengine:tts:piperModelPath')
+        if (!modelPath) { onEnd(); return } // No model configured — short-circuit
         // Register a one-shot listener BEFORE speaking so we don't miss a fast exit
         const unsub = window.electron.tts.onEnded(() => {
           unsub()
@@ -188,7 +195,7 @@ export function useTTS(ttsEnabled: boolean) {
           onEnd()
         })
         pendingTtsEndedUnsubRef.current = unsub
-        window.electron.tts.speak(clean)
+        window.electron.tts.speak(clean, modelPath)
         return
       }
 

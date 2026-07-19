@@ -765,7 +765,7 @@ Please explain:
                   </button>
                 </Tooltip>
 
-                <Tooltip position="right" content="Explain using Llama-3.3-70B">
+                <Tooltip position="right" content="Explain using GPT-OSS-120B">
                   <button
                     onClick={() => setExplanationOpen(true)}
                     className="flex items-center gap-2 px-4 py-2 border border-[rgba(0,255,65,0.3)] rounded text-accent hover:bg-[rgba(0,255,65,0.08)] hover:border-accent transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
