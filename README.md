@@ -61,6 +61,7 @@ ECEngine is an offline-first desktop application engineered for examinees prepar
 
 ### Settings & Customization
 * **Custom Images Storage Path**: Configure a custom directory for image files (such as card diagrams and explanation images). Fully supports native folder browsing as well as direct text path copy-pasting. (Available under Settings → Data & Sync → Unlock Advanced).
+* **App Zoom Controls**: Global application scaling (80% to 150%) using `Ctrl+=` (zoom in), `Ctrl+-` (zoom out), and `Ctrl+0` (reset to 100%). Zoom level is automatically persisted across sessions and features a transient on-screen toast indicator.
 * **Linux Platform Compatibility**: Features case-insensitive file resolution for image protocol handlers (`ece-app://`), correcting Chromium's automatic hostname lowercasing on case-sensitive Linux filesystems. Also features a dedicated native TTS backend (Piper) bypassing Chromium's lack of Web Speech API support on Linux (see Linux TTS Setup).
 
 ---
