@@ -25,7 +25,7 @@ ECEngine is an offline-first desktop application engineered for examinees prepar
 * **Spaced Repetition**: Flashcard and formula sets utilize the SM-2 algorithm, providing Again / Hard / Good / Easy rating buttons to schedule reviews.
 * **Preview Mode**: Browse formula sets without writing SM-2 progress data.
 * **Written Mode**: Require typing the exact answer before flipping the flashcard.
-* **Autoplay Mode**: Hands-free flashcard review loop powered by Web Speech API for Text-to-Speech (TTS), requiring no external dependencies.
+* **Autoplay Mode**: Hands-free flashcard review loop powered by native TTS — Web Speech API on Windows/macOS (no setup required), Piper neural TTS on Linux (requires separate installation, see Linux TTS Setup below).
 * **Additional Controls**: Swap Term/Definition toggle, shuffle toggle, and bookmarking for filtered reviews.
 * **Keyboard Shortcuts**: Use `Space`, `ArrowUp`, or `ArrowDown` to flip cards; `1-4` to select an SM-2 rating; and left/right arrow keys to navigate.
 
@@ -49,7 +49,7 @@ ECEngine is an offline-first desktop application engineered for examinees prepar
 * **Board Exam Countdown**: A built-in timer counting down to the user's exam date.
 
 ### AI Integration
-* **Groq Llama-3.3-70B Integration**: Features an explain button on MCQ cards in Learn and Test modes. Requires a user-supplied API key configured in the Settings.
+* **Groq GPT-OSS-120B Integration**: Features an explain button on MCQ cards in Learn and Test modes. Requires a user-supplied Groq API key configured in Settings.
 * **Context Extraction**: A "Get Context" button instantly copies a structured prompt to the clipboard for use in external AI tools like ChatGPT or Claude.
 
 ### Print & Export
@@ -59,7 +59,7 @@ ECEngine is an offline-first desktop application engineered for examinees prepar
 
 ### Settings & Customization
 * **Custom Images Storage Path**: Configure a custom directory for image files (such as card diagrams and explanation images). Fully supports native folder browsing as well as direct text path copy-pasting. (Available under Settings → Data & Sync → Unlock Advanced).
-* **Linux Platform Compatibility**: Features case-insensitive file resolution for image protocol handlers (`ece-app://`), correcting Chromium's automatic hostname lowercasing on case-sensitive Linux filesystems.
+* **Linux Platform Compatibility**: Features case-insensitive file resolution for image protocol handlers (`ece-app://`), correcting Chromium's automatic hostname lowercasing on case-sensitive Linux filesystems. Also features a dedicated native TTS backend (Piper) bypassing Chromium's lack of Web Speech API support on Linux (see Linux TTS Setup).
 
 ---
 
@@ -167,6 +167,7 @@ ecengine/
 * **Node.js**: `v18.x` or higher installed
 * **npm** or **yarn** package manager
 * **C++ Compiler Tools** (Required to compile native `better-sqlite3` bindings for Electron)
+* **Linux only**: Piper TTS is required for the Read-Aloud/Autoplay feature — see Linux TTS Setup below. Not required to build or run the app; only affects the TTS feature specifically.
 
 ### Installation & Seeding
 
@@ -186,6 +187,20 @@ ecengine/
    ```bash
    npm run seed
    ```
+
+### Linux TTS Setup
+
+This app does not bundle Piper or any voice models. On Linux, TTS requires manual setup:
+
+1. Install Piper (Arch/AUR example — note for other distros the user should consult [https://github.com/rhasspy/piper](https://github.com/rhasspy/piper) directly):
+   ```bash
+   yay -S piper-tts-bin
+   ```
+2. Download a voice model (`.onnx` + matching `.onnx.json` sidecar file) from [https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_US](https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_US) — recommended: the "ryan" voice (medium quality) for a natural-sounding male US English voice, or "amy" for female.
+3. In-app: Settings → Sound & Feedback → Reading Voice (Piper TTS) → Browse, and select the downloaded `.onnx` file. The app validates the `.onnx.json` sidecar exists automatically.
+4. If Piper is not detected, the Settings panel shows install instructions directly — no auto-download is provided by design.
+
+Playback requires `aplay` (part of `alsa-utils`, present by default on most Linux desktop distros).
 
 ### Developer Execution Reference
 
@@ -208,6 +223,7 @@ Use the following commands inside your terminal to launch, build, or test variou
 * **No Cloud Sync/Backup**: There is no automatic backup or cloud syncing. Data relies entirely on the local SQLite file.
 * **Empty Formula Bank**: The formula bank content is not pre-populated. Users must create their own formula decks from scratch.
 * **AI Provider Support**: Only the Groq API is implemented and wired. Mentioned support for Gemini or other multi-provider interfaces in older notes is not present.
+* **No Bundled TTS on Linux**: Unlike Windows/macOS (which use the OS's built-in Web Speech API with zero setup), Linux TTS requires the user to separately install Piper and a voice model — this is a deliberate scope decision (see Linux TTS Setup), not a bug.
 
 ---
 
