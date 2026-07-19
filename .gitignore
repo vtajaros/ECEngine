@@ -16,3 +16,7 @@ electron.vite.config.*.mjs
 *.pdf
 .env.local
 src/styles/output.css
+
+# Local DB debugging tools — do not commit
+sqlite/
+*.exe
