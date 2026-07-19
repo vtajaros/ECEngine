@@ -4,7 +4,7 @@ import { registerDBHandlers } from './ipc/db.ipc'
 import { registerImageHandlers, registerImageProtocolScheme, handleImageProtocol } from './ipc/image.ipc'
 import { registerAIHandlers } from './ipc/ai.ipc'
 import { registerFileHandlers } from './ipc/file.ipc'
-import { registerConfigHandlers } from './ipc/config.ipc'
+import { registerConfigHandlers, resolveZoomIndex, persistZoomIndex, ZOOM_STEPS } from './ipc/config.ipc'
 import { registerPrintHandlers } from './ipc/print.ipc'
 import { registerTTSHandlers, killAllTTSChildren } from './ipc/tts.ipc'
 import { flushDB } from './db/database'
@@ -66,6 +66,33 @@ function createWindow() {
 
   // Disable built-in pinch/ctrl+wheel zoom so PrintView can handle it
   mainWindow.webContents.setVisualZoomLevelLimits(1, 1)
+
+  // Apply persisted zoom on startup
+  let currentZoomIndex = resolveZoomIndex()
+  mainWindow.webContents.setZoomFactor(ZOOM_STEPS[currentZoomIndex])
+
+  // Ctrl+=, Ctrl+-, Ctrl+0 discrete zoom steps (mainWindow only)
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown') return
+    const ctrlOrCmd = input.control || input.meta
+    if (!ctrlOrCmd) return
+
+    if (input.key === '=' || input.key === '+') {
+      currentZoomIndex = Math.min(currentZoomIndex + 1, ZOOM_STEPS.length - 1)
+    } else if (input.key === '-') {
+      currentZoomIndex = Math.max(currentZoomIndex - 1, 0)
+    } else if (input.key === '0') {
+      currentZoomIndex = 2 // DEFAULT_ZOOM_INDEX
+    } else {
+      return // not a zoom key — don't preventDefault
+    }
+
+    event.preventDefault()
+    const factor = ZOOM_STEPS[currentZoomIndex]
+    mainWindow!.webContents.setZoomFactor(factor)
+    persistZoomIndex(currentZoomIndex)
+    mainWindow!.webContents.send('zoom:changed', Math.round(factor * 100))
+  })
 
   // Disable unnecessary permissions for privacy/security
   session.defaultSession.setPermissionRequestHandler((webContents, permission, callback) => {

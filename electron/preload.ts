@@ -111,4 +111,11 @@ contextBridge.exposeInMainWorld('electron', {
     toPDF: (suggestedName: string, themeVars: Record<string, string>, topicId: string, title: string, theme: string, layout: string): Promise<{ success: boolean; canceled?: boolean; error?: string }> =>
       ipcRenderer.invoke('print:toPDF', suggestedName, themeVars, topicId, title, theme, layout),
   },
+  zoom: {
+    onChanged: (callback: (percent: number) => void) => {
+      const listener = (_event: unknown, percent: number) => callback(percent)
+      ipcRenderer.on('zoom:changed', listener)
+      return () => { ipcRenderer.removeListener('zoom:changed', listener) }
+    },
+  },
 })

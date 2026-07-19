@@ -12,6 +12,7 @@ import {
   FlaskConical,
 } from 'lucide-react'
 import { TitleBar } from './TitleBar'
+import { ZoomIndicator } from '../ui/ZoomIndicator'
 import { dbService } from '../../services/db.service'
 
 type NavItem = {
@@ -166,6 +167,9 @@ export const AppShell: React.FC = () => {
           <Outlet />
         </main>
       </div>
+
+      {/* Global overlay — renders above all page content */}
+      <ZoomIndicator />
     </div>
   )
 }

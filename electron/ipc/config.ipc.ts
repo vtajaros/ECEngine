@@ -10,6 +10,31 @@ export interface AppConfig {
   examDate?: string
   preboardDate?: string | null
   imagesPath?: string
+  zoomIndex?: number   // index into ZOOM_STEPS, persisted
+}
+
+export const ZOOM_STEPS = [0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5] as const
+export const DEFAULT_ZOOM_INDEX = 2 // 1.0 / 100%
+
+export function resolveZoomIndex(): number {
+  const config = readConfig()
+  const idx = config.zoomIndex
+  if (typeof idx === 'number' && idx >= 0 && idx < ZOOM_STEPS.length) return idx
+  return DEFAULT_ZOOM_INDEX
+}
+
+let zoomWriteTimer: NodeJS.Timeout | null = null
+export function persistZoomIndex(index: number): void {
+  if (zoomWriteTimer) clearTimeout(zoomWriteTimer)
+  zoomWriteTimer = setTimeout(() => {
+    try {
+      const config = readConfig()
+      config.zoomIndex = index
+      writeConfig(config)
+    } catch (err) {
+      console.error('[persistZoomIndex] Error:', err)
+    }
+  }, 400)
 }
 
 export function resolveImagesPath(): string {
