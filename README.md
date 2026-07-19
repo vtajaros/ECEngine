@@ -17,6 +17,8 @@
 
 ECEngine is an offline-first desktop application engineered for examinees preparing for the Philippine Electronics Engineering (ECE) and Electronics Technician (ECT) Licensure Exams. It combines a local SQLite database with advanced spaced repetition (SM-2) algorithms to provide an integrated study environment. The application supports standard flashcards, multiple-choice questions (MCQs), and LaTeX-rendered formula sets, utilizing a tech stack comprised of Electron, React 18, TypeScript, and Vite. State management is handled by Zustand, styling via Tailwind CSS with custom CSS properties, and animations by Framer Motion. 
 
+**Supported Platforms**: Windows, macOS, and Linux — fully cross-platform, with all core study features identical across all three. (One platform-specific difference: the Text-to-Speech backend — see Linux TTS Setup under Getting Started.)
+
 ---
 
 ## 🚀 Features
@@ -167,7 +169,7 @@ ecengine/
 * **Node.js**: `v18.x` or higher installed
 * **npm** or **yarn** package manager
 * **C++ Compiler Tools** (Required to compile native `better-sqlite3` bindings for Electron)
-* **Linux only**: Piper TTS is required for the Read-Aloud/Autoplay feature — see Linux TTS Setup below. Not required to build or run the app; only affects the TTS feature specifically.
+* **Piper TTS (Linux users only)**: Required for the Read-Aloud/Autoplay feature on Linux — see Linux TTS Setup below. Windows and macOS use the OS's built-in Text-to-Speech with no setup required. Not required to build or run the app on any platform; only affects the TTS feature on Linux specifically.
 
 ### Installation & Seeding
 
