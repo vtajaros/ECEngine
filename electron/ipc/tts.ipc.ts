@@ -125,6 +125,10 @@ export function registerTTSHandlers(): void {
       )
       currentAplayChild = aplayChild
 
+      // Handle stream errors to prevent uncaught exceptions (e.g. EPIPE when killed)
+      piperChild.stdout!.on('error', () => { /* ignore */ })
+      aplayChild.stdin!.on('error', () => { /* ignore */ })
+
       // Pipe piper's WAV output into aplay's stdin
       piperChild.stdout!.pipe(aplayChild.stdin!)
 

@@ -37,10 +37,15 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
   const [preboardModalError, setPreboardModalError] = useState<string | null>(null)
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    const updateTimers = () => {
       setTimeLeft(calculateTimeLeft(examDate))
-      if (preboardDate) setPreboardTimeLeft(calculateTimeLeft(preboardDate))
-    }, 1000)
+      setPreboardTimeLeft(preboardDate ? calculateTimeLeft(preboardDate) : null)
+    }
+
+    // Immediately calculate so there's no 1s delay on prop change
+    updateTimers()
+    
+    const timer = setInterval(updateTimers, 1000)
     return () => clearInterval(timer)
   }, [examDate, preboardDate])
 
