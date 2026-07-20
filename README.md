@@ -42,7 +42,32 @@ ECEngine is an offline-first desktop application engineered for examinees prepar
 * **Edit Deck**: Provides the same comprehensive capabilities as the Add Decks interface for modifying existing decks.
 * **Folder System**: Support for nested folders (maximum depth of 1), independently scoped for the study and formula tabs.
 * **Smart Routing**: After saving, the application automatically redirects to the correct tab based on the deck type (Formula decks route to the Formulas tab, others route to Flashcards).
-* **Source Tags**: Pre-configured source tags include Excel, Edge, TOP, Pinoybix, Indiabix, EST Superbook, and Cuervo, alongside custom user-defined tags.
+
+### Bulk Import & Content Formats
+* **Quizlet Import**: Easily import your existing study sets by pasting Quizlet exports directly into the app. ECEngine automatically detects the Quizlet format (both MCQ and Flashcards) and seamlessly converts them into the native ECEngine format, applying common symbol and spelling fixes automatically.
+* **Native ECEngine Format**: When bulk importing manually, ECEngine uses a simple plain-text block format separated by blank lines.
+
+  **MCQ Format Snippet:**
+  ```text
+  Q: What is the unit of capacitance?
+  A: Henry
+  B: Farad
+  C: Ohm
+  D: Watt
+  ANS: B
+  ```
+
+  **Flashcard / Formula Format Snippet:**
+  ```text
+  Q: Ohm's Law
+  A: V = I * R
+  ```
+
+* **Explanations & Images**: Beyond basic text, ECEngine's card editor allows you to enrich any MCQ, Flashcard, or Formula with **rich explanations** and **images**. You can easily attach an image to the main card content, as well as provide a collapsible explanation field that can contain its own dedicated solution image.
+
+### Board Exam Tools
+* **EELE ToS**: A dedicated tab for viewing the Table of Specifications of the latest board exam (2022 TOS), covering Mathematics, Electronics Engineering, GEAS, and EST.
+* **Review Checklist**: A comprehensive tracker to keep track of your overall review progress across all syllabus subtopics, allowing you to mark items for review, refresher, or self-review.
 
 ### Analytics & Progress
 * **Dashboard Heatmap**: A visual study activity heatmap plotting activity over a 6-month window.
