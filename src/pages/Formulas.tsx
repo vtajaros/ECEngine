@@ -18,6 +18,7 @@ import {
   Search,
   Check,
   Eye,
+  Plus,
 } from 'lucide-react'
 import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
 import { FlashcardSession } from '../components/flashcard/FlashcardSession'
@@ -607,10 +608,19 @@ export default function Formulas() {
           {/* Header centered above decks */}
           <div className="flex flex-col items-center w-full pt-6 pb-0 px-6">
             <div className="w-full max-w-5xl flex flex-col items-center justify-center gap-6 mb-2 border-b border-[var(--bg-card)] pb-4 pt-4 relative z-30">
-              <h1 className="text-2xl lg:text-3xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4 uppercase">
-                <Sigma className="text-[var(--accent-primary)]" size={28} />
-                FORMULAS
-              </h1>
+              <div className="w-full flex items-center justify-between">
+                <h1 className="text-2xl lg:text-3xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4 uppercase">
+                  <Sigma className="text-[var(--accent-primary)]" size={28} />
+                  FORMULAS
+                </h1>
+                <button
+                  onClick={() => navigate('/add-decks?type=formula')}
+                  className="flex items-center gap-2 px-4 py-2 rounded-md border border-[var(--bg-card)] bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)] font-['Rajdhani'] font-bold text-sm uppercase tracking-widest transition-all"
+                >
+                  <Plus size={15} />
+                  Add Formula Set
+                </button>
+              </div>
 
               <div className="flex items-center justify-center flex-wrap gap-2 w-full bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)] no-scrollbar px-1">
                 <div className="relative shrink-0" ref={filterPopoverRef}>

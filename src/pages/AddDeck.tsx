@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { getSubjectFilterClasses } from '../lib/subjectColors'
 import { TOS_SUBJECT_COLORS } from '../lib/tosData'
-import { useNavigate, Link } from 'react-router-dom'
+import { useNavigate, Link, useSearchParams } from 'react-router-dom'
 import { parseImportedMCQs, parseImportedFlashcards } from '../lib/parser'
 import { detectQuizletFormat, tryConvertQuizlet } from '../lib/quizletParser'
 import { renderMath } from '../lib/latex'
@@ -160,7 +160,11 @@ export default function AddDeck() {
 
 
 
-  const [deckType, setDeckType] = useState<'mcq' | 'flashcard' | 'formula'>('mcq')
+  const [searchParams] = useSearchParams()
+  const initialType = searchParams.get('type')
+  const [deckType, setDeckType] = useState<'mcq' | 'flashcard' | 'formula'>(
+    initialType === 'flashcard' ? 'flashcard' : initialType === 'formula' ? 'formula' : 'mcq'
+  )
   const [cards, setCards] = useState<EditCard[]>([])
 
   const [importModalType, setImportModalType] = useState<'none' | 'mcq' | 'flashcard'>('none')

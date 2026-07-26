@@ -97,6 +97,7 @@ interface FormulaEdit {
   imageBack?: string
   explanation?: string
   explanationImagePath?: string
+  backIsPlainText?: boolean
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -116,10 +117,11 @@ interface MathInputFieldProps {
   rows?: number
   multiline?: boolean
   defaultMathMode?: boolean
+  onMathModeChange?: (isMathMode: boolean) => void
 }
 
 const MathInputField: React.FC<MathInputFieldProps> = ({
-  value, onChange, placeholder, rows = 3, multiline = true, defaultMathMode = false
+  value, onChange, placeholder, rows = 3, multiline = true, defaultMathMode = false, onMathModeChange
 }) => {
   const [mathMode, setMathMode] = useState(defaultMathMode)
   const mathfieldRef = React.useRef<any>(null)
@@ -237,7 +239,13 @@ const MathInputField: React.FC<MathInputFieldProps> = ({
     <div className="relative flex flex-col gap-2 w-full flex-1">
       <button
         type="button"
-        onClick={() => setMathMode(m => !m)}
+        onClick={() => {
+          setMathMode(m => {
+            const next = !m
+            onMathModeChange?.(next)
+            return next
+          })
+        }}
         title={mathMode ? 'Switch to text mode' : 'Switch to equation mode'}
         className="absolute top-2 right-2 z-10 flex items-center justify-center min-w-[28px] h-[24px] px-2 rounded-full bg-[#1C1C1C] border border-[rgba(0,255,65,0.3)] text-accent hover:bg-[rgba(0,255,65,0.1)] font-bold text-xs transition-colors shadow-sm"
       >
@@ -412,7 +420,8 @@ const FormulaForm: React.FC<{ data: FormulaEdit; onChange: (d: FormulaEdit) => v
           placeholder="LaTeX equation, e.g. \\sin^{-1}u..."
           rows={5}
           multiline={true}
-          defaultMathMode={true}
+          defaultMathMode={!data.backIsPlainText}
+          onMathModeChange={(isMath) => onChange({ ...data, backIsPlainText: !isMath })}
         />
       </div>
 
@@ -1157,6 +1166,7 @@ export default function EditDeck() {
                 if (parsed.explanationImagePath) d.explanationImagePath = parsed.explanationImagePath
                 if (parsed.imagePathFront) d.imagePathFront = parsed.imagePathFront
                 if (parsed.imageBack) d.imageBack = parsed.imageBack
+                if (parsed.backIsPlainText) d.backIsPlainText = parsed.backIsPlainText
                 return { id: row.id, type: 'formula', data: d } as EditCard
               } else {
                 const d: FlashcardEdit = {

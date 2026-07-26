@@ -59,6 +59,7 @@ export interface FormulaData {
   description?: string
   explanation?: string
   explanationImagePath?: string
+  backIsPlainText?: boolean    // true when user chose text mode for the back/equation field
 }
 
 export interface ConceptData {

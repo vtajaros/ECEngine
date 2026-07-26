@@ -308,8 +308,8 @@ function FormulaItem({ index, card }: FormulaItemProps) {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {latex ? (
           <div
-            style={{ fontFamily: 'monospace', backgroundColor: 'var(--pt-formula-bg)', padding: '6px 8px', borderRadius: '4px', color: 'var(--pt-formula-text)', marginBottom: '0px', overflowX: 'auto' }}
-            dangerouslySetInnerHTML={{ __html: renderMath(`$$${latex}$$`) }}
+            style={{ fontFamily: 'monospace', backgroundColor: 'var(--pt-formula-bg)', padding: '6px 8px', borderRadius: '4px', color: 'var(--pt-formula-text)', marginBottom: '0px', overflowX: 'auto', textAlign: 'center' }}
+            dangerouslySetInnerHTML={{ __html: renderMath(card.data.backIsPlainText ? latex : `$$${latex}$$`) }}
           />
         ) : null}
         {imagePath && (

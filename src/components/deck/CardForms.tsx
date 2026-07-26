@@ -23,6 +23,7 @@ export interface FormulaEdit {
   explanationImagePath?: string
   imagePathFront?: string   // image on the formula name (front) face
   imageBack?: string        // image on the back (equation) face
+  backIsPlainText?: boolean // true when user chose text mode for the back/equation field
 }
 
 export interface MCQEdit {
@@ -131,10 +132,11 @@ interface MathInputFieldProps {
   rows?: number
   multiline?: boolean
   defaultMathMode?: boolean
+  onMathModeChange?: (isMathMode: boolean) => void
 }
 
 const MathInputField: React.FC<MathInputFieldProps> = ({
-  value, onChange, placeholder, rows = 3, multiline = true, defaultMathMode = false
+  value, onChange, placeholder, rows = 3, multiline = true, defaultMathMode = false, onMathModeChange
 }) => {
   const [mathMode, setMathMode] = useState(defaultMathMode)
   const mathfieldRef = React.useRef<any>(null)
@@ -243,7 +245,13 @@ const MathInputField: React.FC<MathInputFieldProps> = ({
     <div className="relative flex flex-col gap-2 w-full flex-1">
       <button
         type="button"
-        onClick={() => setMathMode(m => !m)}
+        onClick={() => {
+          setMathMode(m => {
+            const next = !m
+            onMathModeChange?.(next)
+            return next
+          })
+        }}
         title={mathMode ? 'Switch to text mode' : 'Switch to equation mode'}
         className="absolute top-2 right-2 z-10 flex items-center justify-center min-w-[28px] h-[24px] px-2 rounded-full bg-[var(--bg-elevated)] border border-[rgba(0,255,65,0.3)] text-[var(--accent-primary)] hover:bg-[rgba(0,255,65,0.1)] font-bold text-xs transition-colors shadow-sm"
       >
@@ -609,7 +617,15 @@ export const FormulaForm: React.FC<{
             />
           </div>
         </div>
-        <MathInputField value={data.latex} onChange={val => onChange({ ...data, latex: val })} placeholder="LaTeX equation..." rows={5} multiline={true} defaultMathMode={true} />
+        <MathInputField
+          value={data.latex}
+          onChange={val => onChange({ ...data, latex: val })}
+          placeholder="LaTeX equation..."
+          rows={5}
+          multiline={true}
+          defaultMathMode={!data.backIsPlainText}
+          onMathModeChange={(isMath) => onChange({ ...data, backIsPlainText: !isMath })}
+        />
       </div>
 
       {/* EXPLANATION */}

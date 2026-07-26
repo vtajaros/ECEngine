@@ -31,7 +31,9 @@ export function getFrontText(card: Card, swapTermDef: boolean): string {
     } else {
       descVars = f.description || ''
     }
-    const backStr = [f.latex ? `$$${f.latex}$$` : '', descVars].filter(Boolean).join('\n\n')
+    const backStr = f.backIsPlainText
+      ? [f.latex || '', descVars].filter(Boolean).join('\n\n')
+      : [f.latex ? `$$${f.latex}$$` : '', descVars].filter(Boolean).join('\n\n')
     return swapTermDef ? backStr : frontStr
   }
   return swapTermDef ? (card.data as FlashcardData).back : (card.data as FlashcardData).front
@@ -59,7 +61,9 @@ function getBackContent(card: Card, swapTermDef: boolean): React.ReactNode {
     } else {
       descVars = f.description || ''
     }
-    const backStr = [f.latex ? `$$${f.latex}$$` : '', descVars].filter(Boolean).join('\n\n')
+    const backStr = f.backIsPlainText
+      ? [f.latex || '', descVars].filter(Boolean).join('\n\n')
+      : [f.latex ? `$$${f.latex}$$` : '', descVars].filter(Boolean).join('\n\n')
     const text = swapTermDef ? frontStr : backStr
     return <AutoFitText className={`leading-relaxed ${getDynamicFontSize(text)} font-['Rajdhani'] font-bold text-text-primary text-center`} html={renderMath(text)} />
   }
@@ -89,7 +93,9 @@ export function getCorrectAnswer(card: Card, swapTermDef: boolean): string {
     } else {
       descVars = f.description || ''
     }
-    const backStr = [f.latex ? `$$${f.latex}$$` : '', descVars].filter(Boolean).join('\n\n')
+    const backStr = f.backIsPlainText
+      ? [f.latex || '', descVars].filter(Boolean).join('\n\n')
+      : [f.latex ? `$$${f.latex}$$` : '', descVars].filter(Boolean).join('\n\n')
     return swapTermDef ? frontStr : backStr
   }
   const fc = card.data as FlashcardData

@@ -832,6 +832,7 @@ Provide a thorough explanation covering ALL of the following:
     <FlashcardDeckBrowser
       decks={decks}
       filteredDecks={filteredDecks}
+      onAddDeck={() => navigate('/add-decks?type=flashcard')}
       folders={folders}
       folderRows={folderRows}
       onCreateFolder={onCreateFolder}
