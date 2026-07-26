@@ -41,8 +41,8 @@ React Components -> Zustand / React State -> src/services/db.service.ts -> windo
 - Subject filter buttons across the app (Deck editor, Viewers) were unified to use the Review Checklist style with `getSubjectFilterClasses()`.
 - Added `isLoading` state handling across viewers to prevent empty state flashes while querying the database.
 - Print to PDF handlers in `electron/ipc/print.ipc.ts` were updated to conform to Electron 31 typings (`margins` object instead of `marginType`).
-- **TTS Cleanup**: Removed all dead Kokoro/Groq TTS engine code from `Settings.tsx` (dead state, IPC calls, voice arrays, button groups). `useTTS.ts` now exclusively uses the Web Speech API (Chromium's built-in `speechSynthesis`). No TTS IPC bridge exists in preload.
-- **`useTTS.ts` additions**: `speakWithCallback(text, onEnd)` was added alongside `speak()` and `stop()`. It is identical to `speak()` but attaches `onend`/`onerror` handlers to the utterance so callers can be notified when speech finishes. If TTS is disabled or text is empty, `onEnd()` is called immediately.
+- **Cross-Platform TTS Architecture**: Web Speech API is used natively on Windows/macOS. For Linux, a custom Piper neural TTS backend was integrated via `electron/ipc/tts.ipc.ts` and the `window.electron.tts` IPC bridge.
+- **`useTTS.ts` additions**: Exposes `speakWithCallback(text, onEnd)` to abstract away platform differences. It coordinates with either the native Web Speech API or the Piper IPC backend, ensuring `onEnd` fires reliably for the Autoplay feature.
 - **Autoplay feature** added to `FlashcardViewer.tsx` only:
   - `isAutoplay` boolean state + `autoplayRef` (timer, activeIndex, phase, isNewCard) + `autoplaySpeechDoneRef` manage the sequence without race conditions.
   - Single sequencer `useEffect` (deps: `[isAutoplay, isFlipped, currentIndex, activeDeck]`): waits for TTS to finish via `speakWithCallback`, then applies a post-speech delay (front: 1 s, back: 1 s, new-card gap: 2 s) before flipping or advancing.
@@ -72,10 +72,13 @@ React Components -> Zustand / React State -> src/services/db.service.ts -> windo
   - New tokens added to `tailwind.config.ts`: `surface`, `surface-2`, `border-base`, `border-subtle`, `text-primary`, `text-muted`, `accent`, `warn`, `danger`
   - Residuals intentionally left: `#333`, `#111`, `#555`, `#FF003C` and other component-specific one-off values.
   - Validation: `tsc --noEmit` zero errors.
+- **Grid Stability**: Rewrote `DeckGrid.tsx` to use `@tailwindcss/container-queries` (`@container` and `@[1080px]:grid-cols-2`) for responsive 2-column caps without fragile viewport-based JS or CSS `calc()` boundary math.
+- **LooksFam Restructure**: Updated `LooksFamStudy.tsx` bottom row to use a flexible, unified layout for mastery bars (`flex-1`) and action buttons (`shrink-0`), matching `DeckCard.tsx`.
+- **Print Window Fixes**: Isolated `printWindow` zoom from `mainWindow` by forcing `setZoomFactor(1)` on load, and fixed a Linux KDE/KWin stacking bug by toggling `alwaysOnTop: false` before opening the Save to PDF dialog.
+- **Global Zoom Controls**: Added `Ctrl+Mousewheel` discrete zoom stepping via a throttled listener in `AppShell.tsx`, delegating to a centralized `applyZoomIndex()` in `main.ts`. Capped max zoom at 130%.
 
 ## 7. Strict Rules
 - **DO NOT** introduce arbitrary inline styles unless absolutely necessary for dynamic layout (e.g., progress bars). Use Tailwind classes.
 - **DO NOT** change `onClick` logic or data structure shapes when performing visual redesigns.
 - **ALWAYS** check `src/types/index.ts` before modifying data objects to avoid TypeScript errors.
-- **DO NOT** expose TTS through the Electron IPC bridge / preload. TTS runs entirely in the renderer via `window.speechSynthesis`.
 - **DO NOT** add a second sequencer `useEffect` for autoplay — the single effect pattern with `autoplaySpeechDoneRef` is intentional to prevent stale closure race conditions.
