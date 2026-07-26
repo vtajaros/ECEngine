@@ -21,6 +21,15 @@ registerImageProtocolScheme()
 app.commandLine.appendSwitch('disable-features', 'OverlayScrollbar')
 
 function createWindow() {
+  if (!app.isPackaged && process.platform === 'win32') {
+    // Prevent cache lock ("Access is denied", 0x5) on Windows during dev hot-reloads.
+    // Windows-only: this works around zombie Electron processes from electron-vite
+    // hot-reload holding file locks on the Chromium disk/GPU cache. Not needed on
+    // Linux/macOS dev machines — do not remove the platform check.
+    app.commandLine.appendSwitch('disable-disk-cache')
+    app.commandLine.appendSwitch('disable-gpu-shader-disk-cache')
+  }
+
   const iconExt = process.platform === 'win32' ? 'ico' : 'png'
   const iconPath = join(__dirname, `../../resources/ecengine_icon.${iconExt}`)
   const appIcon = nativeImage.createFromPath(iconPath)

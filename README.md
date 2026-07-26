@@ -222,6 +222,24 @@ ecengine/
    npm run seed
    ```
 
+### Windows Setup Notes
+
+1. Install Node.js 20 LTS or 22 LTS from nodejs.org.
+2. **Open a new terminal** after installation — PATH updates don't apply to already-open terminal sessions.
+3. If PowerShell blocks `npm` with a script-execution error, run once:
+   ```powershell
+   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+   ```
+4. Install and seed (two different `better-sqlite3` ABI targets are involved — seeding uses the system Node.js ABI, `npm run dev` uses Electron's bundled Node.js ABI):
+   ```bash
+   npm install
+   npm rebuild better-sqlite3
+   npm run seed
+   npx electron-rebuild -f
+   npm run dev
+   ```
+   The `postinstall` script now runs `electron-rebuild` automatically after `npm install`, but it must be re-run via `npm rebuild better-sqlite3` (no `-f`/Electron flag) before `npm run seed`, then `npx electron-rebuild -f` again before `npm run dev` — seeding and dev-mode target different Node ABIs and the module must match whichever process is about to load it.
+
 ### Linux TTS Setup
 
 This app does not bundle Piper or any voice models. On Linux, TTS requires manual setup:

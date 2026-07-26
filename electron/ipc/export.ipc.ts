@@ -13,7 +13,10 @@ const TopicSchema = z.object({
   created_at: z.number().optional(),
   description: z.string().optional(),
   folder_name: z.string().optional(),
-  tags: z.string().optional(),
+  tags: z.string().optional().nullable(),
+  folder_id: z.string().optional().nullable(),
+  parent_id: z.string().optional().nullable(),
+  order_index: z.number().optional().nullable(),
 })
 
 const CardSchema = z.object({
@@ -21,10 +24,15 @@ const CardSchema = z.object({
   topic_id: z.string(),
   type: z.enum(['flashcard', 'mcq', 'formula', 'concept']),
   data: z.string(),
-  difficulty: z.enum(['easy', 'medium', 'hard']).optional(),
-  tags: z.string().optional(),
-  is_custom: z.boolean().optional(),
+  // difficulty accepts z.string() in addition to the enum to tolerate backups
+  // from schema versions with different/future difficulty values. This means
+  // invalid difficulty strings will pass validation here — any downstream
+  // code reading `difficulty` must not assume it's one of the three enum values.
+  difficulty: z.union([z.enum(['easy', 'medium', 'hard']), z.string()]).optional().nullable(),
+  tags: z.string().optional().nullable(),
+  is_custom: z.union([z.boolean(), z.number()]).optional().nullable(),
   created_at: z.number().optional(),
+  order_index: z.number().optional().nullable(),
 })
 
 const ProgressSchema = z.object({
@@ -32,10 +40,11 @@ const ProgressSchema = z.object({
   ease_factor: z.number().optional(),
   interval: z.number().optional(),
   repetitions: z.number().optional(),
-  next_review: z.string(),
-  last_reviewed: z.string(),
+  next_review: z.string().optional().nullable(),
+  last_reviewed: z.string().optional().nullable(),
   correct_count: z.number().optional(),
   total_count: z.number().optional(),
+  last_result: z.string().optional().nullable(),
 })
 
 const ImportPayloadSchema = z.object({
@@ -187,9 +196,13 @@ export function registerExportHandlers(): void {
       db.transaction(() => {
         for (const t of topics) {
           const importFolderId = resolveOrCreateFolderIdLocal(db, t.folder_name ?? 'Uncategorized')
+          const folderExists = t.folder_id
+            ? db.prepare('SELECT id FROM folders WHERE id = ? LIMIT 1').get(t.folder_id)
+            : null
+          const targetFolderId = folderExists ? t.folder_id : importFolderId
           db.prepare(
-            `INSERT OR REPLACE INTO topics (id, name, subject, created_at, description, folder_name, folder_id, tags)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+            `INSERT OR REPLACE INTO topics (id, name, subject, created_at, description, folder_name, folder_id, tags, order_index)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
           ).run(
             t.id,
             t.name,
@@ -197,23 +210,24 @@ export function registerExportHandlers(): void {
             t.created_at ?? Date.now() / 1000,
             t.description ?? '',
             t.folder_name ?? 'Uncategorized',
-            importFolderId,
-            t.tags ?? '[]'
+            targetFolderId,
+            t.tags ?? '[]',
+            t.order_index ?? null
           )
         }
         for (const c of cards) {
           execute(
-            `INSERT OR REPLACE INTO cards (id, topic_id, type, data, difficulty, tags, is_custom, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [c.id, c.topic_id, c.type, c.data, c.difficulty ?? 'medium', c.tags ?? '[]', c.is_custom ? 1 : 0, c.created_at ?? Date.now()/1000]
+            `INSERT OR REPLACE INTO cards (id, topic_id, type, data, difficulty, tags, is_custom, created_at, order_index)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [c.id, c.topic_id, c.type, c.data, c.difficulty ?? 'medium', c.tags ?? '[]', c.is_custom ? 1 : 0, c.created_at ?? Date.now()/1000, c.order_index ?? null]
           )
         }
         if (progress) {
           for (const p of progress) {
             execute(
-              `INSERT OR REPLACE INTO progress (card_id, ease_factor, interval, repetitions, next_review, last_reviewed, correct_count, total_count)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-              [p.card_id, p.ease_factor ?? 2.5, p.interval ?? 1, p.repetitions ?? 0, p.next_review, p.last_reviewed, p.correct_count ?? 0, p.total_count ?? 0]
+              `INSERT OR REPLACE INTO progress (card_id, ease_factor, interval, repetitions, next_review, last_reviewed, correct_count, total_count, last_result)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              [p.card_id, p.ease_factor ?? 2.5, p.interval ?? 1, p.repetitions ?? 0, p.next_review, p.last_reviewed, p.correct_count ?? 0, p.total_count ?? 0, p.last_result ?? null]
             )
           }
         }

@@ -6,13 +6,14 @@
   "description": "ECE Board Exam Review App — Philippines",
   "main": "./out/main/index.js",
   "scripts": {
-    "dev": "bash -c 'electron-vite dev 2> >(grep -v \"Fontconfig warning:\" >&2)'",
+    "dev": "electron-vite dev",
     "build": "electron-vite build",
-    "preview": "bash -c 'electron-vite preview 2> >(grep -v \"Fontconfig warning:\" >&2)'",
+    "preview": "electron-vite preview",
     "package": "electron-builder",
     "seed": "ts-node scripts/seed-db.ts",
     "validate-content": "ts-node scripts/validate-content.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "postinstall": "electron-rebuild -f"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
