@@ -4,6 +4,7 @@ import { useSortable } from '@dnd-kit/sortable'
 import { GripVertical, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MCQEdit, FormulaEdit, FlashcardEdit, MCQForm, FlashcardForm, FormulaForm } from './CardForms'
+import { renderMath } from '../../lib/latex'
 
 export interface EditCard {
   id: string
@@ -44,7 +45,7 @@ export const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttr
         <span
           {...dragHandleProps}
           onClick={e => e.stopPropagation()}
-          className="text-[#444] hover:text-text-muted cursor-grab active:cursor-grabbing flex-shrink-0 touch-none"
+          className="text-[#444] hover:text-text-muted cursor-grab active:cursor-grabbing flex-shrink-0 touch-none p-1 -m-1"
           title="Drag to reorder"
         >
           <GripVertical className="w-4 h-4" />
@@ -52,7 +53,13 @@ export const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttr
         <span className="text-[#555] font-['IBM_Plex_Mono'] text-xs w-6 flex-shrink-0">
           {String(index + 1).padStart(2, '0')}
         </span>
-        <span className="flex-1 text-[#ccc] font-['IBM_Plex_Mono'] text-sm truncate">{truncated}</span>
+        <span className="flex-1 text-[#ccc] font-['IBM_Plex_Mono'] text-sm truncate">
+          {card.type === 'formula' || truncated.includes('$') || truncated.includes('\\') ? (
+            <span dangerouslySetInnerHTML={{ __html: renderMath(truncated) }} />
+          ) : (
+            truncated
+          )}
+        </span>
         <span className={`text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded border uppercase flex-shrink-0 ${card.type === 'mcq'
           ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
           : card.type === 'formula'

@@ -13,12 +13,27 @@ import { TOS_SUBJECT_COLORS } from '../lib/tosData'
 import {
   DndContext,
   closestCenter,
+  pointerWithin,
+  rectIntersection,
+  CollisionDetection,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
   DragEndEvent,
 } from '@dnd-kit/core'
+
+const customCollisionDetection: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args)
+  if (pointerCollisions.length > 0) {
+    return pointerCollisions
+  }
+  const rectCollisions = rectIntersection(args)
+  if (rectCollisions.length > 0) {
+    return rectCollisions
+  }
+  return closestCenter(args)
+}
 import {
   arrayMove,
   SortableContext,
@@ -1596,11 +1611,11 @@ export default function EditDeck() {
 
               <DndContext
                 sensors={sensors}
-                collisionDetection={closestCenter}
+                collisionDetection={customCollisionDetection}
                 onDragEnd={handleDragEnd}
               >
                 <SortableContext items={cards.map(c => c.id)} strategy={verticalListSortingStrategy}>
-                  <AnimatePresence mode="sync">
+                  <AnimatePresence>
                     {cards.map((card, i) => (
                       <SortableQuestionRow
                         key={card.id}
