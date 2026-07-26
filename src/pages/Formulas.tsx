@@ -32,7 +32,7 @@ import type { FormulaData } from '../types'
 import { renderMath } from '../lib/latex'
 import { shuffleArray } from '../lib/utils'
 import { dbService } from '../services/db.service'
-import { getCorrectAnswer } from '../components/flashcard/StudyCard'
+import { getFrontText, getCorrectAnswer } from '../components/flashcard/StudyCard'
 
 
 
@@ -125,7 +125,17 @@ export default function Formulas() {
     swapTermDef: false,
     writtenMode: false,
   })
+  const [isAutoplay, setIsAutoplay] = useState(false)
+  const [wasAutoplayed, setWasAutoplayed] = useState(false)
   const [bookmarks, setBookmarks] = useState<Set<string>>(loadFCBookmarks)
+
+  const autoplayRef = useRef<{
+    timer: ReturnType<typeof setTimeout> | null
+    activeIndex: number
+    phase: 'front' | 'back'
+    isNewCard: boolean
+  }>({ timer: null, activeIndex: -1, phase: 'front', isNewCard: false })
+  const autoplaySpeechDoneRef = useRef<(() => void) | null>(null)
 
   // ── Written mode state ──
   const [writtenAnswer, setWrittenAnswer] = useState('')
@@ -385,8 +395,55 @@ export default function Formulas() {
     }))
   }
 
+  // ── Helpers ──
+  const currentCard = sessionCards[currentIndex] || null
+
+  // ── Autoplay Sequencer (Timer-based for Formulas, no TTS) ──
+  useEffect(() => {
+    if (autoplayRef.current.timer) clearTimeout(autoplayRef.current.timer)
+
+    if (!isAutoplay || !activeDeck || !currentCard || settings.writtenMode) return
+
+    const index = currentIndex
+    autoplayRef.current.activeIndex = index
+
+    if (!isFlipped) {
+      autoplayRef.current.phase = 'front'
+      autoplayRef.current.timer = setTimeout(() => {
+        if (autoplayRef.current.activeIndex !== index) return
+        setIsFlipped(true)
+      }, 2000)
+    } else {
+      autoplayRef.current.phase = 'back'
+      autoplayRef.current.timer = setTimeout(() => {
+        if (autoplayRef.current.activeIndex !== index) return
+        if (index < sessionCards.length - 1) {
+          autoplayRef.current.isNewCard = true
+          autoplayRef.current.activeIndex = index + 1
+          setCurrentIndex(index + 1)
+          setIsFlipped(false)
+          setWrittenAnswer('')
+          setWrittenSubmitted(false)
+          setWrittenCorrect(null)
+        } else {
+          setIsAutoplay(false)
+          setWasAutoplayed(true)
+        }
+      }, 2500)
+    }
+  }, [isAutoplay, isFlipped, currentIndex, activeDeck, settings.writtenMode])
+
+  useEffect(() => {
+    return () => {
+      if (autoplayRef.current.timer) clearTimeout(autoplayRef.current.timer)
+    }
+  }, [])
+
   // ── Exit session ──
   const exitSession = () => {
+    if (autoplayRef.current.timer) clearTimeout(autoplayRef.current.timer)
+    setIsAutoplay(false)
+    setWasAutoplayed(false)
     if (blocker.state === 'blocked') blocker.reset()
     setActiveDeck(null)
     setSessionCards([])
@@ -398,9 +455,6 @@ export default function Formulas() {
     // Re-fetch mastery so the deck list shows updated SM-2 progress after study.
     loadDecks()
   }
-
-  // ── Helpers ──
-  const currentCard = sessionCards[currentIndex] || null
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -503,7 +557,8 @@ export default function Formulas() {
         currentIndex={currentIndex}
         sessionCards={sessionCards}
         isFlipped={isFlipped}
-        isAutoplay={false}
+        isAutoplay={isAutoplay}
+        wasAutoplayed={wasAutoplayed}
         isBookmarked={currentCard ? bookmarks.has(`fc_bookmark_${currentCard.id}`) : false}
         isSubmitting={isSubmitting}
         fcTtsEnabled={false}
@@ -519,17 +574,22 @@ export default function Formulas() {
         progress={sessionCards.length > 0 ? ((currentIndex + 1) / sessionCards.length) * 100 : 0}
         mode={sessionMode}
         enableTTS={false}
-        enableAutoplay={false}
+        enableAutoplay={sessionMode === 'study'}
         onExit={handleExit}
         onBlockerProceed={() => { blocker.proceed && blocker.proceed() }}
         onBlockerReset={() => blocker.reset && blocker.reset()}
         onSetExitConfirm={setShowExitConfirm}
-        onFlip={() => { if (!settings.writtenMode) setIsFlipped(f => !f) }}
-        onToggleAutoplay={() => {}}
+        onFlip={() => { if (!settings.writtenMode) { if (isAutoplay) setIsAutoplay(false); setIsFlipped(f => !f) } }}
+        onToggleAutoplay={() => setIsAutoplay(prev => {
+          const next = !prev
+          if (next) setWasAutoplayed(true)
+          return next
+        })}
         onToggleTTS={() => {}}
         onToggleSettings={() => setShowSettings(!showSettings)}
         onSettingChange={(key) => setSettings(s => ({ ...s, [key]: !s[key] }))}
         onSwapTermDef={() => {
+          if (autoplayRef.current.timer) clearTimeout(autoplayRef.current.timer)
           setSettings(s => ({ ...s, swapTermDef: !s.swapTermDef }))
           setIsFlipped(false)
         }}
@@ -544,8 +604,8 @@ export default function Formulas() {
         onGoNext={goNext}
         onGoPrev={goPrev}
         stop={() => {}}
-        autoplayRef={{ current: { timer: null, activeIndex: -1, phase: 'front', isNewCard: false } }}
-        autoplaySpeechDoneRef={{ current: null }}
+        autoplayRef={autoplayRef}
+        autoplaySpeechDoneRef={autoplaySpeechDoneRef}
       />
     )
   }

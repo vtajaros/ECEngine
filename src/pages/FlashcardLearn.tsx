@@ -111,6 +111,7 @@ export default function FlashcardLearn() {
   const [showSettings, setShowSettings] = useState(false)
   const [settings, setSettings] = useState<FCSettings>({ shuffle: false, bookmarkedOnly: false, swapTermDef: false, writtenMode: false })
   const [isAutoplay, setIsAutoplay] = useState(false)
+  const [wasAutoplayed, setWasAutoplayed] = useState(false)
   const [sessionMode, setSessionMode] = useState<'study' | 'preview'>('study')
 
   const autoplayRef = useRef<{
@@ -504,8 +505,10 @@ Provide a thorough explanation covering ALL of the following:
 
     // Defer autoplay by one tick so swapTermDef/ttsEnabled are committed first
     if (flashModalSettings.autoplay) {
+      setWasAutoplayed(true)
       setTimeout(() => setIsAutoplay(true), 0)
     } else {
+      setWasAutoplayed(false)
       setIsAutoplay(false)
     }
 
@@ -607,6 +610,7 @@ Provide a thorough explanation covering ALL of the following:
             setWrittenCorrect(null)
           } else {
             setIsAutoplay(false)
+            setWasAutoplayed(true)
           }
         }, delay)
       }
@@ -725,6 +729,7 @@ Provide a thorough explanation covering ALL of the following:
         sessionCards={sessionCards}
         isFlipped={isFlipped}
         isAutoplay={isAutoplay}
+        wasAutoplayed={wasAutoplayed}
         isBookmarked={isBookmarked}
         isSubmitting={isSubmitting}
         fcTtsEnabled={fcTtsEnabled}
@@ -748,7 +753,11 @@ Provide a thorough explanation covering ALL of the following:
         onBlockerReset={() => blocker.reset && blocker.reset()}
         onSetExitConfirm={setShowExitConfirm}
         onFlip={() => { if (!settings.writtenMode) { if (isAutoplay) setIsAutoplay(false); setIsFlipped(f => !f) } }}
-        onToggleAutoplay={() => setIsAutoplay(prev => !prev)}
+        onToggleAutoplay={() => setIsAutoplay(prev => {
+          const next = !prev
+          if (next) setWasAutoplayed(true)
+          return next
+        })}
         onToggleTTS={() => {
           const next = !fcTtsEnabled
           setFcTtsEnabled(next)

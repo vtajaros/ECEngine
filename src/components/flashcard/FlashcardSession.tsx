@@ -41,6 +41,7 @@ export interface FlashcardSessionProps {
   mode?: 'study' | 'preview'
   enableTTS?: boolean
   enableAutoplay?: boolean
+  wasAutoplayed?: boolean
   onExit: () => void
   onBlockerProceed: () => void
   onBlockerReset: () => void
@@ -119,6 +120,7 @@ export function FlashcardSession({
   mode = 'study',
   enableTTS = true,
   enableAutoplay = true,
+  wasAutoplayed = false,
 }: FlashcardSessionProps) {
   const [selectedRating, setSelectedRating] = useState<number | null>(null)
   const [showRatingFeedback, setShowRatingFeedback] = useState(false)
@@ -385,8 +387,8 @@ export function FlashcardSession({
             />
           </AnimatePresence>
 
-          {/* Rating row — only in study mode, opacity toggle, no layout shift */}
-          {mode === 'study' && (
+          {/* Rating row — only in study mode when NOT autoplayed, opacity toggle, no layout shift */}
+          {mode === 'study' && !wasAutoplayed && (
           <div className={`h-[84px] flex items-center justify-center w-full transition-opacity duration-100 ${explanationVisible ? 'opacity-0' : 'opacity-100'}`} {...(explanationOpen ? { inert: '' } : {})}>
             <div className={`flex gap-3 transition-opacity duration-150 ${(isFlipped || (settings.writtenMode && writtenSubmitted)) && !isAutoplay && !explanationOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
               {[
@@ -433,7 +435,7 @@ export function FlashcardSession({
           </div>
           )}
 
-          {mode === 'study' && showRatingFeedback && selectedRating !== null && !explanationOpen && (
+          {mode === 'study' && (wasAutoplayed || (showRatingFeedback && selectedRating !== null)) && !explanationOpen && (isFlipped || (settings.writtenMode && writtenSubmitted)) && !isAutoplay && (
             <div className="flex justify-center">
               {currentIndex < sessionCards.length - 1 ? (
                 <button
