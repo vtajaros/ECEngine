@@ -27,7 +27,8 @@ ECEngine is an offline-first desktop application engineered for examinees prepar
 * **Spaced Repetition**: Flashcard and formula sets utilize the SM-2 algorithm, providing Again / Hard / Good / Easy rating buttons to schedule reviews.
 * **Preview Mode**: Browse formula sets without writing SM-2 progress data.
 * **Written Mode**: Require typing the exact answer before flipping the flashcard.
-* **Autoplay Mode**: Hands-free flashcard review loop powered by native TTS — Web Speech API on Windows/macOS (no setup required), Piper neural TTS on Linux (requires separate installation, see Linux TTS Setup below).
+* **Autoplay Mode**: Hands-free flashcard review loop powered by native TTS — Web Speech API on Windows/macOS (no setup required), Piper neural TTS on Linux (requires separate installation, see Linux TTS Setup below). Uses a robust single-sequencer synchronized with TTS callbacks.
+* **Interactive UI**: Enjoy 3D CSS `rotateY` card flips and smooth Framer Motion horizontal slide transitions.
 * **Additional Controls**: Swap Term/Definition toggle, shuffle toggle, and bookmarking for filtered reviews.
 * **Keyboard Shortcuts**: Use `Space`, `ArrowUp`, or `ArrowDown` to flip cards; `1-4` to select an SM-2 rating; and left/right arrow keys to navigate.
 
@@ -80,14 +81,19 @@ ECEngine is an offline-first desktop application engineered for examinees prepar
 * **Context Extraction**: A "Get Context" button instantly copies a structured prompt to the clipboard for use in external AI tools like ChatGPT or Claude.
 
 ### Print & Export
-* **Print Views**: Generate layouts optimized for Glossary, Table, or Q&A formats.
+* **Print Views**: Generate layouts optimized for Glossary, Table, or Q&A formats. Features an isolated zoom state independent from the main window.
 * **Theming**: Select between Light, Sepia, and Dark print themes.
-* **Direct Export**: Native capability to export directly to PDF or export deck contents to a raw text file.
+* **Direct Export**: Native capability to export directly to PDF (with reliable native Save dialog rendering) or export deck contents to a raw text file.
 
 ### Settings & Customization
 * **Custom Images Storage Path**: Configure a custom directory for image files (such as card diagrams and explanation images). Fully supports native folder browsing as well as direct text path copy-pasting. (Available under Settings → Data & Sync → Unlock Advanced).
-* **App Zoom Controls**: Global application scaling (80% to 150%) using `Ctrl+=` (zoom in), `Ctrl+-` (zoom out), and `Ctrl+0` (reset to 100%). Zoom level is automatically persisted across sessions and features a transient on-screen toast indicator.
+* **App Zoom Controls**: Global application scaling (80% to 130%) using `Ctrl+=` (zoom in), `Ctrl+-` (zoom out), `Ctrl+0` (reset to 100%), and **`Ctrl+Mousewheel`** for continuous discrete zoom stepping. Zoom level is automatically persisted across sessions and features a transient on-screen toast indicator.
 * **Linux Platform Compatibility**: Features case-insensitive file resolution for image protocol handlers (`ece-app://`), correcting Chromium's automatic hostname lowercasing on case-sensitive Linux filesystems. Also features a dedicated native TTS backend (Piper) bypassing Chromium's lack of Web Speech API support on Linux (see Linux TTS Setup).
+
+### Performance & UI Architecture
+* **Responsive Fluid Grids**: Deck browsers utilize native CSS grid `auto-fit` alongside Tailwind `@container` queries to guarantee a robust, zoom-proof responsive layout strictly capped at two columns.
+* **Non-Blocking IPC**: Uses asynchronous `fs/promises` for file I/O operations and implements 15-second `AbortController` timeouts on Groq AI IPC handlers to prevent main thread and UI freezing.
+* **Strict Theming**: A thoroughly unified CSS variable design system (`surface`, `border-base`, `text-primary`, `accent`) enforced across all components, avoiding arbitrary inline styling.
 
 ---
 

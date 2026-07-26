@@ -25,6 +25,7 @@ import { FlashcardSession } from '../components/flashcard/FlashcardSession'
 import type { Card, CardData, CardType } from '../types'
 import { useIdleAwareTimer } from '../hooks/useIdleAwareTimer'
 import { DeckCard } from '../components/deck/DeckCard'
+import { DeckGrid } from '../components/deck/DeckGrid'
 import { SUBJECT_MAP } from '../lib/subjectColors'
 import { TOS_SUBJECT_COLORS } from '../lib/tosData'
 import { Card as CardLegacy, MCQData, FlashcardData } from '../types'
@@ -908,7 +909,7 @@ export default function Formulas() {
           <div className="flex-1 px-6 pb-6">
             <div className="flex flex-col items-center">
               <div className="w-full max-w-5xl">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-0 pb-4">
+                <DeckGrid>
                   {filteredDecks.map((deck) => (
                     <DeckCard
                       key={deck.id}
@@ -923,7 +924,7 @@ export default function Formulas() {
                       onPrint={(id, title) => window.electron.print.open(id, title)}
                     />
                   ))}
-                </div>
+                </DeckGrid>
 
                 {isLoading ? (
                   <div className="text-center py-20 text-[#555] font-['IBM_Plex_Mono'] text-sm tracking-widest animate-pulse">

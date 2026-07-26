@@ -117,5 +117,6 @@ contextBridge.exposeInMainWorld('electron', {
       ipcRenderer.on('zoom:changed', listener)
       return () => { ipcRenderer.removeListener('zoom:changed', listener) }
     },
+    step: (direction: 1 | -1) => ipcRenderer.send('zoom:step', direction),
   },
 })

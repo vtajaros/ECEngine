@@ -71,6 +71,16 @@ function createWindow() {
   let currentZoomIndex = resolveZoomIndex()
   mainWindow.webContents.setZoomFactor(ZOOM_STEPS[currentZoomIndex])
 
+  // Shared by keyboard shortcuts and ctrl+wheel — single source of truth
+  // for stepping through ZOOM_STEPS, persisting, and broadcasting.
+  const applyZoomIndex = (nextIndex: number) => {
+    currentZoomIndex = Math.min(Math.max(nextIndex, 0), ZOOM_STEPS.length - 1)
+    const factor = ZOOM_STEPS[currentZoomIndex]
+    mainWindow!.webContents.setZoomFactor(factor)
+    persistZoomIndex(currentZoomIndex)
+    mainWindow!.webContents.send('zoom:changed', Math.round(factor * 100))
+  }
+
   // Ctrl+=, Ctrl+-, Ctrl+0 discrete zoom steps (mainWindow only)
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.type !== 'keyDown') return
@@ -78,20 +88,21 @@ function createWindow() {
     if (!ctrlOrCmd) return
 
     if (input.key === '=' || input.key === '+') {
-      currentZoomIndex = Math.min(currentZoomIndex + 1, ZOOM_STEPS.length - 1)
+      applyZoomIndex(currentZoomIndex + 1)
     } else if (input.key === '-') {
-      currentZoomIndex = Math.max(currentZoomIndex - 1, 0)
+      applyZoomIndex(currentZoomIndex - 1)
     } else if (input.key === '0') {
-      currentZoomIndex = 2 // DEFAULT_ZOOM_INDEX
+      applyZoomIndex(2) // DEFAULT_ZOOM_INDEX
     } else {
       return // not a zoom key — don't preventDefault
     }
-
     event.preventDefault()
-    const factor = ZOOM_STEPS[currentZoomIndex]
-    mainWindow!.webContents.setZoomFactor(factor)
-    persistZoomIndex(currentZoomIndex)
-    mainWindow!.webContents.send('zoom:changed', Math.round(factor * 100))
+  })
+
+  // Ctrl+wheel zoom (mainWindow only) — renderer sends direction after
+  // its own throttling; this handler just steps the shared index.
+  ipcMain.on('zoom:step', (_event, direction: 1 | -1) => {
+    applyZoomIndex(currentZoomIndex + direction)
   })
 
   // Disable unnecessary permissions for privacy/security

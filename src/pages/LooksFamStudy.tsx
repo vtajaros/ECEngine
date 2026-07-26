@@ -22,6 +22,7 @@ import { StudyHeader } from '../components/study/StudyHeader'
 import { StudySessionStats } from '../components/study/StudySessionStats'
 import { dbService } from '../services/db.service'
 import { weightedSample } from '../lib/sampling'
+import { DeckGrid } from '../components/deck/DeckGrid'
 
 
 
@@ -959,7 +960,7 @@ export default function LooksFamStudy() {
           <div className="flex-1 px-6 pb-6">
             <div className="flex flex-col items-center">
               <div className="w-full max-w-5xl">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-0 pb-4">
+                <DeckGrid>
                   {filteredAndSortedSets.map(set => (
                     <div
                       key={set.id}
@@ -1014,49 +1015,44 @@ export default function LooksFamStudy() {
                       )}
 
                       {/* Bottom Row: Progress and Actions */}
-                      <div className="flex items-center justify-between w-full mt-4">
-                        <div className="flex items-center gap-6">
-                          {/* Left Side: Progress Bar (Condensed Width) */}
-                          <div className="w-32">
-                            <div className="flex justify-between text-[10px] font-rajdhani tracking-widest mb-1 uppercase text-gray-500">
-                              <span>MASTERY</span>
-                              <span className="text-accent font-bold">{set.mastery}%</span>
-                            </div>
-                            <div className="w-full bg-[#111] h-1 rounded-full overflow-hidden">
-                              <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${set.mastery}%` }}
-                                className="h-full bg-accent shadow-[0_0_8px_rgba(0,255,65,0.4)]"
-                              />
-                            </div>
-                          </div>
+                      <div className="flex items-center gap-4 w-full mt-4">
+                        <span className="text-[10px] font-rajdhani tracking-widest uppercase text-gray-500 shrink-0">
+                          Mastery
+                        </span>
 
-                          {/* Primary Action Buttons */}
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleOpenLearn(set.id); }}
-                              className="py-2 px-3 bg-[#111] border border-[#333] hover:border-accent hover:text-accent text-text-primary rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
-                              title="Learn this deck"
-                              aria-label="Learn"
-                            >
-                              <Play className="w-3 h-3" />
-                              <span className="hidden xl:inline">Learn</span>
-                            </button>
-
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleOpenTest(set.id); }}
-                              className="py-2 px-3 bg-[#111] border border-[#333] hover:border-accent hover:text-accent text-text-primary rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
-                              title="Test this deck"
-                              aria-label="Test"
-                            >
-                              <Trophy className="w-3 h-3" />
-                              <span className="hidden xl:inline">Test</span>
-                            </button>
-                          </div>
+                        <div className="flex-1 bg-[#111] h-1 rounded-full overflow-hidden min-w-[40px]">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${set.mastery}%` }}
+                            className="h-full bg-accent shadow-[0_0_8px_rgba(0,255,65,0.4)]"
+                          />
                         </div>
 
-                        {/* Secondary Action Icons */}
-                        <div className="flex items-center gap-2">
+                        <span className="text-accent font-bold text-[10px] font-rajdhani shrink-0">
+                          {set.mastery}%
+                        </span>
+
+                        <div className="h-4 w-px bg-slate-800 shrink-0" />
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleOpenLearn(set.id); }}
+                            className="py-2 px-3 bg-[#111] border border-[#333] hover:border-accent hover:text-accent text-text-primary rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                            title="Learn this deck"
+                            aria-label="Learn"
+                          >
+                            <Play className="w-3 h-3" />
+                            <span>Learn</span>
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleOpenTest(set.id); }}
+                            className="py-2 px-3 bg-[#111] border border-[#333] hover:border-accent hover:text-accent text-text-primary rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                            title="Test this deck"
+                            aria-label="Test"
+                          >
+                            <Trophy className="w-3 h-3" />
+                            <span>Test</span>
+                          </button>
                           {set.id.startsWith('topic_') && (
                             <button
                               onClick={(e) => {
@@ -1093,7 +1089,7 @@ export default function LooksFamStudy() {
                       </div>
                     </div>
                   ))}
-                </div>
+                </DeckGrid>
 
                 {isLoading ? (
                   <div className="text-center py-20 text-[#555] font-['IBM_Plex_Mono'] text-sm tracking-widest animate-pulse">

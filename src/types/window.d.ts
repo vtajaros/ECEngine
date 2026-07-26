@@ -123,6 +123,7 @@ declare global {
       }
       zoom: {
         onChanged: (callback: (percent: number) => void) => () => void
+        step: (direction: 1 | -1) => void
       }
     }
   }

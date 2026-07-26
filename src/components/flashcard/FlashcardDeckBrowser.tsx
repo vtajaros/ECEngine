@@ -4,6 +4,7 @@ import { Layers, X, AlertTriangle, ScrollText, Play, Pencil, Trash2, Search, Sli
 import FolderPanel from '@/components/ui/FolderPanel'
 import { AdvancedFiltersPopover } from '../deck/AdvancedFiltersPopover'
 import { DeckCard } from '../deck/DeckCard'
+import { DeckGrid } from '../deck/DeckGrid'
 import { FlashCardSettingsModal, FlashCardSettings } from './FlashCardSettingsModal'
 import { getSubjectBadgeClasses, SUBJECT_MAP } from '../../lib/subjectColors'
 import { TOS_SUBJECT_COLORS } from '../../lib/tosData'
@@ -262,7 +263,7 @@ export function FlashcardDeckBrowser({
           <div className="flex-1 px-6 pb-6">
             <div className="flex flex-col items-center">
               <div className="w-full max-w-5xl">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-0 pb-4">
+                <DeckGrid>
                   {filteredDecks.map(deck => (
                     <DeckCard
                       key={deck.id}
@@ -274,7 +275,7 @@ export function FlashcardDeckBrowser({
                       onPrint={onPrintDeck}
                     />
                   ))}
-                </div>
+                </DeckGrid>
 
                 {isLoading ? (
                   <div className="text-center py-20 text-[#555] font-['IBM_Plex_Mono'] text-sm tracking-widest animate-pulse">

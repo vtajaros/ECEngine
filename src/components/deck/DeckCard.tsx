@@ -114,7 +114,7 @@ export const DeckCard = React.memo(function DeckCard({ deck, onLearn, onPreview,
             aria-label="Learn"
           >
             <Play className="w-3 h-3" />
-            <span className="hidden xl:inline">Learn</span>
+            <span>Learn</span>
           </button>
 
           <button

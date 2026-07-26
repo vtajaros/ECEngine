@@ -13,7 +13,7 @@ export interface AppConfig {
   zoomIndex?: number   // index into ZOOM_STEPS, persisted
 }
 
-export const ZOOM_STEPS = [0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5] as const
+export const ZOOM_STEPS = [0.8, 0.9, 1.0, 1.1, 1.2, 1.3] as const
 export const DEFAULT_ZOOM_INDEX = 2 // 1.0 / 100%
 
 export function resolveZoomIndex(): number {

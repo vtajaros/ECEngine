@@ -46,6 +46,25 @@ export const AppShell: React.FC = () => {
     }
   }, [])
 
+  useEffect(() => {
+    let lastStepTime = 0
+    const THROTTLE_MS = 150
+
+    const handleWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey) return
+      e.preventDefault()
+
+      const now = Date.now()
+      if (now - lastStepTime < THROTTLE_MS) return
+      lastStepTime = now
+
+      window.electron.zoom.step(e.deltaY < 0 ? 1 : -1)
+    }
+
+    window.addEventListener('wheel', handleWheel, { passive: false })
+    return () => window.removeEventListener('wheel', handleWheel)
+  }, [])
+
   const navItems: NavItem[] = [
     { to: '/', label: 'Dashboard', icon: Home },
     { to: '/study', label: 'LooksFam', icon: Brain },

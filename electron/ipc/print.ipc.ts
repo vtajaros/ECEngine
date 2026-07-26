@@ -54,6 +54,7 @@ export function registerPrintHandlers(getMainWindow: () => Electron.BrowserWindo
       // Hooking did-finish-load guarantees our title wins every time.
       printWindow.webContents.on('did-finish-load', () => {
         printWindow?.setTitle(`Test Paper View — ${title}`)
+        printWindow?.webContents.setZoomFactor(1)
         printWindow?.show()
       })
 
@@ -77,11 +78,20 @@ export function registerPrintHandlers(getMainWindow: () => Electron.BrowserWindo
   ipcMain.handle('print:toPDF', async (_event, suggestedName: string, themeVars: Record<string, string>, topicId: string, title: string, theme: string, layout: string) => {
     let pdfWindow: BrowserWindow | null = null
     try {
-      const { canceled, filePath } = await dialog.showSaveDialog(printWindow!, {
+      if (!printWindow || printWindow.isDestroyed()) {
+        return { success: false, error: 'Print window not open' }
+      }
+
+      printWindow.setAlwaysOnTop(false)
+      const { canceled, filePath } = await dialog.showSaveDialog(printWindow, {
         title: 'Save Test Paper as PDF',
         defaultPath: join(app.getPath('documents'), `${suggestedName}.pdf`),
         filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
       })
+      if (printWindow && !printWindow.isDestroyed()) {
+        printWindow.setAlwaysOnTop(true)
+      }
+
       if (canceled || !filePath) return { success: false, canceled: true }
 
       const encodedTitle = encodeURIComponent(title)
