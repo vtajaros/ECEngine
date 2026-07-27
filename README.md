@@ -92,7 +92,9 @@ ECEngine is an offline-first desktop application engineered for examinees prepar
 
 ### Performance & UI Architecture
 * **Responsive Fluid Grids**: Deck browsers utilize native CSS grid `auto-fit` alongside Tailwind `@container` queries to guarantee a robust, zoom-proof responsive layout strictly capped at two columns.
-* **Non-Blocking IPC**: Uses asynchronous `fs/promises` for file I/O operations and implements 15-second `AbortController` timeouts on Groq AI IPC handlers to prevent main thread and UI freezing.
+* **Zoom-Proof Dashboard**: The primary Dashboard leverages dynamic overflow handling to permit both vertical scaling and horizontal heatmap scrolling when the main window's zoom factor is increased.
+* **Non-Blocking & Queued IPC**: Uses asynchronous `fs/promises` for file I/O operations with an in-memory Promise queue for configuration writes to prevent race conditions. Implements 15-second `AbortController` timeouts on Groq AI IPC handlers to prevent main thread and UI freezing.
+* **Clean DB Teardown**: Intercepts the Electron `will-quit` event to explicitly close the local `better-sqlite3` connection, ensuring no orphaned WAL (`.sqlite-wal`) files are left on disk.
 * **Strict Theming**: A thoroughly unified CSS variable design system (`surface`, `border-base`, `text-primary`, `accent`) enforced across all components, avoiding arbitrary inline styling.
 
 ---

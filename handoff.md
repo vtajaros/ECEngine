@@ -76,6 +76,9 @@ React Components -> Zustand / React State -> src/services/db.service.ts -> windo
 - **LooksFam Restructure**: Updated `LooksFamStudy.tsx` bottom row to use a flexible, unified layout for mastery bars (`flex-1`) and action buttons (`shrink-0`), matching `DeckCard.tsx`.
 - **Print Window Fixes**: Isolated `printWindow` zoom from `mainWindow` by forcing `setZoomFactor(1)` on load, and fixed a Linux KDE/KWin stacking bug by toggling `alwaysOnTop: false` before opening the Save to PDF dialog.
 - **Global Zoom Controls**: Added `Ctrl+Mousewheel` discrete zoom stepping via a throttled listener in `AppShell.tsx`, delegating to a centralized `applyZoomIndex()` in `main.ts`. Capped max zoom at 130%.
+- **Config & DB Stability**: Fixed a race condition in `config.ipc.ts` by consolidating configuration writes into a single asynchronous Promise queue. Added `closeDB()` in `database.ts` to cleanly close the `better-sqlite3` instance and avoid orphaned WAL files on quit.
+- **Dashboard Zoom Layout**: Adjusted `Dashboard.tsx` root container to allow vertical and horizontal scrolling when the UI is scaled up via zoom controls, preventing content clipping and flex-squeeze.
+- **UI Terminology**: Standardized "Add [Type] Set" buttons to "Add [Type] Deck" across all major tabs.
 
 ## 7. Strict Rules
 - **DO NOT** introduce arbitrary inline styles unless absolutely necessary for dynamic layout (e.g., progress bars). Use Tailwind classes.
