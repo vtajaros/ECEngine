@@ -125,6 +125,7 @@ declare global {
         toPDF: (suggestedName: string, themeVars: Record<string, string>, topicId: string, title: string, theme: string, layout: string) => Promise<{ success: boolean; canceled?: boolean; error?: string }>
       }
       zoom: {
+        get: () => number
         onChanged: (callback: (percent: number) => void) => () => void
         step: (direction: 1 | -1) => void
       }

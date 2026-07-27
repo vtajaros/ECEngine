@@ -747,14 +747,14 @@ export default function LooksFamStudy() {
         <div ref={scrollContainerRef} className="flex flex-col flex-1 min-w-0 overflow-y-auto show-scrollbar">
           <div className="flex flex-col items-center w-full pt-6 pb-0 px-6">
             <div className="w-full max-w-5xl flex flex-col items-center justify-center gap-6 mb-2 border-b border-[var(--bg-card)] pb-4 relative z-30 pt-4">
-              <div className="w-full flex items-center justify-between">
-                <h1 className="text-2xl lg:text-3xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4 uppercase">
-                  <Brain className="text-[var(--accent-primary)]" size={28} />
+              <div className="w-full flex items-center justify-center relative min-h-[40px]">
+                <h1 className="text-3xl lg:text-4xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4 uppercase">
+                  <Brain className="text-[var(--accent-primary)]" size={32} />
                   LOOKS<span className="text-[var(--accent-primary)]">FAM</span>
                 </h1>
                 <button
                   onClick={() => navigate('/add-decks?type=mcq')}
-                  className="flex items-center gap-2 px-4 py-2 rounded-md border border-[var(--bg-card)] bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)] font-['Rajdhani'] font-bold text-sm uppercase tracking-widest transition-all"
+                  className="absolute right-0 flex items-center gap-2 px-4 py-2 rounded-md border border-[var(--bg-card)] bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)] font-['Rajdhani'] font-bold text-sm uppercase tracking-widest transition-all"
                 >
                   <Plus size={15} />
                   Add MCQ Set
@@ -974,7 +974,7 @@ export default function LooksFamStudy() {
                             <span className={`w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] uppercase font-rajdhani font-bold tracking-widest text-[10px] shrink-0 ${getSubjectBadgeClasses(set.subject)}`}>
                               {set.subject}
                             </span>
-                            <h3 className="text-lg font-bold font-rajdhani tracking-wide text-text-primary uppercase truncate flex-1">
+                            <h3 className="text-2xl font-bold font-rajdhani tracking-wide text-text-primary uppercase truncate flex-1">
                               {set.title}
                             </h3>
                           </div>

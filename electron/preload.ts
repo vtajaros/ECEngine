@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge, ipcRenderer, webFrame } from 'electron'
 
 contextBridge.exposeInMainWorld('electron', {
   platform: process.platform,
@@ -121,6 +121,7 @@ contextBridge.exposeInMainWorld('electron', {
       ipcRenderer.invoke('print:toPDF', suggestedName, themeVars, topicId, title, theme, layout),
   },
   zoom: {
+    get: () => Math.round(webFrame.getZoomFactor() * 100),
     onChanged: (callback: (percent: number) => void) => {
       const listener = (_event: unknown, percent: number) => callback(percent)
       ipcRenderer.on('zoom:changed', listener)

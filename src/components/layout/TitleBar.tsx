@@ -1,5 +1,6 @@
 import { Zap, Minus, Square, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 
 interface TitleBarProps {
   isCollapsed?: boolean;
@@ -10,6 +11,18 @@ export const TitleBar: React.FC<TitleBarProps> = ({ isCollapsed, onToggleSidebar
   const controls = (window as any).electron?.windowControls
   const navigate = useNavigate()
   const location = useLocation()
+  
+  const [zoomLevel, setZoomLevel] = useState<number>(100)
+  
+  useEffect(() => {
+    if (window.electron?.zoom) {
+      setZoomLevel(window.electron.zoom.get())
+      const cleanup = window.electron.zoom.onChanged((pct) => {
+        setZoomLevel(pct)
+      })
+      return cleanup
+    }
+  }, [])
 
   const routeLabels: Record<string, string> = {
     '/':           'Dashboard',
@@ -25,7 +38,10 @@ export const TitleBar: React.FC<TitleBarProps> = ({ isCollapsed, onToggleSidebar
   const pageTitle = routeLabels[location.pathname] ?? 'ECEngine'
 
   return (
-    <div className="w-full h-8 bg-surface text-gray-400 flex items-center justify-between select-none [-webkit-app-region:drag] relative shrink-0 px-0">
+    <div 
+      className="w-full h-8 bg-surface text-gray-400 flex items-center justify-between select-none [-webkit-app-region:drag] relative shrink-0 px-0"
+      style={{ zoom: 100 / zoomLevel }}
+    >
       {/* Left Side: Navigation (Anchored to Sidebar Width) */}
       <div className="flex items-center gap-1 ml-2 [-webkit-app-region:no-drag]">
         <button

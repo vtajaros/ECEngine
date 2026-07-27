@@ -41,7 +41,7 @@ export const DeckCard = React.memo(function DeckCard({ deck, onLearn, onPreview,
             <span className={`w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] uppercase font-rajdhani font-bold tracking-widest text-[10px] shrink-0 ${getSubjectBadgeClasses(deck.subject)}`}>
               {deck.subject}
             </span>
-            <h3 className="text-lg font-bold font-rajdhani tracking-wide text-text-primary uppercase truncate flex-1">
+            <h3 className="text-2xl font-bold font-rajdhani tracking-wide text-text-primary uppercase truncate flex-1">
               {deck.title}
             </h3>
           </div>
