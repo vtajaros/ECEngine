@@ -28,11 +28,11 @@ export function resolveZoomIndex(): number {
 let zoomWriteTimer: NodeJS.Timeout | null = null
 export function persistZoomIndex(index: number): void {
   if (zoomWriteTimer) clearTimeout(zoomWriteTimer)
-  zoomWriteTimer = setTimeout(() => {
+  zoomWriteTimer = setTimeout(async () => {
     try {
       const config = readConfig()
       config.zoomIndex = index
-      writeConfig(config)
+      await writeConfig(config)
     } catch (err) {
       console.error('[persistZoomIndex] Error:', err)
     }
@@ -78,9 +78,13 @@ function readConfig(): AppConfig {
   }
 }
 
-function writeConfig(config: AppConfig): void {
+let writeQueue: Promise<void> = Promise.resolve()
+
+function writeConfig(config: AppConfig): Promise<void> {
   const configPath = getConfigPath()
-  fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8')
+  const currentWrite = writeQueue.then(() => fsp.writeFile(configPath, JSON.stringify(config, null, 2), 'utf8'))
+  writeQueue = currentWrite.catch(() => {})
+  return currentWrite
 }
 
 /**
@@ -111,7 +115,7 @@ export function registerConfigHandlers(): void {
       const trimmed = key.trim()
       const config = readConfig()
       config.groqApiKey = trimmed || undefined
-      await fsp.writeFile(getConfigPath(), JSON.stringify(config, null, 2), 'utf8')
+      await writeConfig(config)
       cachedGroqApiKey = trimmed || undefined
       return { success: true }
     } catch (err) {
@@ -150,7 +154,7 @@ export function registerConfigHandlers(): void {
       if (settings.examDate !== undefined) config.examDate = settings.examDate
       if (settings.preboardDate !== undefined) config.preboardDate = settings.preboardDate
       
-      await fsp.writeFile(getConfigPath(), JSON.stringify(config, null, 2), 'utf8')
+      await writeConfig(config)
       return { success: true }
     } catch (err) {
       console.error('[config:updateSettings] Error:', err)
@@ -185,7 +189,7 @@ export function registerConfigHandlers(): void {
       const selectedPath = filePaths[0]
       const config = readConfig()
       config.imagesPath = selectedPath
-      await fsp.writeFile(getConfigPath(), JSON.stringify(config, null, 2), 'utf8')
+      await writeConfig(config)
       return { success: true, imagesPath: selectedPath }
     } catch (err) {
       console.error('[config:selectImagesPath] Error:', err)
@@ -200,7 +204,7 @@ export function registerConfigHandlers(): void {
     try {
       const config = readConfig()
       config.imagesPath = imagesPath.trim() || undefined
-      await fsp.writeFile(getConfigPath(), JSON.stringify(config, null, 2), 'utf8')
+      await writeConfig(config)
       return { success: true, imagesPath: config.imagesPath }
     } catch (err) {
       console.error('[config:setImagesPath] Error:', err)
@@ -237,7 +241,7 @@ export function registerConfigHandlers(): void {
     try {
       const config = readConfig()
       config.dbPath = filePath
-      await fsp.writeFile(getConfigPath(), JSON.stringify(config, null, 2), 'utf8')
+      await writeConfig(config)
       return { success: true, dbPath: filePath }
     } catch (err) {
       console.error('[config:selectDBPath] Error:', err)
@@ -253,7 +257,7 @@ export function registerConfigHandlers(): void {
     try {
       const config = readConfig()
       config.dbPath = dbPath.trim() || undefined
-      await fsp.writeFile(getConfigPath(), JSON.stringify(config, null, 2), 'utf8')
+      await writeConfig(config)
       return { success: true, dbPath: config.dbPath }
     } catch (err) {
       console.error('[config:setDBPath] Error:', err)

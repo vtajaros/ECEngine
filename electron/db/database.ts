@@ -237,6 +237,13 @@ export function flushDB() {
   // No-op for better-sqlite3 — writes go directly to disk.
 }
 
+export function closeDB() {
+  if (db) {
+    db.close();
+    db = null;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Internal helpers
 // ---------------------------------------------------------------------------

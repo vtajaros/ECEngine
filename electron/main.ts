@@ -7,7 +7,7 @@ import { registerFileHandlers } from './ipc/file.ipc'
 import { registerConfigHandlers, resolveZoomIndex, persistZoomIndex, ZOOM_STEPS, initDBPathResolver } from './ipc/config.ipc'
 import { registerPrintHandlers } from './ipc/print.ipc'
 import { registerTTSHandlers, killAllTTSChildren } from './ipc/tts.ipc'
-import { flushDB } from './db/database'
+import { closeDB } from './db/database'
 
 // Exported so sibling IPC modules can reference the main window (e.g. as a parent).
 export let mainWindow: BrowserWindow | null = null
@@ -180,4 +180,4 @@ app.whenReady().then(() => {
 })
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit() })
 app.on('before-quit', () => { killAllTTSChildren() })
-app.on('will-quit', flushDB)
+app.on('will-quit', closeDB)
