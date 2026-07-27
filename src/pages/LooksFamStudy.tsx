@@ -757,7 +757,7 @@ export default function LooksFamStudy() {
                   className="absolute right-0 flex items-center gap-2 px-4 py-2 rounded-md border border-[var(--bg-card)] bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)] font-['Rajdhani'] font-bold text-sm uppercase tracking-widest transition-all"
                 >
                   <Plus size={15} />
-                  Add MCQ Set
+                  Add MCQ Deck
                 </button>
               </div>
 

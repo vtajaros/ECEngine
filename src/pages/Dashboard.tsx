@@ -141,7 +141,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="h-full bg-engine-black px-8 pb-4 pt-4 lg:px-12 lg:pb-6 lg:pt-4 overflow-hidden flex flex-col gap-4">
+    <div className="h-full bg-engine-black px-8 pb-4 pt-4 lg:px-12 lg:pb-6 lg:pt-4 overflow-y-auto overflow-x-hidden flex flex-col gap-4">
       {/* Header */}
       <header className="shrink-0 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
@@ -320,7 +320,7 @@ export default function Dashboard() {
               </div>
             </div>
             
-            <div className="flex-1 w-full flex justify-center py-4">
+            <div className="flex-1 w-full flex justify-start py-4 overflow-x-auto">
               <ReviewHeatmap activityHistory={history} />
             </div>
 
@@ -335,9 +335,9 @@ export default function Dashboard() {
       </div>
 
       {/* Row 2 */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* ACCURACY TREND */}
-        <div className="lg:col-span-3 bg-surface border border-border-base rounded-xl p-4 shadow-xl relative overflow-hidden flex flex-col min-h-0">
+        <div className="lg:col-span-3 bg-surface border border-border-base rounded-xl p-4 shadow-xl relative overflow-hidden flex flex-col">
 
           {/* Header */}
           <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
@@ -419,7 +419,7 @@ export default function Dashboard() {
         </div>
 
         {/* Due Cards Panel */}
-        <div className="lg:col-span-2 p-4 bg-surface rounded-xl border border-border-base flex flex-col min-h-0 overflow-hidden">
+        <div className="lg:col-span-2 p-4 bg-surface rounded-xl border border-border-base flex flex-col overflow-hidden">
           <h2 className="font-['Rajdhani'] font-bold text-sm text-text-primary mb-3 uppercase tracking-widest border-b border-[#1E1E1E] pb-3 flex items-center justify-between">
             <span className="flex items-center gap-2">
               <AlertCircle size={15} className="text-accent" />
