@@ -2,6 +2,7 @@ import { ipcMain, app, shell, dialog, BrowserWindow } from 'electron'
 import fs from 'fs'
 import fsp from 'fs/promises'
 import path from 'path'
+import { setDBPathResolver, getActiveDatabasePath } from '../db/database'
 
 let cachedGroqApiKey: string | undefined | null = null // null = not yet loaded
 
@@ -10,6 +11,7 @@ export interface AppConfig {
   examDate?: string
   preboardDate?: string | null
   imagesPath?: string
+  dbPath?: string
   zoomIndex?: number   // index into ZOOM_STEPS, persisted
 }
 
@@ -43,6 +45,22 @@ export function resolveImagesPath(): string {
     return config.imagesPath.trim()
   }
   return process.env.ECE_IMAGES_PATH || path.join(app.getPath('userData'), 'ece-images')
+}
+
+export function resolveDBPath(): string {
+  const config = readConfig()
+  if (config.dbPath && config.dbPath.trim()) {
+    return config.dbPath.trim()
+  }
+  return path.join(app.getPath('userData'), 'ecengine.sqlite')
+}
+
+/**
+ * Called once at startup from main.ts to wire the lazy resolver so
+ * database.ts can look up the user-configured DB path without a circular dep.
+ */
+export function initDBPathResolver(): void {
+  setDBPathResolver(resolveDBPath)
 }
 
 function getConfigPath(): string {
@@ -186,6 +204,59 @@ export function registerConfigHandlers(): void {
       return { success: true, imagesPath: config.imagesPath }
     } catch (err) {
       console.error('[config:setImagesPath] Error:', err)
+      return { success: false, error: (err as Error).message }
+    }
+  })
+
+  /**
+   * 'config:getDBPath' - returns the resolved database file path.
+   */
+  ipcMain.handle('config:getDBPath', async () => {
+    return { dbPath: getActiveDatabasePath() }
+  })
+
+  /**
+   * 'config:selectDBPath' - opens a file-save dialog to pick a new DB location.
+   * The new path is persisted to config.json but requires an app restart to take effect.
+   */
+  ipcMain.handle('config:selectDBPath', async () => {
+    const win = BrowserWindow.getFocusedWindow()
+    if (!win) return { success: false, error: 'No focused window' }
+
+    const { canceled, filePath } = await dialog.showSaveDialog(win, {
+      title: 'Choose Database File Location',
+      defaultPath: getActiveDatabasePath(),
+      filters: [{ name: 'SQLite Database', extensions: ['sqlite', 'db'] }],
+      properties: ['createDirectory', 'showOverwriteConfirmation'],
+    })
+
+    if (canceled || !filePath) {
+      return { success: false, canceled: true }
+    }
+
+    try {
+      const config = readConfig()
+      config.dbPath = filePath
+      await fsp.writeFile(getConfigPath(), JSON.stringify(config, null, 2), 'utf8')
+      return { success: true, dbPath: filePath }
+    } catch (err) {
+      console.error('[config:selectDBPath] Error:', err)
+      return { success: false, error: (err as Error).message }
+    }
+  })
+
+  /**
+   * 'config:setDBPath' - saves a manually entered database path.
+   * Requires an app restart to take effect.
+   */
+  ipcMain.handle('config:setDBPath', async (_event, dbPath: string) => {
+    try {
+      const config = readConfig()
+      config.dbPath = dbPath.trim() || undefined
+      await fsp.writeFile(getConfigPath(), JSON.stringify(config, null, 2), 'utf8')
+      return { success: true, dbPath: config.dbPath }
+    } catch (err) {
+      console.error('[config:setDBPath] Error:', err)
       return { success: false, error: (err as Error).message }
     }
   })

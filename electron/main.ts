@@ -4,7 +4,7 @@ import { registerDBHandlers } from './ipc/db.ipc'
 import { registerImageHandlers, registerImageProtocolScheme, handleImageProtocol } from './ipc/image.ipc'
 import { registerAIHandlers } from './ipc/ai.ipc'
 import { registerFileHandlers } from './ipc/file.ipc'
-import { registerConfigHandlers, resolveZoomIndex, persistZoomIndex, ZOOM_STEPS } from './ipc/config.ipc'
+import { registerConfigHandlers, resolveZoomIndex, persistZoomIndex, ZOOM_STEPS, initDBPathResolver } from './ipc/config.ipc'
 import { registerPrintHandlers } from './ipc/print.ipc'
 import { registerTTSHandlers, killAllTTSChildren } from './ipc/tts.ipc'
 import { flushDB } from './db/database'
@@ -150,6 +150,8 @@ if (process.platform === 'win32') {
 }
 
 app.whenReady().then(() => {
+  // Wire DB path resolver before initDB() runs inside registerDBHandlers()
+  initDBPathResolver()
   registerDBHandlers()
   registerImageHandlers()
   registerAIHandlers()

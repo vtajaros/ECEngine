@@ -3,6 +3,12 @@ import fs from 'fs';
 import path from 'path';
 import { app } from 'electron';
 
+// Resolved lazily so that config.ipc can be imported without a circular dep.
+let resolveDBPathFn: (() => string) | null = null;
+export function setDBPathResolver(fn: () => string) {
+  resolveDBPathFn = fn;
+}
+
 let db: Database.Database | null = null;
 
 // ---------------------------------------------------------------------------
@@ -194,11 +200,16 @@ function runMigrations(db: Database.Database) {
 // Public API
 // ---------------------------------------------------------------------------
 
+export function getActiveDatabasePath(): string {
+  if (resolveDBPathFn) return resolveDBPathFn();
+  const userDataPath = app ? app.getPath('userData') : process.cwd();
+  return path.join(userDataPath, 'ecengine.sqlite');
+}
+
 export function initDB() {
   if (db) return;
 
-  const userDataPath = app ? app.getPath('userData') : process.cwd();
-  const dbPath = path.join(userDataPath, 'ecengine.sqlite');
+  const dbPath = getActiveDatabasePath();
   const dbExists = fs.existsSync(dbPath);
 
   db = new Database(dbPath);

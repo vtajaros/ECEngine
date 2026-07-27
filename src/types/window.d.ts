@@ -101,6 +101,9 @@ declare global {
         getImagesPath: () => Promise<{ imagesPath: string }>
         selectImagesPath: () => Promise<{ success: boolean; canceled?: boolean; imagesPath?: string; error?: string }>
         setImagesPath: (imagesPath: string) => Promise<{ success: boolean; imagesPath?: string; error?: string }>
+        getDBPath: () => Promise<{ dbPath: string }>
+        selectDBPath: () => Promise<{ success: boolean; canceled?: boolean; dbPath?: string; error?: string }>
+        setDBPath: (dbPath: string) => Promise<{ success: boolean; dbPath?: string; error?: string }>
       }
       shell: {
         openExternal: (url: string) => Promise<void>

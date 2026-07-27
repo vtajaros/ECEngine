@@ -57,6 +57,10 @@ export default function Settings() {
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [apiKeyConfigured, setApiKeyConfigured] = useState(false);
   const [imagesPath, setImagesPath] = useState('');
+  const [dbPath, setDbPath] = useState('');
+  // Track last persisted values so onBlur doesn't fire a toast when simply tabbing between fields
+  const savedImagesPathRef = useRef('');
+  const savedDbPathRef = useRef('');
  
   useEffect(() => {
     const check = async () => {
@@ -66,6 +70,13 @@ export default function Settings() {
       const pathRes = await window.electron.config.getImagesPath();
       if (pathRes?.imagesPath) {
         setImagesPath(pathRes.imagesPath);
+        savedImagesPathRef.current = pathRes.imagesPath;
+      }
+
+      const dbPathRes = await window.electron.config.getDBPath();
+      if (dbPathRes?.dbPath) {
+        setDbPath(dbPathRes.dbPath);
+        savedDbPathRef.current = dbPathRes.dbPath;
       }
     };
     check();
@@ -247,6 +258,7 @@ export default function Settings() {
         },
         { label: 'Auto-Backup Progress Locally', type: 'toggle', current: true, advanced: true },
         { label: 'Images Storage Path', type: 'custom-path-picker', advanced: true },
+        { label: 'Database File Location', type: 'custom-db-path-picker', advanced: true },
         { label: 'Import Decks', type: 'action', buttonText: 'IMPORT JSON', actionId: 'import', advanced: true },
         { label: 'Export Decks', type: 'action', buttonText: 'EXPORT JSON', actionId: 'export', advanced: true },
         { label: 'Reset Mastery Progress', type: 'action', buttonText: 'Reset Progress', actionId: 'reset-progress', advanced: true },
@@ -532,9 +544,26 @@ export default function Settings() {
 
                   return (
                     <div key={idy} className={`flex flex-row items-center justify-between gap-4 transition-all duration-300 ${isDisabled ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
-                      <div className="font-['IBM_Plex_Mono'] text-text-primary text-sm md:text-base shrink-0">
-                        {opt.label}
-                      </div>
+                      {opt.type === 'custom-db-path-picker' ? (
+                        <div className="font-['IBM_Plex_Mono'] text-text-primary text-sm md:text-base shrink-0 relative group">
+                          <span className="cursor-default border-b border-dashed border-[#444]">{opt.label}</span>
+                            <div className="absolute bottom-full left-0 mb-2 z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                              <div className="bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 shadow-xl w-max max-w-xs">
+                                <p className="font-['IBM_Plex_Mono'] text-[#999] text-[11px] leading-relaxed">SQLite file used to store all decks and progress. Restart required to apply.</p>
+                              </div>
+                              <div className="w-2 h-2 bg-[#1a1a1a] border-r border-b border-[#333] rotate-45 ml-3 -mt-1" />
+                            </div>
+                        </div>
+                      ) : (
+                        <div className="font-['IBM_Plex_Mono'] text-text-primary text-sm md:text-base shrink-0">
+                          {opt.label}
+                          {(opt as any).description && (
+                            <div className="font-['IBM_Plex_Mono'] text-[#666] text-[10px] mt-0.5 normal-case tracking-normal">
+                              {(opt as any).description}
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       {opt.type === 'toggle' && (
                         <button className={`w-14 h-7 rounded-full p-1 transition-colors ${opt.current ? 'bg-[rgba(0,255,65,0.2)] border border-accent' : 'bg-surface-2 border border-border-base'} focus:outline-none relative shadow-inner`}>
@@ -583,9 +612,11 @@ export default function Settings() {
                             value={imagesPath}
                             onChange={(e) => setImagesPath(e.target.value)}
                             onBlur={async () => {
+                              if (imagesPath === savedImagesPathRef.current) return;
                               const res = await window.electron.config.setImagesPath(imagesPath);
                               if (res && res.success && res.imagesPath !== undefined) {
                                 setImagesPath(res.imagesPath);
+                                savedImagesPathRef.current = res.imagesPath;
                                 setToastMessage('Images path saved!');
                               } else if (res && res.error) {
                                 setToastMessage(`Error saving path: ${res.error}`);
@@ -597,10 +628,55 @@ export default function Settings() {
                                 (e.target as HTMLInputElement).blur();
                               }
                             }}
+                            title={imagesPath}
                             className="font-['IBM_Plex_Mono'] text-[#999] text-xs bg-[#0D0D0D] border border-surface-2 focus:border-accent outline-none rounded px-3 py-1.5 w-full max-w-[480px]"
                           />
                           <button
                             onClick={handleSelectImagesPath}
+                            className="px-4 py-2 border border-accent text-accent hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)] rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all shrink-0"
+                          >
+                            Browse
+                          </button>
+                        </div>
+                      )}
+
+                      {opt.type === 'custom-db-path-picker' && (
+                        <div className="flex items-center gap-4 flex-1 justify-end min-w-0">
+                          <input
+                            type="text"
+                            value={dbPath}
+                            onChange={(e) => setDbPath(e.target.value)}
+                            onBlur={async () => {
+                              if (dbPath === savedDbPathRef.current) return;
+                              const res = await window.electron.config.setDBPath(dbPath);
+                              if (res && res.success) {
+                                if (res.dbPath) {
+                                  setDbPath(res.dbPath);
+                                  savedDbPathRef.current = res.dbPath;
+                                }
+                                setToastMessage('Database path saved — restart to apply.');
+                              } else if (res && res.error) {
+                                setToastMessage(`Error saving path: ${res.error}`);
+                              }
+                              setTimeout(() => setToastMessage(null), 4000);
+                            }}
+                            onKeyDown={async (e) => {
+                              if (e.key === 'Enter') {
+                                (e.target as HTMLInputElement).blur();
+                              }
+                            }}
+                            title={dbPath}
+                            className="font-['IBM_Plex_Mono'] text-[#999] text-xs bg-[#0D0D0D] border border-surface-2 focus:border-accent outline-none rounded px-3 py-1.5 w-full max-w-[480px]"
+                          />
+                          <button
+                            onClick={async () => {
+                              const res = await window.electron.config.selectDBPath();
+                              if (res && res.success && res.dbPath) {
+                                setDbPath(res.dbPath);
+                                setToastMessage('Database path saved — restart to apply.');
+                                setTimeout(() => setToastMessage(null), 4000);
+                              }
+                            }}
                             className="px-4 py-2 border border-accent text-accent hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)] rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all shrink-0"
                           >
                             Browse

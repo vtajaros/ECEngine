@@ -84,6 +84,15 @@ contextBridge.exposeInMainWorld('electron', {
       ipcRenderer.invoke('config:selectImagesPath'),
     setImagesPath: (imagesPath: string): Promise<{ success: boolean; imagesPath?: string; error?: string }> =>
       ipcRenderer.invoke('config:setImagesPath', imagesPath),
+    /** Returns the active database file path (may differ from default after user change + restart) */
+    getDBPath: (): Promise<{ dbPath: string }> =>
+      ipcRenderer.invoke('config:getDBPath'),
+    /** Opens a save-file dialog to choose a new database location. Requires restart. */
+    selectDBPath: (): Promise<{ success: boolean; canceled?: boolean; dbPath?: string; error?: string }> =>
+      ipcRenderer.invoke('config:selectDBPath'),
+    /** Saves a manually typed database path. Requires restart. */
+    setDBPath: (dbPath: string): Promise<{ success: boolean; dbPath?: string; error?: string }> =>
+      ipcRenderer.invoke('config:setDBPath', dbPath),
   },
   shell: {
     openExternal: (url: string) => ipcRenderer.invoke('shell:openExternal', url),
