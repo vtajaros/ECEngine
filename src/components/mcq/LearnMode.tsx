@@ -183,6 +183,27 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
     if (!isMcq || !mcqData?.question) return
     speak(mcqData.question)
   }, [currentCard?.id, viewState])
+
+  // ── Image Preloading: Preload question & solution images for instant rendering ──
+  useEffect(() => {
+    if (!activeQueue || activeQueue.length === 0) return
+
+    // Preload current card + next 2 cards in queue
+    const cardsToPreload = activeQueue.slice(currentCardIndex, currentCardIndex + 3)
+    cardsToPreload.forEach(c => {
+      if (c && c.type === 'mcq' && c.data) {
+        const data = c.data as MCQData
+        if (data.imagePath) {
+          const img = new Image()
+          img.src = `ece-app://${data.imagePath}`
+        }
+        if (data.solutionImagePath) {
+          const img = new Image()
+          img.src = `ece-app://${data.solutionImagePath}`
+        }
+      }
+    })
+  }, [currentCardIndex, activeQueue])
   // ── Solution delay: 0.5s delay before revealing solution in feedback mode ───
   useEffect(() => {
     if (viewState === 'feedback' && (mcqData?.explanation || mcqData?.solutionImagePath)) {
@@ -714,10 +735,10 @@ Please explain:
           <AnimatePresence>
             {viewState === 'feedback' && showSolution && (mcqData.explanation || mcqData.solutionImagePath) && (
               <motion.div
-                initial={{ opacity: 0, height: 0, y: 10 }}
+                initial={{ opacity: 0, height: 0, y: 12 }}
                 animate={{ opacity: 1, height: 'auto', y: 0 }}
-                exit={{ opacity: 0, height: 0, y: 10 }}
-                transition={{ duration: 0.3, ease: 'easeOut' }}
+                exit={{ opacity: 0, height: 0, y: 12 }}
+                transition={{ duration: 0.35, ease: [0.25, 1, 0.5, 1] }}
                 className="px-6 pb-4 overflow-hidden"
               >
                 <div className="p-4 bg-[#111] rounded border border-border-base">
