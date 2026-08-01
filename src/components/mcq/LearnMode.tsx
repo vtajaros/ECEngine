@@ -58,6 +58,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
   const [viewState, setViewState] = useState<ViewState>('question')
   const [selectedChoiceIndex, setSelectedChoiceIndex] = useState<number | null>(null)
   const [choiceStatus, setChoiceStatus] = useState<QuestionStatus>('unanswered')
+  const [showSolution, setShowSolution] = useState(false)
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(() => {
     const saved = localStorage.getItem('bookmarkedIds')
     return saved ? new Set(JSON.parse(saved)) : new Set()
@@ -91,7 +92,8 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
 
   useEffect(() => {
     return () => {
-      if (blockerRef.current.state === 'blocked') {
+      stop()
+      if (blockerRef.current?.state === 'blocked') {
         blockerRef.current.reset()
       }
     }
@@ -110,9 +112,31 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
 
   const handleExit = () => {
     stop() // cancel any in-flight speech before unmounting
-    if (blocker.state === 'blocked') blocker.reset()
+    if (blocker.state === 'blocked') {
+      blocker.reset()
+    }
     onExit()
   }
+
+  const renderLeaveConfirmModal = () => (
+    <LeaveConfirmModal
+      isOpen={blocker.state === 'blocked' || showExitConfirm}
+      onConfirm={() => {
+        stop()
+        if (blocker.state === 'blocked' && blocker.proceed) {
+          blocker.proceed()
+        }
+        setShowExitConfirm(false)
+        handleExit()
+      }}
+      onCancel={() => {
+        if (blocker.state === 'blocked' && blocker.reset) {
+          blocker.reset()
+        }
+        setShowExitConfirm(false)
+      }}
+    />
+  )
 
   useEffect(() => {
     setOpenExplanationId(null);
@@ -159,9 +183,17 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
     if (!isMcq || !mcqData?.question) return
     speak(mcqData.question)
   }, [currentCard?.id, viewState])
-  // NOTE: `speak` is intentionally omitted from the dep array.
-  // It's stable (useCallback with [ttsEnabled]) but adding it would re-fire
-  // on every render cycle. currentCard.id + viewState is the correct trigger.
+  // ── Solution delay: 0.5s delay before revealing solution in feedback mode ───
+  useEffect(() => {
+    if (viewState === 'feedback' && (mcqData?.explanation || mcqData?.solutionImagePath)) {
+      const timer = setTimeout(() => {
+        setShowSolution(true)
+      }, 500)
+      return () => clearTimeout(timer)
+    } else {
+      setShowSolution(false)
+    }
+  }, [viewState, currentCard?.id, mcqData?.explanation, mcqData?.solutionImagePath])
 
   // Keyboard controls
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
@@ -266,6 +298,11 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
   }
 
   const handleNext = () => {
+    // Guard: if item has a solution, do not allow Next until solution is displayed
+    if (viewState === 'feedback' && (mcqData?.explanation || mcqData?.solutionImagePath) && !showSolution) {
+      return
+    }
+
     setViewState('question')
     setSelectedChoiceIndex(null)
     setChoiceStatus('unanswered')
@@ -389,6 +426,7 @@ Please explain:
 
     return (
       <div className="flex flex-col items-center justify-center p-6 lg:p-10 h-full bg-engine-black">
+        {renderLeaveConfirmModal()}
         <motion.div
           initial={{ y: "100%", opacity: 0 }}
           animate={{ y: "0%", opacity: 1 }}
@@ -549,25 +587,7 @@ Please explain:
 
   return (
     <div className="flex flex-col h-full bg-engine-black p-8 relative">
-      <LeaveConfirmModal
-        isOpen={blocker.state === 'blocked' || showExitConfirm}
-        onConfirm={() => {
-          if (blocker.state === 'blocked') {
-            stop()
-            blocker.proceed && blocker.proceed()
-          } else {
-            setShowExitConfirm(false)
-            handleExit()
-          }
-        }}
-        onCancel={() => {
-          if (blocker.state === 'blocked') {
-            blocker.reset && blocker.reset()
-          } else {
-            setShowExitConfirm(false)
-          }
-        }}
-      />
+      {renderLeaveConfirmModal()}
 
       <div className="max-w-3xl w-full mx-auto flex flex-wrap items-center justify-between gap-2 mb-4">
         <div className="flex flex-col flex-1 min-w-0">
@@ -691,29 +711,37 @@ Please explain:
           </div>
 
           {/* Solution Block */}
-          {viewState === 'feedback' && choiceStatus === 'correct' && (mcqData.explanation || mcqData.solutionImagePath) && (
-            <div className="px-6 pb-4">
-              <div className="p-4 bg-[#111] rounded border border-border-base">
-                <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-text-muted mb-2 block">
-                  Solution
-                </span>
-                {mcqData.explanation && (
-                  <p
-                    className="text-sm text-[#CCC] font-['Rajdhani'] font-medium whitespace-pre-wrap leading-relaxed"
-                    dangerouslySetInnerHTML={{ __html: renderMath(mcqData.explanation) }}
-                  />
-                )}
-                {mcqData.solutionImagePath && (
-                  <img
-                    src={`ece-app://${mcqData.solutionImagePath}`}
-                    alt="Solution diagram"
-                    className="mt-3 max-w-full rounded border border-[#333] object-contain max-h-64 cursor-zoom-in"
-                    onClick={() => setZoomedImage(mcqData.solutionImagePath!)}
-                  />
-                )}
-              </div>
-            </div>
-          )}
+          <AnimatePresence>
+            {viewState === 'feedback' && showSolution && (mcqData.explanation || mcqData.solutionImagePath) && (
+              <motion.div
+                initial={{ opacity: 0, height: 0, y: 10 }}
+                animate={{ opacity: 1, height: 'auto', y: 0 }}
+                exit={{ opacity: 0, height: 0, y: 10 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
+                className="px-6 pb-4 overflow-hidden"
+              >
+                <div className="p-4 bg-[#111] rounded border border-border-base">
+                  <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-text-muted mb-2 block">
+                    Solution
+                  </span>
+                  {mcqData.explanation && (
+                    <p
+                      className="text-sm text-[#CCC] font-['Rajdhani'] font-medium whitespace-pre-wrap leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: renderMath(mcqData.explanation) }}
+                    />
+                  )}
+                  {mcqData.solutionImagePath && (
+                    <img
+                      src={`ece-app://${mcqData.solutionImagePath}`}
+                      alt="Solution diagram"
+                      className="mt-3 max-w-full rounded border border-[#333] object-contain max-h-64 cursor-zoom-in"
+                      onClick={() => setZoomedImage(mcqData.solutionImagePath!)}
+                    />
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {viewState === 'feedback' && explanationOpen && (
             <ExplanationPanel
@@ -747,12 +775,23 @@ Please explain:
                   Correct!
                 </div>
               )}
-              <button
-                onClick={handleNext}
-                className="w-full max-w-sm mx-auto py-3 text-base rounded bg-[var(--accent-primary)] text-black font-bold font-['Orbitron'] tracking-widest uppercase hover:bg-[var(--accent-dim)] transition-colors shadow-[0_0_20px_rgba(0,255,65,0.3)] hover:shadow-[0_0_30px_rgba(0,255,65,0.5)] mb-4"
-              >
-                Next <span className="font-['IBM_Plex_Mono'] text-xs ml-2 opacity-60">(Space)</span>
-              </button>
+              {(() => {
+                const hasSolution = Boolean(mcqData?.explanation || mcqData?.solutionImagePath)
+                const isNextDisabled = viewState === 'feedback' && hasSolution && !showSolution
+                return (
+                  <button
+                    onClick={handleNext}
+                    disabled={isNextDisabled}
+                    className={`w-full max-w-sm mx-auto py-3 text-base rounded font-bold font-['Orbitron'] tracking-widest uppercase transition-all mb-4 ${
+                      isNextDisabled
+                        ? 'bg-[#222] text-[#666] border border-[#333] cursor-not-allowed opacity-50 shadow-none'
+                        : 'bg-[var(--accent-primary)] text-black hover:bg-[var(--accent-dim)] shadow-[0_0_20px_rgba(0,255,65,0.3)] hover:shadow-[0_0_30px_rgba(0,255,65,0.5)]'
+                    }`}
+                  >
+                    Next <span className="font-['IBM_Plex_Mono'] text-xs ml-2 opacity-60">(Space)</span>
+                  </button>
+                )
+              })()}
 
               <div className="flex items-center gap-3 flex-wrap justify-center">
                 <Tooltip content="Copy context to paste into GPT/Gemini/Claude for a better AI explanation.">

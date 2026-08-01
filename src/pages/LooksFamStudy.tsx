@@ -316,7 +316,7 @@ export default function LooksFamStudy() {
   // Navigation Blocking logic
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
-      isSessionActive && (mode === 'flashcard' || mode === 'mcq') && currentLocation.pathname !== nextLocation.pathname
+      isSessionActive && currentLocation.pathname !== nextLocation.pathname
   )
 
 
