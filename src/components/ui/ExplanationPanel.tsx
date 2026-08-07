@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Cpu } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getExplanation } from '../../services/explain.service';
 import { renderMath } from '../../lib/latex';
@@ -63,8 +63,8 @@ export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({
         <X size={18} />
       </button>
 
-      <h4 className="font-['Orbitron'] text-[0.75rem] font-bold text-accent tracking-widest uppercase mb-3 flex items-center">
-        ⚡ AI EXPLANATION
+      <h4 className="font-['Orbitron'] text-[0.75rem] font-bold text-accent tracking-widest uppercase mb-3 flex items-center gap-2">
+        <Cpu size={14} /> GPT-OSS-120B
       </h4>
 
       <div className="font-sans text-[0.875rem] text-text-primary leading-[1.6]">
@@ -81,12 +81,20 @@ export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({
 
         {!loading && explanation && (
           <div className="space-y-3">
-            {explanation.trim().split(/\n\s*\n/).filter(p => p.trim()).map((paragraph, idx) => (
-              <div
-                key={idx}
-                dangerouslySetInnerHTML={{ __html: renderMath(paragraph.trim()) }}
-              />
-            ))}
+            {(() => {
+              const formattedExplanation = /^\s*(\*\*Explanation:\*\*|\*\*Explanation\*\*|Explanation:)/i.test(explanation.trim())
+                ? explanation.trim()
+                : `**Explanation:** ${explanation.trim()}`;
+              return formattedExplanation
+                .split(/\n\s*\n/)
+                .filter(p => p.trim())
+                .map((paragraph, idx) => (
+                  <div
+                    key={idx}
+                    dangerouslySetInnerHTML={{ __html: renderMath(paragraph.trim()) }}
+                  />
+                ));
+            })()}
           </div>
         )}
 
