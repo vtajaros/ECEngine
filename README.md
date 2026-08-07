@@ -39,8 +39,11 @@ ECEngine is an offline-first desktop application engineered for examinees prepar
 * **Explanation Field**: A collapsible section available on the back face of flashcard, formula, and MCQ card types. It supports text with LaTeX rendering and an optional image. When expanded, the SM-2 rating buttons and navigation buttons are hidden to maximize reading space.
 
 ### Deck Management
-* **Add Decks**: Create MCQ, Flashcard, or Formula sets with features including drag-and-drop card reordering (via DnD Kit), undo history, bulk import for MCQs and Flashcards, and MathLive equation editors for individual fields.
-* **Edit Deck**: Provides the same comprehensive capabilities as the Add Decks interface for modifying existing decks.
+* **Add Decks**: Create MCQ, Flashcard, or Formula sets with a comprehensive editor. Features include:
+  * **MathLive Integration**: Dedicated equation editors (Σ button) for entering LaTeX formulas effortlessly. Fields default to text or math mode based on context.
+  * **Rich Media**: Attach images directly to questions, choices, or dedicated explanation fields.
+  * **Advanced Controls**: Drag-and-drop card reordering (via DnD Kit), undo/redo history, and bulk import functionality.
+* **Edit Deck**: A full-featured interface for modifying existing decks, sharing all the advanced capabilities of the Add Decks view. Update questions, toggle between text/equation modes, and preview LaTeX rendering in real-time.
 * **Folder System**: Support for nested folders (maximum depth of 1), independently scoped for the study and formula tabs.
 * **Smart Routing**: After saving, the application automatically redirects to the correct tab based on the deck type (Formula decks route to the Formulas tab, others route to Flashcards).
 
@@ -68,7 +71,7 @@ ECEngine is an offline-first desktop application engineered for examinees prepar
 
 ### Board Exam Tools
 * **EELE ToS**: A dedicated tab for viewing the Table of Specifications of the latest board exam (2022 TOS), covering Mathematics, Electronics Engineering, GEAS, and EST.
-* **Review Checklist**: A comprehensive tracker to keep track of your overall review progress across all syllabus subtopics, allowing you to mark items for review, refresher, or self-review.
+* **Review Checklist**: A comprehensive, interactive syllabus tracker. Keep tabs on your overall review progress across all subjects and subtopics. Mark items with statuses like "For Review," "Refresher," or "Mastered" to visually manage your study priorities and ensure complete coverage of the board exam scope.
 
 ### Analytics & Progress
 * **Dashboard Heatmap**: A visual study activity heatmap plotting activity over a 6-month window.
@@ -80,9 +83,10 @@ ECEngine is an offline-first desktop application engineered for examinees prepar
 * **Groq GPT-OSS-120B Integration**: Features an explain button on MCQ cards in Learn and Test modes. Requires a user-supplied Groq API key configured in Settings.
 * **Context Extraction**: A "Get Context" button instantly copies a structured prompt to the clipboard for use in external AI tools like ChatGPT or Claude.
 
-### Print & Export
-* **Print Views**: Generate layouts optimized for Glossary, Table, or Q&A formats. Features an isolated zoom state independent from the main window.
-* **Theming**: Select between Light, Sepia, and Dark print themes.
+### Print & Export & Test Paper View
+* **Test Paper View**: Transform any deck into a printable test paper format. Ideal for generating physical mock board exams from your MCQ decks. Includes a toggle to hide/show answers on the fly.
+* **Flexible Layouts**: Generate documents optimized for Glossary (list format), Table (grid format), or Q&A (Question & Answer) layouts depending on the deck type.
+* **Theming & Controls**: Select between Light, Sepia, and Dark print themes. Features an isolated zoom state independent from the main window.
 * **Direct Export**: Native capability to export directly to PDF (with reliable native Save dialog rendering) or export deck contents to a raw text file.
 
 ### Settings & Customization

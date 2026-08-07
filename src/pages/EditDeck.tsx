@@ -620,7 +620,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
                 placeholder={`Choice ${labels[i]}...`}
                 multiline={true}
                 rows={1}
-                defaultMathMode={/[_^][\w{]|\\[a-zA-Z]/.test(choice)}
+                defaultMathMode={false}
               />
             </div>
           </div>

@@ -109,9 +109,10 @@ function applyInlineFormatting(text: string): string {
     .replace(/(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)/gs, '<em>$1</em>')
     .replace(/__(.*?)__/gs, '<u>$1</u>')
 
-  // Superscript: ^{multi} or ^x (single non-space char)
+  // Superscript: ^{multi}, ^|...|  (absolute value), or ^x (single non-space char)
   result = result.replace(/\^\{([^}]+)\}/g, '<sup>$1</sup>')
-  result = result.replace(/\^([^\s{])/g, '<sup>$1</sup>')
+  result = result.replace(/\^\|([^|]*)\|/g, '<sup>|$1|</sup>')
+  result = result.replace(/\^([^\s{|])/g, '<sup>$1</sup>')
 
   // Subscript: _{multi} or _x (single non-space char)
   result = result.replace(/\_\{([^}]+)\}/g, '<sub>$1</sub>')
