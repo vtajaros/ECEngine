@@ -3,7 +3,7 @@ import { Card, MCQData } from '../../types'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bookmark, Clock, ArrowRight, RefreshCw, ClipboardCheck, X, AlertTriangle, Copy, Sparkles, Volume2, VolumeX } from 'lucide-react'
 import { shuffle, shuffleChoices, isSafeToShuffleChoices } from '../../lib/scrambler'
-import { renderMath } from '../../lib/latex'
+import { renderMath, renderPlainText } from '../../lib/latex'
 import { ExplanationPanel } from '../ui/ExplanationPanel'
 import { Tooltip } from '../ui/Tooltip'
 import Toast from '../ui/Toast'
@@ -189,7 +189,7 @@ const TestQuestionCard = memo(({
               </div>
               <span
                 className="flex-1 break-words font-['Rajdhani'] font-medium text-base leading-normal mcq-choice-text"
-                dangerouslySetInnerHTML={{ __html: renderMath(choice) }}
+                dangerouslySetInnerHTML={{ __html: (mcq.choicesPlainText?.[cIdx] ? renderPlainText : renderMath)(choice) }}
               />
               {iconElement && <div className="ml-4 flex-shrink-0">{iconElement}</div>}
             </button>
@@ -443,8 +443,8 @@ Please explain:
       finalCards = finalCards.map(card => {
         const mcq = card.data as MCQData
         if (mcq?.choices && isSafeToShuffleChoices(mcq.choices)) {
-          const sc = shuffleChoices(mcq.choices, mcq.answer)
-          return { ...card, data: { ...mcq, choices: sc.choices, answer: sc.answer } }
+          const sc = shuffleChoices(mcq.choices, mcq.answer, mcq.choicesPlainText)
+          return { ...card, data: { ...mcq, choices: sc.choices, answer: sc.answer, ...(sc.choicesPlainText ? { choicesPlainText: sc.choicesPlainText } : {}) } }
         }
         return card
       })

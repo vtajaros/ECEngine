@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Card, MCQData } from '../../types'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bookmark, Play, AlertCircle, ArrowRight, Flag, X, Copy, Sparkles, Volume2, VolumeX } from 'lucide-react'
-import { renderMath } from '../../lib/latex'
+import { renderMath, renderPlainText } from '../../lib/latex'
 import Toast from '../ui/Toast'
 import { ExplanationPanel } from '../ui/ExplanationPanel'
 import { Tooltip } from '../ui/Tooltip'
@@ -514,7 +514,7 @@ Please explain:
                     <div className="pl-8 flex items-start justify-between gap-2">
                       <div className="flex items-start gap-2">
                         <span className="text-accent font-bold">✓</span>
-                        <div className="text-accent font-['IBM_Plex_Mono'] text-[13px]" dangerouslySetInnerHTML={{ __html: renderMath(correctAnswerText) }} />
+                        <div className="text-accent font-['IBM_Plex_Mono'] text-[13px]" dangerouslySetInnerHTML={{ __html: (mcq.choicesPlainText?.[mcq.answer] ? renderPlainText : renderMath)(correctAnswerText) }} />
                       </div>
                       {stat.usedIDK && (
                         <span className="text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded bg-warn/20 text-warn border border-warn/30 shrink-0">IDK</span>
@@ -724,7 +724,7 @@ Please explain:
                   </span>
                   <div
                     className={`flex-1 text-left break-words font-['Rajdhani'] font-medium text-base leading-normal mcq-choice-text ${textClass}`}
-                    dangerouslySetInnerHTML={{ __html: renderMath(choice) }}
+                    dangerouslySetInnerHTML={{ __html: (mcqData.choicesPlainText?.[idx] ? renderPlainText : renderMath)(choice) }}
                   />
                 </button>
               )

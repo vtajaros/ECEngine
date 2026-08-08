@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, MCQData } from '../../types'
-import { renderMath } from '../../lib/latex'
+import { renderMath, renderPlainText } from '../../lib/latex'
 import { CheckCircle2, XCircle } from 'lucide-react'
 
 interface MCQCardProps {
@@ -124,7 +124,7 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
               </div>
               <div 
                 className="flex-1 text-base font-['Rajdhani'] font-semibold tracking-wide mcq-choice-text"
-                dangerouslySetInnerHTML={{ __html: renderMath(choice) }}
+                dangerouslySetInnerHTML={{ __html: (data.choicesPlainText?.[index] ? renderPlainText : renderMath)(choice) }}
               />
               {showResult && isCorrectAnswer && <CheckCircle2 className="text-accent ml-3 flex-shrink-0" size={20} />}
               {showResult && isSelected && !isCorrectAnswer && <XCircle className="text-danger ml-3 flex-shrink-0" size={20} />}

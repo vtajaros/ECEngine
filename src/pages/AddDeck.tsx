@@ -281,7 +281,7 @@ export default function AddDeck() {
         type: deckType,
         isNew: true,
         data: deckType === 'mcq'
-          ? { question: '', choices: ['', '', '', ''], answer: 0, explanation: '' }
+          ? { question: '', choices: ['', '', '', ''], answer: 0, explanation: '', choicesPlainText: [true, true, true, true] }
           : deckType === 'formula'
             ? { name: '', latex: '', description: '', variables: '' }
             : { front: '', back: '' }
@@ -316,7 +316,7 @@ export default function AddDeck() {
       type: newType,
       isNew: true,
       data: newType === 'mcq'
-        ? { question: '', choices: ['', '', '', ''], answer: 0, explanation: '' }
+        ? { question: '', choices: ['', '', '', ''], answer: 0, explanation: '', choicesPlainText: [true, true, true, true] }
         : newType === 'formula'
           ? { name: '', latex: '', description: '', variables: '' }
           : { front: '', back: '' }
@@ -344,7 +344,7 @@ export default function AddDeck() {
       type: newType,
       isNew: true,
       data: newType === 'mcq'
-        ? { question: '', choices: ['', '', '', ''], answer: 0, explanation: '' }
+        ? { question: '', choices: ['', '', '', ''], answer: 0, explanation: '', choicesPlainText: [true, true, true, true] }
         : newType === 'formula'
           ? { name: '', latex: '', description: '', variables: '' }
           : { front: '', back: '' }
@@ -366,7 +366,7 @@ export default function AddDeck() {
       type: deckType,
       isNew: true,
       data: deckType === 'mcq'
-        ? { question: '', choices: ['', '', '', ''], answer: 0, explanation: '' }
+        ? { question: '', choices: ['', '', '', ''], answer: 0, explanation: '', choicesPlainText: [true, true, true, true] }
         : deckType === 'formula'
           ? { name: '', latex: '', description: '', variables: '' }
           : { front: '', back: '' }
@@ -404,7 +404,8 @@ export default function AddDeck() {
         question: c.mcqData.question || '',
         choices: c.mcqData.choices || ['', '', '', ''],
         answer: c.mcqData.answer !== undefined ? c.mcqData.answer : 0,
-        explanation: c.mcqData.explanation || ''
+        explanation: c.mcqData.explanation || '',
+        choicesPlainText: [true, true, true, true]
       }
     }))
 

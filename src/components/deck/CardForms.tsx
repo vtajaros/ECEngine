@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { X, ImageIcon, Eye, EyeOff } from 'lucide-react'
-import { renderMath } from '../../lib/latex'
+import { renderMath, isRawLatex } from '../../lib/latex'
 import 'mathlive'
 import type { MathfieldElement } from 'mathlive'
 
@@ -33,6 +33,7 @@ export interface MCQEdit {
   explanation: string
   imagePath?: string
   solutionImagePath?: string
+  choicesPlainText?: boolean[]  // per-choice flag: true = plain text, false = equation mode
 }
 
 export interface FlashcardEdit {
@@ -331,6 +332,11 @@ export const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; 
     choices[i] = val
     set({ choices })
   }
+  const setChoicePlainText = (i: number, isPlain: boolean) => {
+    const arr = [...(data.choicesPlainText || [true, true, true, true])]
+    arr[i] = isPlain
+    set({ choicesPlainText: arr })
+  }
   const labels = ['A', 'B', 'C', 'D']
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -409,6 +415,8 @@ export const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; 
                 placeholder={`Choice ${labels[i]}...`}
                 multiline={true}
                 rows={1}
+                defaultMathMode={data.choicesPlainText ? !data.choicesPlainText[i] : (isRawLatex(choice) || choice.includes('$'))}
+                onMathModeChange={(isMath) => setChoicePlainText(i, !isMath)}
               />
             </div>
           </div>

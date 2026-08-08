@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { FileText, Table2, List, BookOpen, Bold, Loader2, CheckCircle2, AlertCircle, Minus, Square, X } from 'lucide-react'
 import { dbService } from '../services/db.service'
 import { Card, MCQData, FlashcardData, FormulaData } from '../types'
-import { renderMath } from '../lib/latex'
+import { renderMath, renderPlainText } from '../lib/latex'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -98,11 +98,11 @@ function isFormula(card: Card): card is Card & { data: FormulaData } {
 }
 
 /** Renders text that may contain LaTeX via dangerouslySetInnerHTML. */
-function MathText({ text, style }: { text: string; style?: React.CSSProperties }) {
+function MathText({ text, style, plainText }: { text: string; style?: React.CSSProperties; plainText?: boolean }) {
   return (
     <span
       style={style}
-      dangerouslySetInnerHTML={{ __html: renderMath(text) }}
+      dangerouslySetInnerHTML={{ __html: plainText ? renderPlainText(text) : renderMath(text) }}
     />
   )
 }
@@ -159,7 +159,7 @@ function MCQTableRow({ index, card, hideAnswers }: MCQTableRowProps) {
                     }}
               >
                     <span style={{ minWidth: '18px', fontWeight: 700 }}>{CHOICE_LABELS[ci]}.</span>
-                    <span><MathText text={choice} /></span>
+                    <span><MathText text={choice} plainText={card.data.choicesPlainText?.[ci]} /></span>
                   </div>
                 )
               })}
@@ -178,7 +178,7 @@ function MCQTableRow({ index, card, hideAnswers }: MCQTableRowProps) {
       >
         <span style={{ fontWeight: 700, color: 'var(--pt-text-secondary)' }}></span>
         {!hideAnswers && <span style={{ fontWeight: 700, color: 'var(--pt-text-primary)' }}>
-          <MathText text={choices[answer] ?? '—'} />
+          <MathText text={choices[answer] ?? '—'} plainText={card.data.choicesPlainText?.[answer]} />
         </span>}
         {hideAnswers && <span style={{ color: 'var(--pt-text-muted)' }}>—</span>}
       </td>
@@ -193,7 +193,7 @@ interface MCQGlossaryItemProps {
   hideAnswers?: boolean
 }
 function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers }: MCQGlossaryItemProps) {
-  const { question, choices, answer, imagePath } = card.data
+  const { question, choices, answer, imagePath, choicesPlainText } = card.data
   if (qaMode) {
     return (
       <div style={{
@@ -217,7 +217,7 @@ function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers }: MCQGlossa
           />
         )}
         {!hideAnswers && <p style={{ fontWeight: 700, color: 'var(--pt-text-body)', margin: 0, paddingLeft: '16px' }}>
-          <MathText text={choices[answer] ?? '—'} />
+          <MathText text={choices[answer] ?? '—'} plainText={choicesPlainText?.[answer]} />
         </p>}
         {hideAnswers && <p style={{ color: 'var(--pt-text-muted)', margin: 0, paddingLeft: '16px' }}>—</p>}
       </div>
@@ -264,7 +264,7 @@ function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers }: MCQGlossa
               }}
             >
               <span style={{ minWidth: '18px', fontWeight: 700 }}>{CHOICE_LABELS[ci]}.</span>
-              <span><MathText text={choice} /></span>
+              <span><MathText text={choice} plainText={choicesPlainText?.[ci]} /></span>
             </div>
           )
         })}

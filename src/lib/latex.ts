@@ -231,6 +231,17 @@ export const renderMath = (text: string): string => {
 }
 
 /**
+ * Renders text as plain (non-math) content: HTML-escapes user input, converts
+ * newlines, and applies inline formatting (bold, italic, underline, super/subscript).
+ * Unlike renderMath(), this NEVER runs KaTeX or LaTeX auto-detection.
+ * Use for MCQ choices explicitly set to text mode.
+ */
+export const renderPlainText = (text: string): string => {
+  if (!text || typeof text !== 'string') return ''
+  return applyInlineFormatting(renderSegment(text))
+}
+
+/**
  * Scans for double-escaped backslashes followed by a letter (e.g. \\frac).
  * These often occur due to incorrect JSON stringification of LaTeX data.
  */

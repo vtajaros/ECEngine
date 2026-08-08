@@ -92,6 +92,7 @@ interface MCQEdit {
   explanation: string
   imagePath?: string
   solutionImagePath?: string
+  choicesPlainText?: boolean[]
 }
 
 interface FlashcardEdit {
@@ -511,6 +512,11 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
     choices[i] = val
     set({ choices })
   }
+  const setChoicePlainText = (i: number, isPlain: boolean) => {
+    const arr = [...(data.choicesPlainText || [true, true, true, true])]
+    arr[i] = isPlain
+    set({ choicesPlainText: arr })
+  }
   const labels = ['A', 'B', 'C', 'D']
 
   const handleSolutionImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -620,7 +626,8 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
                 placeholder={`Choice ${labels[i]}...`}
                 multiline={true}
                 rows={1}
-                defaultMathMode={false}
+                defaultMathMode={data.choicesPlainText ? !data.choicesPlainText[i] : (isRawLatex(choice) || choice.includes('$'))}
+                onMathModeChange={(isMath) => setChoicePlainText(i, !isMath)}
               />
             </div>
           </div>
@@ -1142,6 +1149,7 @@ export default function EditDeck() {
                 }
                 if (parsed.imagePath) d.imagePath = parsed.imagePath
                 if (parsed.solutionImagePath) d.solutionImagePath = parsed.solutionImagePath
+                if (parsed.choicesPlainText) d.choicesPlainText = parsed.choicesPlainText
                 return { id: row.id, type: 'mcq', data: d } as EditCard
               } else if (row.type === 'formula') {
                 // Normalise field names: support canonical camelCase AND any
@@ -1222,7 +1230,7 @@ export default function EditDeck() {
   const addCard = (type: 'mcq' | 'flashcard' | 'formula') => {
     const id = `new_${Date.now()}`
     const data: EditCard = type === 'mcq'
-      ? { id, type, data: { question: '', choices: ['', '', '', ''], answer: 0, explanation: '' }, isNew: true }
+      ? { id, type, data: { question: '', choices: ['', '', '', ''], answer: 0, explanation: '', choicesPlainText: [true, true, true, true] }, isNew: true }
       : type === 'formula'
         ? { id, type, data: { name: '', latex: '', description: '', variables: '', explanation: '', explanationImagePath: undefined, imageBack: undefined }, isNew: true }
         : { id, type, data: { front: '', back: '' }, isNew: true }

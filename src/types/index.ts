@@ -48,6 +48,7 @@ export interface MCQData {
   imagePath?: string
   solutionImagePath?: string
   yearAsked?: number
+  choicesPlainText?: boolean[]  // per-choice flag: true = render as plain text, skip LaTeX auto-detection
 }
 
 export interface FormulaData {

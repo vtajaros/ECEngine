@@ -35,13 +35,25 @@ export function isSafeToShuffleChoices(choices: string[]): boolean {
 
 /**
  * Shuffle MCQ choices and remap the correct answer index.
- * Returns new choices array and the updated answer index.
+ * Returns new choices array, the updated answer index, and (if provided)
+ * the correspondingly shuffled choicesPlainText array.
  */
-export function shuffleChoices(choices: string[], answerIndex: number): { choices: string[]; answer: number } {
-  const correctAnswer = choices[answerIndex]
-  const shuffled = shuffleArray(choices)
-  return {
-    choices: shuffled,
-    answer: shuffled.indexOf(correctAnswer),
+export function shuffleChoices(
+  choices: string[],
+  answerIndex: number,
+  choicesPlainText?: boolean[]
+): { choices: string[]; answer: number; choicesPlainText?: boolean[] } {
+  // Build indexed pairs so we can track which slot went where
+  const indexed = choices.map((c, i) => ({ choice: c, originalIndex: i }))
+  const shuffled = shuffleArray(indexed)
+  const newChoices = shuffled.map(s => s.choice)
+  const newAnswer = shuffled.findIndex(s => s.originalIndex === answerIndex)
+  const result: { choices: string[]; answer: number; choicesPlainText?: boolean[] } = {
+    choices: newChoices,
+    answer: newAnswer,
   }
+  if (choicesPlainText) {
+    result.choicesPlainText = shuffled.map(s => choicesPlainText[s.originalIndex])
+  }
+  return result
 }

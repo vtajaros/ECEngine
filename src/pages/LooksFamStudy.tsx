@@ -501,13 +501,14 @@ export default function LooksFamStudy() {
     if (learnSettings.shuffleChoices) {
       filteredData = filteredData.map(card => {
         if (card.type === 'mcq' && card.data && Array.isArray(card.data.choices) && isSafeToShuffleChoices(card.data.choices)) {
-          const sc = shuffleChoices(card.data.choices, card.data.answer)
+          const sc = shuffleChoices(card.data.choices, card.data.answer, card.data.choicesPlainText)
           return {
             ...card,
             data: {
               ...card.data,
               choices: sc.choices,
-              answer: sc.answer
+              answer: sc.answer,
+              ...(sc.choicesPlainText ? { choicesPlainText: sc.choicesPlainText } : {})
             }
           }
         }
@@ -593,13 +594,14 @@ export default function LooksFamStudy() {
     if (testSettings.shuffleChoices) {
       filteredData = filteredData.map(card => {
         if (card.type === 'mcq' && card.data && Array.isArray(card.data.choices) && isSafeToShuffleChoices(card.data.choices)) {
-          const sc = shuffleChoices(card.data.choices, card.data.answer)
+          const sc = shuffleChoices(card.data.choices, card.data.answer, card.data.choicesPlainText)
           return {
             ...card,
             data: {
               ...card.data,
               choices: sc.choices,
-              answer: sc.answer
+              answer: sc.answer,
+              ...(sc.choicesPlainText ? { choicesPlainText: sc.choicesPlainText } : {})
             }
           }
         }
