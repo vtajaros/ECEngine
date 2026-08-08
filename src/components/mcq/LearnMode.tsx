@@ -269,6 +269,8 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
     // the question after they've already committed to an answer.
     stop()
 
+    setZoomedImage(null)
+
     const isIdk = choiceIdx === 'idk'
     const isCorrect = !isIdk && choiceIdx === mcqData.answer
 
@@ -328,6 +330,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
     setSelectedChoiceIndex(null)
     setChoiceStatus('unanswered')
     setExplanationOpen(false)
+    setZoomedImage(null)
 
     if (currentCardIndex < activeQueue.length - 1) {
       setCurrentCardIndex(prev => prev + 1)
@@ -374,6 +377,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
       setViewState('question')
       setSelectedChoiceIndex(null)
       setChoiceStatus('unanswered')
+      setZoomedImage(null)
     }
   }
 
@@ -392,6 +396,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
     setSelectedChoiceIndex(null)
     setChoiceStatus('unanswered')
     setOpenExplanationId(null)
+    setZoomedImage(null)
   }
 
   const handleStudyAgain = () => {
@@ -405,6 +410,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
     setViewState('question')
     setSelectedChoiceIndex(null)
     setChoiceStatus('unanswered')
+    setZoomedImage(null)
   }
 
   const handleGetContext = () => {
@@ -857,7 +863,7 @@ Please explain:
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4 lg:p-10 cursor-zoom-out backdrop-blur-sm"
+            className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4 lg:p-10 cursor-zoom-out"
             onClick={() => setZoomedImage(null)}
           >
             <button

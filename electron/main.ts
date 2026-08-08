@@ -39,7 +39,7 @@ function createWindow() {
     height: 800,
     minWidth: 1280,
     minHeight: 800,
-    backgroundColor: '#0D0D0D', // Instant black background
+    transparent: true,
     show: false, // Don't show until ready
     title: 'ECEngine',
     autoHideMenuBar: true,
