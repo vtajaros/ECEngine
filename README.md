@@ -23,6 +23,15 @@ ECEngine is an offline-first desktop application engineered for examinees prepar
 
 ## 🚀 Features
 
+### 🆕 Recent Updates
+* **Bookmarked Items Manager**: A new dedicated button in the deck list allows you to instantly view and manage all bookmarked items for a specific deck, complete with previewing choices and removing bookmarks. Added a "Bookmarked" legend to all study views.
+* **Immersive Fullscreen**: Pressing `F11` now intelligently hides the custom title bars and removes window borders, allowing the app to sit perfectly flush against the edges of your screen.
+* **Dashboard Analytics & UI Polish**: 
+  * The Accuracy Trend graph is now powered by an optimized SQLite index query, making subject switching virtually instantaneous.
+  * Replaced the SRS mastery bar for MCQs with a clearer "Unique Items Answered" tracker.
+  * Fixed an issue where Study Time wouldn't update if a session was ended abruptly.
+  * Fine-tuned tooltip colors and sidebar expansion animations for a premium, unified look.
+
 ### Study Modes
 * **Spaced Repetition**: Flashcard and formula sets utilize the SM-2 algorithm, providing Again / Hard / Good / Easy rating buttons to schedule reviews.
 * **Preview Mode**: Browse formula sets without writing SM-2 progress data.
