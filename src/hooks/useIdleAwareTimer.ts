@@ -11,6 +11,10 @@ export function useIdleAwareTimer(isActive: boolean) {
 
   useEffect(() => {
     if (!isActive) {
+      const minutes = accumulatedRef.current / 60
+      if (minutes > 0) {
+        dbService.updateTimeSpent(minutes).catch(console.error)
+      }
       accumulatedRef.current = 0
     }
   }, [isActive])

@@ -119,6 +119,7 @@ declare global {
         minimize: () => void
         maximize: () => void
         close: () => void
+        onFullscreenChanged: (callback: (isFullscreen: boolean) => void) => () => void
       }
       print: {
         open: (topicId: string, title: string) => Promise<{ success: boolean; error?: string }>

@@ -28,11 +28,14 @@ export const AppShell: React.FC = () => {
   const [showFormulaBank, setShowFormulaBank] = useState(() =>
     localStorage.getItem('ecengine:show-formula-bank') === 'true'
   )
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const location = useLocation()
 
-
-
-
+  useEffect(() => {
+    if (window.electron?.windowControls?.onFullscreenChanged) {
+      return window.electron.windowControls.onFullscreenChanged(setIsFullscreen)
+    }
+  }, [])
 
   useEffect(() => {
     const handler = () => {
@@ -78,15 +81,17 @@ export const AppShell: React.FC = () => {
   ]
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-engine-black text-[var(--text-primary)] font-['IBM_Plex_Mono'] rounded-xl border border-[#333]">
-      <TitleBar
-        isCollapsed={isCollapsed}
-        onToggleSidebar={() => {
-          const next = !isCollapsed;
-          setIsCollapsed(next);
-          localStorage.setItem('ecengine:sidebar-collapsed', String(next));
-        }}
-      />
+    <div className={`flex flex-col h-screen overflow-hidden bg-engine-black text-[var(--text-primary)] font-['IBM_Plex_Mono'] ${isFullscreen ? '' : 'rounded-xl border border-[#333]'}`}>
+      {!isFullscreen && (
+        <TitleBar
+          isCollapsed={isCollapsed}
+          onToggleSidebar={() => {
+            const next = !isCollapsed;
+            setIsCollapsed(next);
+            localStorage.setItem('ecengine:sidebar-collapsed', String(next));
+          }}
+        />
+      )}
 
       <div className="flex flex-row flex-1 overflow-hidden">
         {/* Sidebar */}
@@ -164,7 +169,7 @@ export const AppShell: React.FC = () => {
                       <item.icon size={18} />
                     </div>
                     {!isCollapsed && (
-                      <span className="font-['Rajdhani'] text-sm font-medium tracking-wide">
+                      <span className="font-['Rajdhani'] text-sm font-medium tracking-wide whitespace-nowrap">
                         {item.label}
                       </span>
                     )}

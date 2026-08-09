@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Layers, X, AlertTriangle, ScrollText, Play, Pencil, Trash2, Search, SlidersHorizontal, Eye, Plus } from 'lucide-react'
+import { Layers, X, AlertTriangle, ScrollText, Play, Pencil, Trash2, Search, SlidersHorizontal, Eye, Plus, Bookmark } from 'lucide-react'
 import FolderPanel from '@/components/ui/FolderPanel'
 import { AdvancedFiltersPopover } from '../deck/AdvancedFiltersPopover'
 import { DeckCard } from '../deck/DeckCard'
@@ -255,6 +255,9 @@ export function FlashcardDeckBrowser({
                 </span>
                 <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
                   <Trash2 className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Delete Deck
+                </span>
+                <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  <Bookmark className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Bookmarked Items
                 </span>
               </div>
             </div>

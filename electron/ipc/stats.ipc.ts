@@ -28,7 +28,7 @@ export function registerStatsHandlers(): void {
          JOIN   cards   c ON p.card_id  = c.id
          JOIN   topics  t ON c.topic_id = t.id
          WHERE  t.subject = ?
-           AND  SUBSTR(p.last_reviewed, 1, 10) >= ?
+           AND  p.last_reviewed >= ?
          GROUP  BY SUBSTR(p.last_reviewed, 1, 10)
          ORDER  BY day ASC`
       const rows = queryAll(sql, [fullSubject, startStr])
@@ -96,12 +96,26 @@ export function registerStatsHandlers(): void {
       const decks = queryAll('SELECT COUNT(id) as count FROM topics')
       const cards = queryAll('SELECT COUNT(id) as count FROM cards')
       const internalized = queryAll('SELECT COUNT(card_id) as count FROM progress WHERE repetitions >= 5')
+      const byType = queryAll(`
+        SELECT type, COUNT(id) as count FROM cards GROUP BY type
+      `) as { type: string; count: number }[]
+      const typeMap: Record<string, number> = {}
+      byType.forEach(r => { typeMap[r.type] = r.count })
+      const answeredMcqs = queryAll(`
+        SELECT COUNT(DISTINCT p.card_id) as count 
+        FROM progress p 
+        JOIN cards c ON p.card_id = c.id 
+        WHERE c.type = 'mcq' AND p.total_count > 0
+      `)
       return {
         success: true,
         data: {
           totalDecks: decks[0]?.count || 0,
           totalCards: cards[0]?.count || 0,
-          internalized: internalized[0]?.count || 0
+          internalized: internalized[0]?.count || 0,
+          flashcardCount: (typeMap['flashcard'] || 0) + (typeMap['formula'] || 0) + (typeMap['concept'] || 0),
+          mcqCount: typeMap['mcq'] || 0,
+          mcqAnswered: answeredMcqs[0]?.count || 0,
         }
       }
     } catch (error) {

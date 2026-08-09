@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { BookOpen, Library, Sigma, Download, Zap, BookMarked, BarChart2, TrendingUp, Calendar, Edit2, Activity, Clock, X, AlertCircle } from 'lucide-react'
+import { BookOpen, Library, Sigma, Download, Zap, BookMarked, BarChart2, TrendingUp, Calendar, Edit2, Activity, Clock, X } from 'lucide-react'
 import { getSubjectBadgeClasses } from '../lib/subjectColors'
 import { dbService, AccuracyGranularity, AccuracySubject } from '../services/db.service'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -14,6 +14,9 @@ export default function Dashboard() {
   const [statsData, setStatsData] = useState({
     totalDecks: 0,
     totalCards: 0,
+    flashcardCount: 0,
+    mcqCount: 0,
+    mcqAnswered: 0,
     totalStudied: 0,
     internalized: 0,
     accuracy: 0,
@@ -28,14 +31,9 @@ export default function Dashboard() {
     { subject: 'EST', count: 0 },
   ])
   const [subjectProgress, setSubjectProgress] = useState<any[]>([])
-  const [dueBySubject, setDueBySubject] = useState<{
-    subject: string
-    due_today: number
-    due_d1: number; due_d2: number; due_d3: number
-    due_d4: number; due_d5: number
-    total_cards: number
-  }[]>([])
+
   const [history, setHistory] = useState<Record<string, { count: number, timeSpent: number }>>({})
+  const [heatmapYear, setHeatmapYear] = useState<number>(new Date().getFullYear())
   
   const [selectedSubject, setSelectedSubject] = useState<AccuracySubject>('ALL')
   const [granularity, setGranularity]         = useState<AccuracyGranularity>('day')
@@ -47,6 +45,18 @@ export default function Dashboard() {
   const SUBJECT_COLORS: Record<string, string> = {
     MATH: '#FB923C', GEAS: '#60A5FA', ELECS: '#F87171', EST: '#22C55E'
   }
+
+  // Derive the list of calendar years that have any tracked activity
+  const availableYears = React.useMemo(() => {
+    const yearSet = new Set<number>()
+    Object.keys(history).forEach(day => {
+      const y = parseInt(day.slice(0, 4), 10)
+      if (!isNaN(y)) yearSet.add(y)
+    })
+    // Always include the current year
+    yearSet.add(new Date().getFullYear())
+    return Array.from(yearSet).sort((a, b) => a - b)
+  }, [history])
 
   const [examDate, setExamDate] = useState('2026-10-16')
   const [preboardDate, setPreboardDate] = useState<string | null>(null)
@@ -77,7 +87,7 @@ export default function Dashboard() {
       const globalStats = await dbService.getGlobalStats()
       const rawSubjectProgress = await dbService.getSubjectProgress()
       const activityHistory = await dbService.getActivityHistory()
-      const rawDueBySubject = await dbService.getDueBySubject()
+
       
       // Use real history for heatmap
       setHistory(activityHistory)
@@ -85,6 +95,9 @@ export default function Dashboard() {
       setStatsData({
         totalDecks: globalStats.totalDecks,
         totalCards: globalStats.totalCards,
+        flashcardCount: globalStats.flashcardCount ?? 0,
+        mcqCount: globalStats.mcqCount ?? 0,
+        mcqAnswered: globalStats.mcqAnswered ?? 0,
         totalStudied: dbStats.totalStudied,
         internalized: globalStats.internalized,
         accuracy: dbStats.accuracy,
@@ -109,11 +122,7 @@ export default function Dashboard() {
 
       setSubjectProgress(formattedProgress)
 
-      const formattedDue = subjects.map(s => {
-        const found = rawDueBySubject.find((r: any) => (SUBJECT_MAP[r.subject] || r.subject) === s)
-        return found ?? { subject: s, due_today: 0, due_d1: 0, due_d2: 0, due_d3: 0, due_d4: 0, due_d5: 0, total_cards: 0 }
-      })
-      setDueBySubject(formattedDue)
+
 
     } catch (error) {
       console.error('Failed to load dashboard data:', error)
@@ -309,19 +318,39 @@ export default function Dashboard() {
                 <Clock className="mr-2 text-accent" size={16} />
                 Activity Monitoring
               </h2>
-              <div className="flex items-center gap-2 text-[10px] font-['Rajdhani'] font-bold text-[#444] uppercase tracking-widest">
-                <span>0H</span>
-                <div className="w-3 h-3 rounded-sm bg-surface border border-border-subtle" />
-                <div className="w-3 h-3 rounded-sm bg-[#003311]" />
-                <div className="w-3 h-3 rounded-sm bg-[#006e21]" />
-                <div className="w-3 h-3 rounded-sm bg-[#00a630]" />
-                <div className="w-3 h-3 rounded-sm bg-accent" />
-                <span>4H+</span>
+              <div className="flex items-center gap-3">
+                {/* Year pill tabs — only shown when multiple years of data exist */}
+                {availableYears.length > 1 && (
+                  <div className="flex items-center gap-1 bg-[#111] border border-border-base rounded-lg p-1">
+                    {availableYears.map(y => (
+                      <button
+                        key={y}
+                        onClick={() => setHeatmapYear(y)}
+                        className={`px-2.5 py-0.5 rounded text-[10px] font-bold font-['Rajdhani'] uppercase tracking-widest transition-all duration-200 ${
+                          heatmapYear === y
+                            ? 'bg-accent text-black'
+                            : 'text-[#555] hover:text-text-primary hover:bg-border-base'
+                        }`}
+                      >
+                        {y}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="flex items-center gap-2 text-[10px] font-['Rajdhani'] font-bold text-[#444] uppercase tracking-widest">
+                  <span>0H</span>
+                  <div className="w-3 h-3 rounded-sm bg-surface border border-border-subtle" />
+                  <div className="w-3 h-3 rounded-sm bg-[#003311]" />
+                  <div className="w-3 h-3 rounded-sm bg-[#006e21]" />
+                  <div className="w-3 h-3 rounded-sm bg-[#00a630]" />
+                  <div className="w-3 h-3 rounded-sm bg-accent" />
+                  <span>4H+</span>
+                </div>
               </div>
             </div>
             
-            <div className="flex-1 w-full flex justify-start py-4 overflow-x-auto">
-              <ReviewHeatmap activityHistory={history} />
+            <div className="flex-1 w-full py-4 overflow-hidden">
+              <ReviewHeatmap activityHistory={history} year={heatmapYear} />
             </div>
 
             {/* Streak Footer */}
@@ -411,51 +440,122 @@ export default function Dashboard() {
                       {s}
                     </button>
                   ))}
-                  <span className="text-[#333] font-['Rajdhani'] text-[9px] tracking-widest">↑ CLICK TO DRILL IN</span>
+                  <span className="text-text-muted font-['Rajdhani'] text-[9px] tracking-widest">↑ CLICK TO DRILL IN</span>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
-        {/* Due Cards Panel */}
-        <div className="lg:col-span-2 p-4 bg-surface rounded-xl border border-border-base flex flex-col overflow-hidden">
-          <h2 className="font-['Rajdhani'] font-bold text-sm text-text-primary mb-3 uppercase tracking-widest border-b border-[#1E1E1E] pb-3 flex items-center justify-between">
+        {/* Study Progress Panel */}
+        <div className="lg:col-span-2 p-5 bg-surface rounded-xl border border-border-base flex flex-col overflow-hidden">
+          <h2 className="font-['Rajdhani'] font-bold text-sm text-text-primary mb-4 uppercase tracking-widest border-b border-[#1E1E1E] pb-3 flex items-center justify-between">
             <span className="flex items-center gap-2">
-              <AlertCircle size={15} className="text-accent" />
-              Due Cards
+              <TrendingUp size={15} className="text-accent" />
+              Study Progress
             </span>
             <span className="text-accent font-['IBM_Plex_Mono'] text-xs">
-              {dueBySubject.reduce((s, r) => s + r.due_today, 0)} today
+              {statsData.flashcardCount > 0
+                ? Math.round((statsData.totalStudied / statsData.flashcardCount) * 100)
+                : 0}% covered
             </span>
           </h2>
 
-          {/* Per-subject rows */}
-          <div className="flex flex-col gap-2 mb-3">
-            {(['MATH', 'GEAS', 'ELECS', 'EST'] as const).map(subj => {
-              const row = dueBySubject.find(r => r.subject === subj)
-              const dueToday = row?.due_today ?? 0
-              const total = row?.total_cards ?? 0
-              const pct = total > 0 ? Math.min(100, Math.round((dueToday / total) * 100)) : 0
-              const SUBJECT_COLORS: Record<string, string> = {
-                MATH: '#F97316', GEAS: '#60A5FA', ELECS: '#F87171', EST: '#00FF41'
+          {/* KPI tiles */}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <div className="bg-surface-2 rounded-lg p-3 border border-border-base flex flex-col items-center">
+              <span className="font-['IBM_Plex_Mono'] text-lg font-bold text-text-primary leading-none">{statsData.totalStudied}</span>
+              <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-[#555] font-bold mt-1">Studied</span>
+            </div>
+            <div className="bg-surface-2 rounded-lg p-3 border border-border-base flex flex-col items-center">
+              <span className="font-['IBM_Plex_Mono'] text-lg font-bold text-accent leading-none">{statsData.internalized}</span>
+              <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-[#555] font-bold mt-1">Mastered</span>
+            </div>
+            <div className="bg-surface-2 rounded-lg p-3 border border-border-base flex flex-col items-center">
+              <span className="font-['IBM_Plex_Mono'] text-lg font-bold text-text-primary leading-none">
+                {(() => {
+                  const totalSecs = Object.values(history).reduce((s, v) => s + v.timeSpent, 0)
+                  const hrs = Math.floor(totalSecs / 3600)
+                  const mins = Math.floor((totalSecs % 3600) / 60)
+                  return hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`
+                })()}
+              </span>
+              <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-[#555] font-bold mt-1">Study Time</span>
+            </div>
+          </div>
+
+          {/* Card type breakdown */}
+          <div className="mb-4 space-y-2.5">
+            {/* MCQ / LooksFam row */}
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="font-['Rajdhani'] font-bold text-[10px] uppercase tracking-widest text-[#666] flex items-center gap-1.5">
+                  <span className="inline-block w-2 h-2 rounded-sm bg-blue-400 opacity-80" />
+                  LooksFam MCQ Items
+                </span>
+                <span className="font-['IBM_Plex_Mono'] text-[10px] text-text-muted">
+                  {statsData.mcqAnswered.toLocaleString()} / {statsData.mcqCount.toLocaleString()} answered
+                </span>
+              </div>
+              <div className="w-full bg-surface-2 h-1.5 rounded-full overflow-hidden border border-border-base">
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{
+                    width: `${statsData.mcqCount > 0 ? Math.min(100, Math.round((statsData.mcqAnswered / statsData.mcqCount) * 100)) : 0}%`,
+                    background: 'linear-gradient(90deg, #60A5FA 0%, #3B82F6 100%)',
+                    boxShadow: '0 0 8px #60A5FA40'
+                  }}
+                />
+              </div>
+              <p className="font-['Rajdhani'] text-[9px] text-text-muted mt-1 tracking-wider">
+                MCQ progress tracks unique items answered
+              </p>
+            </div>
+            {/* Flashcards / Formulas row */}
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="font-['Rajdhani'] font-bold text-[10px] uppercase tracking-widest text-[#666] flex items-center gap-1.5">
+                  <span className="inline-block w-2 h-2 rounded-sm bg-accent opacity-80" />
+                  Flashcards &amp; Formulas
+                </span>
+                <span className="font-['IBM_Plex_Mono'] text-[10px] text-text-muted">
+                  {statsData.totalStudied} / {statsData.flashcardCount} studied
+                </span>
+              </div>
+              <div className="w-full bg-surface-2 h-1.5 rounded-full overflow-hidden border border-border-base">
+                <div
+                  className="h-full rounded-full transition-all duration-700"
+                  style={{
+                    width: `${statsData.flashcardCount > 0 ? Math.min(100, Math.round((statsData.totalStudied / statsData.flashcardCount) * 100)) : 0}%`,
+                    background: 'linear-gradient(90deg, #00FF41 0%, #00CC33 100%)',
+                    boxShadow: '0 0 8px #00FF4140'
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Subject mastery bars */}
+          <div className="flex flex-col gap-3 flex-1">
+            <span className="font-['Rajdhani'] font-bold text-[10px] uppercase tracking-widest text-[#666]">Subject Mastery</span>
+            {subjectProgress.map((item: { subject: string; percent: number }) => {
+              const SUBJ_COLORS: Record<string, string> = {
+                MATH: '#F97316', GEAS: '#60A5FA', ELECS: '#F87171', EST: '#22C55E'
               }
-              const color = SUBJECT_COLORS[subj]
+              const color = SUBJ_COLORS[item.subject] ?? '#555'
               return (
-                <div key={subj}>
-                  <div className="flex justify-between items-center mb-1.5">
-                    <span className="font-['Rajdhani'] font-bold text-[11px] uppercase tracking-widest text-[#666]">{subj}</span>
-                    <span className="font-['IBM_Plex_Mono'] text-[11px]" style={{ color: dueToday > 0 ? color : '#444' }}>
-                      {dueToday} / {total}
-                    </span>
+                <div key={item.subject}>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-['Rajdhani'] font-bold text-[11px] uppercase tracking-widest text-[#666]">{item.subject}</span>
+                    <span className="font-['IBM_Plex_Mono'] text-[11px]" style={{ color }}>{item.percent}%</span>
                   </div>
                   <div className="w-full bg-surface-2 h-1.5 rounded-full overflow-hidden border border-border-base">
                     <div
                       className="h-full rounded-full transition-all duration-700"
                       style={{
-                        width: `${pct}%`,
+                        width: `${item.percent}%`,
                         backgroundColor: color,
-                        boxShadow: dueToday > 0 ? `0 0 6px ${color}60` : 'none'
+                        boxShadow: item.percent > 0 ? `0 0 6px ${color}60` : 'none'
                       }}
                     />
                   </div>
@@ -464,40 +564,29 @@ export default function Dashboard() {
             })}
           </div>
 
-          {/* 5-day upcoming sparkline */}
-          <div className="mt-auto border-t border-[#1E1E1E] pt-3">
-            <p className="font-['Rajdhani'] text-[10px] uppercase tracking-widest text-[#444] mb-2 font-bold">Upcoming 5 days</p>
-            <div className="flex items-end gap-1.5 h-12">
-              {[1, 2, 3, 4, 5].map(d => {
-                const key = `due_d${d}` as 'due_d1'|'due_d2'|'due_d3'|'due_d4'|'due_d5'
-                const count = dueBySubject.reduce((sum, r) => sum + (r[key] ?? 0), 0)
-                const maxCount = Math.max(1, ...[1,2,3,4,5].map(x =>
-                  dueBySubject.reduce((sum, r) => sum + (r[`due_d${x}` as typeof key] ?? 0), 0)
-                ))
-                const heightPct = Math.max(8, Math.round((count / maxCount) * 100))
-                const today = new Date()
-                const futureDate = new Date(today)
-                futureDate.setDate(today.getDate() + d)
-                const label = futureDate.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()
-                return (
-                  <div key={d} className="flex-1 flex flex-col items-center gap-1">
-                    <span className="font-['IBM_Plex_Mono'] text-[9px] text-[#555]">{count > 0 ? count : ''}</span>
-                    <div className="w-full flex items-end" style={{ height: '36px' }}>
-                      <div
-                        className="w-full rounded-sm transition-all duration-700"
-                        style={{
-                          height: `${heightPct}%`,
-                          backgroundColor: count > 0 ? '#00FF41' : '#1A1A1A',
-                          opacity: count > 0 ? 0.7 : 1,
-                          border: '1px solid #222'
-                        }}
-                      />
-                    </div>
-                    <span className="font-['Rajdhani'] text-[9px] text-[#444] font-bold">{label}</span>
-                  </div>
-                )
-              })}
+          {/* Internalization footer */}
+          <div className="mt-auto border-t border-[#1E1E1E] pt-3 mt-3">
+            <div className="flex items-center justify-between">
+              <span className="font-['Rajdhani'] text-[10px] uppercase tracking-widest text-[#666] font-bold">Internalization Rate</span>
+              <span className="font-['IBM_Plex_Mono'] text-[11px] text-accent">
+                {statsData.totalStudied > 0
+                  ? Math.round((statsData.internalized / statsData.totalStudied) * 100)
+                  : 0}%
+              </span>
             </div>
+            <div className="w-full bg-surface-2 h-1 rounded-full overflow-hidden border border-border-base mt-1.5">
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{
+                  width: `${statsData.totalStudied > 0 ? Math.min(100, Math.round((statsData.internalized / statsData.totalStudied) * 100)) : 0}%`,
+                  background: 'linear-gradient(90deg, #00FF41 0%, #00AA30 100%)',
+                  boxShadow: '0 0 6px #00FF4140'
+                }}
+              />
+            </div>
+            <p className="font-['Rajdhani'] text-[9px] text-text-muted mt-1.5 tracking-wider">
+              Cards reviewed ≥5 times are considered mastered
+            </p>
           </div>
         </div>
       </div>

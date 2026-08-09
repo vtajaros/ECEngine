@@ -616,7 +616,7 @@ export default function Formulas() {
     return (
       <div className="h-full bg-engine-black flex flex-col items-center justify-center gap-6 p-10 text-center">
         <div className="flex flex-col items-center gap-2">
-          <Bookmark className="w-12 h-12 text-warn opacity-50 mb-2" />
+          <Bookmark className="w-12 h-12 text-[var(--accent-primary)] opacity-50 mb-2" />
           <p className="text-text-muted font-['IBM_Plex_Mono'] text-lg">
             No cards match your current filters.
           </p>
@@ -901,6 +901,9 @@ export default function Formulas() {
                 </span>
                 <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
                   <Trash2 className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Delete Deck
+                </span>
+                <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  <Bookmark className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Bookmarked Items
                 </span>
               </div>
             </div>

@@ -165,49 +165,6 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
 
   return (
     <div className="flex items-center gap-3">
-      {/* EXAM TARGET TIMER */}
-      <div className="bg-surface border border-accent/10 rounded-lg px-4 py-2 flex items-center gap-6 shadow-xl relative group">
-        <button
-          onClick={openDateModal}
-          className="absolute -top-2 -right-2 p-1.5 bg-surface border border-[#333] rounded-full text-[#666] hover:text-accent opacity-70 hover:opacity-100 transition-all z-10 shadow-lg"
-          title="Change exam date"
-        >
-          <Edit2 size={12} />
-        </button>
-
-        <div className="flex flex-col">
-          <span className="text-[10px] font-['Orbitron'] text-accent uppercase tracking-widest opacity-80">
-            Exam Target
-          </span>
-          <span className="text-[11px] font-['Rajdhani'] text-text-muted uppercase tracking-widest font-bold">
-            {new Date(examDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase()}
-          </span>
-        </div>
-
-        <div className="flex gap-4">
-          <div className="flex flex-col items-center">
-            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{timeLeft.weeks}</span>
-            <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Wks</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{timeLeft.days}</span>
-            <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Days</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{timeLeft.hours.toString().padStart(2, '0')}</span>
-            <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Hrs</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{timeLeft.mins.toString().padStart(2, '0')}</span>
-            <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Min</span>
-          </div>
-          <div className="flex flex-col items-center">
-            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-accent leading-none">{timeLeft.secs.toString().padStart(2, '0')}</span>
-            <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Sec</span>
-          </div>
-        </div>
-      </div>
-
       {/* PREBOARD TIMER OR ADD BUTTON */}
       {preboardDate && preboardTimeLeft ? (
         <div className="bg-surface border border-warn/10 rounded-lg px-4 py-2 flex items-center gap-6 shadow-xl relative group">
@@ -268,6 +225,49 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
           </button>
         </div>
       )}
+
+      {/* EXAM TARGET TIMER */}
+      <div className="bg-surface border border-accent/10 rounded-lg px-4 py-2 flex items-center gap-6 shadow-xl relative group">
+        <button
+          onClick={openDateModal}
+          className="absolute -top-2 -right-2 p-1.5 bg-surface border border-[#333] rounded-full text-[#666] hover:text-accent opacity-70 hover:opacity-100 transition-all z-10 shadow-lg"
+          title="Change exam date"
+        >
+          <Edit2 size={12} />
+        </button>
+
+        <div className="flex flex-col">
+          <span className="text-[10px] font-['Orbitron'] text-accent uppercase tracking-widest opacity-80">
+            Exam Target
+          </span>
+          <span className="text-[11px] font-['Rajdhani'] text-text-muted uppercase tracking-widest font-bold">
+            {new Date(examDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase()}
+          </span>
+        </div>
+
+        <div className="flex gap-4">
+          <div className="flex flex-col items-center">
+            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{timeLeft.weeks}</span>
+            <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Wks</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{timeLeft.days}</span>
+            <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Days</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{timeLeft.hours.toString().padStart(2, '0')}</span>
+            <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Hrs</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{timeLeft.mins.toString().padStart(2, '0')}</span>
+            <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Min</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-accent leading-none">{timeLeft.secs.toString().padStart(2, '0')}</span>
+            <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Sec</span>
+          </div>
+        </div>
+      </div>
 
       {/* EXAM MODAL */}
       <AnimatePresence>

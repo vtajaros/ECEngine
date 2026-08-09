@@ -23,6 +23,7 @@ import { StudySessionStats } from '../components/study/StudySessionStats'
 import { dbService } from '../services/db.service'
 import { weightedSample } from '../lib/sampling'
 import { DeckGrid } from '../components/deck/DeckGrid'
+import { BookmarkedCardsModal } from '../components/mcq/BookmarkedCardsModal'
 
 
 
@@ -59,6 +60,21 @@ export default function LooksFamStudy() {
   const [isLoading, setIsLoading] = useState(true)
   const [setToDelete, setSetToDelete] = useState<StudySet | null>(null)
   const [deleteCountdown, setDeleteCountdown] = useState(0)
+
+  // ── Bookmarks ────────────────────────────────────────────────────────────────
+  // Global bookmark set kept in sync with localStorage so the button visibility
+  // updates live whenever the modal changes bookmarks.
+  const readBookmarks = () => {
+    try {
+      const saved = localStorage.getItem('bookmarkedIds')
+      return saved ? new Set<string>(JSON.parse(saved)) : new Set<string>()
+    } catch { return new Set<string>() }
+  }
+  const [globalBookmarks, setGlobalBookmarks] = useState<Set<string>>(readBookmarks)
+  // Cache: topicId → card IDs loaded from DB (just IDs, not full data)
+  const [topicCardIds, setTopicCardIds] = useState<Record<string, string[]>>({})
+  // Which deck's bookmark modal is currently open
+  const [bookmarkModalDeck, setBookmarkModalDeck] = useState<StudySet | null>(null)
 
   // Advanced Filters State
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
@@ -138,6 +154,19 @@ export default function LooksFamStudy() {
       setAllSets(prev => {
         const nonDb = prev.filter(s => !s.id.startsWith('topic_'));
         return [...nonDb, ...dbSets];
+      })
+
+      // ── Background: load card IDs for all topics so we can show bookmark counts ──
+      // Fire all in parallel; only store IDs (not full data) to keep it cheap.
+      dbSets.forEach(async (s) => {
+        if (!s.id.startsWith('topic_')) return
+        try {
+          const res = await window.electron.data.getCards(s.id)
+          const rows: any[] = res?.data || []
+          if (rows.length > 0) {
+            setTopicCardIds(prev => ({ ...prev, [s.id]: rows.map((c: any) => c.id) }))
+          }
+        } catch { /* non-fatal */ }
       })
     } catch (err) {
       console.error('Failed to load DB sets', err)
@@ -273,6 +302,15 @@ export default function LooksFamStudy() {
 
     return result
   }, [allSets, activeFolder, activeSubject, filterType, filterTags, sortBy, sortOrder, searchQuery])
+
+  // Compute how many bookmarks each topic has (based on cached card IDs)
+  const bookmarksPerTopic = useMemo(() => {
+    const out: Record<string, number> = {}
+    for (const [topicId, ids] of Object.entries(topicCardIds)) {
+      out[topicId] = ids.filter(id => globalBookmarks.has(id)).length
+    }
+    return out
+  }, [topicCardIds, globalBookmarks])
 
   useEffect(() => {
     if (setToDelete) {
@@ -955,6 +993,9 @@ export default function LooksFamStudy() {
                 <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
                   <Trash2 className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Delete Deck
                 </span>
+                <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                  <Bookmark className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Bookmarked Items
+                </span>
               </div>
             </div>
           </div>
@@ -1055,6 +1096,19 @@ export default function LooksFamStudy() {
                             <Trophy className="w-3 h-3" />
                             <span>Test</span>
                           </button>
+                          {/* Bookmark button — only shown when this deck has bookmarked items */}
+                          {(bookmarksPerTopic[set.id] ?? 0) > 0 && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setBookmarkModalDeck(set) }}
+                              className="p-2 bg-[#111] border border-accent/30 text-accent hover:border-accent hover:bg-accent/10 rounded transition-colors relative"
+                              title={`View ${bookmarksPerTopic[set.id]} bookmarked item${bookmarksPerTopic[set.id] !== 1 ? 's' : ''}`}
+                            >
+                              <Bookmark className="w-4 h-4 fill-accent" />
+                              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-accent text-black font-['IBM_Plex_Mono'] text-[9px] font-bold flex items-center justify-center">
+                                {bookmarksPerTopic[set.id] > 9 ? '9+' : bookmarksPerTopic[set.id]}
+                              </span>
+                            </button>
+                          )}
                           {set.id.startsWith('topic_') && (
                             <button
                               onClick={(e) => {
@@ -1158,6 +1212,21 @@ export default function LooksFamStudy() {
                   </button>
                 </motion.div>
               </div>
+            )}
+          </AnimatePresence>
+          {/* Bookmark Modal */}
+          <AnimatePresence>
+            {bookmarkModalDeck && (
+              <BookmarkedCardsModal
+                topicId={bookmarkModalDeck.id}
+                topicTitle={bookmarkModalDeck.title}
+                onClose={() => setBookmarkModalDeck(null)}
+                onBookmarksChanged={(newIds) => {
+                  setGlobalBookmarks(new Set(newIds))
+                  // Update the card ID cache count for this deck in case items changed
+                  setTopicCardIds(prev => ({ ...prev }))
+                }}
+              />
             )}
           </AnimatePresence>
         </div>

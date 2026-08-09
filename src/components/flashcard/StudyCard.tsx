@@ -286,8 +286,8 @@ export const StudyCard = React.memo(function StudyCard({
             }}
           >
             {/* Bookmark */}
-            <button onClick={(e) => { e.stopPropagation(); onBookmarkToggle(card.id) }} className="absolute top-5 right-5 z-10 text-[#666] hover:text-warn transition-colors" title="Bookmark">
-              <Bookmark className={`w-6 h-6 ${isBookmarked ? 'fill-warn text-warn' : ''}`} />
+            <button onClick={(e) => { e.stopPropagation(); onBookmarkToggle(card.id) }} className="absolute top-5 right-5 z-10 text-[#666] hover:text-[var(--accent-primary)] transition-colors" title="Bookmark">
+              <Bookmark className={`w-6 h-6 ${isBookmarked ? 'fill-accent text-accent' : ''}`} />
             </button>
 
             {/* Card Label */}

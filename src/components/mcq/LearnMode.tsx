@@ -227,6 +227,12 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
     }
 
     if (viewState === 'partition-complete') {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        if (currentPartitionIndex < partitions.length - 1) {
+          startNextPartitionPhase()
+        }
+      }
       return
     }
 
@@ -243,7 +249,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
         submitAnswer(mappedIndex)
       }
     }
-  }, [viewState, isMcq, mcqData])
+  }, [viewState, isMcq, mcqData, currentPartitionIndex, partitions.length])
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown)
@@ -501,7 +507,7 @@ Please explain:
                       <div className="text-text-primary font-['IBM_Plex_Mono'] text-[13px] leading-relaxed flex-1 mcq-question-text" dangerouslySetInnerHTML={{ __html: renderMath(mcq.question) }} />
                       <button
                         onClick={() => toggleBookmark(c.id)}
-                        className={`p-1 rounded transition-colors shrink-0 mt-0.5 ${bookmarkedIds.has(c.id) ? 'text-warn bg-warn/10' : 'text-[#555] hover:text-warn hover:bg-warn/5'}`}
+                        className={`p-1 rounded transition-colors shrink-0 mt-0.5 ${bookmarkedIds.has(c.id) ? 'text-accent bg-accent/10' : 'text-[#555] hover:text-accent hover:bg-accent/5'}`}
                         title="Bookmark Question"
                       >
                         <Bookmark className={`w-4 h-4 ${bookmarkedIds.has(c.id) ? 'fill-current' : ''}`} />
@@ -663,10 +669,10 @@ Please explain:
           {/* Bookmark Toggle */}
           <button
             onClick={() => toggleBookmark()}
-            className="absolute top-6 right-6 text-[#666] hover:text-[var(--warning)] transition-colors"
+            className="absolute top-6 right-6 text-[#666] hover:text-[var(--accent-primary)] transition-colors"
             title="Bookmark"
           >
-            <Bookmark className={`w-6 h-6 ${isBookmarked ? 'fill-warn text-warn' : ''}`} />
+            <Bookmark className={`w-6 h-6 ${isBookmarked ? 'fill-accent text-accent' : ''}`} />
           </button>
 
           <div className="mb-10 pr-4 h-auto flex-none">

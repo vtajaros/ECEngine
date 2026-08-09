@@ -113,6 +113,11 @@ contextBridge.exposeInMainWorld('electron', {
     minimize: () => ipcRenderer.send('window-minimize'),
     maximize: () => ipcRenderer.send('window-maximize'),
     close: () => ipcRenderer.send('window-close'),
+    onFullscreenChanged: (callback: (isFullscreen: boolean) => void) => {
+      const listener = (_event: any, isFullscreen: boolean) => callback(isFullscreen)
+      ipcRenderer.on('window:fullscreen', listener)
+      return () => { ipcRenderer.removeListener('window:fullscreen', listener) }
+    },
   },
   print: {
     open: (topicId: string, title: string): Promise<{ success: boolean; error?: string }> =>

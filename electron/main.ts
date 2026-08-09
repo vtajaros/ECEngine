@@ -142,6 +142,14 @@ function createWindow() {
       ::-webkit-scrollbar-corner { background: #0D0D0D !important; }
     `)
   })
+
+  // Broadcast fullscreen state changes
+  mainWindow.on('enter-full-screen', () => {
+    mainWindow?.webContents.send('window:fullscreen', true)
+  })
+  mainWindow.on('leave-full-screen', () => {
+    mainWindow?.webContents.send('window:fullscreen', false)
+  })
 }
 
 app.setName('ECEngine')
