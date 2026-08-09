@@ -161,6 +161,8 @@ export const renderMath = (text: string): string => {
     .replace(/\\unit\{([^}]+)\}/g, '\\text{$1}')
     .replace(/\\ang\{([^}]+)\}/g, '$1^{\\circ}')
     .replace(/\\boldsymbol\{([^}]+)\}/g, '\\mathbf{$1}')
+    .replace(/\\\[([\s\S]*?)\\\]/g, '$$$$$1$$$$')
+    .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$')
 
   const hasDollar = normalized.includes('$')
   const t = normalized  // use normalized text from here on
