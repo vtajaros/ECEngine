@@ -295,7 +295,7 @@ export default function Dashboard() {
               <div className="flex flex-col gap-0.5 flex-1 pr-4">
                 <span className="font-['Rajdhani'] text-[#666] uppercase tracking-widest text-[9px] font-bold">Studied</span>
                 <div className="flex items-baseline gap-1">
-                  <span className="font-['IBM_Plex_Mono'] text-xl font-bold text-text-primary">{statsData.totalStudied || 0}</span>
+                  <span className="font-['IBM_Plex_Mono'] text-xl font-bold text-text-primary">{(statsData.totalStudied || 0) + (statsData.mcqAnswered || 0)}</span>
                   <span className="font-['Rajdhani'] text-accent font-bold text-[9px]">CARDS</span>
                 </div>
               </div>
@@ -464,7 +464,7 @@ export default function Dashboard() {
           {/* KPI tiles */}
           <div className="grid grid-cols-3 gap-2 mb-4">
             <div className="bg-surface-2 rounded-lg p-3 border border-border-base flex flex-col items-center">
-              <span className="font-['IBM_Plex_Mono'] text-lg font-bold text-text-primary leading-none">{statsData.totalStudied}</span>
+              <span className="font-['IBM_Plex_Mono'] text-lg font-bold text-text-primary leading-none">{statsData.totalStudied + statsData.mcqAnswered}</span>
               <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-[#555] font-bold mt-1">Studied</span>
             </div>
             <div className="bg-surface-2 rounded-lg p-3 border border-border-base flex flex-col items-center">
@@ -474,9 +474,9 @@ export default function Dashboard() {
             <div className="bg-surface-2 rounded-lg p-3 border border-border-base flex flex-col items-center">
               <span className="font-['IBM_Plex_Mono'] text-lg font-bold text-text-primary leading-none">
                 {(() => {
-                  const totalSecs = Object.values(history).reduce((s, v) => s + v.timeSpent, 0)
-                  const hrs = Math.floor(totalSecs / 3600)
-                  const mins = Math.floor((totalSecs % 3600) / 60)
+                  const totalMins = Object.values(history).reduce((s, v) => s + (v.timeSpent || 0), 0)
+                  const hrs = Math.floor(totalMins / 60)
+                  const mins = Math.floor(totalMins % 60)
                   return hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`
                 })()}
               </span>
