@@ -679,6 +679,7 @@ export default function LooksFamStudy() {
             setIsSessionActive(false)
             // Re-fetch mastery now that per-answer progress has been written.
             loadDBSets()
+            setGlobalBookmarks(readBookmarks())
           }}
         />
       )
@@ -699,6 +700,7 @@ export default function LooksFamStudy() {
             // TestMode batches writes at submit and fires them concurrently;
             // give SQLite ~300 ms to commit before re-fetching mastery.
             setTimeout(() => loadDBSets(), 300)
+            setGlobalBookmarks(readBookmarks())
           }}
         />
       )
