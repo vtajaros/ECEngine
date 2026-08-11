@@ -208,7 +208,13 @@ export default function LooksFamStudy() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const [activeSubject, setActiveSubject] = useState<Subject>('ALL')
+  const [activeSubject, setActiveSubject] = useState<Subject>(
+    () => (sessionStorage.getItem('looksfam:activeSubject') as Subject) ?? 'ALL'
+  )
+
+  useEffect(() => {
+    sessionStorage.setItem('looksfam:activeSubject', activeSubject)
+  }, [activeSubject])
   const [activeFolder, setActiveFolder] = useState<string | 'all'>(
     () => sessionStorage.getItem('looksfam:activeFolder') ?? 'all'
   )
@@ -257,16 +263,15 @@ export default function LooksFamStudy() {
       if (folder.name === 'Uncategorized') {
         count = allSets.filter(d => d.folderId === null || d.folderId === uncategorizedId).length
       } else {
-        count = allSets.filter(d => {
-          const ids = subtreeIds(folder.id)
-          return d.folderId ? ids.includes(d.folderId) : false
-        }).length
+        // Store only the DIRECT count for this folder (not subtree).
+        // FolderPanel's subtreeCount() handles summing children.
+        count = allSets.filter(d => d.folderId === folder.id).length
       }
       acc[folder.id] = count
       acc[folder.name] = count // for legacy mode fallback
     }
     return acc
-  }, [allSets, folderRows, subtreeIds])
+  }, [allSets, folderRows])
 
   const filteredAndSortedSets = useMemo(() => {
     const folderFiltered = activeFolder === 'all'

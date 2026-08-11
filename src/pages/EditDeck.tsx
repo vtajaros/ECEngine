@@ -1258,6 +1258,10 @@ export default function EditDeck() {
       const tagsArr = deckMeta.tags.split(',').map(t => t.trim()).filter(Boolean)
         const currentIds = new Set(cards.filter(c => !c.id.startsWith('new_')).map(c => c.id))
         const deletedCardIds = [...originalCardIds].filter(id => !currentIds.has(id))
+      const isNewFolder = deckMeta.folderName.trim() !== '' && 
+                          deckMeta.folderName.trim().toLowerCase() !== 'uncategorized' &&
+                          !existingFolders.some(f => f.toLowerCase() === deckMeta.folderName.trim().toLowerCase())
+
       const res = await window.electron.decks.updateDeckWithCards({
         deckId,
         title: deckMeta.title.trim(),
@@ -1277,7 +1281,11 @@ export default function EditDeck() {
       })
       if (!res.success) throw new Error(res.error)
       await loadCards()
-      setToast({ type: 'success', msg: 'Deck saved successfully!' })
+      if (isNewFolder) {
+        setToast({ type: 'success', msg: `Deck saved and new folder "${deckMeta.folderName.trim()}" created!` })
+      } else {
+        setToast({ type: 'success', msg: 'Deck saved successfully!' })
+      }
       setTimeout(() => setToast(null), 3000)
     } catch (err) {
       console.error('[EditDeck] Save failed', err)
@@ -1402,7 +1410,7 @@ export default function EditDeck() {
                     className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-text-primary font-['IBM_Plex_Mono'] text-sm focus:border-accent focus:bg-[#111] outline-none transition-colors pr-16 placeholder-[#555]"
                     value={deckMeta.folderName}
                     onChange={e => {
-                      setDeckMeta(m => ({ ...m, folderName: e.target.value }))
+                      setDeckMeta(m => ({ ...m, folderName: e.target.value, folderId: null }))
                       setShowFolderDropdown(true)
                     }}
                     onFocus={() => setShowFolderDropdown(true)}
@@ -1413,7 +1421,7 @@ export default function EditDeck() {
                       <button
                         type="button"
                         onClick={() => {
-                          setDeckMeta(m => ({ ...m, folderName: '' }))
+                          setDeckMeta(m => ({ ...m, folderName: '', folderId: null }))
                           setShowFolderDropdown(true)
                         }}
                         className="p-1 text-[#444] hover:text-accent transition-colors"
@@ -1455,7 +1463,7 @@ export default function EditDeck() {
                                 key={f}
                                 type="button"
                                 onClick={() => {
-                                  setDeckMeta(m => ({ ...m, folderName: f }))
+                                  setDeckMeta(m => ({ ...m, folderName: f, folderId: null }))
                                   setShowFolderDropdown(false)
                                 }}
                                 className="w-full text-left px-3 py-2 text-xs font-['IBM_Plex_Mono'] text-[#ccc] hover:bg-border-base hover:text-accent transition-colors flex items-center justify-between"

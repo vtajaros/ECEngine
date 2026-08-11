@@ -125,7 +125,7 @@ function computeDropInfo(
     // Using full activeRect.height would skew the center for expanded folders.
     const activeVisualCenterY = activeRect.top + 16
     const relativeY = (activeVisualCenterY - overRect.top) / overRect.height
-    intent = relativeY < 0.25 ? 'before' : relativeY > 0.75 ? 'after' : 'into'
+    intent = relativeY < 0.15 ? 'before' : relativeY > 0.85 ? 'after' : 'into'
   }
 
   return { targetId: overId, intent, isTopLevel: false }
@@ -274,7 +274,15 @@ const FolderRowItem: React.FC<{
     return (
       <div ref={setNodeRef} style={style}>
         <div
-          className="flex items-center gap-2 w-full py-1.5 rounded-md border border-transparent hover:bg-slate-800/50"
+          className={`relative flex items-center gap-2 w-full py-1.5 rounded-md border hover:bg-slate-800/50 ${
+            isDropTarget && dropIntent === 'into'
+              ? 'border-[var(--accent-primary)] bg-[var(--accent-primary)]/10'
+              : isDropTarget && dropIntent === 'before'
+              ? 'border-transparent border-t-[2px] border-t-[var(--accent-primary)]'
+              : isDropTarget && dropIntent === 'after'
+              ? 'border-transparent border-b-[2px] border-b-[var(--accent-primary)]'
+              : 'border-transparent'
+          }`}
           style={{ paddingLeft: `${10 + indent}px`, paddingRight: '8px' }}
         >
           {/* Grip handle — all non-uncategorized rows, any depth */}
@@ -295,6 +303,13 @@ const FolderRowItem: React.FC<{
           <span className="flex-1 min-w-0 text-[12px] font-bold font-['Rajdhani'] uppercase tracking-wider text-[var(--text-secondary)] truncate">
             {node.name}
           </span>
+
+          {/* Nest-into indicator label */}
+          {isDropTarget && dropIntent === 'into' && (
+            <span className="text-[9px] font-['Rajdhani'] uppercase tracking-wider text-[var(--accent-primary)] bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/30 px-1.5 py-0.5 rounded whitespace-nowrap shrink-0">
+              Nest inside
+            </span>
+          )}
 
           {/* Add subfolder — only root level */}
           {!isUncategorized && depth === 0 && (
@@ -365,7 +380,7 @@ const FolderRowItem: React.FC<{
     } else if (dropIntent === 'after') {
       dropHighlightClass = 'border-b-[2px] border-b-[var(--accent-primary)]'
     } else if (dropIntent === 'into') {
-      dropHighlightStyle = { background: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)' }
+      dropHighlightStyle = { background: 'color-mix(in srgb, var(--accent-primary) 12%, transparent)', outline: '1px solid var(--accent-primary)', outlineOffset: '-1px', borderRadius: '6px' }
     }
   }
 
@@ -373,7 +388,7 @@ const FolderRowItem: React.FC<{
     <div ref={setNodeRef} style={style}>
       <motion.div
         whileHover={{ scale: 1.005 }}
-        className={`min-w-0 flex items-center w-full gap-1.5 py-2 rounded-md border-l-[3px] border-t-0 border-r-0 border-b-0 cursor-pointer group transition-colors ${isSelected
+        className={`relative min-w-0 flex items-center w-full gap-1.5 py-2 rounded-md border-l-[3px] border-t-0 border-r-0 border-b-0 cursor-pointer group transition-colors ${isSelected
             ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--accent-primary)]'
             : 'bg-transparent text-[var(--text-secondary)] border-l-transparent hover:bg-[var(--bg-secondary)]'
           } ${dropHighlightClass}`}
@@ -413,6 +428,13 @@ const FolderRowItem: React.FC<{
         <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-mono border border-[var(--bg-elevated)]">
           {deckCount}
         </span>
+
+        {/* Nest-into indicator label */}
+        {isDropTarget && dropIntent === 'into' && (
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-['Rajdhani'] uppercase tracking-wider text-[var(--accent-primary)] bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/30 px-1.5 py-0.5 rounded whitespace-nowrap">
+            Nest inside
+          </span>
+        )}
       </motion.div>
 
       {/* Children */}
