@@ -430,7 +430,8 @@ export const dbService = {
    * Also records activity for dashboard streak tracking.
    */
   recordCardResult: async (cardId: string, isCorrect: boolean): Promise<void> => {
-    const result = await window.electron.data.recordCardResult({ cardId, isCorrect })
+    const lastReviewed = new Date().toISOString()
+    const result = await window.electron.data.recordCardResult({ cardId, isCorrect, lastReviewed })
     if (!result.success) {
       throw new Error(`Database Operation Failed: ${result.error || 'Failed to record card result'}`)
     }

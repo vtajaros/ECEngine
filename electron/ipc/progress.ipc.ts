@@ -7,6 +7,7 @@ import { z } from 'zod'
 const RecordCardResultSchema = z.object({
   cardId: z.string().min(1),
   isCorrect: z.boolean(),
+  lastReviewed: z.string(),
 })
 
 export function registerProgressHandlers(): void {
@@ -23,21 +24,22 @@ export function registerProgressHandlers(): void {
    */
   ipcMain.handle('data:recordCardResult', async (_, payload: unknown) => {
     try {
-      const { cardId, isCorrect } = RecordCardResultSchema.parse(payload)
+      const { cardId, isCorrect, lastReviewed } = RecordCardResultSchema.parse(payload)
       const correctInc = isCorrect ? 1 : 0
       const lastResult = isCorrect ? 'correct' : 'wrong'
 
       const sql = `
         INSERT INTO progress
           (card_id, ease_factor, interval, repetitions,
-           correct_count, total_count, last_result)
-        VALUES (?, 2.5, 1, 0, ?, 1, ?)
+           correct_count, total_count, last_result, last_reviewed)
+        VALUES (?, 2.5, 1, 0, ?, 1, ?, ?)
         ON CONFLICT(card_id) DO UPDATE SET
           total_count   = total_count + 1,
           correct_count = correct_count + ?,
-          last_result   = excluded.last_result
+          last_result   = excluded.last_result,
+          last_reviewed = excluded.last_reviewed
       `
-      execute(sql, [cardId, correctInc, lastResult, correctInc])
+      execute(sql, [cardId, correctInc, lastResult, lastReviewed, correctInc])
       return { success: true }
     } catch (error) {
       return { success: false, error: (error as Error).message }

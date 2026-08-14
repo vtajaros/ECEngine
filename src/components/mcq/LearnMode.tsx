@@ -638,9 +638,9 @@ Please explain:
               style={{ width: `${(overallCurrentQuestion / cards.length) * 100}%` }}
             />
           </div>
-          <div className="text-[11px] font-['IBM_Plex_Mono'] flex items-center gap-4 text-text-muted">
-            <span className="flex items-center gap-1 text-accent"><div className="w-2 h-2 rounded-full bg-accent"></div> ✓ {totalCorrectInPartition} correct</span>
-            <span className="flex items-center gap-1 text-danger"><div className="w-2 h-2 rounded-full bg-danger"></div> ✗ {totalWrongInPartition} to retry</span>
+          <div className="text-[11px] font-['IBM_Plex_Mono'] font-bold uppercase tracking-widest flex items-center gap-4 text-text-muted">
+            <span className="flex items-center gap-1.5 text-accent"><div className="w-2 h-2 rounded-full bg-accent"></div> ✓ {totalCorrectInPartition} correct</span>
+            <span className="flex items-center gap-1.5 text-danger"><div className="w-2 h-2 rounded-full bg-danger"></div> ✗ {totalWrongInPartition} to retry</span>
           </div>
         </div>
 

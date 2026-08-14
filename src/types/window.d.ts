@@ -77,7 +77,7 @@ declare global {
         getDueBySubject: () => Promise<{ success: boolean; data?: any; error?: string }>
         getCardsWithProgress: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
         /** Write MCQ correctness without touching SM-2 fields. Safe to call for native MCQ cards only. */
-        recordCardResult: (payload: { cardId: string; isCorrect: boolean }) => Promise<{ success: boolean; error?: string }>
+        recordCardResult: (payload: { cardId: string, isCorrect: boolean, lastReviewed: string }) => Promise<{ success: boolean; error?: string }>
       }
       file: {
         import: (filePath?: string) => Promise<{ success: boolean; data?: string; canceled?: boolean; error?: string }>

@@ -114,6 +114,13 @@ const MIGRATIONS: Array<{ version: number; sql: string | string[] }> = [
     sql: [
       "ALTER TABLE cards ADD COLUMN order_index INTEGER DEFAULT 0"
     ]
+  },
+  {
+    // v8: Optimization for accuracy trend subject switching.
+    version: 8,
+    sql: [
+      "CREATE INDEX IF NOT EXISTS idx_topics_subject ON topics(subject)"
+    ]
   }
 ]
 
@@ -164,6 +171,7 @@ function ensureBootstrapTables(db: Database.Database) {
   db.exec("CREATE INDEX IF NOT EXISTS idx_next_review ON progress(next_review)");
   db.exec("CREATE INDEX IF NOT EXISTS idx_last_reviewed ON progress(last_reviewed)");
   db.exec("CREATE INDEX IF NOT EXISTS idx_cards_topic_id ON cards(topic_id)");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_topics_subject ON topics(subject)");
 }
 
 /**

@@ -61,3 +61,4 @@ CREATE TABLE IF NOT EXISTS folders (
 );
 
 CREATE INDEX IF NOT EXISTS idx_topics_folder_id ON topics(folder_id);
+CREATE INDEX IF NOT EXISTS idx_topics_subject ON topics(subject);
