@@ -64,11 +64,11 @@ export const DeckCard = React.memo(function DeckCard({ deck, onLearn, onPreview,
         {/* Right Column: Administrative Info */}
         <div className="flex flex-col items-end gap-1.5 shrink-0">
           {/* Items Tag */}
-          <span className="w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] text-text-primary font-rajdhani font-bold tracking-widest text-[10px] shrink-0 uppercase whitespace-nowrap">
+          <span className="min-w-[70px] px-2 flex justify-center py-0.5 rounded border border-[#333] bg-[#111] text-text-primary font-rajdhani font-bold tracking-widest text-xs shrink-0 uppercase whitespace-nowrap">
             {deck.cardCount} ITEMS
           </span>
           {/* Date String */}
-          <span className="text-[10px] text-gray-500 uppercase font-['IBM_Plex_Mono'] tracking-widest">
+          <span className="text-xs text-gray-400 uppercase font-['IBM_Plex_Mono'] tracking-widest">
             {deck.createdAt ? new Date(deck.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
           </span>
         </div>
