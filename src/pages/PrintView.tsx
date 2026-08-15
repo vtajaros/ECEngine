@@ -1174,7 +1174,7 @@ export default function PrintView() {
         <style>{`
           @page {
             size: A4 portrait;
-            margin: 36px 0;
+            margin: 0;
           }
           *, *::before, *::after { box-sizing: border-box; }
           html, body, #root {
@@ -1200,10 +1200,28 @@ export default function PrintView() {
             width: '794px',
             boxSizing: 'border-box',
             margin: 0,
-            padding: '0 48px',
+            padding: 0,
           } as React.CSSProperties}
         >
-          {paperContent}
+          <table style={{ width: '100%', borderCollapse: 'collapse', borderSpacing: 0 }}>
+            <thead style={{ height: '36px' }}>
+              <tr>
+                <td><div style={{ height: '36px' }}></div></td>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style={{ padding: '0 48px' }}>
+                  {paperContent}
+                </td>
+              </tr>
+            </tbody>
+            <tfoot style={{ height: '36px' }}>
+              <tr>
+                <td><div style={{ height: '36px' }}></div></td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
       </>
     )

@@ -142,7 +142,7 @@ export function registerPrintHandlers(getMainWindow: () => Electron.BrowserWindo
       const buffer = await pdfWindow.webContents.printToPDF({
         printBackground: true,
         pageSize: 'A4',
-        margins: { marginType: 'custom', top: 0, bottom: 0, left: 0, right: 0 },
+        margins: { marginType: 'none' },
         landscape: false,
         preferCSSPageSize: true,
       })

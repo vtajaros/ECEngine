@@ -24,6 +24,10 @@ ECEngine is an offline-first desktop application engineered for examinees prepar
 ## 🚀 Features
 
 ### 🆕 Recent Updates
+* **Enhanced Test Paper View**: 
+  * Displays an integrated "Solution" block automatically for MCQ items, complete with explanations and images capped at a distortion-free 300px max height.
+  * Replaced separate toolbar buttons with a sleek, space-saving "ANS" and "SOL'N" grouped checkbox toggle.
+  * Perfected PDF export rendering — each page now maintains consistent vertical margins using a robust `<thead>`/`<tfoot>` HTML hack that flawlessly inherits the active document theme color (Light, Sepia, or Dark) without relying on Chromium's inconsistent `@page` background support.
 * **Bookmarked Items Manager**: A new dedicated button in the deck list allows you to instantly view and manage all bookmarked items for a specific deck, complete with previewing choices and removing bookmarks. Added a "Bookmarked" legend to all study views.
 * **Immersive Fullscreen**: Pressing `F11` now intelligently hides the custom title bars and removes window borders, allowing the app to sit perfectly flush against the edges of your screen.
 * **Dashboard Analytics & UI Polish**: 
