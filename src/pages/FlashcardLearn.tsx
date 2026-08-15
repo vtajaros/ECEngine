@@ -357,6 +357,10 @@ export default function FlashcardLearn() {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
       if (e.key === 'Escape') {
         e.preventDefault()
+        if (zoomedImage) {
+          setZoomedImage(null)
+          return
+        }
         setShowExitConfirm(true)
         return
       }
@@ -385,7 +389,7 @@ export default function FlashcardLearn() {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [activeDeck, currentIndex, sessionCards.length, isAutoplay])
+  }, [activeDeck, currentIndex, sessionCards.length, isAutoplay, zoomedImage])
 
   // ── Bookmark toggle ──
   const toggleBookmark = (cardId: string) => {

@@ -103,12 +103,16 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault()
+        if (zoomedImage) {
+          setZoomedImage(null)
+          return
+        }
         setShowExitConfirm(true)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [zoomedImage])
 
   const handleExit = () => {
     stop() // cancel any in-flight speech before unmounting

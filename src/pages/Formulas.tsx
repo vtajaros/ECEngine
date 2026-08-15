@@ -352,6 +352,10 @@ export default function Formulas() {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
       if (e.key === 'Escape') {
         e.preventDefault()
+        if (zoomedImage) {
+          setZoomedImage(null)
+          return
+        }
         setShowExitConfirm(true)
         return
       }
@@ -369,7 +373,7 @@ export default function Formulas() {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [activeDeck, currentIndex, sessionCards.length])
+  }, [activeDeck, currentIndex, sessionCards.length, zoomedImage])
 
   // ── Bookmark toggle ──
   const toggleBookmark = (cardId: string) => {

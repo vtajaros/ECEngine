@@ -380,6 +380,10 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault()
+        if (zoomedImage) {
+          setZoomedImage(null)
+          return
+        }
         if (viewState === 'test') {
           setShowExitConfirm(true)
         } else {
@@ -389,7 +393,7 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [viewState])
+  }, [viewState, zoomedImage])
 
   const handleExit = () => {
     if (blocker.state === 'blocked') blocker.reset()
