@@ -1174,7 +1174,7 @@ export default function PrintView() {
         <style>{`
           @page {
             size: A4 portrait;
-            margin: 0;
+            margin: 36px 0;
           }
           *, *::before, *::after { box-sizing: border-box; }
           html, body, #root {
@@ -1200,7 +1200,7 @@ export default function PrintView() {
             width: '794px',
             boxSizing: 'border-box',
             margin: 0,
-            padding: '36px 48px',
+            padding: '0 48px',
           } as React.CSSProperties}
         >
           {paperContent}
