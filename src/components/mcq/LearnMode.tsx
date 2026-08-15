@@ -316,17 +316,6 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
       }
       play('wrong')
     }
-
-    // ── Progress write (per-answer, immediate) ──────────────────────────────
-    // Guard: only write for native DB MCQ cards. Generated cards (built from
-    // flashcards via generateMCQs) carry isGenerated=true and reuse the source
-    // flashcard's id \u2014 writing here would corrupt its SM-2 state.
-    if (currentCard.type === 'mcq' && !currentCard.isGenerated) {
-      dbService.recordCardResult(currentCard.id, isCorrect).catch(err => {
-        console.warn('[LearnMode] Failed to record card result:', err)
-      })
-    }
-
     setViewState('feedback')
   }
 
@@ -354,8 +343,18 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
       setViewState('partition-complete')
       if (currentPartitionIndex === partitions.length - 1) {
         play('finish')
+        const progressWrites: Promise<void>[] = []
         for (const [id, stats] of Object.entries(cardStats)) {
+          const card = cards.find(c => c.id === id)
+          if (card && card.type === 'mcq' && !card.isGenerated) {
+            progressWrites.push(
+              dbService.recordCardResult(id, stats.wasCorrectFirstTry).catch(err => {
+                console.warn('[LearnMode] Failed to record card result:', err)
+              })
+            )
+          }
         }
+        Promise.all(progressWrites).catch(() => { /* already caught above */ })
 
         onComplete({
           correct: globalStats.correctFirstTry,
