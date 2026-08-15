@@ -16,6 +16,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { FolderRow } from '../../types/window'
+import { Tooltip } from './Tooltip'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -313,35 +314,38 @@ const FolderRowItem: React.FC<{
 
           {/* Add subfolder — only root level */}
           {!isUncategorized && depth === 0 && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onRequestCreate(node.id) }}
-              title="Add subfolder"
-              className="p-0.5 shrink-0 text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors"
-            >
-              <FolderPlus className="w-3 h-3" />
-            </button>
+            <Tooltip content="Add subfolder" position="top">
+              <button
+                onClick={(e) => { e.stopPropagation(); onRequestCreate(node.id) }}
+                className="p-0.5 shrink-0 text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors"
+              >
+                <FolderPlus className="w-3 h-3" />
+              </button>
+            </Tooltip>
           )}
 
           {/* Rename button — any non-uncategorized row */}
           {!isUncategorized && (
-            <button
-              onClick={(e) => { e.stopPropagation(); setIsRenaming(true) }}
-              title="Rename folder"
-              className="p-0.5 shrink-0 text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors"
-            >
-              <Pencil className="w-3 h-3" />
-            </button>
+            <Tooltip content="Rename folder" position="top">
+              <button
+                onClick={(e) => { e.stopPropagation(); setIsRenaming(true) }}
+                className="p-0.5 shrink-0 text-[var(--text-secondary)] hover:text-[var(--accent-primary)] transition-colors"
+              >
+                <Pencil className="w-3 h-3" />
+              </button>
+            </Tooltip>
           )}
 
           {/* Delete button */}
           {!isUncategorized && (
-            <button
-              onClick={(e) => { e.stopPropagation(); onRequestDelete(node.id, node.name) }}
-              title="Delete folder"
-              className="p-0.5 shrink-0 text-[var(--text-secondary)] hover:text-red-400 transition-colors"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
+            <Tooltip content="Delete folder" position="top">
+              <button
+                onClick={(e) => { e.stopPropagation(); onRequestDelete(node.id, node.name) }}
+                className="p-0.5 shrink-0 text-[var(--text-secondary)] hover:text-red-400 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </Tooltip>
           )}
         </div>
 
@@ -417,13 +421,14 @@ const FolderRowItem: React.FC<{
           className={`shrink-0 ${isSelected ? 'text-[var(--accent-primary)]' : 'text-[var(--text-primary)] group-hover:text-[var(--text-primary)]'}`}
         />
 
-        <span
-          className={`text-[12px] truncate flex-1 font-bold font-['Rajdhani'] uppercase tracking-wider ${isSelected ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'
-            }`}
-          title={node.name}
-        >
-          {node.name}
-        </span>
+        <Tooltip content={node.name} position="bottom" className="flex-1 min-w-0">
+          <span
+            className={`text-[12px] truncate w-full flex-1 font-bold font-['Rajdhani'] uppercase tracking-wider ${isSelected ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'
+              }`}
+          >
+            {node.name}
+          </span>
+        </Tooltip>
 
         <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-mono border border-[var(--bg-elevated)]">
           {deckCount}
@@ -514,25 +519,26 @@ const LegacySortableItem: React.FC<{
 
   return (
     <div ref={setNodeRef} style={style}>
-      <motion.button
-        whileHover={{ scale: 1.01 }}
-        onClick={() => onSelect(folder)}
-        title={folder}
-        className={`min-w-0 flex items-center justify-between w-full gap-2 px-3 py-2.5 rounded-md border-l-[3px] border-t-0 border-r-0 border-b-0 border-transparent whitespace-nowrap group ${isSelected
-            ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--accent-primary)]'
-            : 'bg-transparent text-[var(--text-secondary)] border-l-transparent hover:bg-[var(--bg-secondary)]'
-          }`}
-      >
-        <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
-          <Folder size={14} className={`shrink-0 ${isSelected ? 'text-[var(--accent-primary)]' : 'text-[var(--text-primary)]'}`} />
-          <span className={`text-[13px] truncate font-bold font-['Rajdhani'] uppercase tracking-wider ${isSelected ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'}`} title={folder}>
-            {folder}
-          </span>
-        </div>
+      <Tooltip content={folder} position="bottom" className="w-full">
+        <motion.button
+          whileHover={{ scale: 1.01 }}
+          onClick={() => onSelect(folder)}
+          className={`min-w-0 flex items-center justify-between w-full gap-2 px-3 py-2.5 rounded-md border-l-[3px] border-t-0 border-r-0 border-b-0 border-transparent whitespace-nowrap group ${isSelected
+              ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--accent-primary)]'
+              : 'bg-transparent text-[var(--text-secondary)] border-l-transparent hover:bg-[var(--bg-secondary)]'
+            }`}
+        >
+          <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
+            <Folder size={14} className={`shrink-0 ${isSelected ? 'text-[var(--accent-primary)]' : 'text-[var(--text-primary)]'}`} />
+            <span className={`text-[13px] truncate font-bold font-['Rajdhani'] uppercase tracking-wider ${isSelected ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'}`}>
+              {folder}
+            </span>
+          </div>
         <span className="flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-mono border border-[var(--bg-elevated)]">
           {deckCount}
         </span>
-      </motion.button>
+        </motion.button>
+      </Tooltip>
     </div>
   )
 }
@@ -774,24 +780,26 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
             <h2 className="text-[var(--text-secondary)] text-[10px] uppercase tracking-[0.15em] font-bold">FOLDERS</h2>
             <div className="flex items-center gap-0.5">
               {!isEditing && (
+                <Tooltip content="New folder" position="top">
+                  <button
+                    onClick={() => setCreatingUnder(null)}
+                    className="text-slate-400 hover:text-[var(--accent-primary)] transition-colors p-1 rounded hover:bg-slate-800/50"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </button>
+                </Tooltip>
+              )}
+              <Tooltip content={isEditing ? 'Done' : 'Edit folders'} position="top">
                 <button
-                  onClick={() => setCreatingUnder(null)}
-                  title="New folder"
+                  onClick={() => { setIsEditing(e => !e); setCreatingUnder(undefined) }}
                   className="text-slate-400 hover:text-[var(--accent-primary)] transition-colors p-1 rounded hover:bg-slate-800/50"
                 >
-                  <Plus className="w-3 h-3" />
+                  {isEditing
+                    ? <Check className="w-3 h-3 text-[var(--text-primary)]" />
+                    : <Pencil className="w-3 h-3 text-[var(--text-primary)]" />
+                  }
                 </button>
-              )}
-              <button
-                onClick={() => { setIsEditing(e => !e); setCreatingUnder(undefined) }}
-                title={isEditing ? 'Done' : 'Edit folders'}
-                className="text-slate-400 hover:text-[var(--accent-primary)] transition-colors p-1 rounded hover:bg-slate-800/50"
-              >
-                {isEditing
-                  ? <Check className="w-3 h-3 text-[var(--text-primary)]" />
-                  : <Pencil className="w-3 h-3 text-[var(--text-primary)]" />
-                }
-              </button>
+              </Tooltip>
             </div>
           </div>
 

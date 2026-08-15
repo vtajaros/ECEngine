@@ -10,6 +10,7 @@ import { FormattingGuideModal } from '../components/deck/CardForms'
 import { renderMath, isRawLatex } from '../lib/latex'
 import { getSubjectFilterClasses } from '../lib/subjectColors'
 import { TOS_SUBJECT_COLORS } from '../lib/tosData'
+import { PREDEFINED_TAGS } from '../lib/constants'
 import {
   DndContext,
   closestCenter,
@@ -1537,7 +1538,7 @@ export default function EditDeck() {
                 Source Tags
               </label>
               <div className="flex flex-wrap gap-2 mb-3">
-                {['Excel', 'Edge', 'TOP', 'Indiabix', 'Pinoybix', 'EST Superbook', 'Cuervo'].map(tag => {
+                {PREDEFINED_TAGS.map(tag => {
                   const currentTags = deckMeta.tags.split(',').map(t => t.trim()).filter(Boolean)
                   const isSelected = currentTags.includes(tag)
                   return (

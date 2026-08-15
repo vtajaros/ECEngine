@@ -23,6 +23,8 @@ import {
 import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
 import { FlashcardSession } from '../components/flashcard/FlashcardSession'
 import type { Card, CardData, CardType } from '../types'
+import { Tooltip } from '../components/ui/Tooltip'
+import { PREDEFINED_TAGS } from '../lib/constants'
 import { useIdleAwareTimer } from '../hooks/useIdleAwareTimer'
 import { DeckCard } from '../components/deck/DeckCard'
 import { DeckGrid } from '../components/deck/DeckGrid'
@@ -104,7 +106,7 @@ export default function Formulas() {
   const filterPopoverRef = useRef<HTMLDivElement>(null)
 
   const availableTags = useMemo(() => {
-    const tags = new Set<string>()
+    const tags = new Set<string>(PREDEFINED_TAGS)
     decks.forEach((d) => d.tags?.forEach((t) => tags.add(t)))
     return Array.from(tags).sort()
   }, [decks])
@@ -689,21 +691,23 @@ export default function Formulas() {
 
               <div className="flex items-center justify-center flex-wrap gap-2 w-full bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)] no-scrollbar px-1">
                 <div className="relative shrink-0" ref={filterPopoverRef}>
-                  <button
-                    onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                    className={`p-2 rounded-lg border transition-all ${
-                      showAdvancedFilters ||
-                      filterTags.length > 0 ||
-                      filterType !== 'all' ||
-                      sortBy !== 'date' ||
-                      sortOrder !== 'desc' ||
-                      searchQuery
-                        ? 'bg-accent/10 border-accent text-accent'
-                        : 'bg-[var(--bg-secondary)] border-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                    }`}
-                  >
-                    <SlidersHorizontal size={20} />
-                  </button>
+                  <Tooltip content="Filter & Sort" position="bottom">
+                    <button
+                      onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                      className={`p-2 rounded-lg border transition-all ${
+                        showAdvancedFilters ||
+                        filterTags.length > 0 ||
+                        filterType !== 'all' ||
+                        sortBy !== 'date' ||
+                        sortOrder !== 'desc' ||
+                        searchQuery
+                          ? 'bg-accent/10 border-accent text-accent'
+                          : 'bg-[var(--bg-secondary)] border-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                      }`}
+                    >
+                      <SlidersHorizontal size={20} />
+                    </button>
+                  </Tooltip>
 
                   <AnimatePresence>
                     {showAdvancedFilters && (

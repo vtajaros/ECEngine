@@ -8,6 +8,7 @@ import { DeckGrid } from '../deck/DeckGrid'
 import { FlashCardSettingsModal, FlashCardSettings } from './FlashCardSettingsModal'
 import { getSubjectBadgeClasses, SUBJECT_MAP } from '../../lib/subjectColors'
 import { TOS_SUBJECT_COLORS } from '../../lib/tosData'
+import { Tooltip } from '../ui/Tooltip'
 
 export type Subject = 'MATH' | 'GEAS' | 'ELECS' | 'EST'
 export type FilterSubject = 'ALL' | Subject
@@ -170,15 +171,17 @@ export function FlashcardDeckBrowser({
 
               <div className="flex items-center justify-center flex-wrap gap-2 w-full bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)] no-scrollbar px-1">
                 <div className="relative shrink-0" ref={filterPopoverRef}>
-                  <button
-                    onClick={() => onShowAdvancedFilters(!showAdvancedFilters)}
-                    className={`p-2 rounded-lg border transition-all ${showAdvancedFilters || filterTags.length > 0 || filterType !== 'flashcard' || sortBy !== 'date' || sortOrder !== 'desc' || searchQuery
-                      ? 'bg-accent/10 border-accent text-accent'
-                      : 'bg-[var(--bg-secondary)] border-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                      }`}
-                  >
-                    <SlidersHorizontal size={20} />
-                  </button>
+                  <Tooltip content="Filter & Sort" position="bottom">
+                    <button
+                      onClick={() => onShowAdvancedFilters(!showAdvancedFilters)}
+                      className={`p-2 rounded-lg border transition-all ${showAdvancedFilters || filterTags.length > 0 || filterType !== 'flashcard' || sortBy !== 'date' || sortOrder !== 'desc' || searchQuery
+                        ? 'bg-accent/10 border-accent text-accent'
+                        : 'bg-[var(--bg-secondary)] border-[var(--bg-card)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                        }`}
+                    >
+                      <SlidersHorizontal size={20} />
+                    </button>
+                  </Tooltip>
 
                   <AnimatePresence>
                     {showAdvancedFilters && (

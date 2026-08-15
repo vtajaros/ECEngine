@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { X, Plus, ChevronDown } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TOS_SUBJECT_COLORS } from '../../lib/tosData'
+import { PREDEFINED_TAGS } from '../../lib/constants'
 
 type Subject = 'Mathematics' | 'General Engineering & Applied Sciences' | 'Electronics Engineering' | 'Electronics Systems & Technologies'
 
@@ -12,10 +13,7 @@ const SUBJECTS: { value: Subject; short: string }[] = [
   { value: 'Electronics Systems & Technologies', short: 'EST' },
 ]
 
-const PREDEFINED_TAGS = [
-  'Excel', 'Edge', 'TOP', 'Pinoybix', 'Indiabix',
-  'EST Superbook', 'Cuervo'
-]
+
 
 export type DeckMetadata = {
   title: string

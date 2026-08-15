@@ -1,5 +1,6 @@
 import { MCQForm, FlashcardForm, FormulaForm, MCQEdit, FlashcardEdit, FormulaEdit, FormattingGuideModal } from '../components/deck/CardForms'
 import DeckMetadataForm, { DeckMetadata } from '../components/deck/DeckMetadataForm'
+import { PREDEFINED_TAGS } from '../lib/constants'
 
 import { ImportModal, ImportFlashcardsModal } from '../components/deck/ImportModals'
 import { CardEditor, EditCard } from '../components/deck/CardEditor'
@@ -111,11 +112,6 @@ const SUBJECT_KEYWORDS: Record<Subject, string[]> = {
     'frequency', 'signal', 'channel', 'network'
   ]
 }
-
-const PREDEFINED_TAGS = [
-  'Excel', 'Edge', 'TOP', 'Pinoybix', 'Indiabix',
-  'EST Superbook', 'Cuervo'
-]
 
 
 

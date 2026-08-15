@@ -21,8 +21,7 @@ import { useIdleAwareTimer } from '../hooks/useIdleAwareTimer'
 import { FlashcardSession } from '../components/flashcard/FlashcardSession'
 import { FlashcardDeckBrowser } from '../components/flashcard/FlashcardDeckBrowser'
 import { useSessionStore } from '../store/useSessionStore'
-
-
+import { PREDEFINED_TAGS } from '../lib/constants'
 
 type Subject = 'MATH' | 'GEAS' | 'ELECS' | 'EST'
 type FilterSubject = 'ALL' | Subject
@@ -91,7 +90,7 @@ export default function FlashcardLearn() {
   const filterPopoverRef = useRef<HTMLDivElement>(null)
 
   const availableTags = useMemo(() => {
-    const tags = new Set<string>()
+    const tags = new Set<string>(PREDEFINED_TAGS)
     decks.forEach(d => d.tags?.forEach(t => tags.add(t)))
     return Array.from(tags).sort()
   }, [decks])
