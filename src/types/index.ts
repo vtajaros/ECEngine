@@ -83,6 +83,7 @@ export interface Topic {
   id: string
   name: string
   subject: string
+  description?: string
   parentId: string | null
   orderIndex: number
   createdAt?: number

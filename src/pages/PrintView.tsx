@@ -365,6 +365,7 @@ export default function PrintView() {
   const [scale, setScale] = useState(1)
   const [theme, setTheme] = useState<PrintTheme>('light')
   const [hideAnswers, setHideAnswers] = useState(false)
+  const [topicDescription, setTopicDescription] = useState<string>('')
 
   // Sync theme+layout from pdfConfig once it arrives
   useEffect(() => {
@@ -447,6 +448,16 @@ export default function PrintView() {
       setCards(result)
       setLoading(false)
     })
+    
+    // Fetch description if any
+    window.electron.decks.getTopics().then((res) => {
+      if (res.success && res.data) {
+        const topic = res.data.find((t: any) => t.id === topicId)
+        if (topic?.description) {
+          setTopicDescription(topic.description)
+        }
+      }
+    }).catch(console.error)
   }, [topicId])
 
   // Signal to print.ipc.ts that the PDF render is complete.
@@ -502,9 +513,7 @@ export default function PrintView() {
     }
   }, [hasFormulas, layout])
 
-  const dateStr = new Date().toLocaleDateString('en-US', {
-    year: 'numeric', month: 'long', day: 'numeric',
-  })
+
 
   // -------------------------------------------------------------------------
   // Titlebar (custom centered, matching main window, not printed)
@@ -892,12 +901,14 @@ export default function PrintView() {
     >
       {/* Header */}
       <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--pt-text-primary)', margin: '0 0 6px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <h1 style={{ textAlign: 'center', fontSize: '24px', fontWeight: 700, color: 'var(--pt-text-primary)', margin: topicDescription ? '0 0 6px 0' : '0 0 12px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           {title}
         </h1>
-        <p style={{ fontSize: '13px', color: 'var(--pt-text-secondary)', margin: '0 0 12px 0' }}>
-          {cards.length} item{cards.length !== 1 ? 's' : ''} &nbsp;·&nbsp; Generated {dateStr}
-        </p>
+        {topicDescription && (
+          <p style={{ textAlign: 'center', fontSize: '14px', color: 'var(--pt-text-secondary)', margin: '0 0 12px 0', fontStyle: 'italic', maxWidth: '80%', marginInline: 'auto' }}>
+            {topicDescription}
+          </p>
+        )}
         <hr style={{ border: 'none', borderTop: '2px solid var(--pt-rule)', margin: '0' }} />
       </div>
 
