@@ -115,9 +115,11 @@ interface MCQTableRowProps {
   index: number
   card: Card & { data: MCQData }
   hideAnswers?: boolean
+  hideSolutions?: boolean
 }
-function MCQTableRow({ index, card, hideAnswers }: MCQTableRowProps) {
-  const { question, choices, answer } = card.data
+function MCQTableRow({ index, card, hideAnswers, hideSolutions }: MCQTableRowProps) {
+  const { question, choices, answer, explanation, solutionImagePath, imagePath, choicesPlainText } = card.data
+  const hasSolution = !hideSolutions && ((explanation && explanation.trim().length > 0) || !!solutionImagePath)
   return (
     <tr style={{ borderBottom: '1px solid var(--pt-border)', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
       <td style={{ padding: '10px 12px', verticalAlign: 'top', width: '65%', overflow: 'hidden' }}>
@@ -128,16 +130,15 @@ function MCQTableRow({ index, card, hideAnswers }: MCQTableRowProps) {
               <MathText text={question} />
             </p>
             {/* question imagePath */}
-            {(card.data as MCQData & { imagePath?: string }).imagePath && (
+            {imagePath && (
               <img
-                src={`ece-app://${(card.data as MCQData & { imagePath?: string }).imagePath}`}
+                src={`ece-app://${imagePath}`}
                 alt="Question diagram"
                 onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
                 style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
               />
             )}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: 'auto auto', gap: '2px 8px', marginTop: '4px' }}>
-              {/* Column order: A(0) C(2) in col1, B(1) D(3) in col2 — rendered in row order so grid places them correctly */}
               {[0, 1, 2, 3].map((ci) => {
                 const choice = choices[ci]
                 if (choice === undefined) return null
@@ -157,13 +158,32 @@ function MCQTableRow({ index, card, hideAnswers }: MCQTableRowProps) {
                       alignSelf: 'start',
                       justifySelf: 'start',
                     }}
-              >
+                  >
                     <span style={{ minWidth: '18px', fontWeight: 700 }}>{CHOICE_LABELS[ci]}.</span>
-                    <span><MathText text={choice} plainText={card.data.choicesPlainText?.[ci]} /></span>
+                    <span><MathText text={choice} plainText={choicesPlainText?.[ci]} /></span>
                   </div>
                 )
               })}
             </div>
+            {/* Solution block */}
+            {hasSolution && (
+              <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed var(--pt-border-light)' }}>
+                <span style={{ fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--pt-text-body)', display: 'block', marginBottom: '4px' }}>Solution:</span>
+                {solutionImagePath && (
+                  <img
+                    src={`ece-app://${solutionImagePath}`}
+                    alt="Solution diagram"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                    style={{ maxWidth: '100%', maxHeight: '300px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid var(--pt-border-light)', display: 'block' }}
+                  />
+                )}
+                {explanation && explanation.trim().length > 0 && (
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--pt-text-body)', lineHeight: 1.6 }}>
+                    <MathText text={explanation} />
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </td>
@@ -178,7 +198,7 @@ function MCQTableRow({ index, card, hideAnswers }: MCQTableRowProps) {
       >
         <span style={{ fontWeight: 700, color: 'var(--pt-text-secondary)' }}></span>
         {!hideAnswers && <span style={{ fontWeight: 700, color: 'var(--pt-text-primary)' }}>
-          <MathText text={choices[answer] ?? '—'} plainText={card.data.choicesPlainText?.[answer]} />
+          <MathText text={choices[answer] ?? '—'} plainText={choicesPlainText?.[answer]} />
         </span>}
         {hideAnswers && <span style={{ color: 'var(--pt-text-muted)' }}>—</span>}
       </td>
@@ -191,9 +211,11 @@ interface MCQGlossaryItemProps {
   card: Card & { data: MCQData }
   qaMode?: boolean
   hideAnswers?: boolean
+  hideSolutions?: boolean
 }
-function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers }: MCQGlossaryItemProps) {
-  const { question, choices, answer, imagePath, choicesPlainText } = card.data
+function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers, hideSolutions }: MCQGlossaryItemProps) {
+  const { question, choices, answer, imagePath, choicesPlainText, explanation, solutionImagePath } = card.data
+  const hasSolution = !hideSolutions && ((explanation && explanation.trim().length > 0) || !!solutionImagePath)
   if (qaMode) {
     return (
       <div style={{
@@ -220,6 +242,25 @@ function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers }: MCQGlossa
           <MathText text={choices[answer] ?? '—'} plainText={choicesPlainText?.[answer]} />
         </p>}
         {hideAnswers && <p style={{ color: 'var(--pt-text-muted)', margin: 0, paddingLeft: '16px' }}>—</p>}
+        {/* Solution block (QA mode) */}
+        {hasSolution && (
+          <div style={{ marginTop: '8px', paddingTop: '6px', paddingLeft: '16px', borderTop: '1px dashed var(--pt-border-light)' }}>
+            <span style={{ fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--pt-text-body)', display: 'block', marginBottom: '4px' }}>Solution:</span>
+            {solutionImagePath && (
+              <img
+                src={`ece-app://${solutionImagePath}`}
+                alt="Solution diagram"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                style={{ maxWidth: '100%', maxHeight: '300px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid var(--pt-border-light)', display: 'block' }}
+              />
+            )}
+            {explanation && explanation.trim().length > 0 && (
+              <p style={{ margin: 0, fontSize: '12px', color: 'var(--pt-text-body)', lineHeight: 1.6 }}>
+                <MathText text={explanation} />
+              </p>
+            )}
+          </div>
+        )}
       </div>
     )
   }
@@ -269,6 +310,25 @@ function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers }: MCQGlossa
           )
         })}
       </div>
+      {/* Solution block (glossary mode) */}
+      {hasSolution && (
+        <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed var(--pt-border-light)' }}>
+          <span style={{ fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--pt-text-body)', display: 'block', marginBottom: '4px' }}>Solution:</span>
+          {solutionImagePath && (
+            <img
+              src={`ece-app://${solutionImagePath}`}
+              alt="Solution diagram"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+              style={{ maxWidth: '100%', maxHeight: '300px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid var(--pt-border-light)', display: 'block' }}
+            />
+          )}
+          {explanation && explanation.trim().length > 0 && (
+            <p style={{ margin: 0, fontSize: '12px', color: 'var(--pt-text-body)', lineHeight: 1.6 }}>
+              <MathText text={explanation} />
+            </p>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -364,7 +424,8 @@ export default function PrintView() {
   const [exportError, setExportError] = useState('')
   const [scale, setScale] = useState(1)
   const [theme, setTheme] = useState<PrintTheme>('light')
-  const [hideAnswers, setHideAnswers] = useState(false)
+  const [showAnswers, setShowAnswers] = useState(true)
+  const [showSolutions, setShowSolutions] = useState(true)
   const [topicDescription, setTopicDescription] = useState<string>('')
 
   // Sync theme+layout from pdfConfig once it arrives
@@ -586,7 +647,7 @@ export default function PrintView() {
         borderBottom: '1px solid var(--bg-card)',
       }}
     >
-      <div className="flex flex-nowrap items-center justify-center gap-2 w-full overflow-x-auto no-scrollbar pb-1">
+      <div className="flex flex-wrap items-center justify-center gap-2 w-full pb-1">
       {/* Layout toggle */}
       <div
         className="flex-shrink-0"
@@ -717,38 +778,76 @@ export default function PrintView() {
         ))}
       </div>
 
-      {/* Hide Answers toggle — only for MCQ decks */}
+      {/* ANS / SOL'N checkbox group — only for MCQ decks */}
       {mcqCards.length > 0 && (
         <div
           className="flex-shrink-0"
           style={{
             display: 'flex',
-            gap: '4px',
+            alignItems: 'center',
+            gap: '10px',
             background: 'var(--bg-card)',
-            padding: '4px',
+            padding: '4px 10px',
             borderRadius: 'var(--radius-md)',
             border: '1px solid var(--bg-elevated)',
+            height: '36px',
           }}
         >
-          <motion.button
-            onClick={() => setHideAnswers(h => !h)}
-            whileTap={{ scale: 0.95 }}
-            className="whitespace-nowrap flex-shrink-0 text-[11px] px-[10px] py-[5px]"
+          {/* ANS checkbox */}
+          <label
             style={{
-              borderRadius: 'var(--radius-sm)',
-              border: 'none',
+              display: 'flex', alignItems: 'center', gap: '5px',
               cursor: 'pointer',
               fontFamily: 'var(--font-ui)',
               fontWeight: 700,
+              fontSize: '11px',
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
-              transition: 'all 0.15s',
-              background: hideAnswers ? 'var(--accent-primary)' : 'transparent',
-              color: hideAnswers ? '#000' : 'var(--text-secondary)',
+              color: showAnswers ? 'var(--accent-primary)' : 'var(--text-secondary)',
+              userSelect: 'none',
             }}
           >
-            {hideAnswers ? 'Answers Hidden' : 'Hide Answers'}
-          </motion.button>
+            <input
+              type="checkbox"
+              checked={showAnswers}
+              onChange={() => setShowAnswers(h => !h)}
+              style={{
+                accentColor: 'var(--accent-primary)',
+                width: '13px', height: '13px',
+                cursor: 'pointer',
+              }}
+            />
+            ANS
+          </label>
+
+          {/* SOL'N checkbox — only if at least one card has a solution */}
+          {mcqCards.some(c => (c.data.explanation && c.data.explanation.trim().length > 0) || !!c.data.solutionImagePath) && (
+            <label
+              style={{
+                display: 'flex', alignItems: 'center', gap: '5px',
+                cursor: 'pointer',
+                fontFamily: 'var(--font-ui)',
+                fontWeight: 700,
+                fontSize: '11px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                color: showSolutions ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                userSelect: 'none',
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={showSolutions}
+                onChange={() => setShowSolutions(h => !h)}
+                style={{
+                  accentColor: 'var(--accent-primary)',
+                  width: '13px', height: '13px',
+                  cursor: 'pointer',
+                }}
+              />
+              SOL'N
+            </label>
+          )}
         </div>
       )}
 
@@ -930,14 +1029,14 @@ export default function PrintView() {
               </thead>
               <tbody style={{ display: 'table-row-group' }}>
                 {mcqCards.map((card, i) => (
-                  <MCQTableRow key={card.id} index={i + 1} card={card} hideAnswers={hideAnswers} />
+                  <MCQTableRow key={card.id} index={i + 1} card={card} hideAnswers={!showAnswers} hideSolutions={!showSolutions} />
                 ))}
               </tbody>
             </table>
           ) : (
             <div>
               {mcqCards.map((card, i) => (
-                <MCQGlossaryItem key={card.id} index={i + 1} card={card} qaMode={layout === 'qa'} hideAnswers={hideAnswers} />
+                <MCQGlossaryItem key={card.id} index={i + 1} card={card} qaMode={layout === 'qa'} hideAnswers={!showAnswers} hideSolutions={!showSolutions} />
               ))}
             </div>
           )}
