@@ -224,6 +224,18 @@ input[type='number'] {
    KaTeX's position:absolute SVG positioning inside .hide-tail containers */
 .katex {
   transform-style: flat !important;
+  font-size: var(--katex-scale, 1.1em) !important;
+}
+
+/* Bold equations mode */
+.katex-bold-mode .katex {
+  font-weight: 600 !important;
+}
+.katex-bold-mode .katex * {
+  font-weight: 600 !important;
+}
+.katex-bold-mode .katex .katex-frac-line {
+  border-bottom-width: 0.06em !important;
 }
 
 /* Disable focus rings app-wide — desktop-only app, keyboard nav not needed */

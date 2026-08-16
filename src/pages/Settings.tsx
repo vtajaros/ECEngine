@@ -25,6 +25,12 @@ export default function Settings() {
   const [showFormulaBank, setShowFormulaBank] = useState(
     () => localStorage.getItem('ecengine:show-formula-bank') === 'true'
   )
+  const [katexScale, setKatexScale] = useState<number>(
+    () => parseFloat(localStorage.getItem('ecengine:katex-scale') || '1.1')
+  )
+  const [katexBold, setKatexBold] = useState<boolean>(
+    () => localStorage.getItem('ecengine:katex-bold') === 'true'
+  )
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(
     () => localStorage.getItem('ecengine:sidebar-collapsed') === 'true'
@@ -240,6 +246,24 @@ export default function Settings() {
   const filteredTopics = filteredBySubject.filter(t => topicHasType(t, exportTypeFilter));
 
   const sections = [
+    {
+      title: 'Appearance',
+      icon: <Monitor size={20} className="text-accent" />,
+      options: [
+        {
+          label: 'Equation Font Size',
+          description: 'Adjust the global font size for LaTeX equations.',
+          type: 'custom-slider',
+          actionId: 'katex-scale'
+        },
+        {
+          label: 'Bold Equations',
+          description: 'Render all LaTeX equations with a bold font weight.',
+          type: 'custom-toggle',
+          actionId: 'katex-bold-toggle'
+        }
+      ]
+    },
     {
       title: 'Data & Sync',
       icon: <Database size={20} className="text-accent" />,
@@ -585,6 +609,20 @@ export default function Settings() {
                         </button>
                       )}
 
+                      {opt.type === 'custom-toggle' && (opt as any).actionId === 'katex-bold-toggle' && (
+                        <button
+                          onClick={() => {
+                            const next = !katexBold
+                            setKatexBold(next)
+                            localStorage.setItem('ecengine:katex-bold', String(next))
+                            window.dispatchEvent(new Event('ecengine:katex-bold-changed'))
+                          }}
+                          className={`w-14 h-7 rounded-full p-1 transition-colors ${katexBold ? 'bg-[rgba(0,255,65,0.2)] border border-accent' : 'bg-surface-2 border border-border-base'} focus:outline-none relative shadow-inner`}
+                        >
+                          <span className={`block w-5 h-5 rounded-full shadow-md transform transition-transform ${katexBold ? 'bg-accent translate-x-7 shadow-[0_0_8px_rgba(0,255,65,0.8)]' : 'bg-[#555] translate-x-0'}`} />
+                        </button>
+                      )}
+
                       {opt.type === 'custom-toggle' && (opt as any).actionId === 'formula-bank-toggle' && (
                         <button
                           onClick={() => {
@@ -597,6 +635,28 @@ export default function Settings() {
                         >
                           <span className={`block w-5 h-5 rounded-full shadow-md transform transition-transform ${showFormulaBank ? 'bg-accent translate-x-7 shadow-[0_0_8px_rgba(0,255,65,0.8)]' : 'bg-[#555] translate-x-0'}`} />
                         </button>
+                      )}
+
+                      {opt.type === 'custom-slider' && (opt as any).actionId === 'katex-scale' && (
+                        <div className="flex items-center gap-4 flex-1 justify-end min-w-0 max-w-[250px]">
+                          <input
+                            type="range"
+                            min="0.8"
+                            max="3.0"
+                            step="0.1"
+                            value={katexScale}
+                            onChange={(e) => {
+                              const next = parseFloat(e.target.value)
+                              setKatexScale(next)
+                              localStorage.setItem('ecengine:katex-scale', next.toString())
+                              window.dispatchEvent(new Event('ecengine:katex-scale-changed'))
+                            }}
+                            className="w-full accent-accent"
+                          />
+                          <span className="font-['IBM_Plex_Mono'] text-accent text-sm w-12 text-right">
+                            {katexScale.toFixed(1)}x
+                          </span>
+                        </div>
                       )}
 
                       {opt.type === 'select' && (
