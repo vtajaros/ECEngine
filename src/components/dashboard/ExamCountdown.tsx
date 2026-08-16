@@ -227,44 +227,44 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
       )}
 
       {/* EXAM TARGET TIMER */}
-      <div className="bg-surface border border-accent/10 rounded-lg px-4 py-2 flex items-center gap-6 shadow-xl relative group">
+      <div className={`bg-surface border border-accent/10 rounded-lg flex items-center shadow-xl relative group transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'px-8 py-3 gap-10' : 'px-4 py-2 gap-6'}`}>
         <button
           onClick={openDateModal}
-          className="absolute -top-2 -right-2 p-1.5 bg-surface border border-[#333] rounded-full text-[#666] hover:text-accent opacity-70 hover:opacity-100 transition-all z-10 shadow-lg"
+          className={`absolute p-1.5 bg-surface border border-[#333] rounded-full text-[#666] hover:text-accent opacity-70 hover:opacity-100 transition-all z-10 shadow-lg ${(!preboardDate || !preboardTimeLeft) ? '-top-3 -right-3 scale-110' : '-top-2 -right-2'}`}
           title="Change exam date"
         >
           <Edit2 size={12} />
         </button>
 
-        <div className="flex flex-col">
-          <span className="text-[10px] font-['Orbitron'] text-accent uppercase tracking-widest opacity-80">
+        <div className="flex flex-col transition-all duration-300">
+          <span className={`font-['Orbitron'] text-accent uppercase tracking-widest opacity-80 ${(!preboardDate || !preboardTimeLeft) ? 'text-xs mb-0.5' : 'text-[10px]'}`}>
             Exam Target
           </span>
-          <span className="text-[11px] font-['Rajdhani'] text-text-muted uppercase tracking-widest font-bold">
+          <span className={`font-['Rajdhani'] text-text-muted uppercase tracking-widest font-bold ${(!preboardDate || !preboardTimeLeft) ? 'text-sm' : 'text-[11px]'}`}>
             {new Date(examDate).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase()}
           </span>
         </div>
 
-        <div className="flex gap-4">
+        <div className={`flex transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'gap-6' : 'gap-4'}`}>
           <div className="flex flex-col items-center">
-            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{timeLeft.weeks}</span>
-            <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Wks</span>
+            <span className={`font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-3xl' : 'text-xl'}`}>{timeLeft.weeks}</span>
+            <span className={`uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-[10px] mt-1' : 'text-[9px]'}`}>Wks</span>
           </div>
           <div className="flex flex-col items-center">
-            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{timeLeft.days}</span>
-            <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Days</span>
+            <span className={`font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-3xl' : 'text-xl'}`}>{timeLeft.days}</span>
+            <span className={`uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-[10px] mt-1' : 'text-[9px]'}`}>Days</span>
           </div>
           <div className="flex flex-col items-center">
-            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{timeLeft.hours.toString().padStart(2, '0')}</span>
-            <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Hrs</span>
+            <span className={`font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-3xl' : 'text-xl'}`}>{timeLeft.hours.toString().padStart(2, '0')}</span>
+            <span className={`uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-[10px] mt-1' : 'text-[9px]'}`}>Hrs</span>
           </div>
           <div className="flex flex-col items-center">
-            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{timeLeft.mins.toString().padStart(2, '0')}</span>
-            <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Min</span>
+            <span className={`font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-3xl' : 'text-xl'}`}>{timeLeft.mins.toString().padStart(2, '0')}</span>
+            <span className={`uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-[10px] mt-1' : 'text-[9px]'}`}>Min</span>
           </div>
           <div className="flex flex-col items-center">
-            <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-accent leading-none">{timeLeft.secs.toString().padStart(2, '0')}</span>
-            <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Sec</span>
+            <span className={`font-bold font-['IBM_Plex_Mono'] text-accent leading-none transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-3xl' : 'text-xl'}`}>{timeLeft.secs.toString().padStart(2, '0')}</span>
+            <span className={`uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-[10px] mt-1' : 'text-[9px]'}`}>Sec</span>
           </div>
         </div>
       </div>

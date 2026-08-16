@@ -1,4 +1,5 @@
 import { app, BrowserWindow, shell, session, ipcMain, nativeImage } from 'electron'
+import windowStateKeeper from 'electron-window-state'
 import { join } from 'path'
 import { registerDBHandlers } from './ipc/db.ipc'
 import { registerImageHandlers, registerImageProtocolScheme, handleImageProtocol } from './ipc/image.ipc'
@@ -34,9 +35,16 @@ function createWindow() {
   const iconPath = join(__dirname, `../../resources/ecengine_icon.${iconExt}`)
   const appIcon = nativeImage.createFromPath(iconPath)
 
+  const mainWindowState = windowStateKeeper({
+    defaultWidth: 1280,
+    defaultHeight: 800
+  })
+
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    x: mainWindowState.x,
+    y: mainWindowState.y,
+    width: mainWindowState.width,
+    height: mainWindowState.height,
     minWidth: 1280,
     minHeight: 800,
     transparent: true,
@@ -52,6 +60,8 @@ function createWindow() {
     },
   })
 
+  mainWindowState.manage(mainWindow)
+
   mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     callback({
       responseHeaders: {
@@ -65,7 +75,9 @@ function createWindow() {
 
   // Show window smoothly once React/Vite has loaded the UI initially
   mainWindow.once('ready-to-show', () => {
-    mainWindow!.maximize()
+    if (mainWindowState.isMaximized) {
+      mainWindow!.maximize()
+    }
     mainWindow!.show()
   })
 
