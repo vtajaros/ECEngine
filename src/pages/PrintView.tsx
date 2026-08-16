@@ -168,7 +168,7 @@ function MCQTableRow({ index, card, hideAnswers, hideSolutions }: MCQTableRowPro
             {/* Solution block */}
             {hasSolution && (
               <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed var(--pt-border-light)' }}>
-                <span style={{ fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--pt-text-body)', display: 'block', marginBottom: '4px' }}>Solution:</span>
+                <span style={{ fontWeight: 700, fontSize: '12px', color: 'var(--pt-text-primary)', display: 'block', marginBottom: '4px' }}>SOLUTION:</span>
                 {solutionImagePath && (
                   <img
                     src={`ece-app://${solutionImagePath}`}
@@ -245,7 +245,7 @@ function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers, hideSolutio
         {/* Solution block (QA mode) */}
         {hasSolution && (
           <div style={{ marginTop: '8px', paddingTop: '6px', paddingLeft: '16px', borderTop: '1px dashed var(--pt-border-light)' }}>
-            <span style={{ fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--pt-text-body)', display: 'block', marginBottom: '4px' }}>Solution:</span>
+            <span style={{ fontWeight: 700, fontSize: '12px', color: 'var(--pt-text-primary)', display: 'block', marginBottom: '4px' }}>SOLUTION:</span>
             {solutionImagePath && (
               <img
                 src={`ece-app://${solutionImagePath}`}
@@ -313,7 +313,7 @@ function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers, hideSolutio
       {/* Solution block (glossary mode) */}
       {hasSolution && (
         <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed var(--pt-border-light)' }}>
-          <span style={{ fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--pt-text-body)', display: 'block', marginBottom: '4px' }}>Solution:</span>
+          <span style={{ fontWeight: 700, fontSize: '12px', color: 'var(--pt-text-primary)', display: 'block', marginBottom: '4px' }}>SOLUTION:</span>
           {solutionImagePath && (
             <img
               src={`ece-app://${solutionImagePath}`}

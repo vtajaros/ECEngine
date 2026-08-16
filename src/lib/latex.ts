@@ -107,7 +107,7 @@ function applyInlineFormatting(text: string): string {
   let result = text
     .replace(/\*\*(.*?)\*\*/gs, '<strong>$1</strong>')
     .replace(/(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)/gs, '<em>$1</em>')
-    .replace(/__(.*?)__/gs, '<u>$1</u>')
+    .replace(/(?<!_)__(?!_)(.+?)(?<!_)__(?!_)/gs, '<u>$1</u>')
 
   // Superscript: ^{multi}, ^|...|  (absolute value), or ^x (single non-space char)
   result = result.replace(/\^\{([^}]+)\}/g, '<sup>$1</sup>')
@@ -116,7 +116,7 @@ function applyInlineFormatting(text: string): string {
 
   // Subscript: _{multi} or _x (single non-space char)
   result = result.replace(/\_\{([^}]+)\}/g, '<sub>$1</sub>')
-  result = result.replace(/(?<!\*\*?)_(?!\*\*?)([^\s_{])/g, '<sub>$1</sub>')
+  result = result.replace(/(?<!\*\*?)(?<!_)_(?!\*\*?)([^\s_{])/g, '<sub>$1</sub>')
 
   return result
 }
