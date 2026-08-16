@@ -88,6 +88,29 @@ export default function Settings() {
     check();
   }, []);
 
+  // Autosave katexScale (debounced)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      window.electron.config.updateSettings({ katexScale }).catch(console.error)
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [katexScale])
+
+  // Autosave katexBold
+  useEffect(() => {
+    window.electron.config.updateSettings({ katexBold }).catch(console.error)
+  }, [katexBold])
+
+  // Autosave sidebarCollapsed
+  useEffect(() => {
+    window.electron.config.updateSettings({ sidebarCollapsed }).catch(console.error)
+  }, [sidebarCollapsed])
+
+  // Autosave showFormulaBank
+  useEffect(() => {
+    window.electron.config.updateSettings({ showFormulaBank }).catch(console.error)
+  }, [showFormulaBank])
+
   // Load available TTS voices — getVoices() is async in Chromium, fires voiceschanged event
   // On Linux, skip Web Speech API entirely — we use Piper TTS instead.
   useEffect(() => {

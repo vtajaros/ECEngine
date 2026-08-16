@@ -13,6 +13,10 @@ export interface AppConfig {
   imagesPath?: string
   dbPath?: string
   zoomIndex?: number   // index into ZOOM_STEPS, persisted
+  katexScale?: number
+  katexBold?: boolean
+  sidebarCollapsed?: boolean
+  showFormulaBank?: boolean
 }
 
 export const ZOOM_STEPS = [0.8, 0.9, 1.0, 1.1, 1.2, 1.3] as const
@@ -140,7 +144,11 @@ export function registerConfigHandlers(): void {
     const config = readConfig()
     return {
       examDate: config.examDate,
-      preboardDate: config.preboardDate
+      preboardDate: config.preboardDate,
+      katexScale: config.katexScale,
+      katexBold: config.katexBold,
+      sidebarCollapsed: config.sidebarCollapsed,
+      showFormulaBank: config.showFormulaBank
     }
   })
 

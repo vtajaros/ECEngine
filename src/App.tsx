@@ -23,6 +23,37 @@ export default function App() {
     updateKatexScale()
     updateKatexBold()
 
+    // Sync from persistent config to handle restarts reliably
+    window.electron.config.getSettings().then(settings => {
+      let changed = false
+      if (settings.katexScale !== undefined && settings.katexScale.toString() !== localStorage.getItem('ecengine:katex-scale')) {
+        localStorage.setItem('ecengine:katex-scale', settings.katexScale.toString())
+        changed = true
+      }
+      if (settings.katexBold !== undefined && (settings.katexBold ? 'true' : 'false') !== localStorage.getItem('ecengine:katex-bold')) {
+        localStorage.setItem('ecengine:katex-bold', settings.katexBold ? 'true' : 'false')
+        changed = true
+      }
+      
+      let otherSettingsChanged = false
+      if (settings.sidebarCollapsed !== undefined && (settings.sidebarCollapsed ? 'true' : 'false') !== localStorage.getItem('ecengine:sidebar-collapsed')) {
+        localStorage.setItem('ecengine:sidebar-collapsed', settings.sidebarCollapsed ? 'true' : 'false')
+        otherSettingsChanged = true
+      }
+      if (settings.showFormulaBank !== undefined && (settings.showFormulaBank ? 'true' : 'false') !== localStorage.getItem('ecengine:show-formula-bank')) {
+        localStorage.setItem('ecengine:show-formula-bank', settings.showFormulaBank ? 'true' : 'false')
+        otherSettingsChanged = true
+      }
+
+      if (changed) {
+        updateKatexScale()
+        updateKatexBold()
+      }
+      if (otherSettingsChanged) {
+        window.dispatchEvent(new Event('ecengine:settings-changed'))
+      }
+    }).catch(console.error)
+
     // Listen for changes from Settings
     window.addEventListener('ecengine:katex-scale-changed', updateKatexScale)
     window.addEventListener('ecengine:katex-bold-changed', updateKatexBold)

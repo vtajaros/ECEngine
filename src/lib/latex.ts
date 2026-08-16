@@ -109,14 +109,14 @@ function applyInlineFormatting(text: string): string {
     .replace(/(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)/gs, '<em>$1</em>')
     .replace(/(?<!_)__(?!_)(.+?)(?<!_)__(?!_)/gs, '<u>$1</u>')
 
-  // Superscript: ^{multi}, ^|...|  (absolute value), or ^x (single non-space char)
+  // Superscript: ^{multi}, ^|...|  (absolute value), or ^x (single non-space char or number with optional sign/decimal)
   result = result.replace(/\^\{([^}]+)\}/g, '<sup>$1</sup>')
   result = result.replace(/\^\|([^|]*)\|/g, '<sup>|$1|</sup>')
-  result = result.replace(/\^([^\s{|])/g, '<sup>$1</sup>')
+  result = result.replace(/\^([+-]?\d+(?:\.\d+)?|[^\s{|])/g, '<sup>$1</sup>')
 
-  // Subscript: _{multi} or _x (single non-space char)
+  // Subscript: _{multi} or _x (single non-space char or number with optional sign/decimal)
   result = result.replace(/\_\{([^}]+)\}/g, '<sub>$1</sub>')
-  result = result.replace(/(?<!\*\*?)(?<!_)_(?!\*\*?)([^\s_{])/g, '<sub>$1</sub>')
+  result = result.replace(/(?<!\*\*?)(?<!_)_(?!\*\*?)([+-]?\d+(?:\.\d+)?|[^\s_{])/g, '<sub>$1</sub>')
 
   return result
 }
