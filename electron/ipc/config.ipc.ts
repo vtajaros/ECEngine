@@ -67,27 +67,44 @@ export function initDBPathResolver(): void {
   setDBPathResolver(resolveDBPath)
 }
 
+let cachedConfig: AppConfig | null = null
+
 function getConfigPath(): string {
   return path.join(app.getPath('userData'), 'config.json')
 }
 
 function readConfig(): AppConfig {
+  if (cachedConfig !== null) return cachedConfig
   const configPath = getConfigPath()
-  if (!fs.existsSync(configPath)) return {}
+  if (!fs.existsSync(configPath)) {
+    cachedConfig = {}
+    return cachedConfig
+  }
   try {
     const raw = fs.readFileSync(configPath, 'utf8')
-    return JSON.parse(raw) as AppConfig
+    cachedConfig = (JSON.parse(raw) as AppConfig) || {}
   } catch {
-    return {}
+    cachedConfig = {}
   }
+  return cachedConfig
 }
 
 let writeQueue: Promise<void> = Promise.resolve()
 
 function writeConfig(config: AppConfig): Promise<void> {
+  cachedConfig = { ...config }
+  if (config.groqApiKey !== undefined) {
+    cachedGroqApiKey = config.groqApiKey ? config.groqApiKey.trim() : undefined
+  }
   const configPath = getConfigPath()
-  const currentWrite = writeQueue.then(() => fsp.writeFile(configPath, JSON.stringify(config, null, 2), 'utf8'))
-  writeQueue = currentWrite.catch(() => {})
+  const tmpPath = `${configPath}.${Date.now()}.tmp`
+  const currentWrite = writeQueue.then(async () => {
+    await fsp.writeFile(tmpPath, JSON.stringify(config, null, 2), 'utf8')
+    await fsp.rename(tmpPath, configPath)
+  })
+  writeQueue = currentWrite.catch((err) => {
+    console.error('[writeConfig] Error:', err)
+  })
   return currentWrite
 }
 
@@ -96,7 +113,7 @@ function writeConfig(config: AppConfig): Promise<void> {
  * Priority: userData/config.json → process.env.GROQ_API_KEY
  */
 export function resolveGroqApiKey(): string | undefined {
-  if (cachedGroqApiKey !== null) return cachedGroqApiKey
+  if (cachedGroqApiKey !== null && cachedGroqApiKey !== undefined) return cachedGroqApiKey
   const config = readConfig()
   if (config.groqApiKey && config.groqApiKey.trim()) {
     cachedGroqApiKey = config.groqApiKey.trim()
@@ -158,9 +175,8 @@ export function registerConfigHandlers(): void {
   ipcMain.handle('config:updateSettings', async (_event, settings: Partial<AppConfig>) => {
     try {
       const config = readConfig()
-      // Merge updates
-      if (settings.examDate !== undefined) config.examDate = settings.examDate
-      if (settings.preboardDate !== undefined) config.preboardDate = settings.preboardDate
+      // Safely merge settings
+      Object.assign(config, settings)
       
       await writeConfig(config)
       return { success: true }

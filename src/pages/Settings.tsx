@@ -53,7 +53,7 @@ export default function Settings() {
   const [voicesTimedOut, setVoicesTimedOut] = useState(false)
 
   // Linux Piper TTS state
-  const [piperStatus, setPiperStatus] = useState<{ piperInstalled: boolean; modelConfigured: boolean } | null>(null)
+  const [piperStatus, setPiperStatus] = useState<{ piperInstalled: boolean; modelConfigured: boolean; defaultModelPath?: string; availableModels?: string[] } | null>(null)
   const [piperModelPath, setPiperModelPath] = useState<string>(
     () => localStorage.getItem('ecengine:tts:piperModelPath') ?? ''
   )
@@ -115,8 +115,16 @@ export default function Settings() {
   // On Linux, skip Web Speech API entirely — we use Piper TTS instead.
   useEffect(() => {
     if (isLinux) {
-      const modelPath = localStorage.getItem('ecengine:tts:piperModelPath') ?? undefined
-      window.electron.tts.isAvailable(modelPath).then(setPiperStatus)
+      const saved = localStorage.getItem('ecengine:tts:piperModelPath') ?? ''
+      window.electron.tts.isAvailable(saved || undefined).then((status) => {
+        setPiperStatus(status)
+        if (!saved && status.defaultModelPath) {
+          localStorage.setItem('ecengine:tts:piperModelPath', status.defaultModelPath)
+          setPiperModelPath(status.defaultModelPath)
+        } else if (saved) {
+          setPiperModelPath(saved)
+        }
+      })
       return
     }
     const load = () => {
@@ -445,60 +453,99 @@ export default function Settings() {
 
                   {/* Model path picker — shown when piper is installed */}
                   {piperStatus?.piperInstalled && (
-                    <div className="flex flex-col gap-2">
-                      <span className="font-['Rajdhani'] text-text-muted text-xs uppercase tracking-widest">
-                        Voice Model (.onnx)
-                      </span>
-                      <div className="flex items-center gap-4 flex-1 justify-end min-w-0">
-                        <input
-                          type="text"
-                          value={piperModelPath}
-                          onChange={(e) => setPiperModelPath(e.target.value)}
-                          onBlur={async () => {
-                            if (!piperModelPath.trim()) return
-                            const modelPath = piperModelPath.trim()
-                            const status = await window.electron.tts.isAvailable(modelPath)
-                            if (!status.modelConfigured) {
-                              setPiperModelError('Model not found — ensure the .onnx and .onnx.json sidecar both exist at this path.')
-                            } else {
-                              setPiperModelError(null)
-                              localStorage.setItem('ecengine:tts:piperModelPath', modelPath)
-                              setPiperStatus(status)
-                            }
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
-                          }}
-                          placeholder="e.g. ~/.local/share/piper-voices/en_US-ryan-medium.onnx"
-                          className="font-['IBM_Plex_Mono'] text-text-muted text-xs bg-[#0D0D0D] border border-surface-2 focus:border-accent outline-none rounded px-3 py-1.5 w-full max-w-[480px]"
-                        />
-                        <button
-                          onClick={async () => {
-                            const res = await window.electron.tts.selectVoiceModel()
-                            if (res.success && res.filePath) {
-                              const modelPath = res.filePath
+                    <div className="flex flex-col gap-4">
+                      {piperStatus.availableModels && piperStatus.availableModels.length > 0 && (
+                        <div className="flex flex-row items-center justify-between gap-4">
+                          <div className="flex flex-col gap-1">
+                            <span className="font-['IBM_Plex_Mono'] text-text-primary text-sm">
+                              Select Installed Voice
+                            </span>
+                            <span className="font-['Rajdhani'] text-text-muted text-xs uppercase tracking-widest text-left">
+                              {piperStatus.availableModels.length} Piper model(s) detected in your system
+                            </span>
+                          </div>
+                          <select
+                            value={piperModelPath}
+                            onChange={async (e) => {
+                              const selected = e.target.value
+                              setPiperModelPath(selected)
+                              if (selected) {
+                                const status = await window.electron.tts.isAvailable(selected)
+                                localStorage.setItem('ecengine:tts:piperModelPath', selected)
+                                setPiperStatus(status)
+                                setPiperModelError(null)
+                              }
+                            }}
+                            className="bg-surface-2 border border-border-base focus:border-accent rounded px-4 py-2 text-sm text-text-primary outline-none font-['Rajdhani'] uppercase tracking-wider max-w-[280px]"
+                          >
+                            {piperStatus.availableModels.map((m) => {
+                              const filename = m.split('/').pop() || m
+                              const isRyan = filename.toLowerCase().includes('ryan')
+                              return (
+                                <option key={m} value={m}>
+                                  {filename} {isRyan ? '(Default)' : ''}
+                                </option>
+                              )
+                            })}
+                          </select>
+                        </div>
+                      )}
+
+                      <div className="flex flex-col gap-2">
+                        <span className="font-['Rajdhani'] text-text-muted text-xs uppercase tracking-widest">
+                          Model File Path (.onnx)
+                        </span>
+                        <div className="flex items-center gap-4 flex-1 justify-end min-w-0">
+                          <input
+                            type="text"
+                            value={piperModelPath}
+                            onChange={(e) => setPiperModelPath(e.target.value)}
+                            onBlur={async () => {
+                              if (!piperModelPath.trim()) return
+                              const modelPath = piperModelPath.trim()
                               const status = await window.electron.tts.isAvailable(modelPath)
                               if (!status.modelConfigured) {
-                                setPiperModelPath(modelPath)
-                                setPiperModelError('Model not found — ensure the .onnx.json sidecar exists alongside the selected file.')
+                                setPiperModelError('Model not found — ensure the .onnx and .onnx.json sidecar both exist at this path.')
                               } else {
-                                setPiperModelPath(modelPath)
                                 setPiperModelError(null)
                                 localStorage.setItem('ecengine:tts:piperModelPath', modelPath)
                                 setPiperStatus(status)
                               }
-                            }
-                          }}
-                          className="px-4 py-2 border border-accent text-accent hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)] rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all shrink-0"
-                        >
-                          Browse
-                        </button>
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+                            }}
+                            placeholder="e.g. ~/.local/share/piper-voices/en_US-ryan-medium.onnx"
+                            className="font-['IBM_Plex_Mono'] text-text-muted text-xs bg-[#0D0D0D] border border-surface-2 focus:border-accent outline-none rounded px-3 py-1.5 w-full max-w-[480px]"
+                          />
+                          <button
+                            onClick={async () => {
+                              const res = await window.electron.tts.selectVoiceModel()
+                              if (res.success && res.filePath) {
+                                const modelPath = res.filePath
+                                const status = await window.electron.tts.isAvailable(modelPath)
+                                if (!status.modelConfigured) {
+                                  setPiperModelPath(modelPath)
+                                  setPiperModelError('Model not found — ensure the .onnx.json sidecar exists alongside the selected file.')
+                                } else {
+                                  setPiperModelPath(modelPath)
+                                  setPiperModelError(null)
+                                  localStorage.setItem('ecengine:tts:piperModelPath', modelPath)
+                                  setPiperStatus(status)
+                                }
+                              }
+                            }}
+                            className="px-4 py-2 border border-accent text-accent hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)] rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all shrink-0"
+                          >
+                            Browse
+                          </button>
+                        </div>
+                        {piperModelError && (
+                          <span className="font-['Rajdhani'] text-[var(--color-wrong)] text-xs uppercase tracking-widest">
+                            {piperModelError}
+                          </span>
+                        )}
                       </div>
-                      {piperModelError && (
-                        <span className="font-['Rajdhani'] text-[var(--color-wrong)] text-xs uppercase tracking-widest">
-                          {piperModelError}
-                        </span>
-                      )}
                     </div>
                   )}
                 </div>
@@ -613,8 +660,8 @@ export default function Settings() {
                       )}
 
                       {opt.type === 'toggle' && (
-                        <button className={`w-14 h-7 rounded-full p-1 transition-colors ${opt.current ? 'bg-[rgba(0,255,65,0.2)] border border-accent' : 'bg-surface-2 border border-border-base'} focus:outline-none relative shadow-inner`}>
-                          <span className={`block w-5 h-5 rounded-full shadow-md transform transition-transform ${opt.current ? 'bg-accent translate-x-7 shadow-[0_0_8px_rgba(0,255,65,0.8)]' : 'bg-[#555] translate-x-0'}`} />
+                        <button className={`w-14 h-7 rounded-full p-1 transition-colors ${(opt as any).current ? 'bg-[rgba(0,255,65,0.2)] border border-accent' : 'bg-surface-2 border border-border-base'} focus:outline-none relative shadow-inner`}>
+                          <span className={`block w-5 h-5 rounded-full shadow-md transform transition-transform ${(opt as any).current ? 'bg-accent translate-x-7 shadow-[0_0_8px_rgba(0,255,65,0.8)]' : 'bg-[#555] translate-x-0'}`} />
                         </button>
                       )}
 
@@ -684,7 +731,7 @@ export default function Settings() {
 
                       {opt.type === 'select' && (
                         <select className="bg-surface-2 border border-border-base rounded px-4 py-2 text-sm text-text-primary focus:border-accent outline-none font-['Rajdhani'] uppercase tracking-wider">
-                          <option>{opt.current}</option>
+                          <option>{(opt as any).current}</option>
                         </select>
                       )}
 

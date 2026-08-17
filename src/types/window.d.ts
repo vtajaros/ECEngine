@@ -96,8 +96,8 @@ declare global {
       config: {
         setApiKey: (key: string) => Promise<{ success: boolean; error?: string }>
         getApiKeyStatus: () => Promise<{ configured: boolean }>
-        getSettings: () => Promise<{ examDate?: string; preboardDate?: string | null }>
-        updateSettings: (settings: { examDate?: string; preboardDate?: string | null }) => Promise<{ success: boolean; error?: string }>
+        getSettings: () => Promise<{ examDate?: string; preboardDate?: string | null; katexScale?: number; katexBold?: boolean; sidebarCollapsed?: boolean; showFormulaBank?: boolean }>
+        updateSettings: (settings: { examDate?: string; preboardDate?: string | null; katexScale?: number; katexBold?: boolean; sidebarCollapsed?: boolean; showFormulaBank?: boolean }) => Promise<{ success: boolean; error?: string }>
         getImagesPath: () => Promise<{ imagesPath: string }>
         selectImagesPath: () => Promise<{ success: boolean; canceled?: boolean; imagesPath?: string; error?: string }>
         setImagesPath: (imagesPath: string) => Promise<{ success: boolean; imagesPath?: string; error?: string }>
@@ -109,9 +109,9 @@ declare global {
         openExternal: (url: string) => Promise<void>
       }
       tts: {
-        speak: (text: string, modelPath: string) => Promise<void>
+        speak: (text: string, modelPath?: string) => Promise<void>
         stop: () => Promise<void>
-        isAvailable: (modelPath?: string) => Promise<{ piperInstalled: boolean; modelConfigured: boolean }>
+        isAvailable: (modelPath?: string) => Promise<{ piperInstalled: boolean; modelConfigured: boolean; defaultModelPath?: string; availableModels?: string[] }>
         selectVoiceModel: () => Promise<{ success: boolean; canceled?: boolean; filePath?: string; error?: string }>
         onEnded: (callback: () => void) => () => void
       }

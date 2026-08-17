@@ -123,8 +123,7 @@ export function useTTS(ttsEnabled: boolean) {
       // ── Linux path: piper→aplay via IPC ──────────────────────────────────
       if (isLinux) {
         cleanupLinuxListener()
-        const modelPath = localStorage.getItem('ecengine:tts:piperModelPath')
-        if (!modelPath) return // No model configured — short-circuit, nothing hangs
+        const modelPath = localStorage.getItem('ecengine:tts:piperModelPath') || undefined
         window.electron.tts.speak(clean, modelPath)
         return
       }
@@ -184,8 +183,7 @@ export function useTTS(ttsEnabled: boolean) {
       // ── Linux path: piper→aplay via IPC with onEnded listener ────────────
       if (isLinux) {
         cleanupLinuxListener()
-        const modelPath = localStorage.getItem('ecengine:tts:piperModelPath')
-        if (!modelPath) { onEnd(); return } // No model configured — short-circuit
+        const modelPath = localStorage.getItem('ecengine:tts:piperModelPath') || undefined
         // Register a one-shot listener BEFORE speaking so we don't miss a fast exit
         const unsub = window.electron.tts.onEnded(() => {
           unsub()

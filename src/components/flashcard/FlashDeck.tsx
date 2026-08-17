@@ -5,8 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { RefreshCw, CheckCircle } from 'lucide-react'
 import { useSessionStore } from '../../store/useSessionStore'
 import { useSound } from '../../hooks/useSound'
-import { useTTS } from '../../hooks/useTTS'
-
 interface FlashDeckProps {
   cards: Card[]
   onComplete?: () => void
@@ -51,9 +49,6 @@ export const FlashDeck: React.FC<FlashDeckProps> = ({
     }, autoplayDelay * 1000)
     return () => clearInterval(timer)
   }, [autoplay, autoplayDelay, currentIndex, isFinished, isSubmitting, rateCard])
-
-  // ── TTS ────────────────────────────────────────────────────────────────────
-  const { speak, stop } = useTTS(ttsEnabled)
 
   useEffect(() => {
     if (isFinished) {
@@ -104,28 +99,10 @@ export const FlashDeck: React.FC<FlashDeckProps> = ({
     }
   }, [currentCard, isSwapped, swappedTerms])
 
-  // ── TTS: read front face text when a new card appears ─────────────────────
-  // Fires on card change. After a swap toggle we also re-read because the
-  // front text has changed (swapResetKey increments on swap).
-  useEffect(() => {
-    if (!displayCard || isFinished) return
-    if (displayCard.type !== 'flashcard') return
-    const data = displayCard.data as FlashcardData
-    if (data.front) speak(data.front)
-  }, [displayCard?.id, swapResetKey, isFinished])
-  // NOTE: `speak` omitted from deps intentionally — stable callback, adding it
-  // causes double-fire. Trigger is card identity + swap key.
-
-  // ── TTS: read back face text when card is flipped ─────────────────────────
-  // onFlip is called by FlashCard whenever the flip state changes. We only
-  // speak on flip-to-back (isFlipped === true). Flip-to-front is a reset,
-  // not a new card — no re-read needed.
   const handleFlip = useCallback((isFlipped: boolean) => {
     if (!isFlipped) return
     if (!displayCard || displayCard.type !== 'flashcard') return
-    const data = displayCard.data as FlashcardData
-    if (data.back) speak(data.back)
-  }, [displayCard, speak])
+  }, [displayCard])
 
   return (
     <div className="w-full max-w-4xl mx-auto py-6 mt-8">

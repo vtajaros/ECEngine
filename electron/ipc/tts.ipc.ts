@@ -1,6 +1,8 @@
 import { ipcMain, BrowserWindow, dialog } from 'electron'
 import { spawn, execFileSync, ChildProcess } from 'child_process'
 import * as fs from 'fs'
+import * as os from 'os'
+import * as path from 'path'
 
 let currentPiperChild: ChildProcess | null = null
 let currentAplayChild: ChildProcess | null = null
@@ -29,6 +31,48 @@ function checkPiperAvailable(): boolean {
 function checkVoiceModelConfigured(modelPath: string): boolean {
   if (!modelPath) return false
   return fs.existsSync(modelPath) && fs.existsSync(modelPath + '.json')
+}
+
+/**
+ * Scan standard Piper voice model directories on Linux.
+ * Prioritizes ryan-medium as default if present.
+ */
+function findInstalledVoiceModels(): string[] {
+  const searchDirs = [
+    path.join(os.homedir(), '.local/share/piper-voices'),
+    path.join(os.homedir(), '.local/share/piper'),
+    '/usr/share/piper-voices',
+    '/usr/local/share/piper-voices',
+    path.join(os.homedir(), 'piper-voices'),
+  ]
+
+  const models: string[] = []
+  for (const dir of searchDirs) {
+    if (fs.existsSync(dir)) {
+      try {
+        const files = fs.readdirSync(dir)
+        for (const file of files) {
+          if (file.endsWith('.onnx')) {
+            const fullPath = path.join(dir, file)
+            if (checkVoiceModelConfigured(fullPath) && !models.includes(fullPath)) {
+              models.push(fullPath)
+            }
+          }
+        }
+      } catch {}
+    }
+  }
+
+  // Sort so preferred voices like Ryan medium come first if present
+  models.sort((a, b) => {
+    const aLower = a.toLowerCase()
+    const bLower = b.toLowerCase()
+    if (aLower.includes('ryan') && !bLower.includes('ryan')) return -1
+    if (!aLower.includes('ryan') && bLower.includes('ryan')) return 1
+    return a.localeCompare(b)
+  })
+
+  return models
 }
 
 /**
@@ -69,34 +113,26 @@ function sendEnded(): void {
 
 export function registerTTSHandlers(): void {
   /**
-   * 'tts:isAvailable' — returns a status object distinguishing two failure modes:
-   *   { piperInstalled: boolean, modelConfigured: boolean }
-   * Breaking change from the old boolean return — Settings.tsx is updated to match.
-   * modelConfigured is only meaningful when piperInstalled is true.
+   * 'tts:isAvailable' — returns a status object distinguishing failure modes and discovered voices:
+   *   { piperInstalled: boolean, modelConfigured: boolean, defaultModelPath?: string, availableModels: string[] }
    */
   ipcMain.handle('tts:isAvailable', async (_event, modelPath?: string) => {
     const piperInstalled = checkPiperAvailable()
-    const modelConfigured = piperInstalled && typeof modelPath === 'string'
-      ? checkVoiceModelConfigured(modelPath)
+    const availableModels = piperInstalled ? findInstalledVoiceModels() : []
+    const defaultModelPath = availableModels[0] || undefined
+    const effectivePath = (modelPath && modelPath.trim()) || defaultModelPath
+    const modelConfigured = piperInstalled && typeof effectivePath === 'string'
+      ? checkVoiceModelConfigured(effectivePath)
       : false
-    return { piperInstalled, modelConfigured }
+    return { piperInstalled, modelConfigured, defaultModelPath, availableModels }
   })
 
   /**
    * 'tts:speak' — spawn a piper→aplay pipeline.
    * @param text      The text to synthesize.
-   * @param modelPath Absolute path to the .onnx voice model. Renderer reads this
-   *                  from localStorage and passes it here — main process does not
-   *                  read localStorage itself.
-   *
-   * Pipeline:
-   *   piper (stdin=text, stdout=raw audio) → aplay (stdin=raw audio)
-   *
-   * sendEnded() fires on aplayChild 'exit', NOT on piper's exit.
-   * This is the critical correctness point: piper finishes encoding before aplay
-   * finishes playing, so we must wait for the player to complete.
+   * @param modelPath Absolute path to the .onnx voice model. Falls back to default discovered model if omitted.
    */
-  ipcMain.handle('tts:speak', async (_event, text: string, modelPath: string) => {
+  ipcMain.handle('tts:speak', async (_event, text: string, modelPath?: string) => {
     killAllChildren()
 
     if (typeof text !== 'string' || !text.trim()) {
@@ -104,7 +140,15 @@ export function registerTTSHandlers(): void {
       return
     }
 
-    if (!modelPath || !checkVoiceModelConfigured(modelPath)) {
+    let effectiveModelPath = modelPath && modelPath.trim()
+    if (!effectiveModelPath || !checkVoiceModelConfigured(effectiveModelPath)) {
+      const models = findInstalledVoiceModels()
+      if (models.length > 0) {
+        effectiveModelPath = models[0]
+      }
+    }
+
+    if (!effectiveModelPath || !checkVoiceModelConfigured(effectiveModelPath)) {
       // No valid model — short-circuit immediately rather than spawning a doomed process
       sendEnded()
       return
@@ -113,7 +157,7 @@ export function registerTTSHandlers(): void {
     try {
       const piperChild = spawn(
         'piper',
-        ['--model', modelPath, '--output_file', '-'],
+        ['--model', effectiveModelPath, '--output_file', '-'],
         { stdio: ['pipe', 'pipe', 'ignore'] }
       )
       currentPiperChild = piperChild

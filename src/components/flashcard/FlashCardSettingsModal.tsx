@@ -154,7 +154,7 @@ export const FlashCardSettingsModal: React.FC<FlashCardSettingsModalProps> = ({
                 {settings.ttsEnabled && (() => {
                   const isLinux = window.electron?.platform === 'linux'
                   const rawVoice = isLinux
-                    ? localStorage.getItem('ecengine:tts:piperModelPath')
+                    ? (localStorage.getItem('ecengine:tts:piperModelPath') || 'en_US-ryan-medium.onnx')
                     : localStorage.getItem('ecengine:tts:voice')
                   const voiceName = isLinux && rawVoice ? rawVoice.split('/').pop() : rawVoice
                   return voiceName ? (
@@ -163,7 +163,7 @@ export const FlashCardSettingsModal: React.FC<FlashCardSettingsModalProps> = ({
                     </p>
                   ) : (
                     <p className="text-[10px] text-[#FF4444] font-['IBM_Plex_Mono'] leading-relaxed">
-                      ⚠ No voice selected. Go to Settings → Accessibility to pick a voice before enabling TTS.
+                      ⚠ No voice selected. Go to Settings → Sound & Feedback to pick a voice before enabling TTS.
                     </p>
                   )
                 })()}
