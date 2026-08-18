@@ -84,14 +84,16 @@ function saveFCBookmarks(set: Set<string>) {
 
 
 
+let formulaDecksCache: DeckInfo[] | null = null
+
 export default function Formulas() {
   const navigate = useNavigate()
   const { startSession, rateCard, isSubmitting } = useSessionStore()
 
   // ── Deck listing state ──
   const [activeSubject, setActiveSubject] = useState<FilterSubject>('ALL')
-  const [decks, setDecks] = useState<DeckInfo[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [decks, setDecks] = useState<DeckInfo[]>(() => formulaDecksCache ?? [])
+  const [isLoading, setIsLoading] = useState(() => !formulaDecksCache)
   const [setToDelete, setSetToDelete] = useState<DeckInfo | null>(null)
   const [deleteCountdown, setDeleteCountdown] = useState(0)
 
@@ -208,38 +210,38 @@ export default function Formulas() {
         }
 
         if (r.success && r.data) {
-          setDecks(
-            r.data.map((row: any) => {
-              const types = (row.types || '').split(',')
-              let deckType: 'mcq' | 'flashcard' | 'formula' | 'mixed' = 'formula'
-              if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
-              else if (types.includes('mcq')) deckType = 'mcq'
-              else if (types.includes('flashcard')) deckType = 'flashcard'
-              else if (types.includes('formula')) deckType = 'formula'
+          const nextDecks = (r.data as any[]).map((row: any) => {
+            const types = (row.types || '').split(',').filter(Boolean)
+            let deckType: 'mcq' | 'flashcard' | 'formula' | 'mixed' = 'formula'
+            if (types.includes('formula')) deckType = 'formula'
+            else if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
+            else if (types.includes('flashcard')) deckType = 'flashcard'
+            else if (types.includes('mcq')) deckType = 'mcq'
 
-              let parsedTags: string[] = []
-              try {
-                if (row.tags) parsedTags = JSON.parse(row.tags)
-              } catch (e) {}
+            let parsedTags: string[] = []
+            try {
+              if (row.tags) parsedTags = JSON.parse(row.tags)
+            } catch (e) { }
 
-              const mastery = masteryMap[row.id] ?? 0
+            const mastery = masteryMap[row.id] ?? 0
 
-              return {
-                id: row.id,
-                title: row.name,
-                subject: SUBJECT_MAP[row.subject] || 'ELECS',
-                cardCount: row.card_count || 0,
-                deckType,
-                description: row.description || '',
-                mastery,
-                tags: parsedTags,
-                createdAt: row.created_at || Date.now(),
-                folderName: row.folder_name || 'Uncategorized',
-                folderId: row.folder_id || null,
-                order_index: row.order_index,
-              }
-            })
-          )
+            return {
+              id: row.id,
+              title: row.name,
+              subject: SUBJECT_MAP[row.subject] || 'ELECS',
+              cardCount: row.card_count || 0,
+              deckType,
+              description: row.description || '',
+              mastery,
+              tags: parsedTags,
+              createdAt: row.created_at || Date.now(),
+              folderName: row.folder_name || 'Uncategorized',
+              folderId: row.folder_id || null,
+              order_index: row.order_index,
+            }
+          })
+          formulaDecksCache = nextDecks
+          setDecks(nextDecks)
         }
     } catch (e) { console.error('Failed to load decks', e) }
     finally { setIsLoading(false) }
@@ -657,20 +659,6 @@ export default function Formulas() {
     <div className="flex flex-col h-full w-full">
       {/* Folder Panel + Deck Grid */}
       <div className="flex flex-row flex-1 w-full overflow-hidden">
-        <FolderPanel
-          folderRows={folderRows}
-          folders={folders}
-          deckCountByFolder={deckCountByFolder}
-          totalDeckCount={decks.length}
-          selected={activeFolder}
-          onSelect={setActiveFolder}
-          onDeleteFolder={handleDeleteFolder}
-          onReorderFolders={handleReorderFolders}
-          onCreateFolder={onCreateFolder}
-          onPromoteFolder={onPromoteFolder}
-          onNestFolder={onNestFolder}
-          onRenameFolder={onRenameFolder}
-        />
         <div className="flex flex-col flex-1 min-w-0 overflow-y-auto show-scrollbar">
           {/* Header centered above decks */}
           <div className="flex flex-col items-center w-full pt-6 pb-0 px-6">
@@ -1009,6 +997,20 @@ export default function Formulas() {
             )}
           </AnimatePresence>
         </div>
+        <FolderPanel
+          folderRows={folderRows}
+          folders={folders}
+          deckCountByFolder={deckCountByFolder}
+          totalDeckCount={decks.length}
+          selected={activeFolder}
+          onSelect={setActiveFolder}
+          onDeleteFolder={handleDeleteFolder}
+          onReorderFolders={handleReorderFolders}
+          onCreateFolder={onCreateFolder}
+          onPromoteFolder={onPromoteFolder}
+          onNestFolder={onNestFolder}
+          onRenameFolder={onRenameFolder}
+        />
       </div>
     </div>
   )

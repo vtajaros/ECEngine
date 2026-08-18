@@ -1,6 +1,7 @@
 import { Zap, Minus, Square, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import { Tooltip } from '../ui/Tooltip'
 
 interface TitleBarProps {
   isCollapsed?: boolean;
@@ -44,13 +45,14 @@ export const TitleBar: React.FC<TitleBarProps> = ({ isCollapsed, onToggleSidebar
     >
       {/* Left Side: Navigation (Anchored to Sidebar Width) */}
       <div className="flex items-center gap-1 ml-2 [-webkit-app-region:no-drag]">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-1 text-gray-400 hover:text-white hover:bg-[#333] rounded transition-colors"
-          title="Go Back"
-        >
-          <ChevronLeft size={16} />
-        </button>
+        <Tooltip content="Go Back" position="bottom">
+          <button
+            onClick={() => navigate(-1)}
+            className="p-1 text-gray-400 hover:text-white hover:bg-[#333] rounded transition-colors"
+          >
+            <ChevronLeft size={16} />
+          </button>
+        </Tooltip>
         <button className="p-1 text-[#333] cursor-not-allowed rounded">
           <ChevronRight size={16} />
         </button>

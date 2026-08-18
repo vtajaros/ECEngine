@@ -163,10 +163,10 @@ const RenameFolderInput: React.FC<{
 
   return (
     <div
-      className="flex items-center gap-1.5 py-1.5 rounded-md border border-[var(--accent-primary)]/40 bg-[var(--bg-card)] my-0.5"
+      className="flex items-center gap-1.5 py-1.5 rounded-md border border-accent/40 bg-[#111] my-0.5"
       style={{ paddingLeft: `${10 + indent}px`, paddingRight: '8px' }}
     >
-      <Folder size={12} className="shrink-0 text-[var(--accent-primary)]" />
+      <Folder size={13} className="shrink-0 text-accent" />
       <input
         ref={inputRef}
         value={name}
@@ -175,12 +175,12 @@ const RenameFolderInput: React.FC<{
           if (e.key === 'Enter') confirm()
           if (e.key === 'Escape') onCancel()
         }}
-        className="flex-1 bg-transparent text-[12px] font-bold font-['Rajdhani'] uppercase tracking-wider text-[var(--text-primary)] outline-none min-w-0"
+        className="flex-1 bg-transparent text-sm font-medium font-['Rajdhani'] tracking-wide text-white outline-none min-w-0"
       />
-      <button onClick={confirm} className="text-[var(--accent-primary)] hover:opacity-70 transition-opacity p-0.5 shrink-0">
+      <button onClick={confirm} className="text-accent hover:opacity-70 transition-opacity p-0.5 shrink-0">
         <Check size={12} />
       </button>
-      <button onClick={onCancel} className="text-[var(--text-secondary)] hover:text-red-400 transition-colors p-0.5 shrink-0">
+      <button onClick={onCancel} className="text-gray-400 hover:text-red-400 transition-colors p-0.5 shrink-0">
         <X size={12} />
       </button>
     </div>
@@ -194,6 +194,7 @@ const RenameFolderInput: React.FC<{
 const FolderRowItem: React.FC<{
   node: TreeNode
   isEditing: boolean
+  isCollapsed?: boolean
   selected: string | 'all'
   depth: number
   isExpanded: boolean
@@ -207,7 +208,7 @@ const FolderRowItem: React.FC<{
   onRequestCreate: (parentId: string) => void
   onRenameFolder?: (folderId: string, newName: string) => void
 }> = ({
-  node, isEditing, selected, depth,
+  node, isEditing, isCollapsed, selected, depth,
   isExpanded, activeDragId, activeDragDepth, dropTargetId, dropIntent,
   onSelect, onToggleExpand, onRequestDelete, onRequestCreate, onRenameFolder,
 }) => {
@@ -388,13 +389,39 @@ const FolderRowItem: React.FC<{
     }
   }
 
+  if (isCollapsed) {
+    if (depth > 0) return null
+    return (
+      <div ref={setNodeRef} style={style}>
+        <Tooltip content={`${node.name} (${deckCount})`} position="left" className="w-full">
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            className={`relative min-w-0 flex items-center justify-center w-full h-9 rounded-md cursor-pointer group transition-all duration-200 ${isSelected
+                ? 'bg-gradient-to-r from-transparent to-[#00FF41]/10 text-white'
+                : 'bg-transparent text-gray-400 hover:bg-border-base hover:text-white'
+              }`}
+            onClick={() => onSelect(node.id)}
+          >
+            {isSelected && (
+              <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-accent shadow-[0_0_10px_#00FF41]" />
+            )}
+            <FolderIcon
+              size={16}
+              className={`shrink-0 ${isSelected ? 'text-accent' : 'text-gray-400 group-hover:text-white transition-colors'}`}
+            />
+          </motion.div>
+        </Tooltip>
+      </div>
+    )
+  }
+
   return (
     <div ref={setNodeRef} style={style}>
       <motion.div
         whileHover={{ scale: 1.005 }}
-        className={`relative min-w-0 flex items-center w-full gap-1.5 py-2 rounded-md border-l-[3px] border-t-0 border-r-0 border-b-0 cursor-pointer group transition-colors ${isSelected
-            ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--accent-primary)]'
-            : 'bg-transparent text-[var(--text-secondary)] border-l-transparent hover:bg-[var(--bg-secondary)]'
+        className={`relative min-w-0 flex items-center w-full gap-1.5 py-2 rounded-md cursor-pointer group transition-all duration-200 ${isSelected
+            ? 'bg-gradient-to-r from-transparent to-[#00FF41]/10 text-white'
+            : 'bg-transparent text-gray-400 hover:bg-border-base hover:text-white'
           } ${dropHighlightClass}`}
         style={{ paddingLeft: `${10 + indent}px`, paddingRight: '8px', ...dropHighlightStyle }}
         onClick={() => {
@@ -402,10 +429,13 @@ const FolderRowItem: React.FC<{
           if (hasChildren && !isExpanded) onToggleExpand(node.id)
         }}
       >
+        {isSelected && (
+          <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-accent shadow-[0_0_10px_#00FF41]" />
+        )}
         {hasChildren ? (
           <button
             onClick={(e) => { e.stopPropagation(); onToggleExpand(node.id) }}
-            className="shrink-0 p-0.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
+            className="shrink-0 p-0.5 text-gray-400 hover:text-white transition-colors"
           >
             <ChevronRight
               size={11}
@@ -417,26 +447,26 @@ const FolderRowItem: React.FC<{
         )}
 
         <FolderIcon
-          size={13}
-          className={`shrink-0 ${isSelected ? 'text-[var(--accent-primary)]' : 'text-[var(--text-primary)] group-hover:text-[var(--text-primary)]'}`}
+          size={14}
+          className={`shrink-0 ${isSelected ? 'text-accent' : 'text-gray-400 group-hover:text-white transition-colors'}`}
         />
 
         <Tooltip content={node.name} position="bottom" className="flex-1 min-w-0">
           <span
-            className={`text-[12px] truncate w-full flex-1 font-bold font-['Rajdhani'] uppercase tracking-wider ${isSelected ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'
+            className={`text-sm truncate w-full flex-1 font-['Rajdhani'] font-medium tracking-wide ${isSelected ? 'text-white' : 'text-gray-400 group-hover:text-white'
               }`}
           >
             {node.name}
           </span>
         </Tooltip>
 
-        <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-mono border border-[var(--bg-elevated)]">
+        <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[#111] text-gray-400 font-['IBM_Plex_Mono'] border border-[#333]">
           {deckCount}
         </span>
 
         {/* Nest-into indicator label */}
         {isDropTarget && dropIntent === 'into' && (
-          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-['Rajdhani'] uppercase tracking-wider text-[var(--accent-primary)] bg-[var(--accent-primary)]/10 border border-[var(--accent-primary)]/30 px-1.5 py-0.5 rounded whitespace-nowrap">
+          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[9px] font-['Rajdhani'] uppercase tracking-wider text-accent bg-accent/10 border border-accent/30 px-1.5 py-0.5 rounded whitespace-nowrap">
             Nest inside
           </span>
         )}
@@ -457,6 +487,7 @@ const FolderRowItem: React.FC<{
                 key={child.id}
                 node={child}
                 isEditing={false}
+                isCollapsed={isCollapsed}
                 selected={selected}
                 depth={depth + 1}
                 isExpanded={false}
@@ -487,15 +518,38 @@ const LegacySortableItem: React.FC<{
   isEditing: boolean
   isSelected: boolean
   deckCount: number
+  isCollapsed?: boolean
   onSelect: (f: string | 'all') => void
   onRequestDelete: (f: string) => void
-}> = ({ folder, isEditing, isSelected, deckCount, onSelect, onRequestDelete }) => {
+}> = ({ folder, isEditing, isSelected, deckCount, isCollapsed, onSelect, onRequestDelete }) => {
   const isUncategorized = folder === 'Uncategorized'
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: folder,
     disabled: isUncategorized,
   })
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }
+
+  if (isCollapsed) {
+    return (
+      <div ref={setNodeRef} style={style}>
+        <Tooltip content={`${folder} (${deckCount})`} position="left" className="w-full">
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            onClick={() => onSelect(folder)}
+            className={`relative min-w-0 flex items-center justify-center w-full h-9 rounded-md transition-all duration-200 group ${isSelected
+                ? 'bg-gradient-to-r from-transparent to-[#00FF41]/10 text-white'
+                : 'bg-transparent text-gray-400 hover:bg-border-base hover:text-white'
+              }`}
+          >
+            {isSelected && (
+              <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-accent shadow-[0_0_10px_#00FF41]" />
+            )}
+            <Folder size={16} className={`shrink-0 ${isSelected ? 'text-accent' : 'text-gray-400 group-hover:text-white transition-colors'}`} />
+          </motion.button>
+        </Tooltip>
+      </div>
+    )
+  }
 
   if (isEditing) {
     return (
@@ -523,20 +577,23 @@ const LegacySortableItem: React.FC<{
         <motion.button
           whileHover={{ scale: 1.01 }}
           onClick={() => onSelect(folder)}
-          className={`min-w-0 flex items-center justify-between w-full gap-2 px-3 py-2.5 rounded-md border-l-[3px] border-t-0 border-r-0 border-b-0 border-transparent whitespace-nowrap group ${isSelected
-              ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--accent-primary)]'
-              : 'bg-transparent text-[var(--text-secondary)] border-l-transparent hover:bg-[var(--bg-secondary)]'
+          className={`min-w-0 flex items-center justify-between w-full gap-2 px-3 py-2 rounded-md transition-all duration-200 group relative whitespace-nowrap ${isSelected
+              ? 'bg-gradient-to-r from-transparent to-[#00FF41]/10 text-white'
+              : 'bg-transparent text-gray-400 hover:bg-border-base hover:text-white'
             }`}
         >
+          {isSelected && (
+            <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-accent shadow-[0_0_10px_#00FF41]" />
+          )}
           <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
-            <Folder size={14} className={`shrink-0 ${isSelected ? 'text-[var(--accent-primary)]' : 'text-[var(--text-primary)]'}`} />
-            <span className={`text-[13px] truncate font-bold font-['Rajdhani'] uppercase tracking-wider ${isSelected ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'}`}>
+            <Folder size={14} className={`shrink-0 ${isSelected ? 'text-accent' : 'text-gray-400 group-hover:text-white transition-colors'}`} />
+            <span className={`text-sm truncate font-['Rajdhani'] font-medium tracking-wide ${isSelected ? 'text-white' : 'text-gray-400 group-hover:text-white'}`}>
               {folder}
             </span>
           </div>
-        <span className="flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-mono border border-[var(--bg-elevated)]">
-          {deckCount}
-        </span>
+          <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[#111] text-gray-400 font-['IBM_Plex_Mono'] border border-[#333]">
+            {deckCount}
+          </span>
         </motion.button>
       </Tooltip>
     </div>
@@ -568,10 +625,10 @@ const CreateFolderInput: React.FC<{
 
   return (
     <div
-      className="flex items-center gap-1.5 py-1.5 rounded-md border border-[var(--accent-primary)]/40 bg-[var(--bg-card)] my-0.5"
+      className="flex items-center gap-1.5 py-1.5 rounded-md border border-accent/40 bg-[#111] my-0.5"
       style={{ paddingLeft: parentId ? '24px' : '10px', paddingRight: '8px' }}
     >
-      <Folder size={12} className="shrink-0 text-[var(--accent-primary)]" />
+      <Folder size={13} className="shrink-0 text-accent" />
       <input
         ref={inputRef}
         value={name}
@@ -581,12 +638,12 @@ const CreateFolderInput: React.FC<{
           if (e.key === 'Escape') onCancel()
         }}
         placeholder="Folder name…"
-        className="flex-1 bg-transparent text-[12px] font-bold font-['Rajdhani'] uppercase tracking-wider text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)]/50 placeholder:normal-case placeholder:tracking-normal placeholder:font-normal min-w-0"
+        className="flex-1 bg-transparent text-sm font-medium font-['Rajdhani'] tracking-wide text-white outline-none placeholder:text-gray-500 placeholder:normal-case placeholder:tracking-normal placeholder:font-normal min-w-0"
       />
-      <button onClick={confirm} className="text-[var(--accent-primary)] hover:opacity-70 transition-opacity p-0.5 shrink-0">
+      <button onClick={confirm} className="text-accent hover:opacity-70 transition-opacity p-0.5 shrink-0">
         <Check size={12} />
       </button>
-      <button onClick={onCancel} className="text-[var(--text-secondary)] hover:text-red-400 transition-colors p-0.5 shrink-0">
+      <button onClick={onCancel} className="text-gray-400 hover:text-red-400 transition-colors p-0.5 shrink-0">
         <X size={12} />
       </button>
     </div>
@@ -631,6 +688,25 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
   onRenameFolder,
 }) => {
   const [isEditing, setIsEditing] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(() =>
+    localStorage.getItem('ecengine:folder-sidebar-collapsed') === 'true'
+  )
+
+  const toggleCollapse = () => {
+    const next = !isCollapsed
+    setIsCollapsed(next)
+    localStorage.setItem('ecengine:folder-sidebar-collapsed', String(next))
+  }
+
+  const toggleEdit = () => {
+    if (!isEditing && isCollapsed) {
+      setIsCollapsed(false)
+      localStorage.setItem('ecengine:folder-sidebar-collapsed', 'false')
+    }
+    setIsEditing(e => !e)
+    setCreatingUnder(undefined)
+  }
+
   const [folderToDelete, setFolderToDelete] = useState<{ id: string; name: string } | null>(null)
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
   const [creatingUnder, setCreatingUnder] = useState<string | null | undefined>(undefined)
@@ -765,43 +841,93 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
     }
 
     return (
-      <div className="relative flex-shrink-0 w-[200px] h-full z-40">
+      <div className={`relative flex-shrink-0 ${isEditing ? 'w-[320px]' : isCollapsed ? 'w-[52px]' : 'w-[200px]'} h-full z-40 transition-all duration-200`}>
         <motion.div
-          animate={{ width: isEditing ? 320 : 200 }}
+          initial={false}
+          animate={{ width: isEditing ? 320 : isCollapsed ? 52 : 200 }}
           transition={{ duration: 0.2, ease: 'easeInOut' }}
-          className={`absolute top-0 left-0 h-full bg-[var(--bg-primary)] overflow-y-auto overflow-x-hidden flex flex-col border-r border-[var(--bg-card)] py-4 px-2 ${
-            isEditing ? 'z-40 shadow-2xl shadow-black/50 border-r-2' : 'z-0'
+          className={`absolute top-0 right-0 h-full bg-surface overflow-y-auto overflow-x-hidden flex flex-col border-l border-border-base py-4 ${isCollapsed ? 'px-1' : 'px-2'} ${
+            isEditing ? 'z-40 shadow-2xl shadow-black/50 border-l-2 border-l-border-base' : 'z-0'
           }`}
         >
-          <div className="flex flex-col items-stretch gap-0 px-1 w-full">
+          <div className="flex flex-col items-stretch gap-0 w-full">
 
           {/* Header */}
-          <div className="flex justify-between items-center mb-3 px-1">
-            <h2 className="text-[var(--text-secondary)] text-[10px] uppercase tracking-[0.15em] font-bold">FOLDERS</h2>
-            <div className="flex items-center gap-0.5">
-              {!isEditing && (
-                <Tooltip content="New folder" position="top">
-                  <button
-                    onClick={() => setCreatingUnder(null)}
-                    className="text-slate-400 hover:text-[var(--accent-primary)] transition-colors p-1 rounded hover:bg-slate-800/50"
-                  >
-                    <Plus className="w-3 h-3" />
-                  </button>
-                </Tooltip>
-              )}
-              <Tooltip content={isEditing ? 'Done' : 'Edit folders'} position="top">
+          {isCollapsed ? (
+            <div className="flex justify-center items-center mb-3">
+              <Tooltip content="Expand Folders" position="left">
                 <button
-                  onClick={() => { setIsEditing(e => !e); setCreatingUnder(undefined) }}
-                  className="text-slate-400 hover:text-[var(--accent-primary)] transition-colors p-1 rounded hover:bg-slate-800/50"
+                  onClick={toggleCollapse}
+                  className="text-gray-400 hover:text-accent hover:bg-border-base transition-colors p-1.5 rounded"
                 >
-                  {isEditing
-                    ? <Check className="w-3 h-3 text-[var(--text-primary)]" />
-                    : <Pencil className="w-3 h-3 text-[var(--text-primary)]" />
-                  }
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <line x1="15" y1="3" x2="15" y2="21" />
+                  </svg>
                 </button>
               </Tooltip>
             </div>
-          </div>
+          ) : (
+            <div className="flex justify-between items-center mb-3 px-1">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Tooltip content="Collapse Folders" position="bottom">
+                  <button
+                    onClick={toggleCollapse}
+                    className="text-gray-400 hover:text-accent hover:bg-border-base transition-colors p-1 rounded"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="14"
+                      height="14"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <rect x="3" y="3" width="18" height="18" rx="2" />
+                      <line x1="15" y1="3" x2="15" y2="21" />
+                    </svg>
+                  </button>
+                </Tooltip>
+                <h2 className="text-gray-400 text-xs uppercase tracking-[0.15em] font-bold font-['Rajdhani']">FOLDERS</h2>
+              </div>
+              <div className="flex items-center gap-0.5">
+                {!isEditing && (
+                  <Tooltip content="New folder" position="top">
+                    <button
+                      onClick={() => setCreatingUnder(null)}
+                      className="text-gray-400 hover:text-accent hover:bg-border-base transition-colors p-1 rounded"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </Tooltip>
+                )}
+                <Tooltip content={isEditing ? 'Done' : 'Edit folders'} position="top">
+                  <button
+                    onClick={toggleEdit}
+                    className="text-gray-400 hover:text-accent hover:bg-border-base transition-colors p-1 rounded"
+                  >
+                    {isEditing
+                      ? <Check className="w-3.5 h-3.5 text-white" />
+                      : <Pencil className="w-3.5 h-3.5 text-white" />
+                    }
+                  </button>
+                </Tooltip>
+              </div>
+            </div>
+          )}
 
           {/* Error Banner */}
           <AnimatePresence>
@@ -821,23 +947,32 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
           </AnimatePresence>
 
           {/* All row */}
-          <motion.button
-            whileHover={{ scale: 1.01 }}
-            onClick={() => onSelect('all')}
-            className={`min-w-0 flex items-center justify-between w-full gap-2 px-2.5 py-2 rounded-md border-l-[3px] border-t-0 border-r-0 border-b-0 whitespace-nowrap group ${selected === 'all'
-                ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--accent-primary)]'
-                : 'bg-transparent text-[var(--text-secondary)] border-l-transparent hover:bg-[var(--bg-secondary)]'
-              }`}
-          >
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <LayoutGrid size={13} className={`shrink-0 ${selected === 'all' ? 'text-[var(--accent-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors'}`} />
-              <span className={`text-[12px] truncate font-bold font-['Rajdhani'] uppercase tracking-wider ${selected === 'all' ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'}`}>All</span>
-            </div>
-            <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-mono border border-[var(--bg-elevated)]">{totalDeckCount}</span>
-          </motion.button>
+          <Tooltip content={`All (${totalDeckCount})`} position="left" className="w-full">
+            <motion.button
+              whileHover={{ scale: 1.01 }}
+              onClick={() => onSelect('all')}
+              className={`min-w-0 flex items-center ${isCollapsed ? 'justify-center px-0' : 'justify-between px-3'} w-full h-9 rounded-md transition-all duration-200 group relative whitespace-nowrap ${selected === 'all'
+                  ? 'bg-gradient-to-r from-transparent to-[#00FF41]/10 text-white'
+                  : 'bg-transparent text-gray-400 hover:bg-border-base hover:text-white'
+                }`}
+            >
+              {selected === 'all' && (
+                <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-accent shadow-[0_0_10px_#00FF41]" />
+              )}
+              <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2 flex-1 min-w-0'}`}>
+                <LayoutGrid size={14} className={`shrink-0 ${selected === 'all' ? 'text-accent' : 'text-gray-400 group-hover:text-white transition-colors'}`} />
+                {!isCollapsed && (
+                  <span className={`text-sm truncate font-['Rajdhani'] font-medium tracking-wide ${selected === 'all' ? 'text-white' : 'text-gray-400 group-hover:text-white'}`}>All</span>
+                )}
+              </div>
+              {!isCollapsed && (
+                <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[#111] text-gray-400 font-['IBM_Plex_Mono'] border border-[#333]">{totalDeckCount}</span>
+              )}
+            </motion.button>
+          </Tooltip>
 
           {/* Root-level create input */}
-          {creatingUnder === null && (
+          {!isCollapsed && creatingUnder === null && (
             <CreateFolderInput
               parentId={null}
               onConfirm={(name, parentId) => { onCreateFolder?.(name, parentId); setCreatingUnder(undefined) }}
@@ -867,6 +1002,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                     <FolderRowItem
                       node={node}
                       isEditing={isEditing}
+                      isCollapsed={isCollapsed}
                       selected={selected}
                       depth={0}
                       isExpanded={expandedIds.has(node.id)}
@@ -881,7 +1017,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                       onRenameFolder={onRenameFolder}
                     />
                     {/* Subfolder create input — indented under its parent */}
-                    {creatingUnder === node.id && (
+                    {!isCollapsed && creatingUnder === node.id && (
                       <CreateFolderInput
                         parentId={node.id}
                         onConfirm={(name, parentId) => { onCreateFolder?.(name, parentId); setCreatingUnder(undefined) }}
@@ -893,10 +1029,11 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
               </div>
             </SortableContext>
 
+            {/* DragOverlay for visual preview during drag */}
             <DragOverlay>
               {activeDragNode && (
-                <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-[var(--bg-card)] border border-[var(--accent-primary)]/30 text-[12px] font-bold font-['Rajdhani'] uppercase tracking-wider text-[var(--text-primary)] shadow-lg opacity-90">
-                  <Folder size={12} className="text-[var(--accent-primary)]" />
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-surface/90 border border-accent/60 shadow-xl text-white text-sm font-['Rajdhani'] font-medium uppercase tracking-wider backdrop-blur-sm pointer-events-none opacity-90">
+                  <Folder size={12} className="text-accent" />
                   {activeDragNode.name}
                 </div>
               )}
@@ -905,24 +1042,45 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
 
           {/* Uncategorized — always pinned last, never in DndContext */}
           {uncategorized && !isEditing && (
-            <motion.button
-              whileHover={{ scale: 1.01 }}
-              onClick={() => onSelect(uncategorized!.id)}
-              className={`min-w-0 flex items-center justify-between w-full gap-2 px-2.5 py-2 rounded-md border-l-[3px] border-t-0 border-r-0 border-b-0 whitespace-nowrap group mt-0.5 ${selected === uncategorized.id
-                  ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--accent-primary)]'
-                  : 'bg-transparent text-[var(--text-secondary)] border-l-transparent hover:bg-[var(--bg-secondary)]'
-                }`}
-            >
-              <div className="flex items-center gap-2 min-w-0 flex-1">
-                <Folder size={13} className={`shrink-0 ${selected === uncategorized.id ? 'text-[var(--accent-primary)]' : 'text-[var(--text-primary)]'}`} />
-                <span className={`text-[12px] truncate font-bold font-['Rajdhani'] uppercase tracking-wider ${selected === uncategorized.id ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'}`}>
-                  Uncategorized
+            isCollapsed ? (
+              <Tooltip content={`Uncategorized (${deckCountByFolder[uncategorized.id] ?? deckCountByFolder['Uncategorized'] ?? 0})`} position="left" className="w-full">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  onClick={() => onSelect(uncategorized!.id)}
+                  className={`relative min-w-0 flex items-center justify-center w-full h-9 rounded-md transition-all duration-200 group mt-0.5 ${selected === uncategorized.id
+                      ? 'bg-gradient-to-r from-transparent to-[#00FF41]/10 text-white'
+                      : 'bg-transparent text-gray-400 hover:bg-border-base hover:text-white'
+                    }`}
+                >
+                  {selected === uncategorized.id && (
+                    <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-accent shadow-[0_0_10px_#00FF41]" />
+                  )}
+                  <Folder size={16} className={`shrink-0 ${selected === uncategorized.id ? 'text-accent' : 'text-gray-400 group-hover:text-white transition-colors'}`} />
+                </motion.button>
+              </Tooltip>
+            ) : (
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                onClick={() => onSelect(uncategorized!.id)}
+                className={`min-w-0 flex items-center justify-between w-full gap-2 px-3 py-2 rounded-md transition-all duration-200 group mt-0.5 relative whitespace-nowrap ${selected === uncategorized.id
+                    ? 'bg-gradient-to-r from-transparent to-[#00FF41]/10 text-white'
+                    : 'bg-transparent text-gray-400 hover:bg-border-base hover:text-white'
+                  }`}
+              >
+                {selected === uncategorized.id && (
+                  <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-accent shadow-[0_0_10px_#00FF41]" />
+                )}
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <Folder size={14} className={`shrink-0 ${selected === uncategorized.id ? 'text-accent' : 'text-gray-400 group-hover:text-white transition-colors'}`} />
+                  <span className={`text-sm truncate font-['Rajdhani'] font-medium tracking-wide ${selected === uncategorized.id ? 'text-white' : 'text-gray-400 group-hover:text-white'}`}>
+                    Uncategorized
+                  </span>
+                </div>
+                <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[#111] text-gray-400 font-['IBM_Plex_Mono'] border border-[#333]">
+                  {deckCountByFolder[uncategorized.id] ?? deckCountByFolder['Uncategorized'] ?? 0}
                 </span>
-              </div>
-              <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-mono border border-[var(--bg-elevated)]">
-                {deckCountByFolder[uncategorized.id] ?? deckCountByFolder['Uncategorized'] ?? 0}
-              </span>
-            </motion.button>
+              </motion.button>
+            )
           )}
 
           </div>
@@ -952,40 +1110,103 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
   }
 
   return (
-    <div className="relative flex-shrink-0 w-[200px] h-full z-40">
+    <div className={`relative flex-shrink-0 ${isEditing ? 'w-[320px]' : isCollapsed ? 'w-[52px]' : 'w-[200px]'} h-full z-40 transition-all duration-200`}>
       <motion.div
-        animate={{ width: isEditing ? 320 : 200 }}
+        initial={false}
+        animate={{ width: isEditing ? 320 : isCollapsed ? 52 : 200 }}
         transition={{ duration: 0.2, ease: 'easeInOut' }}
-        className={`absolute top-0 left-0 h-full bg-[var(--bg-primary)] overflow-y-auto overflow-x-hidden flex flex-col border-r border-[var(--bg-card)] py-4 px-2 ${
-          isEditing ? 'z-40 shadow-2xl shadow-black/50 border-r-2' : 'z-0'
+        className={`absolute top-0 right-0 h-full bg-surface overflow-y-auto overflow-x-hidden flex flex-col border-l border-border-base py-4 ${isCollapsed ? 'px-1' : 'px-2'} ${
+          isEditing ? 'z-40 shadow-2xl shadow-black/50 border-l-2 border-l-border-base' : 'z-0'
         }`}
       >
-        <div className="flex flex-col items-stretch gap-0 px-4 w-full">
-        <div className="flex justify-between items-center mb-4 px-1">
-          <h2 className="text-[var(--text-secondary)] text-[10px] uppercase tracking-[0.15em] font-bold">FOLDERS</h2>
-          <button
-            onClick={() => setIsEditing(e => !e)}
-            className="text-slate-400 hover:text-[var(--accent-primary)] transition-colors p-1 rounded hover:bg-slate-800/50"
-          >
-            {isEditing ? <Check className="w-3 h-3 text-[var(--text-primary)]" /> : <Pencil className="w-3 h-3 text-[var(--text-primary)]" />}
-          </button>
-        </div>
+        <div className="flex flex-col items-stretch gap-0 w-full">
+        {isCollapsed ? (
+          <div className="flex justify-center items-center mb-3">
+            <Tooltip content="Expand Folders" position="left">
+              <button
+                onClick={toggleCollapse}
+                className="text-gray-400 hover:text-accent hover:bg-border-base transition-colors p-1.5 rounded"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <line x1="15" y1="3" x2="15" y2="21" />
+                </svg>
+              </button>
+            </Tooltip>
+          </div>
+        ) : (
+          <div className="flex justify-between items-center mb-4 px-1">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Tooltip content="Collapse Folders" position="bottom">
+                <button
+                  onClick={toggleCollapse}
+                  className="text-gray-400 hover:text-accent hover:bg-border-base transition-colors p-1 rounded"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <line x1="15" y1="3" x2="15" y2="21" />
+                  </svg>
+                </button>
+              </Tooltip>
+              <h2 className="text-gray-400 text-xs uppercase tracking-[0.15em] font-bold font-['Rajdhani']">FOLDERS</h2>
+            </div>
+            <div className="flex items-center gap-0.5">
+              <Tooltip content={isEditing ? 'Done' : 'Edit folders'} position="top">
+                <button
+                  onClick={toggleEdit}
+                  className="text-gray-400 hover:text-accent hover:bg-border-base transition-colors p-1 rounded"
+                >
+                  {isEditing ? <Check className="w-3.5 h-3.5 text-white" /> : <Pencil className="w-3.5 h-3.5 text-white" />}
+                </button>
+              </Tooltip>
+            </div>
+          </div>
+        )}
 
         <motion.div className="flex flex-col gap-1">
-          <motion.button
-            whileHover={{ scale: 1.01 }}
-            onClick={() => onSelect('all')}
-            className={`min-w-0 flex items-center justify-between w-full gap-3 px-3 py-2.5 rounded-md border-l-[3px] border-t-0 border-r-0 border-b-0 border-transparent whitespace-nowrap group ${selected === 'all'
-                ? 'bg-[var(--bg-card)] text-[var(--text-primary)] border-[var(--accent-primary)]'
-                : 'bg-transparent text-[var(--text-secondary)] border-l-transparent hover:bg-[var(--bg-secondary)]'
-              }`}
-          >
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <LayoutGrid size={14} className={`shrink-0 ${selected === 'all' ? 'text-[var(--accent-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] transition-colors'}`} />
-              <span className={`text-[13px] truncate font-bold font-['Rajdhani'] uppercase tracking-wider ${selected === 'all' ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]'}`}>All</span>
-            </div>
-            <span className="flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full bg-[var(--bg-secondary)] text-[var(--text-secondary)] font-mono border border-[var(--bg-elevated)]">{totalDeckCount}</span>
-          </motion.button>
+          <Tooltip content={`All (${totalDeckCount})`} position="left" className="w-full">
+            <motion.button
+              whileHover={{ scale: 1.01 }}
+              onClick={() => onSelect('all')}
+              className={`min-w-0 flex items-center ${isCollapsed ? 'justify-center px-0' : 'justify-between px-3'} w-full h-9 rounded-md transition-all duration-200 group relative whitespace-nowrap ${selected === 'all'
+                  ? 'bg-gradient-to-r from-transparent to-[#00FF41]/10 text-white'
+                  : 'bg-transparent text-gray-400 hover:bg-border-base hover:text-white'
+                }`}
+            >
+              {selected === 'all' && (
+                <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-accent shadow-[0_0_10px_#00FF41]" />
+              )}
+              <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2 flex-1 min-w-0'}`}>
+                <LayoutGrid size={14} className={`shrink-0 ${selected === 'all' ? 'text-accent' : 'text-gray-400 group-hover:text-white transition-colors'}`} />
+                {!isCollapsed && (
+                  <span className={`text-sm truncate font-['Rajdhani'] font-medium tracking-wide ${selected === 'all' ? 'text-white' : 'text-gray-400 group-hover:text-white'}`}>All</span>
+                )}
+              </div>
+              {!isCollapsed && (
+                <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[#111] text-gray-400 font-['IBM_Plex_Mono'] border border-[#333]">{totalDeckCount}</span>
+              )}
+            </motion.button>
+          </Tooltip>
 
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleLegacyDragEnd}>
             <SortableContext items={sortable} strategy={verticalListSortingStrategy}>
@@ -994,6 +1215,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                   key={f}
                   folder={f}
                   isEditing={isEditing}
+                  isCollapsed={isCollapsed}
                   isSelected={selected === f}
                   deckCount={deckCountByFolder[f] ?? 0}
                   onSelect={onSelect}
@@ -1007,6 +1229,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
             <LegacySortableItem
               folder="Uncategorized"
               isEditing={false}
+              isCollapsed={isCollapsed}
               isSelected={selected === 'Uncategorized'}
               deckCount={deckCountByFolder['Uncategorized'] ?? 0}
               onSelect={onSelect}

@@ -52,14 +52,14 @@ interface StudySet {
   order_index?: number
 }
 
-// Removed Mock Sets
+// In-memory cache to prevent layout pop-in on re-navigation
+let studySetsCache: StudySet[] | null = null
 
 export default function LooksFamStudy() {
   const navigate = useNavigate()
 
-
-  const [allSets, setAllSets] = useState<StudySet[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [allSets, setAllSets] = useState<StudySet[]>(() => studySetsCache ?? [])
+  const [isLoading, setIsLoading] = useState(() => !studySetsCache)
   const [setToDelete, setSetToDelete] = useState<StudySet | null>(null)
   const [deleteCountdown, setDeleteCountdown] = useState(0)
 
@@ -155,7 +155,9 @@ export default function LooksFamStudy() {
 
       setAllSets(prev => {
         const nonDb = prev.filter(s => !s.id.startsWith('topic_'));
-        return [...nonDb, ...dbSets];
+        const next = [...nonDb, ...dbSets];
+        studySetsCache = next;
+        return next;
       })
 
       // ── Background: load card IDs for all topics so we can show bookmark counts ──
@@ -779,20 +781,6 @@ export default function LooksFamStudy() {
       />
 
       <div className="flex flex-row flex-1 w-full overflow-hidden">
-        <FolderPanel
-          folderRows={folderRows}
-          folders={folders}
-          deckCountByFolder={deckCountByFolder}
-          totalDeckCount={allSets.length}
-          selected={activeFolder}
-          onSelect={setActiveFolder}
-          onDeleteFolder={handleDeleteFolder}
-          onReorderFolders={handleReorderFolders}
-          onCreateFolder={onCreateFolder}
-          onPromoteFolder={onPromoteFolder}
-          onNestFolder={onNestFolder}
-          onRenameFolder={onRenameFolder}
-        />
         <div ref={scrollContainerRef} className="flex flex-col flex-1 min-w-0 overflow-y-auto show-scrollbar">
           <div className="flex flex-col items-center w-full pt-6 pb-0 px-6">
             <div className="w-full max-w-5xl flex flex-col items-center justify-center gap-6 mb-2 border-b border-[var(--bg-card)] pb-4 relative z-30 pt-4">
@@ -1051,11 +1039,11 @@ export default function LooksFamStudy() {
                         {/* Right Column: Administrative Info */}
                         <div className="flex flex-col items-end gap-1.5 shrink-0">
                           {/* Items Tag */}
-                          <span className="w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] text-text-primary font-rajdhani font-bold tracking-widest text-[10px] shrink-0 uppercase whitespace-nowrap">
+                          <span className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px] shrink-0 whitespace-nowrap">
                             {set.count} ITEMS
                           </span>
                           {/* Date String */}
-                          <span className="text-[10px] text-gray-500 uppercase font-['IBM_Plex_Mono'] tracking-widest">
+                          <span className="text-[10px] text-gray-400 uppercase font-['IBM_Plex_Mono'] tracking-widest">
                             {set.createdAt ? new Date(set.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
                           </span>
                         </div>
@@ -1063,7 +1051,7 @@ export default function LooksFamStudy() {
 
                       {/* Deck Description */}
                       {set.description && set.description.trim() !== "" && (
-                        <p className="text-[11px] text-gray-400 font-['IBM_Plex_Mono'] leading-relaxed mt-2 line-clamp-2 uppercase pr-4">
+                        <p className="text-xs text-gray-400 font-['IBM_Plex_Mono'] leading-relaxed mt-2 line-clamp-2 uppercase pr-4">
                           {set.description}
                         </p>
                       )}
@@ -1089,68 +1077,83 @@ export default function LooksFamStudy() {
                         <div className="h-4 w-px bg-slate-800 shrink-0" />
 
                         <div className="flex items-center gap-2 shrink-0">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleOpenLearn(set.id); }}
-                            className="py-2 px-3 bg-[#111] border border-[#333] hover:border-accent hover:text-accent text-text-primary rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
-                            title="Learn this deck"
-                            aria-label="Learn"
-                          >
-                            <Play className="w-3 h-3" />
-                            <span>Learn</span>
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleOpenTest(set.id); }}
-                            className="py-2 px-3 bg-[#111] border border-[#333] hover:border-accent hover:text-accent text-text-primary rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
-                            title="Test this deck"
-                            aria-label="Test"
-                          >
-                            <Trophy className="w-3 h-3" />
-                            <span>Test</span>
-                          </button>
+                          <Tooltip content="Learn Mode" position="top">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleOpenLearn(set.id); }}
+                              className="py-2 px-3 bg-[#111] border border-[#333] hover:border-accent hover:text-accent text-text-primary rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                              aria-label="Learn"
+                            >
+                              <Play className="w-3 h-3" />
+                              <span>Learn</span>
+                            </button>
+                          </Tooltip>
+
+                          <Tooltip content="Test Mode" position="top">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleOpenTest(set.id); }}
+                              className="py-2 px-3 bg-[#111] border border-[#333] hover:border-accent hover:text-accent text-text-primary rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+                              aria-label="Test"
+                            >
+                              <Trophy className="w-3 h-3" />
+                              <span>Test</span>
+                            </button>
+                          </Tooltip>
+
                           {/* Bookmark button — only shown when this deck has bookmarked items */}
                           {(bookmarksPerTopic[set.id] ?? 0) > 0 && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setBookmarkModalDeck(set) }}
-                              className="p-2 bg-[#111] border border-accent/30 text-accent hover:border-accent hover:bg-accent/10 rounded transition-colors relative"
-                              title={`View ${bookmarksPerTopic[set.id]} bookmarked item${bookmarksPerTopic[set.id] !== 1 ? 's' : ''}`}
-                            >
-                              <Bookmark className="w-4 h-4 fill-accent" />
-                              <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-accent text-black font-['IBM_Plex_Mono'] text-[9px] font-bold flex items-center justify-center">
-                                {bookmarksPerTopic[set.id] > 9 ? '9+' : bookmarksPerTopic[set.id]}
-                              </span>
-                            </button>
+                            <Tooltip content={`Bookmarked Items (${bookmarksPerTopic[set.id]})`} position="top">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setBookmarkModalDeck(set) }}
+                                className="p-2 bg-[#111] border border-accent/30 text-accent hover:border-accent hover:bg-accent/10 rounded transition-colors relative"
+                                aria-label="Bookmarked Items"
+                              >
+                                <Bookmark className="w-4 h-4 fill-accent" />
+                                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-accent text-black font-['IBM_Plex_Mono'] text-[9px] font-bold flex items-center justify-center">
+                                  {bookmarksPerTopic[set.id] > 9 ? '9+' : bookmarksPerTopic[set.id]}
+                                </span>
+                              </button>
+                            </Tooltip>
                           )}
+
                           {set.id.startsWith('topic_') && (
+                            <Tooltip content="Test Paper View" position="top">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  window.electron.print.open(set.id, set.title)
+                                }}
+                                className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
+                                aria-label="Test Paper View"
+                              >
+                                <ScrollText className="w-4 h-4" />
+                              </button>
+                            </Tooltip>
+                          )}
+
+                          <Tooltip content="Edit Deck" position="top">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation()
-                                window.electron.print.open(set.id, set.title)
+                                sessionStorage.setItem('ecengine:returnScroll:/study', String(window.scrollY))
+                                safeNavigate(`/edit-deck/${set.id}?returnTo=/study`)
                               }}
-                              className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
-                              title="Test Paper View"
+                              className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
+                              aria-label="Edit Deck"
                             >
-                              <ScrollText className="w-4 h-4" />
+                              <Pencil className="w-4 h-4" />
                             </button>
-                          )}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              sessionStorage.setItem('ecengine:returnScroll:/study', String(window.scrollY))
-                              safeNavigate(`/edit-deck/${set.id}?returnTo=/study`)
-                            }}
-                            className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
-                            title="Edit Deck"
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
+                          </Tooltip>
+
                           {set.id !== 'set-1' && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setSetToDelete(set); }}
-                              className="p-2 bg-[#111] border border-[#333] hover:border-red-500/50 text-gray-500 hover:text-red-500 rounded transition-colors"
-                              title="Delete Set"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                            <Tooltip content="Delete Deck" position="top">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); setSetToDelete(set); }}
+                                className="p-2 bg-[#111] border border-[#333] hover:border-red-500/50 text-gray-500 hover:text-red-500 rounded transition-colors"
+                                aria-label="Delete Deck"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </Tooltip>
                           )}
                         </div>
                       </div>
@@ -1241,6 +1244,20 @@ export default function LooksFamStudy() {
             )}
           </AnimatePresence>
         </div>
+        <FolderPanel
+          folderRows={folderRows}
+          folders={folders}
+          deckCountByFolder={deckCountByFolder}
+          totalDeckCount={allSets.length}
+          selected={activeFolder}
+          onSelect={setActiveFolder}
+          onDeleteFolder={handleDeleteFolder}
+          onReorderFolders={handleReorderFolders}
+          onCreateFolder={onCreateFolder}
+          onPromoteFolder={onPromoteFolder}
+          onNestFolder={onNestFolder}
+          onRenameFolder={onRenameFolder}
+        />
       </div>
     </div>
   )

@@ -16,17 +16,22 @@ export interface UseFolderStateReturn {
   subtreeIds: (folderId: string) => string[]
 }
 
+const folderCache: Record<string, FolderRow[]> = {}
+
 export function useFolderState(onReload: () => Promise<void>, scope: 'study' | 'formula' = 'study'): UseFolderStateReturn {
-  const [folderRows, setFolderRows] = useState<FolderRow[]>([])
+  const [folderRows, setFolderRows] = useState<FolderRow[]>(() => folderCache[scope] ?? [])
 
   const reloadFolders = useCallback(async () => {
     try {
       const res = await window.electron.folders.getAll({ scope })
-      if (res.success && res.data) setFolderRows(res.data)
+      if (res.success && res.data) {
+        folderCache[scope] = res.data
+        setFolderRows(res.data)
+      }
     } catch (e) {
       console.error('[useFolderState] Failed to load folders:', e)
     }
-  }, [])
+  }, [scope])
 
   useEffect(() => { reloadFolders() }, [reloadFolders])
 

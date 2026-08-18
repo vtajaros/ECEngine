@@ -134,21 +134,6 @@ export function FlashcardDeckBrowser({
   return (
     <div className="flex flex-col h-full w-full">
       <div className="flex flex-row flex-1 w-full overflow-hidden">
-        <FolderPanel
-          folderRows={folderRows}
-          folders={folders}
-          deckCountByFolder={deckCountByFolder}
-          totalDeckCount={decks.length}
-          selected={activeFolder}
-          onSelect={onFolderSelect}
-          onDeleteFolder={onDeleteFolder}
-          onReorderFolders={onReorderFolders}
-          onCreateFolder={onCreateFolder}
-          onPromoteFolder={onPromoteFolder}
-          onNestFolder={onNestFolder}
-          onRenameFolder={onRenameFolder}
-        />
-
         <div className="flex flex-col flex-1 min-w-0 overflow-y-auto show-scrollbar">
           {/* Header centered above decks */}
           <div className="flex flex-col items-center w-full pt-6 pb-0 px-6">
@@ -351,6 +336,20 @@ export function FlashcardDeckBrowser({
             )}
           </AnimatePresence>
         </div>
+        <FolderPanel
+          folderRows={folderRows}
+          folders={folders}
+          deckCountByFolder={deckCountByFolder}
+          totalDeckCount={decks.length}
+          selected={activeFolder}
+          onSelect={onFolderSelect}
+          onDeleteFolder={onDeleteFolder}
+          onReorderFolders={onReorderFolders}
+          onCreateFolder={onCreateFolder}
+          onPromoteFolder={onPromoteFolder}
+          onNestFolder={onNestFolder}
+          onRenameFolder={onRenameFolder}
+        />
       </div>
       <FlashCardSettingsModal
         isOpen={showFlashModal.isOpen}

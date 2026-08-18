@@ -1,6 +1,7 @@
 import React from 'react'
 import { Play, ScrollText, Pencil, Trash2, Eye } from 'lucide-react'
 import { getSubjectBadgeClasses } from '../../lib/subjectColors'
+import { Tooltip } from '../ui/Tooltip'
 
 type Subject = 'MATH' | 'GEAS' | 'ELECS' | 'EST'
 
@@ -64,7 +65,7 @@ export const DeckCard = React.memo(function DeckCard({ deck, onLearn, onPreview,
         {/* Right Column: Administrative Info */}
         <div className="flex flex-col items-end gap-1.5 shrink-0">
           {/* Items Tag */}
-          <span className="min-w-[70px] px-2 flex justify-center py-0.5 rounded border border-[#333] bg-[#111] text-text-primary font-rajdhani font-bold tracking-widest text-xs shrink-0 uppercase whitespace-nowrap">
+          <span className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px] shrink-0 whitespace-nowrap">
             {deck.cardCount} ITEMS
           </span>
           {/* Date String */}
@@ -76,7 +77,7 @@ export const DeckCard = React.memo(function DeckCard({ deck, onLearn, onPreview,
 
       {/* Deck Description */}
       {deck.description && deck.description.trim() !== "" && (
-        <p className="text-[11px] text-gray-400 font-['IBM_Plex_Mono'] leading-relaxed mt-2 line-clamp-2 uppercase pr-4">
+        <p className="text-xs text-gray-400 font-['IBM_Plex_Mono'] leading-relaxed mt-2 line-clamp-2 uppercase pr-4">
           {deck.description}
         </p>
       )}
@@ -107,51 +108,61 @@ export const DeckCard = React.memo(function DeckCard({ deck, onLearn, onPreview,
         {/* Secondary Action Icons */}
         <div className="flex items-center gap-2 shrink-0">
           {/* LEARN button — sits right after the percentage, no gap */}
-          <button
-            onClick={(e) => { e.stopPropagation(); onLearn(deck.id); }}
-            className="py-2 px-3 bg-[#111] border border-[#333] hover:border-accent hover:text-accent text-text-primary rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
-            title="Learn this deck"
-            aria-label="Learn"
-          >
-            <Play className="w-3 h-3" />
-            <span>Learn</span>
-          </button>
+          <Tooltip content="Learn Mode" position="top">
+            <button
+              onClick={(e) => { e.stopPropagation(); onLearn(deck.id); }}
+              className="py-2 px-3 bg-[#111] border border-[#333] hover:border-accent hover:text-accent text-text-primary rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+              aria-label="Learn"
+            >
+              <Play className="w-3 h-3" />
+              <span>Learn</span>
+            </button>
+          </Tooltip>
 
-          <button
-            onClick={(e) => { e.stopPropagation(); onPreview(deck.id); }}
-            className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
-            title="Preview (no progress tracking)"
-            aria-label="Preview"
-          >
-            <Eye className="w-4 h-4" />
-          </button>
+          <Tooltip content="Preview Mode" position="top">
+            <button
+              onClick={(e) => { e.stopPropagation(); onPreview(deck.id); }}
+              className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
+              aria-label="Preview"
+            >
+              <Eye className="w-4 h-4" />
+            </button>
+          </Tooltip>
 
           {deck.id.startsWith('topic_') && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onPrint(deck.id, deck.title)
-              }}
-              className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
-              title="Test Paper View"
-            >
-              <ScrollText className="w-4 h-4" />
-            </button>
+            <Tooltip content="Test Paper View" position="top">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onPrint(deck.id, deck.title)
+                }}
+                className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
+                aria-label="Test Paper View"
+              >
+                <ScrollText className="w-4 h-4" />
+              </button>
+            </Tooltip>
           )}
-          <button
-            onClick={(e) => { e.stopPropagation(); onEdit(deck.id) }}
-            className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
-            title="Edit Deck"
-          >
-            <Pencil className="w-4 h-4" />
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(deck); }}
-            className="p-2 bg-[#111] border border-[#333] hover:border-red-500/50 text-gray-500 hover:text-red-500 rounded transition-colors"
-            title="Delete Set"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+
+          <Tooltip content="Edit Deck" position="top">
+            <button
+              onClick={(e) => { e.stopPropagation(); onEdit(deck.id) }}
+              className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
+              aria-label="Edit Deck"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+          </Tooltip>
+
+          <Tooltip content="Delete Deck" position="top">
+            <button
+              onClick={(e) => { e.stopPropagation(); onDelete(deck); }}
+              className="p-2 bg-[#111] border border-[#333] hover:border-red-500/50 text-gray-500 hover:text-red-500 rounded transition-colors"
+              aria-label="Delete Deck"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </Tooltip>
         </div>
       </div>
     </div>

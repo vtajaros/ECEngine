@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Play, Pause,
          Volume2, VolumeX, Copy, Sparkles } from 'lucide-react'
 import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
+import { Tooltip } from '@/components/ui/Tooltip'
 import { StudyCard, getFrontText, getCorrectAnswer } from './StudyCard'
 import { FlashcardContextPanel } from './FlashcardContextPanel'
 import { useSessionStore } from '../../store/useSessionStore'
@@ -232,9 +233,11 @@ export function FlashcardSession({
           }}
         />
         <div className="flex items-center gap-4">
-          <button onClick={() => onSetExitConfirm(true)} className="text-text-muted hover:text-white transition-colors p-2 rounded hover:bg-border-base" title="Exit">
-            <X className="w-5 h-5" />
-          </button>
+          <Tooltip content="Exit Session" position="bottom">
+            <button onClick={() => onSetExitConfirm(true)} className="text-text-muted hover:text-white transition-colors p-2 rounded hover:bg-border-base" aria-label="Exit">
+              <X className="w-5 h-5" />
+            </button>
+          </Tooltip>
           <div className="flex flex-col">
             <span className="text-[var(--accent-primary)] font-['Rajdhani'] font-bold tracking-widest text-base uppercase">{activeDeck.title}</span>
             <span className="text-text-primary text-xs font-['Rajdhani'] font-bold uppercase tracking-widest">Card {currentIndex + 1} of {sessionCards.length}</span>
@@ -247,46 +250,54 @@ export function FlashcardSession({
             </span>
           )}
           {/* Swap Term/Def toggle button — always visible */}
-          <button
-            onClick={onSwapTermDef}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${settings.swapTermDef
-              ? 'bg-accent/20 text-accent border-accent'
-              : 'bg-surface text-text-muted border-[#333] hover:border-[#555] hover:text-text-primary'
-              }`}
-            title="Swap Term / Definition (Shortcut: F)"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            {settings.swapTermDef ? 'SWAPPED' : 'SWAP'}
-          </button>
-          {enableAutoplay && !settings.writtenMode && (
+          <Tooltip content="Swap Term / Definition (F)" position="bottom">
             <button
-              onClick={onToggleAutoplay}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${isAutoplay
-                ? 'bg-accent/10 text-accent border-accent shadow-[0_0_8px_rgba(0,255,65,0.3)]'
+              onClick={onSwapTermDef}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${settings.swapTermDef
+                ? 'bg-accent/20 text-accent border-accent'
                 : 'bg-surface text-text-muted border-[#333] hover:border-[#555] hover:text-text-primary'
                 }`}
-              title="Autoplay"
+              aria-label="Swap Term / Definition"
             >
-              {isAutoplay ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
-              AUTO
+              <RotateCcw className="w-3.5 h-3.5" />
+              {settings.swapTermDef ? 'SWAPPED' : 'SWAP'}
             </button>
+          </Tooltip>
+          {enableAutoplay && !settings.writtenMode && (
+            <Tooltip content={isAutoplay ? "Pause Autoplay" : "Start Autoplay"} position="bottom">
+              <button
+                onClick={onToggleAutoplay}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${isAutoplay
+                  ? 'bg-accent/10 text-accent border-accent shadow-[0_0_8px_rgba(0,255,65,0.3)]'
+                  : 'bg-surface text-text-muted border-[#333] hover:border-[#555] hover:text-text-primary'
+                  }`}
+                aria-label="Autoplay"
+              >
+                {isAutoplay ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
+                AUTO
+              </button>
+            </Tooltip>
           )}
           {enableTTS && (
-          <button
-            onClick={onToggleTTS}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${fcTtsEnabled ? 'border-accent text-accent bg-accent/10' : 'border-[#333] text-text-muted hover:text-text-primary hover:border-[#555]'}`}
-            title={fcTtsEnabled ? 'TTS On — click to disable' : 'TTS Off — click to enable'}
-          >
-            {fcTtsEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
-          </button>
+            <Tooltip content={fcTtsEnabled ? "Disable Audio TTS" : "Enable Audio TTS"} position="bottom">
+              <button
+                onClick={onToggleTTS}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${fcTtsEnabled ? 'border-accent text-accent bg-accent/10' : 'border-[#333] text-text-muted hover:text-text-primary hover:border-[#555]'}`}
+                aria-label="TTS Toggle"
+              >
+                {fcTtsEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+              </button>
+            </Tooltip>
           )}
-          <button
-            onClick={onToggleSettings}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${showSettings ? 'bg-accent/10 text-accent border-accent' : 'bg-surface text-text-muted border-[#333] hover:border-[#555] hover:text-text-primary'}`}
-            title="Settings"
-          >
-            <Settings2 className="w-3.5 h-3.5" />
-          </button>
+          <Tooltip content="Settings" position="bottom">
+            <button
+              onClick={onToggleSettings}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-widest border transition-all ${showSettings ? 'bg-accent/10 text-accent border-accent' : 'bg-surface text-text-muted border-[#333] hover:border-[#555] hover:text-text-primary'}`}
+              aria-label="Settings"
+            >
+              <Settings2 className="w-3.5 h-3.5" />
+            </button>
+          </Tooltip>
         </div>
       </div>
 

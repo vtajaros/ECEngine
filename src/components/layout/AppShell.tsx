@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { TitleBar } from './TitleBar'
 import { ZoomIndicator } from '../ui/ZoomIndicator'
+import { Tooltip } from '../ui/Tooltip'
 import { dbService } from '../../services/db.service'
 
 type NavItem = {
@@ -100,7 +101,7 @@ export const AppShell: React.FC = () => {
             } h-full bg-surface border-r border-border-base flex flex-col transition-all duration-300 shrink-0`}
         >
           {/* Logo + collapse toggle */}
-          <div className="h-10 w-full shrink-0 flex items-center justify-between px-2">
+          <div className={`h-10 w-full shrink-0 flex items-center ${isCollapsed ? 'justify-center px-0' : 'justify-between px-2'}`}>
             {!isCollapsed && (
               <div className="flex items-center gap-2 pl-1">
                 <img
@@ -119,63 +120,68 @@ export const AppShell: React.FC = () => {
                 </span>
               </div>
             )}
-            <button
-              onClick={() => {
-                const next = !isCollapsed;
-                setIsCollapsed(next);
-                localStorage.setItem('ecengine:sidebar-collapsed', String(next));
-              }}
-              className={`${isCollapsed ? 'mx-auto' : 'ml-auto'} w-7 h-7 flex items-center justify-center hover:bg-border-base rounded-md text-gray-500 hover:text-accent transition-colors`}
-              title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            <Tooltip
+              content={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              position="right"
+              className={isCollapsed ? 'w-full flex justify-center' : ''}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+              <button
+                onClick={() => {
+                  const next = !isCollapsed;
+                  setIsCollapsed(next);
+                  localStorage.setItem('ecengine:sidebar-collapsed', String(next));
+                }}
+                className="w-8 h-8 flex items-center justify-center hover:bg-border-base rounded-md text-gray-400 hover:text-white transition-colors"
               >
-                <rect x="3" y="3" width="18" height="18" rx="2" />
-                <line x1="9" y1="3" x2="9" y2="21" />
-              </svg>
-            </button>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <line x1="9" y1="3" x2="9" y2="21" />
+                </svg>
+              </button>
+            </Tooltip>
           </div>
 
           {/* Nav items */}
           <nav className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden">
             {navItems.map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) =>
-                  `flex items-center h-10 transition-all duration-200 group relative
-                  ${isActive
-                    ? 'bg-gradient-to-r from-[#00FF41]/10 to-transparent text-white'
-                    : 'text-gray-400 hover:bg-border-base hover:text-gray-300'
-                  }`
-                }
-                title={item.label}
-              >
-                {({ isActive }) => (
-                  <>
-                    {isActive && (
-                      <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-accent shadow-[0_0_10px_#00FF41]" />
-                    )}
-                    <div className={`${isCollapsed ? 'w-16' : 'w-12'} flex justify-center shrink-0`}>
-                      <item.icon size={18} />
-                    </div>
-                    {!isCollapsed && (
-                      <span className="font-['Rajdhani'] text-sm font-medium tracking-wide whitespace-nowrap">
-                        {item.label}
-                      </span>
-                    )}
-                  </>
-                )}
-              </NavLink>
+              <Tooltip key={item.to} content={item.label} position="right" className="w-full">
+                <NavLink
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `flex items-center h-10 transition-all duration-200 group relative w-full
+                    ${isActive
+                      ? 'bg-gradient-to-r from-[#00FF41]/10 to-transparent text-white'
+                      : 'text-gray-400 hover:bg-border-base hover:text-gray-300'
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      {isActive && (
+                        <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-accent shadow-[0_0_10px_#00FF41]" />
+                      )}
+                      <div className={`${isCollapsed ? 'w-16' : 'w-12'} flex justify-center shrink-0`}>
+                        <item.icon size={18} />
+                      </div>
+                      {!isCollapsed && (
+                        <span className="font-['Rajdhani'] text-sm font-medium tracking-wide whitespace-nowrap">
+                          {item.label}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </NavLink>
+              </Tooltip>
             ))}
           </nav>
 

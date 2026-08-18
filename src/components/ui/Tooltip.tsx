@@ -49,6 +49,21 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 
     setIsVisible(false);
   };
 
+  const handleFocus = (e: React.FocusEvent) => {
+    try {
+      if ((e.target as HTMLElement).matches(':focus-visible')) {
+        recalc();
+        setIsVisible(true);
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleClick = () => {
+    setIsVisible(false);
+  };
+
   // Translate based on position so tooltip box is centred/aligned correctly
   const getTransformStyle = () => {
     if (position === 'bottom') return 'translate(-50%, 0)';
@@ -59,22 +74,60 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 
 
   // Framer-motion initial/exit offset (small nudge in the approach direction)
   const getOffset = () => {
-    if (position === 'bottom') return { y: -6 };
-    if (position === 'top')    return { y: 6 };
-    if (position === 'right')  return { x: -6 };
-    return { x: 6 }; // left
+    if (position === 'bottom') return { y: -4 };
+    if (position === 'top')    return { y: 4 };
+    if (position === 'right')  return { x: -4 };
+    return { x: 4 }; // left
   };
 
   const offset = getOffset();
 
+  // Dismiss tooltip when window loses focus (e.g. opening popup window or switching apps)
+  useEffect(() => {
+    const handleWindowBlur = () => {
+      setIsVisible(false);
+    };
+    window.addEventListener('blur', handleWindowBlur);
+    return () => {
+      window.removeEventListener('blur', handleWindowBlur);
+    };
+  }, []);
+
+  // Update coords on scroll/resize and ensure mouse is still inside target while visible
+  useEffect(() => {
+    if (!isVisible) return;
+
+    const handleScrollOrResize = () => {
+      recalc();
+    };
+
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!anchorRef.current) return;
+      const rect = anchorRef.current.getBoundingClientRect();
+      const isInside =
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom;
+      if (!isInside) {
+        setIsVisible(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScrollOrResize, true);
+    window.addEventListener('resize', handleScrollOrResize);
+    window.addEventListener('pointermove', handlePointerMove);
+    return () => {
+      window.removeEventListener('scroll', handleScrollOrResize, true);
+      window.removeEventListener('resize', handleScrollOrResize);
+      window.removeEventListener('pointermove', handlePointerMove);
+    };
+  }, [isVisible, position]);
+
   const tooltipNode = (
     <AnimatePresence>
       {isVisible && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95, ...offset }}
-          animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, ...offset }}
-          transition={{ duration: 0.15, ease: 'easeOut' }}
+        <div
           style={{
             position: 'fixed',
             top: coords.top,
@@ -83,37 +136,44 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 
             zIndex: 99999,
             pointerEvents: 'none',
           }}
-          className="px-3 py-2 bg-[#0D0D0D] border border-[#00FF41] rounded shadow-[0_0_15px_rgba(0,255,65,0.35)] w-max max-w-[220px] text-center"
         >
-          <p className="text-[#00FF41] text-[10px] font-['Rajdhani'] font-bold tracking-widest leading-tight uppercase whitespace-nowrap">
-            {content}
-          </p>
-          {/* Arrow */}
-          {position === 'left' && (
-            <>
-              <div className="absolute left-[100%] top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[6px] border-l-[#00FF41]" />
-              <div className="absolute left-[calc(100%-1px)] top-1/2 -translate-y-1/2 w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-l-[5px] border-l-[#0D0D0D]" />
-            </>
-          )}
-          {position === 'right' && (
-            <>
-              <div className="absolute right-[100%] top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-[#00FF41]" />
-              <div className="absolute right-[calc(100%-1px)] top-1/2 -translate-y-1/2 w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-r-[5px] border-r-[#0D0D0D]" />
-            </>
-          )}
-          {position === 'top' && (
-            <>
-              <div className="absolute top-[100%] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#00FF41]" />
-              <div className="absolute top-[calc(100%-1px)] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[5px] border-t-[#0D0D0D]" />
-            </>
-          )}
-          {position === 'bottom' && (
-            <>
-              <div className="absolute bottom-[100%] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px] border-b-[#00FF41]" />
-              <div className="absolute bottom-[calc(100%-1px)] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-b-[5px] border-b-[#0D0D0D]" />
-            </>
-          )}
-        </motion.div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, ...offset }}
+            animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, ...offset }}
+            transition={{ duration: 0.15, ease: 'easeOut' }}
+            className="px-3 py-2 bg-[#0D0D0D] border border-[#00FF41] rounded shadow-[0_0_15px_rgba(0,255,65,0.35)] w-max max-w-[220px] text-center relative"
+          >
+            <p className="text-[#00FF41] text-[10px] font-['Rajdhani'] font-bold tracking-widest leading-tight uppercase whitespace-nowrap">
+              {content}
+            </p>
+            {/* Arrow */}
+            {position === 'left' && (
+              <>
+                <div className="absolute left-[100%] top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[6px] border-l-[#00FF41]" />
+                <div className="absolute left-[calc(100%-1px)] top-1/2 -translate-y-1/2 w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-l-[5px] border-l-[#0D0D0D]" />
+              </>
+            )}
+            {position === 'right' && (
+              <>
+                <div className="absolute right-[100%] top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-[#00FF41]" />
+                <div className="absolute right-[calc(100%-1px)] top-1/2 -translate-y-1/2 w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-r-[5px] border-r-[#0D0D0D]" />
+              </>
+            )}
+            {position === 'top' && (
+              <>
+                <div className="absolute top-[100%] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#00FF41]" />
+                <div className="absolute top-[calc(100%-1px)] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[5px] border-t-[#0D0D0D]" />
+              </>
+            )}
+            {position === 'bottom' && (
+              <>
+                <div className="absolute bottom-[100%] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px] border-b-[#00FF41]" />
+                <div className="absolute bottom-[calc(100%-1px)] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-b-[5px] border-b-[#0D0D0D]" />
+              </>
+            )}
+          </motion.div>
+        </div>
       )}
     </AnimatePresence>
   );
@@ -124,8 +184,10 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 
       className={`relative flex items-center justify-center ${className}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      onFocus={handleMouseEnter}
+      onFocus={handleFocus}
       onBlur={handleMouseLeave}
+      onClick={handleClick}
+      onPointerDown={handleClick}
     >
       {children}
       {createPortal(tooltipNode, document.body)}
