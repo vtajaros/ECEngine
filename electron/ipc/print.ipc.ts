@@ -26,7 +26,7 @@ export function registerPrintHandlers(getMainWindow: () => Electron.BrowserWindo
         width: 900,
         height: 800,
         frame: false,
-        backgroundColor: '#FFFFFF',
+        transparent: true,
         title: `Test Paper View — ${title}`,
         autoHideMenuBar: true,
         icon: iconPath,

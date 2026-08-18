@@ -492,6 +492,16 @@ export default function PrintView() {
     }
   }, [])
 
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement)
+    }
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
+
   useEffect(() => {
     const initialScale = () => {
       const availableWidth = window.innerWidth
@@ -584,13 +594,13 @@ export default function PrintView() {
       {/* Left side spacer to balance the right controls or put logo */}
       <div className="flex items-center [-webkit-app-region:no-drag] pl-3">
         <img
-          src="favicon.png"
+          src="/ecengine_icon.png"
           alt="Logo"
           className="w-4 h-4 object-contain"
           onError={(e) => {
             const img = e.currentTarget
-            if (img.src.includes('favicon.png')) {
-              img.src = '/ecengine_icon.png'
+            if (!img.src.includes('resources')) {
+              img.src = 'resources/ecengine_icon.png'
             }
           }}
         />
@@ -1228,7 +1238,7 @@ export default function PrintView() {
   }
 
   return (
-    <div className="h-screen w-full flex flex-col overflow-hidden bg-engine-black print:bg-white">
+    <div className={`h-screen w-full flex flex-col overflow-hidden bg-engine-black print:bg-white ${isFullscreen ? '' : 'rounded-xl border border-[#333]'}`}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         .animate-spin { animation: spin 1s linear infinite; }
