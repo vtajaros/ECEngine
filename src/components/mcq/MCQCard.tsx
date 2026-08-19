@@ -35,7 +35,7 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
         if (key === 'B' || key === '2') handleSelect(1)
         if (key === 'C' || key === '3') handleSelect(2)
         if (key === 'D' || key === '4') handleSelect(3)
-      } else if (e.key === 'Enter' || e.code === 'Space') {
+      } else if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space' || e.key === 'Spacebar') {
         e.preventDefault()
         onNext()
       }

@@ -220,46 +220,6 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
     }
   }, [viewState, currentCard?.id, mcqData?.explanation, mcqData?.solutionImagePath])
 
-  // Keyboard controls
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (viewState === 'feedback') {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault()
-        handleNext()
-      }
-      return
-    }
-
-    if (viewState === 'partition-complete') {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault()
-        if (currentPartitionIndex < partitions.length - 1) {
-          startNextPartitionPhase()
-        }
-      }
-      return
-    }
-
-    if (viewState === 'question' && isMcq && mcqData?.choices) {
-      const key = e.key.toLowerCase()
-      let mappedIndex = -1
-
-      if (key === '1' || key === 'a') mappedIndex = 0
-      if (key === '2' || key === 'b') mappedIndex = 1
-      if (key === '3' || key === 'c') mappedIndex = 2
-      if (key === '4' || key === 'd') mappedIndex = 3
-
-      if (mappedIndex >= 0 && mappedIndex < mcqData.choices.length) {
-        submitAnswer(mappedIndex)
-      }
-    }
-  }, [viewState, isMcq, mcqData, currentPartitionIndex, partitions.length])
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleKeyDown])
-
   const toggleBookmark = (id?: string) => {
     const targetId = typeof id === 'string' ? id : currentCard?.id
     if (!targetId) return
@@ -389,6 +349,61 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
       setZoomedImage(null)
     }
   }
+
+  // Ref wrappers to avoid stale closure issues in keydown listener
+  const handleNextRef = useRef(handleNext)
+  handleNextRef.current = handleNext
+
+  const submitAnswerRef = useRef(submitAnswer)
+  submitAnswerRef.current = submitAnswer
+
+  const startNextPartitionPhaseRef = useRef(startNextPartitionPhase)
+  startNextPartitionPhaseRef.current = startNextPartitionPhase
+
+  // Keyboard controls
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't respond if user is typing in an input or textarea
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+
+      const isSpaceOrEnter = e.key === 'Enter' || e.key === ' ' || e.code === 'Space' || e.key === 'Spacebar'
+
+      if (viewState === 'feedback') {
+        if (isSpaceOrEnter) {
+          e.preventDefault()
+          handleNextRef.current()
+        }
+        return
+      }
+
+      if (viewState === 'partition-complete') {
+        if (isSpaceOrEnter) {
+          e.preventDefault()
+          if (currentPartitionIndex < partitions.length - 1) {
+            startNextPartitionPhaseRef.current()
+          }
+        }
+        return
+      }
+
+      if (viewState === 'question' && isMcq && mcqData?.choices) {
+        const key = e.key.toLowerCase()
+        let mappedIndex = -1
+
+        if (key === '1' || key === 'a') mappedIndex = 0
+        if (key === '2' || key === 'b') mappedIndex = 1
+        if (key === '3' || key === 'c') mappedIndex = 2
+        if (key === '4' || key === 'd') mappedIndex = 3
+
+        if (mappedIndex >= 0 && mappedIndex < mcqData.choices.length) {
+          submitAnswerRef.current(mappedIndex)
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [viewState, isMcq, mcqData, currentPartitionIndex, partitions.length])
 
   const handleRestartRound = () => {
     const currentCards = partitions[currentPartitionIndex]
