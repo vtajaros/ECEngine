@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { FileText, Table2, List, BookOpen, Bold, Loader2, CheckCircle2, AlertCircle, Minus, Square, X } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { FileText, Table2, List, BookOpen, Bold, Loader2, CheckCircle2, AlertCircle, Minus, Square, X, Search, ChevronUp, ChevronDown } from 'lucide-react'
 import { dbService } from '../services/db.service'
 import { Card, MCQData, FlashcardData, FormulaData } from '../types'
 import { renderMath, renderPlainText } from '../lib/latex'
+import { Tooltip } from '../components/ui/Tooltip'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -107,6 +108,29 @@ function MathText({ text, style, plainText }: { text: string; style?: React.CSSP
   )
 }
 
+/** Clickable image that calls onZoom with the image path when clicked. */
+function ClickableImg({
+  src, alt, style, onZoom,
+}: {
+  src: string
+  alt: string
+  style?: React.CSSProperties
+  onZoom: (src: string) => void
+}) {
+  return (
+    <img
+      src={src}
+      alt={alt}
+      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+      onClick={(e) => { e.stopPropagation(); onZoom(src) }}
+      style={{
+        cursor: 'zoom-in',
+        ...style,
+      }}
+    />
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Sub-renderers — Paper content (print-safe black/white)
 // ---------------------------------------------------------------------------
@@ -116,8 +140,9 @@ interface MCQTableRowProps {
   card: Card & { data: MCQData }
   hideAnswers?: boolean
   hideSolutions?: boolean
+  onZoom: (src: string) => void
 }
-function MCQTableRow({ index, card, hideAnswers, hideSolutions }: MCQTableRowProps) {
+function MCQTableRow({ index, card, hideAnswers, hideSolutions, onZoom }: MCQTableRowProps) {
   const { question, choices, answer, explanation, solutionImagePath, imagePath, choicesPlainText } = card.data
   const hasSolution = !hideSolutions && ((explanation && explanation.trim().length > 0) || !!solutionImagePath)
   return (
@@ -131,11 +156,11 @@ function MCQTableRow({ index, card, hideAnswers, hideSolutions }: MCQTableRowPro
             </p>
             {/* question imagePath */}
             {imagePath && (
-              <img
+              <ClickableImg
                 src={`ece-app://${imagePath}`}
                 alt="Question diagram"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
+                onZoom={onZoom}
+                style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid var(--pt-border-light)', display: 'block' }}
               />
             )}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: 'auto auto', gap: '2px 8px', marginTop: '4px' }}>
@@ -165,25 +190,6 @@ function MCQTableRow({ index, card, hideAnswers, hideSolutions }: MCQTableRowPro
                 )
               })}
             </div>
-            {/* Solution block */}
-            {hasSolution && (
-              <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed var(--pt-border-light)' }}>
-                <span style={{ fontWeight: 700, fontSize: '12px', color: 'var(--pt-text-primary)', display: 'block', marginBottom: '4px' }}>SOLUTION:</span>
-                {solutionImagePath && (
-                  <img
-                    src={`ece-app://${solutionImagePath}`}
-                    alt="Solution diagram"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                    style={{ maxWidth: '100%', maxHeight: '300px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid var(--pt-border-light)', display: 'block' }}
-                  />
-                )}
-                {explanation && explanation.trim().length > 0 && (
-                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--pt-text-body)', lineHeight: 1.6 }}>
-                    <MathText text={explanation} />
-                  </p>
-                )}
-              </div>
-            )}
           </div>
         </div>
       </td>
@@ -196,11 +202,29 @@ function MCQTableRow({ index, card, hideAnswers, hideSolutions }: MCQTableRowPro
           fontSize: '13px',
         }}
       >
-        <span style={{ fontWeight: 700, color: 'var(--pt-text-secondary)' }}></span>
         {!hideAnswers && <span style={{ fontWeight: 700, color: 'var(--pt-text-primary)' }}>
           <MathText text={choices[answer] ?? '—'} plainText={choicesPlainText?.[answer]} />
         </span>}
         {hideAnswers && <span style={{ color: 'var(--pt-text-muted)' }}>—</span>}
+        {/* Solution block — displayed below the answer in the Answer column */}
+        {hasSolution && (
+          <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed var(--pt-border-light)' }}>
+            <span style={{ fontWeight: 700, fontSize: '11px', color: 'var(--pt-text-primary)', display: 'block', marginBottom: '4px', letterSpacing: '0.05em' }}>SOLUTION:</span>
+            {solutionImagePath && (
+              <ClickableImg
+                src={`ece-app://${solutionImagePath}`}
+                alt="Solution diagram"
+                onZoom={onZoom}
+                style={{ maxWidth: '100%', maxHeight: '300px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid var(--pt-border-light)', display: 'block' }}
+              />
+            )}
+            {explanation && explanation.trim().length > 0 && (
+              <p style={{ margin: 0, fontSize: '12px', color: 'var(--pt-text-body)', lineHeight: 1.6 }}>
+                <MathText text={explanation} />
+              </p>
+            )}
+          </div>
+        )}
       </td>
     </tr>
   )
@@ -212,8 +236,9 @@ interface MCQGlossaryItemProps {
   qaMode?: boolean
   hideAnswers?: boolean
   hideSolutions?: boolean
+  onZoom: (src: string) => void
 }
-function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers, hideSolutions }: MCQGlossaryItemProps) {
+function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers, hideSolutions, onZoom }: MCQGlossaryItemProps) {
   const { question, choices, answer, imagePath, choicesPlainText, explanation, solutionImagePath } = card.data
   const hasSolution = !hideSolutions && ((explanation && explanation.trim().length > 0) || !!solutionImagePath)
   if (qaMode) {
@@ -231,11 +256,11 @@ function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers, hideSolutio
           <span><MathText text={question} /></span>
         </div>
         {imagePath && (
-          <img
+          <ClickableImg
             src={`ece-app://${imagePath}`}
             alt="Question diagram"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-            style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', marginLeft: '16px', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
+            onZoom={onZoom}
+            style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', marginLeft: '16px', borderRadius: '4px', border: '1px solid var(--pt-border-light)', display: 'block' }}
           />
         )}
         {!hideAnswers && <p style={{ fontWeight: 700, color: 'var(--pt-text-body)', margin: 0, paddingLeft: '16px' }}>
@@ -247,10 +272,10 @@ function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers, hideSolutio
           <div style={{ marginTop: '8px', paddingTop: '6px', paddingLeft: '16px', borderTop: '1px dashed var(--pt-border-light)' }}>
             <span style={{ fontWeight: 700, fontSize: '12px', color: 'var(--pt-text-primary)', display: 'block', marginBottom: '4px' }}>SOLUTION:</span>
             {solutionImagePath && (
-              <img
+              <ClickableImg
                 src={`ece-app://${solutionImagePath}`}
                 alt="Solution diagram"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                onZoom={onZoom}
                 style={{ maxWidth: '100%', maxHeight: '300px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid var(--pt-border-light)', display: 'block' }}
               />
             )}
@@ -276,11 +301,11 @@ function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers, hideSolutio
         <span><MathText text={question} /></span>
       </div>
       {imagePath && (
-        <img
+        <ClickableImg
           src={`ece-app://${imagePath}`}
           alt="Question diagram"
-          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-          style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
+          onZoom={onZoom}
+          style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid var(--pt-border-light)', display: 'block' }}
         />
       )}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: 'auto auto', gap: '2px 8px', marginTop: '12px' }}>
@@ -315,10 +340,10 @@ function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers, hideSolutio
         <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed var(--pt-border-light)' }}>
           <span style={{ fontWeight: 700, fontSize: '12px', color: 'var(--pt-text-primary)', display: 'block', marginBottom: '4px' }}>SOLUTION:</span>
           {solutionImagePath && (
-            <img
+            <ClickableImg
               src={`ece-app://${solutionImagePath}`}
               alt="Solution diagram"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+              onZoom={onZoom}
               style={{ maxWidth: '100%', maxHeight: '300px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid var(--pt-border-light)', display: 'block' }}
             />
           )}
@@ -336,8 +361,9 @@ function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers, hideSolutio
 interface FormulaItemProps {
   index: number
   card: Card & { data: FormulaData }
+  onZoom: (src: string) => void
 }
-function FormulaItem({ index, card }: FormulaItemProps) {
+function FormulaItem({ index, card, onZoom }: FormulaItemProps) {
   const { name, latex, variables, imagePath } = card.data
   const vars = variables as unknown
   return (
@@ -373,10 +399,10 @@ function FormulaItem({ index, card }: FormulaItemProps) {
           />
         ) : null}
         {imagePath && (
-          <img
+          <ClickableImg
             src={`ece-app://${imagePath}`}
             alt="Formula diagram"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+            onZoom={onZoom}
             style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
           />
         )}
@@ -428,6 +454,19 @@ export default function PrintView() {
   const [showSolutions, setShowSolutions] = useState(true)
   const [topicDescription, setTopicDescription] = useState<string>('')
 
+  // ── Find-in-document state ──────────────────────────────────────────────────
+  const [findOpen, setFindOpen] = useState(false)
+  const [findQuery, setFindQuery] = useState('')
+  const [findIndex, setFindIndex] = useState(0)   // 0-based index of current match
+  const [findTotal, setFindTotal] = useState(0)
+  const findInputRef = useRef<HTMLInputElement>(null)
+  const paperAreaRef = useRef<HTMLDivElement>(null)
+  // Keep the list of highlight <mark> elements so we can clear them
+  const findMarkEls = useRef<HTMLElement[]>([])
+
+  // ── Image lightbox state ─────────────────────────────────────────────────────
+  const [zoomedImage, setZoomedImage] = useState<string | null>(null)
+
   // Sync theme+layout from pdfConfig once it arrives
   useEffect(() => {
     if (!pdfConfig) return
@@ -442,6 +481,162 @@ export default function PrintView() {
   // Ref for cleanup on unmount
   const zoomCleanupRef = useRef<(() => void) | null>(null)
   useEffect(() => () => { zoomCleanupRef.current?.() }, [])
+
+  // ── Find helpers ─────────────────────────────────────────────────────────────
+
+  /** Remove all highlight marks previously inserted by find. */
+  const clearFindHighlights = useCallback(() => {
+    for (const mark of findMarkEls.current) {
+      const parent = mark.parentNode
+      if (!parent) continue
+      // Replace the <mark> with its text-node child
+      while (mark.firstChild) parent.insertBefore(mark.firstChild, mark)
+      parent.removeChild(mark)
+      // Merge adjacent text nodes
+      parent.normalize()
+    }
+    findMarkEls.current = []
+  }, [])
+
+  /** Walk text nodes inside el and wrap every occurrence of `query` with <mark>. */
+  const applyFindHighlights = useCallback((el: HTMLElement, query: string): HTMLElement[] => {
+    if (!query) return []
+    const lq = query.toLowerCase()
+    const marks: HTMLElement[] = []
+
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null)
+    const textNodes: Text[] = []
+    let node: Node | null
+    while ((node = walker.nextNode())) textNodes.push(node as Text)
+
+    for (const tn of textNodes) {
+      const text = tn.nodeValue ?? ''
+      const lt = text.toLowerCase()
+      let lastIdx = 0
+      const fragments: Node[] = []
+      let idx: number
+      let found = false
+
+      while ((idx = lt.indexOf(lq, lastIdx)) !== -1) {
+        found = true
+        if (idx > lastIdx) {
+          fragments.push(document.createTextNode(text.slice(lastIdx, idx)))
+        }
+        const mark = document.createElement('mark')
+        mark.dataset.findMark = '1'
+        mark.style.cssText = [
+          'background: rgba(255,200,0,0.55)',
+          'color: inherit',
+          'border-radius: 2px',
+          'outline: none',
+          'padding: 0 1px',
+        ].join(';')
+        mark.appendChild(document.createTextNode(text.slice(idx, idx + lq.length)))
+        fragments.push(mark)
+        marks.push(mark)
+        lastIdx = idx + lq.length
+      }
+
+      if (found) {
+        if (lastIdx < text.length) fragments.push(document.createTextNode(text.slice(lastIdx)))
+        const parent = tn.parentNode!
+        for (const f of fragments) parent.insertBefore(f, tn)
+        parent.removeChild(tn)
+      }
+    }
+    return marks
+  }, [])
+
+  /** Highlight active match differently and scroll it into view. */
+  const activateFindMatch = useCallback((marks: HTMLElement[], index: number) => {
+    marks.forEach((m, i) => {
+      if (i === index) {
+        m.style.background = 'rgba(255,140,0,0.85)'
+        m.style.outline = '2px solid rgba(255,140,0,1)'
+        m.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      } else {
+        m.style.background = 'rgba(255,200,0,0.55)'
+        m.style.outline = 'none'
+      }
+    })
+  }, [])
+
+  /** Run a full find pass: clear old marks, apply new ones, activate current. */
+  const runFind = useCallback((query: string, indexOverride?: number) => {
+    clearFindHighlights()
+    if (!paperAreaRef.current || !query.trim()) {
+      setFindTotal(0)
+      setFindIndex(0)
+      return
+    }
+    const marks = applyFindHighlights(paperAreaRef.current, query.trim())
+    findMarkEls.current = marks
+    setFindTotal(marks.length)
+    if (marks.length === 0) { setFindIndex(0); return }
+    const active = indexOverride !== undefined
+      ? Math.max(0, Math.min(indexOverride, marks.length - 1))
+      : 0
+    setFindIndex(active)
+    activateFindMatch(marks, active)
+  }, [clearFindHighlights, applyFindHighlights, activateFindMatch])
+
+  const navigateFind = useCallback((dir: 1 | -1) => {
+    if (findMarkEls.current.length === 0) return
+    setFindIndex(prev => {
+      const next = (prev + dir + findMarkEls.current.length) % findMarkEls.current.length
+      activateFindMatch(findMarkEls.current, next)
+      return next
+    })
+  }, [activateFindMatch])
+
+  const openFind = useCallback(() => {
+    setFindOpen(true)
+    setTimeout(() => findInputRef.current?.focus(), 50)
+  }, [])
+
+  const closeFind = useCallback(() => {
+    setFindOpen(false)
+    clearFindHighlights()
+    setFindQuery('')
+    setFindTotal(0)
+    setFindIndex(0)
+  }, [clearFindHighlights])
+
+  // Keyboard shortcut: Ctrl+F / Cmd+F → open find; Escape → close lightbox or find bar
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault()
+        if (findOpen) {
+          findInputRef.current?.focus()
+          findInputRef.current?.select()
+        } else {
+          openFind()
+        }
+      }
+      if (e.key === 'Escape') {
+        if (zoomedImage) {
+          setZoomedImage(null)
+        } else if (findOpen) {
+          closeFind()
+        }
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [findOpen, zoomedImage, openFind, closeFind])
+
+  // Re-run find when cards are re-rendered (layout/theme changes clear the DOM)
+  const findQueryRef = useRef(findQuery)
+  findQueryRef.current = findQuery
+  useEffect(() => {
+    if (findOpen && findQueryRef.current) {
+      // Defer slightly so React finishes rendering the paper content
+      const tid = setTimeout(() => runFind(findQueryRef.current), 80)
+      return () => clearTimeout(tid)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layout, theme, showAnswers, showSolutions, boldSide, cards])
 
   // Right-click + wheel zoom (Sumatra PDF style)
   // useCallback ref: fires the instant the DOM node exists, bypasses early-return null problem
@@ -648,24 +843,26 @@ export default function PrintView() {
   // -------------------------------------------------------------------------
   const toolbar = (
     <div
-      className="print:hidden w-full flex flex-col px-6 py-3"
+      className="print:hidden w-full flex items-center px-4 py-2 gap-2"
       style={{
         position: 'sticky',
         top: 0,
         zIndex: 10,
         background: 'var(--bg-secondary)',
         borderBottom: '1px solid var(--bg-card)',
+        flexWrap: 'nowrap',
+        overflowX: 'auto',
+        justifyContent: 'center',
       }}
     >
-      <div className="flex flex-wrap items-center justify-center gap-2 w-full pb-1">
-      {/* Layout toggle */}
+      {/* Layout toggle — icon-only with tooltips */}
       <div
         className="flex-shrink-0"
         style={{
           display: 'flex',
-          gap: '4px',
+          gap: '2px',
           background: 'var(--bg-card)',
-          padding: '4px',
+          padding: '3px',
           borderRadius: 'var(--radius-md)',
           border: '1px solid var(--bg-elevated)',
         }}
@@ -673,80 +870,71 @@ export default function PrintView() {
         {([['glossary', List, 'Glossary'], ['table', Table2, 'Table'], ['qa', BookOpen, 'Q&A']] as const).map(
           ([mode, Icon, label]) => {
             const isDisabled = (mode === 'qa' && isFlashcardOnly) || (hasFormulas && (mode === 'glossary' || mode === 'qa'))
-            // Hide Q&A button entirely for flashcard-only decks instead of showing it grayed out
             if (mode === 'qa' && isFlashcardOnly) return null
             return (
-              <motion.button
-                key={mode}
-                id={`print-layout-${mode}`}
-                disabled={isDisabled}
-                onClick={() => { if (!isDisabled) setLayout(mode) }}
-                whileTap={{ scale: isDisabled ? 1 : 0.95 }}
-                className="whitespace-nowrap flex-shrink-0 text-[12px] px-[14px] py-[6px]"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: 'none',
-                  cursor: isDisabled ? 'not-allowed' : 'pointer',
-                  fontFamily: 'var(--font-ui)',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                  transition: 'all 0.15s',
-                  background: layout === mode ? 'var(--accent-primary)' : 'transparent',
-                  color: isDisabled ? 'var(--text-secondary)' : (layout === mode ? '#000' : 'var(--text-secondary)'),
-                  opacity: isDisabled ? 0.35 : 1,
-                }}
-              >
-                <Icon size={14} />
-                {label}
-              </motion.button>
+              <Tooltip key={mode} content={label} position="bottom">
+                <motion.button
+                  id={`print-layout-${mode}`}
+                  disabled={isDisabled}
+                  onClick={() => { if (!isDisabled) setLayout(mode) }}
+                  whileTap={{ scale: isDisabled ? 1 : 0.95 }}
+                  style={{
+                    width: '28px', height: '28px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    borderRadius: 'var(--radius-sm)',
+                    border: 'none',
+                    cursor: isDisabled ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.15s',
+                    background: layout === mode ? 'var(--accent-primary)' : 'transparent',
+                    color: isDisabled ? 'var(--text-secondary)' : (layout === mode ? '#000' : 'var(--text-secondary)'),
+                    opacity: isDisabled ? 0.35 : 1,
+                  }}
+                >
+                  <Icon size={14} />
+                </motion.button>
+              </Tooltip>
             )
           }
         )}
       </div>
 
-      {/* Bold side toggle — only shown for flashcard/mixed decks in table or glossary layout */}
+      {/* Bold side toggle — icon-only with tooltips */}
       {flashcardCards.length > 0 && layout !== 'qa' && (
         <div
           className="flex-shrink-0"
           style={{
             display: 'flex',
-            gap: '4px',
+            gap: '2px',
             background: 'var(--bg-card)',
-            padding: '4px',
+            padding: '3px',
             borderRadius: 'var(--radius-md)',
             border: '1px solid var(--bg-elevated)',
           }}
         >
           {([['term', 'Bold Term'], ['definition', 'Bold Def']] as const).map(
             ([side, label]) => (
-              <motion.button
-                key={side}
-                onClick={() => setBoldSide(side)}
-                whileTap={{ scale: 0.95 }}
-                className="whitespace-nowrap flex-shrink-0 text-[11px] px-[10px] py-[5px]"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  borderRadius: 'var(--radius-sm)',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontFamily: 'var(--font-ui)',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  transition: 'all 0.15s',
-                  background: boldSide === side ? 'var(--accent-primary)' : 'transparent',
-                  color: boldSide === side ? '#000' : 'var(--text-secondary)',
-                }}
-              >
-                <Bold size={12} />
-                {label}
-              </motion.button>
+              <Tooltip key={side} content={label} position="bottom">
+                <motion.button
+                  onClick={() => setBoldSide(side)}
+                  whileTap={{ scale: 0.95 }}
+                  style={{
+                    width: '28px', height: '28px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    borderRadius: 'var(--radius-sm)',
+                    border: 'none',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s',
+                    background: boldSide === side ? 'var(--accent-primary)' : 'transparent',
+                    color: boldSide === side ? '#000' : 'var(--text-secondary)',
+                  }}
+                >
+                  <Bold size={13} />
+                  {side === 'term'
+                    ? <span style={{ fontSize: '9px', fontWeight: 900, lineHeight: 1, marginLeft: '-1px' }}>T</span>
+                    : <span style={{ fontSize: '9px', fontWeight: 900, lineHeight: 1, marginLeft: '-1px' }}>D</span>
+                  }
+                </motion.button>
+              </Tooltip>
             )
           )}
         </div>
@@ -757,9 +945,9 @@ export default function PrintView() {
         className="flex-shrink-0"
         style={{
           display: 'flex',
-          gap: '4px',
+          gap: '2px',
           background: 'var(--bg-card)',
-          padding: '4px',
+          padding: '3px',
           borderRadius: 'var(--radius-md)',
           border: '1px solid var(--bg-elevated)',
         }}
@@ -769,7 +957,7 @@ export default function PrintView() {
             key={t}
             onClick={() => setTheme(t)}
             whileTap={{ scale: 0.95 }}
-            className="whitespace-nowrap flex-shrink-0 text-[11px] px-[10px] py-[5px]"
+            className="whitespace-nowrap flex-shrink-0 text-[10px] px-[8px] py-[5px]"
             style={{
               borderRadius: 'var(--radius-sm)',
               border: 'none',
@@ -795,22 +983,22 @@ export default function PrintView() {
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
+            gap: '8px',
             background: 'var(--bg-card)',
-            padding: '4px 10px',
+            padding: '4px 8px',
             borderRadius: 'var(--radius-md)',
             border: '1px solid var(--bg-elevated)',
-            height: '36px',
+            height: '34px',
           }}
         >
           {/* ANS checkbox */}
           <label
             style={{
-              display: 'flex', alignItems: 'center', gap: '5px',
+              display: 'flex', alignItems: 'center', gap: '4px',
               cursor: 'pointer',
               fontFamily: 'var(--font-ui)',
               fontWeight: 700,
-              fontSize: '11px',
+              fontSize: '10px',
               textTransform: 'uppercase',
               letterSpacing: '0.06em',
               color: showAnswers ? 'var(--accent-primary)' : 'var(--text-secondary)',
@@ -823,22 +1011,22 @@ export default function PrintView() {
               onChange={() => setShowAnswers(h => !h)}
               style={{
                 accentColor: 'var(--accent-primary)',
-                width: '13px', height: '13px',
+                width: '12px', height: '12px',
                 cursor: 'pointer',
               }}
             />
             ANS
           </label>
 
-          {/* SOL'N checkbox — only if at least one card has a solution */}
+          {/* SOL'N checkbox */}
           {mcqCards.some(c => (c.data.explanation && c.data.explanation.trim().length > 0) || !!c.data.solutionImagePath) && (
             <label
               style={{
-                display: 'flex', alignItems: 'center', gap: '5px',
+                display: 'flex', alignItems: 'center', gap: '4px',
                 cursor: 'pointer',
                 fontFamily: 'var(--font-ui)',
                 fontWeight: 700,
-                fontSize: '11px',
+                fontSize: '10px',
                 textTransform: 'uppercase',
                 letterSpacing: '0.06em',
                 color: showSolutions ? 'var(--accent-primary)' : 'var(--text-secondary)',
@@ -851,7 +1039,7 @@ export default function PrintView() {
                 onChange={() => setShowSolutions(h => !h)}
                 style={{
                   accentColor: 'var(--accent-primary)',
-                  width: '13px', height: '13px',
+                  width: '12px', height: '12px',
                   cursor: 'pointer',
                 }}
               />
@@ -867,9 +1055,9 @@ export default function PrintView() {
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '4px',
+          gap: '2px',
           background: 'var(--bg-card)',
-          padding: '4px',
+          padding: '3px',
           borderRadius: 'var(--radius-md)',
           border: '1px solid var(--bg-elevated)',
         }}
@@ -879,7 +1067,7 @@ export default function PrintView() {
           whileTap={{ scale: 0.9 }}
           title="Zoom Out"
           style={{
-            width: '28px', height: '28px',
+            width: '24px', height: '24px',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             borderRadius: 'var(--radius-sm)',
             border: 'none', cursor: 'pointer',
@@ -896,7 +1084,7 @@ export default function PrintView() {
             fontSize: '11px', fontWeight: 700,
             color: 'var(--text-primary)',
             fontFamily: 'var(--font-ui)',
-            minWidth: '36px', textAlign: 'center',
+            minWidth: '30px', textAlign: 'center',
             cursor: 'pointer',
             letterSpacing: '0.04em',
           }}
@@ -908,7 +1096,7 @@ export default function PrintView() {
           whileTap={{ scale: 0.9 }}
           title="Zoom In"
           style={{
-            width: '28px', height: '28px',
+            width: '24px', height: '24px',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             borderRadius: 'var(--radius-sm)',
             border: 'none', cursor: 'pointer',
@@ -920,17 +1108,38 @@ export default function PrintView() {
         >+</motion.button>
       </div>
 
+      {/* Find / Search button */}
+      <Tooltip content="Find in document (Ctrl+F)" position="bottom">
+        <motion.button
+          onClick={() => findOpen ? closeFind() : openFind()}
+          whileTap={{ scale: 0.9 }}
+          style={{
+            width: '32px', height: '32px',
+            flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--bg-elevated)',
+            cursor: 'pointer',
+            background: findOpen ? 'var(--accent-primary)' : 'var(--bg-card)',
+            color: findOpen ? '#000' : 'var(--text-secondary)',
+            transition: 'all 0.15s',
+          }}
+        >
+          <Search size={14} />
+        </motion.button>
+      </Tooltip>
+
       {/* Export PDF button */}
       <motion.button
         id="print-export-pdf"
         onClick={handleExportPDF}
         disabled={exportState === 'loading'}
         whileTap={{ scale: 0.96 }}
-        className="whitespace-nowrap flex-shrink-0 text-[13px] px-[20px] py-[8px]"
+        className="whitespace-nowrap flex-shrink-0 text-[12px] px-[16px] py-[7px]"
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
+          gap: '6px',
           background: exportState === 'success' ? 'var(--color-correct)' : 'var(--accent-primary)',
           color: '#000',
           border: 'none',
@@ -946,17 +1155,17 @@ export default function PrintView() {
       >
         {exportState === 'loading' ? (
           <>
-            <Loader2 size={15} className="animate-spin" />
+            <Loader2 size={14} className="animate-spin" />
             Generating…
           </>
         ) : exportState === 'success' ? (
           <>
-            <CheckCircle2 size={15} />
+            <CheckCircle2 size={14} />
             Saved!
           </>
         ) : (
           <>
-            <FileText size={15} />
+            <FileText size={14} />
             Export PDF
           </>
         )}
@@ -974,13 +1183,13 @@ export default function PrintView() {
             fontSize: '12px',
             color: 'var(--color-wrong)',
             fontFamily: 'var(--font-body)',
+            flexShrink: 0,
           }}
         >
           <AlertCircle size={13} />
           {exportError}
         </motion.span>
       )}
-      </div>
     </div>
   )
 
@@ -1039,14 +1248,14 @@ export default function PrintView() {
               </thead>
               <tbody style={{ display: 'table-row-group' }}>
                 {mcqCards.map((card, i) => (
-                  <MCQTableRow key={card.id} index={i + 1} card={card} hideAnswers={!showAnswers} hideSolutions={!showSolutions} />
+                  <MCQTableRow key={card.id} index={i + 1} card={card} hideAnswers={!showAnswers} hideSolutions={!showSolutions} onZoom={setZoomedImage} />
                 ))}
               </tbody>
             </table>
           ) : (
             <div>
               {mcqCards.map((card, i) => (
-                <MCQGlossaryItem key={card.id} index={i + 1} card={card} qaMode={layout === 'qa'} hideAnswers={!showAnswers} hideSolutions={!showSolutions} />
+                <MCQGlossaryItem key={card.id} index={i + 1} card={card} qaMode={layout === 'qa'} hideAnswers={!showAnswers} hideSolutions={!showSolutions} onZoom={setZoomedImage} />
               ))}
             </div>
           )}
@@ -1076,18 +1285,18 @@ export default function PrintView() {
                     <tr key={card.id} style={{ borderBottom: '1px solid var(--pt-border)', pageBreakInside: 'avoid' }}>
                       <td style={{ padding: '10px 12px', verticalAlign: 'top', width: '50%', overflow: 'hidden' }}>
                         {imageFront && (
-                          <img
+                          <ClickableImg
                             src={`ece-app://${imageFront}`}
                             alt="Front diagram"
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                            onZoom={setZoomedImage}
                             style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
                           />
                         )}
                         {imagePath && (
-                          <img
+                          <ClickableImg
                             src={`ece-app://${imagePath}`}
                             alt="Flashcard diagram"
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                            onZoom={setZoomedImage}
                             style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
                           />
                         )}
@@ -1095,10 +1304,10 @@ export default function PrintView() {
                       </td>
                       <td style={{ padding: '10px 12px', verticalAlign: 'top', width: '50%', borderLeft: '1px solid var(--pt-border)', overflow: 'hidden' }}>
                         {imageBack && (
-                          <img
+                          <ClickableImg
                             src={`ece-app://${imageBack}`}
                             alt="Back diagram"
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                            onZoom={setZoomedImage}
                             style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
                           />
                         )}
@@ -1119,27 +1328,27 @@ export default function PrintView() {
                       <MathText text={front} />
                     </p>
                     {imageFront && (
-                      <img
+                      <ClickableImg
                         src={`ece-app://${imageFront}`}
                         alt="Front diagram"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                        onZoom={setZoomedImage}
                         style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginLeft: '20px', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
                       />
                     )}
                     {imagePath && (
-                      <img
+                      <ClickableImg
                         src={`ece-app://${imagePath}`}
                         alt="Flashcard diagram"
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                        onZoom={setZoomedImage}
                         style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginLeft: '20px', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
                       />
                     )}
                     <div style={{ paddingLeft: '20px', color: 'var(--pt-text-body)' }}>
                       {imageBack && (
-                        <img
+                        <ClickableImg
                           src={`ece-app://${imageBack}`}
                           alt="Back diagram"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                          onZoom={setZoomedImage}
                           style={{ display: 'block', maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginTop: '4px', marginBottom: '4px', borderRadius: '4px', border: '1px solid var(--pt-border-light)' }}
                         />
                       )}
@@ -1160,7 +1369,7 @@ export default function PrintView() {
             Formulas
           </h2>
           {formulaCards.map((card, i) => (
-            <FormulaItem key={card.id} index={i + 1} card={card} />
+            <FormulaItem key={card.id} index={i + 1} card={card} onZoom={setZoomedImage} />
           ))}
         </section>
       )}
@@ -1279,10 +1488,113 @@ export default function PrintView() {
       `}</style>
       {titleBar}
       {toolbar}
+
+      {/* ── Find bar (Ctrl+F) ── */}
+      {findOpen && (
+        <div
+          className="print:hidden"
+          style={{
+            position: 'absolute',
+            top: '68px',   /* below titlebar (32px) + toolbar (~36px) */
+            right: '16px',
+            zIndex: 50,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: 'var(--bg-elevated)',
+            border: '1px solid var(--bg-card)',
+            borderRadius: 'var(--radius-md)',
+            padding: '6px 10px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          <Search size={14} style={{ color: 'var(--text-secondary)', flexShrink: 0 }} />
+          <input
+            ref={findInputRef}
+            value={findQuery}
+            onChange={(e) => {
+              const q = e.target.value
+              setFindQuery(q)
+              runFind(q)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                navigateFind(e.shiftKey ? -1 : 1)
+              }
+              if (e.key === 'Escape') closeFind()
+            }}
+            placeholder="Find in document…"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              outline: 'none',
+              color: 'var(--text-primary)',
+              fontFamily: 'var(--font-ui)',
+              fontSize: '13px',
+              width: '200px',
+            }}
+          />
+          {/* Match counter */}
+          <span
+            style={{
+              fontSize: '11px',
+              fontFamily: 'var(--font-ui)',
+              color: findTotal === 0 && findQuery ? 'var(--color-wrong)' : 'var(--text-secondary)',
+              minWidth: '50px',
+              textAlign: 'right',
+              flexShrink: 0,
+            }}
+          >
+            {findQuery ? (findTotal === 0 ? 'No results' : `${findIndex + 1} / ${findTotal}`) : ''}
+          </span>
+          {/* Prev */}
+          <button
+            onClick={() => navigateFind(-1)}
+            disabled={findTotal === 0}
+            title="Previous match (Shift+Enter)"
+            style={{
+              background: 'transparent', border: 'none', cursor: findTotal > 0 ? 'pointer' : 'not-allowed',
+              color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', padding: '2px',
+              borderRadius: '4px', opacity: findTotal === 0 ? 0.4 : 1,
+            }}
+          >
+            <ChevronUp size={15} />
+          </button>
+          {/* Next */}
+          <button
+            onClick={() => navigateFind(1)}
+            disabled={findTotal === 0}
+            title="Next match (Enter)"
+            style={{
+              background: 'transparent', border: 'none', cursor: findTotal > 0 ? 'pointer' : 'not-allowed',
+              color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', padding: '2px',
+              borderRadius: '4px', opacity: findTotal === 0 ? 0.4 : 1,
+            }}
+          >
+            <ChevronDown size={15} />
+          </button>
+          {/* Close */}
+          <button
+            onClick={closeFind}
+            title="Close (Esc)"
+            style={{
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', padding: '2px',
+              borderRadius: '4px',
+            }}
+          >
+            <X size={14} />
+          </button>
+        </div>
+      )}
+
       <div ref={scrollAreaRef} className="flex-1 overflow-y-auto print-scrollbar" style={{ background: PRINT_THEMES[theme].vars['--pt-bg-outer'], padding: '40px 0' }}>
         <div className="w-full flex justify-center pb-12 overflow-x-auto">
           <div
             id="print-paper-area"
+            ref={paperAreaRef}
             className="w-[800px] max-w-none"
             style={{
               ...PRINT_THEMES[theme].vars,
@@ -1299,6 +1611,35 @@ export default function PrintView() {
           </div>
         </div>
       </div>
+
+      {/* Image lightbox */}
+      <AnimatePresence>
+        {zoomedImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4 lg:p-10 cursor-zoom-out backdrop-blur-sm print:hidden"
+            onClick={() => setZoomedImage(null)}
+          >
+            <button
+              className="absolute top-6 right-6 text-text-muted hover:text-accent transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-accent"
+              onClick={() => setZoomedImage(null)}
+              title="Close"
+            >
+              <X size={24} />
+            </button>
+            <motion.img
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              src={zoomedImage}
+              alt="Zoomed diagram"
+              className="max-w-[90vw] max-h-[90vh] object-contain shadow-2xl rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
