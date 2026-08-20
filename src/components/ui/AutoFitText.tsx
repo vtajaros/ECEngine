@@ -42,10 +42,8 @@ export const AutoFitText: React.FC<AutoFitTextProps> = ({ html, className }) => 
           transform: scale < 1 ? `scale(${scale})` : 'none',
           transformOrigin: 'center center',
           width: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
+          textAlign: 'center',
+          wordBreak: 'break-word',
         }}
         dangerouslySetInnerHTML={{ __html: html }}
       />

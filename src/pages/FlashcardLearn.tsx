@@ -85,15 +85,35 @@ export default function FlashcardLearn() {
   const [sortBy, setSortBy] = useState<'date' | 'title'>('date')
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
   const [searchQuery, setSearchQuery] = useState('')
-  const [filterType, setFilterType] = useState<'all' | 'mcq' | 'flashcard' | 'mixed'>('flashcard')
+  const [filterType, setFilterType] = useState<'all' | 'mcq' | 'flashcard' | 'mixed'>('all')
+  const [includeMCQ, setIncludeMCQ] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('ecengine:flashcards:includeMCQ') === 'true'
+    } catch {
+      return false
+    }
+  })
+
+  const handleToggleIncludeMCQ = (val: boolean) => {
+    setIncludeMCQ(val)
+    try {
+      localStorage.setItem('ecengine:flashcards:includeMCQ', String(val))
+    } catch {}
+  }
   const [activeFolder, setActiveFolder] = useState<string | 'all'>('all')
   const filterPopoverRef = useRef<HTMLDivElement>(null)
 
+  // Decks available in Flashcards view depending on includeMCQ toggle
+  const availableDecks = useMemo(() => {
+    if (includeMCQ) return decks
+    return decks.filter(d => d.deckType === 'flashcard' || d.deckType === 'mixed')
+  }, [decks, includeMCQ])
+
   const availableTags = useMemo(() => {
     const tags = new Set<string>(PREDEFINED_TAGS)
-    decks.forEach(d => d.tags?.forEach(t => tags.add(t)))
+    availableDecks.forEach(d => d.tags?.forEach(t => tags.add(t)))
     return Array.from(tags).sort()
-  }, [decks])
+  }, [availableDecks])
 
   // ── Pre-session flashcard settings modal ──
   const [showFlashModal, setShowFlashModal] = useState<{ isOpen: boolean; deckId: string | null }>({ isOpen: false, deckId: null })
@@ -649,7 +669,7 @@ Provide a thorough explanation covering ALL of the following:
 
   const folders = useMemo(() => {
     const folderMap = new Map<string, number>()
-    decks.forEach(d => {
+    availableDecks.forEach(d => {
       const name = d.folderName || 'Uncategorized'
       const existing = folderMap.get(name) ?? Infinity
       const idx = d.order_index ?? Infinity
@@ -660,7 +680,7 @@ Provide a thorough explanation covering ALL of the following:
       .sort((a, b) => (folderMap.get(a)! - folderMap.get(b)!))
     names.push('Uncategorized')
     return names
-  }, [decks])
+  }, [availableDecks])
 
   const deckCountByFolder = useMemo(() => {
     const acc: Record<string, number> = {}
@@ -670,9 +690,9 @@ Provide a thorough explanation covering ALL of the following:
     for (const folder of folderRows) {
       let count = 0
       if (folder.name === 'Uncategorized') {
-        count = decks.filter(d => d.folderId === null || d.folderId === uncategorizedId).length
+        count = availableDecks.filter(d => d.folderId === null || d.folderId === uncategorizedId).length
       } else {
-        count = decks.filter(d => {
+        count = availableDecks.filter(d => {
           const ids = subtreeIds(folder.id)
           return d.folderId ? ids.includes(d.folderId) : false
         }).length
@@ -681,12 +701,12 @@ Provide a thorough explanation covering ALL of the following:
       acc[folder.name] = count // for legacy mode fallback
     }
     return acc
-  }, [decks, folderRows, subtreeIds])
+  }, [availableDecks, folderRows, subtreeIds])
 
   const filteredDecks = useMemo(() => {
     const folderFiltered = activeFolder === 'all'
-      ? decks
-      : decks.filter(d => {
+      ? availableDecks
+      : availableDecks.filter(d => {
           const ids = subtreeIds(activeFolder)
           return d.folderId ? ids.includes(d.folderId) : activeFolder === 'Uncategorized'
         })
@@ -715,7 +735,7 @@ Provide a thorough explanation covering ALL of the following:
     })
 
     return result
-  }, [decks, activeFolder, activeSubject, filterType, filterTags, sortBy, sortOrder, searchQuery])
+  }, [availableDecks, activeFolder, activeSubject, filterType, filterTags, sortBy, sortOrder, searchQuery])
 
   const progress = sessionCards.length > 0 ? ((currentIndex + 1) / sessionCards.length) * 100 : 0
   const isBookmarked = currentCard ? bookmarks.has(`fc_bookmark_${currentCard.id}`) : false
@@ -842,8 +862,10 @@ Provide a thorough explanation covering ALL of the following:
 
   return (
     <FlashcardDeckBrowser
-      decks={decks}
+      decks={availableDecks}
       filteredDecks={filteredDecks}
+      includeMCQ={includeMCQ}
+      onToggleIncludeMCQ={handleToggleIncludeMCQ}
       onAddDeck={() => navigate('/add-decks?type=flashcard')}
       folders={folders}
       folderRows={folderRows}

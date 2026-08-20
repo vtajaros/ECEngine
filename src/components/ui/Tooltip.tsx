@@ -3,13 +3,14 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface TooltipProps {
-  content: string;
+  content: React.ReactNode;
   children: React.ReactNode;
   position?: 'left' | 'right' | 'top' | 'bottom';
   className?: string;
+  tooltipClassName?: string;
 }
 
-export const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 'left', className = '' }) => {
+export const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 'left', className = '', tooltipClassName = '' }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
   const anchorRef = useRef<HTMLDivElement>(null);
@@ -142,11 +143,15 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 
             animate={{ opacity: 1, scale: 1, x: 0, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, ...offset }}
             transition={{ duration: 0.15, ease: 'easeOut' }}
-            className="px-3 py-2 bg-[#0D0D0D] border border-[#00FF41] rounded shadow-[0_0_15px_rgba(0,255,65,0.35)] w-max max-w-[220px] text-center relative"
+            className={`px-3 py-2 bg-[#0D0D0D] border border-[#00FF41] rounded shadow-[0_0_15px_rgba(0,255,65,0.35)] w-max max-w-[320px] text-center relative ${tooltipClassName}`}
           >
-            <p className="text-[#00FF41] text-[10px] font-['Rajdhani'] font-bold tracking-widest leading-tight uppercase whitespace-nowrap">
-              {content}
-            </p>
+            {typeof content === 'string' ? (
+              <p className="text-[#00FF41] text-[10px] font-['Rajdhani'] font-bold tracking-widest leading-tight uppercase whitespace-nowrap">
+                {content}
+              </p>
+            ) : (
+              content
+            )}
             {/* Arrow */}
             {position === 'left' && (
               <>

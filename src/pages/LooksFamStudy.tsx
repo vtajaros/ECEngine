@@ -1249,6 +1249,11 @@ export default function LooksFamStudy() {
           folders={folders}
           deckCountByFolder={deckCountByFolder}
           totalDeckCount={allSets.length}
+          displayedDeckCount={filteredAndSortedSets.length}
+          activeSubject={activeSubject}
+          searchQuery={searchQuery}
+          filterType={filterType}
+          filterTags={filterTags}
           selected={activeFolder}
           onSelect={setActiveFolder}
           onDeleteFolder={handleDeleteFolder}

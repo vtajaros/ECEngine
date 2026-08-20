@@ -57,6 +57,7 @@ export interface FlashcardDeckBrowserProps {
   sortOrder: 'desc' | 'asc'
   searchQuery: string
   filterType: 'all' | 'mcq' | 'flashcard' | 'mixed'
+  includeMCQ?: boolean
   availableTags: string[]
   showFlashModal: { isOpen: boolean; deckId: string | null }
   flashModalSettings: FlashCardSettings
@@ -81,6 +82,7 @@ export interface FlashcardDeckBrowserProps {
   setSortOrder: (v: 'desc' | 'asc') => void
   setFilterType: (v: 'all' | 'mcq' | 'flashcard' | 'mixed') => void
   setFilterTags: React.Dispatch<React.SetStateAction<string[]>>
+  onToggleIncludeMCQ?: (val: boolean) => void
   onAddDeck?: () => void
 }
 
@@ -129,6 +131,8 @@ export function FlashcardDeckBrowser({
   setSortOrder,
   setFilterType,
   setFilterTags,
+  includeMCQ = false,
+  onToggleIncludeMCQ,
   onAddDeck
 }: FlashcardDeckBrowserProps) {
   return (
@@ -139,6 +143,26 @@ export function FlashcardDeckBrowser({
           <div className="flex flex-col items-center w-full pt-6 pb-0 px-6">
             <div className="w-full max-w-5xl flex flex-col items-center justify-center gap-6 mb-2 border-b border-[var(--bg-card)] pb-4 pt-4 relative z-30">
               <div className="w-full flex items-center justify-center relative min-h-[40px]">
+                {/* Include MCQ Decks Toggle on Top Left */}
+                <div className="absolute left-0 top-1/2 -translate-y-1/2">
+                  <Tooltip
+                    content={includeMCQ ? "Showing Flashcard + MCQ decks. Click to hide MCQ decks." : "Click to include MCQ decks to study as flashcards"}
+                    position="bottom"
+                  >
+                    <button
+                      onClick={() => onToggleIncludeMCQ?.(!includeMCQ)}
+                      className={`flex items-center gap-2 px-3.5 py-2 rounded-md border font-['Rajdhani'] font-bold text-sm uppercase tracking-wider transition-all ${
+                        includeMCQ
+                          ? 'bg-[#00FF41]/15 border-[#00FF41] text-[#00FF41] shadow-[0_0_12px_rgba(0,255,65,0.15)]'
+                          : 'border-[var(--bg-card)] bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)]'
+                      }`}
+                    >
+                      <span className={`w-2 h-2 rounded-full transition-colors ${includeMCQ ? 'bg-[#00FF41] shadow-[0_0_6px_#00FF41]' : 'bg-[#444]'}`} />
+                      <span>Include MCQ</span>
+                    </button>
+                  </Tooltip>
+                </div>
+
                 <h1 className="text-3xl lg:text-4xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4 uppercase">
                   <Layers className="text-[var(--accent-primary)]" size={32} />
                   FLASH<span className="text-[var(--accent-primary)]">CARDS</span>
@@ -341,6 +365,11 @@ export function FlashcardDeckBrowser({
           folders={folders}
           deckCountByFolder={deckCountByFolder}
           totalDeckCount={decks.length}
+          displayedDeckCount={filteredDecks.length}
+          activeSubject={activeSubject}
+          searchQuery={searchQuery}
+          filterType={filterType}
+          filterTags={filterTags}
           selected={activeFolder}
           onSelect={onFolderSelect}
           onDeleteFolder={onDeleteFolder}

@@ -27,6 +27,11 @@ export interface FolderPanelProps {
   folders?: string[]
   deckCountByFolder: Record<string, number>
   totalDeckCount: number
+  displayedDeckCount?: number
+  activeSubject?: string
+  searchQuery?: string
+  filterType?: string
+  filterTags?: string[]
   selected: string | 'all'
   onSelect: (folderIdOrName: string | 'all') => void
   onDeleteFolder?: (folderIdOrName: string) => void
@@ -82,9 +87,22 @@ function flattenIds(roots: TreeNode[]): string[] {
   return ids
 }
 
-function subtreeCount(node: TreeNode, countMap: Record<string, number>): number {
-  const own = countMap[node.id] ?? countMap[node.name] ?? 0
-  return own + node.children.reduce((s, c) => s + subtreeCount(c, countMap), 0)
+function subtreeCount(node: { id: string; name?: string; children?: any[] } | null | undefined, countMap: Record<string, number>): number {
+  if (!node) return 0
+  const own = countMap[node.id] ?? (node.name ? countMap[node.name] : 0) ?? 0
+  const children = Array.isArray(node.children) ? node.children : []
+  return own + children.reduce((s, c) => s + subtreeCount(c, countMap), 0)
+}
+
+function findTreeNode(nodes: TreeNode[], id: string): TreeNode | null {
+  for (const node of nodes) {
+    if (node.id === id) return node
+    if (node.children && node.children.length > 0) {
+      const found = findTreeNode(node.children, id)
+      if (found) return found
+    }
+  }
+  return null
 }
 
 // Module-level countMap to avoid prop drilling into FolderRowItem
@@ -670,6 +688,159 @@ const TopLevelDropZone: React.FC<{ isOver: boolean }> = ({ isOver }) => {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// FolderPanelFooter (Dolphin-inspired Status Bar)
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface FolderPanelFooterProps {
+  totalDeckCount: number
+  displayedCount: number
+  selected: string | 'all'
+  folderDisplayName: string
+  folderDeckCount?: number
+  activeSubject?: string
+  searchQuery?: string
+  filterType?: string
+  filterTags?: string[]
+  isCollapsed: boolean
+}
+
+const FolderPanelFooter: React.FC<FolderPanelFooterProps> = ({
+  totalDeckCount,
+  displayedCount,
+  selected,
+  folderDisplayName,
+  folderDeckCount,
+  activeSubject,
+  searchQuery,
+  filterType,
+  filterTags,
+  isCollapsed,
+}) => {
+  const filterParts: string[] = []
+
+  if (activeSubject && activeSubject !== 'ALL') {
+    filterParts.push(activeSubject)
+  }
+  if (selected !== 'all') {
+    filterParts.push(folderDisplayName)
+  }
+  if (searchQuery && searchQuery.trim()) {
+    filterParts.push(`"${searchQuery.trim()}"`)
+  }
+  if (filterType && filterType !== 'all' && filterType !== 'flashcard' && filterType !== 'formula') {
+    filterParts.push(filterType.toUpperCase())
+  }
+  if (filterTags && filterTags.length > 0) {
+    filterParts.push(filterTags.join(', '))
+  }
+
+  const hasFilters = filterParts.length > 0
+  const filterSummaryText = hasFilters ? filterParts.join(' • ') : 'All Decks'
+
+  const tooltipBreakdownNode = (
+    <div className="flex flex-col gap-2 text-left min-w-[200px] max-w-[280px] p-1 select-none">
+      <div className="flex items-center justify-between border-b border-[#00FF41]/30 pb-1.5">
+        <span className="text-[#00FF41] text-[11px] font-['Rajdhani'] font-bold tracking-widest uppercase flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#00FF41] animate-pulse shrink-0" />
+          {displayedCount} {displayedCount === 1 ? 'Deck' : 'Decks'} Displayed
+        </span>
+        <span className="text-gray-400 text-[10px] font-['IBM_Plex_Mono']">
+          {totalDeckCount} Total
+        </span>
+      </div>
+
+      <div className="flex flex-col gap-1.5 text-[11px] font-['Rajdhani']">
+        <div className="flex items-center justify-between text-gray-300">
+          <span className="text-gray-400 font-medium">Subject:</span>
+          <span className={activeSubject && activeSubject !== 'ALL' ? 'text-[#00FF41] font-bold' : 'text-gray-400'}>
+            {activeSubject || 'ALL'}
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between text-gray-300">
+          <span className="text-gray-400 font-medium">Folder:</span>
+          <span className={selected !== 'all' ? 'text-[#00FF41] font-bold truncate max-w-[140px]' : 'text-gray-400'}>
+            {folderDisplayName} {folderDeckCount !== undefined ? `(${folderDeckCount})` : ''}
+          </span>
+        </div>
+
+        {searchQuery && searchQuery.trim() && (
+          <div className="flex items-center justify-between text-gray-300">
+            <span className="text-gray-400 font-medium">Search:</span>
+            <span className="text-[#00FF41] font-bold truncate max-w-[140px]">"{searchQuery.trim()}"</span>
+          </div>
+        )}
+
+        {filterType && filterType !== 'all' && (
+          <div className="flex items-center justify-between text-gray-300">
+            <span className="text-gray-400 font-medium">Type:</span>
+            <span className="text-[#00FF41] font-bold uppercase">{filterType}</span>
+          </div>
+        )}
+
+        {filterTags && filterTags.length > 0 && (
+          <div className="flex items-center justify-between text-gray-300">
+            <span className="text-gray-400 font-medium">Tags:</span>
+            <span className="text-[#00FF41] font-bold truncate max-w-[140px]">{filterTags.join(', ')}</span>
+          </div>
+        )}
+      </div>
+
+      <div className="pt-1.5 border-t border-[#333] text-[9px] font-['IBM_Plex_Mono'] text-gray-400 leading-tight">
+        {hasFilters
+          ? `${displayedCount} of ${totalDeckCount} decks match active filters`
+          : `Showing all ${totalDeckCount} decks without filter restrictions`}
+      </div>
+    </div>
+  )
+
+  if (isCollapsed) {
+    return (
+      <div className="mt-auto shrink-0 border-t border-border-base bg-[#0A0A0A] p-2 flex justify-center items-center select-none">
+        <Tooltip content={tooltipBreakdownNode} position="left">
+          <div className="flex flex-col items-center justify-center w-8 h-8 rounded bg-[#111] border border-border-base text-accent font-['IBM_Plex_Mono'] font-bold text-[10px] cursor-help hover:border-accent hover:bg-accent/10 transition-all shadow-sm">
+            {displayedCount}
+          </div>
+        </Tooltip>
+      </div>
+    )
+  }
+
+  return (
+    <div className="mt-auto shrink-0 border-t border-border-base bg-[#0A0A0A] px-3 py-2.5 flex flex-col gap-1 select-none">
+      <Tooltip content={tooltipBreakdownNode} position="left" className="w-full">
+        <div className="flex flex-col gap-0.5 w-full cursor-help group p-1 -m-1 rounded hover:bg-border-base/30 transition-colors">
+          <div className="flex items-center justify-between">
+            <span className="font-['Rajdhani'] font-bold text-xs uppercase tracking-wider text-white flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-accent shadow-[0_0_6px_#00FF41] shrink-0" />
+              <span className="truncate">{displayedCount} {displayedCount === 1 ? 'Deck' : 'Decks'}</span>
+            </span>
+            {displayedCount !== totalDeckCount && (
+              <span className="text-[10px] font-['IBM_Plex_Mono'] text-gray-400 shrink-0">
+                ({totalDeckCount} Total)
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1 text-[11px] font-['Rajdhani'] text-gray-400 truncate">
+            {hasFilters ? (
+              <>
+                <span className="text-gray-500 shrink-0 font-medium">Filter:</span>
+                <span className="text-accent font-semibold truncate group-hover:underline">
+                  {filterSummaryText}
+                </span>
+              </>
+            ) : (
+              <span className="text-gray-500">All decks shown</span>
+            )}
+          </div>
+        </div>
+      </Tooltip>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Main FolderPanel
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -678,6 +849,11 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
   folders: legacyFolders,
   deckCountByFolder,
   totalDeckCount,
+  displayedDeckCount,
+  activeSubject,
+  searchQuery,
+  filterType,
+  filterTags,
   selected,
   onSelect,
   onDeleteFolder,
@@ -840,17 +1016,36 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
       }
     }
 
+    const selectedTreeNode = findTreeNode(roots, selected)
+    const selectedFolderRow = folderRows.find(f => f.id === selected)
+    const folderDisplayName = selected === 'all'
+      ? 'All Folders'
+      : selected === 'Uncategorized' || (uncategorized && selected === uncategorized.id)
+        ? 'Uncategorized'
+        : selectedTreeNode?.name || selectedFolderRow?.name || selected
+    const folderDeckCount = selected === 'all'
+      ? totalDeckCount
+      : selected === 'Uncategorized' || (uncategorized && selected === uncategorized.id)
+        ? (deckCountByFolder[uncategorized?.id || 'Uncategorized'] ?? 0)
+        : selectedTreeNode
+      ? subtreeCount(selectedTreeNode, deckCountByFolder)
+      : (deckCountByFolder[selected] ?? 0)
+
+    const finalDisplayedCount = displayedDeckCount !== undefined
+      ? displayedDeckCount
+      : (selected === 'all' ? totalDeckCount : folderDeckCount)
+
     return (
       <div className={`relative flex-shrink-0 ${isEditing ? 'w-[320px]' : isCollapsed ? 'w-[52px]' : 'w-[200px]'} h-full z-40 transition-all duration-200`}>
         <motion.div
           initial={false}
           animate={{ width: isEditing ? 320 : isCollapsed ? 52 : 200 }}
           transition={{ duration: 0.2, ease: 'easeInOut' }}
-          className={`absolute top-0 right-0 h-full bg-surface overflow-y-auto overflow-x-hidden flex flex-col border-l border-border-base py-4 ${isCollapsed ? 'px-1' : 'px-2'} ${
+          className={`absolute top-0 right-0 h-full bg-surface overflow-hidden flex flex-col border-l border-border-base ${
             isEditing ? 'z-40 shadow-2xl shadow-black/50 border-l-2 border-l-border-base' : 'z-0'
           }`}
         >
-          <div className="flex flex-col items-stretch gap-0 w-full">
+          <div className={`flex-1 overflow-y-auto overflow-x-hidden flex flex-col items-stretch gap-0 w-full py-4 ${isCollapsed ? 'px-1' : 'px-2'}`}>
 
           {/* Header */}
           {isCollapsed ? (
@@ -1085,6 +1280,20 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
 
           </div>
 
+          {/* Footer Status Bar */}
+          <FolderPanelFooter
+            totalDeckCount={totalDeckCount}
+            displayedCount={finalDisplayedCount}
+            selected={selected}
+            folderDisplayName={folderDisplayName}
+            folderDeckCount={folderDeckCount}
+            activeSubject={activeSubject}
+            searchQuery={searchQuery}
+            filterType={filterType}
+            filterTags={filterTags}
+            isCollapsed={isCollapsed}
+          />
+
           <DeleteConfirmModal
             target={folderToDelete}
             onConfirm={() => { if (folderToDelete) { onDeleteFolder?.(folderToDelete.id); setFolderToDelete(null) } }}
@@ -1109,17 +1318,23 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
     onReorderFolders?.([...reordered, 'Uncategorized'])
   }
 
+  const folderDisplayName = selected === 'all' ? 'All Folders' : selected
+  const folderDeckCount = selected === 'all' ? totalDeckCount : (deckCountByFolder[selected] ?? 0)
+  const finalDisplayedCount = displayedDeckCount !== undefined
+    ? displayedDeckCount
+    : (selected === 'all' ? totalDeckCount : folderDeckCount)
+
   return (
     <div className={`relative flex-shrink-0 ${isEditing ? 'w-[320px]' : isCollapsed ? 'w-[52px]' : 'w-[200px]'} h-full z-40 transition-all duration-200`}>
       <motion.div
         initial={false}
         animate={{ width: isEditing ? 320 : isCollapsed ? 52 : 200 }}
         transition={{ duration: 0.2, ease: 'easeInOut' }}
-        className={`absolute top-0 right-0 h-full bg-surface overflow-y-auto overflow-x-hidden flex flex-col border-l border-border-base py-4 ${isCollapsed ? 'px-1' : 'px-2'} ${
+        className={`absolute top-0 right-0 h-full bg-surface overflow-hidden flex flex-col border-l border-border-base ${
           isEditing ? 'z-40 shadow-2xl shadow-black/50 border-l-2 border-l-border-base' : 'z-0'
         }`}
       >
-        <div className="flex flex-col items-stretch gap-0 w-full">
+        <div className={`flex-1 overflow-y-auto overflow-x-hidden flex flex-col items-stretch gap-0 w-full py-4 ${isCollapsed ? 'px-1' : 'px-2'}`}>
         {isCollapsed ? (
           <div className="flex justify-center items-center mb-3">
             <Tooltip content="Expand Folders" position="left">
@@ -1238,7 +1453,21 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
           )}
         </motion.div>
         </div>
-      
+
+        {/* Footer Status Bar */}
+        <FolderPanelFooter
+          totalDeckCount={totalDeckCount}
+          displayedCount={finalDisplayedCount}
+          selected={selected}
+          folderDisplayName={folderDisplayName}
+          folderDeckCount={folderDeckCount}
+          activeSubject={activeSubject}
+          searchQuery={searchQuery}
+          filterType={filterType}
+          filterTags={filterTags}
+          isCollapsed={isCollapsed}
+        />
+
         <DeleteConfirmModal
           target={folderToDelete}
           onConfirm={() => { if (folderToDelete) { onDeleteFolder?.(folderToDelete.id); setFolderToDelete(null) } }}

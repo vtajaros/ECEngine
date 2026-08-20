@@ -1002,6 +1002,9 @@ export default function Formulas() {
           folders={folders}
           deckCountByFolder={deckCountByFolder}
           totalDeckCount={decks.length}
+          displayedDeckCount={filteredDecks.length}
+          activeSubject={activeSubject}
+          searchQuery={searchQuery}
           selected={activeFolder}
           onSelect={setActiveFolder}
           onDeleteFolder={handleDeleteFolder}
