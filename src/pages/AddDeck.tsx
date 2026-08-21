@@ -4,6 +4,7 @@ import { PREDEFINED_TAGS } from '../lib/constants'
 
 import { ImportModal, ImportFlashcardsModal } from '../components/deck/ImportModals'
 import { CardEditor, EditCard } from '../components/deck/CardEditor'
+import { detectSubjectFromCards, hasCardContent, SubjectFullName as Subject } from '../lib/subjectClassifier'
 import React, { useState, useEffect, useCallback } from 'react'
 import {
   X, Save, ArrowLeft, FileText, Upload, AlertCircle, Check, Trash2, Plus, PlusCircle, Calculator, FlaskConical, Zap, Cpu, Layers, Wand2, GripVertical, ChevronDown, ChevronUp, AlertTriangle, RotateCcw, ImageIcon, Menu, Sigma, Type
@@ -69,49 +70,12 @@ const uid = () => `row_${Date.now()}_${++_uid}`
 
 // Module-level web detection (needed by sub-components like MCQForm/FlashcardForm)
 
-type Subject = 'Mathematics' | 'General Engineering & Applied Sciences' | 'Electronics Engineering' | 'Electronics Systems & Technologies'
-
 const SUBJECTS: { value: Subject; short: string; icon: any }[] = [
   { value: 'Mathematics', short: 'MATH', icon: Calculator },
   { value: 'General Engineering & Applied Sciences', short: 'GEAS', icon: FlaskConical },
   { value: 'Electronics Engineering', short: 'ELECS', icon: Zap },
   { value: 'Electronics Systems & Technologies', short: 'EST', icon: Cpu },
 ]
-
-const SUBJECT_KEYWORDS: Record<Subject, string[]> = {
-  'Mathematics': [
-    'calculus', 'differential', 'integral', 'laplace',
-    'fourier', 'probability', 'statistics', 'algebra',
-    'trigonometry', 'derivative', 'determinant', 'eigenvalue',
-    'logarithm', 'polynomial', 'binomial', 'permutation',
-    'combination', 'matrices', 'vectors', 'z-transform'
-  ],
-  'General Engineering & Applied Sciences': [
-    'chemistry', 'physics', 'economics', 'thermodynamics',
-    'programming', 'ethics', 'materials', 'environmental',
-    'management', 'stress', 'strain', 'newton', 'momentum',
-    'energy', 'power', 'heat', 'atom', 'molecule', 'reaction',
-    'pascal', 'fluid', 'pressure', 'density', 'viscosity',
-    'resistivity', 'bond', 'force', 'velocity', 'acceleration'
-  ],
-  'Electronics Engineering': [
-    'transistor', 'amplifier', 'diode', 'op-amp',
-    'logic gate', 'microprocessor', 'feedback', 'control',
-    'impedance', 'resistor', 'capacitor', 'inductor',
-    'thevenin', 'norton', 'kirchhoff', 'boolean',
-    'flip-flop', 'multiplexer', 'encoder', 'decoder',
-    'oscillator', 'filter', 'rectifier', 'mosfet', 'bjt', 'jfet',
-    'semiconductor', 'circuit', 'voltage', 'current'
-  ],
-  'Electronics Systems & Technologies': [
-    'modulation', 'antenna', 'transmission', 'bandwidth',
-    'fiber', 'satellite', 'protocol', 'tcp', 'osi', 'noise',
-    'decibel', 'attenuation', 'propagation', 'wavelength',
-    'spectrum', 'multiplexing', 'fdma', 'tdma', 'cdma', 'gsm',
-    'ethernet', 'router', 'packet', 'frame', 'bit rate', 'snr',
-    'frequency', 'signal', 'channel', 'network'
-  ]
-}
 
 
 
@@ -230,37 +194,13 @@ export default function AddDeck() {
   }, [undo])
 
   useEffect(() => {
-    // Skip if too few cards (initial empty state)
-    if (cards.length <= 3) return
+    // Only detect if there is at least one card with user content
+    const nonEmpty = cards.filter(hasCardContent)
+    if (nonEmpty.length === 0) return
 
-    // Build searchable text from all card content
-    const text = cards.map(card => {
-      if (card.type === 'mcq') {
-        const d = card.data as MCQEdit
-        return [d.question, ...d.choices].join(' ')
-      } else if (card.type === 'formula') {
-        const d = card.data as FormulaEdit
-        return [d.name, d.latex, d.description, d.variables].join(' ')
-      } else {
-        const d = card.data as FlashcardEdit
-        return [d.front, d.back].join(' ')
-      }
-    }).join(' ').toLowerCase()
-
-    // Score each subject
-    const scores = (Object.entries(SUBJECT_KEYWORDS) as [Subject, string[]][])
-      .map(([subj, keywords]) => ({
-        subject: subj,
-        score: keywords.filter(kw => text.includes(kw)).length
-      }))
-      .sort((a, b) => b.score - a.score)
-
-    const [first, second] = scores
-
-
-    // Only set if clear winner (score > 0 and strictly greater than second)
-    if (first.score > 0 && first.score > second.score) {
-      setMetadata(prev => ({ ...prev, subject: first.subject }))
+    const result = detectSubjectFromCards(cards)
+    if (result.confidence > 0.2) {
+      setMetadata(prev => ({ ...prev, subject: result.subject }))
     }
   }, [cards])
 
