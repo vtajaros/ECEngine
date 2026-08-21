@@ -34,7 +34,6 @@ export function registerPrintHandlers(getMainWindow: () => Electron.BrowserWindo
         // (KDE/KWin + Polonium) treat it as a transient/companion window
         // rather than an independent top-level window.
         ...(parent ? { parent, modal: false } : {}),
-        alwaysOnTop: true,
         show: false,
         webPreferences: {
           preload: join(__dirname, '../preload/index.js'),
@@ -82,15 +81,11 @@ export function registerPrintHandlers(getMainWindow: () => Electron.BrowserWindo
         return { success: false, error: 'Print window not open' }
       }
 
-      printWindow.setAlwaysOnTop(false)
       const { canceled, filePath } = await dialog.showSaveDialog(printWindow, {
         title: 'Save Test Paper as PDF',
         defaultPath: join(app.getPath('documents'), `${suggestedName}.pdf`),
         filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
       })
-      if (printWindow && !printWindow.isDestroyed()) {
-        printWindow.setAlwaysOnTop(true)
-      }
 
       if (canceled || !filePath) return { success: false, canceled: true }
 
