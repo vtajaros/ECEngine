@@ -462,5 +462,5 @@ wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/medi
 ---
 
 <div align="center">
-  <i>Engineered for the Filipino Electronics Engineers.</i>
+  <i>Engineered for our future Electronics Engineers & Electronics Technicians.</i>
 </div>
