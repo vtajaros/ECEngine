@@ -635,7 +635,7 @@ export default function PrintView() {
       const tid = setTimeout(() => runFind(findQueryRef.current), 80)
       return () => clearTimeout(tid)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [layout, theme, showAnswers, showSolutions, boldSide, cards])
 
   // Right-click + wheel zoom (Sumatra PDF style)
@@ -714,7 +714,7 @@ export default function PrintView() {
       setCards(result)
       setLoading(false)
     })
-    
+
     // Fetch description if any
     window.electron.decks.getTopics().then((res) => {
       if (res.success && res.data) {
@@ -732,7 +732,7 @@ export default function PrintView() {
     if (!isPdfMode || loading) return
     document.fonts.ready.then(() => {
       setTimeout(() => {
-        ;(window as any).__pdfReady = true
+        ; (window as any).__pdfReady = true
         window.dispatchEvent(new Event('pdf-ready'))
       }, 500)
     })
@@ -744,16 +744,16 @@ export default function PrintView() {
     setExportState('loading')
     setExportError('')
     try {
-        const result = await window.electron.print.toPDF(title, PRINT_THEMES[theme].vars, topicId, title, theme, layout)
-        if (result.canceled) {
-          setExportState('idle')
-        } else if (result.success) {
-          setExportState('success')
-          setTimeout(() => setExportState('idle'), 2500)
-        } else {
-          setExportError(result.error ?? 'Unknown error')
-          setExportState('error')
-        }
+      const result = await window.electron.print.toPDF(title, PRINT_THEMES[theme].vars, topicId, title, theme, layout)
+      if (result.canceled) {
+        setExportState('idle')
+      } else if (result.success) {
+        setExportState('success')
+        setTimeout(() => setExportState('idle'), 2500)
+      } else {
+        setExportError(result.error ?? 'Unknown error')
+        setExportState('error')
+      }
     } catch (err: unknown) {
       setExportError(err instanceof Error ? err.message : 'Unexpected error')
       setExportState('error')

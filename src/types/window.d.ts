@@ -5,9 +5,9 @@
 export { }  // ensure this is treated as a module
 
 export interface FolderRow {
-  id:          string
-  name:        string
-  parent_id:   string | null
+  id: string
+  name: string
+  parent_id: string | null
   order_index: number
 }
 
@@ -45,12 +45,12 @@ declare global {
         updateFolderOrder: (folderOrders: Array<{ folderName: string, orderIndex: number }>) => Promise<{ success: boolean; error?: string }>
       }
       folders: {
-        getAll(payload?: { scope?: string }):                        Promise<{ success: boolean; data?: FolderRow[];    error?: string }>
-        create(payload: { name: string, parentId?: string | null, scope?: string }): Promise<{ success: boolean; data?: FolderRow;     error?: string }>
-        delete(payload: { folderId: string, scope?: string } | string): Promise<{ success: boolean;                       error?: string }>
-        setParent(payload: { folderId: string, parentId: string | null, scope?: string }): Promise<{ success: boolean;                       error?: string }>
-        reorder(orders: Array<{ id: string; order_index: number }>):Promise<{ success: boolean;                       error?: string }>
-        rename(folderId: string, newName: string):                   Promise<{ success: boolean;                       error?: string }>
+        getAll(payload?: { scope?: string }): Promise<{ success: boolean; data?: FolderRow[]; error?: string }>
+        create(payload: { name: string, parentId?: string | null, scope?: string }): Promise<{ success: boolean; data?: FolderRow; error?: string }>
+        delete(payload: { folderId: string, scope?: string } | string): Promise<{ success: boolean; error?: string }>
+        setParent(payload: { folderId: string, parentId: string | null, scope?: string }): Promise<{ success: boolean; error?: string }>
+        reorder(orders: Array<{ id: string; order_index: number }>): Promise<{ success: boolean; error?: string }>
+        rename(folderId: string, newName: string): Promise<{ success: boolean; error?: string }>
       }
       data: {
         getCards: (topicId?: string) => Promise<{ success: boolean; data?: any; error?: string }>

@@ -18,12 +18,12 @@ contextBridge.exposeInMainWorld('electron', {
       ipcRenderer.invoke('decks:updateFolderOrder', { folderOrders }),
   },
   folders: {
-    getAll:    (payload?: { scope?: string }):              Promise<any> => ipcRenderer.invoke('folders:getAll', payload),
-    create:    (payload: { name: string, parentId?: string | null, scope?: string }): Promise<any> => ipcRenderer.invoke('folders:create', payload),
-    delete:    (payload: { folderId: string, scope?: string } | string): Promise<any> => ipcRenderer.invoke('folders:delete', payload),
+    getAll: (payload?: { scope?: string }): Promise<any> => ipcRenderer.invoke('folders:getAll', payload),
+    create: (payload: { name: string, parentId?: string | null, scope?: string }): Promise<any> => ipcRenderer.invoke('folders:create', payload),
+    delete: (payload: { folderId: string, scope?: string } | string): Promise<any> => ipcRenderer.invoke('folders:delete', payload),
     setParent: (payload: { folderId: string, parentId: string | null, scope?: string }): Promise<any> => ipcRenderer.invoke('folders:setParent', payload),
-    reorder:   (orders: Array<{ id: string; order_index: number }>): Promise<any> => ipcRenderer.invoke('folders:reorder', { orders }),
-    rename:    (folderId: string, newName: string):                  Promise<any> => ipcRenderer.invoke('folders:rename', { folderId, newName }),
+    reorder: (orders: Array<{ id: string; order_index: number }>): Promise<any> => ipcRenderer.invoke('folders:reorder', { orders }),
+    rename: (folderId: string, newName: string): Promise<any> => ipcRenderer.invoke('folders:rename', { folderId, newName }),
   },
   data: {
     getCards: (topicId?: string) => ipcRenderer.invoke('data:getCards', topicId),

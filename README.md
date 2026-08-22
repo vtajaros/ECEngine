@@ -1,7 +1,7 @@
 <div align="center">
   <img src="resources/ecengine_icon.png" alt="ECEngine Logo" width="120" />
   <h1>⚡ ECEngine</h1>
-  <p><strong>The Ultimate Cyberpunk-Utility Study Command Center for the Philippine Electronics Engineering (ECE) Licensure Exam</strong></p>
+  <p><strong>The Ultimate Cyberpunk-Utility Study Command Center for the Philippine Electronics Engineering (ECE) & ECT Licensure Exams</strong></p>
   
   <p>
     <img src="https://img.shields.io/badge/version-1.0.0-00FF41.svg?style=flat-square" alt="version" />
@@ -15,154 +15,187 @@
 
 ---
 
-ECEngine is an offline-first desktop application engineered for examinees preparing for the Philippine Electronics Engineering (ECE) and Electronics Technician (ECT) Licensure Exams. It combines a local SQLite database with advanced spaced repetition (SM-2) algorithms to provide an integrated study environment. The application supports standard flashcards, multiple-choice questions (MCQs), and LaTeX-rendered formula sets, utilizing a tech stack comprised of Electron, React 18, TypeScript, and Vite. State management is handled by Zustand, styling via Tailwind CSS with custom CSS properties, and animations by Framer Motion. 
+**ECEngine** is a native, offline-first desktop application designed specifically for examinees preparing for the Philippine Electronics Engineering (ECE) and Electronics Technician (ECT) Licensure Exams. Powered by a local SQLite database and modern spaced repetition (SM-2), ECEngine provides an integrated command center for reviewing multiple-choice questions (MCQs), flashcards, and LaTeX formula banks with real-time mathematical rendering.
 
-**Supported Platforms**: Windows, macOS, and Linux — fully cross-platform, with all core study features identical across all three. (One platform-specific difference: the Text-to-Speech backend — see Linux TTS Setup under Getting Started.)
+Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-managed via **Zustand**, and styled with a cyberpunk-inspired Tailwind design system and **Framer Motion** animations.
+
+**Supported Platforms**: Windows, macOS, and Linux — 100% offline and cross-platform.
 
 ---
 
-## 🚀 Features
+## 🚀 Core Features
 
-### 🆕 Recent Updates
-* **Enhanced Test Paper View**: 
-  * Displays an integrated "Solution" block automatically for MCQ items, complete with explanations and images capped at a distortion-free 300px max height.
-  * Replaced separate toolbar buttons with a sleek, space-saving "ANS" and "SOL'N" grouped checkbox toggle.
-  * Perfected PDF export rendering — each page now maintains consistent vertical margins using a robust `<thead>`/`<tfoot>` HTML hack that flawlessly inherits the active document theme color (Light, Sepia, or Dark) without relying on Chromium's inconsistent `@page` background support.
-* **Bookmarked Items Manager**: A new dedicated button in the deck list allows you to instantly view and manage all bookmarked items for a specific deck, complete with previewing choices and removing bookmarks. Added a "Bookmarked" legend to all study views.
-* **Immersive Fullscreen**: Pressing `F11` now intelligently hides the custom title bars and removes window borders, allowing the app to sit perfectly flush against the edges of your screen.
-* **Dashboard Analytics & UI Polish**: 
-  * The Accuracy Trend graph is now powered by an optimized SQLite index query, making subject switching virtually instantaneous.
-  * Replaced the SRS mastery bar for MCQs with a clearer "Unique Items Answered" tracker.
-  * Fixed an issue where Study Time wouldn't update if a session was ended abruptly.
-  * Fine-tuned tooltip colors and sidebar expansion animations for a premium, unified look.
+### 🧠 Active Recall & Spaced Repetition (SM-2)
+* **Flashcards & Formula Recall**: Powered by the SuperMemo-2 (SM-2) scheduling algorithm (`Again`, `Hard`, `Good`, `Easy`) to maximize long-term retention.
+* **3D CSS Card Flips**: Realistic `rotateY` card flip animations with horizontal slide transitions (`AnimatePresence`).
+* **Written Mode**: Test active production by requiring exact typed answers before revealing the card back.
+* **Autoplay Mode with Synchronized TTS**: Hands-free study loop with synchronized text-to-speech reading (Web Speech API on Windows/macOS, Piper neural TTS on Linux).
+* **Keyboard Hotkeys**: `Space`, `ArrowUp`, or `ArrowDown` to flip cards; `1–4` to rate difficulty; `←` / `→` arrows to navigate.
+* **Study Controls**: Quick-toggle for Term/Definition swapping, card shuffling, and filtered bookmark review.
 
-### Study Modes
-* **Spaced Repetition**: Flashcard and formula sets utilize the SM-2 algorithm, providing Again / Hard / Good / Easy rating buttons to schedule reviews.
-* **Preview Mode**: Browse formula sets without writing SM-2 progress data.
-* **Written Mode**: Require typing the exact answer before flipping the flashcard.
-* **Autoplay Mode**: Hands-free flashcard review loop powered by native TTS — Web Speech API on Windows/macOS (no setup required), Piper neural TTS on Linux (requires separate installation, see Linux TTS Setup below). Uses a robust single-sequencer synchronized with TTS callbacks.
-* **Interactive UI**: Enjoy 3D CSS `rotateY` card flips and smooth Framer Motion horizontal slide transitions.
-* **Additional Controls**: Swap Term/Definition toggle, shuffle toggle, and bookmarking for filtered reviews.
-* **Keyboard Shortcuts**: Use `Space`, `ArrowUp`, or `ArrowDown` to flip cards; `1-4` to select an SM-2 rating; and left/right arrow keys to navigate.
+---
 
-### Card Types
-* **Flashcard**: Standard front/back layout with an optional image and an optional explanation field (with optional image).
-* **MCQ**: Structured with a question, 4 multiple-choice choices, correct answer, optional image, and an optional solution field (with optional image).
-* **Formula**: Specialized layout containing the formula name, LaTeX equation (rendered via KaTeX and MathLive), description, variables, and an optional explanation field (with optional image).
-* **Explanation Field**: A collapsible section available on the back face of flashcard, formula, and MCQ card types. It supports text with LaTeX rendering and an optional image. When expanded, the SM-2 rating buttons and navigation buttons are hidden to maximize reading space.
+### 📝 Multiple Choice (MCQ) & "LooksFam" Engine
+* **Learn Mode**: Immediate feedback with instant answer validation, detailed solution breakdowns, and AI-powered explanations.
+* **Test Mode**: Simulates exam conditions with randomized choice orders, live timer, and a comprehensive end-of-test summary.
+* **Bookmarked Items Manager**: Quickly review, preview, and manage bookmarked questions directly from the deck browser with a dedicated legend and modal.
+* **Choice Shuffling**: Automatically randomizes options on every run while preserving correct answer mappings.
 
-### Deck Management
-* **Add Decks**: Create MCQ, Flashcard, or Formula sets with a comprehensive editor. Features include:
-  * **MathLive Integration**: Dedicated equation editors (Σ button) for entering LaTeX formulas effortlessly. Fields default to text or math mode based on context.
-  * **Rich Media**: Attach images directly to questions, choices, or dedicated explanation fields.
-  * **Advanced Controls**: Drag-and-drop card reordering (via DnD Kit), undo/redo history, and bulk import functionality.
-* **Edit Deck**: A full-featured interface for modifying existing decks, sharing all the advanced capabilities of the Add Decks view. Update questions, toggle between text/equation modes, and preview LaTeX rendering in real-time.
-* **Folder System**: Support for nested folders (maximum depth of 1), independently scoped for the study and formula tabs.
-* **Smart Routing**: After saving, the application automatically redirects to the correct tab based on the deck type (Formula decks route to the Formulas tab, others route to Flashcards).
+---
 
-### Bulk Import & Content Formats
-* **Quizlet Import**: Easily import your existing study sets by pasting Quizlet exports directly into the app. ECEngine automatically detects the Quizlet format (both MCQ and Flashcards) and seamlessly converts them into the native ECEngine format, applying common symbol and spelling fixes automatically.
-* **Native ECEngine Format**: When bulk importing manually, ECEngine uses a simple plain-text block format separated by blank lines.
+### 📐 Mathematical & LaTeX Rendering Engine
+* **Hybrid KaTeX + Plain Text Parser**: Supports raw LaTeX, inline `$...$` and block `$$...$$` math, alongside markdown styling (`**bold**`, `*italic*`, `__underline__`).
+* **Advanced Super/Subscript Parsing**:
+  * Single character: `x^2`, `R_L`
+  * Curly braces: `10^{-8}`, `V_{out}`
+  * Parenthesized expressions: `e^(v - u)`, `u = ln(e^v + c)`, `f_(n + 1)`
+* **ECE Symbol Normalization**: Seamlessly parses non-standard and MathJax symbols into standard KaTeX (e.g. `\phase{}`, `\SI{}{}`, `\ang{}`, `\boldsymbol{}`, `\exponentialE`, `\imaginaryI`).
+* **MathLive Equation Editor**: Interactive visual equation editor (Σ button) embedded into card forms with real-time preview and instant text/math mode toggling.
 
-  **MCQ Format Snippet:**
+---
+
+### 🖨️ Test Paper & PDF Engine (PrintView)
+* **Mock Exam Printouts**: Turn any MCQ, Flashcard, or Formula deck into a high-density, printable exam sheet.
+* **3 Layout Modes**:
+  * **Glossary**: Clean two-column vertical study list.
+  * **Table**: Compact grid with problem and answer/solution columns.
+  * **Q&A**: Classic question-and-answer format.
+* **Themes**: Switch between **Light**, **Sepia**, and **Dark** paper themes.
+* **Solution & Answer Toggles**: Show or hide answers and detailed solutions with a single click.
+* **Find in Document (`Ctrl + F`)**: Integrated search bar with live text highlighting (`<mark>`), occurrence counter, and match stepping.
+* **High-Res Image Lightbox**: Click any diagram or solution schematic to expand into a high-resolution lightbox overlay.
+* **Themed PDF Export**: Exports clean multi-page PDFs with persistent headers/footers matching the selected paper theme.
+
+---
+
+### 🗂️ Deck Management & Authoring
+* **Comprehensive Deck Editor**: Create and edit MCQ, Flashcard, and Formula decks with live previews and image attachment support.
+* **Drag-and-Drop Card Reordering**: Powered by `@dnd-kit`, card order is saved directly to SQLite.
+* **Per-Choice LaTeX / Text Toggles**: Specify whether individual choices should render as pure text or LaTeX equations.
+* **Collapsible Solutions & Explanations**: Enrich any card with reasoning, derivations, and dedicated solution images.
+* **Interactive Formatting Guide Modal**: Built-in reference in the editor detailing hotkeys (`Ctrl+B`, `Ctrl+I`, `Ctrl+U`, `Tab`), super/subscripts, and LaTeX syntax.
+* **Folder Hierarchy**: Nested folder organization with drag-and-drop ordering and separate namespaces for Study and Formula decks.
+
+---
+
+### 📥 Bulk Import & Migration
+* **Quizlet Importer**: Paste Quizlet exports directly into the app; automatically detects MCQs vs. Flashcards and applies automatic typo and symbol fixes.
+* **Native Plain-Text Format**: Quick bulk creation using clean text blocks separated by blank lines:
   ```text
-  Q: What is the unit of capacitance?
-  A: Henry
-  B: Farad
-  C: Ohm
-  D: Watt
+  Q: What is the unit of magnetic flux density?
+  A: Weber
+  B: Tesla
+  C: Henry
+  D: Maxwell
   ANS: B
   ```
+* **Full Backup & Selective Export**: Export all decks or cherry-pick specific decks into portable JSON/text archives.
 
-  **Flashcard / Formula Format Snippet:**
-  ```text
-  Q: Ohm's Law
-  A: V = I * R
-  ```
+---
 
-* **Explanations & Images**: Beyond basic text, ECEngine's card editor allows you to enrich any MCQ, Flashcard, or Formula with **rich explanations** and **images**. You can easily attach an image to the main card content, as well as provide a collapsible explanation field that can contain its own dedicated solution image.
+### 📊 Board Exam Tools & Analytics
+* **2022 EELE Table of Specifications (ToS)**: Browse the official PRC Table of Specifications for Mathematics, Electronics Engineering, GEAS, and EST.
+* **Interactive Review Checklist**: Track completion status across the entire syllabus (marked as *For Review*, *Refresher*, or *Mastered*).
+* **Activity Heatmap & Trends**: 6-month study activity heatmap, subject accuracy trends, and mastery metrics.
+* **Exam Countdown Timer**: Live countdown clock targeting your scheduled Board Exam date.
 
-### Board Exam Tools
-* **EELE ToS**: A dedicated tab for viewing the Table of Specifications of the latest board exam (2022 TOS), covering Mathematics, Electronics Engineering, GEAS, and EST.
-* **Review Checklist**: A comprehensive, interactive syllabus tracker. Keep tabs on your overall review progress across all subjects and subtopics. Mark items with statuses like "For Review," "Refresher," or "Mastered" to visually manage your study priorities and ensure complete coverage of the board exam scope.
+---
 
-### Analytics & Progress
-* **Dashboard Heatmap**: A visual study activity heatmap plotting activity over a 6-month window.
-* **Accuracy Trends**: Line charts mapping accuracy trends across the core subjects (MATH, GEAS, ELECS, EST).
-* **Mastery Intelligence**: Mastery percentage calculated per subject and per individual deck, derived directly from SM-2 progress data.
-* **Board Exam Countdown**: A built-in timer counting down to the user's exam date.
+### 🤖 AI Explanations & Context Generation
+* **Groq AI Integration**: Direct integration with Groq (e.g. `llama-3.3-70b-versatile` / `openai/gpt-oss-120b`) for on-demand step-by-step problem explanations.
+* **"Get Context" Exporter**: One-click extraction of formatted problem context to the clipboard for use with ChatGPT, Claude, or DeepSeek.
 
-### AI Integration
-* **Groq GPT-OSS-120B Integration**: Features an explain button on MCQ cards in Learn and Test modes. Requires a user-supplied Groq API key configured in Settings.
-* **Context Extraction**: A "Get Context" button instantly copies a structured prompt to the clipboard for use in external AI tools like ChatGPT or Claude.
+---
 
-### Print & Export & Test Paper View
-* **Test Paper View**: Transform any deck into a printable test paper format. Ideal for generating physical mock board exams from your MCQ decks. Includes a toggle to hide/show answers on the fly.
-* **Flexible Layouts**: Generate documents optimized for Glossary (list format), Table (grid format), or Q&A (Question & Answer) layouts depending on the deck type.
-* **Theming & Controls**: Select between Light, Sepia, and Dark print themes. Features an isolated zoom state independent from the main window.
-* **Direct Export**: Native capability to export directly to PDF (with reliable native Save dialog rendering) or export deck contents to a raw text file.
+### ⚙️ Settings & System Customization
+* **Custom Images Directory**: Select a custom folder for all diagrams and card media with native directory browsing.
+* **KaTeX Scale & Bold Mode**: Customize math rendering size (`0.8em` to `1.5em`) and toggle high-contrast KaTeX bold mode.
+* **Global App Zoom**: Scale the UI (`80%` – `130%`) with `Ctrl+=`, `Ctrl+-`, `Ctrl+0`, and `Ctrl + Mouse Wheel`.
+* **Database Management**: View active SQLite file path, switch database location, or backup/restore data.
+* **Cross-Platform Audio Settings**: Configurable speech rate, voice selection, and Linux Piper ONNX neural voice model management.
 
-### Settings & Customization
-* **Custom Images Storage Path**: Configure a custom directory for image files (such as card diagrams and explanation images). Fully supports native folder browsing as well as direct text path copy-pasting. (Available under Settings → Data & Sync → Unlock Advanced).
-* **App Zoom Controls**: Global application scaling (80% to 130%) using `Ctrl+=` (zoom in), `Ctrl+-` (zoom out), `Ctrl+0` (reset to 100%), and **`Ctrl+Mousewheel`** for continuous discrete zoom stepping. Zoom level is automatically persisted across sessions and features a transient on-screen toast indicator.
-* **Linux Platform Compatibility**: Features case-insensitive file resolution for image protocol handlers (`ece-app://`), correcting Chromium's automatic hostname lowercasing on case-sensitive Linux filesystems. Also features a dedicated native TTS backend (Piper) bypassing Chromium's lack of Web Speech API support on Linux (see Linux TTS Setup).
+---
 
-### Performance & UI Architecture
-* **Responsive Fluid Grids**: Deck browsers utilize native CSS grid `auto-fit` alongside Tailwind `@container` queries to guarantee a robust, zoom-proof responsive layout strictly capped at two columns.
-* **Zoom-Proof Dashboard**: The primary Dashboard leverages dynamic overflow handling to permit both vertical scaling and horizontal heatmap scrolling when the main window's zoom factor is increased.
-* **Non-Blocking & Queued IPC**: Uses asynchronous `fs/promises` for file I/O operations with an in-memory Promise queue for configuration writes to prevent race conditions. Implements 15-second `AbortController` timeouts on Groq AI IPC handlers to prevent main thread and UI freezing.
-* **Clean DB Teardown**: Intercepts the Electron `will-quit` event to explicitly close the local `better-sqlite3` connection, ensuring no orphaned WAL (`.sqlite-wal`) files are left on disk.
-* **Strict Theming**: A thoroughly unified CSS variable design system (`surface`, `border-base`, `text-primary`, `accent`) enforced across all components, avoiding arbitrary inline styling.
+## 📝 Formatting & Math Cheatsheet
+
+Text fields across questions, choices, formulas, and explanations support inline Markdown and LaTeX:
+
+| Syntax | Description | Example Output |
+|---|---|---|
+| `**text**` (or `Ctrl+B`) | Bold | **text** |
+| `*text*` (or `Ctrl+I`) | Italic | *text* |
+| `__text__` (or `Ctrl+U`) | Underline | <u>text</u> |
+| `x^2` / `R_L` | Single-character super/subscript | x², R<sub>L</sub> |
+| `10^{-8}` / `V_{out}` | Multi-character super/subscript (braces) | 10⁻⁸, V<sub>out</sub> |
+| `e^(v - u)` / `f_(n + 1)` | Expression super/subscript (parentheses) | e<sup>(v - u)</sup>, f<sub>(n + 1)</sub> |
+| `$\sin\theta$` | Inline LaTeX equation | $\sin\theta$ |
+| `$$E = mc^2$$` | Centered display block equation | $$E = mc^2$$ |
+| `\phase{30}` | Electrical angle / phasor | $\angle 30^{\circ}$ |
+| `\SI{10}{k\Omega}` | SI unit formatting | $10\text{ k}\Omega$ |
 
 ---
 
 ## 🏗 System Architecture
 
-ECEngine runs as a native desktop application powered by React 18, Vite, Electron, and a local SQLite database compiled for desktop distribution.
+ECEngine runs as an Electron desktop application where the React UI connects to a local SQLite database via asynchronous Electron IPC channels.
 
 ```mermaid
 flowchart TD
-    subgraph UI_Layer [React 18 Renderer Layer]
-        A[Pages: Dashboard / Study / Exam] --> B[Zustand Stores]
-        B --> C[Database Service Layer: db.service.ts]
+    subgraph Frontend [React 18 + Vite Renderer]
+        UI[Pages & Components]
+        Stores[Zustand State Stores]
+        DBService[src/services/db.service.ts]
+        UI --> Stores
+        Stores --> DBService
     end
 
-    subgraph Desktop_Backend [Electron Main Process]
-        C --> D[IPC Bridge: window.electron.*]
-        D --> F[better-sqlite3 Database Adapter]
-        F --> G[(ecengine.sqlite)]
+    subgraph IPC_Bridge [Preload Bridge]
+        Bridge[window.electron.*]
+        DBService --> Bridge
+    end
+
+    subgraph Backend [Electron Main Process]
+        IPC[electron/ipc/ handlers]
+        SQLite[better-sqlite3 Database Engine]
+        DB[(ecengine.sqlite)]
+        Bridge --> IPC
+        IPC --> SQLite
+        SQLite --> DB
     end
 ```
 
-### Database Schema
+### Database Schema Overview
 
 ```sql
+-- Topic / Deck metadata
 CREATE TABLE topics (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   subject TEXT NOT NULL,
-  description TEXT,
-  parent_id TEXT,
+  description TEXT DEFAULT '',
+  parent_id TEXT REFERENCES topics(id),
   order_index INTEGER DEFAULT 0,
-  tags TEXT,
-  created_at INTEGER DEFAULT (strftime('%s', 'now')),
+  tags TEXT DEFAULT '[]',
   folder_name TEXT DEFAULT 'Uncategorized',
   folder_id TEXT REFERENCES folders(id) ON DELETE SET NULL,
-  FOREIGN KEY(parent_id) REFERENCES topics(id)
+  created_at INTEGER DEFAULT (strftime('%s', 'now'))
 );
 
+-- Card items (MCQ, Flashcard, Formula)
 CREATE TABLE cards (
   id TEXT PRIMARY KEY,
   topic_id TEXT NOT NULL,
-  type TEXT NOT NULL,
-  data TEXT NOT NULL,
-  difficulty TEXT,
-  tags TEXT,
+  type TEXT NOT NULL,          -- 'mcq' | 'flashcard' | 'formula'
+  data TEXT NOT NULL,          -- JSON payload of question/choices/latex/explanation
+  difficulty TEXT DEFAULT 'medium',
+  tags TEXT DEFAULT '[]',
   is_custom BOOLEAN DEFAULT 0,
+  order_index INTEGER DEFAULT 0,
   created_at INTEGER DEFAULT (strftime('%s', 'now')),
-  FOREIGN KEY(topic_id) REFERENCES topics(id)
+  FOREIGN KEY(topic_id) REFERENCES topics(id) ON DELETE CASCADE
 );
 
+-- SM-2 Spaced Repetition progress
 CREATE TABLE progress (
   card_id TEXT PRIMARY KEY,
   ease_factor REAL DEFAULT 2.5,
@@ -170,151 +203,167 @@ CREATE TABLE progress (
   repetitions INTEGER DEFAULT 0,
   next_review TEXT,
   last_reviewed TEXT,
-  FOREIGN KEY(card_id) REFERENCES cards(id)
+  correct_count INTEGER DEFAULT 0,
+  total_count INTEGER DEFAULT 0,
+  last_result TEXT,
+  FOREIGN KEY(card_id) REFERENCES cards(id) ON DELETE CASCADE
 );
 
+-- Folder hierarchy for deck organization
 CREATE TABLE folders (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   parent_id TEXT REFERENCES folders(id),
   order_index INTEGER DEFAULT 0,
-  scope TEXT NOT NULL DEFAULT 'study'
+  scope TEXT NOT NULL DEFAULT 'study' -- 'study' | 'formula'
+);
+
+-- Daily activity tracking
+CREATE TABLE study_activity (
+  day TEXT PRIMARY KEY,        -- YYYY-MM-DD
+  count INTEGER DEFAULT 0,
+  time_spent INTEGER DEFAULT 0,
+  correct_count INTEGER DEFAULT 0,
+  total_count INTEGER DEFAULT 0
+);
+
+-- Mock exam records
+CREATE TABLE exam_sessions (
+  id TEXT PRIMARY KEY,
+  topic_id TEXT,
+  mode TEXT,
+  started_at TEXT,
+  finished_at TEXT,
+  score INTEGER DEFAULT 0,
+  total INTEGER DEFAULT 0,
+  answers TEXT DEFAULT '{}'
 );
 ```
 
 ---
 
-## 📂 Project Directory Layout
+## 📂 Project Structure
 
 ```text
 ecengine/
-├── electron/                    # Electron Shell Files
-│   ├── main.ts                  # App launch entry point, window configuration
-│   ├── preload.ts               # contextBridge IPC boundaries
-│   ├── ipc/                     # DB, file system, and system IPC handlers
-│   └── db/                      # Schema and SQLite connections
-├── src/                         # React Frontend Renderer Process
-│   ├── assets/                  # Fonts, SVGs, Icons
-│   ├── components/              # UI Components
-│   │   ├── ui/                  # Reusable visual units
-│   │   ├── mcq/                 # MCQ components
-│   │   ├── flashcard/           # Flashcard and SM-2 components
-│   │   ├── formula/             # Formula rendering components
-│   │   ├── deck/                # Deck building and forms
-│   │   └── layout/              # Sidebars and Navigation
-│   ├── hooks/                   # Custom business logic React hooks
-│   ├── pages/                   # Main page layout views
-│   ├── services/                # Database Service Layer & connectors
-│   ├── store/                   # Zustand store slices
-│   └── styles/                  # Tailwind styling and CSS custom properties
-├── scripts/                     # Operational scripts
-├── package.json                 # Project manifest and dependencies
-└── electron.vite.config.ts      # Vite build configuration
+├── electron/                    # Electron Backend Process
+│   ├── main.ts                  # App lifecycle, window management, hotkeys
+│   ├── preload.ts               # contextBridge IPC API exposure
+│   ├── db/                      # SQLite connection, schema bootstrap, migrations
+│   └── ipc/                     # Modular IPC handlers (DB, AI, Print, Config, TTS)
+├── src/                         # React Frontend (Renderer)
+│   ├── assets/                  # Brand assets, icons, fonts
+│   ├── components/              # Modular UI Components
+│   │   ├── ui/                  # Buttons, modals, tooltips, toast, auto-fit text
+│   │   ├── mcq/                 # MCQ card, Learn/Test modes, bookmark manager
+│   │   ├── flashcard/           # Flashcard session, 3D flip card, deck browser
+│   │   ├── formula/             # Formula card, MathLive equations
+│   │   ├── deck/                # Card forms, editors, bulk import modals, grid
+│   │   └── layout/              # AppShell, custom TitleBar, navigation sidebar
+│   ├── hooks/                   # Business logic (SM-2, timer, TTS, import)
+│   ├── lib/                     # LaTeX rendering, subject classifier, audio
+│   ├── pages/                   # Main views (Dashboard, Study, PrintView, Settings, etc.)
+│   ├── services/                # db.service.ts (Frontend data access layer)
+│   ├── store/                   # Zustand stores (study, exam, deck states)
+│   └── styles/                  # Tailwind theme, CSS variables, KaTeX customizations
+├── content/                     # Seed JSON deck files
+├── scripts/                     # Seeding and content validation scripts
+├── package.json                 # Dependencies and build configuration
+├── tailwind.config.ts           # Design tokens and container query plugins
+└── electron.vite.config.ts      # Vite configuration for React and Electron
 ```
 
 ---
 
-## 🛠 Getting Started & Developer Guide
+## 🛠 Getting Started & Development
 
 ### Prerequisites
-* **Node.js**: `v18.x` or higher installed
-* **npm** or **yarn** package manager
-* **C++ Compiler Tools** (Required to compile native `better-sqlite3` bindings for Electron)
-* **Piper TTS (Linux users only)**: Required for the Read-Aloud/Autoplay feature on Linux — see Linux TTS Setup below. Windows and macOS use the OS's built-in Text-to-Speech with no setup required. Not required to build or run the app on any platform; only affects the TTS feature on Linux specifically.
+* **Node.js**: `v20.x` or `v22.x` LTS recommended
+* **npm** (comes with Node.js)
+* **C++ Build Tools**:
+  * **Windows**: `npm install --global --production windows-build-tools` or Visual Studio C++ build tools (required for native `better-sqlite3` compilation)
+  * **Linux**: `build-essential`, `python3`
+  * **macOS**: Xcode Command Line Tools (`xcode-select --install`)
 
-### Installation & Seeding
+---
 
-1. **Clone the Repository**:
+### Installation & Database Seeding
+
+1. **Clone the repository**:
    ```bash
    git clone https://github.com/vtajaros/ECEngine.git
    cd ecengine
    ```
 
-2. **Install Node Modules**:
+2. **Install dependencies**:
    ```bash
    npm install
    ```
 
-3. **Compile and Seed the SQLite DB**:
-   This processes the JSON metadata inside `content/` and compiles it into `ecengine.sqlite`:
+3. **Compile and seed the database**:
+   > ⚠️ **Note on ABI Targets**: Seeding runs via system Node.js, while the app runs via Electron's bundled Node.js. Follow this sequence:
    ```bash
-   npm run seed
-   ```
-
-### Windows Setup Notes
-
-1. Install Node.js 20 LTS or 22 LTS from nodejs.org.
-2. **Open a new terminal** after installation — PATH updates don't apply to already-open terminal sessions.
-3. If PowerShell blocks `npm` with a script-execution error, run once:
-   ```powershell
-   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-   ```
-4. Install and seed (two different `better-sqlite3` ABI targets are involved — seeding uses the system Node.js ABI, `npm run dev` uses Electron's bundled Node.js ABI):
-   ```bash
-   npm install
+   # Rebuild native sqlite bindings for system Node.js
    npm rebuild better-sqlite3
+
+   # Seed content/ JSON decks into ecengine.sqlite
    npm run seed
+
+   # Rebuild native sqlite bindings for Electron
    npx electron-rebuild -f
+   ```
+
+4. **Launch development mode**:
+   ```bash
    npm run dev
    ```
-   The `postinstall` script now runs `electron-rebuild` automatically after `npm install`, but it must be re-run via `npm rebuild better-sqlite3` (no `-f`/Electron flag) before `npm run seed`, then `npx electron-rebuild -f` again before `npm run dev` — seeding and dev-mode target different Node ABIs and the module must match whichever process is about to load it.
 
-### Linux TTS Setup
+---
 
-This app does not bundle Piper or any voice models. On Linux, TTS requires manual setup:
+### 🔊 Linux TTS Setup (Optional)
 
-1. Install Piper (Arch/AUR example — note for other distros the user should consult [https://github.com/rhasspy/piper](https://github.com/rhasspy/piper) directly):
+On Windows and macOS, ECEngine uses the operating system's built-in Web Speech API with zero configuration. On Linux, neural voice synthesis is powered by [Piper](https://github.com/rhasspy/piper):
+
+1. **Install Piper**:
    ```bash
+   # Arch Linux (AUR)
    yay -S piper-tts-bin
+
+   # Debian/Ubuntu
+   # Download the latest binary release from https://github.com/rhasspy/piper/releases
    ```
-2. Download a voice model (`.onnx` + matching `.onnx.json` sidecar file) from [https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_US](https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_US) — recommended: the "ryan" voice (medium quality) for a natural-sounding male US English voice, or "amy" for female.
-3. In-app: Settings → Sound & Feedback → Reading Voice (Piper TTS) → Browse, and select the downloaded `.onnx` file. The app validates the `.onnx.json` sidecar exists automatically.
-4. If Piper is not detected, the Settings panel shows install instructions directly — no auto-download is provided by design.
+2. **Download an ONNX voice model**:
+   * Visit [Piper HuggingFace Voices](https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_US)
+   * Download both the `.onnx` and matching `.onnx.json` model files (recommended: `en_US-ryan-medium.onnx` or `en_US-amy-medium.onnx`).
+3. **Configure in ECEngine**:
+   * Navigate to **Settings** → **Sound & Feedback** → **Reading Voice (Piper TTS)**.
+   * Click **Browse** and select your downloaded `.onnx` file. ECEngine will automatically verify the companion `.onnx.json` file and enable neural voice playback.
 
-Playback requires `aplay` (part of `alsa-utils`, present by default on most Linux desktop distros).
+---
 
-### Developer Execution Reference
+### 💻 Developer Command Reference
 
-Use the following commands inside your terminal to launch, build, or test various components:
-
-| Command | Action Description |
+| Command | Description |
 |---|---|
-| `npm run dev` | Spin up Electron shell in development mode with Hot Module Replacement (HMR) |
-| `npm run build` | Compile code and bundle React and Electron assets |
-| `npm run preview` | Run a local preview of the compiled application |
-| `npm run package` | Generate distributable native binary installers (`.exe`, `.dmg`, `.deb`) via electron-builder |
-| `npm run validate-content` | Execute content validations over JSON files under `content/` |
-| `npm run test` | Run active Unit Tests with Vitest |
+| `npm run dev` | Launch Electron app in development mode with Hot Module Replacement (HMR) |
+| `npm run build` | Compile TypeScript and bundle renderer & main process assets |
+| `npm run preview` | Preview production build locally |
+| `npm run package` | Generate distributable installers (`.exe`, `.AppImage`, `.dmg`) via `electron-builder` |
+| `npm run seed` | Parse `content/` JSON files and populate `ecengine.sqlite` |
+| `npm run validate-content` | Validate JSON structure and questions in `content/` |
+| `npm run test` | Run test suite with Vitest |
 
 ---
 
-## ⚠️ Known Limitations
+## 📐 Key Design Principles
 
-* **Technical Debt in FlashCard.tsx**: `FlashCard.tsx` (used by the older LooksFam 3D flip view) is an independent third flip-card implementation separate from the primary `FlashcardSession.tsx`, representing UI duplication.
-* **No Cloud Sync/Backup**: There is no automatic backup or cloud syncing. Data relies entirely on the local SQLite file.
-* **Empty Formula Bank**: The formula bank content is not pre-populated. Users must create their own formula decks from scratch.
-* **AI Provider Support**: Only the Groq API is implemented and wired. Mentioned support for Gemini or other multi-provider interfaces in older notes is not present.
-* **No Bundled TTS on Linux**: Unlike Windows/macOS (which use the OS's built-in Web Speech API with zero setup), Linux TTS requires the user to separately install Piper and a voice model — this is a deliberate scope decision (see Linux TTS Setup), not a bug.
-
----
-
-## 📐 Design Decisions
-
-* **SM-2 Scoped to Flashcards & Formulas Only**: Spaced repetition intentionally does not apply to MCQs (including LooksFam). MCQ banks can run into the thousands of questions per subject, which doesn't fit the spaced-repetition model — SM-2 is designed for a bounded set of items being progressively memorized, not for sampling across a large question pool. Flashcards and formula sets are the actual memorization-oriented content, so SM-2 applies there. This is a deliberate scope decision, not unfinished work.
-
----
-
-## 🤖 AI Auditor & Developer Manifesto
-
-These instructions govern all future modifications to this repository:
-1. **No Hex Color Coding**: All styling changes must use established CSS variables inside `src/styles/theme.css` (e.g., `var(--accent-primary)`). Do not add custom hex values.
-2. **Access Proxying**: Direct browser `window.electron` calls inside React components should be avoided when possible. Route DB activities through `src/services/db.service.ts` for cleaner separation of concerns.
-3. **Typography Standards**: Preserve monospaced readability. Titles must utilize `Orbitron` or `Rajdhani`, and data containers should display body copy in `IBM Plex Mono` or `JetBrains Mono`. No soft pastel or rounded visuals.
-4. **TypeScript Rigidness**: Avoid typing bypasses (`any`). Ensure custom payloads are typed correctly within `src/types/` to prevent silent database runtime failures.
-5. **Shared Study Views**: Formula sets and Flashcard sets share the `FlashcardSession` component — UI changes to the study view affect both.
+1. **Strict Offline First**: No external servers are required for core features. All decks, progress, and history remain on the user's local disk.
+2. **No Arbitrary Hex Colors**: UI components must use established CSS variables in `src/styles/theme.css` and Tailwind semantic classes (`bg-surface`, `border-border-base`, `text-accent`, etc.).
+3. **Separated Service Boundary**: React components query database operations through `src/services/db.service.ts` rather than invoking raw Electron IPCs directly.
+4. **Resilient KaTeX Rendering**: KaTeX math blocks are sanitized and normalized safely without running through DOMPurify SVG-corrupting filters.
 
 ---
 
 <div align="center">
-  <i>Developed for the Engineers of 2026. Non sibi sed aliis.</i>
+  <i>Engineered for the Filipino Electronics Engineers of 2026. Non sibi sed aliis.</i>
 </div>
