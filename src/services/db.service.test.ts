@@ -30,6 +30,10 @@ const mockElectron = {
     getAllCardsByTopic: vi.fn(),
     getCardsPrioritized: vi.fn(),
     getCardsWithProgress: vi.fn(),
+    saveExamSession: vi.fn(),
+    getExamSessions: vi.fn(),
+    deleteExamSession: vi.fn(),
+    clearExamSessions: vi.fn(),
   },
   decks: {
 

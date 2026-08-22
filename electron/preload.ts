@@ -131,6 +131,7 @@ contextBridge.exposeInMainWorld('electron', {
   },
   zoom: {
     get: () => Math.round(webFrame.getZoomFactor() * 100),
+    getZoomFactor: (): Promise<number> => ipcRenderer.invoke('zoom:getFactor'),
     onChanged: (callback: (percent: number) => void) => {
       const listener = (_event: unknown, percent: number) => callback(percent)
       ipcRenderer.on('zoom:changed', listener)

@@ -5,7 +5,7 @@ import { registerDBHandlers } from './ipc/db.ipc'
 import { registerImageHandlers, registerImageProtocolScheme, handleImageProtocol } from './ipc/image.ipc'
 import { registerAIHandlers } from './ipc/ai.ipc'
 import { registerFileHandlers } from './ipc/file.ipc'
-import { registerConfigHandlers, resolveZoomIndex, persistZoomIndex, ZOOM_STEPS, initDBPathResolver } from './ipc/config.ipc'
+import { registerConfigHandlers, resolveZoomIndex, persistZoomIndex, flushPendingConfigWrites, ZOOM_STEPS, DEFAULT_ZOOM_INDEX, initDBPathResolver } from './ipc/config.ipc'
 import { registerPrintHandlers } from './ipc/print.ipc'
 import { registerTTSHandlers, killAllTTSChildren } from './ipc/tts.ipc'
 import { closeDB } from './db/database'
@@ -90,16 +90,17 @@ function createWindow() {
 
   // Apply persisted zoom on startup
   let currentZoomIndex = resolveZoomIndex()
-  mainWindow.webContents.setZoomFactor(ZOOM_STEPS[currentZoomIndex])
 
   // Shared by keyboard shortcuts and ctrl+wheel — single source of truth
   // for stepping through ZOOM_STEPS, persisting, and broadcasting.
   const applyZoomIndex = (nextIndex: number) => {
     currentZoomIndex = Math.min(Math.max(nextIndex, 0), ZOOM_STEPS.length - 1)
     const factor = ZOOM_STEPS[currentZoomIndex]
-    mainWindow!.webContents.setZoomFactor(factor)
-    persistZoomIndex(currentZoomIndex)
-    mainWindow!.webContents.send('zoom:changed', Math.round(factor * 100))
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.setZoomFactor(factor)
+      persistZoomIndex(currentZoomIndex)
+      mainWindow.webContents.send('zoom:changed', Math.round(factor * 100))
+    }
   }
 
   // Ctrl+=, Ctrl+-, Ctrl+0 discrete zoom steps (mainWindow only)
@@ -113,7 +114,7 @@ function createWindow() {
     } else if (input.key === '-') {
       applyZoomIndex(currentZoomIndex - 1)
     } else if (input.key === '0') {
-      applyZoomIndex(2) // DEFAULT_ZOOM_INDEX
+      applyZoomIndex(DEFAULT_ZOOM_INDEX)
     } else {
       return // not a zoom key — don't preventDefault
     }
@@ -124,6 +125,10 @@ function createWindow() {
   // its own throttling; this handler just steps the shared index.
   ipcMain.on('zoom:step', (_event, direction: 1 | -1) => {
     applyZoomIndex(currentZoomIndex + direction)
+  })
+
+  ipcMain.handle('zoom:getFactor', () => {
+    return Math.round(ZOOM_STEPS[currentZoomIndex] * 100)
   })
 
   // Disable unnecessary permissions for privacy/security
@@ -141,11 +146,14 @@ function createWindow() {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
-  // Inject scrollbar styles after every page load.
+  // Inject scrollbar styles and re-apply zoom after every page load.
   // webContents.insertCSS() has the highest priority and cannot be
   // overridden by any renderer-side CSS, solving the Electron/Chromium
   // overlay-scrollbar issue where ::-webkit-scrollbar CSS is ignored.
   mainWindow.webContents.on('did-finish-load', () => {
+    const factor = ZOOM_STEPS[currentZoomIndex]
+    mainWindow!.webContents.setZoomFactor(factor)
+    mainWindow!.webContents.send('zoom:changed', Math.round(factor * 100))
     mainWindow!.webContents.insertCSS(`
       ::-webkit-scrollbar { width: 4px !important; height: 4px !important; }
       ::-webkit-scrollbar-track { background: #0D0D0D !important; border-radius: 4px !important; }
@@ -199,5 +207,8 @@ app.whenReady().then(() => {
   createWindow()
 })
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit() })
-app.on('before-quit', () => { killAllTTSChildren() })
+app.on('before-quit', () => {
+  flushPendingConfigWrites()
+  killAllTTSChildren()
+})
 app.on('will-quit', closeDB)

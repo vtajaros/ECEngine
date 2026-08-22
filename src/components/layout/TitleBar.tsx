@@ -18,6 +18,11 @@ export const TitleBar: React.FC<TitleBarProps> = ({ isCollapsed, onToggleSidebar
   useEffect(() => {
     if (window.electron?.zoom) {
       setZoomLevel(window.electron.zoom.get())
+      if (window.electron.zoom.getZoomFactor) {
+        window.electron.zoom.getZoomFactor().then(pct => {
+          if (typeof pct === 'number' && pct > 0) setZoomLevel(pct)
+        }).catch(() => {})
+      }
       const cleanup = window.electron.zoom.onChanged((pct) => {
         setZoomLevel(pct)
       })

@@ -140,6 +140,7 @@ declare global {
       }
       zoom: {
         get: () => number
+        getZoomFactor?: () => Promise<number>
         onChanged: (callback: (percent: number) => void) => () => void
         step: (direction: 1 | -1) => void
       }

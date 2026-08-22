@@ -191,7 +191,7 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
               </span>
             </h2>
             <p className="text-xs text-text-muted font-['Rajdhani'] uppercase tracking-wider">
-              Learn Mode (First-Try Scores) &amp; Test Mode Results
+              Learn Mode (Flawless Scores) &amp; Test Mode Results
             </p>
           </div>
         </div>
@@ -214,19 +214,19 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
               onClick={() => setModeFilter('learn')}
               className={`px-3 py-1 text-[10px] font-bold font-['Rajdhani'] uppercase tracking-widest rounded flex items-center gap-1.5 transition-all ${
                 modeFilter === 'learn'
-                  ? 'bg-cyan-500 text-black shadow-sm'
-                  : 'text-cyan-400/80 hover:text-cyan-300 hover:bg-border-base'
+                  ? 'bg-accent text-black shadow-sm'
+                  : 'text-text-muted hover:text-text-primary hover:bg-border-base'
               }`}
             >
               <BookOpen size={11} />
-              Learn (1st Try)
+              Learn Mode
             </button>
             <button
               onClick={() => setModeFilter('test')}
               className={`px-3 py-1 text-[10px] font-bold font-['Rajdhani'] uppercase tracking-widest rounded flex items-center gap-1.5 transition-all ${
                 modeFilter === 'test'
-                  ? 'bg-amber-400 text-black shadow-sm'
-                  : 'text-amber-400/80 hover:text-amber-300 hover:bg-border-base'
+                  ? 'bg-accent text-black shadow-sm'
+                  : 'text-text-muted hover:text-text-primary hover:bg-border-base'
               }`}
             >
               <Trophy size={11} />
@@ -282,27 +282,27 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
           </div>
 
           <div className="bg-surface-2 p-3 rounded-lg border border-border-base flex flex-col">
-            <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-cyan-400 font-bold flex items-center gap-1">
+            <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-accent font-bold flex items-center gap-1">
               <BookOpen size={10} />
-              Learn 1st-Try Avg
+              Flawless Answer Avg
             </span>
             <div className="flex items-baseline gap-1 mt-1">
-              <span className="font-['IBM_Plex_Mono'] text-lg font-bold text-cyan-400">
+              <span className="font-['IBM_Plex_Mono'] text-lg font-bold text-accent">
                 {summaryMetrics.learnAvgFirstTry != null ? `${summaryMetrics.learnAvgFirstTry}%` : '—'}
               </span>
             </div>
             <span className="font-['Rajdhani'] text-[9px] text-[#555] mt-0.5">
-              First-attempt correctness
+              First-attempt flawless rate
             </span>
           </div>
 
           <div className="bg-surface-2 p-3 rounded-lg border border-border-base flex flex-col">
-            <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-amber-400 font-bold flex items-center gap-1">
+            <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-accent font-bold flex items-center gap-1">
               <Trophy size={10} />
               Test Mode Avg
             </span>
             <div className="flex items-baseline gap-1 mt-1">
-              <span className="font-['IBM_Plex_Mono'] text-lg font-bold text-amber-400">
+              <span className="font-['IBM_Plex_Mono'] text-lg font-bold text-accent">
                 {summaryMetrics.testAvgScore != null ? `${summaryMetrics.testAvgScore}%` : '—'}
               </span>
             </div>
@@ -376,18 +376,18 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
                     {/* Mode Indicator Pill */}
                     <div className="shrink-0 flex flex-col items-center">
                       {isLearn ? (
-                        <div className="px-2.5 py-1 rounded-md border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 flex items-center gap-1.5 font-['Rajdhani'] font-bold text-[10px] uppercase tracking-wider">
+                        <div className="px-2.5 py-1 rounded-md border border-accent/30 bg-accent/10 text-accent flex items-center gap-1.5 font-['Rajdhani'] font-bold text-[10px] uppercase tracking-wider">
                           <BookOpen size={11} />
                           <span>LEARN</span>
                         </div>
                       ) : (
-                        <div className="px-2.5 py-1 rounded-md border border-amber-500/30 bg-amber-500/10 text-amber-400 flex items-center gap-1.5 font-['Rajdhani'] font-bold text-[10px] uppercase tracking-wider">
+                        <div className="px-2.5 py-1 rounded-md border border-accent/30 bg-accent/10 text-accent flex items-center gap-1.5 font-['Rajdhani'] font-bold text-[10px] uppercase tracking-wider">
                           <Trophy size={11} />
                           <span>TEST</span>
                         </div>
                       )}
                       <span className="text-[8px] font-['IBM_Plex_Mono'] text-text-muted mt-0.5 uppercase tracking-tighter">
-                        {isLearn ? '1st-Try' : 'Exam'}
+                        {isLearn ? 'Flawless' : 'Exam'}
                       </span>
                     </div>
 
@@ -425,8 +425,8 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
                       {/* Explicit Tag */}
                       <div className="flex items-center gap-1.5 mt-0.5">
                         {isLearn ? (
-                          <span className="text-[9px] font-['Rajdhani'] font-bold uppercase tracking-wider text-cyan-400">
-                            First-Try Score
+                          <span className="text-[9px] font-['Rajdhani'] font-bold uppercase tracking-wider text-accent">
+                            Flawless Score
                           </span>
                         ) : (
                           <span className={`text-[9px] font-['Rajdhani'] font-bold uppercase tracking-wider ${isPassed ? 'text-accent' : 'text-[#FF003C]'}`}>

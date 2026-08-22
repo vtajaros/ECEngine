@@ -69,6 +69,8 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
   const [partitionCorrectIds, setPartitionCorrectIds] = useState<Set<string>>(new Set())
   const [globalStats, setGlobalStats] = useState({ correctFirstTry: 0, wrongFirstTry: 0 })
   const [cardStats, setCardStats] = useState<Record<string, { wasCorrectFirstTry: boolean, usedIDK: boolean, attemptCount: number }>>({})
+  const cardStatsRef = useRef<Record<string, { wasCorrectFirstTry: boolean, usedIDK: boolean, attemptCount: number }>>({})
+  cardStatsRef.current = cardStats
   const [zoomedImage, setZoomedImage] = useState<string | null>(null)
   const [showToast, setShowToast] = useState(false)
   const [explanationOpen, setExplanationOpen] = useState(false)
@@ -171,7 +173,9 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
     setPartitionWrongIds(new Set())
     setPartitionCorrectIds(new Set())
     setViewState('question')
+    cardStatsRef.current = {}
     setCardStats({})
+    setGlobalStats({ correctFirstTry: 0, wrongFirstTry: 0 })
   }, [cards])
 
   const currentCard = activeQueue[currentCardIndex]
@@ -246,34 +250,39 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
 
     setSelectedChoiceIndex(isIdk ? null : choiceIdx)
 
-    setCardStats(prev => {
-      const existing = prev[currentCard.id] || { wasCorrectFirstTry: true, usedIDK: false, attemptCount: 0 }
-      const newStats = { ...existing }
-      newStats.attemptCount += 1
-      if (isIdk) {
-        newStats.usedIDK = true
-        newStats.wasCorrectFirstTry = false
-      } else if (!isCorrect) {
-        newStats.wasCorrectFirstTry = false
+    const cardId = currentCard.id
+    const prevStats = cardStatsRef.current[cardId] || { wasCorrectFirstTry: false, usedIDK: false, attemptCount: 0 }
+    const isFirstAttempt = prevStats.attemptCount === 0
+
+    const updatedStats = {
+      attemptCount: prevStats.attemptCount + 1,
+      wasCorrectFirstTry: isFirstAttempt ? isCorrect : prevStats.wasCorrectFirstTry,
+      usedIDK: isFirstAttempt ? isIdk : prevStats.usedIDK,
+    }
+
+    cardStatsRef.current = {
+      ...cardStatsRef.current,
+      [cardId]: updatedStats,
+    }
+    setCardStats(cardStatsRef.current)
+
+    if (isFirstAttempt) {
+      if (isCorrect) {
+        setGlobalStats(s => ({ ...s, correctFirstTry: s.correctFirstTry + 1 }))
+      } else {
+        setGlobalStats(s => ({ ...s, wrongFirstTry: s.wrongFirstTry + 1 }))
       }
-      return { ...prev, [currentCard.id]: newStats }
-    })
+    }
 
     if (isCorrect) {
       setChoiceStatus('correct')
-      setPartitionCorrectIds(prev => new Set(prev).add(currentCard.id))
-      setPartitionWrongIds(prev => { const next = new Set(prev); next.delete(currentCard.id); return next })
-      if (!partitionWrongIds.has(currentCard.id)) {
-        setGlobalStats(s => ({ ...s, correctFirstTry: s.correctFirstTry + 1 }))
-      }
+      setPartitionCorrectIds(prev => new Set(prev).add(cardId))
+      setPartitionWrongIds(prev => { const next = new Set(prev); next.delete(cardId); return next })
       play('correct')
     } else {
       setChoiceStatus('wrong')
-      setPartitionWrongIds(prev => new Set(prev).add(currentCard.id))
-      setPartitionCorrectIds(prev => { const next = new Set(prev); next.delete(currentCard.id); return next })
-      if (!partitionWrongIds.has(currentCard.id)) {
-        setGlobalStats(s => ({ ...s, wrongFirstTry: s.wrongFirstTry + 1 }))
-      }
+      setPartitionWrongIds(prev => new Set(prev).add(cardId))
+      setPartitionCorrectIds(prev => { const next = new Set(prev); next.delete(cardId); return next })
       play('wrong')
     }
     setViewState('feedback')
@@ -303,8 +312,9 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
       setViewState('partition-complete')
       if (currentPartitionIndex === partitions.length - 1) {
         play('finish')
+        const allCardStats = cardStatsRef.current
         const progressWrites: Promise<void>[] = []
-        for (const [id, stats] of Object.entries(cardStats)) {
+        for (const [id, stats] of Object.entries(allCardStats)) {
           const card = cards.find(c => c.id === id)
           if (card && card.type === 'mcq' && !card.isGenerated) {
             progressWrites.push(
@@ -316,11 +326,15 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
         }
         Promise.all(progressWrites).catch(() => { /* already caught above */ })
 
+        const flawlessCount = cards.filter(c => allCardStats[c.id]?.wasCorrectFirstTry === true).length
+        const missedCount = cards.length - flawlessCount
+        const correctIds = cards.filter(c => allCardStats[c.id]?.wasCorrectFirstTry === true).map(c => c.id)
+
         onComplete({
-          correct: globalStats.correctFirstTry,
-          wrong: globalStats.wrongFirstTry,
+          correct: flawlessCount,
+          wrong: missedCount,
           bookmarked: bookmarkedIds.size,
-          correctIds: Object.entries(cardStats).filter(([_, stats]) => stats.wasCorrectFirstTry).map(([id]) => id)
+          correctIds,
         })
       } else {
         play('roundComplete')
@@ -407,11 +421,19 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
 
   const handleRestartRound = () => {
     const currentCards = partitions[currentPartitionIndex]
-    setCardStats(prev => {
-      const next = { ...prev }
-      currentCards.forEach(c => delete next[c.id])
-      return next
+    const nextStats = { ...cardStatsRef.current }
+    currentCards.forEach(c => delete nextStats[c.id])
+    cardStatsRef.current = nextStats
+    setCardStats(nextStats)
+
+    // Recalculate globalStats
+    const currentFlawless = cards.filter(c => nextStats[c.id]?.wasCorrectFirstTry === true).length
+    const currentAttempted = Object.keys(nextStats).length
+    setGlobalStats({
+      correctFirstTry: currentFlawless,
+      wrongFirstTry: currentAttempted - currentFlawless,
     })
+
     setActiveQueue([...currentCards])
     setCurrentCardIndex(0)
     setPartitionWrongIds(new Set())
@@ -424,6 +446,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
   }
 
   const handleStudyAgain = () => {
+    cardStatsRef.current = {}
     setCardStats({})
     setGlobalStats({ correctFirstTry: 0, wrongFirstTry: 0 })
     setCurrentPartitionIndex(0)

@@ -31,16 +31,31 @@ export function resolveZoomIndex(): number {
 
 let zoomWriteTimer: NodeJS.Timeout | null = null
 export function persistZoomIndex(index: number): void {
+  const config = readConfig()
+  config.zoomIndex = index
+  cachedConfig = { ...config }
   if (zoomWriteTimer) clearTimeout(zoomWriteTimer)
   zoomWriteTimer = setTimeout(async () => {
     try {
-      const config = readConfig()
-      config.zoomIndex = index
       await writeConfig(config)
     } catch (err) {
       console.error('[persistZoomIndex] Error:', err)
     }
   }, 400)
+}
+
+export function flushPendingConfigWrites(): void {
+  if (zoomWriteTimer) {
+    clearTimeout(zoomWriteTimer)
+    zoomWriteTimer = null
+    const config = readConfig()
+    try {
+      const configPath = getConfigPath()
+      fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf8')
+    } catch (err) {
+      console.error('[flushPendingConfigWrites] Error:', err)
+    }
+  }
 }
 
 export function resolveImagesPath(): string {
