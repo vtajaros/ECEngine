@@ -773,20 +773,22 @@ export const FormattingGuideModal: React.FC<{ onClose: () => void }> = ({ onClos
           {/* Superscript & Subscript */}
           <section>
             <div className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-accent font-bold mb-3">
-              Superscript & Subscript
+              Superscript &amp; Subscript
             </div>
             <div className="flex flex-col gap-2">
               {[
-                { syntax: 'x^2',      html: 'x<sup>2</sup>',   label: 'Superscript (single char)' },
-                { syntax: '10^{-8}',  html: '10<sup>-8</sup>', label: 'Superscript (multi-char)' },
-                { syntax: 'R_L',      html: 'R<sub>L</sub>',   label: 'Subscript (single char)' },
-                { syntax: 'V_{out}',  html: 'V<sub>out</sub>', label: 'Subscript (multi-char)' },
+                { syntax: 'x^2',           html: 'x<sup>2</sup>',        label: 'Superscript — single char' },
+                { syntax: '10^{-8}',        html: '10<sup>-8</sup>',      label: 'Superscript — braces (multi-char)' },
+                { syntax: 'e^(v - u)',      html: 'e<sup>(v - u)</sup>',  label: 'Superscript — parentheses (expression)' },
+                { syntax: 'R_L',            html: 'R<sub>L</sub>',        label: 'Subscript — single char' },
+                { syntax: 'V_{out}',        html: 'V<sub>out</sub>',      label: 'Subscript — braces (multi-char)' },
+                { syntax: 'f_(n + 1)',      html: 'f<sub>(n + 1)</sub>',  label: 'Subscript — parentheses (expression)' },
               ].map(({ syntax, html, label }) => (
                 <div key={syntax} className="flex items-center gap-3 bg-[#0d0d0d] border border-[#1e1e1e] rounded-lg px-4 py-2.5">
-                  <code className="font-['IBM_Plex_Mono'] text-[11px] text-[#aaa] w-28 flex-shrink-0">{syntax}</code>
+                  <code className="font-['IBM_Plex_Mono'] text-[11px] text-[#aaa] w-36 flex-shrink-0">{syntax}</code>
                   <span className="text-[#444] text-xs flex-shrink-0">→</span>
                   <span
-                    className="font-['IBM_Plex_Mono'] text-[11px] text-accent w-32 flex-shrink-0"
+                    className="font-['IBM_Plex_Mono'] text-[11px] text-accent w-40 flex-shrink-0"
                     dangerouslySetInnerHTML={{ __html: html }}
                   />
                   <span className="font-['Rajdhani'] text-xs text-text-muted">{label}</span>
@@ -795,8 +797,11 @@ export const FormattingGuideModal: React.FC<{ onClose: () => void }> = ({ onClos
             </div>
             <div className="mt-2 px-4 py-2.5 bg-[#0a0f0a] border border-accent/10 rounded-lg">
               <p className="text-[11px] font-['IBM_Plex_Mono'] text-[#888] leading-relaxed">
-                Use <code className="text-accent">{'{ }'}</code> braces for multi-character super/subscripts.
-                Single character after <code className="text-accent">^</code> or <code className="text-accent">_</code> works without braces.
+                Three ways to write multi-character exponents/subscripts:<br />
+                <code className="text-accent">^{'{'}-8{'}'}</code> braces &nbsp;·&nbsp;
+                <code className="text-accent">^(v - u)</code> parentheses &nbsp;·&nbsp;
+                <code className="text-accent">^2</code> single char (no delimiters needed).
+                Parentheses are kept in the rendered output, e.g. <span dangerouslySetInnerHTML={{ __html: 'e<sup>(v&nbsp;-&nbsp;u)</sup>' }} />.
               </p>
             </div>
           </section>
@@ -836,6 +841,14 @@ export const FormattingGuideModal: React.FC<{ onClose: () => void }> = ({ onClos
                 {
                   input: 'Copper = 1.7x10^{-8} ohm-meter',
                   html: 'Copper = 1.7x10<sup>-8</sup> ohm-meter'
+                },
+                {
+                  input: 'e^(v - u) — parenthesized exponent',
+                  html: 'e<sup>(v - u)</sup> — parenthesized exponent'
+                },
+                {
+                  input: 'u = ln(e^v + c)',
+                  html: 'u = ln(e<sup>v</sup> + c)'
                 },
                 {
                   input: 'V_{BE} = 0.7V for silicon BJT',
