@@ -51,6 +51,10 @@ contextBridge.exposeInMainWorld('electron', {
     getDueBySubject: () => ipcRenderer.invoke('data:getDueBySubject'),
     recordCardResult: (payload: { cardId: string; isCorrect: boolean }) =>
       ipcRenderer.invoke('data:recordCardResult', payload),
+    saveExamSession: (payload: any) => ipcRenderer.invoke('data:saveExamSession', payload),
+    getExamSessions: (limit?: number) => ipcRenderer.invoke('data:getExamSessions', limit),
+    deleteExamSession: (id: string) => ipcRenderer.invoke('data:deleteExamSession', id),
+    clearExamSessions: () => ipcRenderer.invoke('data:clearExamSessions'),
   },
   file: {
     import: (filePath?: string) => ipcRenderer.invoke('file:import', filePath),

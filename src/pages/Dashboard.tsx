@@ -5,7 +5,7 @@ import { getSubjectBadgeClasses } from '../lib/subjectColors'
 import { dbService, AccuracyGranularity, AccuracySubject } from '../services/db.service'
 import { motion, AnimatePresence } from 'framer-motion'
 
-import { ReviewHeatmap, ExamCountdown, AccuracyChart } from '../components/dashboard'
+import { ReviewHeatmap, ExamCountdown, AccuracyChart, SessionHistory } from '../components/dashboard'
 import { SUBJECT_MAP, SUBJECT_LINE_COLOR } from '../lib/dashboardUtils'
 
 // ── Components ──────────────────────────────────────────────────────────────
@@ -589,6 +589,11 @@ export default function Dashboard() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Row 3: Learn & Test Session History */}
+      <div className="shrink-0">
+        <SessionHistory onSessionUpdated={loadDashboardData} />
       </div>
 
     </div>

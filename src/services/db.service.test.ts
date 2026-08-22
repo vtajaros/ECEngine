@@ -382,3 +382,70 @@ describe('dbService.clearAllData', () => {
     await expect(dbService.clearAllData()).rejects.toThrow('Locked')
   })
 })
+
+// ─── exam sessions ────────────────────────────────────────────────────────────
+
+describe('dbService exam session methods', () => {
+  it('saveExamSession calls IPC and returns id', async () => {
+    mockElectron.data.saveExamSession = vi.fn().mockResolvedValue({
+      success: true,
+      data: { id: 'sess-123' },
+    })
+
+    const res = await dbService.saveExamSession({
+      topicId: 'topic-1',
+      mode: 'learn',
+      score: 18,
+      total: 20,
+      answers: JSON.stringify({ deckTitle: 'Sample Deck', subject: 'MATH', correctFirstTry: 18 }),
+    })
+
+    expect(res.id).toBe('sess-123')
+    expect(mockElectron.data.saveExamSession).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mode: 'learn',
+        score: 18,
+        total: 20,
+      })
+    )
+  })
+
+  it('getExamSessions parses answers JSON and formats records', async () => {
+    mockElectron.data.getExamSessions = vi.fn().mockResolvedValue({
+      success: true,
+      data: [
+        {
+          id: 'sess-1',
+          topic_id: 'topic-1',
+          mode: 'learn',
+          started_at: '2026-08-22T10:00:00.000Z',
+          finished_at: '2026-08-22T10:15:00.000Z',
+          score: 15,
+          total: 20,
+          answers: JSON.stringify({ deckTitle: 'Calculus Deck', subject: 'MATH', correctFirstTry: 15 }),
+          topic_name: 'Calculus Topic',
+          topic_subject: 'MATH',
+        },
+      ],
+    })
+
+    const sessions = await dbService.getExamSessions(50)
+    expect(sessions.length).toBe(1)
+    expect(sessions[0].score).toBe(15)
+    expect(sessions[0].total).toBe(20)
+    expect(sessions[0].metadata?.deckTitle).toBe('Calculus Deck')
+    expect(sessions[0].topicName).toBe('Calculus Topic')
+  })
+
+  it('deleteExamSession calls IPC and resolves', async () => {
+    mockElectron.data.deleteExamSession = vi.fn().mockResolvedValue({ success: true })
+    await expect(dbService.deleteExamSession('sess-1')).resolves.toBeUndefined()
+    expect(mockElectron.data.deleteExamSession).toHaveBeenCalledWith('sess-1')
+  })
+
+  it('clearExamSessions calls IPC and resolves', async () => {
+    mockElectron.data.clearExamSessions = vi.fn().mockResolvedValue({ success: true })
+    await expect(dbService.clearExamSessions()).resolves.toBeUndefined()
+  })
+})
+

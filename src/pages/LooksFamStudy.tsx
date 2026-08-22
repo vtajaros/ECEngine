@@ -879,7 +879,25 @@ export default function LooksFamStudy() {
           title={activeSessionTitle}
           ttsEnabled={learnSettings.ttsEnabled}
           onComplete={(stats) => {
-            console.log('Learn Mode Stats:', stats)
+            const currentSet = allSets.find(s => s.id === activeSessionSetId)
+            const deckTitle = activeSessionTitle || currentSet?.title || 'LooksFam Deck'
+            const subject = currentSet?.subject || (activeSubject !== 'ALL' ? activeSubject : 'ELECS')
+            const total = currentDeck.length || (stats.correct + stats.wrong)
+            dbService.saveExamSession({
+              topicId: activeSessionSetId?.startsWith('topic_') ? activeSessionSetId : null,
+              mode: 'learn',
+              score: stats.correct, // First-try correct score
+              total,
+              answers: JSON.stringify({
+                deckTitle,
+                subject,
+                correctFirstTry: stats.correct,
+                wrongFirstTry: stats.wrong,
+                bookmarkedCount: stats.bookmarked,
+              })
+            }).catch(err => {
+              console.error('Failed to save learn session:', err)
+            })
           }}
           onExit={() => {
             if (blocker.state === 'blocked') blocker.reset()
@@ -899,7 +917,24 @@ export default function LooksFamStudy() {
           title={activeSessionTitle}
           settings={testSettings}
           onComplete={(stats) => {
-            console.log('Test Mode Stats:', stats)
+            const currentSet = allSets.find(s => s.id === activeSessionSetId)
+            const deckTitle = activeSessionTitle || currentSet?.title || 'LooksFam Deck'
+            const subject = currentSet?.subject || (activeSubject !== 'ALL' ? activeSubject : 'ELECS')
+            dbService.saveExamSession({
+              topicId: activeSessionSetId?.startsWith('topic_') ? activeSessionSetId : null,
+              mode: 'test',
+              score: stats.score,
+              total: stats.total,
+              answers: JSON.stringify({
+                deckTitle,
+                subject,
+                score: stats.score,
+                total: stats.total,
+                bookmarkedCount: stats.bookmarked,
+              })
+            }).catch(err => {
+              console.error('Failed to save test session:', err)
+            })
           }}
           onExit={() => {
             if (blocker.state === 'blocked') blocker.reset()

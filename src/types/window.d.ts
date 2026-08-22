@@ -78,6 +78,19 @@ declare global {
         getCardsWithProgress: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
         /** Write MCQ correctness without touching SM-2 fields. Safe to call for native MCQ cards only. */
         recordCardResult: (payload: { cardId: string, isCorrect: boolean, lastReviewed: string }) => Promise<{ success: boolean; error?: string }>
+        saveExamSession: (payload: {
+          id?: string
+          topicId?: string | null
+          mode: string
+          startedAt?: string | number
+          finishedAt?: string | number
+          score: number
+          total: number
+          answers?: string
+        }) => Promise<{ success: boolean; data?: { id: string }; error?: string }>
+        getExamSessions: (limit?: number) => Promise<{ success: boolean; data?: any[]; error?: string }>
+        deleteExamSession: (id: string) => Promise<{ success: boolean; error?: string }>
+        clearExamSessions: () => Promise<{ success: boolean; error?: string }>
       }
       file: {
         import: (filePath?: string) => Promise<{ success: boolean; data?: string; canceled?: boolean; error?: string }>

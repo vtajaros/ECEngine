@@ -201,4 +201,79 @@ export function registerProgressHandlers(): void {
       return { success: false, error: (error as Error).message }
     }
   })
+
+  const SaveExamSessionSchema = z.object({
+    id: z.string().optional(),
+    topicId: z.string().nullable().optional(),
+    mode: z.string(),
+    startedAt: z.union([z.string(), z.number()]).optional(),
+    finishedAt: z.union([z.string(), z.number()]).optional(),
+    score: z.number(),
+    total: z.number(),
+    answers: z.string().optional(),
+  })
+
+  ipcMain.handle('data:saveExamSession', async (_, payload: unknown) => {
+    try {
+      const parsed = SaveExamSessionSchema.parse(payload)
+      const id = parsed.id || `sess_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+      const startedAt = parsed.startedAt != null ? String(parsed.startedAt) : new Date().toISOString()
+      const finishedAt = parsed.finishedAt != null ? String(parsed.finishedAt) : new Date().toISOString()
+      const topicId = parsed.topicId || null
+      const answers = parsed.answers || '{}'
+
+      const sql = `
+        INSERT INTO exam_sessions (id, topic_id, mode, started_at, finished_at, score, total, answers)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          topic_id = excluded.topic_id,
+          mode = excluded.mode,
+          started_at = excluded.started_at,
+          finished_at = excluded.finished_at,
+          score = excluded.score,
+          total = excluded.total,
+          answers = excluded.answers
+      `
+      execute(sql, [id, topicId, parsed.mode, startedAt, finishedAt, parsed.score, parsed.total, answers])
+      return { success: true, data: { id } }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('data:getExamSessions', async (_, limit: number = 100) => {
+    try {
+      const sql = `
+        SELECT e.id, e.topic_id, e.mode, e.started_at, e.finished_at, e.score, e.total, e.answers,
+               t.name as topic_name, t.subject as topic_subject
+        FROM exam_sessions e
+        LEFT JOIN topics t ON e.topic_id = t.id
+        ORDER BY COALESCE(e.finished_at, e.started_at) DESC
+        LIMIT ?
+      `
+      const rows = queryAll(sql, [limit])
+      return { success: true, data: rows }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('data:deleteExamSession', async (_, id: string) => {
+    try {
+      execute('DELETE FROM exam_sessions WHERE id = ?', [id])
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('data:clearExamSessions', async () => {
+    try {
+      execute('DELETE FROM exam_sessions')
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
 }
+

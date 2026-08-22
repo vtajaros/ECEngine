@@ -439,7 +439,58 @@ export const dbService = {
     await dbService.recordActivity(isCorrect)
   },
 
+  saveExamSession: async (session: {
+    id?: string
+    topicId?: string | null
+    mode: 'learn' | 'test' | 'exam' | string
+    startedAt?: string | number
+    finishedAt?: string | number
+    score: number
+    total: number
+    answers?: string
+  }): Promise<{ id: string }> => {
+    const result = await window.electron.data.saveExamSession(session)
+    if (!result.success) throw new Error(result.error ?? 'Failed to save exam session')
+    return result.data ?? { id: '' }
+  },
 
+  getExamSessions: async (limit: number = 100): Promise<ExamSessionRecord[]> => {
+    const result = await window.electron.data.getExamSessions(limit)
+    if (!result.success) throw new Error(result.error ?? 'Failed to get exam sessions')
+    return (result.data || []).map((row: any) => {
+      let parsedMetadata: Record<string, any> = {}
+      if (row.answers) {
+        try {
+          parsedMetadata = typeof row.answers === 'string' ? JSON.parse(row.answers) : row.answers
+        } catch {
+          parsedMetadata = {}
+        }
+      }
+      return {
+        id: row.id,
+        topicId: row.topic_id,
+        topicName: row.topic_name || parsedMetadata.deckTitle || null,
+        topicSubject: row.topic_subject || parsedMetadata.subject || null,
+        mode: row.mode,
+        startedAt: String(row.started_at || ''),
+        finishedAt: String(row.finished_at || ''),
+        score: Number(row.score ?? 0),
+        total: Number(row.total ?? 0),
+        answers: row.answers,
+        metadata: parsedMetadata,
+      }
+    })
+  },
+
+  deleteExamSession: async (id: string): Promise<void> => {
+    const result = await window.electron.data.deleteExamSession(id)
+    if (!result.success) throw new Error(result.error ?? 'Failed to delete exam session')
+  },
+
+  clearExamSessions: async (): Promise<void> => {
+    const result = await window.electron.data.clearExamSessions()
+    if (!result.success) throw new Error(result.error ?? 'Failed to clear exam sessions')
+  },
 
   updateFolderOrder: async (
     folderOrders: Array<{ folderName: string; orderIndex: number }>
@@ -453,4 +504,27 @@ export const dbService = {
     }
   },
 }
+
+export interface ExamSessionRecord {
+  id: string
+  topicId: string | null
+  topicName?: string | null
+  topicSubject?: string | null
+  mode: 'learn' | 'test' | 'exam' | string
+  startedAt: string
+  finishedAt: string
+  score: number
+  total: number
+  answers?: string | null
+  metadata?: {
+    deckTitle?: string
+    subject?: string
+    correctFirstTry?: number
+    wrongFirstTry?: number
+    bookmarkedCount?: number
+    timeSpentSeconds?: number
+    [key: string]: any
+  }
+}
+
 
