@@ -55,6 +55,184 @@ interface StudySet {
 // In-memory cache to prevent layout pop-in on re-navigation
 let studySetsCache: StudySet[] | null = null
 
+// ── Memoized deck card for LooksFam ──────────────────────────────────────────
+// Extracted from the inline .map() so React.memo can skip re-renders when only
+// an unrelated deck's bookmarkCount changes.
+interface LooksFamCardProps {
+  set: StudySet
+  bookmarkCount: number
+  onLearn: (id: string) => void
+  onTest: (id: string) => void
+  onBookmark: (set: StudySet) => void
+  onPrint: (id: string, title: string) => void
+  onEdit: (id: string) => void
+  onDelete: (set: StudySet) => void
+}
+
+const LooksFamCard = React.memo(function LooksFamCard({
+  set,
+  bookmarkCount,
+  onLearn,
+  onTest,
+  onBookmark,
+  onPrint,
+  onEdit,
+  onDelete,
+}: LooksFamCardProps) {
+  return (
+    <div
+      className="relative isolate group transition-all duration-300 border border-[#333] bg-surface p-5 flex flex-col w-full min-h-[180px] justify-between hover:-translate-x-[6px] hover:-translate-y-[6px] rounded-xl before:absolute before:w-full before:h-full before:top-0 before:left-0 before:bg-surface before:border before:border-[#333] before:rounded-xl before:translate-x-[6px] before:translate-y-[6px] before:z-[-1] before:transition-transform before:duration-300 group-hover:before:translate-x-[12px] group-hover:before:translate-y-[12px] after:absolute after:w-full after:h-full after:top-0 after:left-0 after:bg-surface after:border after:border-[#333] after:rounded-xl after:translate-x-[12px] after:translate-y-[12px] after:z-[-2] after:transition-transform after:duration-300 group-hover:after:translate-x-[18px] group-hover:after:translate-y-[18px]"
+    >
+      <div className="flex justify-between items-start gap-4">
+        {/* Left Column: Title & Tags */}
+        <div className="flex-1 min-w-0 flex flex-col gap-3">
+          {/* Title Row */}
+          <div className="flex items-center gap-3">
+            <span className={`w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] uppercase font-rajdhani font-bold tracking-widest text-[10px] shrink-0 ${getSubjectBadgeClasses(set.subject)}`}>
+              {set.subject}
+            </span>
+            <h3 className="text-2xl font-bold font-rajdhani tracking-wide text-text-primary uppercase truncate flex-1">
+              {set.title}
+            </h3>
+          </div>
+          {/* Tag Row: Type & Custom Tags */}
+          <div className="flex flex-wrap items-center gap-2 mt-0.5">
+            <span className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]">
+              {set.deckType === 'mixed' ? 'MIX' : set.deckType === 'mcq' ? 'MCQ' : 'FC'}
+            </span>
+            {set.tags && set.tags.length > 0 && set.tags.map(tag => (
+              <span
+                key={tag}
+                className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Right Column: Administrative Info */}
+        <div className="flex flex-col items-end gap-1.5 shrink-0">
+          <span className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px] shrink-0 whitespace-nowrap">
+            {set.count} ITEMS
+          </span>
+          <span className="text-[10px] text-gray-400 uppercase font-['IBM_Plex_Mono'] tracking-widest">
+            {set.createdAt ? new Date(set.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
+          </span>
+        </div>
+      </div>
+
+      {/* Deck Description */}
+      {set.description && set.description.trim() !== "" && (
+        <p className="text-xs text-gray-400 font-['IBM_Plex_Mono'] leading-relaxed mt-2 line-clamp-2 uppercase pr-4">
+          {set.description}
+        </p>
+      )}
+
+      {/* Bottom Row: Progress and Actions */}
+      <div className="flex items-center gap-4 w-full mt-4">
+        <span className="text-[10px] font-rajdhani tracking-widest uppercase text-gray-500 shrink-0">
+          Mastery
+        </span>
+
+        {/* Fix 2: plain CSS transition instead of motion.div — no JS animation loop on mount */}
+        <div className="flex-1 bg-[#111] h-1 rounded-full overflow-hidden min-w-[40px]">
+          <div
+            className="h-full bg-accent shadow-[0_0_8px_rgba(0,255,65,0.4)] transition-all duration-500"
+            style={{ width: `${set.mastery}%` }}
+          />
+        </div>
+
+        <span className="text-accent font-bold text-[10px] font-rajdhani shrink-0">
+          {set.mastery}%
+        </span>
+
+        <div className="h-4 w-px bg-slate-800 shrink-0" />
+
+        <div className="flex items-center gap-2 shrink-0">
+          <Tooltip content="Learn Mode" position="top">
+            <button
+              onClick={(e) => { e.stopPropagation(); onLearn(set.id); }}
+              className="py-2 px-3 bg-[#111] border border-[#333] hover:border-accent hover:text-accent text-text-primary rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+              aria-label="Learn"
+            >
+              <Play className="w-3 h-3" />
+              <span>Learn</span>
+            </button>
+          </Tooltip>
+
+          <Tooltip content="Test Mode" position="top">
+            <button
+              onClick={(e) => { e.stopPropagation(); onTest(set.id); }}
+              className="py-2 px-3 bg-[#111] border border-[#333] hover:border-accent hover:text-accent text-text-primary rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
+              aria-label="Test"
+            >
+              <Trophy className="w-3 h-3" />
+              <span>Test</span>
+            </button>
+          </Tooltip>
+
+          {/* Bookmark button — only shown when this deck has bookmarked items */}
+          {bookmarkCount > 0 && (
+            <Tooltip content={`Bookmarked Items (${bookmarkCount})`} position="top">
+              <button
+                onClick={(e) => { e.stopPropagation(); onBookmark(set) }}
+                className="p-2 bg-[#111] border border-accent/30 text-accent hover:border-accent hover:bg-accent/10 rounded transition-colors relative"
+                aria-label="Bookmarked Items"
+              >
+                <Bookmark className="w-4 h-4 fill-accent" />
+                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-accent text-black font-['IBM_Plex_Mono'] text-[9px] font-bold flex items-center justify-center">
+                  {bookmarkCount > 9 ? '9+' : bookmarkCount}
+                </span>
+              </button>
+            </Tooltip>
+          )}
+
+          {set.id.startsWith('topic_') && (
+            <Tooltip content="Test Paper View" position="top">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onPrint(set.id, set.title)
+                }}
+                className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
+                aria-label="Test Paper View"
+              >
+                <ScrollText className="w-4 h-4" />
+              </button>
+            </Tooltip>
+          )}
+
+          <Tooltip content="Edit Deck" position="top">
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                onEdit(set.id)
+              }}
+              className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
+              aria-label="Edit Deck"
+            >
+              <Pencil className="w-4 h-4" />
+            </button>
+          </Tooltip>
+
+          {set.id !== 'set-1' && (
+            <Tooltip content="Delete Deck" position="top">
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete(set); }}
+                className="p-2 bg-[#111] border border-[#333] hover:border-red-500/50 text-gray-500 hover:text-red-500 rounded transition-colors"
+                aria-label="Delete Deck"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </Tooltip>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+})
+
 export default function LooksFamStudy() {
   const navigate = useNavigate()
 
@@ -160,18 +338,27 @@ export default function LooksFamStudy() {
         return next;
       })
 
-      // ── Background: load card IDs for all topics so we can show bookmark counts ──
-      // Fire all in parallel; only store IDs (not full data) to keep it cheap.
-      dbSets.forEach(async (s) => {
-        if (!s.id.startsWith('topic_')) return
-        try {
-          const res = await window.electron.data.getCards(s.id)
-          const rows: any[] = res?.data || []
-          if (rows.length > 0) {
-            setTopicCardIds(prev => ({ ...prev, [s.id]: rows.map((c: any) => c.id) }))
-          }
-        } catch { /* non-fatal */ }
-      })
+      // ── Background: load card IDs for topics that actually have bookmarks ──
+      // Fix 1: skip ALL IPC calls when the user has no bookmarks — the common
+      // case — eliminating the N-render storm that caused the clunky transition.
+      const existingBookmarks = readBookmarks()
+      if (existingBookmarks.size > 0) {
+        dbSets.forEach(async (s) => {
+          if (!s.id.startsWith('topic_')) return
+          try {
+            const res = await window.electron.data.getCards(s.id)
+            const rows: any[] = res?.data || []
+            if (rows.length > 0) {
+              const ids = rows.map((c: any) => c.id as string)
+              // Only trigger a re-render if this deck actually has bookmarked cards
+              const hasBookmark = ids.some(id => existingBookmarks.has(id))
+              if (hasBookmark) {
+                setTopicCardIds(prev => ({ ...prev, [s.id]: ids }))
+              }
+            }
+          } catch { /* non-fatal */ }
+        })
+      }
     } catch (err) {
       console.error('Failed to load DB sets', err)
     } finally {
@@ -405,6 +592,17 @@ export default function LooksFamStudy() {
     navigate(to)
   }
 
+  // Stable callbacks for LooksFamCard — inline arrows recreated each render defeat React.memo,
+  // so we memoize these with useCallback so the child can actually skip re-renders.
+  const handleCardPrint = React.useCallback((id: string, title: string) => {
+    window.electron.print.open(id, title)
+  }, [])
+
+  const handleCardEdit = React.useCallback((id: string) => {
+    sessionStorage.setItem('ecengine:returnScroll:/study', String(window.scrollY))
+    safeNavigate(`/edit-deck/${id}?returnTo=/study`)
+  }, [safeNavigate])
+
   // Pre-Learn Settings Modal State
   const [showSettingsModal, setShowSettingsModal] = useState<{ isOpen: boolean; setId: string | null }>({ isOpen: false, setId: null })
   const [learnSettings, setLearnSettings] = useState<LearnSettings>({
@@ -431,14 +629,14 @@ export default function LooksFamStudy() {
   })
 
   // Open learn settings
-  const handleOpenLearn = (setId: string) => {
+  const handleOpenLearn = React.useCallback((setId: string) => {
     setShowSettingsModal({ isOpen: true, setId })
-  }
+  }, [])
 
   // Open test settings
-  const handleOpenTest = (setId: string) => {
+  const handleOpenTest = React.useCallback((setId: string) => {
     setShowTestModal({ isOpen: true, setId })
-  }
+  }, [])
 
   // Helper to build MCQs out of flashcards dynamically for the Learn/Test view
   const generateMCQs = (flashcards: any[]) => {
@@ -1002,162 +1200,20 @@ export default function LooksFamStudy() {
           <div className="flex-1 px-6 pb-6">
             <div className="flex flex-col items-center">
               <div className="w-full max-w-5xl">
+                {/* Fix 3: memoized card component — only re-renders if its own props changed */}
                 <DeckGrid>
                   {filteredAndSortedSets.map(set => (
-                    <div
+                    <LooksFamCard
                       key={set.id}
-                      className="relative isolate group transition-all duration-300 border border-[#333] bg-surface p-5 flex flex-col w-full min-h-[180px] justify-between hover:-translate-x-[6px] hover:-translate-y-[6px] rounded-xl before:absolute before:w-full before:h-full before:top-0 before:left-0 before:bg-surface before:border before:border-[#333] before:rounded-xl before:translate-x-[6px] before:translate-y-[6px] before:z-[-1] before:transition-transform before:duration-300 group-hover:before:translate-x-[12px] group-hover:before:translate-y-[12px] after:absolute after:w-full after:h-full after:top-0 after:left-0 after:bg-surface after:border after:border-[#333] after:rounded-xl after:translate-x-[12px] after:translate-y-[12px] after:z-[-2] after:transition-transform after:duration-300 group-hover:after:translate-x-[18px] group-hover:after:translate-y-[18px]"
-                    >
-                      <div className="flex justify-between items-start gap-4">
-                        {/* Left Column: Title & Tags */}
-                        <div className="flex-1 min-w-0 flex flex-col gap-3">
-                          {/* Title Row */}
-                          <div className="flex items-center gap-3">
-                            <span className={`w-[58px] flex justify-center py-0.5 rounded border border-[#333] bg-[#111] uppercase font-rajdhani font-bold tracking-widest text-[10px] shrink-0 ${getSubjectBadgeClasses(set.subject)}`}>
-                              {set.subject}
-                            </span>
-                            <h3 className="text-2xl font-bold font-rajdhani tracking-wide text-text-primary uppercase truncate flex-1">
-                              {set.title}
-                            </h3>
-                          </div>
-                          {/* Tag Row: Type & Custom Tags (Aligned with Date) */}
-                          <div className="flex flex-wrap items-center gap-2 mt-0.5">
-                            <span className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]">
-                              {set.deckType === 'mixed' ? 'MIX' : set.deckType === 'mcq' ? 'MCQ' : 'FC'}
-                            </span>
-                            {set.tags && set.tags.length > 0 && set.tags.map(tag => (
-                              <span
-                                key={tag}
-                                className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px]"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Right Column: Administrative Info */}
-                        <div className="flex flex-col items-end gap-1.5 shrink-0">
-                          {/* Items Tag */}
-                          <span className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px] shrink-0 whitespace-nowrap">
-                            {set.count} ITEMS
-                          </span>
-                          {/* Date String */}
-                          <span className="text-[10px] text-gray-400 uppercase font-['IBM_Plex_Mono'] tracking-widest">
-                            {set.createdAt ? new Date(set.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Deck Description */}
-                      {set.description && set.description.trim() !== "" && (
-                        <p className="text-xs text-gray-400 font-['IBM_Plex_Mono'] leading-relaxed mt-2 line-clamp-2 uppercase pr-4">
-                          {set.description}
-                        </p>
-                      )}
-
-                      {/* Bottom Row: Progress and Actions */}
-                      <div className="flex items-center gap-4 w-full mt-4">
-                        <span className="text-[10px] font-rajdhani tracking-widest uppercase text-gray-500 shrink-0">
-                          Mastery
-                        </span>
-
-                        <div className="flex-1 bg-[#111] h-1 rounded-full overflow-hidden min-w-[40px]">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${set.mastery}%` }}
-                            className="h-full bg-accent shadow-[0_0_8px_rgba(0,255,65,0.4)]"
-                          />
-                        </div>
-
-                        <span className="text-accent font-bold text-[10px] font-rajdhani shrink-0">
-                          {set.mastery}%
-                        </span>
-
-                        <div className="h-4 w-px bg-slate-800 shrink-0" />
-
-                        <div className="flex items-center gap-2 shrink-0">
-                          <Tooltip content="Learn Mode" position="top">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleOpenLearn(set.id); }}
-                              className="py-2 px-3 bg-[#111] border border-[#333] hover:border-accent hover:text-accent text-text-primary rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
-                              aria-label="Learn"
-                            >
-                              <Play className="w-3 h-3" />
-                              <span>Learn</span>
-                            </button>
-                          </Tooltip>
-
-                          <Tooltip content="Test Mode" position="top">
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleOpenTest(set.id); }}
-                              className="py-2 px-3 bg-[#111] border border-[#333] hover:border-accent hover:text-accent text-text-primary rounded transition-colors font-rajdhani tracking-widest uppercase text-xs font-bold flex items-center justify-center gap-2"
-                              aria-label="Test"
-                            >
-                              <Trophy className="w-3 h-3" />
-                              <span>Test</span>
-                            </button>
-                          </Tooltip>
-
-                          {/* Bookmark button — only shown when this deck has bookmarked items */}
-                          {(bookmarksPerTopic[set.id] ?? 0) > 0 && (
-                            <Tooltip content={`Bookmarked Items (${bookmarksPerTopic[set.id]})`} position="top">
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setBookmarkModalDeck(set) }}
-                                className="p-2 bg-[#111] border border-accent/30 text-accent hover:border-accent hover:bg-accent/10 rounded transition-colors relative"
-                                aria-label="Bookmarked Items"
-                              >
-                                <Bookmark className="w-4 h-4 fill-accent" />
-                                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-accent text-black font-['IBM_Plex_Mono'] text-[9px] font-bold flex items-center justify-center">
-                                  {bookmarksPerTopic[set.id] > 9 ? '9+' : bookmarksPerTopic[set.id]}
-                                </span>
-                              </button>
-                            </Tooltip>
-                          )}
-
-                          {set.id.startsWith('topic_') && (
-                            <Tooltip content="Test Paper View" position="top">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  window.electron.print.open(set.id, set.title)
-                                }}
-                                className="p-2 bg-[#111] border border-[#333] hover:border-[var(--accent-primary)] hover:text-[var(--accent-primary)] text-gray-400 rounded transition-colors"
-                                aria-label="Test Paper View"
-                              >
-                                <ScrollText className="w-4 h-4" />
-                              </button>
-                            </Tooltip>
-                          )}
-
-                          <Tooltip content="Edit Deck" position="top">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                sessionStorage.setItem('ecengine:returnScroll:/study', String(window.scrollY))
-                                safeNavigate(`/edit-deck/${set.id}?returnTo=/study`)
-                              }}
-                              className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
-                              aria-label="Edit Deck"
-                            >
-                              <Pencil className="w-4 h-4" />
-                            </button>
-                          </Tooltip>
-
-                          {set.id !== 'set-1' && (
-                            <Tooltip content="Delete Deck" position="top">
-                              <button
-                                onClick={(e) => { e.stopPropagation(); setSetToDelete(set); }}
-                                className="p-2 bg-[#111] border border-[#333] hover:border-red-500/50 text-gray-500 hover:text-red-500 rounded transition-colors"
-                                aria-label="Delete Deck"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </Tooltip>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                      set={set}
+                      bookmarkCount={bookmarksPerTopic[set.id] ?? 0}
+                      onLearn={handleOpenLearn}
+                      onTest={handleOpenTest}
+                      onBookmark={setBookmarkModalDeck}
+                      onPrint={handleCardPrint}
+                      onEdit={handleCardEdit}
+                      onDelete={setSetToDelete}
+                    />
                   ))}
                 </DeckGrid>
 
