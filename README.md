@@ -322,22 +322,119 @@ ecengine/
 
 ### 🔊 Linux TTS Setup (Optional)
 
-On Windows and macOS, ECEngine uses the operating system's built-in Web Speech API with zero configuration. On Linux, neural voice synthesis is powered by [Piper](https://github.com/rhasspy/piper):
+On Windows and macOS, ECEngine uses the operating system's built-in Web Speech API with zero configuration. On Linux, fast, high-quality neural voice synthesis is powered by [Piper](https://github.com/rhasspy/piper) and ALSA (`aplay`).
 
-1. **Install Piper**:
-   ```bash
-   # Arch Linux (AUR)
-   yay -S piper-tts-bin
+#### 1. Install Piper & Audio Tools by Distro
 
-   # Debian/Ubuntu
-   # Download the latest binary release from https://github.com/rhasspy/piper/releases
-   ```
-2. **Download an ONNX voice model**:
-   * Visit [Piper HuggingFace Voices](https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_US)
-   * Download both the `.onnx` and matching `.onnx.json` model files (recommended: `en_US-ryan-medium.onnx` or `en_US-amy-medium.onnx`).
-3. **Configure in ECEngine**:
-   * Navigate to **Settings** → **Sound & Feedback** → **Reading Voice (Piper TTS)**.
-   * Click **Browse** and select your downloaded `.onnx` file. ECEngine will automatically verify the companion `.onnx.json` file and enable neural voice playback.
+Choose the method that matches your Linux distribution:
+
+<details open>
+<summary><b>Ubuntu / Debian / Linux Mint / Pop!_OS / Zorin OS</b></summary>
+
+```bash
+# 1. Install audio utility dependencies
+sudo apt update && sudo apt install -y alsa-utils wget tar
+
+# 2. Download and install precompiled Piper binary
+wget https://github.com/rhasspy/piper/releases/latest/download/piper_linux_x86_64.tar.gz
+tar -xzf piper_linux_x86_64.tar.gz
+sudo cp -r piper/* /usr/local/
+rm -rf piper piper_linux_x86_64.tar.gz
+```
+
+*Alternative via pipx:*
+```bash
+sudo apt install -y pipx alsa-utils
+pipx install piper-tts
+pipx ensurepath
+```
+</details>
+
+<details open>
+<summary><b>Fedora / RHEL / Nobara / Rocky Linux / AlmaLinux</b></summary>
+
+```bash
+# 1. Install audio utility dependencies
+sudo dnf install -y alsa-utils wget tar
+
+# 2. Download and install precompiled Piper binary
+wget https://github.com/rhasspy/piper/releases/latest/download/piper_linux_x86_64.tar.gz
+tar -xzf piper_linux_x86_64.tar.gz
+sudo cp -r piper/* /usr/local/
+rm -rf piper piper_linux_x86_64.tar.gz
+```
+
+*Alternative via pipx:*
+```bash
+sudo dnf install -y pipx alsa-utils
+pipx install piper-tts
+pipx ensurepath
+```
+</details>
+
+<details open>
+<summary><b>Arch Linux / Manjaro / EndeavourOS</b></summary>
+
+```bash
+# Install via AUR helper (yay or paru)
+yay -S piper-tts-bin alsa-utils
+# or: paru -S piper-tts-bin alsa-utils
+```
+</details>
+
+<details>
+<summary><b>openSUSE (Tumbleweed / Leap)</b></summary>
+
+```bash
+# 1. Install audio utility dependencies
+sudo zypper install -y alsa-utils wget tar
+
+# 2. Download and install precompiled Piper binary
+wget https://github.com/rhasspy/piper/releases/latest/download/piper_linux_x86_64.tar.gz
+tar -xzf piper_linux_x86_64.tar.gz
+sudo cp -r piper/* /usr/local/
+rm -rf piper piper_linux_x86_64.tar.gz
+```
+</details>
+
+<details>
+<summary><b>Universal (Any Distro via Python pipx)</b></summary>
+
+```bash
+# Install pipx from your system package manager, then:
+pipx install piper-tts
+pipx ensurepath
+```
+</details>
+
+---
+
+#### 2. Download ONNX Voice Models
+
+Piper requires an `.onnx` voice model and its matching `.onnx.json` configuration file. ECEngine automatically scans `~/.local/share/piper-voices/` on startup.
+
+Run the following commands to create the directory and download the recommended natural voice (**Ryan - Medium**):
+
+```bash
+mkdir -p ~/.local/share/piper-voices && cd ~/.local/share/piper-voices
+
+# Download Ryan Medium (recommended)
+wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/medium/en_US-ryan-medium.onnx
+wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/medium/en_US-ryan-medium.onnx.json
+```
+
+> 💡 **Want other voices?** Browse additional English and international voices on the [Piper HuggingFace Voice Library](https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_US) (e.g. `amy`, `lessac`, `danny`, `bryce`). Simply download both the `.onnx` and `.onnx.json` files into `~/.local/share/piper-voices/`.
+
+---
+
+#### 3. Configuration & Verification
+
+* **Automatic Detection**: If you downloaded the voice model into `~/.local/share/piper-voices/`, ECEngine detects and selects it automatically upon startup.
+* **Manual Model Selection**: You can also browse for any `.onnx` file in **Settings** → **Sound & Feedback** → **Reading Voice (Piper TTS)** → **Browse**.
+* **Quick CLI Verification**: Test your installation directly in the terminal:
+  ```bash
+  echo "ECEngine neural text-to-speech is ready." | piper --model ~/.local/share/piper-voices/en_US-ryan-medium.onnx --output_file - | aplay
+  ```
 
 ---
 
@@ -365,5 +462,5 @@ On Windows and macOS, ECEngine uses the operating system's built-in Web Speech A
 ---
 
 <div align="center">
-  <i>Engineered for the Filipino Electronics Engineers of 2026. Non sibi sed aliis.</i>
+  <i>Engineered for the Filipino Electronics Engineers.</i>
 </div>
