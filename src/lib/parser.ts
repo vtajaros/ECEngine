@@ -107,6 +107,60 @@ const ANSWER_LABEL_TO_INDEX: Record<string, number> = {
   A: 0, B: 1, C: 2, D: 3, E: 4,
 }
 
+interface ParsedLine {
+  text: string
+  lineNum: number
+}
+
+interface RawBlock {
+  index: number
+  lines: ParsedLine[]
+  startLine: number
+}
+
+function splitIntoNumberedBlocks(rawText: string): RawBlock[] {
+  const normalized = rawText
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+
+  const allLines = normalized.split('\n')
+  const blocks: RawBlock[] = []
+  let currentBlockLines: ParsedLine[] = []
+  let currentStartLine = 0
+
+  for (let i = 0; i < allLines.length; i++) {
+    const rawLine = allLines[i]
+    const trimmed = rawLine.trim()
+    const lineNum = i + 1
+
+    if (trimmed.length === 0) {
+      if (currentBlockLines.length > 0) {
+        blocks.push({
+          index: blocks.length,
+          lines: currentBlockLines,
+          startLine: currentStartLine,
+        })
+        currentBlockLines = []
+      }
+    } else {
+      if (currentBlockLines.length === 0) {
+        currentStartLine = lineNum
+      }
+      currentBlockLines.push({ text: trimmed, lineNum })
+    }
+  }
+
+  if (currentBlockLines.length > 0) {
+    blocks.push({
+      index: blocks.length,
+      lines: currentBlockLines,
+      startLine: currentStartLine,
+    })
+  }
+
+  return blocks
+}
+
 export function parseImportedMCQs(rawText: string): {
   cards: any[],
   warnings: string[]
@@ -114,49 +168,39 @@ export function parseImportedMCQs(rawText: string): {
   const warnings: string[] = []
   const cards: any[] = []
 
-  // Step 1: normalize all line endings
-  const normalized = rawText
-    .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n')
+  const blocks = splitIntoNumberedBlocks(rawText)
 
-  // Step 2: split into blocks by blank lines
-  const blocks = normalized
-    .split(/\n\s*\n/)
-    .map(b => b.trim())
-    .filter(b => b.length > 0)
-
-  // Step 3: parse each block
-  blocks.forEach((block, index) => {
-    const lines = block
-      .split('\n')
-      .map(l => l.trim())
-      .filter(l => l.length > 0)
+  blocks.forEach((block) => {
+    const lines = block.lines
 
     // ── Extract question (Q:) ────────────────────────────────
     // Q: may span multiple consecutive lines before the first choice label.
     // We collect all lines until we hit a choice or ANS line.
-    const firstChoiceIdx = lines.findIndex(l => CHOICE_LINE_RE.test(l))
-    const ansLineIdx = lines.findIndex(l => /^ANS:/i.test(l))
+    const firstChoiceIdx = lines.findIndex(l => CHOICE_LINE_RE.test(l.text))
+    const ansLineIdx = lines.findIndex(l => /^ANS:/i.test(l.text))
 
     if (firstChoiceIdx === -1) {
-      warnings.push(`Block ${index + 1}: No choice lines (A:/B:/…) found`)
+      warnings.push(`Block ${block.index + 1} (Line ${block.startLine}): No choice lines (A:/B:/…) found`)
       return
     }
     if (ansLineIdx === -1) {
-      warnings.push(`Block ${index + 1}: Missing ANS: field`)
+      warnings.push(`Block ${block.index + 1} (Line ${block.startLine}): Missing ANS: field`)
       return
     }
 
     // Question text: everything before the first choice, joined as multi-line
     const questionLines = lines.slice(0, firstChoiceIdx)
     // Strip leading "Q:" prefix if present on the first line
-    if (questionLines.length > 0 && /^Q:/i.test(questionLines[0])) {
-      questionLines[0] = questionLines[0].replace(/^Q:\s*/i, '')
+    const firstQLine = questionLines[0]
+    let firstLineText = firstQLine ? firstQLine.text : ''
+    if (/^Q:/i.test(firstLineText)) {
+      firstLineText = firstLineText.replace(/^Q:\s*/i, '')
     }
-    const question = questionLines.join('\n').trim()
+    const fullQuestionLines = [firstLineText, ...questionLines.slice(1).map(l => l.text)]
+    const question = fullQuestionLines.join('\n').trim()
 
     if (!question) {
-      warnings.push(`Block ${index + 1}: Question text is empty`)
+      warnings.push(`Block ${block.index + 1} (Line ${block.startLine}): Question text is empty`)
       return
     }
 
@@ -166,35 +210,39 @@ export function parseImportedMCQs(rawText: string): {
     const choices: string[] = []
 
     for (const line of choiceLines) {
-      const m = line.match(CHOICE_LINE_RE)
+      const m = line.text.match(CHOICE_LINE_RE)
       if (m) {
         choices.push(m[2].trim())
       }
     }
 
+    const choiceStartLine = choiceLines[0]?.lineNum || block.startLine
+
     // True/False: allow exactly 2 choices; otherwise require at least 2
     if (choices.length < 2) {
-      warnings.push(`Block ${index + 1}: Expected at least 2 choices, found ${choices.length}`)
+      warnings.push(`Block ${block.index + 1} (Line ${choiceStartLine}): Expected at least 2 choices, found ${choices.length}`)
       return
     }
 
     // ── Extract answer ───────────────────────────────────────
     const ansLine = lines[ansLineIdx]
-    const answerLetter = ansLine.replace(/^ANS:\s*/i, '').trim().toUpperCase() as ChoiceLabel
+    const rawAnswerText = ansLine.text.replace(/^ANS:\s*/i, '').trim()
+    const letterMatch = rawAnswerText.match(/^[\(\[]?\s*([A-Ea-e])\s*[\)\]\.\:\,\-]?/i)
+    const answerLetter = (letterMatch ? letterMatch[1].toUpperCase() : rawAnswerText.toUpperCase()) as ChoiceLabel
     const answer = ANSWER_LABEL_TO_INDEX[answerLetter]
 
     if (answer === undefined) {
-      warnings.push(`Block ${index + 1}: ANS must be A–E. Got: ${answerLetter}`)
+      warnings.push(`Block ${block.index + 1} (Line ${ansLine.lineNum}): ANS must be A–E. Got: ${rawAnswerText}`)
       return
     }
 
     if (answer >= choices.length) {
-      warnings.push(`Block ${index + 1}: ANS "${answerLetter}" is out of range for ${choices.length} choices`)
+      warnings.push(`Block ${block.index + 1} (Line ${ansLine.lineNum}): ANS "${answerLetter}" is out of range for ${choices.length} choices`)
       return
     }
 
     if (choices.some(c => !c)) {
-      warnings.push(`Block ${index + 1}: One or more choices are empty`)
+      warnings.push(`Block ${block.index + 1} (Line ${choiceStartLine}): One or more choices are empty`)
       return
     }
 
@@ -211,54 +259,44 @@ export function parseImportedFlashcards(rawText: string): {
   const warnings: string[] = []
   const cards: any[] = []
 
-  const normalized = rawText
-    .replace(/\r\n/g, '\n')
-    .replace(/\r/g, '\n')
+  const blocks = splitIntoNumberedBlocks(rawText)
 
-  const blocks = normalized
-    .split(/\n\s*\n/)
-    .map(b => b.trim())
-    .filter(b => b.length > 0)
-
-  blocks.forEach((block, index) => {
-    const lines = block
-      .split('\n')
-      .map(l => l.trim())
-      .filter(l => l.length > 0)
+  blocks.forEach((block) => {
+    const lines = block.lines
 
     // Find the Q: line (always first among labelled lines)
-    const qLineIdx = lines.findIndex(l => /^Q:/i.test(l))
-    const aLineIdx = lines.findIndex(l => /^A:/i.test(l))
+    const qLineIdx = lines.findIndex(l => /^Q:/i.test(l.text))
+    const aLineIdx = lines.findIndex(l => /^A:/i.test(l.text))
 
     if (qLineIdx === -1) {
-      warnings.push(`Block ${index + 1}: Missing Q: field`)
+      warnings.push(`Block ${block.index + 1} (Line ${block.startLine}): Missing Q: field`)
       return
     }
     if (aLineIdx === -1) {
-      warnings.push(`Block ${index + 1}: Missing A: field`)
+      warnings.push(`Block ${block.index + 1} (Line ${block.startLine}): Missing A: field`)
       return
     }
     if (aLineIdx <= qLineIdx) {
-      warnings.push(`Block ${index + 1}: A: must come after Q:`)
+      warnings.push(`Block ${block.index + 1} (Line ${lines[aLineIdx].lineNum}): A: must come after Q:`)
       return
     }
 
     // Term: everything from Q: line up to (not including) the A: line
-    const termLines = lines.slice(qLineIdx, aLineIdx)
+    const termLines = lines.slice(qLineIdx, aLineIdx).map(l => l.text)
     termLines[0] = termLines[0].replace(/^Q:\s*/i, '')
     const term = termLines.join('\n').trim()
 
     // Definition: everything from A: line to end of block (supports multi-line defs)
-    const defLines = lines.slice(aLineIdx)
+    const defLines = lines.slice(aLineIdx).map(l => l.text)
     defLines[0] = defLines[0].replace(/^A:\s*/i, '')
     const definition = defLines.join('\n').trim()
 
     if (!term) {
-      warnings.push(`Block ${index + 1}: Term is empty`)
+      warnings.push(`Block ${block.index + 1} (Line ${lines[qLineIdx].lineNum}): Term is empty`)
       return
     }
     if (!definition) {
-      warnings.push(`Block ${index + 1}: Definition is empty`)
+      warnings.push(`Block ${block.index + 1} (Line ${lines[aLineIdx].lineNum}): Definition is empty`)
       return
     }
 

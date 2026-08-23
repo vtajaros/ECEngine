@@ -16,7 +16,19 @@ export function ImportModal({ onImportCards, onClose }: { onImportCards: (cards:
 
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
   const gutterRef = React.useRef<HTMLDivElement>(null)
+  const highlightLayerRef = React.useRef<HTMLDivElement>(null)
   const autoFixTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const errorLines = React.useMemo(() => {
+    const linesSet = new Set<number>()
+    previewWarnings.forEach(w => {
+      const match = w.match(/Line\s*(\d+)/i)
+      if (match) {
+        linesSet.add(parseInt(match[1], 10))
+      }
+    })
+    return linesSet
+  }, [previewWarnings])
 
   useEffect(() => {
     return () => {
@@ -25,8 +37,9 @@ export function ImportModal({ onImportCards, onClose }: { onImportCards: (cards:
   }, [])
 
   const handleScroll = () => {
-    if (textareaRef.current && gutterRef.current) {
-      gutterRef.current.scrollTop = textareaRef.current.scrollTop
+    if (textareaRef.current) {
+      if (gutterRef.current) gutterRef.current.scrollTop = textareaRef.current.scrollTop
+      if (highlightLayerRef.current) highlightLayerRef.current.scrollTop = textareaRef.current.scrollTop
     }
   }
 
@@ -92,9 +105,9 @@ export function ImportModal({ onImportCards, onClose }: { onImportCards: (cards:
       trimmed = trimmed.replace(/^ans:\s*/i, 'ANS: ')
       trimmed = trimmed.replace(/^([a-e]):\s*/i, (match, p1) => `${p1.toUpperCase()}: `)
       if (trimmed.startsWith('ANS: ')) {
-        const parts = trimmed.split('ANS: ')
-        if (parts[1]) {
-          trimmed = `ANS: ${parts[1].trim().toUpperCase()}`
+        const ansMatch = trimmed.match(/^ANS:\s*\(?([A-Ea-e])\)?(?:\s*[\.\:\,\-\[\]\?\s].*)?$/i)
+        if (ansMatch) {
+          trimmed = `ANS: ${ansMatch[1].toUpperCase()}`
         }
       }
       return trimmed
@@ -128,12 +141,69 @@ export function ImportModal({ onImportCards, onClose }: { onImportCards: (cards:
 
   const scrollToBlock = (warningIndex: number) => {
     if (!textareaRef.current) return
-    const match = previewWarnings[warningIndex]?.match(/Block\s*(\d+)/i)
-    if (match) {
-      const blockNum = parseInt(match[1])
-      const estimatedLine = (blockNum - 1) * 7
-      const lineHeight = 20
-      textareaRef.current.scrollTop = estimatedLine * lineHeight
+    const warning = previewWarnings[warningIndex]
+    if (!warning) return
+
+    let targetLine: number | null = null
+
+    // 1. Try to extract exact line number: "(Line 345)" or "Line 345"
+    const lineMatch = warning.match(/Line\s*(\d+)/i)
+    if (lineMatch) {
+      targetLine = parseInt(lineMatch[1], 10)
+    } else {
+      // 2. Fallback: if only Block N exists, scan inputText to find start line of Block N
+      const blockMatch = warning.match(/Block\s*(\d+)/i)
+      if (blockMatch) {
+        const blockNum = parseInt(blockMatch[1], 10)
+        const lines = inputText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
+        let currentBlock = 0
+        let inBlock = false
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].trim().length > 0) {
+            if (!inBlock) {
+              currentBlock++
+              inBlock = true
+              if (currentBlock === blockNum) {
+                targetLine = i + 1
+                break
+              }
+            }
+          } else {
+            inBlock = false
+          }
+        }
+      }
+    }
+
+    if (targetLine !== null && targetLine > 0) {
+      const textarea = textareaRef.current
+      const lines = textarea.value.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
+
+      let charStart = 0
+      for (let i = 0; i < targetLine - 1 && i < lines.length; i++) {
+        charStart += lines[i].length + 1
+      }
+      const charEnd = charStart + (lines[targetLine - 1]?.length || 0)
+
+      const style = window.getComputedStyle(textarea)
+      let lineHeight = parseFloat(style.lineHeight)
+      if (isNaN(lineHeight) || lineHeight <= 0) {
+        lineHeight = 24
+      }
+
+      const clientHeight = textarea.clientHeight || 300
+      const targetScrollTop = Math.max(0, (targetLine - 1) * lineHeight - (clientHeight / 3))
+      textarea.scrollTop = targetScrollTop
+
+      textarea.focus()
+      textarea.setSelectionRange(charStart, charEnd)
+
+      if (gutterRef.current) {
+        gutterRef.current.scrollTop = textarea.scrollTop
+      }
+      if (highlightLayerRef.current) {
+        highlightLayerRef.current.scrollTop = textarea.scrollTop
+      }
     }
   }
 
@@ -252,22 +322,64 @@ ANS: D`}
           {/* Text Area */}
           <div className="flex flex-col flex-1 min-h-[300px]">
             <div className="flex flex-1 flex-row border border-[#333] rounded-t-lg bg-engine-black overflow-hidden focus-within:border-accent transition-colors relative">
+              {/* Line Numbers Gutter */}
               <div
                 ref={gutterRef}
                 className="w-12 shrink-0 bg-engine-black text-[#444] font-['IBM_Plex_Mono'] text-sm text-right pr-3 pl-2 select-none overflow-hidden pt-5"
-              >
-                {linesArray.map(line => <div key={line}>{line}</div>)}
-              </div>
-              <textarea
-                ref={textareaRef}
-                onScroll={handleScroll}
-                autoFocus
-                value={inputText}
-                onChange={e => setInputText(e.target.value)}
-                placeholder="Paste your MCQ questions here..."
-                className="w-full flex-1 bg-transparent text-text-primary p-5 focus:outline-none font-['IBM_Plex_Mono'] text-sm resize-none leading-normal"
                 style={{ lineHeight: '1.5rem' }}
-              />
+              >
+                {linesArray.map(line => {
+                  const isErr = errorLines.has(line)
+                  return (
+                    <div
+                      key={line}
+                      style={{ height: '1.5rem', lineHeight: '1.5rem' }}
+                      className={isErr ? 'text-[#FF003C] font-bold bg-[#FF003C]/20 border-r-2 border-[#FF003C] transition-colors' : ''}
+                    >
+                      {line}
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Text Area with Error Highlight Overlay */}
+              <div className="relative flex-1 flex overflow-hidden">
+                {/* Background Error Highlight Band */}
+                <div
+                  ref={highlightLayerRef}
+                  className="absolute inset-0 pointer-events-none select-none overflow-hidden pt-5 px-5"
+                  style={{ lineHeight: '1.5rem' }}
+                >
+                  {linesArray.map(line => {
+                    const isErr = errorLines.has(line)
+                    if (!isErr) {
+                      return <div key={line} style={{ height: '1.5rem' }} />
+                    }
+                    return (
+                      <div
+                        key={line}
+                        style={{ height: '1.5rem' }}
+                        className="w-full bg-[#FF003C]/20 border-l-2 border-[#FF003C] rounded-r -mx-1 px-1 flex items-center justify-end"
+                      >
+                        <span className="text-[9px] font-['Rajdhani'] font-bold text-[#FF003C] uppercase tracking-wider pr-2 opacity-80">
+                          ERROR
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <textarea
+                  ref={textareaRef}
+                  onScroll={handleScroll}
+                  autoFocus
+                  value={inputText}
+                  onChange={e => setInputText(e.target.value)}
+                  placeholder="Paste your MCQ questions here..."
+                  className="w-full flex-1 bg-transparent relative z-10 text-text-primary p-5 focus:outline-none font-['IBM_Plex_Mono'] text-sm resize-none leading-normal"
+                  style={{ lineHeight: '1.5rem' }}
+                />
+              </div>
             </div>
             {/* Live Feedback Bar */}
             <div className="bg-[#111] border border-t-0 border-[#333] rounded-b-lg p-3 flex items-center justify-between">
@@ -366,7 +478,19 @@ export function ImportFlashcardsModal({ onImportCards, onClose }: { onImportCard
 
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
   const gutterRef = React.useRef<HTMLDivElement>(null)
+  const highlightLayerRef = React.useRef<HTMLDivElement>(null)
   const autoFixTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const errorLines = React.useMemo(() => {
+    const linesSet = new Set<number>()
+    previewWarnings.forEach(w => {
+      const match = w.match(/Line\s*(\d+)/i)
+      if (match) {
+        linesSet.add(parseInt(match[1], 10))
+      }
+    })
+    return linesSet
+  }, [previewWarnings])
 
   useEffect(() => {
     return () => {
@@ -375,8 +499,9 @@ export function ImportFlashcardsModal({ onImportCards, onClose }: { onImportCard
   }, [])
 
   const handleScroll = () => {
-    if (textareaRef.current && gutterRef.current) {
-      gutterRef.current.scrollTop = textareaRef.current.scrollTop
+    if (textareaRef.current) {
+      if (gutterRef.current) gutterRef.current.scrollTop = textareaRef.current.scrollTop
+      if (highlightLayerRef.current) highlightLayerRef.current.scrollTop = textareaRef.current.scrollTop
     }
   }
 
@@ -470,12 +595,69 @@ export function ImportFlashcardsModal({ onImportCards, onClose }: { onImportCard
 
   const scrollToBlock = (warningIndex: number) => {
     if (!textareaRef.current) return
-    const match = previewWarnings[warningIndex]?.match(/Block\s*(\d+)/i)
-    if (match) {
-      const blockNum = parseInt(match[1])
-      const estimatedLine = (blockNum - 1) * 3
-      const lineHeight = 20
-      textareaRef.current.scrollTop = estimatedLine * lineHeight
+    const warning = previewWarnings[warningIndex]
+    if (!warning) return
+
+    let targetLine: number | null = null
+
+    // 1. Try to extract exact line number: "(Line 345)" or "Line 345"
+    const lineMatch = warning.match(/Line\s*(\d+)/i)
+    if (lineMatch) {
+      targetLine = parseInt(lineMatch[1], 10)
+    } else {
+      // 2. Fallback: if only Block N exists, scan inputText to find start line of Block N
+      const blockMatch = warning.match(/Block\s*(\d+)/i)
+      if (blockMatch) {
+        const blockNum = parseInt(blockMatch[1], 10)
+        const lines = inputText.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
+        let currentBlock = 0
+        let inBlock = false
+        for (let i = 0; i < lines.length; i++) {
+          if (lines[i].trim().length > 0) {
+            if (!inBlock) {
+              currentBlock++
+              inBlock = true
+              if (currentBlock === blockNum) {
+                targetLine = i + 1
+                break
+              }
+            }
+          } else {
+            inBlock = false
+          }
+        }
+      }
+    }
+
+    if (targetLine !== null && targetLine > 0) {
+      const textarea = textareaRef.current
+      const lines = textarea.value.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n')
+
+      let charStart = 0
+      for (let i = 0; i < targetLine - 1 && i < lines.length; i++) {
+        charStart += lines[i].length + 1
+      }
+      const charEnd = charStart + (lines[targetLine - 1]?.length || 0)
+
+      const style = window.getComputedStyle(textarea)
+      let lineHeight = parseFloat(style.lineHeight)
+      if (isNaN(lineHeight) || lineHeight <= 0) {
+        lineHeight = 24
+      }
+
+      const clientHeight = textarea.clientHeight || 300
+      const targetScrollTop = Math.max(0, (targetLine - 1) * lineHeight - (clientHeight / 3))
+      textarea.scrollTop = targetScrollTop
+
+      textarea.focus()
+      textarea.setSelectionRange(charStart, charEnd)
+
+      if (gutterRef.current) {
+        gutterRef.current.scrollTop = textarea.scrollTop
+      }
+      if (highlightLayerRef.current) {
+        highlightLayerRef.current.scrollTop = textarea.scrollTop
+      }
     }
   }
 
@@ -588,22 +770,64 @@ A: Another definition`}
           {/* Text Area */}
           <div className="flex flex-col flex-1 min-h-[300px]">
             <div className="flex flex-1 flex-row border border-[#333] rounded-t-lg bg-engine-black overflow-hidden focus-within:border-accent transition-colors relative">
+              {/* Line Numbers Gutter */}
               <div
                 ref={gutterRef}
                 className="w-12 shrink-0 bg-engine-black text-[#444] font-['IBM_Plex_Mono'] text-sm text-right pr-3 pl-2 select-none overflow-hidden pt-5"
-              >
-                {linesArray.map(line => <div key={line}>{line}</div>)}
-              </div>
-              <textarea
-                ref={textareaRef}
-                onScroll={handleScroll}
-                autoFocus
-                value={inputText}
-                onChange={e => setInputText(e.target.value)}
-                placeholder="Paste your flashcards here..."
-                className="w-full flex-1 bg-transparent text-text-primary p-5 focus:outline-none font-['IBM_Plex_Mono'] text-sm resize-none leading-normal"
                 style={{ lineHeight: '1.5rem' }}
-              />
+              >
+                {linesArray.map(line => {
+                  const isErr = errorLines.has(line)
+                  return (
+                    <div
+                      key={line}
+                      style={{ height: '1.5rem', lineHeight: '1.5rem' }}
+                      className={isErr ? 'text-[#FF003C] font-bold bg-[#FF003C]/20 border-r-2 border-[#FF003C] transition-colors' : ''}
+                    >
+                      {line}
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Text Area with Error Highlight Overlay */}
+              <div className="relative flex-1 flex overflow-hidden">
+                {/* Background Error Highlight Band */}
+                <div
+                  ref={highlightLayerRef}
+                  className="absolute inset-0 pointer-events-none select-none overflow-hidden pt-5 px-5"
+                  style={{ lineHeight: '1.5rem' }}
+                >
+                  {linesArray.map(line => {
+                    const isErr = errorLines.has(line)
+                    if (!isErr) {
+                      return <div key={line} style={{ height: '1.5rem' }} />
+                    }
+                    return (
+                      <div
+                        key={line}
+                        style={{ height: '1.5rem' }}
+                        className="w-full bg-[#FF003C]/20 border-l-2 border-[#FF003C] rounded-r -mx-1 px-1 flex items-center justify-end"
+                      >
+                        <span className="text-[9px] font-['Rajdhani'] font-bold text-[#FF003C] uppercase tracking-wider pr-2 opacity-80">
+                          ERROR
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <textarea
+                  ref={textareaRef}
+                  onScroll={handleScroll}
+                  autoFocus
+                  value={inputText}
+                  onChange={e => setInputText(e.target.value)}
+                  placeholder="Paste your flashcards here..."
+                  className="w-full flex-1 bg-transparent relative z-10 text-text-primary p-5 focus:outline-none font-['IBM_Plex_Mono'] text-sm resize-none leading-normal"
+                  style={{ lineHeight: '1.5rem' }}
+                />
+              </div>
             </div>
             {/* Live Feedback Bar */}
             <div className="bg-[#111] border border-t-0 border-[#333] rounded-b-lg p-3 flex items-center justify-between">

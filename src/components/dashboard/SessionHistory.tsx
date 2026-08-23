@@ -356,6 +356,7 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
               const rawSubj = session.topicSubject || session.metadata?.subject || 'ELECS'
               const subject = SUBJECT_MAP[rawSubj] || rawSubj.toUpperCase()
               const title = session.topicName || session.metadata?.deckTitle || 'LooksFam Deck'
+              const description = session.topicDescription || session.metadata?.deckDescription || session.metadata?.description || ''
               const isLearn = session.mode === 'learn'
               const pct = session.total > 0 ? Math.round((session.score / session.total) * 100) : 0
               const scoreStyle = getScoreColor(session.score, session.total)
@@ -391,7 +392,7 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
                       </span>
                     </div>
 
-                    {/* Subject + Deck Title + Date */}
+                    {/* Subject + Deck Title + Description + Date */}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className={`px-1.5 py-0.2 rounded border text-[9px] font-bold font-['Rajdhani'] uppercase tracking-wider ${getSubjectBadgeClasses(subject)}`}>
@@ -401,6 +402,11 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
                           {title}
                         </h4>
                       </div>
+                      {description.trim() !== '' && (
+                        <p className="text-xs text-text-muted font-['IBM_Plex_Mono'] line-clamp-1 sm:line-clamp-2 leading-relaxed mt-0.5" title={description}>
+                          {description}
+                        </p>
+                      )}
                       <div className="flex items-center gap-2 mt-1 text-[10px] text-text-muted font-['IBM_Plex_Mono']">
                         <Calendar size={11} className="text-[#555]" />
                         <span>{formatDate(session.finishedAt || session.startedAt)}</span>

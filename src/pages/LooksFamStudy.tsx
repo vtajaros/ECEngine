@@ -881,6 +881,7 @@ export default function LooksFamStudy() {
           onComplete={(stats) => {
             const currentSet = allSets.find(s => s.id === activeSessionSetId)
             const deckTitle = activeSessionTitle || currentSet?.title || 'LooksFam Deck'
+            const deckDescription = currentSet?.description || undefined
             const subject = currentSet?.subject || (activeSubject !== 'ALL' ? activeSubject : 'ELECS')
             const total = currentDeck.length || (stats.correct + stats.wrong)
             dbService.saveExamSession({
@@ -890,6 +891,7 @@ export default function LooksFamStudy() {
               total,
               answers: JSON.stringify({
                 deckTitle,
+                deckDescription,
                 subject,
                 correctFirstTry: stats.correct,
                 wrongFirstTry: stats.wrong,
@@ -919,6 +921,7 @@ export default function LooksFamStudy() {
           onComplete={(stats) => {
             const currentSet = allSets.find(s => s.id === activeSessionSetId)
             const deckTitle = activeSessionTitle || currentSet?.title || 'LooksFam Deck'
+            const deckDescription = currentSet?.description || undefined
             const subject = currentSet?.subject || (activeSubject !== 'ALL' ? activeSubject : 'ELECS')
             dbService.saveExamSession({
               topicId: activeSessionSetId?.startsWith('topic_') ? activeSessionSetId : null,
@@ -927,6 +930,7 @@ export default function LooksFamStudy() {
               total: stats.total,
               answers: JSON.stringify({
                 deckTitle,
+                deckDescription,
                 subject,
                 score: stats.score,
                 total: stats.total,

@@ -471,6 +471,7 @@ export const dbService = {
         topicId: row.topic_id,
         topicName: row.topic_name || parsedMetadata.deckTitle || null,
         topicSubject: row.topic_subject || parsedMetadata.subject || null,
+        topicDescription: row.topic_description || parsedMetadata.deckDescription || parsedMetadata.description || null,
         mode: row.mode,
         startedAt: String(row.started_at || ''),
         finishedAt: String(row.finished_at || ''),
@@ -510,6 +511,7 @@ export interface ExamSessionRecord {
   topicId: string | null
   topicName?: string | null
   topicSubject?: string | null
+  topicDescription?: string | null
   mode: 'learn' | 'test' | 'exam' | string
   startedAt: string
   finishedAt: string
@@ -518,6 +520,7 @@ export interface ExamSessionRecord {
   answers?: string | null
   metadata?: {
     deckTitle?: string
+    deckDescription?: string
     subject?: string
     correctFirstTry?: number
     wrongFirstTry?: number

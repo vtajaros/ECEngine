@@ -245,7 +245,7 @@ export function registerProgressHandlers(): void {
     try {
       const sql = `
         SELECT e.id, e.topic_id, e.mode, e.started_at, e.finished_at, e.score, e.total, e.answers,
-               t.name as topic_name, t.subject as topic_subject
+               t.name as topic_name, t.subject as topic_subject, t.description as topic_description
         FROM exam_sessions e
         LEFT JOIN topics t ON e.topic_id = t.id
         ORDER BY COALESCE(e.finished_at, e.started_at) DESC

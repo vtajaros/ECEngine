@@ -426,9 +426,10 @@ describe('dbService exam session methods', () => {
           finished_at: '2026-08-22T10:15:00.000Z',
           score: 15,
           total: 20,
-          answers: JSON.stringify({ deckTitle: 'Calculus Deck', subject: 'MATH', correctFirstTry: 15 }),
+          answers: JSON.stringify({ deckTitle: 'Calculus Deck', deckDescription: 'Differential equations', subject: 'MATH', correctFirstTry: 15 }),
           topic_name: 'Calculus Topic',
           topic_subject: 'MATH',
+          topic_description: 'Differential equations',
         },
       ],
     })
@@ -439,6 +440,7 @@ describe('dbService exam session methods', () => {
     expect(sessions[0].total).toBe(20)
     expect(sessions[0].metadata?.deckTitle).toBe('Calculus Deck')
     expect(sessions[0].topicName).toBe('Calculus Topic')
+    expect(sessions[0].topicDescription).toBe('Differential equations')
   })
 
   it('deleteExamSession calls IPC and resolves', async () => {
