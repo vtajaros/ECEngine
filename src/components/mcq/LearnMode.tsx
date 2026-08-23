@@ -3,6 +3,7 @@ import { Card, MCQData } from '../../types'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bookmark, Play, AlertCircle, ArrowRight, Flag, X, Copy, Sparkles, Volume2, VolumeX } from 'lucide-react'
 import { renderMath, renderPlainText } from '../../lib/latex'
+import { shuffleChoices, isSafeToShuffleChoices } from '../../lib/scrambler'
 import Toast from '../ui/Toast'
 import { ExplanationPanel } from '../ui/ExplanationPanel'
 import { Tooltip } from '../ui/Tooltip'
@@ -22,14 +23,57 @@ interface LearnModeProps {
   // the preference — it only consumes it. This keeps TTS state out of the
   // session store and co-located with the other learn settings.
   ttsEnabled?: boolean
+  shuffleChoices?: boolean
   onComplete: (stats: { correct: number; wrong: number; bookmarked: number; correctIds: string[] }) => void
   onExit: () => void
+}
+
+function reshuffleCardChoices(card: Card): Card {
+  if (
+    card.type === 'mcq' &&
+    card.data &&
+    Array.isArray((card.data as MCQData).choices) &&
+    isSafeToShuffleChoices((card.data as MCQData).choices)
+  ) {
+    const mcq = card.data as MCQData
+    const sc = shuffleChoices(mcq.choices, mcq.answer, mcq.choicesPlainText)
+    return {
+      ...card,
+      data: {
+        ...mcq,
+        choices: sc.choices,
+        answer: sc.answer,
+        ...(sc.choicesPlainText ? { choicesPlainText: sc.choicesPlainText } : {})
+      }
+    }
+  }
+  return card
+}
+
+/**
+ * Partitions cards into chunks of partitionSize (default 5).
+ * If the final chunk would have fewer than minTrailingSize (default 3) items
+ * (i.e. 1 or 2 leftover items) and there is a preceding partition, those remainder
+ * items are merged into the second-to-last partition (resulting in 6 or 7 items)
+ * instead of creating an extra round with only 1 or 2 items.
+ */
+export function partitionCards(cards: Card[], partitionSize = 5, minTrailingSize = 3): Card[][] {
+  if (!cards || cards.length === 0) return []
+  const partitions: Card[][] = []
+  for (let i = 0; i < cards.length; i += partitionSize) {
+    partitions.push(cards.slice(i, i + partitionSize))
+  }
+  if (partitions.length > 1 && partitions[partitions.length - 1].length < minTrailingSize) {
+    const last = partitions.pop()!
+    partitions[partitions.length - 1] = [...partitions[partitions.length - 1], ...last]
+  }
+  return partitions
 }
 
 type QuestionStatus = 'unanswered' | 'correct' | 'wrong'
 type ViewState = 'question' | 'feedback' | 'partition-complete' | 'summary'
 
-export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled = false, onComplete, onExit }) => {
+export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled = false, shuffleChoices = false, onComplete, onExit }) => {
   // Partitioning logic
   const PARTITION_SIZE = 5
 
@@ -162,10 +206,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
   // Initialize
   useEffect(() => {
     if (!cards || cards.length === 0) return
-    const newPartitions: Card[][] = []
-    for (let i = 0; i < cards.length; i += PARTITION_SIZE) {
-      newPartitions.push(cards.slice(i, i + PARTITION_SIZE))
-    }
+    const newPartitions = partitionCards(cards, PARTITION_SIZE, 3)
     setPartitions(newPartitions)
     setActiveQueue([...newPartitions[0]])
     setCurrentPartitionIndex(0)
@@ -340,12 +381,17 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
         play('roundComplete')
       }
     } else {
-      const nextQueue = activeQueue.filter(c => partitionWrongIds.has(c.id))
+      const nextQueue = activeQueue
+        .filter(c => partitionWrongIds.has(c.id))
+        .map(c => (shuffleChoices ? reshuffleCardChoices(c) : c))
       setActiveQueue(nextQueue)
       setCurrentCardIndex(0)
       setPartitionWrongIds(new Set())
       setPartitionCorrectIds(new Set())
       setViewState('question')
+      setSelectedChoiceIndex(null)
+      setChoiceStatus('unanswered')
+      setZoomedImage(null)
     }
   }
 
@@ -434,7 +480,13 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
       wrongFirstTry: currentAttempted - currentFlawless,
     })
 
-    setActiveQueue([...currentCards])
+    const restartedCards = currentCards.map(c => (shuffleChoices ? reshuffleCardChoices(c) : c))
+    setPartitions(prev => {
+      const updated = [...prev]
+      updated[currentPartitionIndex] = restartedCards
+      return updated
+    })
+    setActiveQueue([...restartedCards])
     setCurrentCardIndex(0)
     setPartitionWrongIds(new Set())
     setPartitionCorrectIds(new Set())
@@ -450,7 +502,11 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
     setCardStats({})
     setGlobalStats({ correctFirstTry: 0, wrongFirstTry: 0 })
     setCurrentPartitionIndex(0)
-    setActiveQueue([...partitions[0]])
+    const reshuffledPartitions = shuffleChoices
+      ? partitions.map(part => part.map(c => reshuffleCardChoices(c)))
+      : partitions
+    setPartitions(reshuffledPartitions)
+    setActiveQueue([...reshuffledPartitions[0]])
     setCurrentCardIndex(0)
     setPartitionWrongIds(new Set())
     setPartitionCorrectIds(new Set())
@@ -533,7 +589,8 @@ Please explain:
                 const stat = cardStats[c.id] || { wasCorrectFirstTry: false, usedIDK: false, attemptCount: 0 }
                 const mcq = c.data as MCQData
                 const correctAnswerText = mcq.choices[mcq.answer]
-                const overallPos = (currentPartitionIndex * PARTITION_SIZE) + idx + 1
+                const originalIndex = cards.findIndex(card => card.id === c.id)
+                const overallPos = originalIndex >= 0 ? originalIndex + 1 : idx + 1
 
                 return (
                   <motion.div

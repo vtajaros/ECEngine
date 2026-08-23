@@ -878,6 +878,7 @@ export default function LooksFamStudy() {
           cards={currentDeck}
           title={activeSessionTitle}
           ttsEnabled={learnSettings.ttsEnabled}
+          shuffleChoices={learnSettings.shuffleChoices}
           onComplete={(stats) => {
             const currentSet = allSets.find(s => s.id === activeSessionSetId)
             const deckTitle = activeSessionTitle || currentSet?.title || 'LooksFam Deck'
