@@ -28,10 +28,21 @@ const LATEX_COMMANDS = [
   '\\phase', '\\SI', '\\unit', '\\ang', '\\boldsymbol'
 ]
 
+// Common math function names that shouldn't be counted as English prose words
+const MATH_FUNCTION_WORDS = new Set([
+  'sin', 'cos', 'tan', 'cot', 'sec', 'csc',
+  'arcsin', 'arccos', 'arctan',
+  'sinh', 'cosh', 'tanh',
+  'log', 'ln', 'lg', 'exp',
+  'lim', 'max', 'min', 'inf', 'sup',
+  'det', 'dim', 'ker', 'deg', 'gcd', 'lcm',
+  'mod', 'arg', 'var', 'cov', 're', 'im',
+  'sqrt'
+])
+
 // Detects if text contains LaTeX that needs rendering:
 // - backslash commands (\frac, etc.)
 // - superscripts (a^b) or subscripts (a_b) using curly braces
-// - curly brace grouping that implies structure
 // - dollar sign delimiters
 export const isRawLatex = (text: string): boolean => {
   if (!text || typeof text !== 'string') return false
@@ -43,15 +54,14 @@ export const isRawLatex = (text: string): boolean => {
   if (text.includes('$')) return true
   // Superscripts or subscripts with braces: a^{...} or a_{...}
   if (/[\^_]\{/.test(text)) return true
-  // Bare superscripts or subscripts
+  // Bare superscripts or subscripts: e.g. a^2 or a_1 (only when not surrounded by prose)
   const hasBareNotation = /\^\w/.test(text) || /(?<!^|[_])_(?![_])[a-zA-Z0-9{]/.test(text)
   if (hasBareNotation) {
-    // Prose guard: if text contains 4+ English words separated by spaces, it's likely prose
-    // with incidental notation (e.g. "The f_T of a BJT is..."), not a pure math expression.
+    // Prose guard: if text contains 2+ English words separated by spaces, it's prose with notation
     let stripped = text.replace(/\\(text|mathrm|textbf|textit)\{[^}]*\}/g, '')
     stripped = stripped.replace(/\\[a-zA-Z]+/g, '')
     const words = stripped.match(/\b[a-zA-Z]{2,}\b/g) || []
-    if (words.length >= 4 && /\s/.test(stripped)) {
+    if (words.length >= 2 && /\s/.test(stripped)) {
       return false
     }
     return true
@@ -59,7 +69,7 @@ export const isRawLatex = (text: string): boolean => {
   return false
 }
 
-// Determines if a string is almost entirely math (no regular English sentences)
+// Determines if a string is entirely a math equation (no regular English sentences or prose words)
 export const isPureMath = (text: string): boolean => {
   if (!text || typeof text !== 'string') return false
   if (!isRawLatex(text)) return false
@@ -68,8 +78,9 @@ export const isPureMath = (text: string): boolean => {
   let stripped = text.replace(/\\(text|mathrm|textbf|textit)\{[^}]*\}/g, '')
   stripped = stripped.replace(/\\[a-zA-Z]+/g, '')
   const words = stripped.match(/\b[a-zA-Z]{2,}\b/g) || []
+  const nonMathWords = words.filter(w => !MATH_FUNCTION_WORDS.has(w.toLowerCase()))
   const hasSpace = /\s/.test(stripped)
-  const isText = hasSpace && words.length > 0
+  const isText = (hasSpace && nonMathWords.length > 0) || nonMathWords.length >= 2
 
   return !isText
 }
@@ -128,16 +139,9 @@ function applyInlineFormatting(text: string): string {
 /**
  * Render inline LaTeX math expressions within text.
  * Handles three cases:
- *   Path A — pure raw LaTeX (no $ delimiters): render entire string as display math.
- *   Path B/C — $ / $$ delimited content: split on delimiter boundaries, render each
- *              math block with KaTeX (unsanitized), HTML-escape and format text segments.
- *
- * Security: KaTeX output is NOT passed through DOMPurify because DOMPurify corrupts
- * SVG path 'd' attributes used by symbols like \sqrt (it encodes the SVG 'c' cubic-
- * bezier commands as '&lt;', producing invalid path data and a broken symbol).
- * KaTeX only accepts LaTeX math input and generates its own safe HTML, so sanitizing
- * its output provides no real security benefit. User-supplied plain text is HTML-escaped
- * via escapeHtml() before being inserted into the output.
+ *   Path A — pure math expressions: render entire string with KaTeX.
+ *   Path B/C — $ / $$ delimited content or embedded LaTeX commands:
+ *              render math blocks with KaTeX, and prose segments as formatted text.
  *
  * @param text - Raw text potentially containing LaTeX expressions
  * @returns HTML string safe for dangerouslySetInnerHTML
@@ -146,8 +150,6 @@ export const renderMath = (text: string): string => {
   if (!text || typeof text !== 'string') return ''
 
   // ── Normalize non-standard / MathJax-only commands to KaTeX equivalents ──
-  // These commands are valid MathJax/ISO-80000-2 but undefined in KaTeX,
-  // causing KaTeX to render them in red as unknown commands.
   const normalized = text
     .replace(/\\exponentialE\b/g, 'e')           // Euler's number e
     .replace(/\\imaginaryI\b/g, 'i')             // imaginary unit i
@@ -168,46 +170,48 @@ export const renderMath = (text: string): string => {
     .replace(/\\\[([\s\S]*?)\\\]/g, '$$$$$1$$$$')
     .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$')
 
-  const hasDollar = normalized.includes('$')
-  const t = normalized  // use normalized text from here on
+  let t = normalized
 
-  // ── Path A: raw LaTeX with no $ delimiters ──
-  // Render the entire string as math. KaTeX output is returned directly — no
-  // DOMPurify — to preserve SVG path data intact (see function-level comment).
-  if (isRawLatex(t) && !t.includes('$')) {
-    // If the string contains inline formatting markers, treat as prose — not raw LaTeX.
-    // KaTeX cannot handle ** or __ and will error on them.
+  // ── Path A: pure raw LaTeX with no $ delimiters ──
+  // Only render the entire string with KaTeX if it is purely a math expression.
+  if (!t.includes('$') && isPureMath(t)) {
     const hasFormatting = /\*\*|\*[^*]|__/.test(t)
-    if (hasFormatting) {
-      return applyInlineFormatting(renderSegment(t))
-    }
-    try {
-      return katex.renderToString(t, {
-        throwOnError: false,
-        displayMode: isPureMath(t), // block display only for pure single-expression math
-        trust: true
-      })
-    } catch {
-      return renderSegment(t)
+    if (!hasFormatting) {
+      try {
+        return katex.renderToString(t, {
+          throwOnError: false,
+          displayMode: true,
+          trust: true
+        })
+      } catch {
+        return renderSegment(t)
+      }
     }
   }
 
+  // ── If the text has un-delimited LaTeX commands in mixed prose, wrap them in $ ──
+  if (!t.includes('$') && /\\([a-zA-Z]+)/.test(t)) {
+    // Wrap environments like \begin{matrix}...\end{matrix}
+    t = t.replace(/\\begin\{([a-zA-Z*]+)\}[\s\S]*?\\end\{\1\}/g, match => `$${match}$`)
+    // Wrap standalone LaTeX commands with their arguments
+    t = t.replace(/\\[a-zA-Z]+(?:\{(?:[^{}]|\{[^{}]*\})*\}|\[[^[\]]*\])*/g, match => `$${match}$`)
+  }
+
+  const hasDollar = t.includes('$')
+
   // ── Path B/C: content with $ / $$ delimiters ──
   // Split on math delimiter boundaries. Text segments are HTML-escaped; KaTeX
-  // rendered segments are inserted directly (no DOMPurify — see function-level comment).
+  // rendered segments are inserted directly.
   if (hasDollar) {
     const segments: string[] = []
-    // Important: match $$ BEFORE $ to avoid consuming the first $ of a $$ pair
     const delimRegex = /(\$\$[\s\S]*?\$\$|\$[^$\n]*?\$)/g
     let lastIndex = 0
     let match: RegExpExecArray | null
 
     while ((match = delimRegex.exec(t)) !== null) {
-      // Text before this delimiter block — HTML-escape then apply markdown formatting
       if (match.index > lastIndex) {
         segments.push(applyInlineFormatting(renderSegment(t.slice(lastIndex, match.index))))
       }
-      // The delimited math block — strip delimiters, render with KaTeX (not sanitized)
       const isDisplay = match[0].startsWith('$$')
       const inner = match[0].replace(/^\$\$?/, '').replace(/\$\$?$/, '')
       try {
@@ -218,13 +222,11 @@ export const renderMath = (text: string): string => {
           })
         )
       } catch {
-        // Fallback: show the raw delimiter block as escaped text
         segments.push(escapeHtml(match[0]))
       }
       lastIndex = match.index + match[0].length
     }
 
-    // Remaining text after last delimiter
     if (lastIndex < t.length) {
       segments.push(applyInlineFormatting(renderSegment(t.slice(lastIndex))))
     }

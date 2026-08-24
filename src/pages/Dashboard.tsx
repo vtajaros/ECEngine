@@ -344,7 +344,7 @@ export default function Dashboard() {
                   <div className="w-3 h-3 rounded-sm bg-[#006e21]" />
                   <div className="w-3 h-3 rounded-sm bg-[#00a630]" />
                   <div className="w-3 h-3 rounded-sm bg-accent" />
-                  <span>4H+</span>
+                  <span>2H+</span>
                 </div>
               </div>
             </div>

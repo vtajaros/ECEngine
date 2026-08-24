@@ -107,3 +107,44 @@ describe('scanForDoubleEscapes', () => {
     expect(scanForDoubleEscapes('hello world')).toBe(false)
   })
 })
+
+// ─── renderMath ─────────────────────────────────────────────────────────────
+
+import { renderMath } from './latex'
+
+describe('renderMath', () => {
+  it('renders question prose with superscripts without equation italics on text', () => {
+    const q16 = 'Given z = 3 + 3i. Find z^4.'
+    const html = renderMath(q16)
+    expect(html).toContain('Given z = 3 + 3i. Find z<sup>4</sup>.')
+    expect(html).not.toContain('katex')
+  })
+
+  it('renders questions with multiple algebraic terms as formatted text', () => {
+    const q24 = 'If Z1 = 1 - i and Z2 = -2 + 4i, evaluate Z1^2 + 2Z1 - 3.'
+    const html = renderMath(q24)
+    expect(html).toContain('evaluate Z1<sup>2</sup> + 2Z1 - 3.')
+    expect(html).not.toContain('katex')
+  })
+
+  it('renders equation solve question without merging words', () => {
+    const q25 = 'Solve the equation z^2 + (2i - 3)z + 5 - i = 0.'
+    const html = renderMath(q25)
+    expect(html).toContain('Solve the equation z<sup>2</sup> + (2i - 3)z + 5 - i = 0.')
+    expect(html).not.toContain('katex')
+  })
+
+  it('renders embedded un-delimited LaTeX commands while keeping prose as text', () => {
+    const q17 = 'If z = sqrt(2x^2y^-3), find \\partial z / \\partial y.'
+    const html = renderMath(q17)
+    expect(html).toContain('If z = sqrt(2x<sup>2</sup>y<sup>-3</sup>), find')
+    expect(html).toContain('katex')
+  })
+
+  it('renders pure LaTeX formulas with KaTeX', () => {
+    const formula = '\\frac{1}{2}'
+    const html = renderMath(formula)
+    expect(html).toContain('katex')
+  })
+})
+

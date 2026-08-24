@@ -88,9 +88,9 @@ export default function ReviewHeatmap({ activityHistory, year }: ReviewHeatmapPr
 
   const getLevel = (timeSpent: number) => {
     if (!timeSpent) return 'bg-surface border-border-subtle'
-    if (timeSpent < 60) return 'bg-[#003311] border-[#005511] shadow-[0_0_8px_rgba(0,51,17,0.4)]'
-    if (timeSpent < 120) return 'bg-[#006e21] border-[#008821] shadow-[0_0_12px_rgba(0,110,33,0.5)]'
-    if (timeSpent < 180) return 'bg-[#00a630] border-[#00bb30] shadow-[0_0_15px_rgba(0,166,48,0.6)]'
+    if (timeSpent <= 30) return 'bg-[#003311] border-[#005511] shadow-[0_0_8px_rgba(0,51,17,0.4)]'
+    if (timeSpent <= 60) return 'bg-[#006e21] border-[#008821] shadow-[0_0_12px_rgba(0,110,33,0.5)]'
+    if (timeSpent <= 90) return 'bg-[#00a630] border-[#00bb30] shadow-[0_0_15px_rgba(0,166,48,0.6)]'
     return 'bg-accent border-accent shadow-[0_0_20px_rgba(0,255,65,0.7)]'
   }
 
