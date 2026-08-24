@@ -40,18 +40,44 @@ const MATH_FUNCTION_WORDS = new Set([
   'sqrt'
 ])
 
+const CURRENCY_TOKEN = '\uE000CURRENCYDOLLARSIGN\uE000'
+
+/**
+ * Replaces currency dollar signs (e.g. $500,000, $150, $2.50, ($100)) and escaped dollar signs (\$)
+ * with a temporary private-use token so KaTeX doesn't mistake them for math delimiters.
+ */
+export const protectCurrencyAndEscapedDollars = (text: string): string => {
+  if (!text || typeof text !== 'string') return ''
+
+  // 1. Explicitly escaped dollar signs: \$ -> token
+  let result = text.replace(/\\\$/g, CURRENCY_TOKEN)
+
+  // 2. Currency dollar signs: $ directly preceding a number (e.g. $500,000, $150, $2.50, ($100))
+  // Must be a single $ (not $$), preceded by start of line, whitespace, or open punctuation.
+  const currencyRegex = /(^|[\s(\[{,;:])(?<!\$)\$(?!\$)(?=\s?\d[\d,]*(?:\.\d+)?(?:[kKmMbBtT])?(?:[\s.,;:!?)\]}\-]|$))/g
+  result = result.replace(currencyRegex, `$1${CURRENCY_TOKEN}`)
+
+  return result
+}
+
+export const restoreCurrencyTokens = (text: string): string => {
+  if (!text || typeof text !== 'string') return ''
+  return text.replace(new RegExp(CURRENCY_TOKEN, 'g'), '$')
+}
+
 // Detects if text contains LaTeX that needs rendering:
 // - backslash commands (\frac, etc.)
 // - superscripts (a^b) or subscripts (a_b) using curly braces
-// - dollar sign delimiters
+// - dollar sign delimiters (excluding currency values and escaped dollars)
 export const isRawLatex = (text: string): boolean => {
   if (!text || typeof text !== 'string') return false
   // Contains known backslash commands
   if (LATEX_COMMANDS.some(cmd => text.includes(cmd))) return true
   // Starts with backslash (raw command)
   if (text.startsWith('\\')) return true
-  // Contains $ delimiters
-  if (text.includes('$')) return true
+  // Contains $ delimiters (excluding currency values and escaped dollars)
+  const withoutCurrency = protectCurrencyAndEscapedDollars(text)
+  if (withoutCurrency.includes('$')) return true
   // Superscripts or subscripts with braces: a^{...} or a_{...}
   if (/[\^_]\{/.test(text)) return true
   // Bare superscripts or subscripts: e.g. a^2 or a_1 (only when not surrounded by prose)
@@ -170,7 +196,8 @@ export const renderMath = (text: string): string => {
     .replace(/\\\[([\s\S]*?)\\\]/g, '$$$$$1$$$$')
     .replace(/\\\(([\s\S]*?)\\\)/g, '$$$1$$')
 
-  let t = normalized
+  // Protect currency amounts ($500,000, $150) and escaped dollars (\$)
+  let t = protectCurrencyAndEscapedDollars(normalized)
 
   // ── Path A: pure raw LaTeX with no $ delimiters ──
   // Only render the entire string with KaTeX if it is purely a math expression.
@@ -178,13 +205,15 @@ export const renderMath = (text: string): string => {
     const hasFormatting = /\*\*|\*[^*]|__/.test(t)
     if (!hasFormatting) {
       try {
-        return katex.renderToString(t, {
-          throwOnError: false,
-          displayMode: true,
-          trust: true
-        })
+        return restoreCurrencyTokens(
+          katex.renderToString(t, {
+            throwOnError: false,
+            displayMode: true,
+            trust: true
+          })
+        )
       } catch {
-        return renderSegment(t)
+        return restoreCurrencyTokens(renderSegment(t))
       }
     }
   }
@@ -216,13 +245,13 @@ export const renderMath = (text: string): string => {
       const inner = match[0].replace(/^\$\$?/, '').replace(/\$\$?$/, '')
       try {
         segments.push(
-          katex.renderToString(inner.trim(), {
+          katex.renderToString(restoreCurrencyTokens(inner.trim()), {
             throwOnError: false,
             displayMode: isDisplay
           })
         )
       } catch {
-        segments.push(escapeHtml(match[0]))
+        segments.push(escapeHtml(restoreCurrencyTokens(match[0])))
       }
       lastIndex = match.index + match[0].length
     }
@@ -231,11 +260,11 @@ export const renderMath = (text: string): string => {
       segments.push(applyInlineFormatting(renderSegment(t.slice(lastIndex))))
     }
 
-    return segments.join('')
+    return restoreCurrencyTokens(segments.join(''))
   }
 
   // ── Pure plain text: no math at all ──
-  return applyInlineFormatting(renderSegment(t))
+  return restoreCurrencyTokens(applyInlineFormatting(renderSegment(t)))
 }
 
 /**
@@ -246,7 +275,7 @@ export const renderMath = (text: string): string => {
  */
 export const renderPlainText = (text: string): string => {
   if (!text || typeof text !== 'string') return ''
-  return applyInlineFormatting(renderSegment(text))
+  return restoreCurrencyTokens(applyInlineFormatting(renderSegment(protectCurrencyAndEscapedDollars(text))))
 }
 
 /**

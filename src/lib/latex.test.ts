@@ -146,5 +146,30 @@ describe('renderMath', () => {
     const html = renderMath(formula)
     expect(html).toContain('katex')
   })
+
+  it('renders questions with currency dollar signs without mistaking them for LaTeX delimiters', () => {
+    const q54 = 'An electronics firm is deciding whether to continue R&D on a prototype. The potential benefits are $500,000, but the R&D cost already spent is $150,000. The $150,000 is considered:'
+    const html = renderMath(q54)
+    expect(html).toContain('$500,000')
+    expect(html).toContain('$150,000')
+    expect(html).toContain('R&amp;D')
+    expect(html).not.toContain('katex-error')
+    expect(html).not.toContain('color:#cc0000')
+  })
+
+  it('renders mixed currency and LaTeX math formulas correctly', () => {
+    const q = 'If initial cost is $25,000 and value is given by $V(t) = 25000e^{-0.1t}$, calculate value at t = 5.'
+    const html = renderMath(q)
+    expect(html).toContain('$25,000')
+    expect(html).toContain('katex')
+    expect(html).not.toContain('katex-error')
+  })
+
+  it('handles escaped dollar signs cleanly', () => {
+    const q = 'The price was \\$50 before discount.'
+    const html = renderMath(q)
+    expect(html).toContain('The price was $50 before discount.')
+    expect(html).not.toContain('katex')
+  })
 })
 

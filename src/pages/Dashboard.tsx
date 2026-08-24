@@ -448,13 +448,13 @@ export default function Dashboard() {
         </div>
 
         {/* Study Progress Panel */}
-        <div className="lg:col-span-2 p-5 bg-surface rounded-xl border border-border-base flex flex-col overflow-hidden">
-          <h2 className="font-['Rajdhani'] font-bold text-sm text-text-primary mb-4 uppercase tracking-widest border-b border-[#1E1E1E] pb-3 flex items-center justify-between">
+        <div className="lg:col-span-2 p-4 sm:p-5 bg-surface rounded-xl border border-border-base flex flex-col overflow-hidden">
+          <h2 className="font-['Rajdhani'] font-bold text-sm text-text-primary mb-3 sm:mb-4 uppercase tracking-widest border-b border-[#1E1E1E] pb-3 flex items-center justify-between">
             <span className="flex items-center gap-2">
-              <TrendingUp size={15} className="text-accent" />
-              Study Progress
+              <TrendingUp size={15} className="text-accent shrink-0" />
+              <span className="whitespace-nowrap">Study Progress</span>
             </span>
-            <span className="text-accent font-['IBM_Plex_Mono'] text-xs">
+            <span className="text-accent font-['IBM_Plex_Mono'] text-xs whitespace-nowrap">
               {statsData.flashcardCount > 0
                 ? Math.round((statsData.totalStudied / statsData.flashcardCount) * 100)
                 : 0}% covered
@@ -462,17 +462,21 @@ export default function Dashboard() {
           </h2>
 
           {/* KPI tiles */}
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className="bg-surface-2 rounded-lg p-3 border border-border-base flex flex-col items-center">
-              <span className="font-['IBM_Plex_Mono'] text-lg font-bold text-text-primary leading-none">{statsData.totalStudied + statsData.mcqAnswered}</span>
-              <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-[#555] font-bold mt-1">Studied</span>
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-4">
+            <div className="bg-surface-2 rounded-lg p-2 sm:p-3 border border-border-base flex flex-col items-center justify-center text-center min-w-0">
+              <span className="font-['IBM_Plex_Mono'] text-sm sm:text-base xl:text-lg font-bold text-text-primary leading-tight whitespace-nowrap">
+                {(statsData.totalStudied + statsData.mcqAnswered).toLocaleString()}
+              </span>
+              <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-[#555] font-bold mt-1 whitespace-nowrap">Studied</span>
             </div>
-            <div className="bg-surface-2 rounded-lg p-3 border border-border-base flex flex-col items-center">
-              <span className="font-['IBM_Plex_Mono'] text-lg font-bold text-accent leading-none">{statsData.internalized}</span>
-              <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-[#555] font-bold mt-1">Mastered</span>
+            <div className="bg-surface-2 rounded-lg p-2 sm:p-3 border border-border-base flex flex-col items-center justify-center text-center min-w-0">
+              <span className="font-['IBM_Plex_Mono'] text-sm sm:text-base xl:text-lg font-bold text-accent leading-tight whitespace-nowrap">
+                {statsData.internalized.toLocaleString()}
+              </span>
+              <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-[#555] font-bold mt-1 whitespace-nowrap">Mastered</span>
             </div>
-            <div className="bg-surface-2 rounded-lg p-3 border border-border-base flex flex-col items-center">
-              <span className="font-['IBM_Plex_Mono'] text-lg font-bold text-text-primary leading-none">
+            <div className="bg-surface-2 rounded-lg p-2 sm:p-3 border border-border-base flex flex-col items-center justify-center text-center min-w-0">
+              <span className="font-['IBM_Plex_Mono'] text-xs sm:text-sm xl:text-base font-bold text-text-primary leading-tight whitespace-nowrap">
                 {(() => {
                   const totalMins = Object.values(history).reduce((s, v) => s + (v.timeSpent || 0), 0)
                   const hrs = Math.floor(totalMins / 60)
@@ -480,7 +484,7 @@ export default function Dashboard() {
                   return hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`
                 })()}
               </span>
-              <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-[#555] font-bold mt-1">Study Time</span>
+              <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-[#555] font-bold mt-1 whitespace-nowrap">Study Time</span>
             </div>
           </div>
 
@@ -488,12 +492,12 @@ export default function Dashboard() {
           <div className="mb-4 space-y-2.5">
             {/* MCQ / LooksFam row */}
             <div>
-              <div className="flex justify-between items-center mb-1">
-                <span className="font-['Rajdhani'] font-bold text-[10px] uppercase tracking-widest text-[#666] flex items-center gap-1.5">
-                  <span className="inline-block w-2 h-2 rounded-sm bg-blue-400 opacity-80" />
-                  LooksFam MCQ Items
+              <div className="flex justify-between items-center mb-1 gap-2">
+                <span className="font-['Rajdhani'] font-bold text-[10px] uppercase tracking-widest text-[#666] flex items-center gap-1.5 min-w-0 truncate">
+                  <span className="inline-block w-2 h-2 rounded-sm bg-blue-400 opacity-80 shrink-0" />
+                  <span className="truncate">LooksFam MCQ Items</span>
                 </span>
-                <span className="font-['IBM_Plex_Mono'] text-[10px] text-text-muted">
+                <span className="font-['IBM_Plex_Mono'] text-[10px] text-text-muted shrink-0 whitespace-nowrap">
                   {statsData.mcqAnswered.toLocaleString()} / {statsData.mcqCount.toLocaleString()} answered
                 </span>
               </div>
@@ -513,13 +517,13 @@ export default function Dashboard() {
             </div>
             {/* Flashcards / Formulas row */}
             <div>
-              <div className="flex justify-between items-center mb-1">
-                <span className="font-['Rajdhani'] font-bold text-[10px] uppercase tracking-widest text-[#666] flex items-center gap-1.5">
-                  <span className="inline-block w-2 h-2 rounded-sm bg-accent opacity-80" />
-                  Flashcards &amp; Formulas
+              <div className="flex justify-between items-center mb-1 gap-2">
+                <span className="font-['Rajdhani'] font-bold text-[10px] uppercase tracking-widest text-[#666] flex items-center gap-1.5 min-w-0 truncate">
+                  <span className="inline-block w-2 h-2 rounded-sm bg-accent opacity-80 shrink-0" />
+                  <span className="truncate">Flashcards &amp; Formulas</span>
                 </span>
-                <span className="font-['IBM_Plex_Mono'] text-[10px] text-text-muted">
-                  {statsData.totalStudied} / {statsData.flashcardCount} studied
+                <span className="font-['IBM_Plex_Mono'] text-[10px] text-text-muted shrink-0 whitespace-nowrap">
+                  {statsData.totalStudied.toLocaleString()} / {statsData.flashcardCount.toLocaleString()} studied
                 </span>
               </div>
               <div className="w-full bg-surface-2 h-1.5 rounded-full overflow-hidden border border-border-base">

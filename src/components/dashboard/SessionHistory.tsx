@@ -19,6 +19,7 @@ import { dbService, ExamSessionRecord } from '../../services/db.service'
 import { getSubjectBadgeClasses, SUBJECT_MAP } from '../../lib/subjectColors'
 import { SUBJECT_LINE_COLOR } from '../../lib/dashboardUtils'
 import { Tooltip } from '../ui/Tooltip'
+import { renderMath } from '../../lib/latex'
 
 type ModeFilter = 'ALL' | 'learn' | 'test'
 type SubjectFilter = 'ALL' | 'MATH' | 'GEAS' | 'ELECS' | 'EST'
@@ -178,28 +179,30 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
   return (
     <div className="bg-surface border border-border-base rounded-xl p-5 lg:p-6 shadow-xl relative overflow-hidden flex flex-col">
       {/* Top Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5 border-b border-[#1E1E1E] pb-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-[#111] border border-border-base text-accent">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5 border-b border-[#1E1E1E] pb-4">
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="p-2 rounded-lg bg-[#111] border border-border-base text-accent shrink-0">
             <History size={20} />
           </div>
           <div>
-            <h2 className="font-['Rajdhani'] font-bold text-lg text-text-primary uppercase tracking-widest flex items-center gap-2">
-              Session History
-              <span className="text-xs px-2 py-0.5 rounded-full bg-[#111] border border-border-base font-['IBM_Plex_Mono'] text-accent">
+            <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+              <h2 className="font-['Rajdhani'] font-bold text-lg text-text-primary uppercase tracking-widest whitespace-nowrap">
+                Session History
+              </h2>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-[#111] border border-border-base font-['IBM_Plex_Mono'] text-accent whitespace-nowrap">
                 {sessions.length} Recorded
               </span>
-            </h2>
-            <p className="text-xs text-text-muted font-['Rajdhani'] uppercase tracking-wider">
+            </div>
+            <p className="text-xs text-text-muted font-['Rajdhani'] uppercase tracking-wider mt-0.5">
               Learn Mode (Flawless Scores) &amp; Test Mode Results
             </p>
           </div>
         </div>
 
         {/* Action Controls & Filters */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center justify-center lg:justify-end gap-2 w-full lg:w-auto">
           {/* Mode Filter Tabs */}
-          <div className="flex items-center bg-[#111] p-1 rounded-lg border border-border-base">
+          <div className="flex items-center bg-[#111] p-1 rounded-lg border border-border-base shrink-0">
             <button
               onClick={() => setModeFilter('ALL')}
               className={`px-3 py-1 text-[10px] font-bold font-['Rajdhani'] uppercase tracking-widest rounded transition-all ${
@@ -235,7 +238,7 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
           </div>
 
           {/* Subject Filter Dropdown / Pill */}
-          <div className="flex items-center bg-[#111] p-1 rounded-lg border border-border-base">
+          <div className="flex items-center bg-[#111] p-1 rounded-lg border border-border-base shrink-0">
             {(['ALL', 'MATH', 'GEAS', 'ELECS', 'EST'] as const).map(subj => (
               <button
                 key={subj}
@@ -257,7 +260,7 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
             <Tooltip content="Clear session history" position="top">
               <button
                 onClick={() => setShowClearConfirm(true)}
-                className="p-1.5 rounded-lg bg-[#111] border border-border-base text-[#666] hover:text-[#FF003C] hover:border-[#FF003C]/40 hover:bg-[#FF003C]/10 transition-colors"
+                className="p-1.5 rounded-lg bg-[#111] border border-border-base text-[#666] hover:text-[#FF003C] hover:border-[#FF003C]/40 hover:bg-[#FF003C]/10 transition-colors shrink-0"
                 aria-label="Clear All History"
               >
                 <RotateCcw size={15} />
@@ -269,52 +272,52 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
 
       {/* Mini Summary Cards Bar */}
       {sessions.length > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-          <div className="bg-surface-2 p-3 rounded-lg border border-border-base flex flex-col">
-            <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-text-muted font-bold">Total Sessions</span>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 mb-5">
+          <div className="bg-surface-2 p-3 rounded-lg border border-border-base flex flex-col min-w-0">
+            <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-text-muted font-bold truncate">Total Sessions</span>
             <div className="flex items-baseline gap-1 mt-1">
               <span className="font-['IBM_Plex_Mono'] text-lg font-bold text-text-primary">{summaryMetrics.totalCount}</span>
               <span className="font-['Rajdhani'] text-[9px] text-[#666] uppercase">runs</span>
             </div>
-            <span className="font-['Rajdhani'] text-[9px] text-[#555] mt-0.5">
+            <span className="font-['Rajdhani'] text-[9px] text-[#555] mt-0.5 truncate">
               {summaryMetrics.learnCount} Learn • {summaryMetrics.testCount} Test
             </span>
           </div>
 
-          <div className="bg-surface-2 p-3 rounded-lg border border-border-base flex flex-col">
-            <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-accent font-bold flex items-center gap-1">
-              <BookOpen size={10} />
-              Flawless Answer Avg
+          <div className="bg-surface-2 p-3 rounded-lg border border-border-base flex flex-col min-w-0">
+            <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-accent font-bold flex items-center gap-1 truncate">
+              <BookOpen size={10} className="shrink-0" />
+              <span className="truncate">Flawless Answer Avg</span>
             </span>
             <div className="flex items-baseline gap-1 mt-1">
               <span className="font-['IBM_Plex_Mono'] text-lg font-bold text-accent">
                 {summaryMetrics.learnAvgFirstTry != null ? `${summaryMetrics.learnAvgFirstTry}%` : '—'}
               </span>
             </div>
-            <span className="font-['Rajdhani'] text-[9px] text-[#555] mt-0.5">
+            <span className="font-['Rajdhani'] text-[9px] text-[#555] mt-0.5 truncate">
               First-attempt flawless rate
             </span>
           </div>
 
-          <div className="bg-surface-2 p-3 rounded-lg border border-border-base flex flex-col">
-            <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-accent font-bold flex items-center gap-1">
-              <Trophy size={10} />
-              Test Mode Avg
+          <div className="bg-surface-2 p-3 rounded-lg border border-border-base flex flex-col min-w-0">
+            <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-accent font-bold flex items-center gap-1 truncate">
+              <Trophy size={10} className="shrink-0" />
+              <span className="truncate">Test Mode Avg</span>
             </span>
             <div className="flex items-baseline gap-1 mt-1">
               <span className="font-['IBM_Plex_Mono'] text-lg font-bold text-accent">
                 {summaryMetrics.testAvgScore != null ? `${summaryMetrics.testAvgScore}%` : '—'}
               </span>
             </div>
-            <span className="font-['Rajdhani'] text-[9px] text-[#555] mt-0.5">
+            <span className="font-['Rajdhani'] text-[9px] text-[#555] mt-0.5 truncate">
               {summaryMetrics.passRate != null ? `${summaryMetrics.passRate}% pass rate (≥75%)` : 'No tests yet'}
             </span>
           </div>
 
-          <div className="bg-surface-2 p-3 rounded-lg border border-border-base flex flex-col">
-            <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-accent font-bold flex items-center gap-1">
-              <Sparkles size={10} />
-              Items Solved
+          <div className="bg-surface-2 p-3 rounded-lg border border-border-base flex flex-col min-w-0">
+            <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-accent font-bold flex items-center gap-1 truncate">
+              <Sparkles size={10} className="shrink-0" />
+              <span className="truncate">Items Solved</span>
             </span>
             <div className="flex items-baseline gap-1 mt-1">
               <span className="font-['IBM_Plex_Mono'] text-lg font-bold text-text-primary">
@@ -322,7 +325,7 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
               </span>
               <span className="font-['Rajdhani'] text-[9px] text-accent uppercase font-bold">MCQs</span>
             </div>
-            <span className="font-['Rajdhani'] text-[9px] text-[#555] mt-0.5">
+            <span className="font-['Rajdhani'] text-[9px] text-[#555] mt-0.5 truncate">
               Across all recorded runs
             </span>
           </div>
@@ -375,15 +378,15 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
                   {/* Left: Mode Badge & Deck Info */}
                   <div className="flex items-center gap-3.5 min-w-0 flex-1">
                     {/* Mode Indicator Pill */}
-                    <div className="shrink-0 flex flex-col items-center">
+                    <div className="shrink-0 flex flex-col items-center w-14 sm:w-16">
                       {isLearn ? (
-                        <div className="px-2.5 py-1 rounded-md border border-accent/30 bg-accent/10 text-accent flex items-center gap-1.5 font-['Rajdhani'] font-bold text-[10px] uppercase tracking-wider">
-                          <BookOpen size={11} />
+                        <div className="w-full py-1 rounded-md border border-accent/30 bg-accent/10 text-accent flex items-center justify-center gap-1.5 font-['Rajdhani'] font-bold text-[10px] uppercase tracking-wider">
+                          <BookOpen size={11} className="shrink-0" />
                           <span>LEARN</span>
                         </div>
                       ) : (
-                        <div className="px-2.5 py-1 rounded-md border border-accent/30 bg-accent/10 text-accent flex items-center gap-1.5 font-['Rajdhani'] font-bold text-[10px] uppercase tracking-wider">
-                          <Trophy size={11} />
+                        <div className="w-full py-1 rounded-md border border-accent/30 bg-accent/10 text-accent flex items-center justify-center gap-1.5 font-['Rajdhani'] font-bold text-[10px] uppercase tracking-wider">
+                          <Trophy size={11} className="shrink-0" />
                           <span>TEST</span>
                         </div>
                       )}
@@ -394,28 +397,30 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
 
                     {/* Subject + Deck Title + Description + Date */}
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`px-1.5 py-0.2 rounded border text-[9px] font-bold font-['Rajdhani'] uppercase tracking-wider ${getSubjectBadgeClasses(subject)}`}>
+                      <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                        <span className={`px-1.5 py-0.2 rounded border text-[9px] font-bold font-['Rajdhani'] uppercase tracking-wider shrink-0 ${getSubjectBadgeClasses(subject)}`}>
                           {subject}
                         </span>
-                        <h4 className="font-['Rajdhani'] font-bold text-sm text-text-primary tracking-wide uppercase truncate max-w-[280px] sm:max-w-md">
-                          {title}
-                        </h4>
+                        <h4 
+                          className="font-['Rajdhani'] font-bold text-sm text-text-primary tracking-wide uppercase truncate"
+                          dangerouslySetInnerHTML={{ __html: renderMath(title) }}
+                          title={title}
+                        />
                       </div>
                       {description.trim() !== '' && (
-                        <p className="text-xs text-text-muted font-['IBM_Plex_Mono'] line-clamp-1 sm:line-clamp-2 leading-relaxed mt-0.5" title={description}>
+                        <p className="text-xs text-text-muted font-['IBM_Plex_Mono'] line-clamp-1 leading-relaxed mt-0.5" title={description}>
                           {description}
                         </p>
                       )}
                       <div className="flex items-center gap-2 mt-1 text-[10px] text-text-muted font-['IBM_Plex_Mono']">
-                        <Calendar size={11} className="text-[#555]" />
+                        <Calendar size={11} className="text-[#555] shrink-0" />
                         <span>{formatDate(session.finishedAt || session.startedAt)}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Right: Score, Percentage, Bar & Delete */}
-                  <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#1E1E1E]">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-[#1E1E1E]">
                     {/* Score / Ratio details */}
                     <div className="flex flex-col items-start sm:items-end">
                       <div className="flex items-baseline gap-1.5">
@@ -431,19 +436,19 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
                       {/* Explicit Tag */}
                       <div className="flex items-center gap-1.5 mt-0.5">
                         {isLearn ? (
-                          <span className="text-[9px] font-['Rajdhani'] font-bold uppercase tracking-wider text-accent">
+                          <span className="text-[9px] font-['Rajdhani'] font-bold uppercase tracking-wider text-accent whitespace-nowrap">
                             Flawless Score
                           </span>
                         ) : (
-                          <span className={`text-[9px] font-['Rajdhani'] font-bold uppercase tracking-wider ${isPassed ? 'text-accent' : 'text-[#FF003C]'}`}>
+                          <span className={`text-[9px] font-['Rajdhani'] font-bold uppercase tracking-wider whitespace-nowrap ${isPassed ? 'text-accent' : 'text-[#FF003C]'}`}>
                             {isPassed ? 'Passed (≥75%)' : 'Needs Practice'}
                           </span>
                         )}
                       </div>
                     </div>
 
-                    {/* Visual Progress Bar (Hidden on ultra-small mobile) */}
-                    <div className="hidden md:flex flex-col gap-1 w-20">
+                    {/* Visual Progress Bar (Hidden on compact screens/130% zoom) */}
+                    <div className="hidden lg:flex flex-col gap-1 w-16 sm:w-20 shrink-0">
                       <div className="w-full bg-[#111] h-1.5 rounded-full overflow-hidden border border-border-base">
                         <div
                           className="h-full rounded-full transition-all duration-500"
@@ -460,7 +465,7 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
                     <Tooltip content="Delete this session record" position="top">
                       <button
                         onClick={() => setSessionToDelete(session)}
-                        className="opacity-40 group-hover:opacity-100 p-1.5 rounded-md hover:bg-[#FF003C]/10 text-text-muted hover:text-[#FF003C] hover:border hover:border-[#FF003C]/30 transition-all"
+                        className="opacity-40 group-hover:opacity-100 p-1.5 rounded-md hover:bg-[#FF003C]/10 text-text-muted hover:text-[#FF003C] hover:border hover:border-[#FF003C]/30 transition-all shrink-0"
                         aria-label="Delete session"
                       >
                         <Trash2 size={14} />
