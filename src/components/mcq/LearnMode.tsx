@@ -10,7 +10,8 @@ import { Tooltip } from '../ui/Tooltip'
 import { LeaveConfirmModal } from '../ui/LeaveConfirmModal'
 import { useBlocker } from 'react-router-dom'
 import { dbService } from '../../services/db.service'
-import { useSound, getSoundsMuted, setSoundsMuted } from '../../hooks/useSound'
+import { useSound, useSoundVolume } from '../../hooks/useSound'
+import { VolumeControl } from '../ui/VolumeControl'
 import { useTTS } from '../../hooks/useTTS'
 
 // Partitioned learning mode handling the custom "LEARN" flow
@@ -78,17 +79,16 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
   const PARTITION_SIZE = 5
 
   const { play } = useSound()
-  const [isMuted, setIsMuted] = useState(() => getSoundsMuted())
+  const { isMuted } = useSoundVolume()
 
   // ── TTS ────────────────────────────────────────────────────────────────────
   const { speak, stop } = useTTS(ttsEnabled && !isMuted)
 
-  const toggleMute = () => {
-    const next = !isMuted
-    setIsMuted(next)
-    setSoundsMuted(next)
-    if (next) stop() // cut off any in-flight speech immediately on mute
-  }
+  useEffect(() => {
+    if (isMuted) {
+      stop()
+    }
+  }, [isMuted, stop])
 
   // Create partitions initially
   const [partitions, setPartitions] = useState<Card[][]>([])
@@ -743,15 +743,11 @@ Please explain:
         </div>
 
         <div className="flex justify-end items-center gap-3">
-
+          <VolumeControl />
           <button
-            onClick={toggleMute}
-            className={`p-2 rounded border transition-colors ${isMuted ? 'border-danger text-danger bg-[rgba(255,51,51,0.08)]' : 'border-[#333] text-text-muted hover:text-white hover:border-[#666]'}`}
-            title={isMuted ? 'Unmute sounds' : 'Mute sounds'}
+            onClick={() => setShowExitConfirm(true)}
+            className="px-4 py-2 border border-[#333] bg-[#111]/80 text-[#d0d0d0] hover:text-white hover:border-[#666] hover:bg-[#1a1a1a] rounded transition-all font-['Rajdhani'] font-bold uppercase tracking-widest text-sm shadow-sm"
           >
-            {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-          </button>
-          <button onClick={() => setShowExitConfirm(true)} className="px-4 py-2 border border-[#333] text-text-muted rounded hover:text-white hover:border-[#666] transition-colors font-['Rajdhani'] uppercase tracking-widest text-sm">
             Exit Learn Mode
           </button>
         </div>
@@ -797,21 +793,21 @@ Please explain:
               const choice = mcqData.choices[idx];
               if (choice === undefined) return null;
 
-              let btnClass = "border-border-base bg-[#111] hover:border-accent hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] cursor-pointer"
-              let prefixClass = "text-[#666]"
+              let btnClass = "border-[#2c2c2c] bg-[#121212] hover:bg-[#1c1c1c] hover:border-accent hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] cursor-pointer"
+              let prefixClass = "text-[#888]"
               let textClass = "text-text-primary"
 
               if (viewState === 'feedback') {
                 if (idx === mcqData.answer) {
-                  btnClass = "border-[var(--color-correct)] bg-[rgba(0,255,65,0.05)] shadow-[0_0_15px_rgba(0,255,65,0.15)]"
+                  btnClass = "border-[var(--color-correct)] bg-[rgba(0,255,65,0.06)] shadow-[0_0_15px_rgba(0,255,65,0.15)]"
                   prefixClass = "text-[var(--color-correct)] font-bold"
                   textClass = "text-white"
                 } else if (idx === selectedChoiceIndex) {
-                  btnClass = "border-[var(--color-wrong)] bg-[rgba(255,51,51,0.05)]"
+                  btnClass = "border-[var(--color-wrong)] bg-[rgba(255,51,51,0.06)]"
                   prefixClass = "text-[var(--color-wrong)] font-bold"
                   textClass = "text-[#aaa]"
                 } else {
-                  btnClass = "border-border-base bg-[#111] opacity-60 cursor-default"
+                  btnClass = "border-[#222] bg-[#0e0e0e] opacity-50 cursor-default"
                   textClass = "text-[#555]"
                 }
               }
@@ -887,7 +883,7 @@ Please explain:
             <div className="flex justify-center border-t border-border-base pt-6 mt-auto">
               <button
                 onClick={() => submitAnswer('idk')}
-                className="px-8 py-3 rounded text-text-muted font-['Rajdhani'] uppercase tracking-widest text-sm hover:bg-border-base hover:text-white transition-colors"
+                className="px-8 py-2.5 rounded border border-[#333] bg-[#121212] hover:bg-[#1f1f1f] hover:border-[#555] text-[#b8b8b8] hover:text-white transition-all font-['Rajdhani'] font-bold uppercase tracking-widest text-sm shadow-sm"
               >
                 I Don't Know
               </button>

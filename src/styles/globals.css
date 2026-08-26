@@ -58,6 +58,23 @@
   src: url('../assets/fonts/ibm-plex-mono-600.woff2') format('woff2');
 }
 
+/* JetBrains Mono */
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/jetbrains-mono-400.ttf') format('truetype');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../assets/fonts/jetbrains-mono-700.ttf') format('truetype');
+}
+
 /* Rajdhani */
 @font-face {
   font-family: 'Rajdhani';

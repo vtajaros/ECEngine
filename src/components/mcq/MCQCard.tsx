@@ -95,7 +95,7 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
           const isCorrectAnswer = index === data.answer
           const showResult = selectedChoice !== null
           
-          let btnClass = 'bg-[#111111] border border-surface-2 text-text-muted hover:border-[rgba(0,255,65,0.3)] hover:text-text-primary'
+          let btnClass = 'bg-[#121212] border border-[#2c2c2c] text-text-muted hover:border-[rgba(0,255,65,0.3)] hover:bg-[#1c1c1c] hover:text-text-primary'
           
           if (showResult) {
             if (isCorrectAnswer) {
@@ -103,7 +103,7 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
             } else if (isSelected) {
               btnClass = 'bg-[rgba(255,51,51,0.1)] border-danger text-text-primary shadow-[0_0_15px_rgba(255,51,51,0.2)]'
             } else {
-              btnClass = 'bg-engine-black border-surface-2 text-[#444] opacity-50'
+              btnClass = 'bg-[#0e0e0e] border-[#222] text-[#444] opacity-50'
             }
           }
 

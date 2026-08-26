@@ -122,7 +122,9 @@ declare global {
         openExternal: (url: string) => Promise<void>
       }
       tts: {
-        speak: (text: string, modelPath?: string) => Promise<void>
+        synthesize: (text: string, modelPath?: string) => Promise<{ success: boolean; audioData?: Uint8Array; error?: string }>
+        speak: (text: string, modelPath?: string, volume?: number) => Promise<void>
+        setVolume?: (volume: number) => Promise<void>
         stop: () => Promise<void>
         isAvailable: (modelPath?: string) => Promise<{ piperInstalled: boolean; modelConfigured: boolean; defaultModelPath?: string; availableModels?: string[] }>
         selectVoiceModel: () => Promise<{ success: boolean; canceled?: boolean; filePath?: string; error?: string }>

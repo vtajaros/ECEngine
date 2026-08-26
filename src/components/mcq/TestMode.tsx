@@ -10,7 +10,8 @@ import Toast from '../ui/Toast'
 import { useBlocker } from 'react-router-dom'
 import { LeaveConfirmModal } from '../ui/LeaveConfirmModal'
 import { dbService } from '../../services/db.service'
-import { useSound, getSoundsMuted, setSoundsMuted } from '../../hooks/useSound'
+import { useSound } from '../../hooks/useSound'
+import { VolumeControl } from '../ui/VolumeControl'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { TestNavRail } from '../ui/TestNavRail'
 
@@ -143,9 +144,9 @@ const TestQuestionCard = memo(({
 
           const isSelected = userAnswer === cIdx
 
-          let stateStyles = 'border-[#333] hover:border-accent hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] bg-[#111] text-text-primary'
+          let stateStyles = 'border-[#2c2c2c] hover:border-accent hover:bg-[#1c1c1c] hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] bg-[#121212] text-text-primary'
           let iconElement: React.ReactNode = null
-          let prefixStyles = 'text-[#666]'
+          let prefixStyles = 'text-[#888]'
 
           if (showFeedback) {
             const isChoiceCorrect = cIdx === mcq.answer
@@ -158,7 +159,7 @@ const TestQuestionCard = memo(({
               iconElement = <div className="text-[#FF003C] font-bold">✗</div>
               prefixStyles = 'text-[#FF003C] font-bold'
             } else {
-              stateStyles = 'border-border-base bg-[#111] text-[#666] opacity-60'
+              stateStyles = 'border-[#222] bg-[#0e0e0e] text-[#666] opacity-50'
               prefixStyles = 'text-[#555]'
             }
           } else {
@@ -265,13 +266,6 @@ TestQuestionCard.displayName = 'TestQuestionCard'
 // ─── Main Component ───────────────────────────────────────────────────────────
 export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onComplete, onExit }) => {
   const { play } = useSound()
-  const [isMuted, setIsMuted] = useState(() => getSoundsMuted())
-
-  const toggleMute = () => {
-    const next = !isMuted
-    setIsMuted(next)
-    setSoundsMuted(next)
-  }
 
   const [testCards, setTestCards] = useState<Card[]>([])
   const [answers, setAnswers] = useState<Record<string, number>>({})
@@ -581,13 +575,7 @@ Please explain:
 
       <div className="flex-shrink-0 flex items-center gap-2">
         {settings.instantChecking && (
-          <button
-            onClick={toggleMute}
-            className={`p-2 rounded border transition-colors ${isMuted ? 'border-danger text-danger bg-[rgba(255,51,51,0.08)]' : 'border-[#333] text-text-muted hover:text-white hover:border-[#666]'}`}
-            title={isMuted ? 'Unmute sounds' : 'Mute sounds'}
-          >
-            {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-          </button>
+          <VolumeControl />
         )}
         <div className="flex items-center gap-2 text-lg font-bold tracking-widest bg-[#111] px-4 py-1.5 rounded border border-[#333] shrink-0">
           <Clock className="w-4 h-4 text-[var(--accent-primary)]" />

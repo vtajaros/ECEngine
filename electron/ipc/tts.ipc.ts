@@ -1,5 +1,6 @@
 import { ipcMain, BrowserWindow, dialog } from 'electron'
 import { spawn, execFileSync, ChildProcess } from 'child_process'
+import { Transform } from 'stream'
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'
@@ -7,6 +8,61 @@ import * as path from 'path'
 let currentPiperChild: ChildProcess | null = null
 let currentAplayChild: ChildProcess | null = null
 let piperAvailable: boolean | null = null // null = not yet checked
+let currentTTSVolume = 1.0
+
+function createVolumeTransform(getVol: () => number): Transform {
+  let headerPassed = false
+  let headerBytesRead = 0
+  let leftover: Buffer | null = null
+
+  return new Transform({
+    transform(chunk: Buffer, _encoding, callback) {
+      const data = leftover ? Buffer.concat([leftover, chunk]) : chunk
+      leftover = null
+
+      let startOffset = 0
+      if (!headerPassed) {
+        if (headerBytesRead + data.length <= 44) {
+          headerBytesRead += data.length
+          callback(null, data)
+          return
+        } else {
+          startOffset = 44 - headerBytesRead
+          headerBytesRead += startOffset
+          headerPassed = true
+        }
+      }
+
+      const headerPart = data.subarray(0, startOffset)
+      const audioPart = Buffer.from(data.subarray(startOffset))
+
+      if (audioPart.length % 2 !== 0) {
+        leftover = audioPart.subarray(audioPart.length - 1)
+      }
+
+      const processLength = leftover ? audioPart.length - 1 : audioPart.length
+      const vol = getVol()
+      for (let i = 0; i < processLength; i += 2) {
+        const val = audioPart.readInt16LE(i)
+        const scaled = Math.max(-32768, Math.min(32767, Math.round(val * vol)))
+        audioPart.writeInt16LE(scaled, i)
+      }
+
+      if (leftover) {
+        callback(null, Buffer.concat([headerPart, audioPart.subarray(0, processLength)]))
+      } else {
+        callback(null, Buffer.concat([headerPart, audioPart]))
+      }
+    },
+    flush(callback) {
+      if (leftover) {
+        this.push(leftover)
+        leftover = null
+      }
+      callback()
+    }
+  })
+}
 
 /**
  * One-shot check: is `piper` on PATH?
@@ -128,14 +184,82 @@ export function registerTTSHandlers(): void {
   })
 
   /**
-   * 'tts:speak' — spawn a piper→aplay pipeline.
-   * @param text      The text to synthesize.
-   * @param modelPath Absolute path to the .onnx voice model. Falls back to default discovered model if omitted.
+   * 'tts:synthesize' — synthesize text to raw WAV buffer using Piper.
+   * Enables Web Audio API playback in the renderer for instant, sample-accurate,
+   * real-time gain/volume adjustments and seamless event lifecycle.
    */
-  ipcMain.handle('tts:speak', async (_event, text: string, modelPath?: string) => {
+  ipcMain.handle('tts:synthesize', async (_event, text: string, modelPath?: string) => {
     killAllChildren()
 
     if (typeof text !== 'string' || !text.trim()) {
+      return { success: false, error: 'Empty text' }
+    }
+
+    let effectiveModelPath = modelPath && modelPath.trim()
+    if (!effectiveModelPath || !checkVoiceModelConfigured(effectiveModelPath)) {
+      const models = findInstalledVoiceModels()
+      if (models.length > 0) {
+        effectiveModelPath = models[0]
+      }
+    }
+
+    if (!effectiveModelPath || !checkVoiceModelConfigured(effectiveModelPath)) {
+      return { success: false, error: 'No valid voice model found' }
+    }
+
+    return new Promise((resolve) => {
+      try {
+        const piperChild = spawn(
+          'piper',
+          ['--model', effectiveModelPath, '--output_file', '-'],
+          { stdio: ['pipe', 'pipe', 'ignore'] }
+        )
+        currentPiperChild = piperChild
+
+        const chunks: Buffer[] = []
+        piperChild.stdout!.on('data', (chunk) => {
+          chunks.push(chunk)
+        })
+
+        piperChild.on('close', (code) => {
+          if (currentPiperChild === piperChild) currentPiperChild = null
+          if (code === 0 && chunks.length > 0) {
+            const fullBuffer = Buffer.concat(chunks)
+            resolve({ success: true, audioData: fullBuffer })
+          } else {
+            resolve({ success: false, error: `Piper exited with code ${code}` })
+          }
+        })
+
+        piperChild.on('error', (err) => {
+          if (currentPiperChild === piperChild) currentPiperChild = null
+          resolve({ success: false, error: err.message })
+        })
+
+        piperChild.stdin!.on('error', () => { /* ignore */ })
+        piperChild.stdin!.write(text)
+        piperChild.stdin!.end()
+      } catch (err: any) {
+        currentPiperChild = null
+        resolve({ success: false, error: err.message })
+      }
+    })
+  })
+
+  /**
+   * 'tts:speak' — spawn a piper→aplay pipeline.
+   * @param text      The text to synthesize.
+   * @param modelPath Absolute path to the .onnx voice model. Falls back to default discovered model if omitted.
+   * @param volume    Volume multiplier between 0.0 and 1.0 (default: 1.0)
+   */
+  ipcMain.handle('tts:speak', async (_event, text: string, modelPath?: string, volume?: number) => {
+    killAllChildren()
+
+    if (typeof volume === 'number') {
+      currentTTSVolume = Math.max(0, Math.min(1, volume))
+    }
+
+    if (typeof text !== 'string' || !text.trim() || currentTTSVolume <= 0) {
       sendEnded()
       return
     }
@@ -169,12 +293,15 @@ export function registerTTSHandlers(): void {
       )
       currentAplayChild = aplayChild
 
+      const volumeTransform = createVolumeTransform(() => currentTTSVolume)
+
       // Handle stream errors to prevent uncaught exceptions (e.g. EPIPE when killed)
       piperChild.stdout!.on('error', () => { /* ignore */ })
+      volumeTransform.on('error', () => { /* ignore */ })
       aplayChild.stdin!.on('error', () => { /* ignore */ })
 
-      // Pipe piper's WAV output into aplay's stdin
-      piperChild.stdout!.pipe(aplayChild.stdin!)
+      // Pipe piper's WAV output -> volumeTransform -> aplay's stdin
+      piperChild.stdout!.pipe(volumeTransform).pipe(aplayChild.stdin!)
 
       // Write text to piper and close its stdin to signal end of input
       piperChild.stdin!.on('error', () => { /* ignore — process likely already dying, cleanup
@@ -213,6 +340,19 @@ export function registerTTSHandlers(): void {
       currentPiperChild = null
       currentAplayChild = null
       sendEnded()
+    }
+  })
+
+  /**
+   * 'tts:setVolume' — update current live playback volume.
+   */
+  ipcMain.handle('tts:setVolume', async (_event, volume: number) => {
+    if (typeof volume === 'number') {
+      currentTTSVolume = Math.max(0, Math.min(1, volume))
+      if (currentTTSVolume <= 0 && (currentPiperChild || currentAplayChild)) {
+        killAllChildren()
+        sendEnded()
+      }
     }
   })
 
