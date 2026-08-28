@@ -127,6 +127,42 @@ export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({
                 .map((paragraph, idx) => {
                   const isCallout = /^\s*(\*\*Key Formula:\*\*|Key Formula:|\*\*Memory Tip:\*\*|Memory Tip:)/i.test(paragraph)
 
+                  // Split single-newline numbered list items (e.g. "1. item\n2. item")
+                  // and also convert inline numbering like "(1) item, (2) item" to lines
+                  const lines = paragraph.trim().split('\n')
+                  const numberedLines = lines.filter(l => /^\s*\d+[.)]\s/.test(l.trim()))
+                  const isNumberedList = !isCallout && lines.length > 1 && numberedLines.length >= 2
+
+                  if (isNumberedList) {
+                    // Find the header line (if any) and the list lines
+                    const headerLines: string[] = []
+                    const listLines: string[] = []
+                    for (const line of lines) {
+                      if (/^\s*\d+[\.)]\s/.test(line.trim())) {
+                        listLines.push(line.trim())
+                      } else {
+                        headerLines.push(line.trim())
+                      }
+                    }
+
+                    return (
+                      <div key={idx} className="relative pl-1 space-y-1.5">
+                        {headerLines.length > 0 && (
+                          <div dangerouslySetInnerHTML={{ __html: renderMath(headerLines.join(' ')) }} />
+                        )}
+                        <ol className="list-none space-y-1.5 pl-0">
+                          {listLines.map((line, li) => (
+                            <li
+                              key={li}
+                              className="leading-relaxed"
+                              dangerouslySetInnerHTML={{ __html: renderMath(line) }}
+                            />
+                          ))}
+                        </ol>
+                      </div>
+                    )
+                  }
+
                   return (
                     <div
                       key={idx}

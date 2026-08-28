@@ -146,7 +146,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 
             className={`px-3 py-2 bg-[#0D0D0D] border border-[#00FF41] rounded shadow-[0_0_15px_rgba(0,255,65,0.35)] w-max max-w-[320px] text-center relative ${tooltipClassName}`}
           >
             {typeof content === 'string' ? (
-              <p className="text-[#00FF41] text-[10px] font-['Rajdhani'] font-bold tracking-widest leading-tight uppercase whitespace-nowrap">
+              <p className="text-[#00FF41] text-[10px] font-['Rajdhani'] font-bold tracking-widest leading-tight uppercase whitespace-normal break-words">
                 {content}
               </p>
             ) : (

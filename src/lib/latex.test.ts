@@ -171,5 +171,18 @@ describe('renderMath', () => {
     expect(html).toContain('The price was $50 before discount.')
     expect(html).not.toContain('katex')
   })
+
+  it('renders AI explanation with formulas and numbers correctly', () => {
+    const input = `Explanation: B. $5.57 \\times 10^{-13}\\text{ m}$ is correct because the photon must provide at least the deuteron binding energy of $2.23\\ \\text{MeV}$, and inserting this energy into $E=\\frac{hc}{\\lambda}$ yields that wavelength.`
+    const html = renderMath(input)
+    expect(html).not.toContain('andinsertingthisenergyinto')
+    expect(html).toContain('katex')
+  })
+
+  it('renders AI explanation memory tip with mixed LaTeX and bare commands', () => {
+    const input = `Memory Tip: *Bind-Energy -> \\lambda = hc/E; higher E means shorter \\lambda, so plug 2.23 MeV to get $5.57\\times10^{-13}$ m.*`
+    const html = renderMath(input)
+    expect(html).toContain('katex')
+  })
 })
 

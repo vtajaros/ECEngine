@@ -52,10 +52,51 @@ export const protectCurrencyAndEscapedDollars = (text: string): string => {
   // 1. Explicitly escaped dollar signs: \$ -> token
   let result = text.replace(/\\\$/g, CURRENCY_TOKEN)
 
-  // 2. Currency dollar signs: $ directly preceding a number (e.g. $500,000, $150, $2.50, ($100))
-  // Must be a single $ (not $$), preceded by start of line, whitespace, or open punctuation.
-  const currencyRegex = /(^|[\s(\[{,;:])(?<!\$)\$(?!\$)(?=\s?\d[\d,]*(?:\.\d+)?(?:[kKmMbBtT])?(?:[\s.,;:!?)\]}\-]|$))/g
-  result = result.replace(currencyRegex, `$1${CURRENCY_TOKEN}`)
+  // 2. Scan through dollar signs to differentiate currency from LaTeX math delimiters
+  // A dollar sign directly preceding digits (e.g. $500,000 or $25,000) is currency if:
+  // - It has no matching closing $ on the same line, OR
+  // - The text between it and the next $ looks like English prose (e.g. 2+ prose words, no LaTeX commands or math operators)
+  const dollarRegex = /(^|[\s(\[{,;:])(?<!\$)\$(?!\$)(?=\s?\d[\d,]*(?:\.\d+)?(?:[kKmMbBtT])?\b)/g
+
+  let match: RegExpExecArray | null
+  while ((match = dollarRegex.exec(result)) !== null) {
+    const prefix = match[1]
+    const dollarIndex = match.index + prefix.length
+
+    // Find the next single $ after this dollar sign (if any)
+    const restOfText = result.slice(dollarIndex + 1)
+    const nextDollarOffset = restOfText.search(/(?<!\$)\$(?!\$)/)
+
+    if (nextDollarOffset === -1) {
+      // Unpaired dollar sign before a number -> definitely currency
+      result = result.slice(0, dollarIndex) + CURRENCY_TOKEN + result.slice(dollarIndex + 1)
+      dollarRegex.lastIndex = dollarIndex + CURRENCY_TOKEN.length
+      continue
+    }
+
+    const insideCandidate = restOfText.slice(0, nextDollarOffset)
+
+    // Check if the candidate inside is a valid math expression vs prose
+    const hasLatexCommand = /\\([a-zA-Z]+)/.test(insideCandidate)
+    const hasMathScript = /[\^_][{0-9a-zA-Z]/.test(insideCandidate)
+    const hasMathRel = /[=<>≈≤≥±]/.test(insideCandidate)
+
+    let stripped = insideCandidate.replace(/\\(text|mathrm|textbf|textit)\{[^}]*\}/g, '')
+    stripped = stripped.replace(/\\[a-zA-Z]+/g, '')
+    const words = (stripped.match(/\b[a-zA-Z]{2,}\b/g) || []).filter(w => !MATH_FUNCTION_WORDS.has(w.toLowerCase()))
+    const isProse = words.length >= 2 && /\s/.test(stripped)
+
+    const isMath = (hasLatexCommand || hasMathScript || hasMathRel) && !isProse
+
+    if (!isMath) {
+      // This is a currency symbol, not a LaTeX math delimiter
+      result = result.slice(0, dollarIndex) + CURRENCY_TOKEN + result.slice(dollarIndex + 1)
+      dollarRegex.lastIndex = dollarIndex + CURRENCY_TOKEN.length
+    } else {
+      // It's a valid math block, skip past the closing $
+      dollarRegex.lastIndex = dollarIndex + 1 + nextDollarOffset + 1
+    }
+  }
 
   return result
 }
@@ -163,6 +204,43 @@ function applyInlineFormatting(text: string): string {
 }
 
 /**
+ * Renders a plain-text/prose segment that sits outside explicit $ delimiters.
+ * If the prose contains bare LaTeX commands (e.g. \lambda, \frac{1}{2}), they are rendered with KaTeX.
+ * Otherwise, markdown-style inline formatting is applied.
+ */
+function renderProseSegment(segment: string): string {
+  if (!segment) return ''
+  if (!/\\([a-zA-Z]+)/.test(segment)) {
+    return applyInlineFormatting(renderSegment(segment))
+  }
+  // Match standalone LaTeX commands or environments in prose
+  const bareRegex = /(\\begin\{[a-zA-Z*]+\}[\s\S]*?\\end\{[a-zA-Z*]+\}|\\[a-zA-Z]+(?:\{(?:[^{}]|\{[^{}]*\})*\}|\[[^[\]]*\])*)/g
+  const parts: string[] = []
+  let last = 0
+  let m: RegExpExecArray | null
+  while ((m = bareRegex.exec(segment)) !== null) {
+    if (m.index > last) {
+      parts.push(applyInlineFormatting(renderSegment(segment.slice(last, m.index))))
+    }
+    try {
+      parts.push(
+        katex.renderToString(restoreCurrencyTokens(m[0].trim()), {
+          throwOnError: false,
+          displayMode: false
+        })
+      )
+    } catch {
+      parts.push(escapeHtml(restoreCurrencyTokens(m[0])))
+    }
+    last = m.index + m[0].length
+  }
+  if (last < segment.length) {
+    parts.push(applyInlineFormatting(renderSegment(segment.slice(last))))
+  }
+  return parts.join('')
+}
+
+/**
  * Render inline LaTeX math expressions within text.
  * Handles three cases:
  *   Path A — pure math expressions: render entire string with KaTeX.
@@ -218,53 +296,41 @@ export const renderMath = (text: string): string => {
     }
   }
 
-  // ── If the text has un-delimited LaTeX commands in mixed prose, wrap them in $ ──
-  if (!t.includes('$') && /\\([a-zA-Z]+)/.test(t)) {
-    // Wrap environments like \begin{matrix}...\end{matrix}
-    t = t.replace(/\\begin\{([a-zA-Z*]+)\}[\s\S]*?\\end\{\1\}/g, match => `$${match}$`)
-    // Wrap standalone LaTeX commands with their arguments
-    t = t.replace(/\\[a-zA-Z]+(?:\{(?:[^{}]|\{[^{}]*\})*\}|\[[^[\]]*\])*/g, match => `$${match}$`)
+  // ── Path B/C: content with $ / $$ delimiters (or mixed prose with LaTeX) ──
+  const delimRegex = /(\$\$[\s\S]*?\$\$|\$[^$\n]*?\$)/g
+  const segments: string[] = []
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  while ((match = delimRegex.exec(t)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push(renderProseSegment(t.slice(lastIndex, match.index)))
+    }
+    const isDisplay = match[0].startsWith('$$')
+    const inner = match[0].replace(/^\$\$?/, '').replace(/\$\$?$/, '')
+    try {
+      segments.push(
+        katex.renderToString(restoreCurrencyTokens(inner.trim()), {
+          throwOnError: false,
+          displayMode: isDisplay
+        })
+      )
+    } catch {
+      segments.push(escapeHtml(restoreCurrencyTokens(match[0])))
+    }
+    lastIndex = match.index + match[0].length
   }
 
-  const hasDollar = t.includes('$')
+  if (lastIndex < t.length) {
+    segments.push(renderProseSegment(t.slice(lastIndex)))
+  }
 
-  // ── Path B/C: content with $ / $$ delimiters ──
-  // Split on math delimiter boundaries. Text segments are HTML-escaped; KaTeX
-  // rendered segments are inserted directly.
-  if (hasDollar) {
-    const segments: string[] = []
-    const delimRegex = /(\$\$[\s\S]*?\$\$|\$[^$\n]*?\$)/g
-    let lastIndex = 0
-    let match: RegExpExecArray | null
-
-    while ((match = delimRegex.exec(t)) !== null) {
-      if (match.index > lastIndex) {
-        segments.push(applyInlineFormatting(renderSegment(t.slice(lastIndex, match.index))))
-      }
-      const isDisplay = match[0].startsWith('$$')
-      const inner = match[0].replace(/^\$\$?/, '').replace(/\$\$?$/, '')
-      try {
-        segments.push(
-          katex.renderToString(restoreCurrencyTokens(inner.trim()), {
-            throwOnError: false,
-            displayMode: isDisplay
-          })
-        )
-      } catch {
-        segments.push(escapeHtml(restoreCurrencyTokens(match[0])))
-      }
-      lastIndex = match.index + match[0].length
-    }
-
-    if (lastIndex < t.length) {
-      segments.push(applyInlineFormatting(renderSegment(t.slice(lastIndex))))
-    }
-
+  if (segments.length > 0) {
     return restoreCurrencyTokens(segments.join(''))
   }
 
   // ── Pure plain text: no math at all ──
-  return restoreCurrencyTokens(applyInlineFormatting(renderSegment(t)))
+  return restoreCurrencyTokens(renderProseSegment(t))
 }
 
 /**
