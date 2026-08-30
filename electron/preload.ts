@@ -55,6 +55,8 @@ contextBridge.exposeInMainWorld('electron', {
     getExamSessions: (limit?: number) => ipcRenderer.invoke('data:getExamSessions', limit),
     deleteExamSession: (id: string) => ipcRenderer.invoke('data:deleteExamSession', id),
     clearExamSessions: () => ipcRenderer.invoke('data:clearExamSessions'),
+    exportDatabaseAndImages: (): Promise<{ success: boolean; canceled?: boolean; folderPath?: string; error?: string }> =>
+      ipcRenderer.invoke('data:exportDatabaseAndImages'),
   },
   file: {
     import: (filePath?: string) => ipcRenderer.invoke('file:import', filePath),

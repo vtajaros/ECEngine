@@ -91,6 +91,7 @@ declare global {
         getExamSessions: (limit?: number) => Promise<{ success: boolean; data?: any[]; error?: string }>
         deleteExamSession: (id: string) => Promise<{ success: boolean; error?: string }>
         clearExamSessions: () => Promise<{ success: boolean; error?: string }>
+        exportDatabaseAndImages: () => Promise<{ success: boolean; canceled?: boolean; folderPath?: string; error?: string }>
       }
       file: {
         import: (filePath?: string) => Promise<{ success: boolean; data?: string; canceled?: boolean; error?: string }>

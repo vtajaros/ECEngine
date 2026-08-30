@@ -73,10 +73,10 @@ const PRINT_THEMES: Record<PrintTheme, ThemeDef> = {
       '--pt-border': '#363b45',
       '--pt-border-light': '#2e3340',
       '--pt-thead-bg': '#1e2128',
-      '--pt-answer-bg': 'rgba(100,160,255,0.12)',
-      '--pt-answer-text': '#7eb8f7',
+      '--pt-answer-bg': 'rgba(0, 255, 65, 0.15)',
+      '--pt-answer-text': '#00FF41',
       '--pt-formula-bg': '#1e2128',
-      '--pt-formula-text': '#7eb8f7',
+      '--pt-formula-text': '#00FF41',
       '--pt-rule': '#4a5060',
     },
   },
@@ -449,7 +449,7 @@ export default function PrintView() {
   const [exportState, setExportState] = useState<ExportState>('idle')
   const [exportError, setExportError] = useState('')
   const [scale, setScale] = useState(1)
-  const [theme, setTheme] = useState<PrintTheme>('light')
+  const [theme, setTheme] = useState<PrintTheme>('dark')
   const [showAnswers, setShowAnswers] = useState(true)
   const [showSolutions, setShowSolutions] = useState(true)
   const [topicDescription, setTopicDescription] = useState<string>('')
@@ -470,7 +470,7 @@ export default function PrintView() {
   // Sync theme+layout from pdfConfig once it arrives
   useEffect(() => {
     if (!pdfConfig) return
-    setTheme((pdfConfig.theme ?? 'light') as PrintTheme)
+    setTheme((pdfConfig.theme ?? 'dark') as PrintTheme)
     setLayout((pdfConfig.layout ?? 'table') as LayoutMode)
   }, [pdfConfig])
 

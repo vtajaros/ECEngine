@@ -1,10 +1,13 @@
 import { ipcMain, dialog, BrowserWindow, app } from 'electron'
-import { queryAll, execute, getDB } from '../db/database'
+import { queryAll, execute, getDB, getActiveDatabasePath } from '../db/database'
 import { serializeMcqCard } from './mcq.serializer'
+import * as fs from 'fs'
 import * as fsp from 'fs/promises'
 import * as path from 'path'
 import { z } from 'zod'
 import crypto from 'crypto'
+import archiver from 'archiver'
+import { resolveImagesPath } from './config.ipc'
 
 const TopicSchema = z.object({
   id: z.string(),
@@ -283,6 +286,61 @@ export function registerExportHandlers(): void {
       })()
       return { success: true }
     } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('data:exportDatabaseAndImages', async () => {
+    try {
+      const win = BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0]
+      if (!win) return { success: false, error: 'No active window' }
+
+      const { canceled, filePaths } = await dialog.showOpenDialog(win, {
+        title: 'Export Database & Images — Select Destination Folder',
+        buttonLabel: 'Export Here',
+        properties: ['openDirectory', 'createDirectory']
+      })
+
+      if (canceled || !filePaths || filePaths.length === 0) {
+        return { success: false, canceled: true }
+      }
+
+      const targetFolder = filePaths[0]
+      const destDbPath = path.join(targetFolder, 'ecengine.sqlite')
+      const destZipPath = path.join(targetFolder, 'ece-images.zip')
+
+      // 1. Export database (ecengine.sqlite)
+      try {
+        await getDB().backup(destDbPath)
+      } catch (dbErr) {
+        const activeDbPath = getActiveDatabasePath()
+        if (fs.existsSync(activeDbPath)) {
+          await fsp.copyFile(activeDbPath, destDbPath)
+        } else {
+          throw new Error(`Database file not found: ${activeDbPath}`)
+        }
+      }
+
+      // 2. Export images (ece-images.zip)
+      const imagesDir = resolveImagesPath()
+      await new Promise<void>((resolve, reject) => {
+        const output = fs.createWriteStream(destZipPath)
+        const archive = archiver('zip', { zlib: { level: 9 } })
+
+        output.on('close', () => resolve())
+        output.on('error', (err) => reject(err))
+        archive.on('error', (err) => reject(err))
+
+        archive.pipe(output)
+        if (fs.existsSync(imagesDir)) {
+          archive.directory(imagesDir, false)
+        }
+        archive.finalize().catch(reject)
+      })
+
+      return { success: true, folderPath: targetFolder }
+    } catch (error) {
+      console.error('[exportDatabaseAndImages] Error:', error)
       return { success: false, error: (error as Error).message }
     }
   })

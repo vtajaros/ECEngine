@@ -270,6 +270,27 @@ export default function Settings() {
     }
   };
 
+  const [isExportingData, setIsExportingData] = useState(false);
+
+  const handleExportDatabaseAndImages = async () => {
+    if (isExportingData) return;
+    setIsExportingData(true);
+    try {
+      const res = await window.electron.data.exportDatabaseAndImages();
+      if (res.success) {
+        setToastMessage('Database & images exported successfully!');
+      } else if (!res.canceled) {
+        setToastMessage(`Export failed: ${res.error || 'Unknown error'}`);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setToastMessage(`Export failed: ${err?.message || String(err)}`);
+    } finally {
+      setIsExportingData(false);
+      setTimeout(() => setToastMessage(null), 3500);
+    }
+  };
+
   const filteredBySubject = exportSubjectFilter === 'ALL'
     ? allTopics
     : allTopics.filter(t => (SUBJECT_MAP[t.subject] ?? t.subject) === exportSubjectFilter);
@@ -314,6 +335,15 @@ export default function Settings() {
         { label: 'Auto-Backup Progress Locally', type: 'toggle', current: true, advanced: true },
         { label: 'Images Storage Path', type: 'custom-path-picker', advanced: true },
         { label: 'Database File Location', type: 'custom-db-path-picker', advanced: true },
+        {
+          label: 'Export Database & Images',
+          description: 'Export ecengine.sqlite and zipped ece-images.zip to a folder.',
+          type: 'action',
+          buttonText: isExportingData ? 'EXPORTING...' : 'EXPORT DATA',
+          actionId: 'export-db-images',
+          advanced: true,
+          disabled: isExportingData,
+        },
         { label: 'Import Decks', type: 'action', buttonText: 'IMPORT JSON', actionId: 'import', advanced: true },
         { label: 'Export Decks', type: 'action', buttonText: 'EXPORT JSON', actionId: 'export', advanced: true },
         { label: 'Reset Mastery Progress', type: 'action', buttonText: 'Reset Progress', actionId: 'reset-progress', advanced: true },
@@ -816,8 +846,11 @@ export default function Settings() {
 
                       {opt.type === 'action' && (
                         <button
+                          disabled={(opt as any).disabled}
                           onClick={() => {
-                            if ((opt as any).actionId === 'reset-progress') {
+                            if ((opt as any).actionId === 'export-db-images') {
+                              handleExportDatabaseAndImages();
+                            } else if ((opt as any).actionId === 'reset-progress') {
                               setResetResetMenuOpen(true);
                             } else if ((opt as any).actionId === 'clear-all') {
                               setShowClearModal(true);
@@ -834,7 +867,9 @@ export default function Settings() {
                               handleImportDecks();
                             }
                           }}
-                          className={`px-4 py-2 border rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all ${(opt as any).danger
+                          className={`px-4 py-2 border rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all ${(opt as any).disabled
+                            ? 'opacity-50 cursor-not-allowed border-border-base text-text-muted'
+                            : (opt as any).danger
                             ? 'border-danger text-danger hover:bg-[rgba(255,51,51,0.1)] hover:shadow-[0_0_10px_rgba(255,51,51,0.5)]'
                             : 'border-accent text-accent hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)]'
                             }`}>
