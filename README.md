@@ -60,7 +60,7 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
   * **Glossary**: Clean two-column vertical study list.
   * **Table**: Compact grid with problem and answer/solution columns.
   * **Q&A**: Classic question-and-answer format.
-* **Themes**: Switch between **Light**, **Sepia**, and **Dark** paper themes.
+* **Themes**: Switch between **Light**, **Sepia**, and **Dark** (default, with cyber-neon green highlights matching the companion app).
 * **Solution & Answer Toggles**: Show or hide answers and detailed solutions with a single click.
 * **Find in Document (`Ctrl + F`)**: Integrated search bar with live text highlighting (`<mark>`), occurrence counter, and match stepping.
 * **High-Res Image Lightbox**: Click any diagram or solution schematic to expand into a high-resolution lightbox overlay.
@@ -78,7 +78,7 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 
 ---
 
-### 📥 Bulk Import & Migration
+### 📥 Bulk Import, Migration & Companion App Sync
 * **Quizlet Importer**: Paste Quizlet exports directly into the app; automatically detects MCQs vs. Flashcards and applies automatic typo and symbol fixes.
 * **Native Plain-Text Format**: Quick bulk creation using clean text blocks separated by blank lines:
   ```text
@@ -90,6 +90,14 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
   ANS: B
   ```
 * **Full Backup & Selective Export**: Export all decks or cherry-pick specific decks into portable JSON/text archives.
+* **Database & Images Export (Companion App Ready)**: One-click export of the active SQLite database (`ecengine.sqlite`) and zipped diagram assets (`ece-images.zip`) to any destination folder for easy offline backup and synchronization with the **ECEngine Android Companion App**.
+
+---
+
+### 📱 ECEngine Android Companion App
+* **Study Anywhere**: Transfer your exported `ecengine.sqlite` and `ece-images.zip` directly to your Android device.
+* **Unified Cyberpunk Aesthetic**: Consistent dark mode interface with vibrant neon green accents and crisp LaTeX equation rendering.
+* **Full Offline Portability**: Access all study decks, question explanations, and schematics on the go without requiring an internet connection.
 
 ---
 
@@ -111,7 +119,7 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 * **Custom Images Directory**: Select a custom folder for all diagrams and card media with native directory browsing.
 * **KaTeX Scale & Bold Mode**: Customize math rendering size (`0.8em` to `1.5em`) and toggle high-contrast KaTeX bold mode.
 * **Global App Zoom**: Scale the UI (`80%` – `130%`) with `Ctrl+=`, `Ctrl+-`, `Ctrl+0`, and `Ctrl + Mouse Wheel`.
-* **Database Management**: View active SQLite file path, switch database location, or backup/restore data.
+* **Database Management & Export**: View active SQLite file path, switch database location, or export database + zipped images to a directory with a single click.
 * **Cross-Platform Audio Settings**: Configurable speech rate, voice selection, and Linux Piper ONNX neural voice model management.
 
 ---
