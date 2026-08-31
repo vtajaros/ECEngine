@@ -1050,7 +1050,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
           {/* Header */}
           {isCollapsed ? (
             <div className="flex justify-center items-center mb-3">
-              <Tooltip content="Expand Folders" position="left">
+              <Tooltip content="Expand Folders" position="bottom">
                 <button
                   onClick={toggleCollapse}
                   className="text-gray-400 hover:text-accent hover:bg-border-base transition-colors p-1.5 rounded"
@@ -1100,7 +1100,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
               </div>
               <div className="flex items-center gap-0.5">
                 {!isEditing && (
-                  <Tooltip content="New folder" position="top">
+                  <Tooltip content="New folder" position="bottom">
                     <button
                       onClick={() => setCreatingUnder(null)}
                       className="text-gray-400 hover:text-accent hover:bg-border-base transition-colors p-1 rounded"
@@ -1109,7 +1109,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                     </button>
                   </Tooltip>
                 )}
-                <Tooltip content={isEditing ? 'Done' : 'Edit folders'} position="top">
+                <Tooltip content={isEditing ? 'Done' : 'Edit folders'} position="bottom">
                   <button
                     onClick={toggleEdit}
                     className="text-gray-400 hover:text-accent hover:bg-border-base transition-colors p-1 rounded"
@@ -1337,7 +1337,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
         <div className={`flex-1 overflow-y-auto overflow-x-hidden flex flex-col items-stretch gap-0 w-full py-4 ${isCollapsed ? 'px-1' : 'px-2'}`}>
         {isCollapsed ? (
           <div className="flex justify-center items-center mb-3">
-            <Tooltip content="Expand Folders" position="left">
+            <Tooltip content="Expand Folders" position="bottom">
               <button
                 onClick={toggleCollapse}
                 className="text-gray-400 hover:text-accent hover:bg-border-base transition-colors p-1.5 rounded"
@@ -1386,7 +1386,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
               <h2 className="text-gray-400 text-xs uppercase tracking-[0.15em] font-bold font-['Rajdhani']">FOLDERS</h2>
             </div>
             <div className="flex items-center gap-0.5">
-              <Tooltip content={isEditing ? 'Done' : 'Edit folders'} position="top">
+              <Tooltip content={isEditing ? 'Done' : 'Edit folders'} position="bottom">
                 <button
                   onClick={toggleEdit}
                   className="text-gray-400 hover:text-accent hover:bg-border-base transition-colors p-1 rounded"

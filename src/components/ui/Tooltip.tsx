@@ -1,48 +1,160 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+
+export type TooltipPosition = 'left' | 'right' | 'top' | 'bottom';
 
 interface TooltipProps {
   content: React.ReactNode;
   children: React.ReactNode;
-  position?: 'left' | 'right' | 'top' | 'bottom';
+  position?: TooltipPosition;
   className?: string;
   tooltipClassName?: string;
 }
 
-export const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 'left', className = '', tooltipClassName = '' }) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const [coords, setCoords] = useState({ top: 0, left: 0 });
-  const anchorRef = useRef<HTMLDivElement>(null);
+export interface ComputedTooltipLayout {
+  top: number;
+  left: number;
+  placement: TooltipPosition;
+  arrowLeft?: number;
+  arrowTop?: number;
+}
 
-  const GAP = 10;
+export function computeTooltipPosition(
+  anchorRect: { top: number; bottom: number; left: number; right: number; width: number; height: number },
+  tooltipWidth: number,
+  tooltipHeight: number,
+  preferredPosition: TooltipPosition = 'left',
+  viewportWidth: number = typeof window !== 'undefined' ? window.innerWidth : 1920,
+  viewportHeight: number = typeof window !== 'undefined' ? window.innerHeight : 1080,
+  gap: number = 10,
+  padding: number = 8
+): ComputedTooltipLayout {
+  let placement: TooltipPosition = preferredPosition;
+  const w = tooltipWidth;
+  const h = tooltipHeight;
 
-  const recalc = () => {
-    if (!anchorRef.current) return;
-    const rect = anchorRef.current.getBoundingClientRect();
-    let top = 0;
-    let left = 0;
+  // 1. Determine placement (auto-flip if requested position overflows viewport)
+  if (preferredPosition === 'top') {
+    const spaceAbove = anchorRect.top - gap;
+    const spaceBelow = viewportHeight - anchorRect.bottom - gap;
+    if (spaceAbove < h + padding && spaceBelow > spaceAbove) {
+      placement = 'bottom';
+    }
+  } else if (preferredPosition === 'bottom') {
+    const spaceBelow = viewportHeight - anchorRect.bottom - gap;
+    const spaceAbove = anchorRect.top - gap;
+    if (spaceBelow < h + padding && spaceAbove > spaceBelow) {
+      placement = 'top';
+    }
+  } else if (preferredPosition === 'left') {
+    const spaceLeft = anchorRect.left - gap;
+    const spaceRight = viewportWidth - anchorRect.right - gap;
+    if (spaceLeft < w + padding && spaceRight > spaceLeft) {
+      placement = 'right';
+    }
+  } else if (preferredPosition === 'right') {
+    const spaceRight = viewportWidth - anchorRect.right - gap;
+    const spaceLeft = anchorRect.left - gap;
+    if (spaceRight < w + padding && spaceLeft > spaceRight) {
+      placement = 'left';
+    }
+  }
 
-    if (position === 'bottom') {
-      top = rect.bottom + GAP;
-      left = rect.left + rect.width / 2;
-    } else if (position === 'top') {
-      top = rect.top - GAP;
-      left = rect.left + rect.width / 2;
-    } else if (position === 'right') {
-      top = rect.top + rect.height / 2;
-      left = rect.right + GAP;
+  // 2. Compute coordinates and arrow offsets based on resolved placement
+  let top = 0;
+  let left = 0;
+  let arrowLeft: number | undefined;
+  let arrowTop: number | undefined;
+
+  const anchorCenterX = anchorRect.left + anchorRect.width / 2;
+  const anchorCenterY = anchorRect.top + anchorRect.height / 2;
+
+  if (placement === 'top' || placement === 'bottom') {
+    if (placement === 'top') {
+      top = anchorRect.top - gap - h;
     } else {
-      // left
-      top = rect.top + rect.height / 2;
-      left = rect.left - GAP;
+      top = anchorRect.bottom + gap;
     }
 
-    setCoords({ top, left });
+    // Clamp top inside viewport
+    top = Math.max(padding, Math.min(viewportHeight - padding - h, top));
+
+    // Center horizontally on anchor
+    left = anchorCenterX - w / 2;
+
+    // Clamp left inside viewport
+    left = Math.max(padding, Math.min(viewportWidth - padding - w, left));
+
+    // Arrow horizontally points to anchor center
+    const rawArrowLeft = anchorCenterX - left;
+    arrowLeft = Math.max(12, Math.min(w - 12, rawArrowLeft));
+  } else {
+    // left or right
+    if (placement === 'left') {
+      left = anchorRect.left - gap - w;
+    } else {
+      left = anchorRect.right + gap;
+    }
+
+    // Clamp left inside viewport
+    left = Math.max(padding, Math.min(viewportWidth - padding - w, left));
+
+    // Center vertically on anchor
+    top = anchorCenterY - h / 2;
+
+    // Clamp top inside viewport
+    top = Math.max(padding, Math.min(viewportHeight - padding - h, top));
+
+    // Arrow vertically points to anchor center
+    const rawArrowTop = anchorCenterY - top;
+    arrowTop = Math.max(10, Math.min(h - 10, rawArrowTop));
+  }
+
+  return { top, left, placement, arrowLeft, arrowTop };
+}
+
+export const Tooltip: React.FC<TooltipProps> = ({
+  content,
+  children,
+  position = 'left',
+  className = '',
+  tooltipClassName = ''
+}) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const [layout, setLayout] = useState<ComputedTooltipLayout>(() => ({
+    top: 0,
+    left: 0,
+    placement: position,
+  }));
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+
+  const GAP = 10;
+  const PADDING = 8;
+
+  const updateLayout = () => {
+    if (!anchorRef.current) return;
+    const anchorRect = anchorRef.current.getBoundingClientRect();
+    const tooltipRect = tooltipRef.current?.getBoundingClientRect();
+    const w = tooltipRect?.width || 100;
+    const h = tooltipRect?.height || 30;
+
+    const newLayout = computeTooltipPosition(
+      anchorRect,
+      w,
+      h,
+      position,
+      window.innerWidth,
+      window.innerHeight,
+      GAP,
+      PADDING
+    );
+    setLayout(newLayout);
   };
 
   const handleMouseEnter = () => {
-    recalc();
+    updateLayout();
     setIsVisible(true);
   };
 
@@ -53,7 +165,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 
   const handleFocus = (e: React.FocusEvent) => {
     try {
       if ((e.target as HTMLElement).matches(':focus-visible')) {
-        recalc();
+        updateLayout();
         setIsVisible(true);
       }
     } catch {
@@ -65,25 +177,24 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 
     setIsVisible(false);
   };
 
-  // Translate based on position so tooltip box is centred/aligned correctly
-  const getTransformStyle = () => {
-    if (position === 'bottom') return 'translate(-50%, 0)';
-    if (position === 'top')    return 'translate(-50%, -100%)';
-    if (position === 'right')  return 'translate(0, -50%)';
-    return 'translate(-100%, -50%)'; // left
-  };
+  // Adjust exact layout after DOM render before paint
+  useLayoutEffect(() => {
+    if (isVisible) {
+      updateLayout();
+    }
+  }, [isVisible, content, position]);
 
-  // Framer-motion initial/exit offset (small nudge in the approach direction)
-  const getOffset = () => {
-    if (position === 'bottom') return { y: -4 };
-    if (position === 'top')    return { y: 4 };
-    if (position === 'right')  return { x: -4 };
+  // Framer-motion initial/exit offset
+  const getOffset = (plc: TooltipPosition) => {
+    if (plc === 'bottom') return { y: -4 };
+    if (plc === 'top')    return { y: 4 };
+    if (plc === 'right')  return { x: -4 };
     return { x: 4 }; // left
   };
 
-  const offset = getOffset();
+  const offset = getOffset(layout.placement);
 
-  // Dismiss tooltip when window loses focus (e.g. opening popup window or switching apps)
+  // Dismiss tooltip when window loses focus
   useEffect(() => {
     const handleWindowBlur = () => {
       setIsVisible(false);
@@ -99,7 +210,7 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 
     if (!isVisible) return;
 
     const handleScrollOrResize = () => {
-      recalc();
+      updateLayout();
     };
 
     const handlePointerMove = (e: PointerEvent) => {
@@ -129,11 +240,11 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 
     <AnimatePresence>
       {isVisible && (
         <div
+          ref={tooltipRef}
           style={{
             position: 'fixed',
-            top: coords.top,
-            left: coords.left,
-            transform: getTransformStyle(),
+            top: layout.top,
+            left: layout.left,
             zIndex: 99999,
             pointerEvents: 'none',
           }}
@@ -153,28 +264,52 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 
               content
             )}
             {/* Arrow */}
-            {position === 'left' && (
+            {layout.placement === 'left' && (
               <>
-                <div className="absolute left-[100%] top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[6px] border-l-[#00FF41]" />
-                <div className="absolute left-[calc(100%-1px)] top-1/2 -translate-y-1/2 w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-l-[5px] border-l-[#0D0D0D]" />
+                <div
+                  className="absolute left-[100%] w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[6px] border-l-[#00FF41]"
+                  style={{ top: layout.arrowTop ?? '50%', transform: 'translateY(-50%)' }}
+                />
+                <div
+                  className="absolute left-[calc(100%-1px)] w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-l-[5px] border-l-[#0D0D0D]"
+                  style={{ top: layout.arrowTop ?? '50%', transform: 'translateY(-50%)' }}
+                />
               </>
             )}
-            {position === 'right' && (
+            {layout.placement === 'right' && (
               <>
-                <div className="absolute right-[100%] top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-[#00FF41]" />
-                <div className="absolute right-[calc(100%-1px)] top-1/2 -translate-y-1/2 w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-r-[5px] border-r-[#0D0D0D]" />
+                <div
+                  className="absolute right-[100%] w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[6px] border-r-[#00FF41]"
+                  style={{ top: layout.arrowTop ?? '50%', transform: 'translateY(-50%)' }}
+                />
+                <div
+                  className="absolute right-[calc(100%-1px)] w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-r-[5px] border-r-[#0D0D0D]"
+                  style={{ top: layout.arrowTop ?? '50%', transform: 'translateY(-50%)' }}
+                />
               </>
             )}
-            {position === 'top' && (
+            {layout.placement === 'top' && (
               <>
-                <div className="absolute top-[100%] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#00FF41]" />
-                <div className="absolute top-[calc(100%-1px)] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[5px] border-t-[#0D0D0D]" />
+                <div
+                  className="absolute top-[100%] w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-[#00FF41]"
+                  style={{ left: layout.arrowLeft ?? '50%', transform: 'translateX(-50%)' }}
+                />
+                <div
+                  className="absolute top-[calc(100%-1px)] w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[5px] border-t-[#0D0D0D]"
+                  style={{ left: layout.arrowLeft ?? '50%', transform: 'translateX(-50%)' }}
+                />
               </>
             )}
-            {position === 'bottom' && (
+            {layout.placement === 'bottom' && (
               <>
-                <div className="absolute bottom-[100%] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px] border-b-[#00FF41]" />
-                <div className="absolute bottom-[calc(100%-1px)] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-b-[5px] border-b-[#0D0D0D]" />
+                <div
+                  className="absolute bottom-[100%] w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px] border-b-[#00FF41]"
+                  style={{ left: layout.arrowLeft ?? '50%', transform: 'translateX(-50%)' }}
+                />
+                <div
+                  className="absolute bottom-[calc(100%-1px)] w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-b-[5px] border-b-[#0D0D0D]"
+                  style={{ left: layout.arrowLeft ?? '50%', transform: 'translateX(-50%)' }}
+                />
               </>
             )}
           </motion.div>
@@ -199,3 +334,4 @@ export const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 
     </div>
   );
 };
+
