@@ -514,7 +514,17 @@ export default function AddDeck() {
       <div className="w-full px-6 py-8 xl:grid xl:grid-cols-3 xl:gap-6 flex flex-col gap-8 pb-32 items-center xl:items-start">
 
         {/* 1. Metadata & Tags — Pane 1 (sticky left) */}
-        <DeckMetadataForm metadata={metadata} setMetadata={setMetadata} scope={deckType === 'formula' ? 'formula' : 'study'} />
+        <DeckMetadataForm
+          metadata={metadata}
+          setMetadata={setMetadata}
+          scope={deckType === 'formula' ? 'formula' : 'study'}
+          cards={cards}
+          onToast={(type, msg) => {
+            setToast({ type, msg })
+            if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+            toastTimerRef.current = setTimeout(() => setToast(null), type === 'error' ? 3500 : 2500)
+          }}
+        />
 
         {/* 2 & 3. Cards Pane — Pane 2 (right, 2/3 wide) */}
         <div className="w-full max-w-4xl xl:max-w-none xl:col-span-2 flex flex-col gap-6">

@@ -107,6 +107,40 @@ declare global {
         term: string
         definition: string
       }) => Promise<{ text?: string; error?: string; status?: number; detail?: string }>
+      summarizeDeck: (payload: {
+        title?: string
+        subject?: string
+        cardItems: string[]
+        totalCards: number
+      }) => Promise<{ text?: string; error?: string; status?: number; detail?: string }>
+      getUsageLimits: () => Promise<{
+        success: boolean
+        isConfigured: boolean
+        usage: {
+          limitRequests: number
+          remainingRequests: number
+          resetRequests: string
+          limitTokens: number
+          remainingTokens: number
+          resetTokens: string
+          lastUpdated: number
+        } | null
+        error?: string
+      }>
+      refreshUsageLimits: () => Promise<{
+        success: boolean
+        isConfigured: boolean
+        usage: {
+          limitRequests: number
+          remainingRequests: number
+          resetRequests: string
+          limitTokens: number
+          remainingTokens: number
+          resetTokens: string
+          lastUpdated: number
+        } | null
+        error?: string
+      }>
       config: {
         setApiKey: (key: string) => Promise<{ success: boolean; error?: string }>
         getApiKeyStatus: () => Promise<{ configured: boolean }>

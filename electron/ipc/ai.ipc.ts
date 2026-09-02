@@ -5,10 +5,8 @@ interface ExplainPayload {
   question: string
   choices: string[]
   correctAnswerIndex: number
-  // apiKey intentionally removed — key is read main-process-only via resolveGroqApiKey()
 }
 
-// Groq OpenAI-compatible response shape
 interface GroqResponse {
   choices?: Array<{
     message?: {
@@ -17,11 +15,81 @@ interface GroqResponse {
   }>
 }
 
+export interface UsageLimits {
+  limitRequests: number
+  remainingRequests: number
+  resetRequests: string
+  limitTokens: number
+  remainingTokens: number
+  resetTokens: string
+  lastUpdated: number
+}
+
+let cachedUsageLimits: UsageLimits | null = null
+
+function captureRateLimits(headers: any): void {
+  try {
+    if (!headers) return
+    const getHeader = (name: string): string | null => {
+      if (typeof headers.get === 'function') return headers.get(name)
+      return headers[name] || headers[name.toLowerCase()] || null
+    }
+
+    const limitReq = getHeader('x-ratelimit-limit-requests')
+    const remReq = getHeader('x-ratelimit-remaining-requests')
+    const resetReq = getHeader('x-ratelimit-reset-requests')
+    const limitTok = getHeader('x-ratelimit-limit-tokens')
+    const remTok = getHeader('x-ratelimit-remaining-tokens')
+    const resetTok = getHeader('x-ratelimit-reset-tokens')
+
+    if (limitReq && remReq) {
+      cachedUsageLimits = {
+        limitRequests: parseInt(limitReq, 10) || 0,
+        remainingRequests: parseInt(remReq, 10) || 0,
+        resetRequests: resetReq || '',
+        limitTokens: parseInt(limitTok || '0', 10) || 0,
+        remainingTokens: parseInt(remTok || '0', 10) || 0,
+        resetTokens: resetTok || '',
+        lastUpdated: Date.now(),
+      }
+    }
+  } catch (e) {
+    console.error('[ai.ipc] Failed to parse rate limit headers:', e)
+  }
+}
+
+async function fetchFreshUsageLimits(apiKey: string): Promise<UsageLimits | null> {
+  const endpoint = 'https://api.groq.com/openai/v1/chat/completions'
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 10000)
+  try {
+    const response = await net.fetch(endpoint, {
+      method: 'POST',
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'openai/gpt-oss-120b',
+        messages: [{ role: 'user', content: 'hi' }],
+        max_tokens: 1,
+      }),
+    })
+    clearTimeout(timeout)
+    captureRateLimits(response.headers)
+    return cachedUsageLimits
+  } catch (err) {
+    clearTimeout(timeout)
+    console.error('[ai:getUsageLimits] Ping error:', err)
+    return cachedUsageLimits
+  }
+}
+
 export function registerAIHandlers() {
   ipcMain.handle('ai:explain', async (_event, payload: ExplainPayload) => {
     const { question, choices, correctAnswerIndex } = payload
 
-    // Key is resolved exclusively in the main process — never from the renderer payload
     const apiKey = resolveGroqApiKey()
     if (!apiKey) {
       return { error: 'NO_KEY' }
@@ -85,6 +153,7 @@ STRICT FORMATTING RULES:
       })
 
       clearTimeout(timeout)
+      captureRateLimits(response.headers)
 
       if (!response.ok) {
         if (response.status === 401) return { error: 'INVALID_KEY' }
@@ -137,7 +206,7 @@ STRICT FORMATTING RULES:
 
     try {
       const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 15000)
+      const timeout = setTimeout(() => controller.abort(), 25000)
       const response = await net.fetch(endpoint, {
         method: 'POST',
         signal: controller.signal,
@@ -148,12 +217,13 @@ STRICT FORMATTING RULES:
         body: JSON.stringify({
           model: 'openai/gpt-oss-120b',
           messages: [{ role: 'user', content: userPrompt }],
-          max_tokens: 300,
+          max_tokens: 800,
           temperature: 0.4,
         }),
       })
 
       clearTimeout(timeout)
+      captureRateLimits(response.headers)
 
       if (!response.ok) {
         if (response.status === 401) return { error: 'INVALID_KEY' }
@@ -178,4 +248,120 @@ STRICT FORMATTING RULES:
       return { error: 'NETWORK_ERROR', detail: message }
     }
   })
+
+  ipcMain.handle('ai:summarizeDeck', async (_event, payload: {
+    title?: string
+    subject?: string
+    cardItems: string[]
+    totalCards: number
+  }) => {
+    const apiKey = resolveGroqApiKey()
+    if (!apiKey) {
+      return { error: 'NO_KEY' }
+    }
+
+    const { title = '', subject = '', cardItems = [], totalCards = 0 } = payload
+    if (cardItems.length === 0) {
+      return { error: 'NO_CONTENT', detail: 'No card content provided to summarize' }
+    }
+
+    const cardsText = cardItems.join('\n')
+    const userPrompt = `DECK TITLE: ${title || 'Untitled Deck'}
+SUBJECT: ${subject || 'General'}
+TOTAL CARDS: ${totalCards || cardItems.length}
+
+CARD SAMPLES:
+${cardsText}
+
+RULES:
+1. Identify the top 2 to 4 most prominent topics in the deck.
+2. Output ONLY the topics as a clean, concise phrase or comma-separated list (maximum 4 topics).
+3. Strictly DO NOT include any introductory phrases, headers, or lead-ins (e.g., 'Key concepts in...', 'Overview of...', 'Covers...', 'Topics include:'). Get straight to the topics.
+4. Keep it very short (strictly under 12 words).
+5. Return ONLY the plain text description without quotes.`
+
+    const endpoint = 'https://api.groq.com/openai/v1/chat/completions'
+
+    try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 30000)
+      const response = await net.fetch(endpoint, {
+        method: 'POST',
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: 'openai/gpt-oss-120b',
+          messages: [
+            {
+              role: 'system',
+              content: 'You generate ultra-short, direct topic summaries for flashcard decks (maximum 4 topics, strictly under 12 words). You NEVER use introductory phrases or headers. You get straight to the topics.',
+            },
+            {
+              role: 'user',
+              content: userPrompt,
+            },
+          ],
+          max_tokens: 600,
+          temperature: 0.1,
+        }),
+      })
+
+      clearTimeout(timeout)
+      captureRateLimits(response.headers)
+
+      if (!response.ok) {
+        if (response.status === 401) return { error: 'INVALID_KEY' }
+        if (response.status === 429) return { error: 'RATE_LIMITED' }
+        const errBody = await response.text().catch(() => '')
+        console.error('[ai:summarizeDeck] Groq error:', response.status, errBody)
+        return { error: 'API_ERROR', status: response.status, detail: errBody }
+      }
+
+      const data = (await response.json()) as GroqResponse
+      let text = data?.choices?.[0]?.message?.content?.trim()
+
+      if (!text) return { error: 'API_ERROR', status: 200, detail: 'Empty response from model' }
+
+      // Strip leading/trailing quotation marks and any accidental header/lead-in prefixes
+      text = text
+        .replace(/^["'`]+|["'`]+$/g, '')
+        .replace(/^(key concepts in[^:]*|topics include|topics covered|overview of|covers|deck covers|main topics)\s*[:\-–—]?\s*/i, '')
+        .trim()
+
+      return { text }
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return { error: 'TIMEOUT' }
+      }
+      const message = err instanceof Error ? err.message : String(err)
+      console.error('[ai:summarizeDeck] Network error:', message)
+      return { error: 'NETWORK_ERROR', detail: message }
+    }
+  })
+
+  ipcMain.handle('ai:getUsageLimits', async () => {
+    const apiKey = resolveGroqApiKey()
+    if (!apiKey) {
+      return { success: true, isConfigured: false, usage: null }
+    }
+    if (cachedUsageLimits) {
+      return { success: true, isConfigured: true, usage: cachedUsageLimits }
+    }
+    const usage = await fetchFreshUsageLimits(apiKey)
+    return { success: true, isConfigured: true, usage }
+  })
+
+  ipcMain.handle('ai:refreshUsageLimits', async () => {
+    const apiKey = resolveGroqApiKey()
+    if (!apiKey) {
+      return { success: false, isConfigured: false, error: 'NO_KEY' }
+    }
+    const usage = await fetchFreshUsageLimits(apiKey)
+    return { success: Boolean(usage), isConfigured: true, usage }
+  })
 }
+
+

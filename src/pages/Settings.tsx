@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { Settings as SettingsIcon, Monitor, Bell, Database, Shield, CheckCircle, AlertTriangle, X } from 'lucide-react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { Settings as SettingsIcon, Monitor, Bell, Database, Shield, CheckCircle, AlertTriangle, X, RefreshCw, Info } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { dbService } from '../services/db.service'
 import { getCustomWrongSoundEnabled, setCustomWrongSoundEnabled } from '../hooks/useSound'
@@ -67,6 +67,38 @@ export default function Settings() {
   // Track last persisted values so onBlur doesn't fire a toast when simply tabbing between fields
   const savedImagesPathRef = useRef('');
   const savedDbPathRef = useRef('');
+
+  // Groq API Usage Limits state
+  const [usageLimits, setUsageLimits] = useState<{
+    limitRequests: number
+    remainingRequests: number
+    resetRequests: string
+    limitTokens: number
+    remainingTokens: number
+    resetTokens: string
+    lastUpdated: number
+  } | null>(null)
+  const [loadingUsage, setLoadingUsage] = useState(false)
+  const [usageError, setUsageError] = useState<string | null>(null)
+
+  const loadUsageLimits = useCallback(async (isRefresh = false) => {
+    if (isRefresh) setLoadingUsage(true)
+    try {
+      const res = isRefresh
+        ? await window.electron.refreshUsageLimits()
+        : await window.electron.getUsageLimits()
+      if (res?.success && res.usage) {
+        setUsageLimits(res.usage)
+        setUsageError(null)
+      } else if (res?.error) {
+        setUsageError(res.error)
+      }
+    } catch (err: any) {
+      setUsageError(err?.message || 'Failed to load usage')
+    } finally {
+      setLoadingUsage(false)
+    }
+  }, [])
  
   useEffect(() => {
     const check = async () => {
@@ -87,6 +119,14 @@ export default function Settings() {
     };
     check();
   }, []);
+
+  useEffect(() => {
+    if (apiKeyConfigured) {
+      loadUsageLimits()
+    } else {
+      setUsageLimits(null)
+    }
+  }, [apiKeyConfigured, loadUsageLimits])
 
   // Autosave katexScale (debounced)
   useEffect(() => {
@@ -180,9 +220,13 @@ export default function Settings() {
   const handleSaveApiKey = async () => {
     const result = await window.electron.config.setApiKey(apiKeyInput);
     if (result?.success) {
-      setApiKeyConfigured(apiKeyInput.trim().length > 0);
+      const isConfigured = apiKeyInput.trim().length > 0
+      setApiKeyConfigured(isConfigured);
       setApiKeyInput('');
       setToastMessage('API Key saved successfully!');
+      if (isConfigured) {
+        loadUsageLimits(true);
+      }
     } else {
       setToastMessage('Failed to save API Key.');
     }
@@ -368,25 +412,25 @@ export default function Settings() {
         <div className="space-y-12">
           {/* AI Integration Section */}
           <section>
-            <h2 className="font-['Rajdhani'] font-bold text-xl text-text-primary mb-6 uppercase tracking-wider flex items-center border-b border-surface-2 pb-4">
+            <h2 className="font-['Orbitron'] font-bold text-lg text-text-primary mb-6 uppercase tracking-wider flex items-center border-b border-surface-2 pb-4">
               <Shield size={20} className="text-accent" />
               <span className="ml-3">AI Integration</span>
             </h2>
             <div className="bg-[#111111] p-6 lg:p-8 rounded-lg border border-surface-2 shadow-lg space-y-4">
               <div className="flex flex-col gap-2">
-                <label className="font-['IBM_Plex_Mono'] text-[var(--text-primary)] text-sm">Groq API Key</label>
+                <label className="font-['IBM_Plex_Mono'] text-text-primary text-sm font-medium">Groq API Key</label>
 
                 {/* Status badge */}
                 <div className="flex items-center gap-2 bg-surface-2 border border-border-base rounded px-4 py-3">
                   {apiKeyConfigured ? (
                     <>
-                      <CheckCircle size={16} className="text-[var(--accent-primary)] shrink-0" />
-                      <span className="font-['IBM_Plex_Mono'] text-[var(--accent-primary)] text-sm">API key configured ✓</span>
+                      <CheckCircle size={16} className="text-accent shrink-0" />
+                      <span className="font-['IBM_Plex_Mono'] text-accent text-xs">API key configured ✓</span>
                     </>
                   ) : (
                     <>
                       <AlertTriangle size={16} className="text-[var(--color-wrong)] shrink-0" />
-                      <span className="font-['IBM_Plex_Mono'] text-[var(--color-wrong)] text-sm">No API key set</span>
+                      <span className="font-['IBM_Plex_Mono'] text-[var(--color-wrong)] text-xs">No API key set</span>
                     </>
                   )}
                 </div>
@@ -398,27 +442,201 @@ export default function Settings() {
                     placeholder={apiKeyConfigured ? 'Enter new key to replace…' : 'Enter your Groq API key…'}
                     value={apiKeyInput}
                     onChange={(e) => setApiKeyInput(e.target.value)}
-                    className="flex-1 bg-surface-2 border border-border-base focus:border-[var(--accent-primary)] rounded px-4 py-2 text-[var(--text-primary)] outline-none font-['IBM_Plex_Mono'] transition-colors"
+                    className="flex-1 bg-surface-2 border border-border-base focus:border-accent rounded px-4 py-2 text-text-primary outline-none font-['IBM_Plex_Mono'] text-xs transition-colors"
                   />
                   <button
                     onClick={handleSaveApiKey}
                     disabled={apiKeyInput.trim().length === 0}
-                    className="px-6 py-2 border border-[var(--accent-primary)] text-[var(--accent-primary)] rounded hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)] font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="px-6 py-2 border border-accent text-accent rounded hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)] font-['Rajdhani'] uppercase tracking-wider text-xs md:text-sm font-bold transition-all whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     Save Key
                   </button>
                 </div>
 
-                <p className="text-[#999] text-xs font-['Rajdhani'] uppercase tracking-widest mt-2">
-                  Required for AI explanations. Get a free key at <button type="button" onClick={() => window.electron.shell.openExternal('https://console.groq.com/keys')} className="text-[var(--accent-primary)] hover:underline transition-all bg-transparent border-none p-0 inline font-inherit cursor-pointer">console.groq.com/keys</button>.
+                <p className="text-[#888] text-xs font-['Rajdhani'] tracking-wide mt-2">
+                  Required for AI explanations. Get a free key at <button type="button" onClick={() => window.electron.shell.openExternal('https://console.groq.com/keys')} className="text-accent hover:underline transition-all bg-transparent border-none p-0 inline font-inherit cursor-pointer">console.groq.com/keys</button>.
                 </p>
               </div>
+
+              {/* Usage Limits Card (Antigravity-inspired) */}
+              {apiKeyConfigured && (
+                <div className="border-t border-surface-2 pt-6 mt-4 flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <h3 className="font-['Orbitron'] text-sm tracking-wider text-text-primary uppercase font-bold">
+                        Usage limits
+                      </h3>
+                      <span className="bg-[rgba(0,255,65,0.08)] text-accent border border-accent/30 px-2 py-0.5 rounded text-[10px] font-['IBM_Plex_Mono'] font-bold tracking-wider uppercase">
+                        GROQ API
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => loadUsageLimits(true)}
+                      disabled={loadingUsage}
+                      className="flex items-center gap-1.5 px-3 py-1 text-xs font-['Rajdhani'] uppercase tracking-wider text-text-muted hover:text-accent border border-surface-2 hover:border-accent/40 rounded transition-all disabled:opacity-40"
+                      title="Refresh usage limits"
+                    >
+                      <RefreshCw size={12} className={loadingUsage ? 'animate-spin text-accent' : ''} />
+                      <span>{loadingUsage ? 'Refreshing...' : 'Refresh'}</span>
+                    </button>
+                  </div>
+
+                  <p className="text-[#888] text-xs font-['Rajdhani'] tracking-wide">
+                    Your plan's rate limits determine how much you can use Groq over time.
+                  </p>
+
+                  {usageLimits ? (
+                    <div className="space-y-3 pt-1">
+                      {/* Daily / Window Requests */}
+                      {(() => {
+                        const usedRequests = Math.max(0, usageLimits.limitRequests - usageLimits.remainingRequests)
+                        const pctRequests = usageLimits.limitRequests > 0
+                          ? Math.min(100, Math.round((usedRequests / usageLimits.limitRequests) * 100))
+                          : 0
+
+                        const parseDurationMs = (str: string) => {
+                          if (!str) return 0
+                          let ms = 0
+                          const h = str.match(/(\d+)\s*h/)
+                          const m = str.match(/(\d+)\s*m(?!s)/)
+                          const s = str.match(/(\d+(?:\.\d+)?)\s*s/)
+                          const subMs = str.match(/(\d+)\s*ms/)
+                          if (h) ms += parseInt(h[1], 10) * 3600 * 1000
+                          if (m) ms += parseInt(m[1], 10) * 60 * 1000
+                          if (s && !subMs) ms += parseFloat(s[1]) * 1000
+                          if (subMs) ms += parseInt(subMs[1], 10)
+                          return ms
+                        }
+
+                        const formatReset = (resetStr: string) => {
+                          if (!resetStr) return 'Active'
+                          const dMs = parseDurationMs(resetStr)
+                          if (dMs <= 0) return 'Active'
+                          if (dMs < 2000) return 'Resets continuously'
+                          const target = new Date(usageLimits.lastUpdated + dMs)
+                          const timeStr = target.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+                          return `Resets at ${timeStr} (in ${resetStr})`
+                        }
+
+                        return (
+                          <div className="bg-[#161616] border border-surface-2 rounded-xl p-4 flex flex-col gap-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="font-['IBM_Plex_Mono'] text-sm text-text-primary font-medium">
+                                  Current request usage
+                                </span>
+                                <div className="relative group cursor-pointer">
+                                  <Info size={13} className="text-[#666] hover:text-[#aaa] transition-colors" />
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 pointer-events-none w-max max-w-xs bg-[#222] text-[#ccc] border border-[#444] rounded px-2.5 py-1.5 text-[11px] font-['IBM_Plex_Mono'] shadow-xl leading-relaxed">
+                                    Requests used in the current rolling rate-limit window.
+                                    <div className="w-2 h-2 bg-[#222] border-r border-b border-[#444] rotate-45 absolute top-full left-1/2 -translate-x-1/2 -mt-1" />
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-baseline gap-2">
+                                <span className="font-['IBM_Plex_Mono'] text-sm font-bold text-text-primary">
+                                  {pctRequests}% used
+                                </span>
+                                <span className="font-['IBM_Plex_Mono'] text-xs text-[#777]">
+                                  ({usedRequests.toLocaleString()} / {usageLimits.limitRequests.toLocaleString()})
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Progress Bar */}
+                            <div className="w-full h-1.5 bg-[#252525] rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  pctRequests > 85
+                                    ? 'bg-[var(--color-wrong)] shadow-[0_0_8px_rgba(255,51,51,0.6)]'
+                                    : 'bg-accent shadow-[0_0_8px_rgba(0,255,65,0.4)]'
+                                }`}
+                                style={{ width: `${Math.max(1, pctRequests)}%` }}
+                              />
+                            </div>
+
+                            {/* Reset Subtext */}
+                            <span className="text-[#777] text-xs font-['IBM_Plex_Mono']">
+                              {formatReset(usageLimits.resetRequests)}
+                            </span>
+                          </div>
+                        )
+                      })()}
+
+                      {/* Tokens Per Minute Card */}
+                      {(() => {
+                        const usedTokens = Math.max(0, usageLimits.limitTokens - usageLimits.remainingTokens)
+                        const pctTokens = usageLimits.limitTokens > 0
+                          ? Math.min(100, Math.round((usedTokens / usageLimits.limitTokens) * 100))
+                          : 0
+
+                        return (
+                          <div className="bg-[#161616] border border-surface-2 rounded-xl p-4 flex flex-col gap-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="font-['IBM_Plex_Mono'] text-sm text-text-primary font-medium">
+                                  Token bandwidth (TPM)
+                                </span>
+                                <div className="relative group cursor-pointer">
+                                  <Info size={13} className="text-[#666] hover:text-[#aaa] transition-colors" />
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 pointer-events-none w-max max-w-xs bg-[#222] text-[#ccc] border border-[#444] rounded px-2.5 py-1.5 text-[11px] font-['IBM_Plex_Mono'] shadow-xl leading-relaxed">
+                                    Tokens per minute available across requests.
+                                    <div className="w-2 h-2 bg-[#222] border-r border-b border-[#444] rotate-45 absolute top-full left-1/2 -translate-x-1/2 -mt-1" />
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-baseline gap-2">
+                                <span className="font-['IBM_Plex_Mono'] text-sm font-bold text-text-primary">
+                                  {pctTokens}% used
+                                </span>
+                                <span className="font-['IBM_Plex_Mono'] text-xs text-[#777]">
+                                  ({usedTokens.toLocaleString()} / {usageLimits.limitTokens.toLocaleString()})
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Progress Bar */}
+                            <div className="w-full h-1.5 bg-[#252525] rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  pctTokens > 85
+                                    ? 'bg-[var(--color-wrong)] shadow-[0_0_8px_rgba(255,51,51,0.6)]'
+                                    : 'bg-accent shadow-[0_0_8px_rgba(0,255,65,0.4)]'
+                                }`}
+                                style={{ width: `${Math.max(1, pctTokens)}%` }}
+                              />
+                            </div>
+
+                            {/* Reset Subtext */}
+                            <span className="text-[#777] text-xs font-['IBM_Plex_Mono']">
+                              Resets continuously ({usageLimits.resetTokens || '600ms'})
+                            </span>
+                          </div>
+                        )
+                      })()}
+                    </div>
+                  ) : loadingUsage ? (
+                    <div className="bg-[#161616] border border-surface-2 rounded-xl p-5 text-center">
+                      <span className="font-['IBM_Plex_Mono'] text-xs text-[#777] flex items-center justify-center gap-2">
+                        <RefreshCw size={13} className="animate-spin text-accent" />
+                        Loading Groq rate limits...
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="bg-[#161616] border border-surface-2 rounded-xl p-4 text-center">
+                      <span className="font-['IBM_Plex_Mono'] text-xs text-[#666]">
+                        {usageError ? `Error: ${usageError}` : 'Click Refresh to check live Groq rate limits.'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </section>
 
           {/* Sound & Feedback Section */}
           <section>
-            <h2 className="font-['Rajdhani'] font-bold text-xl text-text-primary mb-6 uppercase tracking-wider flex items-center border-b border-surface-2 pb-4">
+            <h2 className="font-['Orbitron'] font-bold text-lg text-text-primary mb-6 uppercase tracking-wider flex items-center border-b border-surface-2 pb-4">
               <Bell size={20} className="text-accent" />
               <span className="ml-3">Sound & Feedback</span>
             </h2>
@@ -428,10 +646,10 @@ export default function Settings() {
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-row items-center justify-between gap-4">
                     <div className="flex flex-col gap-1">
-                      <span className="font-['IBM_Plex_Mono'] text-text-primary text-sm md:text-base">
+                      <span className="font-['IBM_Plex_Mono'] text-text-primary text-sm font-medium">
                         Reading Voice (Piper TTS)
                       </span>
-                      <span className="font-['Rajdhani'] text-text-muted text-xs uppercase tracking-widest text-left">
+                      <span className="font-['Rajdhani'] text-[#888] text-xs tracking-wide text-left">
                         {piperStatus === null
                           ? 'Checking Piper...'
                           : piperStatus.piperInstalled && piperStatus.modelConfigured
@@ -453,7 +671,7 @@ export default function Settings() {
                           const modelPath = localStorage.getItem('ecengine:tts:piperModelPath') ?? undefined
                           window.electron.tts.isAvailable(modelPath).then(setPiperStatus)
                         }}
-                        className="px-4 py-2 border border-accent text-accent hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)] rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all shrink-0"
+                        className="px-4 py-2 border border-accent text-accent hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)] rounded font-['Rajdhani'] uppercase tracking-wider text-xs md:text-sm font-bold transition-all shrink-0"
                       >
                         Check Again
                       </button>
@@ -463,11 +681,11 @@ export default function Settings() {
                   {/* Install instructions — only shown when piper is not found */}
                   {piperStatus !== null && !piperStatus.piperInstalled && (
                     <div className="bg-surface-2 border border-border-base rounded-lg p-4 flex flex-col gap-2">
-                      <span className="font-['Rajdhani'] text-text-muted text-xs uppercase tracking-widest">Install Piper</span>
+                      <span className="font-['Rajdhani'] text-[#888] text-xs tracking-wide">Install Piper</span>
                       <code className="font-['IBM_Plex_Mono'] text-accent text-xs bg-[#0D0D0D] border border-surface-2 rounded px-3 py-2 block">
                         yay -S piper-tts-bin
                       </code>
-                      <span className="font-['Rajdhani'] text-text-muted text-xs uppercase tracking-widest mt-1">
+                      <span className="font-['Rajdhani'] text-[#888] text-xs tracking-wide mt-1">
                         On other distros, build or install Piper per{' '}
                         <button
                           type="button"
@@ -487,10 +705,10 @@ export default function Settings() {
                       {piperStatus.availableModels && piperStatus.availableModels.length > 0 && (
                         <div className="flex flex-row items-center justify-between gap-4">
                           <div className="flex flex-col gap-1">
-                            <span className="font-['IBM_Plex_Mono'] text-text-primary text-sm">
+                            <span className="font-['IBM_Plex_Mono'] text-text-primary text-sm font-medium">
                               Select Installed Voice
                             </span>
-                            <span className="font-['Rajdhani'] text-text-muted text-xs uppercase tracking-widest text-left">
+                            <span className="font-['Rajdhani'] text-[#888] text-xs tracking-wide text-left">
                               {piperStatus.availableModels.length} Piper model(s) detected in your system
                             </span>
                           </div>
@@ -506,7 +724,7 @@ export default function Settings() {
                                 setPiperModelError(null)
                               }
                             }}
-                            className="bg-surface-2 border border-border-base focus:border-accent rounded px-4 py-2 text-sm text-text-primary outline-none font-['Rajdhani'] uppercase tracking-wider max-w-[280px]"
+                            className="bg-surface-2 border border-border-base focus:border-accent rounded px-4 py-2 text-xs md:text-sm text-text-primary outline-none font-['Rajdhani'] uppercase tracking-wider max-w-[280px]"
                           >
                             {piperStatus.availableModels.map((m) => {
                               const filename = m.split('/').pop() || m
@@ -522,7 +740,7 @@ export default function Settings() {
                       )}
 
                       <div className="flex flex-col gap-2">
-                        <span className="font-['Rajdhani'] text-text-muted text-xs uppercase tracking-widest">
+                        <span className="font-['Rajdhani'] text-[#888] text-xs tracking-wide">
                           Model File Path (.onnx)
                         </span>
                         <div className="flex items-center gap-4 flex-1 justify-end min-w-0">
@@ -565,13 +783,13 @@ export default function Settings() {
                                 }
                               }
                             }}
-                            className="px-4 py-2 border border-accent text-accent hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)] rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all shrink-0"
+                            className="px-4 py-2 border border-accent text-accent hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)] rounded font-['Rajdhani'] uppercase tracking-wider text-xs md:text-sm font-bold transition-all shrink-0"
                           >
                             Browse
                           </button>
                         </div>
                         {piperModelError && (
-                          <span className="font-['Rajdhani'] text-[var(--color-wrong)] text-xs uppercase tracking-widest">
+                          <span className="font-['Rajdhani'] text-[var(--color-wrong)] text-xs tracking-wide">
                             {piperModelError}
                           </span>
                         )}
@@ -580,13 +798,13 @@ export default function Settings() {
                   )}
                 </div>
               ) : (
-                /* ── Non-Linux: Web Speech API voice dropdown (unchanged) ───── */
+                /* ── Non-Linux: Web Speech API voice dropdown ───── */
                 <div className="flex flex-row items-center justify-between gap-4">
                   <div className="flex flex-col gap-1">
-                    <span className="font-['IBM_Plex_Mono'] text-text-primary text-sm md:text-base">
+                    <span className="font-['IBM_Plex_Mono'] text-text-primary text-sm font-medium">
                       Reading Voice
                     </span>
-                    <span className="font-['Rajdhani'] text-text-muted text-xs uppercase tracking-widest text-left">
+                    <span className="font-['Rajdhani'] text-[#888] text-xs tracking-wide text-left">
                       {availableVoices.length > 0
                         ? `${availableVoices.length} English voices available`
                         : voicesTimedOut
@@ -601,7 +819,7 @@ export default function Settings() {
                       localStorage.setItem('ecengine:tts:voice', e.target.value)
                     }}
                     disabled={availableVoices.length === 0}
-                    className="bg-surface-2 border border-border-base focus:border-accent rounded px-4 py-2 text-sm text-text-primary outline-none font-['Rajdhani'] uppercase tracking-wider max-w-[220px] disabled:opacity-40"
+                    className="bg-surface-2 border border-border-base focus:border-accent rounded px-4 py-2 text-xs md:text-sm text-text-primary outline-none font-['Rajdhani'] uppercase tracking-wider max-w-[220px] disabled:opacity-40"
                   >
                     <option value="">System Default</option>
                     {availableVoices.map(v => (
@@ -614,10 +832,10 @@ export default function Settings() {
               )}
               <div className="border-t border-surface-2 pt-6 flex flex-row items-center justify-between gap-4">
                 <div className="flex flex-col gap-1">
-                  <span className="font-['IBM_Plex_Mono'] text-text-primary text-sm md:text-base">
+                  <span className="font-['IBM_Plex_Mono'] text-text-primary text-sm font-medium">
                     Disable Faah Sound Meme
                   </span>
-                  <span className="font-['Rajdhani'] text-[#999] text-xs uppercase tracking-widest">
+                  <span className="font-['Rajdhani'] text-[#888] text-xs tracking-wide">
                     {customWrongSound ? 'Using faah sound meme' : 'Using default synthesized sound'}
                   </span>
                 </div>
@@ -643,14 +861,14 @@ export default function Settings() {
 
           {sections.map((section, idx) => (
             <section key={idx}>
-              <h2 className="font-['Rajdhani'] font-bold text-xl text-text-primary mb-6 uppercase tracking-wider flex items-center justify-between border-b border-surface-2 pb-4">
+              <h2 className="font-['Orbitron'] font-bold text-lg text-text-primary mb-6 uppercase tracking-wider flex items-center justify-between border-b border-surface-2 pb-4">
                 <div className="flex items-center">
                   {section.icon}
                   <span className="ml-3">{section.title}</span>
                 </div>
                 {section.title === 'Data & Sync' && (
                   <div className="flex items-center gap-3">
-                    <span className="text-[10px] text-[#666] tracking-widest uppercase font-bold">Unlock Advanced</span>
+                    <span className="font-['Orbitron'] text-[10px] text-[#666] tracking-wider uppercase font-bold">Unlock Advanced</span>
                     <button
                       onClick={() => setAdvancedSyncEnabled(!advancedSyncEnabled)}
                       className={`w-10 h-5 rounded-full p-0.5 transition-colors ${advancedSyncEnabled ? 'bg-[rgba(255,51,51,0.2)] border border-danger' : 'bg-surface-2 border border-border-base'} focus:outline-none relative shadow-inner flex items-center`}
@@ -669,7 +887,7 @@ export default function Settings() {
                   return (
                     <div key={idy} className={`flex flex-row items-center justify-between gap-4 transition-all duration-300 ${isDisabled ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
                       {opt.type === 'custom-db-path-picker' ? (
-                        <div className="font-['IBM_Plex_Mono'] text-text-primary text-sm md:text-base shrink-0 relative group">
+                        <div className="font-['IBM_Plex_Mono'] text-text-primary text-sm font-medium shrink-0 relative group">
                           <span className="cursor-default border-b border-dashed border-[#444]">{opt.label}</span>
                             <div className="absolute bottom-full left-0 mb-2 z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                               <div className="bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 shadow-xl w-max max-w-xs">
@@ -679,10 +897,10 @@ export default function Settings() {
                             </div>
                         </div>
                       ) : (
-                        <div className="font-['IBM_Plex_Mono'] text-text-primary text-sm md:text-base shrink-0">
+                        <div className="font-['IBM_Plex_Mono'] text-text-primary text-sm font-medium shrink-0">
                           {opt.label}
                           {(opt as any).description && (
-                            <div className="font-['IBM_Plex_Mono'] text-[#666] text-[10px] mt-0.5 normal-case tracking-normal">
+                            <div className="text-[#888] text-xs font-['Rajdhani'] tracking-wide mt-0.5">
                               {(opt as any).description}
                             </div>
                           )}
@@ -793,7 +1011,7 @@ export default function Settings() {
                           />
                           <button
                             onClick={handleSelectImagesPath}
-                            className="px-4 py-2 border border-accent text-accent hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)] rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all shrink-0"
+                            className="px-4 py-2 border border-accent text-accent hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)] rounded font-['Rajdhani'] uppercase tracking-wider text-xs md:text-sm font-bold transition-all shrink-0"
                           >
                             Browse
                           </button>
@@ -820,7 +1038,7 @@ export default function Settings() {
                               }
                               setTimeout(() => setToastMessage(null), 4000);
                             }}
-                            onKeyDown={async (e) => {
+                            onKeyDown={(e) => {
                               if (e.key === 'Enter') {
                                 (e.target as HTMLInputElement).blur();
                               }
@@ -837,7 +1055,7 @@ export default function Settings() {
                                 setTimeout(() => setToastMessage(null), 4000);
                               }
                             }}
-                            className="px-4 py-2 border border-accent text-accent hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)] rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all shrink-0"
+                            className="px-4 py-2 border border-accent text-accent hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)] rounded font-['Rajdhani'] uppercase tracking-wider text-xs md:text-sm font-bold transition-all shrink-0"
                           >
                             Browse
                           </button>
@@ -867,7 +1085,7 @@ export default function Settings() {
                               handleImportDecks();
                             }
                           }}
-                          className={`px-4 py-2 border rounded font-['Rajdhani'] uppercase tracking-widest text-sm font-bold transition-all ${(opt as any).disabled
+                          className={`px-4 py-2 border rounded font-['Rajdhani'] uppercase tracking-wider text-xs md:text-sm font-bold transition-all ${(opt as any).disabled
                             ? 'opacity-50 cursor-not-allowed border-border-base text-text-muted'
                             : (opt as any).danger
                             ? 'border-danger text-danger hover:bg-[rgba(255,51,51,0.1)] hover:shadow-[0_0_10px_rgba(255,51,51,0.5)]'

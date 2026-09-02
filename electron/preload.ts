@@ -73,6 +73,17 @@ contextBridge.exposeInMainWorld('electron', {
     ipcRenderer.invoke('ai:explain', payload),
   explainFlashcard: (payload: { term: string; definition: string }) =>
     ipcRenderer.invoke('ai:explainFlashcard', payload),
+  summarizeDeck: (payload: {
+    title?: string
+    subject?: string
+    cardItems: string[]
+    totalCards: number
+  }): Promise<{ text?: string; error?: string; status?: number; detail?: string }> =>
+    ipcRenderer.invoke('ai:summarizeDeck', payload),
+  getUsageLimits: (): Promise<{ success: boolean; isConfigured: boolean; usage: any; error?: string }> =>
+    ipcRenderer.invoke('ai:getUsageLimits'),
+  refreshUsageLimits: (): Promise<{ success: boolean; isConfigured: boolean; usage: any; error?: string }> =>
+    ipcRenderer.invoke('ai:refreshUsageLimits'),
   config: {
     /** Save the API key to userData/config.json in the main process */
     setApiKey: (key: string): Promise<{ success: boolean; error?: string }> =>

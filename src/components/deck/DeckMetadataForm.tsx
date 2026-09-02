@@ -15,6 +15,10 @@ const SUBJECTS: { value: Subject; short: string }[] = [
 
 
 
+import { EditCard } from './CardEditor'
+import { AIDescriptionButton } from './AIDescriptionButton'
+import { generateDeckSummary } from '../../services/aiSummary.service'
+
 export type DeckMetadata = {
   title: string
   description: string
@@ -31,10 +35,36 @@ interface DeckMetadataFormProps {
   metadata: DeckMetadata
   setMetadata: React.Dispatch<React.SetStateAction<DeckMetadata>>
   scope: 'study' | 'formula'
+  cards?: EditCard[]
+  onToast?: (type: 'success' | 'error', msg: string) => void
 }
 
-export default function DeckMetadataForm({ metadata, setMetadata, scope }: DeckMetadataFormProps) {
+export default function DeckMetadataForm({ metadata, setMetadata, scope, cards = [], onToast }: DeckMetadataFormProps) {
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false)
   const folderDropdownRef = React.useRef<HTMLDivElement>(null)
+
+  const handleGenerateSummary = async () => {
+    if (cards.length === 0) {
+      onToast?.('error', 'Please add some cards to generate a summary.')
+      return
+    }
+
+    setIsGeneratingSummary(true)
+    try {
+      const summary = await generateDeckSummary({
+        title: metadata.title,
+        subject: metadata.subject,
+        cards,
+      })
+      setMetadata(prev => ({ ...prev, description: summary }))
+      onToast?.('success', 'AI summary generated!')
+    } catch (err: any) {
+      console.error('[AI Summary Generation Error]', err)
+      onToast?.('error', err.message || 'Failed to generate summary.')
+    } finally {
+      setIsGeneratingSummary(false)
+    }
+  }
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -81,12 +111,22 @@ export default function DeckMetadataForm({ metadata, setMetadata, scope }: DeckM
             {metadata.title.length} / 80
           </span>
         </div>
-        <input
-          value={metadata.description}
-          onChange={e => setMetadata(prev => ({ ...prev, description: e.target.value }))}
-          placeholder="Add a description... (optional)"
-          className="w-full bg-transparent text-[#aaa] text-sm font-['IBM_Plex_Mono'] pb-2 focus:outline-none placeholder:text-[#555] transition-colors"
-        />
+        <div className="relative flex items-center">
+          <input
+            type="text"
+            value={metadata.description}
+            onChange={e => setMetadata(prev => ({ ...prev, description: e.target.value }))}
+            placeholder="Add a description... (optional)"
+            className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 pr-10 text-text-primary text-sm font-['IBM_Plex_Mono'] focus:border-accent focus:bg-[#111] outline-none transition-colors placeholder-[#555]"
+          />
+          <div className="absolute right-1.5 flex items-center">
+            <AIDescriptionButton
+              onClick={handleGenerateSummary}
+              isGenerating={isGeneratingSummary}
+              disabled={cards.length === 0}
+            />
+          </div>
+        </div>
         <div className="mt-2 pt-2 border-t border-border-base">
           <label className="text-[10px] text-[#555] font-['Rajdhani'] font-bold uppercase tracking-widest mb-1 block">
             Folder / Category

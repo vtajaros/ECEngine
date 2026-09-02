@@ -20,3 +20,15 @@ src/styles/output.css
 # Local DB debugging tools — do not commit
 sqlite/
 *.exe
+
+# Test and scratch files
+*.test.ts
+*.test.tsx
+*.test.js
+test.js
+test.ts
+test-*.js
+test-*.ts
+scratch/
+temp/
+

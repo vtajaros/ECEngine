@@ -11,6 +11,8 @@ import { renderMath, isRawLatex } from '../lib/latex'
 import { getSubjectFilterClasses } from '../lib/subjectColors'
 import { TOS_SUBJECT_COLORS } from '../lib/tosData'
 import { PREDEFINED_TAGS } from '../lib/constants'
+import { AIDescriptionButton } from '../components/deck/AIDescriptionButton'
+import { generateDeckSummary } from '../services/aiSummary.service'
 import {
   DndContext,
   closestCenter,
@@ -1010,15 +1012,42 @@ export default function EditDeck() {
     folderId: null
   })
   const [cards, setCards] = useState<EditCard[]>([])
+  const [originalCardIds, setOriginalCardIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [showFormattingGuide, setShowFormattingGuide] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
-  const [originalCardIds, setOriginalCardIds] = useState<Set<string>>(new Set())
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
+  const [isGeneratingSummary, setIsGeneratingSummary] = useState(false)
 
   const isFormulaDeck = cards.length > 0 && cards.every(c => c.type === 'formula')
   const scope = isFormulaDeck ? 'formula' : 'study'
+
+  const handleGenerateSummary = async () => {
+    if (cards.length === 0) {
+      setToast({ type: 'error', msg: 'Please add some cards to generate a summary.' })
+      setTimeout(() => setToast(null), 3000)
+      return
+    }
+
+    setIsGeneratingSummary(true)
+    try {
+      const summary = await generateDeckSummary({
+        title: deckMeta.title,
+        subject: deckMeta.subject,
+        cards,
+      })
+      setDeckMeta(m => ({ ...m, description: summary }))
+      setToast({ type: 'success', msg: 'AI summary generated!' })
+      setTimeout(() => setToast(null), 2500)
+    } catch (err: any) {
+      console.error('[AI Summary Generation Error]', err)
+      setToast({ type: 'error', msg: err.message || 'Failed to generate summary.' })
+      setTimeout(() => setToast(null), 3500)
+    } finally {
+      setIsGeneratingSummary(false)
+    }
+  }
 
   const handleExportToText = async () => {
     if (!deckId || isExporting) return
@@ -1393,13 +1422,22 @@ export default function EditDeck() {
 
             <div>
               <Label>Description</Label>
-              <input
-                type="text"
-                className={inputCls}
-                value={deckMeta.description}
-                onChange={e => setDeckMeta(m => ({ ...m, description: e.target.value }))}
-                placeholder="Short description..."
-              />
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  className={`${inputCls} pr-10`}
+                  value={deckMeta.description}
+                  onChange={e => setDeckMeta(m => ({ ...m, description: e.target.value }))}
+                  placeholder="Short description..."
+                />
+                <div className="absolute right-1.5 flex items-center">
+                  <AIDescriptionButton
+                    onClick={handleGenerateSummary}
+                    isGenerating={isGeneratingSummary}
+                    disabled={cards.length === 0}
+                  />
+                </div>
+              </div>
             </div>
 
             <div>
