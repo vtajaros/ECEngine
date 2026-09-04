@@ -10,7 +10,7 @@ import { LearnSettingsModal, LearnSettings, loadTTSPreference } from '../compone
 import { TestSettingsModal, TestSettings } from '../components/mcq/TestSettingsModal'
 import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
 import { MOCK_FLASHCARDS, MOCK_MCQS } from '../lib/mockData'
-import { Play, Bookmark, X, Trash2, AlertTriangle, ClipboardList, SlidersHorizontal, Check, Pencil, Brain, Trophy, ScrollText, Search, Plus } from 'lucide-react'
+import { Play, Bookmark, X, Trash2, AlertTriangle, ClipboardList, SlidersHorizontal, Check, Pencil, Brain, Trophy, ScrollText, Search, Plus, Star } from 'lucide-react'
 import { getSubjectFilterClasses, getSubjectBadgeClasses, SUBJECT_MAP } from '../lib/subjectColors'
 import { TOS_SUBJECT_COLORS } from '../lib/tosData'
 import { useSessionStore } from '../store/useSessionStore'
@@ -50,6 +50,7 @@ interface StudySet {
   folderName?: string
   folderId?: string
   order_index?: number
+  isFavorite?: boolean
 }
 
 // In-memory cache to prevent layout pop-in on re-navigation
@@ -67,6 +68,7 @@ interface LooksFamCardProps {
   onPrint: (id: string, title: string) => void
   onEdit: (id: string) => void
   onDelete: (set: StudySet) => void
+  onToggleFavorite?: (id: string) => void
 }
 
 const LooksFamCard = React.memo(function LooksFamCard({
@@ -78,6 +80,7 @@ const LooksFamCard = React.memo(function LooksFamCard({
   onPrint,
   onEdit,
   onDelete,
+  onToggleFavorite,
 }: LooksFamCardProps) {
   return (
     <div
@@ -111,11 +114,38 @@ const LooksFamCard = React.memo(function LooksFamCard({
           </div>
         </div>
 
-        {/* Right Column: Administrative Info */}
+        {/* Right Column: Favorite Star & Administrative Info */}
         <div className="flex flex-col items-end gap-1.5 shrink-0">
+          {/* Favorite Star Button */}
+          {onToggleFavorite && (
+            <Tooltip content={set.isFavorite ? "Remove from Favorites" : "Mark as Favorite"} position="top">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onToggleFavorite(set.id)
+                }}
+                className={`p-1.5 rounded-lg border transition-all ${
+                  set.isFavorite
+                    ? 'border-accent/50 bg-accent/15 text-accent shadow-[0_0_12px_rgba(0,255,65,0.25)]'
+                    : 'border-[#333] bg-[#111] text-gray-500 hover:text-accent hover:border-accent/40 opacity-40 group-hover:opacity-100 hover:!opacity-100'
+                }`}
+                aria-label={set.isFavorite ? "Unfavorite Deck" : "Favorite Deck"}
+              >
+                <Star
+                  className={`w-4 h-4 transition-transform active:scale-125 ${
+                    set.isFavorite ? 'fill-accent text-accent' : ''
+                  }`}
+                />
+              </button>
+            </Tooltip>
+          )}
+
+          {/* Number of Items Tag */}
           <span className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px] shrink-0 whitespace-nowrap">
             {set.count} ITEMS
           </span>
+
+          {/* Date Created */}
           <span className="text-[10px] text-gray-400 uppercase font-['IBM_Plex_Mono'] tracking-widest">
             {set.createdAt ? new Date(set.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
           </span>
@@ -263,13 +293,24 @@ export default function LooksFamStudy() {
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
   const [searchQuery, setSearchQuery] = useState('')
   const [filterType, setFilterType] = useState<'all' | 'mcq' | 'flashcard' | 'mixed'>('all')
+  const [favoritesOnly, setFavoritesOnly] = useState<boolean>(
+    () => sessionStorage.getItem('looksfam:favoritesOnly') === 'true'
+  )
   const filterPopoverRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    sessionStorage.setItem('looksfam:favoritesOnly', String(favoritesOnly))
+  }, [favoritesOnly])
 
   const availableTags = useMemo(() => {
     const tags = new Set<string>(PREDEFINED_TAGS)
     allSets.forEach(s => s.tags?.forEach(t => tags.add(t)))
     return Array.from(tags).sort()
+  }, [allSets])
+
+  const favoriteCount = useMemo(() => {
+    return allSets.filter(s => s.isFavorite).length
   }, [allSets])
 
   // Load user-created sets from DB
@@ -308,7 +349,8 @@ export default function LooksFamStudy() {
             createdAt: row.created_at || Date.now(),
             folderName: row.folder_name || 'Uncategorized',
             folderId: row.folder_id || null,
-            order_index: row.order_index
+            order_index: row.order_index,
+            isFavorite: Boolean(row.is_favorite)
           }
         }).filter((s: StudySet | null): s is StudySet => s !== null)
       }
@@ -474,6 +516,10 @@ export default function LooksFamStudy() {
 
     let result = folderFiltered.filter(s => activeSubject === 'ALL' || s.subject === activeSubject)
 
+    if (favoritesOnly) {
+      result = result.filter(s => s.isFavorite)
+    }
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       result = result.filter(s => s.title.toLowerCase().includes(q))
@@ -497,7 +543,7 @@ export default function LooksFamStudy() {
     })
 
     return result
-  }, [allSets, activeFolder, activeSubject, filterType, filterTags, sortBy, sortOrder, searchQuery])
+  }, [allSets, activeFolder, activeSubject, favoritesOnly, filterType, filterTags, sortBy, sortOrder, searchQuery])
 
   // Compute how many bookmarks each topic has (based on cached card IDs)
   const bookmarksPerTopic = useMemo(() => {
@@ -602,6 +648,16 @@ export default function LooksFamStudy() {
     sessionStorage.setItem('ecengine:returnScroll:/study', String(window.scrollY))
     safeNavigate(`/edit-deck/${id}?returnTo=/study`)
   }, [safeNavigate])
+
+  const handleCardToggleFavorite = React.useCallback(async (deckId: string) => {
+    setAllSets(prev => prev.map(s => s.id === deckId ? { ...s, isFavorite: !s.isFavorite } : s))
+    try {
+      await window.electron.decks.toggleFavorite(deckId)
+    } catch (err) {
+      console.error('[LooksFam] Failed to toggle favorite:', err)
+      setAllSets(prev => prev.map(s => s.id === deckId ? { ...s, isFavorite: !s.isFavorite } : s))
+    }
+  }, [])
 
   // Pre-Learn Settings Modal State
   const [showSettingsModal, setShowSettingsModal] = useState<{ isOpen: boolean; setId: string | null }>({ isOpen: false, setId: null })
@@ -1078,6 +1134,24 @@ export default function LooksFamStudy() {
                           />
                         </div>
 
+                        {/* Favorites Toggle */}
+                        <div className="flex items-center justify-between py-1 px-1 rounded bg-[#0d0d0d] border border-[#222]">
+                          <span className="text-xs font-['Rajdhani'] tracking-widest text-text-muted uppercase flex items-center gap-2">
+                            <Star size={14} className={favoritesOnly ? "text-accent fill-accent" : "text-gray-500"} />
+                            Favorites Only
+                          </span>
+                          <button
+                            onClick={() => setFavoritesOnly(!favoritesOnly)}
+                            className={`px-2.5 py-0.5 rounded text-[10px] font-['Rajdhani'] font-bold tracking-widest uppercase transition-all border ${
+                              favoritesOnly
+                                ? 'bg-accent/20 border-accent/60 text-accent shadow-[0_0_10px_rgba(0,255,65,0.25)]'
+                                : 'bg-surface border-[#333] text-text-muted hover:border-[#555] hover:text-text-primary'
+                            }`}
+                          >
+                            {favoritesOnly ? 'Active' : 'Off'}
+                          </button>
+                        </div>
+
                         {/* Sort Selection */}
                         <div className="flex flex-col gap-2">
                           <div className="flex justify-between items-center">
@@ -1155,7 +1229,7 @@ export default function LooksFamStudy() {
                         )}
 
                         {/* Clear Button */}
-                        {(filterTags.length > 0 || filterType !== 'all' || sortBy !== 'date' || sortOrder !== 'desc' || searchQuery) && (
+                        {(filterTags.length > 0 || filterType !== 'all' || sortBy !== 'date' || sortOrder !== 'desc' || searchQuery || favoritesOnly) && (
                           <button
                             onClick={() => {
                               setFilterTags([])
@@ -1163,6 +1237,7 @@ export default function LooksFamStudy() {
                               setSortBy('date')
                               setSortOrder('desc')
                               setSearchQuery('')
+                              setFavoritesOnly(false)
                             }}
                             className="mt-2 text-xs font-['Rajdhani'] uppercase tracking-widest text-red-400 hover:text-red-300 text-center py-1 transition-colors"
                           >
@@ -1173,6 +1248,21 @@ export default function LooksFamStudy() {
                     )}
                   </AnimatePresence>
                 </div>
+
+                {/* Favorites Quick Filter Button */}
+                <Tooltip content={favoritesOnly ? "Show All Decks" : favoriteCount > 0 ? `Favorites (${favoriteCount})` : "Show Favorites Only"} position="bottom">
+                  <button
+                    onClick={() => setFavoritesOnly(prev => !prev)}
+                    className={`p-2 rounded-lg border transition-all ${
+                      favoritesOnly
+                        ? 'bg-accent/20 border-accent/60 text-accent shadow-[0_0_16px_rgba(0,255,65,0.25)]'
+                        : 'bg-[var(--bg-secondary)] border-[var(--bg-card)] text-[var(--text-secondary)] hover:text-accent hover:border-accent/40'
+                    }`}
+                    aria-label={favoritesOnly ? "Show All Decks" : "Show Favorites Only"}
+                  >
+                    <Star size={20} className={favoritesOnly ? "fill-accent text-accent" : ""} />
+                  </button>
+                </Tooltip>
 
                 {SUBJECTS.map(s => {
                   const isActive = activeSubject === s
@@ -1253,6 +1343,7 @@ export default function LooksFamStudy() {
                       onPrint={handleCardPrint}
                       onEdit={handleCardEdit}
                       onDelete={setSetToDelete}
+                      onToggleFavorite={handleCardToggleFavorite}
                     />
                   ))}
                 </DeckGrid>
@@ -1350,6 +1441,7 @@ export default function LooksFamStudy() {
           searchQuery={searchQuery}
           filterType={filterType}
           filterTags={filterTags}
+          favoritesOnly={favoritesOnly}
           selected={activeFolder}
           onSelect={setActiveFolder}
           onDeleteFolder={handleDeleteFolder}

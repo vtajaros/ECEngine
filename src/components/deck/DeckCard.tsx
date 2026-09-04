@@ -1,11 +1,11 @@
 import React from 'react'
-import { Play, ScrollText, Pencil, Trash2, Eye } from 'lucide-react'
+import { Play, ScrollText, Pencil, Trash2, Eye, Star } from 'lucide-react'
 import { getSubjectBadgeClasses } from '../../lib/subjectColors'
 import { Tooltip } from '../ui/Tooltip'
 
 type Subject = 'MATH' | 'GEAS' | 'ELECS' | 'EST'
 
-interface DeckInfo {
+export interface DeckInfo {
   id: string
   title: string
   subject: Subject
@@ -17,6 +17,7 @@ interface DeckInfo {
   folderName?: string
   order_index?: number
   mastery?: number
+  isFavorite?: boolean
 }
 
 interface DeckCardProps {
@@ -26,9 +27,10 @@ interface DeckCardProps {
   onEdit: (deckId: string) => void
   onDelete: (deck: DeckInfo) => void
   onPrint: (deckId: string, title: string) => void
+  onToggleFavorite?: (deckId: string) => void
 }
 
-export const DeckCard = React.memo(function DeckCard({ deck, onLearn, onPreview, onEdit, onDelete, onPrint }: DeckCardProps) {
+export const DeckCard = React.memo(function DeckCard({ deck, onLearn, onPreview, onEdit, onDelete, onPrint, onToggleFavorite }: DeckCardProps) {
   return (
     <div
       className="relative isolate group transition-all duration-300 border border-[#333] bg-surface p-5 flex flex-col w-full min-h-[180px] justify-between hover:-translate-x-[6px] hover:-translate-y-[6px] rounded-xl before:absolute before:w-full before:h-full before:top-0 before:left-0 before:bg-surface before:border before:border-[#333] before:rounded-xl before:translate-x-[6px] before:translate-y-[6px] before:z-[-1] before:transition-transform before:duration-300 group-hover:before:translate-x-[12px] group-hover:before:translate-y-[12px] after:absolute after:w-full after:h-full after:top-0 after:left-0 after:bg-surface after:border after:border-[#333] after:rounded-xl after:translate-x-[12px] after:translate-y-[12px] after:z-[-2] after:transition-transform after:duration-300 group-hover:after:translate-x-[18px] group-hover:after:translate-y-[18px]"
@@ -62,14 +64,38 @@ export const DeckCard = React.memo(function DeckCard({ deck, onLearn, onPreview,
           </div>
         </div>
 
-        {/* Right Column: Administrative Info */}
+        {/* Right Column: Favorite Star & Administrative Info */}
         <div className="flex flex-col items-end gap-1.5 shrink-0">
+          {/* Favorite Star Button */}
+          {onToggleFavorite && (
+            <Tooltip content={deck.isFavorite ? "Remove from Favorites" : "Mark as Favorite"} position="top">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onToggleFavorite(deck.id)
+                }}
+                className={`p-1.5 rounded-lg border transition-all ${
+                  deck.isFavorite
+                    ? 'border-accent/50 bg-accent/15 text-accent shadow-[0_0_12px_rgba(0,255,65,0.25)]'
+                    : 'border-[#333] bg-[#111] text-gray-500 hover:text-accent hover:border-accent/40 opacity-40 group-hover:opacity-100 hover:!opacity-100'
+                }`}
+                aria-label={deck.isFavorite ? "Unfavorite Deck" : "Favorite Deck"}
+              >
+                <Star
+                  className={`w-4 h-4 transition-transform active:scale-125 ${
+                    deck.isFavorite ? 'fill-accent text-accent' : ''
+                  }`}
+                />
+              </button>
+            </Tooltip>
+          )}
+
           {/* Items Tag */}
           <span className="px-2 py-0.5 rounded border border-[#333] bg-transparent text-gray-400 uppercase font-bold tracking-wider text-[10px] shrink-0 whitespace-nowrap">
             {deck.cardCount} ITEMS
           </span>
           {/* Date String */}
-          <span className="text-xs text-gray-400 uppercase font-['IBM_Plex_Mono'] tracking-widest">
+          <span className="text-[10px] text-gray-400 uppercase font-['IBM_Plex_Mono'] tracking-widest">
             {deck.createdAt ? new Date(deck.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
           </span>
         </div>

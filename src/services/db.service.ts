@@ -502,7 +502,13 @@ export const dbService = {
   decks: {
     getFormulaMastery: async () => {
       return window.electron.decks.getFormulaMastery()
-    }
+    },
+    toggleFavorite: async (topicId: string) => {
+      return window.electron.decks.toggleFavorite(topicId)
+    },
+    setFavorite: async (topicId: string, isFavorite: boolean) => {
+      return window.electron.decks.setFavorite(topicId, isFavorite)
+    },
   },
 }
 

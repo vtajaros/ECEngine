@@ -121,6 +121,14 @@ const MIGRATIONS: Array<{ version: number; sql: string | string[] }> = [
     sql: [
       "CREATE INDEX IF NOT EXISTS idx_topics_subject ON topics(subject)"
     ]
+  },
+  {
+    // v9: Add is_favorite to topics for marking favorite decks.
+    version: 9,
+    sql: [
+      "ALTER TABLE topics ADD COLUMN is_favorite BOOLEAN DEFAULT 0",
+      "CREATE INDEX IF NOT EXISTS idx_topics_is_favorite ON topics(is_favorite)"
+    ]
   }
 ]
 

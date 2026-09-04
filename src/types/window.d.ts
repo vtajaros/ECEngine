@@ -43,6 +43,8 @@ declare global {
 
         /** @deprecated Legacy deck order by folder name. Use folders.reorder for folder ordering. */
         updateFolderOrder: (folderOrders: Array<{ folderName: string, orderIndex: number }>) => Promise<{ success: boolean; error?: string }>
+        toggleFavorite: (topicId: string) => Promise<{ success: boolean; isFavorite?: boolean; error?: string }>
+        setFavorite: (topicId: string, isFavorite: boolean) => Promise<{ success: boolean; isFavorite?: boolean; error?: string }>
       }
       folders: {
         getAll(payload?: { scope?: string }): Promise<{ success: boolean; data?: FolderRow[]; error?: string }>

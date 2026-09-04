@@ -227,7 +227,7 @@ export function registerDeckHandlers(): void {
   ipcMain.handle('decks:getTopicsWithCardCounts', async () => {
     try {
       const rows = queryAll(`
-        SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags, t.folder_name, t.folder_id, t.order_index,
+        SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags, t.folder_name, t.folder_id, t.order_index, t.is_favorite,
                COUNT(c.id) as card_count,
                GROUP_CONCAT(DISTINCT c.type) as types
         FROM topics t LEFT JOIN cards c ON c.topic_id = t.id
@@ -242,7 +242,7 @@ export function registerDeckHandlers(): void {
   ipcMain.handle('decks:getFormulaTopics', async () => {
     try {
       const rows = queryAll(`
-        SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags, t.folder_name, t.folder_id, t.order_index,
+        SELECT t.id, t.name, t.subject, t.description, t.created_at, t.tags, t.folder_name, t.folder_id, t.order_index, t.is_favorite,
                COUNT(c.id) as card_count,
                GROUP_CONCAT(DISTINCT c.type) as types
         FROM topics t
@@ -368,6 +368,40 @@ export function registerDeckHandlers(): void {
       })()
       return { success: true }
     } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('decks:toggleFavorite', async (_, topicId: string) => {
+    try {
+      if (!topicId || typeof topicId !== 'string') {
+        return { success: false, error: 'Invalid topicId' }
+      }
+      const db = getDB()
+      const row = db.prepare('SELECT is_favorite FROM topics WHERE id = ?').get(topicId) as { is_favorite: number } | undefined
+      if (!row) {
+        return { success: false, error: 'Topic not found' }
+      }
+      const nextVal = row.is_favorite ? 0 : 1
+      db.prepare('UPDATE topics SET is_favorite = ? WHERE id = ?').run(nextVal, topicId)
+      return { success: true, isFavorite: nextVal === 1 }
+    } catch (error) {
+      console.error('[Decks toggleFavorite Error]', error)
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('decks:setFavorite', async (_, payload: { topicId: string; isFavorite: boolean }) => {
+    try {
+      if (!payload?.topicId || typeof payload.topicId !== 'string') {
+        return { success: false, error: 'Invalid topicId' }
+      }
+      const db = getDB()
+      const val = payload.isFavorite ? 1 : 0
+      db.prepare('UPDATE topics SET is_favorite = ? WHERE id = ?').run(val, payload.topicId)
+      return { success: true, isFavorite: payload.isFavorite }
+    } catch (error) {
+      console.error('[Decks setFavorite Error]', error)
       return { success: false, error: (error as Error).message }
     }
   })

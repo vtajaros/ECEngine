@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS topics (
   created_at INTEGER DEFAULT (strftime('%s', 'now')),
   folder_name TEXT DEFAULT 'Uncategorized',
   folder_id   TEXT REFERENCES folders(id),
+  is_favorite BOOLEAN DEFAULT 0,
   FOREIGN KEY(parent_id) REFERENCES topics(id)
 );
 
@@ -62,3 +63,4 @@ CREATE TABLE IF NOT EXISTS folders (
 
 CREATE INDEX IF NOT EXISTS idx_topics_folder_id ON topics(folder_id);
 CREATE INDEX IF NOT EXISTS idx_topics_subject ON topics(subject);
+CREATE INDEX IF NOT EXISTS idx_topics_is_favorite ON topics(is_favorite);

@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Search, Check } from 'lucide-react'
+import { X, Search, Check, Star } from 'lucide-react'
 
 interface AdvancedFiltersPopoverProps {
   searchQuery: string
@@ -14,6 +14,8 @@ interface AdvancedFiltersPopoverProps {
   filterTags: string[]
   setFilterTags: React.Dispatch<React.SetStateAction<string[]>>
   availableTags: string[]
+  favoritesOnly?: boolean
+  setFavoritesOnly?: (v: boolean) => void
   onClose: () => void
 }
 
@@ -29,6 +31,8 @@ export const AdvancedFiltersPopover: React.FC<AdvancedFiltersPopoverProps> = ({
   filterTags,
   setFilterTags,
   availableTags,
+  favoritesOnly,
+  setFavoritesOnly,
   onClose
 }) => {
   return (
@@ -57,6 +61,26 @@ export const AdvancedFiltersPopover: React.FC<AdvancedFiltersPopoverProps> = ({
           className="w-full bg-surface border border-[#333] focus:border-accent rounded-lg py-2 pl-9 pr-3 text-sm text-text-primary placeholder-[#555] outline-none transition-colors font-['IBM_Plex_Mono']"
         />
       </div>
+
+      {/* Favorites Filter */}
+      {setFavoritesOnly && (
+        <div className="flex items-center justify-between py-1 px-1 rounded bg-[#0d0d0d] border border-[#222]">
+          <span className="text-xs font-['Rajdhani'] tracking-widest text-text-muted uppercase flex items-center gap-2">
+            <Star size={14} className={favoritesOnly ? "text-accent fill-accent" : "text-gray-500"} />
+            Favorites Only
+          </span>
+          <button
+            onClick={() => setFavoritesOnly(!favoritesOnly)}
+            className={`px-2.5 py-0.5 rounded text-[10px] font-['Rajdhani'] font-bold tracking-widest uppercase transition-all border ${
+              favoritesOnly
+                ? 'bg-accent/20 border-accent/60 text-accent shadow-[0_0_10px_rgba(0,255,65,0.25)]'
+                : 'bg-surface border-[#333] text-text-muted hover:border-[#555] hover:text-text-primary'
+            }`}
+          >
+            {favoritesOnly ? 'Active' : 'Off'}
+          </button>
+        </div>
+      )}
 
       {/* Sort Selection */}
       <div className="flex flex-col gap-2">
@@ -135,12 +159,13 @@ export const AdvancedFiltersPopover: React.FC<AdvancedFiltersPopoverProps> = ({
       )}
 
       {/* Clear Button */}
-      {(filterTags.length > 0 || filterType !== 'flashcard' || sortBy !== 'date') && (
+      {(filterTags.length > 0 || filterType !== 'flashcard' || sortBy !== 'date' || favoritesOnly) && (
         <button
           onClick={() => {
             setFilterTags([])
             setFilterType('flashcard')
             setSortBy('date')
+            setFavoritesOnly?.(false)
           }}
           className="mt-2 text-xs font-['Rajdhani'] uppercase tracking-widest text-red-400 hover:text-red-300 text-center py-1 transition-colors"
         >

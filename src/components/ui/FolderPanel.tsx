@@ -32,6 +32,7 @@ export interface FolderPanelProps {
   searchQuery?: string
   filterType?: string
   filterTags?: string[]
+  favoritesOnly?: boolean
   selected: string | 'all'
   onSelect: (folderIdOrName: string | 'all') => void
   onDeleteFolder?: (folderIdOrName: string) => void
@@ -701,6 +702,7 @@ interface FolderPanelFooterProps {
   searchQuery?: string
   filterType?: string
   filterTags?: string[]
+  favoritesOnly?: boolean
   isCollapsed: boolean
 }
 
@@ -714,6 +716,7 @@ const FolderPanelFooter: React.FC<FolderPanelFooterProps> = ({
   searchQuery,
   filterType,
   filterTags,
+  favoritesOnly,
   isCollapsed,
 }) => {
   const filterParts: string[] = []
@@ -732,6 +735,9 @@ const FolderPanelFooter: React.FC<FolderPanelFooterProps> = ({
   }
   if (filterTags && filterTags.length > 0) {
     filterParts.push(filterTags.join(', '))
+  }
+  if (favoritesOnly) {
+    filterParts.push('Favorites')
   }
 
   const hasFilters = filterParts.length > 0
@@ -782,6 +788,13 @@ const FolderPanelFooter: React.FC<FolderPanelFooterProps> = ({
           <div className="flex items-center justify-between text-gray-300">
             <span className="text-gray-400 font-medium">Tags:</span>
             <span className="text-[#00FF41] font-bold truncate max-w-[140px]">{filterTags.join(', ')}</span>
+          </div>
+        )}
+
+        {favoritesOnly && (
+          <div className="flex items-center justify-between text-gray-300">
+            <span className="text-gray-400 font-medium">Favorites:</span>
+            <span className="text-accent font-bold uppercase">Active</span>
           </div>
         )}
       </div>
@@ -854,6 +867,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
   searchQuery,
   filterType,
   filterTags,
+  favoritesOnly,
   selected,
   onSelect,
   onDeleteFolder,
@@ -1465,6 +1479,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
           searchQuery={searchQuery}
           filterType={filterType}
           filterTags={filterTags}
+          favoritesOnly={favoritesOnly}
           isCollapsed={isCollapsed}
         />
 

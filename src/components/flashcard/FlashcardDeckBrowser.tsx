@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Layers, X, AlertTriangle, ScrollText, Play, Pencil, Trash2, Search, SlidersHorizontal, Eye, Plus, Bookmark } from 'lucide-react'
+import { Layers, X, AlertTriangle, ScrollText, Play, Pencil, Trash2, Search, SlidersHorizontal, Eye, Plus, Bookmark, Star } from 'lucide-react'
 import FolderPanel from '@/components/ui/FolderPanel'
 import { AdvancedFiltersPopover } from '../deck/AdvancedFiltersPopover'
 import { DeckCard } from '../deck/DeckCard'
@@ -27,6 +27,7 @@ export interface DeckInfo {
   folderName?: string
   order_index?: number
   mastery?: number
+  isFavorite?: boolean
 }
 
 interface FCSettings {
@@ -84,6 +85,9 @@ export interface FlashcardDeckBrowserProps {
   setFilterTags: React.Dispatch<React.SetStateAction<string[]>>
   onToggleIncludeMCQ?: (val: boolean) => void
   onAddDeck?: () => void
+  favoritesOnly?: boolean
+  setFavoritesOnly?: (v: boolean) => void
+  onToggleFavorite?: (deckId: string) => void
 }
 
 export function FlashcardDeckBrowser({
@@ -133,7 +137,10 @@ export function FlashcardDeckBrowser({
   setFilterTags,
   includeMCQ = false,
   onToggleIncludeMCQ,
-  onAddDeck
+  onAddDeck,
+  favoritesOnly,
+  setFavoritesOnly,
+  onToggleFavorite,
 }: FlashcardDeckBrowserProps) {
   return (
     <div className="flex flex-col h-full w-full">
@@ -206,11 +213,30 @@ export function FlashcardDeckBrowser({
                         filterTags={filterTags}
                         setFilterTags={setFilterTags}
                         availableTags={availableTags}
+                        favoritesOnly={favoritesOnly}
+                        setFavoritesOnly={setFavoritesOnly}
                         onClose={() => onShowAdvancedFilters(false)}
                       />
                     )}
                   </AnimatePresence>
                 </div>
+
+                {/* Favorites Quick Filter Button */}
+                {setFavoritesOnly && (
+                  <Tooltip content={favoritesOnly ? "Show All Decks" : decks.filter(d => d.isFavorite).length > 0 ? `Favorites (${decks.filter(d => d.isFavorite).length})` : "Show Favorites Only"} position="bottom">
+                    <button
+                      onClick={() => setFavoritesOnly(!favoritesOnly)}
+                      className={`p-2 rounded-lg border transition-all ${
+                        favoritesOnly
+                          ? 'bg-accent/20 border-accent/60 text-accent shadow-[0_0_16px_rgba(0,255,65,0.25)]'
+                          : 'bg-[var(--bg-secondary)] border-[var(--bg-card)] text-[var(--text-secondary)] hover:text-accent hover:border-accent/40'
+                      }`}
+                      aria-label={favoritesOnly ? "Show All Decks" : "Show Favorites Only"}
+                    >
+                      <Star size={20} className={favoritesOnly ? "fill-accent text-accent" : ""} />
+                    </button>
+                  </Tooltip>
+                )}
 
                 {SUBJECTS.map(s => {
                   const isActive = activeSubject === s
@@ -288,6 +314,7 @@ export function FlashcardDeckBrowser({
                       onEdit={onEditDeck}
                       onDelete={onDeleteDeck}
                       onPrint={onPrintDeck}
+                      onToggleFavorite={onToggleFavorite}
                     />
                   ))}
                 </DeckGrid>
@@ -370,6 +397,7 @@ export function FlashcardDeckBrowser({
           searchQuery={searchQuery}
           filterType={filterType}
           filterTags={filterTags}
+          favoritesOnly={favoritesOnly}
           selected={activeFolder}
           onSelect={onFolderSelect}
           onDeleteFolder={onDeleteFolder}

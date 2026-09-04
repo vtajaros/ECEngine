@@ -19,6 +19,7 @@ import {
   Check,
   Eye,
   Plus,
+  Star,
 } from 'lucide-react'
 import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
 import { FlashcardSession } from '../components/flashcard/FlashcardSession'
@@ -105,7 +106,18 @@ export default function Formulas() {
   const [searchQuery, setSearchQuery] = useState('')
   const [filterType, setFilterType] = useState<'all' | 'mcq' | 'formula' | 'mixed'>('all')
   const [activeFolder, setActiveFolder] = useState<string | 'all'>('all')
+  const [favoritesOnly, setFavoritesOnly] = useState<boolean>(
+    () => sessionStorage.getItem('formulas:favoritesOnly') === 'true'
+  )
   const filterPopoverRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    sessionStorage.setItem('formulas:favoritesOnly', String(favoritesOnly))
+  }, [favoritesOnly])
+
+  const favoriteCount = useMemo(() => {
+    return decks.filter(d => d.isFavorite).length
+  }, [decks])
 
   const availableTags = useMemo(() => {
     const tags = new Set<string>(PREDEFINED_TAGS)
@@ -238,6 +250,7 @@ export default function Formulas() {
               folderName: row.folder_name || 'Uncategorized',
               folderId: row.folder_id || null,
               order_index: row.order_index,
+              isFavorite: Boolean(row.is_favorite),
             }
           })
           formulaDecksCache = nextDecks
@@ -465,6 +478,16 @@ export default function Formulas() {
     loadDecks()
   }
 
+  const handleToggleFavorite = async (deckId: string) => {
+    setDecks(prev => prev.map(d => d.id === deckId ? { ...d, isFavorite: !d.isFavorite } : d))
+    try {
+      await window.electron.decks.toggleFavorite(deckId)
+    } catch (err) {
+      console.error('[Formulas] Failed to toggle favorite:', err)
+      setDecks(prev => prev.map(d => d.id === deckId ? { ...d, isFavorite: !d.isFavorite } : d))
+    }
+  }
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (filterPopoverRef.current && !filterPopoverRef.current.contains(event.target as Node)) {
@@ -525,6 +548,10 @@ export default function Formulas() {
       (d) => activeSubject === 'ALL' || d.subject === activeSubject
     )
 
+    if (favoritesOnly) {
+      result = result.filter(d => d.isFavorite)
+    }
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       result = result.filter(d => d.title.toLowerCase().includes(q))
@@ -548,7 +575,7 @@ export default function Formulas() {
     })
 
     return result
-  }, [decks, activeFolder, activeSubject, filterType, filterTags, sortBy, sortOrder, searchQuery])
+  }, [decks, activeFolder, activeSubject, favoritesOnly, filterType, filterTags, sortBy, sortOrder, searchQuery])
   const progress = sessionCards.length > 0 ? ((currentIndex + 1) / sessionCards.length) * 100 : 0
   const isBookmarked = currentCard ? bookmarks.has(`fc_bookmark_${currentCard.id}`) : false
 
@@ -730,6 +757,24 @@ export default function Formulas() {
                           />
                         </div>
 
+                        {/* Favorites Toggle */}
+                        <div className="flex items-center justify-between py-1 px-1 rounded bg-[#0d0d0d] border border-[#222]">
+                          <span className="text-xs font-['Rajdhani'] tracking-widest text-text-muted uppercase flex items-center gap-2">
+                            <Star size={14} className={favoritesOnly ? "text-accent fill-accent" : "text-gray-500"} />
+                            Favorites Only
+                          </span>
+                          <button
+                            onClick={() => setFavoritesOnly(!favoritesOnly)}
+                            className={`px-2.5 py-0.5 rounded text-[10px] font-['Rajdhani'] font-bold tracking-widest uppercase transition-all border ${
+                              favoritesOnly
+                                ? 'bg-accent/20 border-accent/60 text-accent shadow-[0_0_10px_rgba(0,255,65,0.25)]'
+                                : 'bg-surface border-[#333] text-text-muted hover:border-[#555] hover:text-text-primary'
+                            }`}
+                          >
+                            {favoritesOnly ? 'Active' : 'Off'}
+                          </button>
+                        </div>
+
                         {/* Type Filter */}
                         <div className="flex flex-col gap-2">
                           <label className="text-xs font-['Rajdhani'] tracking-widest text-text-muted uppercase">
@@ -823,7 +868,13 @@ export default function Formulas() {
                           </div>
                         </div>
 
-                        {(filterTags.length > 0 || filterType !== 'all' || sortBy !== 'date' || sortOrder !== 'desc' || searchQuery) && (
+                        {/* Clear Button */}
+                        {(filterTags.length > 0 ||
+                          filterType !== 'all' ||
+                          sortBy !== 'date' ||
+                          sortOrder !== 'desc' ||
+                          searchQuery ||
+                          favoritesOnly) && (
                           <button
                             onClick={() => {
                               setFilterTags([])
@@ -841,6 +892,21 @@ export default function Formulas() {
                     )}
                   </AnimatePresence>
                 </div>
+
+                {/* Favorites Quick Filter Button */}
+                <Tooltip content={favoritesOnly ? "Show All Decks" : favoriteCount > 0 ? `Favorites (${favoriteCount})` : "Show Favorites Only"} position="bottom">
+                  <button
+                    onClick={() => setFavoritesOnly(prev => !prev)}
+                    className={`p-2 rounded-lg border transition-all ${
+                      favoritesOnly
+                        ? 'bg-accent/20 border-accent/60 text-accent shadow-[0_0_16px_rgba(0,255,65,0.25)]'
+                        : 'bg-[var(--bg-secondary)] border-[var(--bg-card)] text-[var(--text-secondary)] hover:text-accent hover:border-accent/40'
+                    }`}
+                    aria-label={favoritesOnly ? "Show All Decks" : "Show Favorites Only"}
+                  >
+                    <Star size={20} className={favoritesOnly ? "fill-accent text-accent" : ""} />
+                  </button>
+                </Tooltip>
 
                 {SUBJECTS.map(s => {
                   const isActive = activeSubject === s
@@ -921,6 +987,7 @@ export default function Formulas() {
                       }}
                       onDelete={setSetToDelete}
                       onPrint={(id, title) => window.electron.print.open(id, title)}
+                      onToggleFavorite={handleToggleFavorite}
                     />
                   ))}
                 </DeckGrid>
@@ -1005,6 +1072,7 @@ export default function Formulas() {
           displayedDeckCount={filteredDecks.length}
           activeSubject={activeSubject}
           searchQuery={searchQuery}
+          favoritesOnly={favoritesOnly}
           selected={activeFolder}
           onSelect={setActiveFolder}
           onDeleteFolder={handleDeleteFolder}

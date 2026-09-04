@@ -233,7 +233,8 @@ export default function FlashcardLearn() {
             createdAt: row.created_at || Date.now(),
             folderName: row.folder_name || 'Uncategorized',
             folderId: row.folder_id || null,
-            order_index: row.order_index
+            order_index: row.order_index,
+            isFavorite: Boolean(row.is_favorite)
           }
         }).filter((d: DeckInfo | null): d is DeckInfo => d !== null)
         // Load mastery and merge
@@ -649,6 +650,24 @@ Provide a thorough explanation covering ALL of the following:
     }
   }, [])
 
+  const [favoritesOnly, setFavoritesOnly] = useState<boolean>(
+    () => sessionStorage.getItem('flashcard:favoritesOnly') === 'true'
+  )
+
+  useEffect(() => {
+    sessionStorage.setItem('flashcard:favoritesOnly', String(favoritesOnly))
+  }, [favoritesOnly])
+
+  const handleToggleFavorite = async (deckId: string) => {
+    setDecks(prev => prev.map(d => d.id === deckId ? { ...d, isFavorite: !d.isFavorite } : d))
+    try {
+      await window.electron.decks.toggleFavorite(deckId)
+    } catch (err) {
+      console.error('[FlashcardLearn] Failed to toggle favorite:', err)
+      setDecks(prev => prev.map(d => d.id === deckId ? { ...d, isFavorite: !d.isFavorite } : d))
+    }
+  }
+
   useEffect(() => {
     if (!activeDeck) {
       setIsAutoplay(false)
@@ -713,6 +732,10 @@ Provide a thorough explanation covering ALL of the following:
 
     let result = folderFiltered.filter(d => activeSubject === 'ALL' || d.subject === activeSubject)
 
+    if (favoritesOnly) {
+      result = result.filter(d => d.isFavorite)
+    }
+
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
       result = result.filter(d => d.title.toLowerCase().includes(q))
@@ -735,7 +758,7 @@ Provide a thorough explanation covering ALL of the following:
     })
 
     return result
-  }, [availableDecks, activeFolder, activeSubject, filterType, filterTags, sortBy, sortOrder, searchQuery])
+  }, [availableDecks, activeFolder, activeSubject, favoritesOnly, filterType, filterTags, sortBy, sortOrder, searchQuery])
 
   const progress = sessionCards.length > 0 ? ((currentIndex + 1) / sessionCards.length) * 100 : 0
   const isBookmarked = currentCard ? bookmarks.has(`fc_bookmark_${currentCard.id}`) : false
@@ -912,6 +935,9 @@ Provide a thorough explanation covering ALL of the following:
       setSortOrder={setSortOrder}
       setFilterType={setFilterType}
       setFilterTags={setFilterTags}
+      favoritesOnly={favoritesOnly}
+      setFavoritesOnly={setFavoritesOnly}
+      onToggleFavorite={handleToggleFavorite}
     />
   )
 }
