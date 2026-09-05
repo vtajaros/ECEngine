@@ -11,7 +11,6 @@
     "preview": "electron-vite preview",
     "package": "electron-builder",
     "seed": "ts-node scripts/seed-db.ts",
-    "validate-content": "ts-node scripts/validate-content.ts",
     "test": "vitest run",
     "postinstall": "electron-rebuild -f"
   },
