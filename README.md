@@ -70,9 +70,12 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 
 ### 🗂️ Deck Management & Authoring
 * **Comprehensive Deck Editor**: Create and edit MCQ, Flashcard, and Formula decks with live previews and image attachment support.
+* **Favorite Decks & Instant Filtering**: Star high-priority decks across Study, LooksFam, and Formula banks. Filter favorites with a single click from the Folder panel or Advanced Filters popover.
+* **AI-Powered Deck Description**: Auto-generate concise, topic-focused deck descriptions (<12 words) directly in the deck editor using Groq AI (`openai/gpt-oss-120b`).
 * **Drag-and-Drop Card Reordering**: Powered by `@dnd-kit`, card order is saved directly to SQLite.
 * **Per-Choice LaTeX / Text Toggles**: Specify whether individual choices should render as pure text or LaTeX equations.
 * **Collapsible Solutions & Explanations**: Enrich any card with reasoning, derivations, and dedicated solution images.
+* **Smart Collision-Aware Tooltips**: Dynamic viewport boundary detection with multi-axis auto-flipping to prevent tooltip clipping in narrow panels and sidebars.
 * **Interactive Formatting Guide Modal**: Built-in reference in the editor detailing hotkeys (`Ctrl+B`, `Ctrl+I`, `Ctrl+U`, `Tab`), super/subscripts, and LaTeX syntax.
 * **Folder Hierarchy**: Nested folder organization with drag-and-drop ordering and separate namespaces for Study and Formula decks.
 
@@ -110,8 +113,10 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 ---
 
 ### 🤖 AI Explanations & Context Generation
-* **Groq AI Integration**: Direct integration with Groq (e.g. `llama-3.3-70b-versatile` / `openai/gpt-oss-120b`) for on-demand step-by-step problem explanations.
-* **"Get Context" Exporter**: One-click extraction of formatted problem context to the clipboard for use with ChatGPT, Claude, or DeepSeek.
+* **Groq AI Integration**: Direct integration with Groq (`llama-3.3-70b-versatile` / `openai/gpt-oss-120b`) for on-demand step-by-step problem explanations and automated deck summaries.
+* **AI-Powered Deck Summaries**: Single-click auto-generation of crisp deck summaries distilling up to 40 sample cards into clean topic phrases without introductory filler.
+* **"Get Context" Exporter**: One-click extraction of formatted problem context to the clipboard for use with ChatGPT, Claude, Gemini, or DeepSeek.
+* **Live AI Usage & Rate-Limit Dashboard**: Track Groq API rate limits (requests per minute/day and tokens per minute) in real time from Settings, featuring progress indicators, rate-limit warnings (>85%), and dynamic reset countdown timers.
 
 ---
 
@@ -120,7 +125,9 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 * **KaTeX Scale & Bold Mode**: Customize math rendering size (`0.8em` to `1.5em`) and toggle high-contrast KaTeX bold mode.
 * **Global App Zoom**: Scale the UI (`80%` – `130%`) with `Ctrl+=`, `Ctrl+-`, `Ctrl+0`, and `Ctrl + Mouse Wheel`.
 * **Database Management & Export**: View active SQLite file path, switch database location, or export database + zipped images to a directory with a single click.
-* **Cross-Platform Audio Settings**: Configurable speech rate, voice selection, and Linux Piper ONNX neural voice model management.
+* **Master Audio Volume & SFX Settings**: Global SFX volume slider (`VolumeControl`), persistent sound levels, and customizable wrong-answer meme audio ("faah sound meme" vs synthesized alert).
+* **Cross-Platform TTS Settings**: Configurable speech rate, voice selection, and Linux Piper ONNX neural voice model management.
+* **AI Telemetry & Rate-Limit Tracking**: Antigravity-inspired usage tracker with real-time percentage indicators and reset timers for your configured Groq API key.
 
 ---
 
@@ -186,6 +193,7 @@ CREATE TABLE topics (
   tags TEXT DEFAULT '[]',
   folder_name TEXT DEFAULT 'Uncategorized',
   folder_id TEXT REFERENCES folders(id) ON DELETE SET NULL,
+  is_favorite BOOLEAN DEFAULT 0,
   created_at INTEGER DEFAULT (strftime('%s', 'now'))
 );
 
@@ -226,6 +234,14 @@ CREATE TABLE folders (
   scope TEXT NOT NULL DEFAULT 'study' -- 'study' | 'formula'
 );
 
+-- Optimization Indexes
+CREATE INDEX IF NOT EXISTS idx_next_review ON progress(next_review);
+CREATE INDEX IF NOT EXISTS idx_last_reviewed ON progress(last_reviewed);
+CREATE INDEX IF NOT EXISTS idx_cards_topic_id ON cards(topic_id);
+CREATE INDEX IF NOT EXISTS idx_topics_folder_id ON topics(folder_id);
+CREATE INDEX IF NOT EXISTS idx_topics_subject ON topics(subject);
+CREATE INDEX IF NOT EXISTS idx_topics_is_favorite ON topics(is_favorite);
+
 -- Daily activity tracking
 CREATE TABLE study_activity (
   day TEXT PRIMARY KEY,        -- YYYY-MM-DD
@@ -255,29 +271,30 @@ CREATE TABLE exam_sessions (
 ```text
 ecengine/
 ├── electron/                    # Electron Backend Process
-│   ├── main.ts                  # App lifecycle, window management, hotkeys
+│   ├── main.ts                  # App lifecycle, window management, zoom, hotkeys
 │   ├── preload.ts               # contextBridge IPC API exposure
-│   ├── db/                      # SQLite connection, schema bootstrap, migrations
-│   └── ipc/                     # Modular IPC handlers (DB, AI, Print, Config, TTS)
+│   ├── db/                      # SQLite connection, schema bootstrap, migrations (v1–v9)
+│   └── ipc/                     # Modular IPC handlers (DB, Deck, AI, Print, Config, TTS, Export)
 ├── src/                         # React Frontend (Renderer)
-│   ├── assets/                  # Brand assets, icons, fonts
+│   ├── assets/                  # Brand assets, icons, fonts (JetBrains Mono)
 │   ├── components/              # Modular UI Components
-│   │   ├── ui/                  # Buttons, modals, tooltips, toast, auto-fit text
-│   │   ├── mcq/                 # MCQ card, Learn/Test modes, bookmark manager
-│   │   ├── flashcard/           # Flashcard session, 3D flip card, deck browser
-│   │   ├── formula/             # Formula card, MathLive equations
-│   │   ├── deck/                # Card forms, editors, bulk import modals, grid
+│   │   ├── ui/                  # Tooltip (auto-flipping), VolumeControl, FolderPanel, Toast
+│   │   ├── mcq/                 # MCQCard, LearnMode, TestMode, BookmarkedCardsModal
+│   │   ├── flashcard/           # FlashcardSession, FlashcardDeckBrowser, StudyCard
+│   │   ├── deck/                # CardForms, DeckCard, AIDescriptionButton, AdvancedFiltersPopover
+│   │   ├── study/               # StudyHeader, StudySessionStats
+│   │   ├── dashboard/           # ReviewHeatmap, SessionHistory, ExamCountdown
 │   │   └── layout/              # AppShell, custom TitleBar, navigation sidebar
-│   ├── hooks/                   # Business logic (SM-2, timer, TTS, import)
-│   ├── lib/                     # LaTeX rendering, subject classifier, audio
-│   ├── pages/                   # Main views (Dashboard, Study, PrintView, Settings, etc.)
-│   ├── services/                # db.service.ts (Frontend data access layer)
+│   ├── hooks/                   # Business logic (SM-2, timer, TTS, sound volume, import)
+│   ├── lib/                     # LaTeX rendering, subject classifier, audio synthesis
+│   ├── pages/                   # Main views (Dashboard, LooksFam, FlashcardLearn, Formulas, PrintView, Settings, etc.)
+│   ├── services/                # db.service.ts (SQLite data access), aiSummary.service.ts (Groq summaries)
 │   ├── store/                   # Zustand stores (study, exam, deck states)
-│   └── styles/                  # Tailwind theme, CSS variables, KaTeX customizations
+│   └── styles/                  # Tailwind theme tokens, CSS variables, KaTeX customizations
 ├── content/                     # Seed JSON deck files
 ├── scripts/                     # Seeding and content validation scripts
 ├── package.json                 # Dependencies and build configuration
-├── tailwind.config.ts           # Design tokens and container query plugins
+├── tailwind.config.ts           # Semantic design tokens and container queries
 └── electron.vite.config.ts      # Vite configuration for React and Electron
 ```
 
