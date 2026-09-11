@@ -3,6 +3,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { useSortable } from '@dnd-kit/sortable'
 import { GripVertical, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Tooltip } from '../ui/Tooltip'
 import { MCQEdit, FormulaEdit, FlashcardEdit, MCQForm, FlashcardForm, FormulaForm } from './CardForms'
 import { renderMath } from '../../lib/latex'
 
@@ -42,14 +43,15 @@ export const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttr
         onClick={() => setExpanded(e => !e)}
       >
         {/* Grip handle — only this triggers drag */}
-        <span
-          {...dragHandleProps}
-          onClick={e => e.stopPropagation()}
-          className="text-[#444] hover:text-text-muted cursor-grab active:cursor-grabbing flex-shrink-0 touch-none p-1 -m-1"
-          title="Drag to reorder"
-        >
-          <GripVertical className="w-4 h-4" />
-        </span>
+        <Tooltip content="Drag to reorder" position="top">
+          <span
+            {...dragHandleProps}
+            onClick={e => e.stopPropagation()}
+            className="text-[#444] hover:text-text-muted cursor-grab active:cursor-grabbing flex-shrink-0 touch-none p-1 -m-1"
+          >
+            <GripVertical className="w-4 h-4" />
+          </span>
+        </Tooltip>
         <span className="text-[#555] font-['IBM_Plex_Mono'] text-xs w-6 flex-shrink-0">
           {String(index + 1).padStart(2, '0')}
         </span>

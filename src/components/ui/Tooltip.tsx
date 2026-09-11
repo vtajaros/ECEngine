@@ -121,6 +121,10 @@ export const Tooltip: React.FC<TooltipProps> = ({
   className = '',
   tooltipClassName = ''
 }) => {
+  if (!content) {
+    return <>{children}</>;
+  }
+
   const [isVisible, setIsVisible] = useState(false);
   const [layout, setLayout] = useState<ComputedTooltipLayout>(() => ({
     top: 0,
@@ -318,10 +322,13 @@ export const Tooltip: React.FC<TooltipProps> = ({
     </AnimatePresence>
   );
 
+  const hasCustomPositioning = /\b(absolute|fixed|static|sticky)\b/.test(className);
+  const hasCustomDisplay = /\b(inline-flex|inline-block|block|inline|grid|hidden)\b/.test(className);
+
   return (
     <div
       ref={anchorRef}
-      className={`relative flex items-center justify-center ${className}`}
+      className={`${hasCustomPositioning ? '' : 'relative '}${hasCustomDisplay ? '' : 'flex '}items-center justify-center ${className}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onFocus={handleFocus}

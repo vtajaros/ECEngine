@@ -17,6 +17,7 @@ const SUBJECTS: { value: Subject; short: string }[] = [
 
 import { EditCard } from './CardEditor'
 import { AIDescriptionButton } from './AIDescriptionButton'
+import { Tooltip } from '../ui/Tooltip'
 import { generateDeckSummary } from '../../services/aiSummary.service'
 
 export type DeckMetadata = {
@@ -143,23 +144,25 @@ export default function DeckMetadataForm({ metadata, setMetadata, scope, cards =
               />
               <div className="absolute right-2 flex items-center gap-1">
                 {metadata.folderName && (
+                  <Tooltip content="Clear folder" position="top">
+                    <button
+                      type="button"
+                      onClick={() => setMetadata(prev => ({ ...prev, folderName: '', folderId: null, showFolderDropdown: true }))}
+                      className="p-1 text-[#444] hover:text-accent transition-colors"
+                    >
+                      <X size={14} />
+                    </button>
+                  </Tooltip>
+                )}
+                <Tooltip content="Toggle folder list" position="top">
                   <button
                     type="button"
-                    onClick={() => setMetadata(prev => ({ ...prev, folderName: '', folderId: null, showFolderDropdown: true }))}
-                    className="p-1 text-[#444] hover:text-accent transition-colors"
-                    title="Clear folder"
+                    onClick={() => setMetadata(prev => ({ ...prev, showFolderDropdown: !prev.showFolderDropdown }))}
+                    className="p-1 text-[#666] hover:text-accent transition-colors"
                   >
-                    <X size={14} />
+                    <ChevronDown size={14} className={`transform transition-transform ${metadata.showFolderDropdown ? 'rotate-180' : ''}`} />
                   </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setMetadata(prev => ({ ...prev, showFolderDropdown: !prev.showFolderDropdown }))}
-                  className="p-1 text-[#666] hover:text-accent transition-colors"
-                  title="Toggle folder list"
-                >
-                  <ChevronDown size={14} className={`transform transition-transform ${metadata.showFolderDropdown ? 'rotate-180' : ''}`} />
-                </button>
+                </Tooltip>
               </div>
             </div>
 
@@ -201,12 +204,13 @@ export default function DeckMetadataForm({ metadata, setMetadata, scope, cards =
                           <span className="font-['IBM_Plex_Mono'] text-xs text-accent">
                             Create "{metadata.folderName}"
                           </span>
-                          <button
-                            className="flex items-center justify-center w-5 h-5 rounded bg-accent/10 border border-accent/30 hover:bg-accent/20 transition-colors"
-                            title="Confirm new folder name"
-                          >
-                            <Plus size={12} className="text-accent" />
-                          </button>
+                          <Tooltip content="Confirm new folder name" position="top">
+                            <button
+                              className="flex items-center justify-center w-5 h-5 rounded bg-accent/10 border border-accent/30 hover:bg-accent/20 transition-colors"
+                            >
+                              <Plus size={12} className="text-accent" />
+                            </button>
+                          </Tooltip>
                         </div>
                       )}
                     </div>

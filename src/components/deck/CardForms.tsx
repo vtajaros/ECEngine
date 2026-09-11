@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { X, ImageIcon, Eye, EyeOff } from 'lucide-react'
 import { renderMath, isRawLatex } from '../../lib/latex'
+import { Tooltip } from '../ui/Tooltip'
 import 'mathlive'
 import type { MathfieldElement } from 'mathlive'
 
@@ -95,27 +96,32 @@ const ImageSlot: React.FC<ImageSlotProps> = ({
     return value ? (
       <div className="relative group flex items-center justify-center">
         <img src={`ece-app://${value}`} className="w-5 h-5 object-cover rounded border border-[#333]" alt={alt} />
-        <button type="button" onClick={onRemove}
-          className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-          title="Remove image">
-          <X size={10} />
-        </button>
+        <Tooltip content="Remove image" position="top" className="absolute -top-1 -right-1">
+          <button type="button" onClick={onRemove}
+            className="bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+            <X size={10} />
+          </button>
+        </Tooltip>
       </div>
     ) : (
-      <label className="cursor-pointer text-text-muted hover:text-accent transition-colors" title="Add Image">
-        <ImageIcon size={16} />
-        <input type="file" accept="image/*" className="hidden" onChange={onUpload} />
-      </label>
+      <Tooltip content={alt.toLowerCase().startsWith('add') ? alt : `Add ${alt}`} position="top">
+        <label className="cursor-pointer text-text-muted hover:text-accent transition-colors">
+          <ImageIcon size={16} />
+          <input type="file" accept="image/*" className="hidden" onChange={onUpload} />
+        </label>
+      </Tooltip>
     )
   }
 
   return value ? (
     <div className="relative group inline-block">
       <img src={`ece-app://${value}`} alt={alt} className="w-24 h-24 object-cover rounded border border-[#333]" />
-      <button type="button" onClick={onRemove}
-        className="absolute -top-2 -right-2 bg-[#FF4B4B] text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
-        <X size={12} />
-      </button>
+      <Tooltip content="Remove image" position="top" className="absolute -top-2 -right-2">
+        <button type="button" onClick={onRemove}
+          className="bg-[#FF4B4B] text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg">
+          <X size={12} />
+        </button>
+      </Tooltip>
     </div>
   ) : (
     <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#333] hover:border-accent hover:text-accent text-text-muted rounded transition-colors bg-[#0a0a0a]">
@@ -244,20 +250,25 @@ const MathInputField: React.FC<MathInputFieldProps> = ({
 
   return (
     <div className="relative flex flex-col gap-2 w-full flex-1">
-      <button
-        type="button"
-        onClick={() => {
-          setMathMode(m => {
-            const next = !m
-            onMathModeChange?.(next)
-            return next
-          })
-        }}
-        title={mathMode ? 'Switch to text mode' : 'Switch to equation mode'}
-        className="absolute top-2 right-2 z-10 flex items-center justify-center min-w-[28px] h-[24px] px-2 rounded-full bg-[var(--bg-elevated)] border border-[rgba(0,255,65,0.3)] text-[var(--accent-primary)] hover:bg-[rgba(0,255,65,0.1)] font-bold text-xs transition-colors shadow-sm"
+      <Tooltip
+        content={mathMode ? 'Switch to text mode' : 'Switch to equation mode'}
+        position="top"
+        className="absolute top-2 right-2 z-10"
       >
-        {mathMode ? 'Aa' : '∑'}
-      </button>
+        <button
+          type="button"
+          onClick={() => {
+            setMathMode(m => {
+              const next = !m
+              onMathModeChange?.(next)
+              return next
+            })
+          }}
+          className="flex items-center justify-center min-w-[28px] h-[24px] px-2 rounded-full bg-[var(--bg-elevated)] border border-[rgba(0,255,65,0.3)] text-[var(--accent-primary)] hover:bg-[rgba(0,255,65,0.1)] font-bold text-xs transition-colors shadow-sm"
+        >
+          {mathMode ? 'Aa' : '∑'}
+        </button>
+      </Tooltip>
 
       {!mathMode ? (
         multiline ? (
@@ -376,15 +387,19 @@ export const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; 
             {data.imagePath ? (
               <div className="relative group flex items-center justify-center">
                 <img src={`ece-app://${data.imagePath}`} className="w-5 h-5 object-cover rounded border border-[#333]" />
-                <button type="button" onClick={() => set({ imagePath: undefined })} className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" title="Remove image">
-                  <X size={10} />
-                </button>
+                <Tooltip content="Remove image" position="top" className="absolute -top-1 -right-1">
+                  <button type="button" onClick={() => set({ imagePath: undefined })} className="bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                    <X size={10} />
+                  </button>
+                </Tooltip>
               </div>
             ) : (
-              <label className="cursor-pointer text-text-muted hover:text-accent transition-colors" title="Add Image">
-                <ImageIcon size={16} />
-                <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-              </label>
+              <Tooltip content="Add Image" position="top">
+                <label className="cursor-pointer text-text-muted hover:text-accent transition-colors">
+                  <ImageIcon size={16} />
+                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                </label>
+              </Tooltip>
             )}
           </div>
         </div>
@@ -437,14 +452,15 @@ export const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; 
             <div className="flex items-center justify-between mb-1">
               <Label>Solution</Label>
               <div className="flex items-center gap-2 mr-[6px]">
-                <button
-                  type="button"
-                  onClick={() => setShowSolutionPreview(p => !p)}
-                  className="text-text-muted hover:text-accent transition-colors"
-                  title={showSolutionPreview ? 'Hide preview' : 'Preview formatting'}
-                >
-                  {showSolutionPreview ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
+                <Tooltip content={showSolutionPreview ? 'Hide preview' : 'Preview formatting'} position="top">
+                  <button
+                    type="button"
+                    onClick={() => setShowSolutionPreview(p => !p)}
+                    className="text-text-muted hover:text-accent transition-colors"
+                  >
+                    {showSolutionPreview ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </Tooltip>
                 <ImageSlot
                   variant="inline"
                   value={data.solutionImagePath}
@@ -538,14 +554,15 @@ export const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: Flashc
             <div className="flex items-center justify-between mb-1">
               <Label>Explanation / Notes</Label>
               <div className="flex items-center gap-2 mr-[6px]">
-                <button
-                  type="button"
-                  onClick={() => setShowExplanationPreview(p => !p)}
-                  className="text-text-muted hover:text-accent transition-colors"
-                  title={showExplanationPreview ? 'Hide preview' : 'Preview formatting'}
-                >
-                  {showExplanationPreview ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
+                <Tooltip content={showExplanationPreview ? 'Hide preview' : 'Preview formatting'} position="top">
+                  <button
+                    type="button"
+                    onClick={() => setShowExplanationPreview(p => !p)}
+                    className="text-text-muted hover:text-accent transition-colors"
+                  >
+                    {showExplanationPreview ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </Tooltip>
                 <ImageSlot
                   variant="inline"
                   value={data.explanationImagePath}
@@ -648,14 +665,15 @@ export const FormulaForm: React.FC<{
             <div className="flex items-center justify-between mb-1">
               <Label>Explanation / Notes</Label>
               <div className="flex items-center gap-2 mr-[6px]">
-                <button
-                  type="button"
-                  onClick={() => setShowExplanationPreview(p => !p)}
-                  className="text-text-muted hover:text-accent transition-colors"
-                  title={showExplanationPreview ? 'Hide preview' : 'Preview formatting'}
-                >
-                  {showExplanationPreview ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
+                <Tooltip content={showExplanationPreview ? 'Hide preview' : 'Preview formatting'} position="top">
+                  <button
+                    type="button"
+                    onClick={() => setShowExplanationPreview(p => !p)}
+                    className="text-text-muted hover:text-accent transition-colors"
+                  >
+                    {showExplanationPreview ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </Tooltip>
                 <ImageSlot
                   variant="inline"
                   value={data.explanationImagePath}

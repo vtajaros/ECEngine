@@ -1,5 +1,6 @@
 import { MCQForm, FlashcardForm, FormulaForm, MCQEdit, FlashcardEdit, FormulaEdit, FormattingGuideModal } from '../components/deck/CardForms'
 import DeckMetadataForm, { DeckMetadata } from '../components/deck/DeckMetadataForm'
+import { Tooltip } from '../components/ui/Tooltip'
 import { PREDEFINED_TAGS } from '../lib/constants'
 
 import { ImportModal, ImportFlashcardsModal } from '../components/deck/ImportModals'
@@ -475,7 +476,6 @@ export default function AddDeck() {
             <button
               onClick={() => setShowFormattingGuide(true)}
               className="flex items-center gap-2 px-3 py-1.5 rounded border border-[#2a2a2a] bg-[#111] text-text-muted hover:text-accent hover:border-accent/40 transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs font-bold"
-              title="Formatting Guide"
             >
               <Type className="w-3.5 h-3.5" />
               Format Guide
@@ -603,13 +603,14 @@ export default function AddDeck() {
             {/* 4. Footer Actions */}
             <div className="mt-4 flex items-center gap-3">
               {historyStack.length > 0 && (
-                <button
-                  onClick={undo}
-                  className="flex items-center justify-center p-5 rounded-lg border-2 border-[#666] text-[#666] hover:text-accent hover:border-accent transition-colors"
-                  title="Undo (Ctrl+Z)"
-                >
-                  <RotateCcw className="w-5 h-5" />
-                </button>
+                <Tooltip content="Undo (Ctrl+Z)" position="top">
+                  <button
+                    onClick={undo}
+                    className="flex items-center justify-center p-5 rounded-lg border-2 border-[#666] text-[#666] hover:text-accent hover:border-accent transition-colors"
+                  >
+                    <RotateCcw className="w-5 h-5" />
+                  </button>
+                </Tooltip>
               )}
               <button
                 onClick={addCard}

@@ -12,6 +12,7 @@ import { getSubjectFilterClasses } from '../lib/subjectColors'
 import { TOS_SUBJECT_COLORS } from '../lib/tosData'
 import { PREDEFINED_TAGS } from '../lib/constants'
 import { AIDescriptionButton } from '../components/deck/AIDescriptionButton'
+import { Tooltip } from '../components/ui/Tooltip'
 import { generateDeckSummary } from '../services/aiSummary.service'
 import {
   DndContext,
@@ -256,20 +257,25 @@ const MathInputField: React.FC<MathInputFieldProps> = ({
 
   return (
     <div className="relative flex flex-col gap-2 w-full flex-1">
-      <button
-        type="button"
-        onClick={() => {
-          setMathMode(m => {
-            const next = !m
-            onMathModeChange?.(next)
-            return next
-          })
-        }}
-        title={mathMode ? 'Switch to text mode' : 'Switch to equation mode'}
-        className="absolute top-2 right-2 z-10 flex items-center justify-center min-w-[28px] h-[24px] px-2 rounded-full bg-[#1C1C1C] border border-[rgba(0,255,65,0.3)] text-accent hover:bg-[rgba(0,255,65,0.1)] font-bold text-xs transition-colors shadow-sm"
+      <Tooltip
+        content={mathMode ? 'Switch to text mode' : 'Switch to equation mode'}
+        position="top"
+        className="absolute top-2 right-2 z-10"
       >
-        {mathMode ? 'Aa' : <Sigma size={12} />}
-      </button>
+        <button
+          type="button"
+          onClick={() => {
+            setMathMode(m => {
+              const next = !m
+              onMathModeChange?.(next)
+              return next
+            })
+          }}
+          className="flex items-center justify-center min-w-[28px] h-[24px] px-2 rounded-full bg-[#1C1C1C] border border-[rgba(0,255,65,0.3)] text-accent hover:bg-[rgba(0,255,65,0.1)] font-bold text-xs transition-colors shadow-sm"
+        >
+          {mathMode ? 'Aa' : <Sigma size={12} />}
+        </button>
+      </Tooltip>
 
       {!mathMode ? (
         multiline ? (
@@ -391,16 +397,20 @@ const FormulaForm: React.FC<{ data: FormulaEdit; onChange: (d: FormulaEdit) => v
             {data.imagePathFront ? (
               <div className="relative group flex items-center justify-center">
                 <img src={`ece-app://${data.imagePathFront}`} className="w-5 h-5 object-cover rounded border border-[#333]" alt="Front image" />
-                <button type="button" onClick={() => onChange({ ...data, imagePathFront: undefined })}
-                  className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                  <X size={10} />
-                </button>
+                <Tooltip content="Remove image" position="top" className="absolute -top-1 -right-1">
+                  <button type="button" onClick={() => onChange({ ...data, imagePathFront: undefined })}
+                    className="bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                    <X size={10} />
+                  </button>
+                </Tooltip>
               </div>
             ) : (
-              <label className="cursor-pointer text-text-muted hover:text-accent transition-colors" title="Add Front Image">
-                <ImageIcon size={16} />
-                <input type="file" accept="image/*" className="hidden" onChange={handleFrontImageUpload} />
-              </label>
+              <Tooltip content="Add Front Image" position="top">
+                <label className="cursor-pointer text-text-muted hover:text-accent transition-colors">
+                  <ImageIcon size={16} />
+                  <input type="file" accept="image/*" className="hidden" onChange={handleFrontImageUpload} />
+                </label>
+              </Tooltip>
             )}
           </div>
         </div>
@@ -420,16 +430,20 @@ const FormulaForm: React.FC<{ data: FormulaEdit; onChange: (d: FormulaEdit) => v
             {data.imageBack ? (
               <div className="relative group flex items-center justify-center">
                 <img src={`ece-app://${data.imageBack}`} className="w-5 h-5 object-cover rounded border border-[#333]" alt="Back image" />
-                <button type="button" onClick={() => onChange({ ...data, imageBack: undefined })}
-                  className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                  <X size={10} />
-                </button>
+                <Tooltip content="Remove image" position="top" className="absolute -top-1 -right-1">
+                  <button type="button" onClick={() => onChange({ ...data, imageBack: undefined })}
+                    className="bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                    <X size={10} />
+                  </button>
+                </Tooltip>
               </div>
             ) : (
-              <label className="cursor-pointer text-text-muted hover:text-accent transition-colors" title="Add Back Image">
-                <ImageIcon size={16} />
-                <input type="file" accept="image/*" className="hidden" onChange={handleBackImageUpload} />
-              </label>
+              <Tooltip content="Add Back Image" position="top">
+                <label className="cursor-pointer text-text-muted hover:text-accent transition-colors">
+                  <ImageIcon size={16} />
+                  <input type="file" accept="image/*" className="hidden" onChange={handleBackImageUpload} />
+                </label>
+              </Tooltip>
             )}
           </div>
         </div>
@@ -457,27 +471,32 @@ const FormulaForm: React.FC<{ data: FormulaEdit; onChange: (d: FormulaEdit) => v
             <div className="flex items-center justify-between mb-1">
               <Label>Explanation / Notes</Label>
               <div className="flex items-center gap-2 mr-[6px]">
-                <button
-                  type="button"
-                  onClick={() => setShowExplanationPreview(p => !p)}
-                  className="text-text-muted hover:text-accent transition-colors"
-                  title={showExplanationPreview ? 'Hide preview' : 'Preview formatting'}
-                >
-                  {showExplanationPreview ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
+                <Tooltip content={showExplanationPreview ? 'Hide preview' : 'Preview formatting'} position="top">
+                  <button
+                    type="button"
+                    onClick={() => setShowExplanationPreview(p => !p)}
+                    className="text-text-muted hover:text-accent transition-colors"
+                  >
+                    {showExplanationPreview ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </Tooltip>
                 {data.explanationImagePath ? (
                   <div className="relative group flex items-center justify-center">
                     <img src={`ece-app://${data.explanationImagePath}`} className="w-5 h-5 object-cover rounded border border-[#333]" alt="Explanation image" />
-                    <button type="button" onClick={() => onChange({ ...data, explanationImagePath: undefined })}
-                      className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                      <X size={10} />
-                    </button>
+                    <Tooltip content="Remove image" position="top" className="absolute -top-1 -right-1">
+                      <button type="button" onClick={() => onChange({ ...data, explanationImagePath: undefined })}
+                        className="bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                        <X size={10} />
+                      </button>
+                    </Tooltip>
                   </div>
                 ) : (
-                  <label className="cursor-pointer text-text-muted hover:text-accent transition-colors" title="Add Explanation Image">
-                    <ImageIcon size={16} />
-                    <input type="file" accept="image/*" className="hidden" onChange={handleExplanationImageUpload} />
-                  </label>
+                  <Tooltip content="Add Explanation Image" position="top">
+                    <label className="cursor-pointer text-text-muted hover:text-accent transition-colors">
+                      <ImageIcon size={16} />
+                      <input type="file" accept="image/*" className="hidden" onChange={handleExplanationImageUpload} />
+                    </label>
+                  </Tooltip>
                 )}
               </div>
             </div>
@@ -594,12 +613,14 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
           {data.imagePath ? (
             <div className="relative group">
               <img src={`ece-app://${data.imagePath}`} alt="Question image" className="w-24 h-24 object-cover rounded border border-[#333]" />
-              <button
-                onClick={() => set({ imagePath: undefined })}
-                className="absolute -top-2 -right-2 bg-[#FF4B4B] text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-              >
-                <X size={12} />
-              </button>
+              <Tooltip content="Remove image" position="top" className="absolute -top-2 -right-2">
+                <button
+                  onClick={() => set({ imagePath: undefined })}
+                  className="bg-[#FF4B4B] text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                >
+                  <X size={12} />
+                </button>
+              </Tooltip>
             </div>
           ) : (
             <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#333] hover:border-accent hover:text-accent text-text-muted rounded transition-colors bg-[#0a0a0a]">
@@ -651,27 +672,32 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
             <div className="flex items-center justify-between mb-1">
               <Label>Solution</Label>
               <div className="flex items-center gap-2 mr-[6px]">
-                <button
-                  type="button"
-                  onClick={() => setShowSolutionPreview(p => !p)}
-                  className="text-text-muted hover:text-accent transition-colors"
-                  title={showSolutionPreview ? 'Hide preview' : 'Preview formatting'}
-                >
-                  {showSolutionPreview ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
+                <Tooltip content={showSolutionPreview ? 'Hide preview' : 'Preview formatting'} position="top">
+                  <button
+                    type="button"
+                    onClick={() => setShowSolutionPreview(p => !p)}
+                    className="text-text-muted hover:text-accent transition-colors"
+                  >
+                    {showSolutionPreview ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </Tooltip>
                 {data.solutionImagePath ? (
                   <div className="relative group flex items-center justify-center">
                     <img src={`ece-app://${data.solutionImagePath}`} className="w-5 h-5 object-cover rounded border border-[#333]" alt="Solution image" />
-                    <button type="button" onClick={() => set({ solutionImagePath: undefined })}
-                      className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                      <X size={10} />
-                    </button>
+                    <Tooltip content="Remove image" position="top" className="absolute -top-1 -right-1">
+                      <button type="button" onClick={() => set({ solutionImagePath: undefined })}
+                        className="bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                        <X size={10} />
+                      </button>
+                    </Tooltip>
                   </div>
                 ) : (
-                  <label className="cursor-pointer text-text-muted hover:text-accent transition-colors" title="Add Solution Image">
-                    <ImageIcon size={16} />
-                    <input type="file" accept="image/*" className="hidden" onChange={handleSolutionImageUpload} />
-                  </label>
+                  <Tooltip content="Add Solution Image" position="top">
+                    <label className="cursor-pointer text-text-muted hover:text-accent transition-colors">
+                      <ImageIcon size={16} />
+                      <input type="file" accept="image/*" className="hidden" onChange={handleSolutionImageUpload} />
+                    </label>
+                  </Tooltip>
                 )}
               </div>
             </div>
@@ -774,16 +800,20 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
                 {data.imageBack ? (
                   <div className="relative group flex items-center justify-center">
                     <img src={`ece-app://${data.imageBack}`} className="w-5 h-5 object-cover rounded border border-[#333]" alt="Back image" />
-                    <button type="button" onClick={() => onChange({ ...data, imageBack: undefined })}
-                      className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                      <X size={10} />
-                    </button>
+                    <Tooltip content="Remove image" position="top" className="absolute -top-1 -right-1">
+                      <button type="button" onClick={() => onChange({ ...data, imageBack: undefined })}
+                        className="bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                        <X size={10} />
+                      </button>
+                    </Tooltip>
                   </div>
                 ) : (
-                  <label className="cursor-pointer text-text-muted hover:text-accent transition-colors" title="Add Back Image">
-                    <ImageIcon size={16} />
-                    <input type="file" accept="image/*" className="hidden" onChange={handleBackImageUpload} />
-                  </label>
+                  <Tooltip content="Add Back Image" position="top">
+                    <label className="cursor-pointer text-text-muted hover:text-accent transition-colors">
+                      <ImageIcon size={16} />
+                      <input type="file" accept="image/*" className="hidden" onChange={handleBackImageUpload} />
+                    </label>
+                  </Tooltip>
                 )}
               </div>
             </div>
@@ -795,12 +825,14 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
           {data.imagePath ? (
             <div className="relative group">
               <img src={`ece-app://${data.imagePath}`} alt="Flashcard image" className="w-24 h-24 object-cover rounded border border-[#333]" />
-              <button
-                onClick={() => onChange({ ...data, imagePath: undefined })}
-                className="absolute -top-2 -right-2 bg-[#FF4B4B] text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-              >
-                <X size={12} />
-              </button>
+              <Tooltip content="Remove image" position="top" className="absolute -top-2 -right-2">
+                <button
+                  onClick={() => onChange({ ...data, imagePath: undefined })}
+                  className="bg-[#FF4B4B] text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                >
+                  <X size={12} />
+                </button>
+              </Tooltip>
             </div>
           ) : (
             <label className="cursor-pointer flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#333] hover:border-accent hover:text-accent text-text-muted rounded transition-colors bg-[#0a0a0a]">
@@ -824,27 +856,32 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
             <div className="flex items-center justify-between mb-1">
               <Label>Explanation / Notes</Label>
               <div className="flex items-center gap-2 mr-[6px]">
-                <button
-                  type="button"
-                  onClick={() => setShowExplanationPreview(p => !p)}
-                  className="text-text-muted hover:text-accent transition-colors"
-                  title={showExplanationPreview ? 'Hide preview' : 'Preview formatting'}
-                >
-                  {showExplanationPreview ? <EyeOff size={14} /> : <Eye size={14} />}
-                </button>
+                <Tooltip content={showExplanationPreview ? 'Hide preview' : 'Preview formatting'} position="top">
+                  <button
+                    type="button"
+                    onClick={() => setShowExplanationPreview(p => !p)}
+                    className="text-text-muted hover:text-accent transition-colors"
+                  >
+                    {showExplanationPreview ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </Tooltip>
                 {data.explanationImagePath ? (
                   <div className="relative group flex items-center justify-center">
                     <img src={`ece-app://${data.explanationImagePath}`} className="w-5 h-5 object-cover rounded border border-[#333]" alt="Explanation image" />
-                    <button type="button" onClick={() => onChange({ ...data, explanationImagePath: undefined })}
-                      className="absolute -top-1 -right-1 bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                      <X size={10} />
-                    </button>
+                    <Tooltip content="Remove image" position="top" className="absolute -top-1 -right-1">
+                      <button type="button" onClick={() => onChange({ ...data, explanationImagePath: undefined })}
+                        className="bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                        <X size={10} />
+                      </button>
+                    </Tooltip>
                   </div>
                 ) : (
-                  <label className="cursor-pointer text-text-muted hover:text-accent transition-colors" title="Add Explanation Image">
-                    <ImageIcon size={16} />
-                    <input type="file" accept="image/*" className="hidden" onChange={handleExplanationImageUpload} />
-                  </label>
+                  <Tooltip content="Add Explanation Image" position="top">
+                    <label className="cursor-pointer text-text-muted hover:text-accent transition-colors">
+                      <ImageIcon size={16} />
+                      <input type="file" accept="image/*" className="hidden" onChange={handleExplanationImageUpload} />
+                    </label>
+                  </Tooltip>
                 )}
               </div>
             </div>
@@ -885,14 +922,15 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
         className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none"
         onClick={() => setExpanded(e => !e)}
       >
-        <span
-          {...dragHandleProps}
-          onClick={e => e.stopPropagation()}
-          className="text-[#444] hover:text-text-muted cursor-grab active:cursor-grabbing flex-shrink-0 touch-none"
-          title="Drag to reorder"
-        >
-          <GripVertical className="w-4 h-4" />
-        </span>
+        <Tooltip content="Drag to reorder" position="top">
+          <span
+            {...dragHandleProps}
+            onClick={e => e.stopPropagation()}
+            className="text-[#444] hover:text-text-muted cursor-grab active:cursor-grabbing flex-shrink-0 touch-none"
+          >
+            <GripVertical className="w-4 h-4" />
+          </span>
+        </Tooltip>
         <span className="text-[#555] font-['IBM_Plex_Mono'] text-xs w-6 flex-shrink-0">
           {String(index + 1).padStart(2, '0')}
         </span>
@@ -1370,7 +1408,6 @@ export default function EditDeck() {
           <button
             onClick={() => setShowFormattingGuide(true)}
             className="flex items-center gap-2 px-3 py-1.5 rounded border border-[#2a2a2a] bg-[#111] text-text-muted hover:text-accent hover:border-accent/40 transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs font-bold"
-            title="Formatting Guide"
           >
             <Type className="w-3.5 h-3.5" />
             Format Guide
@@ -1457,26 +1494,28 @@ export default function EditDeck() {
                   />
                   <div className="absolute right-2 flex items-center gap-1">
                     {deckMeta.folderName && (
+                      <Tooltip content="Clear folder" position="top">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDeckMeta(m => ({ ...m, folderName: '', folderId: null }))
+                            setShowFolderDropdown(true)
+                          }}
+                          className="p-1 text-[#444] hover:text-accent transition-colors"
+                        >
+                          <X size={14} />
+                        </button>
+                      </Tooltip>
+                    )}
+                    <Tooltip content="Toggle folder list" position="top">
                       <button
                         type="button"
-                        onClick={() => {
-                          setDeckMeta(m => ({ ...m, folderName: '', folderId: null }))
-                          setShowFolderDropdown(true)
-                        }}
-                        className="p-1 text-[#444] hover:text-accent transition-colors"
-                        title="Clear folder"
+                        onClick={() => setShowFolderDropdown(prev => !prev)}
+                        className="p-1 text-[#666] hover:text-accent transition-colors"
                       >
-                        <X size={14} />
+                        <ChevronDown size={14} className={`transform transition-transform ${showFolderDropdown ? 'rotate-180' : ''}`} />
                       </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => setShowFolderDropdown(prev => !prev)}
-                      className="p-1 text-[#666] hover:text-accent transition-colors"
-                      title="Toggle folder list"
-                    >
-                      <ChevronDown size={14} className={`transform transition-transform ${showFolderDropdown ? 'rotate-180' : ''}`} />
-                    </button>
+                    </Tooltip>
                   </div>
                 </div>
 
@@ -1521,12 +1560,13 @@ export default function EditDeck() {
                               <span className="font-['IBM_Plex_Mono'] text-xs text-accent">
                                 Create "{deckMeta.folderName}"
                               </span>
-                              <button
-                                className="flex items-center justify-center w-5 h-5 rounded bg-accent/10 border border-accent/30 hover:bg-accent/20 transition-colors"
-                                title="Confirm new folder name"
-                              >
-                                <Plus size={12} className="text-accent" />
-                              </button>
+                              <Tooltip content="Confirm new folder name" position="top">
+                                <button
+                                  className="flex items-center justify-center w-5 h-5 rounded bg-accent/10 border border-accent/30 hover:bg-accent/20 transition-colors"
+                                >
+                                  <Plus size={12} className="text-accent" />
+                                </button>
+                              </Tooltip>
                             </div>
                           )}
                         </div>
@@ -1702,13 +1742,14 @@ export default function EditDeck() {
               </span>
               <div className="flex items-center gap-3">
                 {historyStack.length > 0 && (
-                  <button
-                    onClick={undo}
-                    className="flex items-center justify-center p-2 rounded border border-[#666] text-[#666] hover:text-accent hover:border-accent transition-colors"
-                    title="Undo (Ctrl+Z)"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                  </button>
+                  <Tooltip content="Undo (Ctrl+Z)" position="top">
+                    <button
+                      onClick={undo}
+                      className="flex items-center justify-center p-2 rounded border border-[#666] text-[#666] hover:text-accent hover:border-accent transition-colors"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
                 )}
                 <button
                   onClick={() => addCard('flashcard')}
