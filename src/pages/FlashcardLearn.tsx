@@ -43,6 +43,7 @@ interface DeckInfo {
   folderId?: string
   order_index?: number
   mastery?: number
+  isFavorite?: boolean
 }
 
 interface FCSettings {

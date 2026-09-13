@@ -305,6 +305,31 @@ export function registerDeckHandlers(): void {
     }
   })
 
+  ipcMain.handle('decks:getBookmarkCountsByTopic', async (_, cardIds: string[]) => {
+    try {
+      if (!Array.isArray(cardIds) || cardIds.length === 0) {
+        return { success: true, data: {} }
+      }
+      const counts: Record<string, number> = {}
+      const CHUNK_SIZE = 500
+      for (let i = 0; i < cardIds.length; i += CHUNK_SIZE) {
+        const chunk = cardIds.slice(i, i + CHUNK_SIZE)
+        const placeholders = chunk.map(() => '?').join(',')
+        const rows = queryAll(
+          `SELECT topic_id, COUNT(*) as count FROM cards WHERE id IN (${placeholders}) GROUP BY topic_id`,
+          chunk
+        ) as Array<{ topic_id: string; count: number }>
+        for (const row of rows) {
+          counts[row.topic_id] = (counts[row.topic_id] || 0) + row.count
+        }
+      }
+      return { success: true, data: counts }
+    } catch (error) {
+      console.error('[Decks getBookmarkCountsByTopic Error]', error)
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
   ipcMain.handle('decks:updateDeckWithCards', async (_, payload: {
     deckId: string,
     title: string,

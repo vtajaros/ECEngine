@@ -34,6 +34,7 @@ declare global {
         getTopicsWithCardCounts: () => Promise<{ success: boolean; data?: any; error?: string }>
         getFormulaTopics: () => Promise<{ success: boolean; data?: any; error?: string }>
         getFormulaMastery: () => Promise<{ success: boolean; data?: any; error?: string }>
+        getBookmarkCountsByTopic: (cardIds: string[]) => Promise<{ success: boolean; data?: Record<string, number>; error?: string }>
         updateDeckWithCards: (payload: {
           deckId: string, title: string, subject: string, description: string,
           tags: string, folderName: string, folderId: string | null, scope: string,

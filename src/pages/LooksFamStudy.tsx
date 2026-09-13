@@ -56,6 +56,9 @@ interface StudySet {
 // In-memory cache to prevent layout pop-in on re-navigation
 let studySetsCache: StudySet[] | null = null
 
+const INITIAL_BATCH_SIZE = 16
+const BATCH_SIZE = 16
+
 // ── Memoized deck card for LooksFam ──────────────────────────────────────────
 // Extracted from the inline .map() so React.memo can skip re-renders when only
 // an unrelated deck's bookmarkCount changes.
@@ -281,8 +284,8 @@ export default function LooksFamStudy() {
     } catch { return new Set<string>() }
   }
   const [globalBookmarks, setGlobalBookmarks] = useState<Set<string>>(readBookmarks)
-  // Cache: topicId → card IDs loaded from DB (just IDs, not full data)
-  const [topicCardIds, setTopicCardIds] = useState<Record<string, string[]>>({})
+  // Fast batch bookmark counts: topicId -> count of bookmarked cards
+  const [bookmarkCounts, setBookmarkCounts] = useState<Record<string, number>>({})
   // Which deck's bookmark modal is currently open
   const [bookmarkModalDeck, setBookmarkModalDeck] = useState<StudySet | null>(null)
 
@@ -316,10 +319,35 @@ export default function LooksFamStudy() {
   // Load user-created sets from DB
   const loadDBSets = async () => {
     try {
+      const existingBookmarks = readBookmarks()
+      const bookmarkIds = Array.from(existingBookmarks)
+
+      // Fetch topics, mastery, and bookmark counts in parallel
+      const [topicsResult, masteryResult, bookmarksResult] = await Promise.all([
+        window.electron.decks.getTopicsWithCardCounts(),
+        window.electron.decks.getFormulaMastery().catch(e => {
+          console.warn('[LooksFamStudy] Failed to load mastery:', e)
+          return { success: false, data: null }
+        }),
+        bookmarkIds.length > 0 && window.electron.decks.getBookmarkCountsByTopic
+          ? window.electron.decks.getBookmarkCountsByTopic(bookmarkIds).catch(e => {
+              console.warn('[LooksFamStudy] Failed to load bookmark counts:', e)
+              return { success: false, data: {} }
+            })
+          : Promise.resolve({ success: true, data: {} })
+      ])
+
       let dbSets: StudySet[] = []
 
-      const topicsResult = await window.electron.decks.getTopicsWithCardCounts()
       if (topicsResult.success && topicsResult.data) {
+        const masteryMap = new Map<string, number>()
+        if (masteryResult.success && masteryResult.data) {
+          for (const row of masteryResult.data) {
+            const pct = row.mastery != null ? Math.round(row.mastery * 100) : 0
+            masteryMap.set(row.topic_id, pct)
+          }
+        }
+
         dbSets = topicsResult.data.map((row: any) => {
           const types = (row.types || '').split(',').filter(Boolean)
 
@@ -329,8 +357,6 @@ export default function LooksFamStudy() {
           let deckType: 'mcq' | 'flashcard' | 'mixed' = 'mcq'
           if (types.includes('mcq') && types.includes('flashcard')) deckType = 'mixed'
           else if (types.includes('flashcard')) deckType = 'flashcard'
-
-          const mastery = 0; // DB-based progress handles mastery calculation in the service layer
 
           let parsedTags: string[] = []
           try {
@@ -343,7 +369,7 @@ export default function LooksFamStudy() {
             description: row.description || '',
             subject: SUBJECT_MAP[row.subject] || 'ELECS',
             count: row.card_count || 0,
-            mastery,
+            mastery: masteryMap.get(row.id) ?? 0,
             deckType,
             tags: parsedTags,
             createdAt: row.created_at || Date.now(),
@@ -355,51 +381,17 @@ export default function LooksFamStudy() {
         }).filter((s: StudySet | null): s is StudySet => s !== null)
       }
 
-      // Load mastery percentages and merge into sets
-      try {
-        const masteryResult = await window.electron.decks.getFormulaMastery()
-        if (masteryResult.success && masteryResult.data) {
-          const masteryMap = new Map<string, number>()
-          for (const row of masteryResult.data) {
-            const pct = row.mastery != null ? Math.round(row.mastery * 100) : 0
-            masteryMap.set(row.topic_id, pct)
-          }
-          dbSets = dbSets.map(s => ({
-            ...s,
-            mastery: masteryMap.get(s.id) ?? 0,
-          }))
-        }
-      } catch (e) {
-        console.warn('[LooksFamStudy] Failed to load mastery:', e)
-      }
-
       setAllSets(prev => {
-        const nonDb = prev.filter(s => !s.id.startsWith('topic_'));
-        const next = [...nonDb, ...dbSets];
-        studySetsCache = next;
-        return next;
+        const nonDb = prev.filter(s => !s.id.startsWith('topic_'))
+        const next = [...nonDb, ...dbSets]
+        studySetsCache = next
+        return next
       })
 
-      // ── Background: load card IDs for topics that actually have bookmarks ──
-      // Fix 1: skip ALL IPC calls when the user has no bookmarks — the common
-      // case — eliminating the N-render storm that caused the clunky transition.
-      const existingBookmarks = readBookmarks()
-      if (existingBookmarks.size > 0) {
-        dbSets.forEach(async (s) => {
-          if (!s.id.startsWith('topic_')) return
-          try {
-            const res = await window.electron.data.getCards(s.id)
-            const rows: any[] = res?.data || []
-            if (rows.length > 0) {
-              const ids = rows.map((c: any) => c.id as string)
-              // Only trigger a re-render if this deck actually has bookmarked cards
-              const hasBookmark = ids.some(id => existingBookmarks.has(id))
-              if (hasBookmark) {
-                setTopicCardIds(prev => ({ ...prev, [s.id]: ids }))
-              }
-            }
-          } catch { /* non-fatal */ }
-        })
+      if (bookmarksResult.success && bookmarksResult.data) {
+        setBookmarkCounts(bookmarksResult.data)
+      } else {
+        setBookmarkCounts({})
       }
     } catch (err) {
       console.error('Failed to load DB sets', err)
@@ -468,8 +460,32 @@ export default function LooksFamStudy() {
     if (!el) return
     const save = () => sessionStorage.setItem('looksfam:scrollTop', String(el.scrollTop))
     el.addEventListener('scroll', save, { passive: true })
-    return () => el.removeEventListener('scroll', save)
+    return () => {
+      save()
+      el.removeEventListener('scroll', save)
+    }
   }, [isLoading])
+
+  const getInitialBatchSize = () => {
+    try {
+      const saved = sessionStorage.getItem('looksfam:scrollTop')
+      if (saved) {
+        const top = parseInt(saved, 10)
+        if (top > 0) {
+          const estimatedRows = Math.ceil(top / 240)
+          return Math.max(INITIAL_BATCH_SIZE, (estimatedRows + 4) * 2)
+        }
+      }
+    } catch {}
+    return INITIAL_BATCH_SIZE
+  }
+
+  const [visibleLimit, setVisibleLimit] = useState<number>(getInitialBatchSize)
+  const loadMoreRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    setVisibleLimit(INITIAL_BATCH_SIZE)
+  }, [activeFolder, activeSubject, favoritesOnly, searchQuery, filterType, filterTags, sortBy, sortOrder])
 
   const folders = useMemo(() => {
     const folderMap = new Map<string, number>()
@@ -545,14 +561,32 @@ export default function LooksFamStudy() {
     return result
   }, [allSets, activeFolder, activeSubject, favoritesOnly, filterType, filterTags, sortBy, sortOrder, searchQuery])
 
-  // Compute how many bookmarks each topic has (based on cached card IDs)
-  const bookmarksPerTopic = useMemo(() => {
-    const out: Record<string, number> = {}
-    for (const [topicId, ids] of Object.entries(topicCardIds)) {
-      out[topicId] = ids.filter(id => globalBookmarks.has(id)).length
-    }
-    return out
-  }, [topicCardIds, globalBookmarks])
+  const visibleSets = useMemo(() => {
+    return filteredAndSortedSets.slice(0, visibleLimit)
+  }, [filteredAndSortedSets, visibleLimit])
+
+  useEffect(() => {
+    if (visibleLimit >= filteredAndSortedSets.length) return
+
+    const scrollContainer = scrollContainerRef.current
+    const sentinel = loadMoreRef.current
+    if (!sentinel) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setVisibleLimit(prev => Math.min(prev + BATCH_SIZE, filteredAndSortedSets.length))
+        }
+      },
+      {
+        root: scrollContainer,
+        rootMargin: '400px',
+      }
+    )
+
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [visibleLimit, filteredAndSortedSets.length])
 
   useEffect(() => {
     if (setToDelete) {
@@ -1332,11 +1366,11 @@ export default function LooksFamStudy() {
               <div className="w-full max-w-5xl">
                 {/* Fix 3: memoized card component — only re-renders if its own props changed */}
                 <DeckGrid>
-                  {filteredAndSortedSets.map(set => (
+                  {visibleSets.map(set => (
                     <LooksFamCard
                       key={set.id}
                       set={set}
-                      bookmarkCount={bookmarksPerTopic[set.id] ?? 0}
+                      bookmarkCount={bookmarkCounts[set.id] ?? 0}
                       onLearn={handleOpenLearn}
                       onTest={handleOpenTest}
                       onBookmark={setBookmarkModalDeck}
@@ -1347,6 +1381,13 @@ export default function LooksFamStudy() {
                     />
                   ))}
                 </DeckGrid>
+
+                {/* Progressive batch loading sentinel */}
+                {visibleLimit < filteredAndSortedSets.length && (
+                  <div ref={loadMoreRef} className="w-full h-10 flex items-center justify-center py-4">
+                    <div className="w-4 h-4 border-2 border-accent/40 border-t-accent rounded-full animate-spin" />
+                  </div>
+                )}
 
                 {isLoading ? (
                   <div className="text-center py-20 text-[#555] font-['IBM_Plex_Mono'] text-sm tracking-widest animate-pulse">
@@ -1424,8 +1465,14 @@ export default function LooksFamStudy() {
                 onClose={() => setBookmarkModalDeck(null)}
                 onBookmarksChanged={(newIds) => {
                   setGlobalBookmarks(new Set(newIds))
-                  // Update the card ID cache count for this deck in case items changed
-                  setTopicCardIds(prev => ({ ...prev }))
+                  const ids = Array.from(newIds)
+                  if (ids.length > 0 && window.electron.decks.getBookmarkCountsByTopic) {
+                    window.electron.decks.getBookmarkCountsByTopic(ids).then(res => {
+                      if (res.success && res.data) setBookmarkCounts(res.data)
+                    }).catch(() => {})
+                  } else {
+                    setBookmarkCounts({})
+                  }
                 }}
               />
             )}

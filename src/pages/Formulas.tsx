@@ -60,6 +60,7 @@ interface DeckInfo {
   folderName?: string
   folderId?: string
   order_index?: number
+  isFavorite?: boolean
 }
 
 interface FCSettings {
