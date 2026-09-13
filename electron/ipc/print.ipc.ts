@@ -74,7 +74,13 @@ export function registerPrintHandlers(getMainWindow: () => Electron.BrowserWindo
     }
   })
 
-  ipcMain.handle('print:toPDF', async (_event, suggestedName: string, themeVars: Record<string, string>, topicId: string, title: string, theme: string, layout: string) => {
+interface PDFExportOptions {
+  showAnswers?: boolean
+  showSolutions?: boolean
+  boldSide?: string
+}
+
+ipcMain.handle('print:toPDF', async (_event, suggestedName: string, themeVars: Record<string, string>, topicId: string, title: string, theme: string, layout: string, options?: PDFExportOptions) => {
     let pdfWindow: BrowserWindow | null = null
     try {
       if (!printWindow || printWindow.isDestroyed()) {
@@ -90,6 +96,16 @@ export function registerPrintHandlers(getMainWindow: () => Electron.BrowserWindo
       if (canceled || !filePath) return { success: false, canceled: true }
 
       const encodedTitle = encodeURIComponent(title)
+      const queryParams = [
+        `topicId=${encodeURIComponent(topicId)}`,
+        `title=${encodedTitle}`,
+        `theme=${encodeURIComponent(theme)}`,
+        `layout=${encodeURIComponent(layout)}`,
+        `pdfmode=1`,
+        `showAnswers=${options?.showAnswers !== false}`,
+        `showSolutions=${options?.showSolutions !== false}`,
+        `boldSide=${encodeURIComponent(options?.boldSide ?? 'term')}`,
+      ].join('&')
 
       // A4 at 96dpi = 794×1122px. Window matches layout width; pageSize 'A4' is passed
       // as a string so Chromium uses its validated internal A4 definition (no micron rounding).
@@ -108,11 +124,11 @@ export function registerPrintHandlers(getMainWindow: () => Electron.BrowserWindo
 
       if (process.env['ELECTRON_RENDERER_URL']) {
         await pdfWindow.loadURL(
-          `${process.env['ELECTRON_RENDERER_URL']}#/print?topicId=${topicId}&title=${encodedTitle}`
+          `${process.env['ELECTRON_RENDERER_URL']}#/print?${queryParams}`
         )
       } else {
         await pdfWindow.loadFile(join(__dirname, '../renderer/index.html'), {
-          hash: `/print?topicId=${topicId}&title=${encodedTitle}`,
+          hash: `/print?${queryParams}`,
         })
       }
 
@@ -121,6 +137,9 @@ export function registerPrintHandlers(getMainWindow: () => Electron.BrowserWindo
           pdfmode: '1',
           theme: ${JSON.stringify(theme)},
           layout: ${JSON.stringify(layout)},
+          showAnswers: ${JSON.stringify(options?.showAnswers !== false)},
+          showSolutions: ${JSON.stringify(options?.showSolutions !== false)},
+          boldSide: ${JSON.stringify(options?.boldSide ?? 'term')},
         };
         window.dispatchEvent(new Event('pdf-config-ready'));
       `)

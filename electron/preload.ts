@@ -144,8 +144,20 @@ contextBridge.exposeInMainWorld('electron', {
   print: {
     open: (topicId: string, title: string): Promise<{ success: boolean; error?: string }> =>
       ipcRenderer.invoke('print:open', topicId, title),
-    toPDF: (suggestedName: string, themeVars: Record<string, string>, topicId: string, title: string, theme: string, layout: string): Promise<{ success: boolean; canceled?: boolean; error?: string }> =>
-      ipcRenderer.invoke('print:toPDF', suggestedName, themeVars, topicId, title, theme, layout),
+    toPDF: (
+      suggestedName: string,
+      themeVars: Record<string, string>,
+      topicId: string,
+      title: string,
+      theme: string,
+      layout: string,
+      options?: {
+        showAnswers?: boolean
+        showSolutions?: boolean
+        boldSide?: string
+      }
+    ): Promise<{ success: boolean; canceled?: boolean; error?: string }> =>
+      ipcRenderer.invoke('print:toPDF', suggestedName, themeVars, topicId, title, theme, layout, options),
   },
   zoom: {
     get: () => Math.round(webFrame.getZoomFactor() * 100),

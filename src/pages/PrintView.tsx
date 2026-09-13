@@ -423,12 +423,21 @@ export default function PrintView() {
   const topicId = searchParams.get('id') ?? searchParams.get('topicId') ?? ''
   const title = decodeURIComponent(searchParams.get('title') ?? 'Test Paper')
 
+  interface PDFConfig {
+    pdfmode?: string
+    theme?: string
+    layout?: string
+    showAnswers?: boolean
+    showSolutions?: boolean
+    boldSide?: string
+  }
+
   // pdf config injected by main process via executeJavaScript BEFORE React mounts.
   // We gate rendering until config is present in pdf mode.
-  const [pdfConfig, setPdfConfig] = useState<{ pdfmode: string; theme: string; layout: string } | null>(
+  const [pdfConfig, setPdfConfig] = useState<PDFConfig | null>(
     () => (window as any).__pdfConfig ?? null
   )
-  const isPdfMode = pdfConfig?.pdfmode === '1' || (window as any).__pdfConfig?.pdfmode === '1'
+  const isPdfMode = pdfConfig?.pdfmode === '1' || (window as any).__pdfConfig?.pdfmode === '1' || searchParams.get('pdfmode') === '1'
 
   useEffect(() => {
     if ((window as any).__pdfConfig) {
@@ -444,14 +453,34 @@ export default function PrintView() {
 
   const [cards, setCards] = useState<Card[]>([])
   const [loading, setLoading] = useState(true)
-  const [layout, setLayout] = useState<LayoutMode>('glossary')
-  const [boldSide, setBoldSide] = useState<BoldSide>('term')
+  const [layout, setLayout] = useState<LayoutMode>(() => {
+    const l = searchParams.get('layout')
+    if (l === 'table' || l === 'glossary' || l === 'qa') return l
+    return (pdfConfig?.layout as LayoutMode) ?? 'glossary'
+  })
+  const [boldSide, setBoldSide] = useState<BoldSide>(() => {
+    const b = searchParams.get('boldSide')
+    if (b === 'term' || b === 'definition' || b === 'none') return b
+    return (pdfConfig?.boldSide as BoldSide) ?? 'term'
+  })
   const [exportState, setExportState] = useState<ExportState>('idle')
   const [exportError, setExportError] = useState('')
   const [scale, setScale] = useState(1)
-  const [theme, setTheme] = useState<PrintTheme>('dark')
-  const [showAnswers, setShowAnswers] = useState(true)
-  const [showSolutions, setShowSolutions] = useState(true)
+  const [theme, setTheme] = useState<PrintTheme>(() => {
+    const t = searchParams.get('theme')
+    if (t === 'light' || t === 'sepia' || t === 'dark') return t
+    return (pdfConfig?.theme as PrintTheme) ?? 'dark'
+  })
+  const [showAnswers, setShowAnswers] = useState<boolean>(() => {
+    const a = searchParams.get('showAnswers')
+    if (a !== null) return a !== 'false'
+    return pdfConfig?.showAnswers ?? true
+  })
+  const [showSolutions, setShowSolutions] = useState<boolean>(() => {
+    const s = searchParams.get('showSolutions')
+    if (s !== null) return s !== 'false'
+    return pdfConfig?.showSolutions ?? true
+  })
   const [topicDescription, setTopicDescription] = useState<string>('')
 
   // ── Find-in-document state ──────────────────────────────────────────────────
@@ -467,11 +496,14 @@ export default function PrintView() {
   // ── Image lightbox state ─────────────────────────────────────────────────────
   const [zoomedImage, setZoomedImage] = useState<string | null>(null)
 
-  // Sync theme+layout from pdfConfig once it arrives
+  // Sync theme+layout and display toggles from pdfConfig once it arrives
   useEffect(() => {
     if (!pdfConfig) return
-    setTheme((pdfConfig.theme ?? 'dark') as PrintTheme)
-    setLayout((pdfConfig.layout ?? 'table') as LayoutMode)
+    if (pdfConfig.theme) setTheme((pdfConfig.theme ?? 'dark') as PrintTheme)
+    if (pdfConfig.layout) setLayout((pdfConfig.layout ?? 'table') as LayoutMode)
+    if (pdfConfig.boldSide) setBoldSide(pdfConfig.boldSide as BoldSide)
+    if (typeof pdfConfig.showAnswers === 'boolean') setShowAnswers(pdfConfig.showAnswers)
+    if (typeof pdfConfig.showSolutions === 'boolean') setShowSolutions(pdfConfig.showSolutions)
   }, [pdfConfig])
 
   const MIN_SCALE = 0.5
@@ -744,7 +776,19 @@ export default function PrintView() {
     setExportState('loading')
     setExportError('')
     try {
-      const result = await window.electron.print.toPDF(title, PRINT_THEMES[theme].vars, topicId, title, theme, layout)
+      const result = await window.electron.print.toPDF(
+        title,
+        PRINT_THEMES[theme].vars,
+        topicId,
+        title,
+        theme,
+        layout,
+        {
+          showAnswers,
+          showSolutions,
+          boldSide,
+        }
+      )
       if (result.canceled) {
         setExportState('idle')
       } else if (result.success) {

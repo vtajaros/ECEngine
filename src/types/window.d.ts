@@ -175,7 +175,19 @@ declare global {
       }
       print: {
         open: (topicId: string, title: string) => Promise<{ success: boolean; error?: string }>
-        toPDF: (suggestedName: string, themeVars: Record<string, string>, topicId: string, title: string, theme: string, layout: string) => Promise<{ success: boolean; canceled?: boolean; error?: string }>
+        toPDF: (
+          suggestedName: string,
+          themeVars: Record<string, string>,
+          topicId: string,
+          title: string,
+          theme: string,
+          layout: string,
+          options?: {
+            showAnswers?: boolean
+            showSolutions?: boolean
+            boldSide?: string
+          }
+        ) => Promise<{ success: boolean; canceled?: boolean; error?: string }>
       }
       zoom: {
         get: () => number
