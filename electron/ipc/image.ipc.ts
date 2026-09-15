@@ -80,8 +80,8 @@ import { createReadStream, readdirSync } from 'fs'
 import { Readable } from 'node:stream'
 
 // ── Protocol handler (after app ready) ────────────────────────────
-export function handleImageProtocol() {
-  protocol.handle('ece-app', (request) => {
+export function handleImageProtocol(targetSession?: Electron.Session) {
+  const handler = (request: Request) => {
     try {
       const url = new URL(request.url)
       const requestedFilename = decodeURIComponent(url.host + url.pathname).replace(/^\//, '').replace(/\/$/, '')
@@ -129,5 +129,11 @@ export function handleImageProtocol() {
       console.error('[ece-app://] Protocol error:', err)
       return new Response('Internal Error', { status: 500 })
     }
-  })
+  }
+
+  if (targetSession) {
+    targetSession.protocol.handle('ece-app', handler)
+  } else {
+    protocol.handle('ece-app', handler)
+  }
 }

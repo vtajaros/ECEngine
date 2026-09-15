@@ -188,6 +188,18 @@ app.whenReady().then(() => {
   registerPrintHandlers(() => mainWindow)
   registerTTSHandlers()
   handleImageProtocol()
+  const printSession = session.fromPartition('print')
+  handleImageProtocol(printSession)
+  printSession.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': [
+          "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: ece-app:; connect-src 'self' https://api.groq.com;"
+        ]
+      }
+    })
+  })
 
   // Window Control Handlers
   ipcMain.on('window-minimize', () => {

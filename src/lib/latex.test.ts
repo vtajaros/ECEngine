@@ -184,5 +184,32 @@ describe('renderMath', () => {
     const html = renderMath(input)
     expect(html).toContain('katex')
   })
+
+  it('renders AI explanation with delimited numbers without red errors or broken delimiters', () => {
+    const p1 = 'B. 32 is correct because every instruction in this fixed-length RISC ISA occupies $32$ bits, so any mixture of instruction types yields an average of $32$ bits.'
+    const html1 = renderMath(p1)
+    expect(html1).not.toContain('katex-error')
+    expect(html1).not.toContain('color:#cc0000')
+    expect(html1).toContain('katex')
+
+    const p2 = '3. Immediate instructions: opcode + $16$-bit immediate = $32$ bits'
+    const html2 = renderMath(p2)
+    expect(html2).not.toContain('katex-error')
+    expect(html2).not.toContain('color:#cc0000')
+    expect(html2).toContain('katex')
+
+    const p3 = 'Since each class is $32$ bits, the weighted average = $0.2\\! \\times \\! 32 + 0.5\\! \\times \\! 32 + 0.3\\! \\times \\! 32 = 32$ bits.'
+    const html3 = renderMath(p3)
+    expect(html3).not.toContain('katex-error')
+    expect(html3).not.toContain('color:#cc0000')
+    expect(html3).toContain('katex')
+  })
+
+  it('gracefully handles malformed LaTeX expressions without red error markup', () => {
+    const broken = 'The value is $\\unknownMacro{abc} + $32$ and done.'
+    const html = renderMath(broken)
+    expect(html).not.toContain('katex-error')
+    expect(html).not.toContain('color:#cc0000')
+  })
 })
 

@@ -36,6 +36,7 @@ export function registerPrintHandlers(getMainWindow: () => Electron.BrowserWindo
         ...(parent ? { parent, modal: false } : {}),
         show: false,
         webPreferences: {
+          partition: 'print',
           preload: join(__dirname, '../preload/index.js'),
           contextIsolation: true,
           nodeIntegration: false,
@@ -114,6 +115,7 @@ ipcMain.handle('print:toPDF', async (_event, suggestedName: string, themeVars: R
         height: 1122,
         show: false,
         webPreferences: {
+          partition: 'print',
           preload: join(__dirname, '../preload/index.js'),
           contextIsolation: true,
           nodeIntegration: false,
