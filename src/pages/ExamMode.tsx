@@ -67,7 +67,7 @@ export default function ExamMode() {
            <div className="flex items-center gap-8">
              <div className="flex items-center bg-[var(--bg-secondary)] border border-[var(--bg-card)] px-5 py-2.5 rounded shadow-[inset_0_2px_4px_rgba(0,0,0,0.2)]">
                <Clock className="text-[var(--color-warning)] mr-3" size={20} />
-               <span className="font-['IBM_Plex_Mono'] text-xl font-bold text-[var(--text-primary)] tracking-widest">{formatted}</span>
+               <span className="font-['JetBrains_Mono'] text-xl font-bold text-[var(--text-primary)] tracking-widest">{formatted}</span>
              </div>
              <button 
                onClick={handleExit}
@@ -91,7 +91,7 @@ export default function ExamMode() {
                  className="w-full max-w-4xl bg-[var(--bg-card)] border border-[var(--bg-secondary)] rounded-lg p-6 shadow-2xl relative"
               >
                  <div className="flex justify-between items-start mb-6">
-                    <span className="text-[var(--text-secondary)] font-['IBM_Plex_Mono'] text-sm tracking-wider">QUESTION {currentIndex + 1}</span>
+                    <span className="text-[var(--text-secondary)] font-['JetBrains_Mono'] text-sm tracking-wider">QUESTION {currentIndex + 1}</span>
                  </div>
                  
                   <div className="text-xl text-[var(--text-primary)] mb-6 leading-relaxed font-medium">
@@ -101,7 +101,7 @@ export default function ExamMode() {
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                    {(currentCard.data as MCQData).choices?.map((choice: string, idx: number) => {
                      let btnClass = "p-3 text-left border rounded transition-all font-['Rajdhani'] text-base group "
-                     let prefixClass = "mr-3 font-['IBM_Plex_Mono'] transition-colors "
+                     let prefixClass = "mr-3 font-['JetBrains_Mono'] transition-colors "
                      
                      if (isRevealed) {
                        const isCorrectAnswer = idx === (currentCard.data as MCQData).answer
@@ -230,7 +230,7 @@ export default function ExamMode() {
               <select 
                 value={subjectFilter}
                 onChange={(e) => setSubjectFilter(e.target.value)}
-                className="w-full bg-[var(--bg-card)] border border-[var(--text-muted)] text-[var(--text-primary)] py-3 px-4 rounded font-['IBM_Plex_Mono'] focus:outline-none focus:border-[var(--accent-primary)] transition-colors focus:shadow-[0_0_10px_rgba(0,255,65,0.2)]"
+                className="w-full bg-[var(--bg-card)] border border-[var(--text-muted)] text-[var(--text-primary)] py-3 px-4 rounded font-['JetBrains_Mono'] focus:outline-none focus:border-[var(--accent-primary)] transition-colors focus:shadow-[0_0_10px_rgba(0,255,65,0.2)]"
               >
                 <option value="full">Pre-Board Examination (Full)</option>
                 <option value="math">Mathematics (100 Items)</option>
@@ -247,7 +247,7 @@ export default function ExamMode() {
               <select 
                 value={timeLimit}
                 onChange={(e) => setTimeLimit(e.target.value)}
-                className="w-full bg-[var(--bg-card)] border border-[var(--text-muted)] text-[var(--text-primary)] py-3 px-4 rounded font-['IBM_Plex_Mono'] focus:outline-none focus:border-[var(--accent-primary)] transition-colors focus:shadow-[0_0_10px_rgba(0,255,65,0.2)]"
+                className="w-full bg-[var(--bg-card)] border border-[var(--text-muted)] text-[var(--text-primary)] py-3 px-4 rounded font-['JetBrains_Mono'] focus:outline-none focus:border-[var(--accent-primary)] transition-colors focus:shadow-[0_0_10px_rgba(0,255,65,0.2)]"
               >
                 <option value="4h">4 Hours (Standard)</option>
                 <option value="2h">2 Hours (Half)</option>
@@ -261,7 +261,7 @@ export default function ExamMode() {
             <Clock className="text-[var(--color-warning)] mt-1 shrink-0" size={24} />
             <div>
               <h3 className="font-['Rajdhani'] text-[var(--color-warning)] text-lg font-bold tracking-wider mb-1">Strict Mode is ON</h3>
-              <p className="text-[var(--text-secondary)] font-['IBM_Plex_Mono'] text-sm leading-relaxed">
+              <p className="text-[var(--text-secondary)] font-['JetBrains_Mono'] text-sm leading-relaxed">
                 You cannot pause or exit the exam once started without forfeiting your score. Make sure you have uninterrupted time before proceeding.
               </p>
             </div>

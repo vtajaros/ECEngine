@@ -149,7 +149,7 @@ const LooksFamCard = React.memo(function LooksFamCard({
           </span>
 
           {/* Date Created */}
-          <span className="text-[10px] text-gray-400 uppercase font-['IBM_Plex_Mono'] tracking-widest">
+          <span className="text-[10px] text-gray-400 uppercase font-['JetBrains_Mono'] tracking-widest">
             {set.createdAt ? new Date(set.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
           </span>
         </div>
@@ -157,7 +157,7 @@ const LooksFamCard = React.memo(function LooksFamCard({
 
       {/* Deck Description */}
       {set.description && set.description.trim() !== "" && (
-        <p className="text-xs text-gray-400 font-['IBM_Plex_Mono'] leading-relaxed mt-2 line-clamp-2 uppercase pr-4">
+        <p className="text-xs text-gray-400 font-['JetBrains_Mono'] leading-relaxed mt-2 line-clamp-2 uppercase pr-4">
           {set.description}
         </p>
       )}
@@ -214,7 +214,7 @@ const LooksFamCard = React.memo(function LooksFamCard({
                 aria-label="Bookmarked Items"
               >
                 <Bookmark className="w-4 h-4 fill-accent" />
-                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-accent text-black font-['IBM_Plex_Mono'] text-[9px] font-bold flex items-center justify-center">
+                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-accent text-black font-['JetBrains_Mono'] text-[9px] font-bold flex items-center justify-center">
                   {bookmarkCount > 9 ? '9+' : bookmarkCount}
                 </span>
               </button>
@@ -1164,7 +1164,7 @@ export default function LooksFamStudy() {
                             placeholder="Search decks..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-surface border border-[#333] focus:border-accent rounded-lg py-2 pl-9 pr-3 text-sm text-text-primary placeholder-[#555] outline-none transition-colors font-['IBM_Plex_Mono']"
+                            className="w-full bg-surface border border-[#333] focus:border-accent rounded-lg py-2 pl-9 pr-3 text-sm text-text-primary placeholder-[#555] outline-none transition-colors font-['JetBrains_Mono']"
                           />
                         </div>
 
@@ -1390,7 +1390,7 @@ export default function LooksFamStudy() {
                 )}
 
                 {isLoading ? (
-                  <div className="text-center py-20 text-[#555] font-['IBM_Plex_Mono'] text-sm tracking-widest animate-pulse">
+                  <div className="text-center py-20 text-[#555] font-['JetBrains_Mono'] text-sm tracking-widest animate-pulse">
                     Loading decks...
                   </div>
                 ) : filteredAndSortedSets.length === 0 ? (
@@ -1427,7 +1427,7 @@ export default function LooksFamStudy() {
                     <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-4 tracking-widest uppercase">
                       DELETE DECK?
                     </h3>
-                    <p className="text-text-muted font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
+                    <p className="text-text-muted font-['JetBrains_Mono'] mb-8 leading-relaxed">
                       Are you absolutely sure you want to delete <strong className="text-white">{setToDelete.title}</strong>? This action cannot be undone and will permanently remove all {setToDelete.count} items in this set.
                     </p>
                     <div className="flex flex-col gap-3 w-full">

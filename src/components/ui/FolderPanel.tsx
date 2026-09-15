@@ -479,7 +479,7 @@ const FolderRowItem: React.FC<{
           </span>
         </Tooltip>
 
-        <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[#111] text-gray-400 font-['IBM_Plex_Mono'] border border-[#333]">
+        <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[#111] text-gray-400 font-['JetBrains_Mono'] border border-[#333]">
           {deckCount}
         </span>
 
@@ -610,7 +610,7 @@ const LegacySortableItem: React.FC<{
               {folder}
             </span>
           </div>
-          <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[#111] text-gray-400 font-['IBM_Plex_Mono'] border border-[#333]">
+          <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[#111] text-gray-400 font-['JetBrains_Mono'] border border-[#333]">
             {deckCount}
           </span>
         </motion.button>
@@ -750,7 +750,7 @@ const FolderPanelFooter: React.FC<FolderPanelFooterProps> = ({
           <span className="w-1.5 h-1.5 rounded-full bg-[#00FF41] animate-pulse shrink-0" />
           {displayedCount} {displayedCount === 1 ? 'Deck' : 'Decks'} Displayed
         </span>
-        <span className="text-gray-400 text-[10px] font-['IBM_Plex_Mono']">
+        <span className="text-gray-400 text-[10px] font-['JetBrains_Mono']">
           {totalDeckCount} Total
         </span>
       </div>
@@ -799,7 +799,7 @@ const FolderPanelFooter: React.FC<FolderPanelFooterProps> = ({
         )}
       </div>
 
-      <div className="pt-1.5 border-t border-[#333] text-[9px] font-['IBM_Plex_Mono'] text-gray-400 leading-tight">
+      <div className="pt-1.5 border-t border-[#333] text-[9px] font-['JetBrains_Mono'] text-gray-400 leading-tight">
         {hasFilters
           ? `${displayedCount} of ${totalDeckCount} decks match active filters`
           : `Showing all ${totalDeckCount} decks without filter restrictions`}
@@ -811,7 +811,7 @@ const FolderPanelFooter: React.FC<FolderPanelFooterProps> = ({
     return (
       <div className="mt-auto shrink-0 border-t border-border-base bg-[#0A0A0A] p-2 flex justify-center items-center select-none">
         <Tooltip content={tooltipBreakdownNode} position="left">
-          <div className="flex flex-col items-center justify-center w-8 h-8 rounded bg-[#111] border border-border-base text-accent font-['IBM_Plex_Mono'] font-bold text-[10px] cursor-help hover:border-accent hover:bg-accent/10 transition-all shadow-sm">
+          <div className="flex flex-col items-center justify-center w-8 h-8 rounded bg-[#111] border border-border-base text-accent font-['JetBrains_Mono'] font-bold text-[10px] cursor-help hover:border-accent hover:bg-accent/10 transition-all shadow-sm">
             {displayedCount}
           </div>
         </Tooltip>
@@ -829,7 +829,7 @@ const FolderPanelFooter: React.FC<FolderPanelFooterProps> = ({
               <span className="truncate">{displayedCount} {displayedCount === 1 ? 'Deck' : 'Decks'}</span>
             </span>
             {displayedCount !== totalDeckCount && (
-              <span className="text-[10px] font-['IBM_Plex_Mono'] text-gray-400 shrink-0">
+              <span className="text-[10px] font-['JetBrains_Mono'] text-gray-400 shrink-0">
                 ({totalDeckCount} Total)
               </span>
             )}
@@ -1175,7 +1175,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                 )}
               </div>
               {!isCollapsed && (
-                <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[#111] text-gray-400 font-['IBM_Plex_Mono'] border border-[#333]">{totalDeckCount}</span>
+                <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[#111] text-gray-400 font-['JetBrains_Mono'] border border-[#333]">{totalDeckCount}</span>
               )}
             </motion.button>
           </Tooltip>
@@ -1285,7 +1285,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                     Uncategorized
                   </span>
                 </div>
-                <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[#111] text-gray-400 font-['IBM_Plex_Mono'] border border-[#333]">
+                <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[#111] text-gray-400 font-['JetBrains_Mono'] border border-[#333]">
                   {deckCountByFolder[uncategorized.id] ?? deckCountByFolder['Uncategorized'] ?? 0}
                 </span>
               </motion.button>
@@ -1432,7 +1432,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                 )}
               </div>
               {!isCollapsed && (
-                <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[#111] text-gray-400 font-['IBM_Plex_Mono'] border border-[#333]">{totalDeckCount}</span>
+                <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded-full bg-[#111] text-gray-400 font-['JetBrains_Mono'] border border-[#333]">{totalDeckCount}</span>
               )}
             </motion.button>
           </Tooltip>
@@ -1522,7 +1522,7 @@ const DeleteConfirmModal: React.FC<{
               <AlertTriangle className="w-8 h-8 text-[#FF003C]" />
             </div>
             <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-4 tracking-widest uppercase">DELETE FOLDER?</h3>
-            <p className="text-text-muted font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
+            <p className="text-text-muted font-['JetBrains_Mono'] mb-8 leading-relaxed">
               Delete <strong className="text-white">{target.name}</strong>?{' '}
               Decks inside will be moved to Uncategorized. Subfolders will be promoted to top level.
             </p>

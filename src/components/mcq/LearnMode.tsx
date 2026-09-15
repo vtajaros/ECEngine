@@ -602,7 +602,7 @@ Please explain:
                   >
                     <div className="flex items-start justify-between gap-4 mb-2">
                       <span className="font-['Rajdhani'] font-bold text-text-muted whitespace-nowrap mt-0.5">Q{overallPos}</span>
-                      <div className="text-text-primary font-['IBM_Plex_Mono'] text-[13px] leading-relaxed flex-1 mcq-question-text" dangerouslySetInnerHTML={{ __html: renderMath(mcq.question) }} />
+                      <div className="text-text-primary font-['JetBrains_Mono'] text-[13px] leading-relaxed flex-1 mcq-question-text" dangerouslySetInnerHTML={{ __html: renderMath(mcq.question) }} />
                       <button
                         onClick={() => toggleBookmark(c.id)}
                         className={`p-1 rounded transition-colors shrink-0 mt-0.5 ${bookmarkedIds.has(c.id) ? 'text-accent bg-accent/10' : 'text-[#555] hover:text-accent hover:bg-accent/5'}`}
@@ -624,13 +624,13 @@ Please explain:
                     <div className="pl-8 flex items-start justify-between gap-2">
                       <div className="flex items-start gap-2">
                         <span className="text-accent font-bold">✓</span>
-                        <div className="text-accent font-['IBM_Plex_Mono'] text-[13px]" dangerouslySetInnerHTML={{ __html: (mcq.choicesPlainText?.[mcq.answer] ? renderPlainText : renderMath)(correctAnswerText) }} />
+                        <div className="text-accent font-['JetBrains_Mono'] text-[13px]" dangerouslySetInnerHTML={{ __html: (mcq.choicesPlainText?.[mcq.answer] ? renderPlainText : renderMath)(correctAnswerText) }} />
                       </div>
                       {stat.usedIDK && (
-                        <span className="text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded bg-warn/20 text-warn border border-warn/30 shrink-0">IDK</span>
+                        <span className="text-[10px] font-['JetBrains_Mono'] font-bold px-2 py-0.5 rounded bg-warn/20 text-warn border border-warn/30 shrink-0">IDK</span>
                       )}
                       {!stat.wasCorrectFirstTry && !stat.usedIDK && (
-                        <span className="text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded bg-danger/20 text-danger border border-danger/30 shrink-0">Missed</span>
+                        <span className="text-[10px] font-['JetBrains_Mono'] font-bold px-2 py-0.5 rounded bg-danger/20 text-danger border border-danger/30 shrink-0">Missed</span>
                       )}
                     </div>
 
@@ -722,7 +722,7 @@ Please explain:
 
       <div className="max-w-3xl w-full mx-auto flex flex-wrap items-center justify-between gap-2 mb-4">
         <div className="flex flex-col flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-4 text-text-primary font-['IBM_Plex_Mono'] font-bold text-sm tracking-wider uppercase mb-3">
+          <div className="flex flex-wrap items-center gap-4 text-text-primary font-['JetBrains_Mono'] font-bold text-sm tracking-wider uppercase mb-3">
             <span>Question {overallCurrentQuestion} of {cards.length}</span>
             {title && (
               <span className="text-accent font-['Orbitron'] font-bold text-lg tracking-[0.1em] uppercase whitespace-nowrap flex-shrink-0">
@@ -736,7 +736,7 @@ Please explain:
               style={{ width: `${(overallCurrentQuestion / cards.length) * 100}%` }}
             />
           </div>
-          <div className="text-[11px] font-['IBM_Plex_Mono'] font-bold uppercase tracking-widest flex items-center gap-4 text-text-muted">
+          <div className="text-[11px] font-['JetBrains_Mono'] font-bold uppercase tracking-widest flex items-center gap-4 text-text-muted">
             <span className="flex items-center gap-1.5 text-accent"><div className="w-2 h-2 rounded-full bg-accent"></div> ✓ {totalCorrectInPartition} correct</span>
             <span className="flex items-center gap-1.5 text-danger"><div className="w-2 h-2 rounded-full bg-danger"></div> ✗ {totalWrongInPartition} to retry</span>
           </div>
@@ -825,7 +825,7 @@ Please explain:
                   disabled={viewState === 'feedback'}
                   className={`py-4 px-4 text-base rounded-lg border text-left flex items-center transition-all font-['Rajdhani'] ${btnClass} ${orderClass}`}
                 >
-                  <span className={`font-['IBM_Plex_Mono'] mr-4 w-8 text-base flex-shrink-0 ${prefixClass}`}>
+                  <span className={`font-['JetBrains_Mono'] mr-4 w-8 text-base flex-shrink-0 ${prefixClass}`}>
                     {String.fromCharCode(65 + idx)}.
                   </span>
                   <div
@@ -915,7 +915,7 @@ Please explain:
                         : 'bg-[var(--accent-primary)] text-black hover:bg-[var(--accent-dim)] shadow-[0_0_20px_rgba(0,255,65,0.3)] hover:shadow-[0_0_30px_rgba(0,255,65,0.5)]'
                     }`}
                   >
-                    Next <span className="font-['IBM_Plex_Mono'] text-xs ml-2 opacity-60">(Space)</span>
+                    Next <span className="font-['JetBrains_Mono'] text-xs ml-2 opacity-60">(Space)</span>
                   </button>
                 )
               })()}

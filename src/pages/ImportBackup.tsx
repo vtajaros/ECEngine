@@ -181,7 +181,7 @@ export default function ImportBackup() {
             }}>
               <p style={{
                 color: '#555', fontSize: '0.8rem',
-                fontFamily: "'IBM Plex Mono', monospace",
+                fontFamily: "'JetBrains Mono', monospace",
                 marginBottom: '10px', letterSpacing: '1px'
               }}>
                 HOW TO EXPORT FROM DESKTOP
@@ -227,7 +227,7 @@ export default function ImportBackup() {
             </p>
             <p style={{
               color: '#555', fontSize: '0.85rem',
-              fontFamily: "'IBM Plex Mono', monospace",
+              fontFamily: "'JetBrains Mono', monospace",
               marginBottom: '28px'
             }}>
               {fileName}
@@ -351,7 +351,7 @@ export default function ImportBackup() {
             </h2>
             <p style={{
               color: '#FF6666', fontSize: '0.875rem',
-              fontFamily: "'IBM Plex Mono', monospace",
+              fontFamily: "'JetBrains Mono', monospace",
               background: '#0D0D0D', border: '1px solid #2A1A1A',
               borderRadius: '6px', padding: '12px',
               marginBottom: '28px', wordBreak: 'break-word'

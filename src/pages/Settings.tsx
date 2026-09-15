@@ -418,19 +418,19 @@ export default function Settings() {
             </h2>
             <div className="bg-[#111111] p-6 lg:p-8 rounded-lg border border-surface-2 shadow-lg space-y-4">
               <div className="flex flex-col gap-2">
-                <label className="font-['IBM_Plex_Mono'] text-text-primary text-sm font-medium">Groq API Key</label>
+                <label className="font-['JetBrains_Mono'] text-text-primary text-sm font-medium">Groq API Key</label>
 
                 {/* Status badge */}
                 <div className="flex items-center gap-2 bg-surface-2 border border-border-base rounded px-4 py-3">
                   {apiKeyConfigured ? (
                     <>
                       <CheckCircle size={16} className="text-accent shrink-0" />
-                      <span className="font-['IBM_Plex_Mono'] text-accent text-xs">API key configured ✓</span>
+                      <span className="font-['JetBrains_Mono'] text-accent text-xs">API key configured ✓</span>
                     </>
                   ) : (
                     <>
                       <AlertTriangle size={16} className="text-[var(--color-wrong)] shrink-0" />
-                      <span className="font-['IBM_Plex_Mono'] text-[var(--color-wrong)] text-xs">No API key set</span>
+                      <span className="font-['JetBrains_Mono'] text-[var(--color-wrong)] text-xs">No API key set</span>
                     </>
                   )}
                 </div>
@@ -442,7 +442,7 @@ export default function Settings() {
                     placeholder={apiKeyConfigured ? 'Enter new key to replace…' : 'Enter your Groq API key…'}
                     value={apiKeyInput}
                     onChange={(e) => setApiKeyInput(e.target.value)}
-                    className="flex-1 bg-surface-2 border border-border-base focus:border-accent rounded px-4 py-2 text-text-primary outline-none font-['IBM_Plex_Mono'] text-xs transition-colors"
+                    className="flex-1 bg-surface-2 border border-border-base focus:border-accent rounded px-4 py-2 text-text-primary outline-none font-['JetBrains_Mono'] text-xs transition-colors"
                   />
                   <button
                     onClick={handleSaveApiKey}
@@ -466,7 +466,7 @@ export default function Settings() {
                       <h3 className="font-['Orbitron'] text-sm tracking-wider text-text-primary uppercase font-bold">
                         Usage limits
                       </h3>
-                      <span className="bg-[rgba(0,255,65,0.08)] text-accent border border-accent/30 px-2 py-0.5 rounded text-[10px] font-['IBM_Plex_Mono'] font-bold tracking-wider uppercase">
+                      <span className="bg-[rgba(0,255,65,0.08)] text-accent border border-accent/30 px-2 py-0.5 rounded text-[10px] font-['JetBrains_Mono'] font-bold tracking-wider uppercase">
                         GROQ API
                       </span>
                     </div>
@@ -522,22 +522,22 @@ export default function Settings() {
                           <div className="bg-[#161616] border border-surface-2 rounded-xl p-4 flex flex-col gap-3">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <span className="font-['IBM_Plex_Mono'] text-sm text-text-primary font-medium">
+                                <span className="font-['JetBrains_Mono'] text-sm text-text-primary font-medium">
                                   Current request usage
                                 </span>
                                 <div className="relative group cursor-pointer">
                                   <Info size={13} className="text-[#666] hover:text-[#aaa] transition-colors" />
-                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 pointer-events-none w-max max-w-xs bg-[#222] text-[#ccc] border border-[#444] rounded px-2.5 py-1.5 text-[11px] font-['IBM_Plex_Mono'] shadow-xl leading-relaxed">
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 pointer-events-none w-max max-w-xs bg-[#222] text-[#ccc] border border-[#444] rounded px-2.5 py-1.5 text-[11px] font-['JetBrains_Mono'] shadow-xl leading-relaxed">
                                     Requests used in the current rolling rate-limit window.
                                     <div className="w-2 h-2 bg-[#222] border-r border-b border-[#444] rotate-45 absolute top-full left-1/2 -translate-x-1/2 -mt-1" />
                                   </div>
                                 </div>
                               </div>
                               <div className="flex items-baseline gap-2">
-                                <span className="font-['IBM_Plex_Mono'] text-sm font-bold text-text-primary">
+                                <span className="font-['JetBrains_Mono'] text-sm font-bold text-text-primary">
                                   {pctRequests}% used
                                 </span>
-                                <span className="font-['IBM_Plex_Mono'] text-xs text-[#777]">
+                                <span className="font-['JetBrains_Mono'] text-xs text-[#777]">
                                   ({usedRequests.toLocaleString()} / {usageLimits.limitRequests.toLocaleString()})
                                 </span>
                               </div>
@@ -556,7 +556,7 @@ export default function Settings() {
                             </div>
 
                             {/* Reset Subtext */}
-                            <span className="text-[#777] text-xs font-['IBM_Plex_Mono']">
+                            <span className="text-[#777] text-xs font-['JetBrains_Mono']">
                               {formatReset(usageLimits.resetRequests)}
                             </span>
                           </div>
@@ -574,22 +574,22 @@ export default function Settings() {
                           <div className="bg-[#161616] border border-surface-2 rounded-xl p-4 flex flex-col gap-3">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <span className="font-['IBM_Plex_Mono'] text-sm text-text-primary font-medium">
+                                <span className="font-['JetBrains_Mono'] text-sm text-text-primary font-medium">
                                   Token bandwidth (TPM)
                                 </span>
                                 <div className="relative group cursor-pointer">
                                   <Info size={13} className="text-[#666] hover:text-[#aaa] transition-colors" />
-                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 pointer-events-none w-max max-w-xs bg-[#222] text-[#ccc] border border-[#444] rounded px-2.5 py-1.5 text-[11px] font-['IBM_Plex_Mono'] shadow-xl leading-relaxed">
+                                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-50 pointer-events-none w-max max-w-xs bg-[#222] text-[#ccc] border border-[#444] rounded px-2.5 py-1.5 text-[11px] font-['JetBrains_Mono'] shadow-xl leading-relaxed">
                                     Tokens per minute available across requests.
                                     <div className="w-2 h-2 bg-[#222] border-r border-b border-[#444] rotate-45 absolute top-full left-1/2 -translate-x-1/2 -mt-1" />
                                   </div>
                                 </div>
                               </div>
                               <div className="flex items-baseline gap-2">
-                                <span className="font-['IBM_Plex_Mono'] text-sm font-bold text-text-primary">
+                                <span className="font-['JetBrains_Mono'] text-sm font-bold text-text-primary">
                                   {pctTokens}% used
                                 </span>
-                                <span className="font-['IBM_Plex_Mono'] text-xs text-[#777]">
+                                <span className="font-['JetBrains_Mono'] text-xs text-[#777]">
                                   ({usedTokens.toLocaleString()} / {usageLimits.limitTokens.toLocaleString()})
                                 </span>
                               </div>
@@ -608,7 +608,7 @@ export default function Settings() {
                             </div>
 
                             {/* Reset Subtext */}
-                            <span className="text-[#777] text-xs font-['IBM_Plex_Mono']">
+                            <span className="text-[#777] text-xs font-['JetBrains_Mono']">
                               Resets continuously ({usageLimits.resetTokens || '600ms'})
                             </span>
                           </div>
@@ -617,14 +617,14 @@ export default function Settings() {
                     </div>
                   ) : loadingUsage ? (
                     <div className="bg-[#161616] border border-surface-2 rounded-xl p-5 text-center">
-                      <span className="font-['IBM_Plex_Mono'] text-xs text-[#777] flex items-center justify-center gap-2">
+                      <span className="font-['JetBrains_Mono'] text-xs text-[#777] flex items-center justify-center gap-2">
                         <RefreshCw size={13} className="animate-spin text-accent" />
                         Loading Groq rate limits...
                       </span>
                     </div>
                   ) : (
                     <div className="bg-[#161616] border border-surface-2 rounded-xl p-4 text-center">
-                      <span className="font-['IBM_Plex_Mono'] text-xs text-[#666]">
+                      <span className="font-['JetBrains_Mono'] text-xs text-[#666]">
                         {usageError ? `Error: ${usageError}` : 'Click Refresh to check live Groq rate limits.'}
                       </span>
                     </div>
@@ -646,7 +646,7 @@ export default function Settings() {
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-row items-center justify-between gap-4">
                     <div className="flex flex-col gap-1">
-                      <span className="font-['IBM_Plex_Mono'] text-text-primary text-sm font-medium">
+                      <span className="font-['JetBrains_Mono'] text-text-primary text-sm font-medium">
                         Reading Voice (Piper TTS)
                       </span>
                       <span className="font-['Rajdhani'] text-[#888] text-xs tracking-wide text-left">
@@ -662,7 +662,7 @@ export default function Settings() {
                     {piperStatus?.piperInstalled && piperStatus?.modelConfigured && (
                       <div className="flex items-center gap-2">
                         <CheckCircle size={16} className="text-accent shrink-0" />
-                        <span className="font-['IBM_Plex_Mono'] text-accent text-xs">Ready</span>
+                        <span className="font-['JetBrains_Mono'] text-accent text-xs">Ready</span>
                       </div>
                     )}
                     {piperStatus !== null && !piperStatus.piperInstalled && (
@@ -682,7 +682,7 @@ export default function Settings() {
                   {piperStatus !== null && !piperStatus.piperInstalled && (
                     <div className="bg-surface-2 border border-border-base rounded-lg p-4 flex flex-col gap-2">
                       <span className="font-['Rajdhani'] text-[#888] text-xs tracking-wide">Install Piper</span>
-                      <code className="font-['IBM_Plex_Mono'] text-accent text-xs bg-[#0D0D0D] border border-surface-2 rounded px-3 py-2 block">
+                      <code className="font-['JetBrains_Mono'] text-accent text-xs bg-[#0D0D0D] border border-surface-2 rounded px-3 py-2 block">
                         yay -S piper-tts-bin
                       </code>
                       <span className="font-['Rajdhani'] text-[#888] text-xs tracking-wide mt-1">
@@ -705,7 +705,7 @@ export default function Settings() {
                       {piperStatus.availableModels && piperStatus.availableModels.length > 0 && (
                         <div className="flex flex-row items-center justify-between gap-4">
                           <div className="flex flex-col gap-1">
-                            <span className="font-['IBM_Plex_Mono'] text-text-primary text-sm font-medium">
+                            <span className="font-['JetBrains_Mono'] text-text-primary text-sm font-medium">
                               Select Installed Voice
                             </span>
                             <span className="font-['Rajdhani'] text-[#888] text-xs tracking-wide text-left">
@@ -764,7 +764,7 @@ export default function Settings() {
                               if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
                             }}
                             placeholder="e.g. ~/.local/share/piper-voices/en_US-ryan-medium.onnx"
-                            className="font-['IBM_Plex_Mono'] text-text-muted text-xs bg-[#0D0D0D] border border-surface-2 focus:border-accent outline-none rounded px-3 py-1.5 w-full max-w-[480px]"
+                            className="font-['JetBrains_Mono'] text-text-muted text-xs bg-[#0D0D0D] border border-surface-2 focus:border-accent outline-none rounded px-3 py-1.5 w-full max-w-[480px]"
                           />
                           <button
                             onClick={async () => {
@@ -801,7 +801,7 @@ export default function Settings() {
                 /* ── Non-Linux: Web Speech API voice dropdown ───── */
                 <div className="flex flex-row items-center justify-between gap-4">
                   <div className="flex flex-col gap-1">
-                    <span className="font-['IBM_Plex_Mono'] text-text-primary text-sm font-medium">
+                    <span className="font-['JetBrains_Mono'] text-text-primary text-sm font-medium">
                       Reading Voice
                     </span>
                     <span className="font-['Rajdhani'] text-[#888] text-xs tracking-wide text-left">
@@ -832,7 +832,7 @@ export default function Settings() {
               )}
               <div className="border-t border-surface-2 pt-6 flex flex-row items-center justify-between gap-4">
                 <div className="flex flex-col gap-1">
-                  <span className="font-['IBM_Plex_Mono'] text-text-primary text-sm font-medium">
+                  <span className="font-['JetBrains_Mono'] text-text-primary text-sm font-medium">
                     Disable Faah Sound Meme
                   </span>
                   <span className="font-['Rajdhani'] text-[#888] text-xs tracking-wide">
@@ -887,17 +887,17 @@ export default function Settings() {
                   return (
                     <div key={idy} className={`flex flex-row items-center justify-between gap-4 transition-all duration-300 ${isDisabled ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
                       {opt.type === 'custom-db-path-picker' ? (
-                        <div className="font-['IBM_Plex_Mono'] text-text-primary text-sm font-medium shrink-0 relative group">
+                        <div className="font-['JetBrains_Mono'] text-text-primary text-sm font-medium shrink-0 relative group">
                           <span className="cursor-default border-b border-dashed border-[#444]">{opt.label}</span>
                             <div className="absolute bottom-full left-0 mb-2 z-50 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                               <div className="bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 shadow-xl w-max max-w-xs">
-                                <p className="font-['IBM_Plex_Mono'] text-[#999] text-[11px] leading-relaxed">SQLite file used to store all decks and progress. Restart required to apply.</p>
+                                <p className="font-['JetBrains_Mono'] text-[#999] text-[11px] leading-relaxed">SQLite file used to store all decks and progress. Restart required to apply.</p>
                               </div>
                               <div className="w-2 h-2 bg-[#1a1a1a] border-r border-b border-[#333] rotate-45 ml-3 -mt-1" />
                             </div>
                         </div>
                       ) : (
-                        <div className="font-['IBM_Plex_Mono'] text-text-primary text-sm font-medium shrink-0">
+                        <div className="font-['JetBrains_Mono'] text-text-primary text-sm font-medium shrink-0">
                           {opt.label}
                           {(opt as any).description && (
                             <div className="text-[#888] text-xs font-['Rajdhani'] tracking-wide mt-0.5">
@@ -971,7 +971,7 @@ export default function Settings() {
                             }}
                             className="w-full accent-accent"
                           />
-                          <span className="font-['IBM_Plex_Mono'] text-accent text-sm w-12 text-right">
+                          <span className="font-['JetBrains_Mono'] text-accent text-sm w-12 text-right">
                             {katexScale.toFixed(1)}x
                           </span>
                         </div>
@@ -1007,7 +1007,7 @@ export default function Settings() {
                               }
                             }}
                             title={imagesPath}
-                            className="font-['IBM_Plex_Mono'] text-[#999] text-xs bg-[#0D0D0D] border border-surface-2 focus:border-accent outline-none rounded px-3 py-1.5 w-full max-w-[480px]"
+                            className="font-['JetBrains_Mono'] text-[#999] text-xs bg-[#0D0D0D] border border-surface-2 focus:border-accent outline-none rounded px-3 py-1.5 w-full max-w-[480px]"
                           />
                           <button
                             onClick={handleSelectImagesPath}
@@ -1044,7 +1044,7 @@ export default function Settings() {
                               }
                             }}
                             title={dbPath}
-                            className="font-['IBM_Plex_Mono'] text-[#999] text-xs bg-[#0D0D0D] border border-surface-2 focus:border-accent outline-none rounded px-3 py-1.5 w-full max-w-[480px]"
+                            className="font-['JetBrains_Mono'] text-[#999] text-xs bg-[#0D0D0D] border border-surface-2 focus:border-accent outline-none rounded px-3 py-1.5 w-full max-w-[480px]"
                           />
                           <button
                             onClick={async () => {
@@ -1145,7 +1145,7 @@ export default function Settings() {
                 <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-4 tracking-widest uppercase">
                   Reset Mastery Progress
                 </h3>
-                <p className="text-text-muted font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
+                <p className="text-text-muted font-['JetBrains_Mono'] mb-8 leading-relaxed">
                   Are you sure you want to reset all mastery and progress data across all decks? This will clear your studied status but keep your decks intact.
                 </p>
                 <div className="flex flex-col gap-3 w-full">
@@ -1218,7 +1218,7 @@ export default function Settings() {
 
                 {exportMode === 'all' ? (
                   <div className="flex-1 flex items-center justify-center min-h-[150px]">
-                    <p className="text-gray-400 font-['IBM_Plex_Mono'] text-center px-4">
+                    <p className="text-gray-400 font-['JetBrains_Mono'] text-center px-4">
                       This will export all decks, flashcards, and your entire study progress into a single JSON file.
                     </p>
                   </div>
@@ -1256,7 +1256,7 @@ export default function Settings() {
                     </div>
 
                     <div className="flex justify-between items-center mb-4 shrink-0">
-                      <span className="text-gray-400 text-sm font-['IBM_Plex_Mono']">
+                      <span className="text-gray-400 text-sm font-['JetBrains_Mono']">
                         {selectedTopicIds.size} deck{selectedTopicIds.size !== 1 ? 's' : ''} selected
                       </span>
                       <button
@@ -1294,7 +1294,7 @@ export default function Settings() {
                               className="w-4 h-4 rounded border-gray-600 bg-black text-[var(--accent-primary)] focus:ring-[var(--accent-primary)] focus:ring-offset-black"
                             />
                             <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <span className="text-white font-['IBM_Plex_Mono'] text-sm truncate">{topic.name}</span>
+                              <span className="text-white font-['JetBrains_Mono'] text-sm truncate">{topic.name}</span>
                               <span className={`px-2 py-0.5 rounded text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest border ${getSubjectBadgeClasses(shortCode)}`}>
                                 {shortCode}
                               </span>
@@ -1366,7 +1366,7 @@ export default function Settings() {
                 <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-4 tracking-widest uppercase">
                   Clear All Decks
                 </h3>
-                <p className="text-text-muted font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
+                <p className="text-text-muted font-['JetBrains_Mono'] mb-8 leading-relaxed">
                   This will permanently delete <strong className="text-white">ALL decks, cards, and progress</strong> from the database. This cannot be undone.
                 </p>
                 <div className="flex flex-col gap-3 w-full">

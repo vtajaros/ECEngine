@@ -50,7 +50,7 @@ const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-text-muted mb-1 block">{children}</span>
 )
 
-const inputCls = "w-full bg-engine-black border border-border-subtle rounded px-3 py-2 text-text-primary font-['IBM_Plex_Mono'] text-sm outline-none focus:border-accent transition-colors placeholder-[#555]"
+const inputCls = "w-full bg-engine-black border border-border-subtle rounded px-3 py-2 text-text-primary font-['JetBrains_Mono'] text-sm outline-none focus:border-accent transition-colors placeholder-[#555]"
 const textareaCls = `${inputCls} resize-none leading-relaxed`
 
 // Shared image upload handler — avoids repeating the same 15-line block across every form.
@@ -311,7 +311,7 @@ const MathInputField: React.FC<MathInputFieldProps> = ({
               paddingRight: '40px',
               color: 'var(--text-primary)',
               fontSize: '1rem',
-              fontFamily: 'IBM Plex Mono, monospace',
+              fontFamily: 'JetBrains Mono', monospace,
               '--keyboard-zindex': '99999',
             } as React.CSSProperties & Record<string, string>}
           />
@@ -481,7 +481,7 @@ export const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; 
               <div className="bg-[#0d0d0d] border border-[rgba(0,255,65,0.1)] rounded-lg p-3 mt-1">
                 <div className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-text-muted mb-2">Preview</div>
                 <div
-                  className="text-sm font-['IBM_Plex_Mono'] text-[#d4d4d4] leading-relaxed"
+                  className="text-sm font-['JetBrains_Mono'] text-[#d4d4d4] leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: renderMath(data.explanation || '') }}
                 />
               </div>
@@ -577,7 +577,7 @@ export const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: Flashc
               <div className="bg-[#0d0d0d] border border-[rgba(0,255,65,0.1)] rounded-lg p-3 mt-1">
                 <div className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-text-muted mb-2">Preview</div>
                 <div
-                  className="text-sm font-['IBM_Plex_Mono'] text-[#d4d4d4] leading-relaxed"
+                  className="text-sm font-['JetBrains_Mono'] text-[#d4d4d4] leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: renderMath(data.explanation || '') }}
                 />
               </div>
@@ -688,7 +688,7 @@ export const FormulaForm: React.FC<{
               <div className="bg-[#0d0d0d] border border-[rgba(0,255,65,0.1)] rounded-lg p-3 mt-1">
                 <div className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-text-muted mb-2">Preview</div>
                 <div
-                  className="text-sm font-['IBM_Plex_Mono'] text-[#d4d4d4] leading-relaxed"
+                  className="text-sm font-['JetBrains_Mono'] text-[#d4d4d4] leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: renderMath(data.explanation || '') }}
                 />
               </div>
@@ -749,7 +749,7 @@ export const FormattingGuideModal: React.FC<{ onClose: () => void }> = ({ onClos
                   <div className="flex items-center gap-1 flex-shrink-0">
                     {keys.map((k, i) => (
                       <React.Fragment key={k}>
-                        <kbd className="px-2 py-0.5 rounded bg-[#1c1c1c] border border-[#333] text-[#ccc] font-['IBM_Plex_Mono'] text-xs">
+                        <kbd className="px-2 py-0.5 rounded bg-[#1c1c1c] border border-[#333] text-[#ccc] font-['JetBrains_Mono'] text-xs">
                           {k}
                         </kbd>
                         {i < keys.length - 1 && <span className="text-[#444] text-xs">+</span>}
@@ -759,7 +759,7 @@ export const FormattingGuideModal: React.FC<{ onClose: () => void }> = ({ onClos
                   <span className="text-[#555] text-xs">→</span>
                   <span className="font-['Rajdhani'] text-sm text-text-primary font-bold flex-shrink-0">{result}</span>
                   {example && (
-                    <code className="ml-auto text-[11px] font-['IBM_Plex_Mono'] text-[#888] bg-[#0a0a0a] px-2 py-0.5 rounded border border-[#222]">
+                    <code className="ml-auto text-[11px] font-['JetBrains_Mono'] text-[#888] bg-[#0a0a0a] px-2 py-0.5 rounded border border-[#222]">
                       {example}
                     </code>
                   )}
@@ -780,7 +780,7 @@ export const FormattingGuideModal: React.FC<{ onClose: () => void }> = ({ onClos
                 { syntax: '__underline__',   result: '<u>underline</u>',         label: 'Underline' },
               ].map(({ syntax, result, label }) => (
                 <div key={label} className="flex items-center gap-3 bg-[#0d0d0d] border border-[#1e1e1e] rounded-lg px-4 py-2.5">
-                  <code className="font-['IBM_Plex_Mono'] text-[11px] text-[#aaa] w-36 flex-shrink-0">{syntax}</code>
+                  <code className="font-['JetBrains_Mono'] text-[11px] text-[#aaa] w-36 flex-shrink-0">{syntax}</code>
                   <span className="text-[#444] text-xs flex-shrink-0">→</span>
                   <span className="font-['Rajdhani'] text-sm font-bold text-[#d4d4d4]">{label}</span>
                 </div>
@@ -803,10 +803,10 @@ export const FormattingGuideModal: React.FC<{ onClose: () => void }> = ({ onClos
                 { syntax: 'f_(n + 1)',      html: 'f<sub>(n + 1)</sub>',  label: 'Subscript — parentheses (expression)' },
               ].map(({ syntax, html, label }) => (
                 <div key={syntax} className="flex items-center gap-3 bg-[#0d0d0d] border border-[#1e1e1e] rounded-lg px-4 py-2.5">
-                  <code className="font-['IBM_Plex_Mono'] text-[11px] text-[#aaa] w-36 flex-shrink-0">{syntax}</code>
+                  <code className="font-['JetBrains_Mono'] text-[11px] text-[#aaa] w-36 flex-shrink-0">{syntax}</code>
                   <span className="text-[#444] text-xs flex-shrink-0">→</span>
                   <span
-                    className="font-['IBM_Plex_Mono'] text-[11px] text-accent w-40 flex-shrink-0"
+                    className="font-['JetBrains_Mono'] text-[11px] text-accent w-40 flex-shrink-0"
                     dangerouslySetInnerHTML={{ __html: html }}
                   />
                   <span className="font-['Rajdhani'] text-xs text-text-muted">{label}</span>
@@ -814,7 +814,7 @@ export const FormattingGuideModal: React.FC<{ onClose: () => void }> = ({ onClos
               ))}
             </div>
             <div className="mt-2 px-4 py-2.5 bg-[#0a0f0a] border border-accent/10 rounded-lg">
-              <p className="text-[11px] font-['IBM_Plex_Mono'] text-[#888] leading-relaxed">
+              <p className="text-[11px] font-['JetBrains_Mono'] text-[#888] leading-relaxed">
                 Three ways to write multi-character exponents/subscripts:<br />
                 <code className="text-accent">^{'{'}-8{'}'}</code> braces &nbsp;·&nbsp;
                 <code className="text-accent">^(v - u)</code> parentheses &nbsp;·&nbsp;
@@ -835,13 +835,13 @@ export const FormattingGuideModal: React.FC<{ onClose: () => void }> = ({ onClos
                 { syntax: '$$E = mc^2$$',           label: 'Block equation' },
               ].map(({ syntax, label }) => (
                 <div key={label} className="flex items-center gap-3 bg-[#0d0d0d] border border-[#1e1e1e] rounded-lg px-4 py-2.5">
-                  <code className="font-['IBM_Plex_Mono'] text-[11px] text-[#aaa] flex-1">{syntax}</code>
+                  <code className="font-['JetBrains_Mono'] text-[11px] text-[#aaa] flex-1">{syntax}</code>
                   <span className="font-['Rajdhani'] text-xs text-text-muted flex-shrink-0">{label}</span>
                 </div>
               ))}
             </div>
             <div className="mt-2 px-4 py-2.5 bg-[#0a0f0a] border border-accent/10 rounded-lg">
-              <p className="text-[11px] font-['IBM_Plex_Mono'] text-[#888] leading-relaxed">
+              <p className="text-[11px] font-['JetBrains_Mono'] text-[#888] leading-relaxed">
                 LaTeX inside <code className="text-accent">$...$</code> is rendered by KaTeX.
                 Text formatting markers outside <code className="text-accent">$</code> blocks render as HTML.
                 Do not mix <code className="text-accent">**bold**</code> inside a LaTeX block.
@@ -882,11 +882,11 @@ export const FormattingGuideModal: React.FC<{ onClose: () => void }> = ({ onClos
                 },
               ].map(({ input, html }) => (
                 <div key={input} className="flex flex-col gap-1 bg-[#0d0d0d] border border-[#1e1e1e] rounded-lg px-4 py-3">
-                  <code className="font-['IBM_Plex_Mono'] text-[11px] text-[#888]">{input}</code>
+                  <code className="font-['JetBrains_Mono'] text-[11px] text-[#888]">{input}</code>
                   <div className="flex items-center gap-2">
                     <span className="text-accent text-[10px]">→</span>
                     <span
-                      className="font-['IBM_Plex_Mono'] text-xs text-[#d4d4d4]"
+                      className="font-['JetBrains_Mono'] text-xs text-[#d4d4d4]"
                       dangerouslySetInnerHTML={{ __html: html }}
                     />
                   </div>

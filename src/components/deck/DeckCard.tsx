@@ -95,7 +95,7 @@ export const DeckCard = React.memo(function DeckCard({ deck, onLearn, onPreview,
             {deck.cardCount} ITEMS
           </span>
           {/* Date String */}
-          <span className="text-[10px] text-gray-400 uppercase font-['IBM_Plex_Mono'] tracking-widest">
+          <span className="text-[10px] text-gray-400 uppercase font-['JetBrains_Mono'] tracking-widest">
             {deck.createdAt ? new Date(deck.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
           </span>
         </div>
@@ -103,7 +103,7 @@ export const DeckCard = React.memo(function DeckCard({ deck, onLearn, onPreview,
 
       {/* Deck Description */}
       {deck.description && deck.description.trim() !== "" && (
-        <p className="text-xs text-gray-400 font-['IBM_Plex_Mono'] leading-relaxed mt-2 line-clamp-2 uppercase pr-4">
+        <p className="text-xs text-gray-400 font-['JetBrains_Mono'] leading-relaxed mt-2 line-clamp-2 uppercase pr-4">
           {deck.description}
         </p>
       )}

@@ -653,7 +653,7 @@ export default function Formulas() {
       <div className="h-full bg-engine-black flex flex-col items-center justify-center gap-6 p-10 text-center">
         <div className="flex flex-col items-center gap-2">
           <Bookmark className="w-12 h-12 text-[var(--accent-primary)] opacity-50 mb-2" />
-          <p className="text-text-muted font-['IBM_Plex_Mono'] text-lg">
+          <p className="text-text-muted font-['JetBrains_Mono'] text-lg">
             No cards match your current filters.
           </p>
           <p className="text-[#555] font-['Rajdhani'] uppercase tracking-widest text-sm">
@@ -754,7 +754,7 @@ export default function Formulas() {
                             placeholder="Search decks..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-surface border border-[#333] focus:border-accent rounded-lg py-2 pl-9 pr-3 text-sm text-text-primary placeholder-[#555] outline-none transition-colors font-['IBM_Plex_Mono']"
+                            className="w-full bg-surface border border-[#333] focus:border-accent rounded-lg py-2 pl-9 pr-3 text-sm text-text-primary placeholder-[#555] outline-none transition-colors font-['JetBrains_Mono']"
                           />
                         </div>
 
@@ -994,7 +994,7 @@ export default function Formulas() {
                 </DeckGrid>
 
                 {isLoading ? (
-                  <div className="text-center py-20 text-[#555] font-['IBM_Plex_Mono'] text-sm tracking-widest animate-pulse">
+                  <div className="text-center py-20 text-[#555] font-['JetBrains_Mono'] text-sm tracking-widest animate-pulse">
                     Loading decks...
                   </div>
                 ) : filteredDecks.length === 0 ? (
@@ -1032,7 +1032,7 @@ export default function Formulas() {
                     <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-4 tracking-widest uppercase">
                       DELETE DECK?
                     </h3>
-                    <p className="text-text-muted font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
+                    <p className="text-text-muted font-['JetBrains_Mono'] mb-8 leading-relaxed">
                       Are you absolutely sure you want to delete{' '}
                       <strong className="text-white">{setToDelete.title}</strong>? This action
                       cannot be undone and will permanently remove all {setToDelete.cardCount} items

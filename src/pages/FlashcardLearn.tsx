@@ -856,7 +856,7 @@ Provide a thorough explanation covering ALL of the following:
       <div className="h-full bg-engine-black flex flex-col items-center justify-center gap-6 p-10 text-center">
         <div className="flex flex-col items-center gap-2">
           <Bookmark className="w-12 h-12 text-[var(--accent-primary)] opacity-50 mb-2" />
-          <p className="text-text-muted font-['IBM_Plex_Mono'] text-lg">No cards match your current filters.</p>
+          <p className="text-text-muted font-['JetBrains_Mono'] text-lg">No cards match your current filters.</p>
           <p className="text-[#555] font-['Rajdhani'] uppercase tracking-widest text-sm">
             (You might have 'Bookmarked Only' enabled with no bookmarks in this deck)
           </p>

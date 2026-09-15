@@ -47,7 +47,7 @@ export const LeaveConfirmModal: React.FC<LeaveConfirmModalProps> = ({
                 Abort Session?
               </h3>
               
-              <p className="text-text-muted font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
+              <p className="text-text-muted font-['JetBrains_Mono'] mb-8 leading-relaxed">
                 {message}
               </p>
 

@@ -29,7 +29,7 @@ export default function TableOfContents() {
               placeholder="Search topics..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#111] border border-[#333] focus:border-[var(--accent-primary)] rounded-lg pl-10 pr-4 py-3 text-[var(--text-primary)] font-['IBM_Plex_Mono'] text-sm outline-none transition-colors shadow-inner"
+              className="w-full bg-[#111] border border-[#333] focus:border-[var(--accent-primary)] rounded-lg pl-10 pr-4 py-3 text-[var(--text-primary)] font-['JetBrains_Mono'] text-sm outline-none transition-colors shadow-inner"
             />
           </div>
         </header>

@@ -194,23 +194,23 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
 
           <div className="flex gap-4">
             <div className="flex flex-col items-center">
-              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{preboardTimeLeft.weeks}</span>
+              <span className="text-xl font-bold font-['JetBrains_Mono'] text-text-primary leading-none">{preboardTimeLeft.weeks}</span>
               <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Wks</span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{preboardTimeLeft.days}</span>
+              <span className="text-xl font-bold font-['JetBrains_Mono'] text-text-primary leading-none">{preboardTimeLeft.days}</span>
               <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Days</span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{preboardTimeLeft.hours.toString().padStart(2, '0')}</span>
+              <span className="text-xl font-bold font-['JetBrains_Mono'] text-text-primary leading-none">{preboardTimeLeft.hours.toString().padStart(2, '0')}</span>
               <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Hrs</span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none">{preboardTimeLeft.mins.toString().padStart(2, '0')}</span>
+              <span className="text-xl font-bold font-['JetBrains_Mono'] text-text-primary leading-none">{preboardTimeLeft.mins.toString().padStart(2, '0')}</span>
               <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Min</span>
             </div>
             <div className="flex flex-col items-center">
-              <span className="text-xl font-bold font-['IBM_Plex_Mono'] text-warn leading-none">{preboardTimeLeft.secs.toString().padStart(2, '0')}</span>
+              <span className="text-xl font-bold font-['JetBrains_Mono'] text-warn leading-none">{preboardTimeLeft.secs.toString().padStart(2, '0')}</span>
               <span className="text-[9px] uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest">Sec</span>
             </div>
           </div>
@@ -247,23 +247,23 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
 
         <div className={`flex transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'gap-6' : 'gap-4'}`}>
           <div className="flex flex-col items-center">
-            <span className={`font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-3xl' : 'text-xl'}`}>{timeLeft.weeks}</span>
+            <span className={`font-bold font-['JetBrains_Mono'] text-text-primary leading-none transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-3xl' : 'text-xl'}`}>{timeLeft.weeks}</span>
             <span className={`uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-[10px] mt-1' : 'text-[9px]'}`}>Wks</span>
           </div>
           <div className="flex flex-col items-center">
-            <span className={`font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-3xl' : 'text-xl'}`}>{timeLeft.days}</span>
+            <span className={`font-bold font-['JetBrains_Mono'] text-text-primary leading-none transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-3xl' : 'text-xl'}`}>{timeLeft.days}</span>
             <span className={`uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-[10px] mt-1' : 'text-[9px]'}`}>Days</span>
           </div>
           <div className="flex flex-col items-center">
-            <span className={`font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-3xl' : 'text-xl'}`}>{timeLeft.hours.toString().padStart(2, '0')}</span>
+            <span className={`font-bold font-['JetBrains_Mono'] text-text-primary leading-none transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-3xl' : 'text-xl'}`}>{timeLeft.hours.toString().padStart(2, '0')}</span>
             <span className={`uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-[10px] mt-1' : 'text-[9px]'}`}>Hrs</span>
           </div>
           <div className="flex flex-col items-center">
-            <span className={`font-bold font-['IBM_Plex_Mono'] text-text-primary leading-none transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-3xl' : 'text-xl'}`}>{timeLeft.mins.toString().padStart(2, '0')}</span>
+            <span className={`font-bold font-['JetBrains_Mono'] text-text-primary leading-none transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-3xl' : 'text-xl'}`}>{timeLeft.mins.toString().padStart(2, '0')}</span>
             <span className={`uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-[10px] mt-1' : 'text-[9px]'}`}>Min</span>
           </div>
           <div className="flex flex-col items-center">
-            <span className={`font-bold font-['IBM_Plex_Mono'] text-accent leading-none transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-3xl' : 'text-xl'}`}>{timeLeft.secs.toString().padStart(2, '0')}</span>
+            <span className={`font-bold font-['JetBrains_Mono'] text-accent leading-none transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-3xl' : 'text-xl'}`}>{timeLeft.secs.toString().padStart(2, '0')}</span>
             <span className={`uppercase text-[#666] font-['Rajdhani'] font-bold tracking-widest transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'text-[10px] mt-1' : 'text-[9px]'}`}>Sec</span>
           </div>
         </div>
@@ -326,7 +326,7 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
                       value={modalDate}
                       onChange={handleModalDateChange}
                       min={new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0]}
-                      className="w-full bg-engine-black border border-border-subtle rounded-xl px-4 py-3 text-text-primary font-['IBM_Plex_Mono'] text-sm focus:outline-none focus:border-accent/40 transition-colors [color-scheme:dark]"
+                      className="w-full bg-engine-black border border-border-subtle rounded-xl px-4 py-3 text-text-primary font-['JetBrains_Mono'] text-sm focus:outline-none focus:border-accent/40 transition-colors [color-scheme:dark]"
                     />
                   </div>
 
@@ -364,7 +364,7 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
                           transition={{ duration: 0.15 }}
                           className="flex items-center justify-center gap-2 py-2"
                         >
-                          <span className="font-['IBM_Plex_Mono'] text-2xl font-bold text-accent">{d}</span>
+                          <span className="font-['JetBrains_Mono'] text-2xl font-bold text-accent">{d}</span>
                           <span className="font-['Rajdhani'] text-[#555] text-xs uppercase tracking-widest font-bold">
                             days until exam
                           </span>
@@ -456,7 +456,7 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
                       value={preboardModalDate}
                       onChange={handlePreboardModalDateChange}
                       min={new Date(new Date().setDate(new Date().getDate() + 1)).toISOString().split('T')[0]}
-                      className="w-full bg-engine-black border border-border-subtle rounded-xl px-4 py-3 text-text-primary font-['IBM_Plex_Mono'] text-sm focus:outline-none focus:border-warn/40 transition-colors [color-scheme:dark]"
+                      className="w-full bg-engine-black border border-border-subtle rounded-xl px-4 py-3 text-text-primary font-['JetBrains_Mono'] text-sm focus:outline-none focus:border-warn/40 transition-colors [color-scheme:dark]"
                     />
                   </div>
 
@@ -494,7 +494,7 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
                           transition={{ duration: 0.15 }}
                           className="flex items-center justify-center gap-2 py-2"
                         >
-                          <span className="font-['IBM_Plex_Mono'] text-2xl font-bold text-warn">{d}</span>
+                          <span className="font-['JetBrains_Mono'] text-2xl font-bold text-warn">{d}</span>
                           <span className="font-['Rajdhani'] text-[#555] text-xs uppercase tracking-widest font-bold">
                             days until preboard
                           </span>

@@ -149,9 +149,9 @@ function MCQTableRow({ index, card, hideAnswers, hideSolutions, onZoom }: MCQTab
     <tr style={{ borderBottom: '1px solid var(--pt-border)', pageBreakInside: 'avoid', breakInside: 'avoid' }}>
       <td style={{ padding: '10px 12px', verticalAlign: 'top', width: '65%', overflow: 'hidden' }}>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <span style={{ fontWeight: 700, minWidth: '24px', color: 'var(--pt-text-primary)' }}>{index}.</span>
+          <span style={{ fontWeight: 700, minWidth: '26px', color: 'var(--pt-text-primary)', fontSize: '18px' }}>{index}.</span>
           <div style={{ flex: 1 }}>
-            <p style={{ fontWeight: 600, color: 'var(--pt-text-primary)', marginBottom: '6px', lineHeight: 1.5 }}>
+            <p style={{ fontWeight: 600, color: 'var(--pt-text-primary)', marginBottom: '8px', lineHeight: 1.45, fontSize: '18px' }}>
               <MathText text={question} />
             </p>
             {/* question imagePath */}
@@ -174,7 +174,9 @@ function MCQTableRow({ index, card, hideAnswers, hideSolutions, onZoom }: MCQTab
                       padding: '4px 8px',
                       backgroundColor: (!hideAnswers && ci === answer) ? 'var(--pt-answer-bg)' : 'transparent',
                       color: (!hideAnswers && ci === answer) ? 'var(--pt-answer-text)' : 'var(--pt-text-body)',
-                      fontWeight: (!hideAnswers && ci === answer) ? 700 : 400,
+                      fontWeight: (!hideAnswers && ci === answer) ? 700 : 500,
+                      fontSize: '16.5px',
+                      lineHeight: 1.4,
                       borderRadius: '3px',
                       display: 'flex',
                       gap: '6px',
@@ -184,7 +186,7 @@ function MCQTableRow({ index, card, hideAnswers, hideSolutions, onZoom }: MCQTab
                       justifySelf: 'start',
                     }}
                   >
-                    <span style={{ minWidth: '18px', fontWeight: 700 }}>{CHOICE_LABELS[ci]}.</span>
+                    <span style={{ minWidth: '20px', fontWeight: 700 }}>{CHOICE_LABELS[ci]}.</span>
                     <span><MathText text={choice} plainText={choicesPlainText?.[ci]} /></span>
                   </div>
                 )
@@ -209,7 +211,7 @@ function MCQTableRow({ index, card, hideAnswers, hideSolutions, onZoom }: MCQTab
         {/* Solution block — displayed below the answer in the Answer column */}
         {hasSolution && (
           <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed var(--pt-border-light)' }}>
-            <span style={{ fontWeight: 700, fontSize: '11px', color: 'var(--pt-text-primary)', display: 'block', marginBottom: '4px', letterSpacing: '0.05em' }}>SOLUTION:</span>
+            <span style={{ fontWeight: 700, fontSize: '12px', color: 'var(--pt-text-primary)', display: 'block', marginBottom: '4px', letterSpacing: '0.05em' }}>SOLUTION:</span>
             {solutionImagePath && (
               <ClickableImg
                 src={`ece-app://${solutionImagePath}`}
@@ -219,7 +221,7 @@ function MCQTableRow({ index, card, hideAnswers, hideSolutions, onZoom }: MCQTab
               />
             )}
             {explanation && explanation.trim().length > 0 && (
-              <p style={{ margin: 0, fontSize: '12px', color: 'var(--pt-text-body)', lineHeight: 1.6 }}>
+              <p style={{ margin: 0, fontSize: '14.5px', color: 'var(--pt-text-body)', lineHeight: 1.55 }}>
                 <MathText text={explanation} />
               </p>
             )}
@@ -251,9 +253,9 @@ function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers, hideSolutio
         paddingBottom: '10px',
         display: 'block',
       }}>
-        <div style={{ display: 'flex', gap: '4px', fontWeight: 400, color: 'var(--pt-text-primary)', marginBottom: '4px' }}>
-          <span style={{ flexShrink: 0 }}>{index}.</span>
-          <span><MathText text={question} /></span>
+        <div style={{ display: 'flex', gap: '8px', fontWeight: 600, color: 'var(--pt-text-primary)', marginBottom: '6px', fontSize: '18.5px', lineHeight: 1.45 }}>
+          <span style={{ flexShrink: 0, minWidth: '24px', fontWeight: 700 }}>{index}.</span>
+          <span style={{ flex: 1 }}><MathText text={question} /></span>
         </div>
         {imagePath && (
           <ClickableImg
@@ -263,14 +265,14 @@ function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers, hideSolutio
             style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', marginLeft: '16px', borderRadius: '4px', border: '1px solid var(--pt-border-light)', display: 'block' }}
           />
         )}
-        {!hideAnswers && <p style={{ fontWeight: 700, color: 'var(--pt-text-body)', margin: 0, paddingLeft: '16px' }}>
+        {!hideAnswers && <p style={{ fontWeight: 700, color: 'var(--pt-text-body)', margin: 0, paddingLeft: '16px', fontSize: '17px' }}>
           <MathText text={choices[answer] ?? '—'} plainText={choicesPlainText?.[answer]} />
         </p>}
         {hideAnswers && <p style={{ color: 'var(--pt-text-muted)', margin: 0, paddingLeft: '16px' }}>—</p>}
         {/* Solution block (QA mode) */}
         {hasSolution && (
           <div style={{ marginTop: '8px', paddingTop: '6px', paddingLeft: '16px', borderTop: '1px dashed var(--pt-border-light)' }}>
-            <span style={{ fontWeight: 700, fontSize: '12px', color: 'var(--pt-text-primary)', display: 'block', marginBottom: '4px' }}>SOLUTION:</span>
+            <span style={{ fontWeight: 700, fontSize: '13px', color: 'var(--pt-text-primary)', display: 'block', marginBottom: '4px', letterSpacing: '0.08em' }}>SOLUTION:</span>
             {solutionImagePath && (
               <ClickableImg
                 src={`ece-app://${solutionImagePath}`}
@@ -280,7 +282,7 @@ function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers, hideSolutio
               />
             )}
             {explanation && explanation.trim().length > 0 && (
-              <p style={{ margin: 0, fontSize: '12px', color: 'var(--pt-text-body)', lineHeight: 1.6 }}>
+              <p style={{ margin: 0, fontSize: '15.5px', color: 'var(--pt-text-body)', lineHeight: 1.55 }}>
                 <MathText text={explanation} />
               </p>
             )}
@@ -296,9 +298,9 @@ function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers, hideSolutio
       breakInside: 'avoid',
       display: 'block',
     }}>
-      <div style={{ display: 'flex', gap: '4px', fontWeight: 600, color: 'var(--pt-text-primary)', marginBottom: '6px' }}>
-        <span style={{ flexShrink: 0 }}>{index}.</span>
-        <span><MathText text={question} /></span>
+      <div style={{ display: 'flex', gap: '8px', fontWeight: 600, color: 'var(--pt-text-primary)', marginBottom: '8px', fontSize: '18.5px', lineHeight: 1.45 }}>
+        <span style={{ flexShrink: 0, minWidth: '24px', fontWeight: 700 }}>{index}.</span>
+        <span style={{ flex: 1 }}><MathText text={question} /></span>
       </div>
       {imagePath && (
         <ClickableImg
@@ -308,7 +310,7 @@ function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers, hideSolutio
           style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid var(--pt-border-light)', display: 'block' }}
         />
       )}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: 'auto auto', gap: '2px 8px', marginTop: '12px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: 'auto auto', gap: '4px 12px', marginTop: '10px' }}>
         {[0, 1, 2, 3].map((ci) => {
           const choice = choices[ci]
           if (choice === undefined) return null
@@ -319,7 +321,9 @@ function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers, hideSolutio
                 padding: '4px 8px',
                 backgroundColor: (!hideAnswers && ci === answer) ? 'var(--pt-answer-bg)' : 'transparent',
                 color: (!hideAnswers && ci === answer) ? 'var(--pt-answer-text)' : 'var(--pt-text-body)',
-                fontWeight: (!hideAnswers && ci === answer) ? 700 : 400,
+                fontWeight: (!hideAnswers && ci === answer) ? 700 : 500,
+                fontSize: '17px',
+                lineHeight: 1.4,
                 borderRadius: '3px',
                 display: 'flex',
                 gap: '6px',
@@ -329,7 +333,7 @@ function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers, hideSolutio
                 justifySelf: 'start',
               }}
             >
-              <span style={{ minWidth: '18px', fontWeight: 700 }}>{CHOICE_LABELS[ci]}.</span>
+              <span style={{ minWidth: '20px', fontWeight: 700 }}>{CHOICE_LABELS[ci]}.</span>
               <span><MathText text={choice} plainText={choicesPlainText?.[ci]} /></span>
             </div>
           )
@@ -337,8 +341,8 @@ function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers, hideSolutio
       </div>
       {/* Solution block (glossary mode) */}
       {hasSolution && (
-        <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px dashed var(--pt-border-light)' }}>
-          <span style={{ fontWeight: 700, fontSize: '12px', color: 'var(--pt-text-primary)', display: 'block', marginBottom: '4px' }}>SOLUTION:</span>
+        <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px dashed var(--pt-border-light)' }}>
+          <span style={{ fontWeight: 700, fontSize: '13px', color: 'var(--pt-text-primary)', display: 'block', marginBottom: '6px', letterSpacing: '0.08em' }}>SOLUTION:</span>
           {solutionImagePath && (
             <ClickableImg
               src={`ece-app://${solutionImagePath}`}
@@ -348,7 +352,7 @@ function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers, hideSolutio
             />
           )}
           {explanation && explanation.trim().length > 0 && (
-            <p style={{ margin: 0, fontSize: '12px', color: 'var(--pt-text-body)', lineHeight: 1.6 }}>
+            <p style={{ margin: 0, fontSize: '15.5px', color: 'var(--pt-text-body)', lineHeight: 1.55 }}>
               <MathText text={explanation} />
             </p>
           )}
@@ -1254,7 +1258,9 @@ export default function PrintView() {
   const paperContent = (
     <div
       style={{
-        fontFamily: 'Georgia, "Times New Roman", serif',
+        fontFamily: "'Rajdhani', sans-serif",
+        fontSize: '17px',
+        lineHeight: 1.5,
         color: 'var(--pt-text-primary)',
         maxWidth: isPdfMode ? 'none' : '800px',
         margin: isPdfMode ? '0' : '0 auto',
@@ -1457,7 +1463,9 @@ export default function PrintView() {
             ...currentThemeVars,
             background: paperBg,
             color: currentThemeVars['--pt-text-primary'],
-            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontFamily: "'Rajdhani', sans-serif",
+            fontSize: '17px',
+            lineHeight: 1.5,
             minHeight: 'unset',
             height: 'auto',
             width: '794px',

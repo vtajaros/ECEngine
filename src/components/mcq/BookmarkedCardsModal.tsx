@@ -120,7 +120,7 @@ export function BookmarkedCardsModal({ topicId, topicTitle, onClose, onBookmarks
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="font-['IBM_Plex_Mono'] text-xs text-accent">
+            <span className="font-['JetBrains_Mono'] text-xs text-accent">
               {bookmarkedCards.length} bookmarked
             </span>
             <button
@@ -135,7 +135,7 @@ export function BookmarkedCardsModal({ topicId, topicTitle, onClose, onBookmarks
         {/* Body */}
         <div className="flex-1 overflow-y-auto custom-scrollbar">
           {loading ? (
-            <div className="flex items-center justify-center py-20 text-[#444] font-['IBM_Plex_Mono'] text-sm animate-pulse">
+            <div className="flex items-center justify-center py-20 text-[#444] font-['JetBrains_Mono'] text-sm animate-pulse">
               Loading cards...
             </div>
           ) : (
@@ -197,7 +197,7 @@ export function BookmarkedCardsModal({ topicId, topicTitle, onClose, onBookmarks
                               placeholder="Search questions..."
                               value={search}
                               onChange={e => setSearch(e.target.value)}
-                              className="w-full bg-surface border border-[#2a2a2a] focus:border-[#444] rounded-lg py-2 pl-8 pr-3 text-xs text-text-primary placeholder-[#444] outline-none transition-colors font-['IBM_Plex_Mono']"
+                              className="w-full bg-surface border border-[#2a2a2a] focus:border-[#444] rounded-lg py-2 pl-8 pr-3 text-xs text-text-primary placeholder-[#444] outline-none transition-colors font-['JetBrains_Mono']"
                             />
                           </div>
                         </div>
@@ -260,19 +260,19 @@ function BookmarkRow({ card, idx, isBookmarked, onToggle }: BookmarkRowProps) {
         onClick={() => setIsExpanded(!isExpanded)}
       >
       {/* Index badge */}
-      <span className="shrink-0 w-6 h-6 rounded bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center font-['IBM_Plex_Mono'] text-[10px] text-[#444] mt-0.5">
+      <span className="shrink-0 w-6 h-6 rounded bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center font-['JetBrains_Mono'] text-[10px] text-[#444] mt-0.5">
         {idx + 1}
       </span>
 
       {/* Question text */}
       <div className="flex-1 min-w-0">
         {isEmpty ? (
-          <span className="text-[#444] text-xs font-['IBM_Plex_Mono'] italic">
+          <span className="text-[#444] text-xs font-['JetBrains_Mono'] italic">
             [Image-only question — no text preview]
           </span>
         ) : (
           <div
-            className={`font-['IBM_Plex_Mono'] text-[12px] leading-relaxed text-text-primary mcq-question-text ${!isExpanded ? 'line-clamp-3' : ''}`}
+            className={`font-['JetBrains_Mono'] text-[12px] leading-relaxed text-text-primary mcq-question-text ${!isExpanded ? 'line-clamp-3' : ''}`}
             dangerouslySetInnerHTML={{ __html: renderMath(questionText) }}
           />
         )}
@@ -312,7 +312,7 @@ function BookmarkRow({ card, idx, isBookmarked, onToggle }: BookmarkRowProps) {
                     return (
                       <div 
                         key={i} 
-                        className={`px-3 py-2 rounded text-[11px] font-['IBM_Plex_Mono'] border ${
+                        className={`px-3 py-2 rounded text-[11px] font-['JetBrains_Mono'] border ${
                           isCorrect 
                             ? 'bg-[var(--accent-glow)] border-[var(--accent-border)] text-[var(--accent-primary)] font-bold shadow-[0_0_12px_rgba(0,255,65,0.05)]' 
                             : 'bg-[#0f0f0f] border-[#222] text-[#888]'
@@ -326,7 +326,7 @@ function BookmarkRow({ card, idx, isBookmarked, onToggle }: BookmarkRowProps) {
                 <div className="flex flex-col gap-1.5">
                   <div className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-[#555]">Answer</div>
                   <div 
-                    className="px-3 py-2 rounded text-[11px] font-['IBM_Plex_Mono'] bg-[#0f0f0f] border border-accent/20 text-accent"
+                    className="px-3 py-2 rounded text-[11px] font-['JetBrains_Mono'] bg-[#0f0f0f] border border-accent/20 text-accent"
                     dangerouslySetInnerHTML={{ __html: renderMath((card.data as FlashcardData).back || '') }}
                   />
                 </div>

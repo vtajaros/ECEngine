@@ -320,7 +320,7 @@ export function FlashcardDeckBrowser({
                 </DeckGrid>
 
                 {isLoading ? (
-                  <div className="text-center py-20 text-[#555] font-['IBM_Plex_Mono'] text-sm tracking-widest animate-pulse">
+                  <div className="text-center py-20 text-[#555] font-['JetBrains_Mono'] text-sm tracking-widest animate-pulse">
                     Loading decks...
                   </div>
                 ) : filteredDecks.length === 0 ? (
@@ -357,7 +357,7 @@ export function FlashcardDeckBrowser({
                     <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-4 tracking-widest uppercase">
                       DELETE DECK?
                     </h3>
-                    <p className="text-text-muted font-['IBM_Plex_Mono'] mb-8 leading-relaxed">
+                    <p className="text-text-muted font-['JetBrains_Mono'] mb-8 leading-relaxed">
                       Are you absolutely sure you want to delete <strong className="text-white">{setToDelete.title}</strong>? This action cannot be undone and will permanently remove all {setToDelete.cardCount} items in this set.
                     </p>
                     <div className="flex flex-col gap-3 w-full">

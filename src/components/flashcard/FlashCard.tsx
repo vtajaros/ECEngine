@@ -184,7 +184,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting
           >
             <span className="font-['Rajdhani'] font-bold text-lg mb-0.5 group-hover:drop-shadow-[0_0_5px_currentColor]">{label}</span>
             <span className="text-xs text-text-muted">{sub}</span>
-            <span className="text-[10px] text-[#555] mt-0.5 font-['IBM_Plex_Mono']">{hint}</span>
+            <span className="text-[10px] text-[#555] mt-0.5 font-['JetBrains_Mono']">{hint}</span>
           </button>
         ))}
 

@@ -37,7 +37,7 @@ function TopicRow({ topic, searchQuery }: { topic: Topic, searchQuery: string })
           </span>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-xs font-['IBM_Plex_Mono'] text-[var(--text-secondary)] bg-[var(--bg-elevated)] px-2 py-1 rounded border border-[#333]">
+          <span className="text-xs font-['JetBrains_Mono'] text-[var(--text-secondary)] bg-[var(--bg-elevated)] px-2 py-1 rounded border border-[#333]">
             {topic.subtopics.length} subtopics
           </span>
           {isExpanded ? <ChevronDown size={16} className="text-[var(--accent-primary)]" /> : <ChevronRight size={16} className="text-[var(--text-secondary)]" />}
@@ -59,7 +59,7 @@ function TopicRow({ topic, searchQuery }: { topic: Topic, searchQuery: string })
                 return (
                   <div key={st.id} className="flex items-center gap-3 py-1.5 cursor-pointer hover:bg-surface-2 transition-colors rounded px-2 group">
                     <div className="w-1.5 h-1.5 rounded-full bg-[var(--accent-primary)] shrink-0" />
-                    <span className="text-[13px] font-['IBM_Plex_Mono'] text-text-muted group-hover:text-text-primary transition-colors">
+                    <span className="text-[13px] font-['JetBrains_Mono'] text-text-muted group-hover:text-text-primary transition-colors">
                       {/* TODO: Link to filtered decks for this subtopic */}
                       {isMatch && searchQuery ? highlightText(st.name, searchQuery) : st.name}
                     </span>
@@ -67,7 +67,7 @@ function TopicRow({ topic, searchQuery }: { topic: Topic, searchQuery: string })
                 )
               })}
               {visibleSubtopics.length === 0 && (
-                <div className="text-xs text-[#555] font-['IBM_Plex_Mono'] py-2 px-2">No matching subtopics</div>
+                <div className="text-xs text-[#555] font-['JetBrains_Mono'] py-2 px-2">No matching subtopics</div>
               )}
             </div>
           </motion.div>

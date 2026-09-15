@@ -52,17 +52,17 @@ export const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttr
             <GripVertical className="w-4 h-4" />
           </span>
         </Tooltip>
-        <span className="text-[#555] font-['IBM_Plex_Mono'] text-xs w-6 flex-shrink-0">
+        <span className="text-[#555] font-['JetBrains_Mono'] text-xs w-6 flex-shrink-0">
           {String(index + 1).padStart(2, '0')}
         </span>
-        <span className="flex-1 text-[#ccc] font-['IBM_Plex_Mono'] text-sm truncate">
+        <span className="flex-1 text-[#ccc] font-['JetBrains_Mono'] text-sm truncate">
           {card.type === 'formula' || truncated.includes('$') || truncated.includes('\\') ? (
             <span dangerouslySetInnerHTML={{ __html: renderMath(truncated) }} />
           ) : (
             truncated
           )}
         </span>
-        <span className={`text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded border uppercase flex-shrink-0 ${card.type === 'mcq'
+        <span className={`text-[10px] font-['JetBrains_Mono'] font-bold px-2 py-0.5 rounded border uppercase flex-shrink-0 ${card.type === 'mcq'
           ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
           : card.type === 'formula'
             ? 'text-[#A855F7] border-[#A855F7]/30 bg-[#A855F7]/10'

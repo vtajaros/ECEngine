@@ -61,7 +61,7 @@ const TopicRow = ({
       />
 
       {/* Number */}
-      <span className="text-xs font-['IBM_Plex_Mono'] shrink-0 w-6 text-right text-text-muted">
+      <span className="text-xs font-['JetBrains_Mono'] shrink-0 w-6 text-right text-text-muted">
         {String(index + 1).padStart(2, '0')}
       </span>
 
@@ -73,14 +73,14 @@ const TopicRow = ({
           </div>
           {showSubjectBadge && (
             <div
-              className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-['IBM_Plex_Mono'] font-bold uppercase tracking-widest"
+              className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-['JetBrains_Mono'] font-bold uppercase tracking-widest"
               style={{ background: colors.badge, color: colors.accent }}
             >
               {subjectCode}
             </div>
           )}
         </div>
-        <div className={`text-xs font-['IBM_Plex_Mono'] mt-1 ${count > 0 ? 'text-[#666]' : 'text-[#444]'}`}>
+        <div className={`text-xs font-['JetBrains_Mono'] mt-1 ${count > 0 ? 'text-[#666]' : 'text-[#444]'}`}>
           {count > 0 ? (
             <>
               <span style={{ color: colors.accent }}>{count}</span> formulas
@@ -122,12 +122,12 @@ const FormulaCard = ({
         {renderFormula(formula.latex)}
       </div>
       {formula.description && (
-        <div className="text-[#666] text-xs font-['IBM_Plex_Mono'] italic leading-relaxed">
+        <div className="text-[#666] text-xs font-['JetBrains_Mono'] italic leading-relaxed">
           {formula.description}
         </div>
       )}
       {formula.variables && (
-        <div className="text-[#555] text-[10px] font-['IBM_Plex_Mono'] leading-relaxed whitespace-pre-wrap">
+        <div className="text-[#555] text-[10px] font-['JetBrains_Mono'] leading-relaxed whitespace-pre-wrap">
           {formula.variables}
         </div>
       )}
@@ -179,7 +179,7 @@ const TopicDetail = ({
 
         <div className="flex items-center gap-3 mt-2">
           <div
-            className="shrink-0 text-xs font-['IBM_Plex_Mono'] font-bold uppercase tracking-widest px-2 py-0.5 rounded"
+            className="shrink-0 text-xs font-['JetBrains_Mono'] font-bold uppercase tracking-widest px-2 py-0.5 rounded"
             style={{ background: colors.badge, color: colors.accent }}
           >
             {subjectCode}
@@ -189,7 +189,7 @@ const TopicDetail = ({
           </h1>
         </div>
 
-        <div className="text-[#666] font-['IBM_Plex_Mono'] text-xs mt-1">
+        <div className="text-[#666] font-['JetBrains_Mono'] text-xs mt-1">
           {totalTopicFormulas} formula{totalTopicFormulas !== 1 ? 's' : ''} across {topic.subtopics.length} subtopics
         </div>
       </div>
@@ -209,7 +209,7 @@ const TopicDetail = ({
                 </h2>
                 {subtopic.formulas.length > 0 && (
                   <span
-                    className="shrink-0 text-xs font-['IBM_Plex_Mono'] px-2 py-0.5 rounded-full border"
+                    className="shrink-0 text-xs font-['JetBrains_Mono'] px-2 py-0.5 rounded-full border"
                     style={{ color: colors.accent, borderColor: `rgba(${colors.accentRgb},0.3)`, background: colors.badge }}
                   >
                     {subtopic.formulas.length}
@@ -218,7 +218,7 @@ const TopicDetail = ({
               </div>
 
               {subtopic.formulas.length === 0 ? (
-                <div className="text-[#2a2a2a] text-xs text-center py-3 font-['IBM_Plex_Mono'] border border-surface rounded-lg bg-[#0c0c0c]">
+                <div className="text-[#2a2a2a] text-xs text-center py-3 font-['JetBrains_Mono'] border border-surface rounded-lg bg-[#0c0c0c]">
                   — no formulas yet —
                 </div>
               ) : (

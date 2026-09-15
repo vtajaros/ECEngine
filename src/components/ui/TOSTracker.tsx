@@ -120,7 +120,7 @@ const TopicAccordion: React.FC<TopicAccordionProps> = ({
               {topic.name}
             </span>
             <span
-              className="font-['IBM_Plex_Mono'] text-[11px] font-bold px-2 py-0.5 rounded ml-1"
+              className="font-['JetBrains_Mono'] text-[11px] font-bold px-2 py-0.5 rounded ml-1"
               style={{
                 color: pctColor,
                 background: topicPct > 0 ? pctColor + '18' : '#1a1a1a',
@@ -175,7 +175,7 @@ const TopicAccordion: React.FC<TopicAccordionProps> = ({
             {/* Subtopic Title (Left) */}
             <td className="px-4 py-2 pl-10">
               <span
-                className="font-['IBM_Plex_Mono'] text-sm leading-relaxed transition-colors"
+                className="font-['JetBrains_Mono'] text-sm leading-relaxed transition-colors"
                 style={{ color: isReviewed ? '#00FF41' : '#a3a3a3' }}
               >
                 {sub.name}
@@ -462,7 +462,7 @@ export const TOSTracker: React.FC = () => {
             <span className="font-['Rajdhani'] text-xs font-bold uppercase tracking-widest text-accent block leading-tight">
               OVERALL REVIEW PROGRESS
             </span>
-            <span className="font-['IBM_Plex_Mono'] text-[10px] text-gray-500">
+            <span className="font-['JetBrains_Mono'] text-[10px] text-gray-500">
               {globalStats.total} subtopics · weighted progress
             </span>
           </div>
@@ -479,7 +479,7 @@ export const TOSTracker: React.FC = () => {
               />
             </div>
             <span
-              className="font-['IBM_Plex_Mono'] text-sm font-black min-w-[42px] text-right"
+              className="font-['JetBrains_Mono'] text-sm font-black min-w-[42px] text-right"
               style={{ color: progressColor }}
             >
               {globalStats.pct}%
@@ -499,7 +499,7 @@ export const TOSTracker: React.FC = () => {
                 </button>
               ) : (
                 <div className="flex items-center gap-1.5 bg-black/60 px-2.5 py-1.5 rounded border border-red-900/40">
-                  <span className="font-['IBM_Plex_Mono'] text-[10px] text-red-400">Confirm Reset?</span>
+                  <span className="font-['JetBrains_Mono'] text-[10px] text-red-400">Confirm Reset?</span>
                   <button
                     onClick={handleReset}
                     className="px-2 py-0.5 rounded bg-red-900/30 border border-red-700/50 text-red-300 text-[10px] font-['Rajdhani'] uppercase tracking-widest hover:bg-red-800/50 transition-colors font-bold"
@@ -534,7 +534,7 @@ export const TOSTracker: React.FC = () => {
         return (
           <div className="flex items-center gap-3 px-1">
             <span
-              className="font-['IBM_Plex_Mono'] font-bold text-xs tracking-widest px-3 py-1.5 rounded border uppercase"
+              className="font-['JetBrains_Mono'] font-bold text-xs tracking-widest px-3 py-1.5 rounded border uppercase"
               style={{ color: colors.accent, background: colors.badge, borderColor: `rgba(${colors.accentRgb},0.3)` }}
             >
               {activeSubject.code}
@@ -564,7 +564,7 @@ export const TOSTracker: React.FC = () => {
                         : '#444'
               return (
                 <span
-                  className="font-['IBM_Plex_Mono'] text-xs font-bold px-2 py-0.5 rounded"
+                  className="font-['JetBrains_Mono'] text-xs font-bold px-2 py-0.5 rounded"
                   style={{ color: pctColor, background: `${pctColor}18`, border: `1px solid ${pctColor}33` }}
                 >
                   {subjectPct}%

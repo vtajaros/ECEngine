@@ -135,7 +135,7 @@ export const FlashCardSettingsModal: React.FC<FlashCardSettingsModalProps> = ({
                           <button
                             key={s}
                             onClick={() => onSettingsChange({ ...settings, autoplayDelay: s })}
-                            className={`px-2 py-1 rounded text-xs font-['IBM_Plex_Mono'] border transition-all ${settings.autoplayDelay === s ? 'bg-[rgba(0,255,65,0.1)] border-accent text-accent' : 'bg-[#111] border-[#333] text-text-muted hover:border-[#555]'}`}
+                            className={`px-2 py-1 rounded text-xs font-['JetBrains_Mono'] border transition-all ${settings.autoplayDelay === s ? 'bg-[rgba(0,255,65,0.1)] border-accent text-accent' : 'bg-[#111] border-[#333] text-text-muted hover:border-[#555]'}`}
                           >
                             {s}s
                           </button>
@@ -158,11 +158,11 @@ export const FlashCardSettingsModal: React.FC<FlashCardSettingsModalProps> = ({
                     : localStorage.getItem('ecengine:tts:voice')
                   const voiceName = isLinux && rawVoice ? rawVoice.split('/').pop() : rawVoice
                   return voiceName ? (
-                    <p className="text-[10px] text-[#555] font-['IBM_Plex_Mono'] leading-relaxed">
+                    <p className="text-[10px] text-[#555] font-['JetBrains_Mono'] leading-relaxed">
                       Voice: <span className="text-accent">{voiceName}</span>. The front face of each card is read aloud when it appears.
                     </p>
                   ) : (
-                    <p className="text-[10px] text-[#FF4444] font-['IBM_Plex_Mono'] leading-relaxed">
+                    <p className="text-[10px] text-[#FF4444] font-['JetBrains_Mono'] leading-relaxed">
                       ⚠ No voice selected. Go to Settings → Sound & Feedback to pick a voice before enabling TTS.
                     </p>
                   )

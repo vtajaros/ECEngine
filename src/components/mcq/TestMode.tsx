@@ -185,7 +185,7 @@ const TestQuestionCard = memo(({
               className={`flex items-center text-left py-4 px-4 min-h-[56px] rounded-lg border transition-all duration-200 font-['Rajdhani'] ${stateStyles} ${orderClass} ${viewState === 'review' || (settings.instantChecking && isAnswered) ? 'cursor-default' : 'cursor-pointer'
                 }`}
             >
-              <div className={`flex-shrink-0 mr-3 font-['IBM_Plex_Mono'] ${prefixStyles}`}>
+              <div className={`flex-shrink-0 mr-3 font-['JetBrains_Mono'] ${prefixStyles}`}>
                 {choiceLabel}.
               </div>
               <span
@@ -815,11 +815,11 @@ Please explain:
                 </h3>
 
                 {testCards.length - answeredCount > 0 ? (
-                  <p className="text-text-primary font-['IBM_Plex_Mono'] mb-6">
+                  <p className="text-text-primary font-['JetBrains_Mono'] mb-6">
                     You still have <span className="text-danger font-bold">{testCards.length - answeredCount}</span> unanswered questions. Are you sure you want to submit?
                   </p>
                 ) : (
-                  <p className="text-text-primary font-['IBM_Plex_Mono'] mb-6">
+                  <p className="text-text-primary font-['JetBrains_Mono'] mb-6">
                     You have answered all questions. Are you ready to submit and see your score?
                   </p>
                 )}

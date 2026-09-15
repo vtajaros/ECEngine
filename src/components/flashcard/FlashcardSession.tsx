@@ -245,7 +245,7 @@ export function FlashcardSession({
         </div>
         <div className="flex items-center gap-3">
           {settings.writtenMode && (
-            <span className="text-xs font-['IBM_Plex_Mono'] text-text-muted bg-surface px-3 py-1 rounded border border-[#333]">
+            <span className="text-xs font-['JetBrains_Mono'] text-text-muted bg-surface px-3 py-1 rounded border border-[#333]">
               Accuracy: <span className="text-[var(--accent-primary)]">{writtenStats.total > 0 ? Math.round((writtenStats.correct / writtenStats.total) * 100) : 0}%</span>
             </span>
           )}
@@ -359,7 +359,7 @@ export function FlashcardSession({
                 >
                   {fb.label}
                 </span>
-                <span className="text-[#888] font-['IBM_Plex_Mono'] text-xs">
+                <span className="text-[#888] font-['JetBrains_Mono'] text-xs">
                   {fb.message}
                 </span>
               </motion.div>
@@ -433,7 +433,7 @@ export function FlashcardSession({
                 >
                   <span className="font-['Rajdhani'] font-bold text-lg mb-0.5">{label}</span>
                   <span className="text-xs text-text-muted">{sub}</span>
-                  <span className="text-[10px] text-[#555] mt-0.5 font-['IBM_Plex_Mono']">{hint}</span>
+                  <span className="text-[10px] text-[#555] mt-0.5 font-['JetBrains_Mono']">{hint}</span>
                 </button>
               ))}
               {isSubmitting && (

@@ -64,11 +64,11 @@ export const TestNavRail = memo(({
           Item Navigator
         </span>
         <div className="flex items-center gap-1.5 mt-0.5">
-          <span className="font-['IBM_Plex_Mono'] text-[11px] text-accent font-bold tabular-nums">
+          <span className="font-['JetBrains_Mono'] text-[11px] text-accent font-bold tabular-nums">
             {answeredCount}
           </span>
-          <span className="font-['IBM_Plex_Mono'] text-[11px] text-[#444]">/</span>
-          <span className="font-['IBM_Plex_Mono'] text-[11px] text-zinc-400 tabular-nums">
+          <span className="font-['JetBrains_Mono'] text-[11px] text-[#444]">/</span>
+          <span className="font-['JetBrains_Mono'] text-[11px] text-zinc-400 tabular-nums">
             {totalItems}
           </span>
           <span className="font-['Rajdhani'] text-[10px] uppercase tracking-widest text-zinc-400 ml-0.5">

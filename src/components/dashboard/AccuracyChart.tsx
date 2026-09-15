@@ -24,7 +24,7 @@ export default function AccuracyChart({ data, subject, isLoading }: AccuracyChar
             exit={{ opacity: 0 }}
             className="absolute inset-0 flex items-center justify-center"
           >
-            <span className="font-['IBM_Plex_Mono'] text-[10px] text-[#444] uppercase tracking-widest animate-pulse">
+            <span className="font-['JetBrains_Mono'] text-[10px] text-[#444] uppercase tracking-widest animate-pulse">
               Loading…
             </span>
           </motion.div>
@@ -65,7 +65,7 @@ export default function AccuracyChart({ data, subject, isLoading }: AccuracyChar
                   dataKey="date"
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#555', fontSize: 10, fontFamily: 'IBM Plex Mono' }}
+                  tick={{ fill: '#555', fontSize: 10, fontFamily: 'JetBrains Mono' }}
                   dy={10}
                   interval="preserveStartEnd"
                 />
@@ -73,7 +73,7 @@ export default function AccuracyChart({ data, subject, isLoading }: AccuracyChar
                   domain={[0, 100]}
                   axisLine={false}
                   tickLine={false}
-                  tick={{ fill: '#555', fontSize: 10, fontFamily: 'IBM Plex Mono' }}
+                  tick={{ fill: '#555', fontSize: 10, fontFamily: 'JetBrains Mono' }}
                   tickFormatter={(v: number) => `${v}%`}
                   width={38}
                 />
@@ -81,7 +81,7 @@ export default function AccuracyChart({ data, subject, isLoading }: AccuracyChar
                   y={50}
                   stroke="#2A2A2A"
                   strokeDasharray="4 4"
-                  label={{ value: '50%', fill: '#3A3A3A', fontSize: 9, fontFamily: 'IBM Plex Mono', position: 'insideTopRight' }}
+                  label={{ value: '50%', fill: '#3A3A3A', fontSize: 9, fontFamily: 'JetBrains Mono', position: 'insideTopRight' }}
                 />
                 <Tooltip
                   contentStyle={{
@@ -89,7 +89,7 @@ export default function AccuracyChart({ data, subject, isLoading }: AccuracyChar
                     border: '1px solid #2A2A2A',
                     borderRadius: '8px',
                     fontSize: '11px',
-                    fontFamily: 'IBM Plex Mono',
+                    fontFamily: 'JetBrains Mono',
                     boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
                     padding: '8px 12px',
                   }}

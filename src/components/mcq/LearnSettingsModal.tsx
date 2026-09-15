@@ -177,7 +177,7 @@ export const LearnSettingsModal: React.FC<LearnSettingsModalProps> = ({
                   {renderToggle('ttsEnabled', 'Read Questions Aloud (TTS)', ({ className }) => <Volume2 className={className} />)}
                 </div>
                 {settings.ttsEnabled && (
-                  <p className="text-[10px] text-[#555] font-['IBM_Plex_Mono'] leading-relaxed">
+                  <p className="text-[10px] text-[#555] font-['JetBrains_Mono'] leading-relaxed">
                     Uses your system voice. Questions are read when each card appears. Math notation is skipped.
                   </p>
                 )}

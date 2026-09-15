@@ -126,7 +126,7 @@ const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <span className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-text-muted mb-1 block">{children}</span>
 )
 
-const inputCls = "w-full bg-engine-black border border-border-subtle rounded px-3 py-2 text-text-primary font-['IBM_Plex_Mono'] text-sm outline-none focus:border-accent transition-colors placeholder-[#555]"
+const inputCls = "w-full bg-engine-black border border-border-subtle rounded px-3 py-2 text-text-primary font-['JetBrains_Mono'] text-sm outline-none focus:border-accent transition-colors placeholder-[#555]"
 const textareaCls = `${inputCls} resize-none leading-relaxed`
 
 // ── MathInputField: text area with ∑ toggle for MathLive equation entry ──────
@@ -318,7 +318,7 @@ const MathInputField: React.FC<MathInputFieldProps> = ({
               paddingRight: '40px',
               color: '#E8E8E8',
               fontSize: '1rem',
-              fontFamily: 'IBM Plex Mono, monospace',
+              fontFamily: 'JetBrains Mono', monospace,
               '--keyboard-zindex': '99999',
             } as React.CSSProperties & Record<string, string>}
           />
@@ -505,7 +505,7 @@ const FormulaForm: React.FC<{ data: FormulaEdit; onChange: (d: FormulaEdit) => v
               <div className="bg-[#0d0d0d] border border-[rgba(0,255,65,0.1)] rounded-lg p-3 mt-1">
                 <div className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-text-muted mb-2">Preview</div>
                 <div
-                  className="text-sm font-['IBM_Plex_Mono'] text-[#d4d4d4] leading-relaxed"
+                  className="text-sm font-['JetBrains_Mono'] text-[#d4d4d4] leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: renderMath(data.explanation || '') }}
                 />
               </div>
@@ -713,7 +713,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
               <div className="bg-[#0d0d0d] border border-[rgba(0,255,65,0.1)] rounded-lg p-3 mt-1">
                 <div className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-text-muted mb-2">Preview</div>
                 <div
-                  className="text-sm font-['IBM_Plex_Mono'] text-[#d4d4d4] leading-relaxed"
+                  className="text-sm font-['JetBrains_Mono'] text-[#d4d4d4] leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: renderMath(data.explanation || '') }}
                 />
               </div>
@@ -890,7 +890,7 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
               <div className="bg-[#0d0d0d] border border-[rgba(0,255,65,0.1)] rounded-lg p-3 mt-1">
                 <div className="text-[10px] font-['Rajdhani'] uppercase tracking-widest text-text-muted mb-2">Preview</div>
                 <div
-                  className="text-sm font-['IBM_Plex_Mono'] text-[#d4d4d4] leading-relaxed"
+                  className="text-sm font-['JetBrains_Mono'] text-[#d4d4d4] leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: renderMath(data.explanation || '') }}
                 />
               </div>
@@ -931,17 +931,17 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
             <GripVertical className="w-4 h-4" />
           </span>
         </Tooltip>
-        <span className="text-[#555] font-['IBM_Plex_Mono'] text-xs w-6 flex-shrink-0">
+        <span className="text-[#555] font-['JetBrains_Mono'] text-xs w-6 flex-shrink-0">
           {String(index + 1).padStart(2, '0')}
         </span>
-        <span className="flex-1 text-[#ccc] font-['IBM_Plex_Mono'] text-sm truncate">
+        <span className="flex-1 text-[#ccc] font-['JetBrains_Mono'] text-sm truncate">
           {card.type === 'formula' || truncated.includes('$') || truncated.includes('\\') ? (
             <span dangerouslySetInnerHTML={{ __html: renderMath(truncated) }} />
           ) : (
             truncated
           )}
         </span>
-        <span className={`text-[10px] font-['IBM_Plex_Mono'] font-bold px-2 py-0.5 rounded border uppercase flex-shrink-0 ${card.type === 'mcq'
+        <span className={`text-[10px] font-['JetBrains_Mono'] font-bold px-2 py-0.5 rounded border uppercase flex-shrink-0 ${card.type === 'mcq'
             ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
             : card.type === 'formula'
               ? 'text-[#A855F7] border-[#A855F7]/30 bg-[#A855F7]/10'
@@ -1369,7 +1369,7 @@ export default function EditDeck() {
   if (loading) {
     return (
       <div className="h-full bg-engine-black flex items-center justify-center">
-        <div className="text-accent font-['IBM_Plex_Mono'] text-sm tracking-widest animate-pulse">LOADING DECK...</div>
+        <div className="text-accent font-['JetBrains_Mono'] text-sm tracking-widest animate-pulse">LOADING DECK...</div>
       </div>
     )
   }
@@ -1451,7 +1451,7 @@ export default function EditDeck() {
                   placeholder="Deck title..."
                   maxLength={80}
                 />
-                <span className="absolute right-0 bottom-4 text-xs font-['IBM_Plex_Mono'] text-[#666]">
+                <span className="absolute right-0 bottom-4 text-xs font-['JetBrains_Mono'] text-[#666]">
                   {deckMeta.title.length} / 80
                 </span>
               </div>
@@ -1483,7 +1483,7 @@ export default function EditDeck() {
                 <div className="relative flex items-center">
                   <input
                     type="text"
-                    className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-text-primary font-['IBM_Plex_Mono'] text-sm focus:border-accent focus:bg-[#111] outline-none transition-colors pr-16 placeholder-[#555]"
+                    className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-text-primary font-['JetBrains_Mono'] text-sm focus:border-accent focus:bg-[#111] outline-none transition-colors pr-16 placeholder-[#555]"
                     value={deckMeta.folderName}
                     onChange={e => {
                       setDeckMeta(m => ({ ...m, folderName: e.target.value, folderId: null }))
@@ -1529,7 +1529,7 @@ export default function EditDeck() {
                       className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-surface-2 border border-[#333] rounded-lg shadow-2xl max-h-48 overflow-y-auto custom-scrollbar"
                     >
                       {existingFolders.length === 0 ? (
-                        <div className="p-3 text-xs text-[#666] font-['IBM_Plex_Mono'] text-center">
+                        <div className="p-3 text-xs text-[#666] font-['JetBrains_Mono'] text-center">
                           No folders created yet. Type above to create one.
                         </div>
                       ) : (
@@ -1544,7 +1544,7 @@ export default function EditDeck() {
                                   setDeckMeta(m => ({ ...m, folderName: f, folderId: null }))
                                   setShowFolderDropdown(false)
                                 }}
-                                className="w-full text-left px-3 py-2 text-xs font-['IBM_Plex_Mono'] text-[#ccc] hover:bg-border-base hover:text-accent transition-colors flex items-center justify-between"
+                                className="w-full text-left px-3 py-2 text-xs font-['JetBrains_Mono'] text-[#ccc] hover:bg-border-base hover:text-accent transition-colors flex items-center justify-between"
                               >
                                 <span>{f}</span>
                                 {deckMeta.folderName.toLowerCase() === f.toLowerCase() && (
@@ -1557,7 +1557,7 @@ export default function EditDeck() {
                               className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-surface transition-colors"
                               onClick={() => { setShowFolderDropdown(false) }}
                             >
-                              <span className="font-['IBM_Plex_Mono'] text-xs text-accent">
+                              <span className="font-['JetBrains_Mono'] text-xs text-accent">
                                 Create "{deckMeta.folderName}"
                               </span>
                               <Tooltip content="Confirm new folder name" position="top">
@@ -1699,7 +1699,7 @@ export default function EditDeck() {
                 <h2 className="font-['Rajdhani'] font-bold uppercase tracking-widest text-text-muted text-xs">
                   Questions
                 </h2>
-                <span className="text-[#555] font-['IBM_Plex_Mono'] text-xs">
+                <span className="text-[#555] font-['JetBrains_Mono'] text-xs">
                   {cards.length} {cards.length === 1 ? 'item' : 'items'} total
                 </span>
               </div>
@@ -1729,7 +1729,7 @@ export default function EditDeck() {
               </DndContext>
 
               {cards.length === 0 && (
-                <div className="text-center py-16 text-[#444] font-['IBM_Plex_Mono'] text-sm">
+                <div className="text-center py-16 text-[#444] font-['JetBrains_Mono'] text-sm">
                   No questions yet. Add one below.
                 </div>
               )}
@@ -1737,7 +1737,7 @@ export default function EditDeck() {
 
             {/* ── Bottom Bar ── */}
             <div className="flex items-center justify-between bg-[#111] border border-[#1e1e1e] rounded-xl px-6 py-4 gap-4">
-              <span className="text-[#555] font-['IBM_Plex_Mono'] text-xs">
+              <span className="text-[#555] font-['JetBrains_Mono'] text-xs">
                 {cards.length} question{cards.length !== 1 ? 's' : ''} total
               </span>
               <div className="flex items-center gap-3">

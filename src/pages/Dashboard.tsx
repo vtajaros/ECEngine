@@ -229,7 +229,7 @@ export default function Dashboard() {
                       })}
                       {/* Center label */}
                       <text x={cx} y={cy - 6} textAnchor="middle" fill="#E8E8E8"
-                        fontSize="18" fontFamily="'IBM Plex Mono', monospace" fontWeight="bold">
+                        fontSize="18" fontFamily="'JetBrains Mono', monospace" fontWeight="bold">
                         {total}
                       </text>
                       <text x={cx} y={cy + 12} textAnchor="middle" fill="#555"
@@ -295,14 +295,14 @@ export default function Dashboard() {
               <div className="flex flex-col gap-0.5 flex-1 pr-4">
                 <span className="font-['Rajdhani'] text-[#666] uppercase tracking-widest text-[9px] font-bold">Studied</span>
                 <div className="flex items-baseline gap-1">
-                  <span className="font-['IBM_Plex_Mono'] text-xl font-bold text-text-primary">{(statsData.totalStudied || 0) + (statsData.mcqAnswered || 0)}</span>
+                  <span className="font-['JetBrains_Mono'] text-xl font-bold text-text-primary">{(statsData.totalStudied || 0) + (statsData.mcqAnswered || 0)}</span>
                   <span className="font-['Rajdhani'] text-accent font-bold text-[9px]">CARDS</span>
                 </div>
               </div>
               <div className="flex flex-col gap-0.5 flex-1 pl-4">
                 <span className="font-['Rajdhani'] text-[#666] uppercase tracking-widest text-[9px] font-bold">Avg. Accuracy</span>
                 <div className="flex items-baseline gap-1">
-                  <span className="font-['IBM_Plex_Mono'] text-xl font-bold text-text-primary">{statsData.accuracy || 0}</span>
+                  <span className="font-['JetBrains_Mono'] text-xl font-bold text-text-primary">{statsData.accuracy || 0}</span>
                   <span className="font-['Rajdhani'] text-accent font-bold text-[9px]">%</span>
                 </div>
               </div>
@@ -454,7 +454,7 @@ export default function Dashboard() {
               <TrendingUp size={15} className="text-accent shrink-0" />
               <span className="whitespace-nowrap">Study Progress</span>
             </span>
-            <span className="text-accent font-['IBM_Plex_Mono'] text-xs whitespace-nowrap">
+            <span className="text-accent font-['JetBrains_Mono'] text-xs whitespace-nowrap">
               {statsData.flashcardCount > 0
                 ? Math.round((statsData.totalStudied / statsData.flashcardCount) * 100)
                 : 0}% covered
@@ -464,19 +464,19 @@ export default function Dashboard() {
           {/* KPI tiles */}
           <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-4">
             <div className="bg-surface-2 rounded-lg p-2 sm:p-3 border border-border-base flex flex-col items-center justify-center text-center min-w-0">
-              <span className="font-['IBM_Plex_Mono'] text-sm sm:text-base xl:text-lg font-bold text-text-primary leading-tight whitespace-nowrap">
+              <span className="font-['JetBrains_Mono'] text-sm sm:text-base xl:text-lg font-bold text-text-primary leading-tight whitespace-nowrap">
                 {(statsData.totalStudied + statsData.mcqAnswered).toLocaleString()}
               </span>
               <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-[#555] font-bold mt-1 whitespace-nowrap">Studied</span>
             </div>
             <div className="bg-surface-2 rounded-lg p-2 sm:p-3 border border-border-base flex flex-col items-center justify-center text-center min-w-0">
-              <span className="font-['IBM_Plex_Mono'] text-sm sm:text-base xl:text-lg font-bold text-accent leading-tight whitespace-nowrap">
+              <span className="font-['JetBrains_Mono'] text-sm sm:text-base xl:text-lg font-bold text-accent leading-tight whitespace-nowrap">
                 {statsData.internalized.toLocaleString()}
               </span>
               <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-[#555] font-bold mt-1 whitespace-nowrap">Mastered</span>
             </div>
             <div className="bg-surface-2 rounded-lg p-2 sm:p-3 border border-border-base flex flex-col items-center justify-center text-center min-w-0">
-              <span className="font-['IBM_Plex_Mono'] text-xs sm:text-sm xl:text-base font-bold text-text-primary leading-tight whitespace-nowrap">
+              <span className="font-['JetBrains_Mono'] text-xs sm:text-sm xl:text-base font-bold text-text-primary leading-tight whitespace-nowrap">
                 {(() => {
                   const totalMins = Object.values(history).reduce((s, v) => s + (v.timeSpent || 0), 0)
                   const hrs = Math.floor(totalMins / 60)
@@ -497,7 +497,7 @@ export default function Dashboard() {
                   <span className="inline-block w-2 h-2 rounded-sm bg-blue-400 opacity-80 shrink-0" />
                   <span className="truncate">LooksFam MCQ Items</span>
                 </span>
-                <span className="font-['IBM_Plex_Mono'] text-[10px] text-text-muted shrink-0 whitespace-nowrap">
+                <span className="font-['JetBrains_Mono'] text-[10px] text-text-muted shrink-0 whitespace-nowrap">
                   {statsData.mcqAnswered.toLocaleString()} / {statsData.mcqCount.toLocaleString()} answered
                 </span>
               </div>
@@ -522,7 +522,7 @@ export default function Dashboard() {
                   <span className="inline-block w-2 h-2 rounded-sm bg-accent opacity-80 shrink-0" />
                   <span className="truncate">Flashcards &amp; Formulas</span>
                 </span>
-                <span className="font-['IBM_Plex_Mono'] text-[10px] text-text-muted shrink-0 whitespace-nowrap">
+                <span className="font-['JetBrains_Mono'] text-[10px] text-text-muted shrink-0 whitespace-nowrap">
                   {statsData.totalStudied.toLocaleString()} / {statsData.flashcardCount.toLocaleString()} studied
                 </span>
               </div>
@@ -551,7 +551,7 @@ export default function Dashboard() {
                 <div key={item.subject}>
                   <div className="flex justify-between items-center mb-1">
                     <span className="font-['Rajdhani'] font-bold text-[11px] uppercase tracking-widest text-[#666]">{item.subject}</span>
-                    <span className="font-['IBM_Plex_Mono'] text-[11px]" style={{ color }}>{item.percent}%</span>
+                    <span className="font-['JetBrains_Mono'] text-[11px]" style={{ color }}>{item.percent}%</span>
                   </div>
                   <div className="w-full bg-surface-2 h-1.5 rounded-full overflow-hidden border border-border-base">
                     <div
@@ -572,7 +572,7 @@ export default function Dashboard() {
           <div className="mt-auto border-t border-[#1E1E1E] pt-3 mt-3">
             <div className="flex items-center justify-between">
               <span className="font-['Rajdhani'] text-[10px] uppercase tracking-widest text-[#666] font-bold">Internalization Rate</span>
-              <span className="font-['IBM_Plex_Mono'] text-[11px] text-accent">
+              <span className="font-['JetBrains_Mono'] text-[11px] text-accent">
                 {statsData.totalStudied > 0
                   ? Math.round((statsData.internalized / statsData.totalStudied) * 100)
                   : 0}%

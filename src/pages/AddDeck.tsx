@@ -445,7 +445,7 @@ export default function AddDeck() {
   }
 
   return (
-    <div className="h-full bg-engine-black overflow-y-auto show-scrollbar flex flex-col font-['IBM_Plex_Mono']">
+    <div className="h-full bg-engine-black overflow-y-auto show-scrollbar flex flex-col font-['JetBrains_Mono']">
       <AnimatePresence>
         {toast && (
           <motion.div
@@ -502,7 +502,7 @@ export default function AddDeck() {
                 <Save size={16} /> {saving ? 'Saving...' : 'Save Deck'}
               </button>
               {!canSave && (
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 absolute top-full right-0 mt-2 w-48 p-2 bg-surface-2 border border-[#333] rounded shadow-xl text-center text-xs font-['IBM_Plex_Mono'] text-text-muted pointer-events-none z-50">
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 absolute top-full right-0 mt-2 w-48 p-2 bg-surface-2 border border-[#333] rounded shadow-xl text-center text-xs font-['JetBrains_Mono'] text-text-muted pointer-events-none z-50">
                   Add a title and at least one complete card to save
                 </div>
               )}

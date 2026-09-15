@@ -108,7 +108,7 @@ export default function DeckMetadataForm({ metadata, setMetadata, scope, cards =
             placeholder='Enter deck title...'
             className="w-full bg-transparent text-text-primary text-[1.15rem] font-['Orbitron'] border-b-2 border-[#333] focus:border-accent pb-3 focus:outline-none placeholder:text-[#555] transition-colors tracking-wide pr-16"
           />
-          <span className="absolute right-0 bottom-4 text-xs font-['IBM_Plex_Mono'] text-[#666]">
+          <span className="absolute right-0 bottom-4 text-xs font-['JetBrains_Mono'] text-[#666]">
             {metadata.title.length} / 80
           </span>
         </div>
@@ -118,7 +118,7 @@ export default function DeckMetadataForm({ metadata, setMetadata, scope, cards =
             value={metadata.description}
             onChange={e => setMetadata(prev => ({ ...prev, description: e.target.value }))}
             placeholder="Add a description... (optional)"
-            className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 pr-10 text-text-primary text-sm font-['IBM_Plex_Mono'] focus:border-accent focus:bg-[#111] outline-none transition-colors placeholder-[#555]"
+            className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 pr-10 text-text-primary text-sm font-['JetBrains_Mono'] focus:border-accent focus:bg-[#111] outline-none transition-colors placeholder-[#555]"
           />
           <div className="absolute right-1.5 flex items-center">
             <AIDescriptionButton
@@ -140,7 +140,7 @@ export default function DeckMetadataForm({ metadata, setMetadata, scope, cards =
                 onChange={e => setMetadata(prev => ({ ...prev, folderName: e.target.value, folderId: null, showFolderDropdown: true }))}
                 onFocus={() => setMetadata(prev => ({ ...prev, showFolderDropdown: true }))}
                 placeholder="e.g. Select or type folder name..."
-                className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-text-primary text-sm font-['IBM_Plex_Mono'] focus:border-accent focus:bg-[#111] outline-none transition-colors pr-16 placeholder-[#555]"
+                className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-text-primary text-sm font-['JetBrains_Mono'] focus:border-accent focus:bg-[#111] outline-none transition-colors pr-16 placeholder-[#555]"
               />
               <div className="absolute right-2 flex items-center gap-1">
                 {metadata.folderName && (
@@ -176,7 +176,7 @@ export default function DeckMetadataForm({ metadata, setMetadata, scope, cards =
                   className="absolute left-0 right-0 top-full mt-1.5 z-50 bg-surface-2 border border-[#333] rounded-lg shadow-2xl max-h-48 overflow-y-auto custom-scrollbar"
                 >
                   {metadata.existingFolders.length === 0 ? (
-                    <div className="p-3 text-xs text-[#666] font-['IBM_Plex_Mono'] text-center">
+                    <div className="p-3 text-xs text-[#666] font-['JetBrains_Mono'] text-center">
                       No folders created yet. Type above to create one.
                     </div>
                   ) : (
@@ -188,7 +188,7 @@ export default function DeckMetadataForm({ metadata, setMetadata, scope, cards =
                             key={f.id}
                             type="button"
                             onClick={() => setMetadata(prev => ({ ...prev, folderName: f.name, folderId: f.id, showFolderDropdown: false }))}
-                            className="w-full text-left px-3 py-2 text-xs font-['IBM_Plex_Mono'] text-[#ccc] hover:bg-border-base hover:text-accent transition-colors flex items-center justify-between"
+                            className="w-full text-left px-3 py-2 text-xs font-['JetBrains_Mono'] text-[#ccc] hover:bg-border-base hover:text-accent transition-colors flex items-center justify-between"
                           >
                             <span>{f.name}</span>
                             {metadata.folderName.toLowerCase() === f.name.toLowerCase() && (
@@ -201,7 +201,7 @@ export default function DeckMetadataForm({ metadata, setMetadata, scope, cards =
                           className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-surface transition-colors"
                           onClick={() => setMetadata(prev => ({ ...prev, showFolderDropdown: false }))}
                         >
-                          <span className="font-['IBM_Plex_Mono'] text-xs text-accent">
+                          <span className="font-['JetBrains_Mono'] text-xs text-accent">
                             Create "{metadata.folderName}"
                           </span>
                           <Tooltip content="Confirm new folder name" position="top">

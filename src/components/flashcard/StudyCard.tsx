@@ -154,7 +154,7 @@ const ExplanationBlock: React.FC<{
     <>
       {explanation.text && (
         <div
-          className="text-sm font-['IBM_Plex_Mono'] text-[#d4d4d4] leading-relaxed text-left"
+          className="text-sm font-['JetBrains_Mono'] text-[#d4d4d4] leading-relaxed text-left"
           dangerouslySetInnerHTML={{ __html: renderMath(explanation.text) }}
         />
       )}
@@ -380,7 +380,7 @@ export const StudyCard = React.memo(function StudyCard({
             onKeyDown={e => { if (e.key === 'Enter') onWrittenSubmit() }}
             disabled={writtenSubmitted}
             placeholder="Type your answer..."
-            className="w-full bg-[#111] border border-[#333] focus:border-[var(--accent-primary)] text-text-primary placeholder-[#555] py-4 px-6 rounded-lg font-['IBM_Plex_Mono'] outline-none transition-colors"
+            className="w-full bg-[#111] border border-[#333] focus:border-[var(--accent-primary)] text-text-primary placeholder-[#555] py-4 px-6 rounded-lg font-['JetBrains_Mono'] outline-none transition-colors"
           />
           {!writtenSubmitted ? (
             <button onClick={onWrittenSubmit} className="w-full py-3 bg-[var(--accent-primary)] text-black rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-colors">Submit</button>
@@ -394,7 +394,7 @@ export const StudyCard = React.memo(function StudyCard({
                   {writtenCorrect ? 'Correct!' : 'Incorrect'}
                 </span>
                 {!writtenCorrect && (
-                  <div className="text-text-muted text-sm font-['IBM_Plex_Mono'] mt-1">
+                  <div className="text-text-muted text-sm font-['JetBrains_Mono'] mt-1">
                     Correct: <span className="text-accent" dangerouslySetInnerHTML={{ __html: renderMath(getCorrectAnswer(card, swapTermDef)) }} />
                   </div>
                 )}

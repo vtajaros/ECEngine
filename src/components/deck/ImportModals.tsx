@@ -239,7 +239,7 @@ export function ImportModal({ onImportCards, onClose }: { onImportCards: (cards:
             </div>
             <div>
               <h3 className="font-['Rajdhani'] text-text-primary font-bold uppercase tracking-wider text-lg">Import MCQ Questions</h3>
-              <p className="text-[11px] text-text-muted font-['IBM_Plex_Mono']">Paste your questions using the format below</p>
+              <p className="text-[11px] text-text-muted font-['JetBrains_Mono']">Paste your questions using the format below</p>
             </div>
           </div>
           <button onClick={onClose} className="text-text-muted hover:text-text-primary transition-colors p-2"><X size={20} /></button>
@@ -264,7 +264,7 @@ export function ImportModal({ onImportCards, onClose }: { onImportCards: (cards:
                   </div>
                   <div className="min-w-0">
                     <p className="text-accent text-xs font-['Rajdhani'] font-bold uppercase tracking-widest">Quizlet Format Detected</p>
-                    <p className="text-text-muted text-[11px] font-['IBM_Plex_Mono'] truncate">
+                    <p className="text-text-muted text-[11px] font-['JetBrains_Mono'] truncate">
                       This looks like Quizlet MCQ export — convert it to ECEngine format?
                     </p>
                   </div>
@@ -301,7 +301,7 @@ export function ImportModal({ onImportCards, onClose }: { onImportCards: (cards:
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <pre className="p-[0_16px_16px_16px] text-text-primary text-[13px] font-['IBM_Plex_Mono'] leading-relaxed whitespace-pre">
+                  <pre className="p-[0_16px_16px_16px] text-text-primary text-[13px] font-['JetBrains_Mono'] leading-relaxed whitespace-pre">
                     {`Q: Your question here
 A: First choice
 B: Second choice
@@ -325,7 +325,7 @@ ANS: D`}
               {/* Line Numbers Gutter */}
               <div
                 ref={gutterRef}
-                className="w-12 shrink-0 bg-engine-black text-[#444] font-['IBM_Plex_Mono'] text-sm text-right pr-3 pl-2 select-none overflow-hidden pt-5"
+                className="w-12 shrink-0 bg-engine-black text-[#444] font-['JetBrains_Mono'] text-sm text-right pr-3 pl-2 select-none overflow-hidden pt-5"
                 style={{ lineHeight: '1.5rem' }}
               >
                 {linesArray.map(line => {
@@ -376,14 +376,14 @@ ANS: D`}
                   value={inputText}
                   onChange={e => setInputText(e.target.value)}
                   placeholder="Paste your MCQ questions here..."
-                  className="w-full flex-1 bg-transparent relative z-10 text-text-primary p-5 focus:outline-none font-['IBM_Plex_Mono'] text-sm resize-none leading-normal"
+                  className="w-full flex-1 bg-transparent relative z-10 text-text-primary p-5 focus:outline-none font-['JetBrains_Mono'] text-sm resize-none leading-normal"
                   style={{ lineHeight: '1.5rem' }}
                 />
               </div>
             </div>
             {/* Live Feedback Bar */}
             <div className="bg-[#111] border border-t-0 border-[#333] rounded-b-lg p-3 flex items-center justify-between">
-              <span className={`text-xs font-['IBM_Plex_Mono'] font-bold ${feedbackColor}`}>
+              <span className={`text-xs font-['JetBrains_Mono'] font-bold ${feedbackColor}`}>
                 {feedbackText}
               </span>
             </div>
@@ -427,7 +427,7 @@ ANS: D`}
               {showErrors && (
                 <div className="p-3 pt-0 border-t border-warn/10 flex flex-col gap-2 max-h-32 overflow-y-auto custom-scrollbar bg-[#111]/50">
                   {previewWarnings.map((warning, idx) => (
-                    <div key={idx} className="text-text-primary text-[11px] font-['IBM_Plex_Mono'] flex items-start gap-2 py-1">
+                    <div key={idx} className="text-text-primary text-[11px] font-['JetBrains_Mono'] flex items-start gap-2 py-1">
                       <span className="text-warn shrink-0 mt-0.5">•</span>
                       <span className="flex-1">{warning}</span>
                       <button
@@ -693,7 +693,7 @@ export function ImportFlashcardsModal({ onImportCards, onClose }: { onImportCard
             </div>
             <div>
               <h3 className="font-['Rajdhani'] text-text-primary font-bold uppercase tracking-wider text-lg">Import Flashcards</h3>
-              <p className="text-[11px] text-text-muted font-['IBM_Plex_Mono']">Paste your terms and definitions using the format below</p>
+              <p className="text-[11px] text-text-muted font-['JetBrains_Mono']">Paste your terms and definitions using the format below</p>
             </div>
           </div>
           <button onClick={onClose} className="text-text-muted hover:text-text-primary transition-colors p-2"><X size={20} /></button>
@@ -718,7 +718,7 @@ export function ImportFlashcardsModal({ onImportCards, onClose }: { onImportCard
                   </div>
                   <div className="min-w-0">
                     <p className="text-accent text-xs font-['Rajdhani'] font-bold uppercase tracking-widest">Quizlet Format Detected</p>
-                    <p className="text-text-muted text-[11px] font-['IBM_Plex_Mono'] truncate">
+                    <p className="text-text-muted text-[11px] font-['JetBrains_Mono'] truncate">
                       This looks like Quizlet flashcard export — convert it to ECEngine format?
                     </p>
                   </div>
@@ -755,7 +755,7 @@ export function ImportFlashcardsModal({ onImportCards, onClose }: { onImportCard
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <pre className="p-[0_16px_16px_16px] text-text-primary text-[13px] font-['IBM_Plex_Mono'] leading-relaxed whitespace-pre">
+                  <pre className="p-[0_16px_16px_16px] text-text-primary text-[13px] font-['JetBrains_Mono'] leading-relaxed whitespace-pre">
                     {`Q: Term here
 A: Definition here
 
@@ -773,7 +773,7 @@ A: Another definition`}
               {/* Line Numbers Gutter */}
               <div
                 ref={gutterRef}
-                className="w-12 shrink-0 bg-engine-black text-[#444] font-['IBM_Plex_Mono'] text-sm text-right pr-3 pl-2 select-none overflow-hidden pt-5"
+                className="w-12 shrink-0 bg-engine-black text-[#444] font-['JetBrains_Mono'] text-sm text-right pr-3 pl-2 select-none overflow-hidden pt-5"
                 style={{ lineHeight: '1.5rem' }}
               >
                 {linesArray.map(line => {
@@ -824,14 +824,14 @@ A: Another definition`}
                   value={inputText}
                   onChange={e => setInputText(e.target.value)}
                   placeholder="Paste your flashcards here..."
-                  className="w-full flex-1 bg-transparent relative z-10 text-text-primary p-5 focus:outline-none font-['IBM_Plex_Mono'] text-sm resize-none leading-normal"
+                  className="w-full flex-1 bg-transparent relative z-10 text-text-primary p-5 focus:outline-none font-['JetBrains_Mono'] text-sm resize-none leading-normal"
                   style={{ lineHeight: '1.5rem' }}
                 />
               </div>
             </div>
             {/* Live Feedback Bar */}
             <div className="bg-[#111] border border-t-0 border-[#333] rounded-b-lg p-3 flex items-center justify-between">
-              <span className={`text-xs font-['IBM_Plex_Mono'] font-bold ${feedbackColor}`}>
+              <span className={`text-xs font-['JetBrains_Mono'] font-bold ${feedbackColor}`}>
                 {feedbackText}
               </span>
             </div>
@@ -875,7 +875,7 @@ A: Another definition`}
               {showErrors && (
                 <div className="p-3 pt-0 border-t border-warn/10 flex flex-col gap-2 max-h-32 overflow-y-auto custom-scrollbar bg-[#111]/50">
                   {previewWarnings.map((warning, idx) => (
-                    <div key={idx} className="text-text-primary text-[11px] font-['IBM_Plex_Mono'] flex items-start gap-2 py-1">
+                    <div key={idx} className="text-text-primary text-[11px] font-['JetBrains_Mono'] flex items-start gap-2 py-1">
                       <span className="text-warn shrink-0 mt-0.5">•</span>
                       <span className="flex-1">{warning}</span>
                       <button

@@ -29,7 +29,7 @@ export const StudySessionStats: React.FC<StudySessionStatsProps> = ({
       {/* Accuracy Tag */}
       <div className="flex items-center gap-2 bg-[#111] border border-[#333] px-3 py-1.5 rounded-lg">
         <Target size={14} className="text-[#00BFFF]" />
-        <span className="text-xs font-['IBM_Plex_Mono'] text-[#aaa] uppercase tracking-wider">
+        <span className="text-xs font-['JetBrains_Mono'] text-[#aaa] uppercase tracking-wider">
           Accuracy
         </span>
         <span className="text-sm font-['Rajdhani'] font-bold text-white tracking-widest">
@@ -40,7 +40,7 @@ export const StudySessionStats: React.FC<StudySessionStatsProps> = ({
       {/* Correct / Total Tag */}
       <div className="flex items-center gap-2 bg-[#111] border border-[#333] px-3 py-1.5 rounded-lg">
         <CheckCircle size={14} className="text-accent" />
-        <span className="text-xs font-['IBM_Plex_Mono'] text-[#aaa] uppercase tracking-wider">
+        <span className="text-xs font-['JetBrains_Mono'] text-[#aaa] uppercase tracking-wider">
           Correct
         </span>
         <span className="text-sm font-['Rajdhani'] font-bold text-white tracking-widest">
@@ -52,7 +52,7 @@ export const StudySessionStats: React.FC<StudySessionStatsProps> = ({
       {streakDays > 0 && (
         <div className="flex items-center gap-2 bg-[rgba(255,107,0,0.1)] border border-[rgba(255,107,0,0.3)] px-3 py-1.5 rounded-lg">
           <Flame size={14} className="text-[#FF6B00]" />
-          <span className="text-xs font-['IBM_Plex_Mono'] text-[#FF6B00] uppercase tracking-wider">
+          <span className="text-xs font-['JetBrains_Mono'] text-[#FF6B00] uppercase tracking-wider">
             Streak
           </span>
           <span className="text-sm font-['Rajdhani'] font-bold text-[#FF6B00] tracking-widest">
@@ -65,7 +65,7 @@ export const StudySessionStats: React.FC<StudySessionStatsProps> = ({
       {countdownSeconds !== undefined && (
         <div className="flex items-center gap-2 bg-[#111] border border-[#333] px-3 py-1.5 rounded-lg ml-auto">
           <Clock size={14} className="text-[#A855F7]" />
-          <span className="text-sm font-['IBM_Plex_Mono'] font-bold text-white tracking-widest">
+          <span className="text-sm font-['JetBrains_Mono'] font-bold text-white tracking-widest">
             {formatTime(countdownSeconds)}
           </span>
         </div>

@@ -189,7 +189,7 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
               <h2 className="font-['Rajdhani'] font-bold text-lg text-text-primary uppercase tracking-widest whitespace-nowrap">
                 Session History
               </h2>
-              <span className="text-xs px-2 py-0.5 rounded-full bg-[#111] border border-border-base font-['IBM_Plex_Mono'] text-accent whitespace-nowrap">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-[#111] border border-border-base font-['JetBrains_Mono'] text-accent whitespace-nowrap">
                 {sessions.length} Recorded
               </span>
             </div>
@@ -276,7 +276,7 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
           <div className="bg-surface-2 p-3 rounded-lg border border-border-base flex flex-col min-w-0">
             <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-text-muted font-bold truncate">Total Sessions</span>
             <div className="flex items-baseline gap-1 mt-1">
-              <span className="font-['IBM_Plex_Mono'] text-lg font-bold text-text-primary">{summaryMetrics.totalCount}</span>
+              <span className="font-['JetBrains_Mono'] text-lg font-bold text-text-primary">{summaryMetrics.totalCount}</span>
               <span className="font-['Rajdhani'] text-[9px] text-[#666] uppercase">runs</span>
             </div>
             <span className="font-['Rajdhani'] text-[9px] text-[#555] mt-0.5 truncate">
@@ -290,7 +290,7 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
               <span className="truncate">Flawless Answer Avg</span>
             </span>
             <div className="flex items-baseline gap-1 mt-1">
-              <span className="font-['IBM_Plex_Mono'] text-lg font-bold text-accent">
+              <span className="font-['JetBrains_Mono'] text-lg font-bold text-accent">
                 {summaryMetrics.learnAvgFirstTry != null ? `${summaryMetrics.learnAvgFirstTry}%` : '—'}
               </span>
             </div>
@@ -305,7 +305,7 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
               <span className="truncate">Test Mode Avg</span>
             </span>
             <div className="flex items-baseline gap-1 mt-1">
-              <span className="font-['IBM_Plex_Mono'] text-lg font-bold text-accent">
+              <span className="font-['JetBrains_Mono'] text-lg font-bold text-accent">
                 {summaryMetrics.testAvgScore != null ? `${summaryMetrics.testAvgScore}%` : '—'}
               </span>
             </div>
@@ -320,7 +320,7 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
               <span className="truncate">Items Solved</span>
             </span>
             <div className="flex items-baseline gap-1 mt-1">
-              <span className="font-['IBM_Plex_Mono'] text-lg font-bold text-text-primary">
+              <span className="font-['JetBrains_Mono'] text-lg font-bold text-text-primary">
                 {summaryMetrics.totalQuestionsAnswered}
               </span>
               <span className="font-['Rajdhani'] text-[9px] text-accent uppercase font-bold">MCQs</span>
@@ -390,7 +390,7 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
                           <span>TEST</span>
                         </div>
                       )}
-                      <span className="text-[8px] font-['IBM_Plex_Mono'] text-text-muted mt-0.5 uppercase tracking-tighter">
+                      <span className="text-[8px] font-['JetBrains_Mono'] text-text-muted mt-0.5 uppercase tracking-tighter">
                         {isLearn ? 'Flawless' : 'Exam'}
                       </span>
                     </div>
@@ -408,11 +408,11 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
                         />
                       </div>
                       {description.trim() !== '' && (
-                        <p className="text-xs text-text-muted font-['IBM_Plex_Mono'] line-clamp-1 leading-relaxed mt-0.5" title={description}>
+                        <p className="text-xs text-text-muted font-['JetBrains_Mono'] line-clamp-1 leading-relaxed mt-0.5" title={description}>
                           {description}
                         </p>
                       )}
-                      <div className="flex items-center gap-2 mt-1 text-[10px] text-text-muted font-['IBM_Plex_Mono']">
+                      <div className="flex items-center gap-2 mt-1 text-[10px] text-text-muted font-['JetBrains_Mono']">
                         <Calendar size={11} className="text-[#555] shrink-0" />
                         <span>{formatDate(session.finishedAt || session.startedAt)}</span>
                       </div>
@@ -424,11 +424,11 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
                     {/* Score / Ratio details */}
                     <div className="flex flex-col items-start sm:items-end">
                       <div className="flex items-baseline gap-1.5">
-                        <span className="font-['IBM_Plex_Mono'] text-base font-bold text-text-primary">
+                        <span className="font-['JetBrains_Mono'] text-base font-bold text-text-primary">
                           {session.score}
                           <span className="text-[#555] text-xs font-normal"> / {session.total}</span>
                         </span>
-                        <span className={`font-['IBM_Plex_Mono'] text-xs font-bold px-1.5 py-0.5 rounded border ${scoreStyle.text} ${scoreStyle.bg} ${scoreStyle.border}`}>
+                        <span className={`font-['JetBrains_Mono'] text-xs font-bold px-1.5 py-0.5 rounded border ${scoreStyle.text} ${scoreStyle.bg} ${scoreStyle.border}`}>
                           {pct}%
                         </span>
                       </div>

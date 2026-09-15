@@ -22,7 +22,7 @@ export default {
       },
       fontFamily: {
         display: ['Orbitron', 'sans-serif'],
-        body:    ['IBM Plex Mono', 'monospace'],
+        body:    ['JetBrains Mono', 'monospace'],
         ui:      ['Rajdhani', 'sans-serif'],
         rajdhani: ['Rajdhani', 'sans-serif'],
       },

@@ -82,7 +82,7 @@ export const AppShell: React.FC = () => {
   ]
 
   return (
-    <div className={`flex flex-col h-screen overflow-hidden bg-engine-black text-[var(--text-primary)] font-['IBM_Plex_Mono'] ${isFullscreen ? '' : 'rounded-xl border border-[#333]'}`}>
+    <div className={`flex flex-col h-screen overflow-hidden bg-engine-black text-[var(--text-primary)] font-['JetBrains_Mono'] ${isFullscreen ? '' : 'rounded-xl border border-[#333]'}`}>
       {!isFullscreen && (
         <TitleBar
           isCollapsed={isCollapsed}
