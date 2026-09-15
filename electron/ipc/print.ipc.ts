@@ -27,6 +27,7 @@ export function registerPrintHandlers(getMainWindow: () => Electron.BrowserWindo
         height: 800,
         frame: false,
         transparent: true,
+        backgroundColor: '#0D0D0D',
         title: `Test Paper View — ${title}`,
         autoHideMenuBar: true,
         icon: iconPath,
@@ -37,6 +38,7 @@ export function registerPrintHandlers(getMainWindow: () => Electron.BrowserWindo
         show: false,
         webPreferences: {
           partition: 'print',
+          zoomFactor: 1.0,
           preload: join(__dirname, '../preload/index.js'),
           contextIsolation: true,
           nodeIntegration: false,
@@ -49,13 +51,23 @@ export function registerPrintHandlers(getMainWindow: () => Electron.BrowserWindo
         printWindow = null
       })
 
+      let hasShown = false
+      const showWindowSmoothly = () => {
+        if (hasShown || !printWindow || printWindow.isDestroyed()) return
+        hasShown = true
+        printWindow.webContents.setZoomFactor(1)
+        printWindow.show()
+      }
+
+      printWindow.once('ready-to-show', showWindowSmoothly)
+
       // Override title AFTER did-finish-load — Chromium applies <title>ECEngine</title>
       // from the HTML after navigation, which overwrites the BrowserWindow constructor title.
       // Hooking did-finish-load guarantees our title wins every time.
       printWindow.webContents.on('did-finish-load', () => {
         printWindow?.setTitle(`Test Paper View — ${title}`)
-        printWindow?.webContents.setZoomFactor(1)
-        printWindow?.show()
+        // Fallback in case ready-to-show was already triggered or delayed by window manager
+        setTimeout(showWindowSmoothly, 100)
       })
 
       if (process.env['ELECTRON_RENDERER_URL']) {

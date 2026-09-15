@@ -311,7 +311,7 @@ const MathInputField: React.FC<MathInputFieldProps> = ({
               paddingRight: '40px',
               color: 'var(--text-primary)',
               fontSize: '1rem',
-              fontFamily: 'JetBrains Mono', monospace,
+              fontFamily: "'JetBrains Mono', monospace",
               '--keyboard-zindex': '99999',
             } as React.CSSProperties & Record<string, string>}
           />

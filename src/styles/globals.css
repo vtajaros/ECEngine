@@ -5,7 +5,7 @@
   font-family: 'Orbitron';
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
+  font-display: block;
   src: url('../assets/fonts/orbitron-400.woff2') format('woff2');
 }
 
@@ -13,7 +13,7 @@
   font-family: 'Orbitron';
   font-style: normal;
   font-weight: 700;
-  font-display: swap;
+  font-display: block;
   src: url('../assets/fonts/orbitron-700.woff2') format('woff2');
 }
 
@@ -21,7 +21,7 @@
   font-family: 'Orbitron';
   font-style: normal;
   font-weight: 900;
-  font-display: swap;
+  font-display: block;
   src: url('../assets/fonts/orbitron-900.woff2') format('woff2');
 }
 
@@ -30,7 +30,7 @@
   font-family: 'IBM Plex Mono';
   font-style: normal;
   font-weight: 300;
-  font-display: swap;
+  font-display: block;
   src: url('../assets/fonts/ibm-plex-mono-300.woff2') format('woff2');
 }
 
@@ -38,7 +38,7 @@
   font-family: 'IBM Plex Mono';
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
+  font-display: block;
   src: url('../assets/fonts/ibm-plex-mono-400.woff2') format('woff2');
 }
 
@@ -46,7 +46,7 @@
   font-family: 'IBM Plex Mono';
   font-style: normal;
   font-weight: 500;
-  font-display: swap;
+  font-display: block;
   src: url('../assets/fonts/ibm-plex-mono-500.woff2') format('woff2');
 }
 
@@ -54,7 +54,7 @@
   font-family: 'IBM Plex Mono';
   font-style: normal;
   font-weight: 600;
-  font-display: swap;
+  font-display: block;
   src: url('../assets/fonts/ibm-plex-mono-600.woff2') format('woff2');
 }
 
@@ -63,7 +63,7 @@
   font-family: 'JetBrains Mono';
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
+  font-display: block;
   src: url('../assets/fonts/jetbrains-mono-400.ttf') format('truetype');
 }
 
@@ -71,7 +71,7 @@
   font-family: 'JetBrains Mono';
   font-style: normal;
   font-weight: 700;
-  font-display: swap;
+  font-display: block;
   src: url('../assets/fonts/jetbrains-mono-700.ttf') format('truetype');
 }
 
@@ -80,7 +80,7 @@
   font-family: 'Rajdhani';
   font-style: normal;
   font-weight: 400;
-  font-display: swap;
+  font-display: block;
   src: url('../assets/fonts/rajdhani-400.woff2') format('woff2');
 }
 
@@ -88,7 +88,7 @@
   font-family: 'Rajdhani';
   font-style: normal;
   font-weight: 500;
-  font-display: swap;
+  font-display: block;
   src: url('../assets/fonts/rajdhani-500.woff2') format('woff2');
 }
 
@@ -96,7 +96,7 @@
   font-family: 'Rajdhani';
   font-style: normal;
   font-weight: 600;
-  font-display: swap;
+  font-display: block;
   src: url('../assets/fonts/rajdhani-600.woff2') format('woff2');
 }
 
@@ -104,7 +104,7 @@
   font-family: 'Rajdhani';
   font-style: normal;
   font-weight: 700;
-  font-display: swap;
+  font-display: block;
   src: url('../assets/fonts/rajdhani-700.woff2') format('woff2');
 }
 

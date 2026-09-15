@@ -276,7 +276,7 @@ ecengine/
 │   ├── db/                      # SQLite connection, schema bootstrap, migrations (v1–v9)
 │   └── ipc/                     # Modular IPC handlers (DB, Deck, AI, Print, Config, TTS, Export)
 ├── src/                         # React Frontend (Renderer)
-│   ├── assets/                  # Brand assets, icons, fonts (JetBrains Mono)
+│   ├── assets/                  # Brand assets, icons, bundled fonts (Rajdhani, JetBrains Mono, Orbitron)
 │   ├── components/              # Modular UI Components
 │   │   ├── ui/                  # Tooltip (auto-flipping), VolumeControl, FolderPanel, Toast
 │   │   ├── mcq/                 # MCQCard, LearnMode, TestMode, BookmarkedCardsModal
@@ -480,9 +480,13 @@ wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/medi
 ## 📐 Key Design Principles
 
 1. **Strict Offline First**: No external servers are required for core features. All decks, progress, and history remain on the user's local disk.
-2. **No Arbitrary Hex Colors**: UI components must use established CSS variables in `src/styles/theme.css` and Tailwind semantic classes (`bg-surface`, `border-border-base`, `text-accent`, etc.).
-3. **Separated Service Boundary**: React components query database operations through `src/services/db.service.ts` rather than invoking raw Electron IPCs directly.
-4. **Resilient KaTeX Rendering**: KaTeX math blocks are sanitized and normalized safely without running through DOMPurify SVG-corrupting filters.
+2. **Unified Cyberpunk Typography**:
+   * **Orbitron**: Display headers, page titles, hero text, and alert banners.
+   * **Rajdhani**: Primary application UI, navigation, buttons, badges, MCQ cards, flashcards, and Test Paper View.
+   * **JetBrains Mono**: All monospace data, numbers, charts, table reviews, code editors, AI explanations, and choice prefixes (`[A]`, `[B]`, `[C]`, `[D]`). *(Note: Replaced legacy IBM Plex Mono)*.
+3. **No Arbitrary Hex Colors**: UI components must use established CSS variables in `src/styles/theme.css` and Tailwind semantic classes (`bg-surface`, `border-border-base`, `text-accent`, etc.).
+4. **Separated Service Boundary**: React components query database operations through `src/services/db.service.ts` rather than invoking raw Electron IPCs directly.
+5. **Resilient KaTeX Rendering**: KaTeX math blocks are sanitized and normalized safely without running through DOMPurify SVG-corrupting filters.
 
 ---
 

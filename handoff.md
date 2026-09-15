@@ -12,8 +12,10 @@ ECEngine is a native, offline-first desktop application designed for Philippine 
 ## 2. UI & Design System
 - **Theme**: Cyberpunk-inspired, highly tactical interface.
 - **Typography**: 
-  - `Orbitron` / `Rajdhani` (Headers, Titles, UI Labels)
-  - `IBM_Plex_Mono` / `JetBrains Mono` (Data, Numbers, Tables, Code/Monospace)
+  - `Orbitron`: Display headers, page titles, hero text, and alert banners.
+  - `Rajdhani`: Primary UI interface, navigation, buttons, badges, MCQ question/choice cards, flashcards, and Test Paper View.
+  - `JetBrains Mono`: All monospace data, numbers, charts, table reviews, code editors, AI explanations, and choice prefixes (`[A]`, `[B]`, `[C]`, `[D]`).
+  - *(Note: `IBM Plex Mono` has been completely deprecated and removed from application code/styles in favor of `JetBrains Mono`)*
 - **Colors**: Deep dark backgrounds (`#050505`, `#080808`, `#0c0c0c`), neon accents. Do NOT use Tailwind generic colors unless instructed. Rely on existing CSS variables in `src/styles/theme.css` (e.g. `var(--bg-primary)`) or semantic tokens in `tailwind.config.ts` (`surface`, `surface-2`, `border-base`, `border-subtle`, `text-primary`, `text-muted`, `accent`, `warn`, `danger`).
 - **Subject Colors**: Handled in `src/lib/subjectColors.ts`. MATH (Amber), GEAS (Blue), ELECS (Red), EST (Green).
 - **Icons**: `lucide-react`.
@@ -107,6 +109,10 @@ React Components -> Zustand / React State -> src/services/db.service.ts (or aiSu
 - **3D card flip & slide transitions**: `rotateY` 3D CSS flip with cubic-bezier timing and `AnimatePresence + motion.div` horizontal card transitions.
 - **Print Window Fixes**: Isolated `printWindow` zoom from `mainWindow` by forcing `setZoomFactor(1)` on load, and fixed a Linux KDE/KWin stacking bug by toggling `alwaysOnTop: false` before opening the Save to PDF dialog.
 - **Global Zoom Controls**: Added `Ctrl+Mousewheel` discrete zoom stepping via a throttled listener in `AppShell.tsx`, delegating to a centralized `applyZoomIndex()` in `main.ts` (capped at 130%).
+- **Typography & Monospace Unification (IBM Plex Mono -> JetBrains Mono & Rajdhani)**:
+  - Deprecated and eliminated all instances of `IBM Plex Mono` across 39+ files, standardizing on `JetBrains Mono` for all monospace contexts (`font-['JetBrains_Mono']`, `body: ['JetBrains Mono', 'monospace']` in `tailwind.config.ts`, `--font-body: 'JetBrains Mono', monospace;` in `theme.css`).
+  - Switched the entire Test Paper View (`PrintView.tsx`) to `Rajdhani` sans-serif (18.5px question font, 17px choices, 15.5px explanations), matching interactive exam cards and improving readability.
+  - Stabilized local font loading in `globals.css` with `font-display: block;` and ensured smooth, flicker-free window opening for `PrintView` via Electron's `ready-to-show` event with synchronous zoom scale initialization.
 
 ## 7. Strict Rules
 - **DO NOT** introduce arbitrary inline styles unless absolutely necessary for dynamic layout (e.g., progress bars). Use Tailwind classes.

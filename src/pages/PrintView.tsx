@@ -469,7 +469,12 @@ export default function PrintView() {
   })
   const [exportState, setExportState] = useState<ExportState>('idle')
   const [exportError, setExportError] = useState('')
-  const [scale, setScale] = useState(1)
+  const [scale, setScale] = useState(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 800) {
+      return window.innerWidth / 800
+    }
+    return 1
+  })
   const [theme, setTheme] = useState<PrintTheme>(() => {
     const t = searchParams.get('theme')
     if (t === 'light' || t === 'sepia' || t === 'dark') return t
@@ -1241,16 +1246,7 @@ export default function PrintView() {
     </div>
   )
 
-  // -------------------------------------------------------------------------
-  // Loading state
-  // -------------------------------------------------------------------------
-  if (loading) {
-    return (
-      <div style={{ background: '#0D0D0D', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Loader2 size={32} className="animate-spin" style={{ color: 'var(--accent-primary)' }} />
-      </div>
-    )
-  }
+
 
   // -------------------------------------------------------------------------
   // Paper content
@@ -1643,25 +1639,31 @@ export default function PrintView() {
       )}
 
       <div ref={scrollAreaRef} className="flex-1 overflow-y-auto print-scrollbar" style={{ background: PRINT_THEMES[theme].vars['--pt-bg-outer'], padding: '40px 0' }}>
-        <div className="w-full flex justify-center pb-12 overflow-x-auto">
-          <div
-            id="print-paper-area"
-            ref={paperAreaRef}
-            className="w-[800px] max-w-none"
-            style={{
-              ...PRINT_THEMES[theme].vars,
-              maxWidth: '800px',
-              margin: '0 auto',
-              background: PRINT_THEMES[theme].vars['--pt-bg-paper'],
-              padding: '60px 70px',
-              boxShadow: '0 2px 16px rgba(0,0,0,0.13)',
-              minHeight: '1100px',
-              zoom: scale
-            } as any}
-          >
-            {paperContent}
+        {loading ? (
+          <div className="w-full flex items-center justify-center" style={{ minHeight: '600px' }}>
+            <Loader2 size={32} className="animate-spin" style={{ color: 'var(--accent-primary)' }} />
           </div>
-        </div>
+        ) : (
+          <div className="w-full flex justify-center pb-12 overflow-x-auto">
+            <div
+              id="print-paper-area"
+              ref={paperAreaRef}
+              className="w-[800px] max-w-none"
+              style={{
+                ...PRINT_THEMES[theme].vars,
+                maxWidth: '800px',
+                margin: '0 auto',
+                background: PRINT_THEMES[theme].vars['--pt-bg-paper'],
+                padding: '60px 70px',
+                boxShadow: '0 2px 16px rgba(0,0,0,0.13)',
+                minHeight: '1100px',
+                zoom: scale
+              } as any}
+            >
+              {paperContent}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Image lightbox */}
