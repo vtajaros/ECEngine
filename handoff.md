@@ -64,6 +64,13 @@ React Components -> Zustand / React State -> src/services/db.service.ts (or aiSu
 - **TypeScript Checking**: `npx tsc --noEmit` (Always ensure TS builds cleanly).
 
 ## 6. Recent Refactors & Features
+- **SM-2 Spaced Repetition Engine & Keyboard-Driven Study Workflow**:
+  - Implemented 4-grade SuperMemo-2 algorithm (`src/lib/sm2.ts`): Again (1, lapse reset), Hard (2, -20% interval), Good (3, progression ladder), and Easy (4, +0.15 EF boost).
+  - Database queries in `electron/db/database.ts` (`getCardsWithProgress` / `getDueCards`) filter due cards (`next_review <= today` or `NULL`), prioritizing unreviewed cards and deferring future items.
+  - Separate progress pathways: `data:saveProgress` for full SM-2 scheduling vs `data:recordCardResult` for lightweight MCQ stats.
+  - Keyboard study hotkeys: `1-4` for ratings, `Space`/`Enter` to advance, `Space`/`ArrowUp`/`ArrowDown` for flipping and collapsible explanations, `F` for Term/Def swap.
+  - Immediate audio cutoff on rating / navigation to stop active TTS streams and prevent sound bleed.
+  - End-to-end multi-session integration tests in `electron/db/sm2.integration.test.ts`.
 - **Favorite Decks System (Migration v9 & UI Integration)**:
   - Added `is_favorite BOOLEAN DEFAULT 0` column to `topics` table with index `idx_topics_is_favorite`.
   - Auto-migration v9 in `electron/db/database.ts` ensures backward-compatible upgrades on startup.

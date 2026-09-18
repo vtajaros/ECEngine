@@ -26,12 +26,31 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 ## 🚀 Core Features
 
 ### 🧠 Active Recall & Spaced Repetition (SM-2)
-* **Flashcards & Formula Recall**: Powered by the SuperMemo-2 (SM-2) scheduling algorithm (`Again`, `Hard`, `Good`, `Easy`) to maximize long-term retention.
-* **3D CSS Card Flips**: Realistic `rotateY` card flip animations with horizontal slide transitions (`AnimatePresence`).
-* **Written Mode**: Test active production by requiring exact typed answers before revealing the card back.
-* **Autoplay Mode with Synchronized TTS**: Hands-free study loop with synchronized text-to-speech reading (Web Speech API on Windows/macOS, Piper neural TTS on Linux).
-* **Keyboard Hotkeys**: `Space`, `ArrowUp`, or `ArrowDown` to flip cards; `1–4` to rate difficulty; `←` / `→` arrows to navigate.
-* **Study Controls**: Quick-toggle for Term/Definition swapping, card shuffling, and filtered bookmark review.
+* **SuperMemo-2 (SM-2) Scheduling Engine**: Fully implemented spaced repetition algorithm (`src/lib/sm2.ts`) that calculates interval expansions and Ease Factor adjustments based on review quality to maximize long-term retention:
+  * **Again (`1` / `< 1m`)**: Full lapse / incorrect recall. Resets consecutive repetitions to `0`, resets interval to `1` day, and applies standard SM-2 Ease Factor penalty ($\text{EF} \ge 1.3$).
+  * **Hard (`2` / `~5m`)**: Effortful retrieval. Preserves consecutive repetitions, contracts the interval by 20% ($\max(1, \text{round}(\text{Interval} \times 0.8))$), and decreases Ease Factor.
+  * **Good (`3` / `~10m`)**: Successful recall. Increments repetition count; schedules standard interval expansion ($1\text{d} \to 6\text{d} \to \text{round}(\text{Interval} \times \text{EF})$).
+  * **Easy (`4` / `4d+`)**: Effortless instant recall. Increments repetition count, computes expanded interval, and grants a bonus $+0.15$ Ease Factor boost (capped at $4.0$).
+* **Automated Due Queue & Calendar Scheduling**:
+  * Prioritizes unreviewed cards (`next_review IS NULL`) first, followed by due cards (`next_review <= today`) ordered chronologically.
+  * Future cards are automatically deferred and filtered out of active sessions until their due date arrives.
+  * Provides a dedicated completed/deferred queue screen with actionable feedback when all cards in a deck are scheduled for future review.
+* **Ergonomic Hotkeys & Keyboard Navigation**:
+  * `1` / `2` / `3` / `4`: Instantly submit SM-2 ratings (`Again`, `Hard`, `Good`, `Easy`) once the card back is revealed or a written answer is submitted.
+  * `Space` / `Enter`: Advance to the next card immediately after rating without lifting hands from the keyboard.
+  * `Space`, `ArrowUp`, or `ArrowDown`: Flip cards; `ArrowDown` / `ArrowUp` also seamlessly expands and collapses inline solutions/explanations.
+  * `←` / `→`: Navigate to the previous card or skip ahead.
+  * `F`: Instant hotkey toggle for Term / Definition swapping.
+* **Interactive Rating UI & Spring Physics**:
+  * Color-coded cyberpunk rating buttons (Red `#FF3333`, Amber `#FFB800`, Green `#00FF41`, Cyan `#00BFFF`) with animated spring transitions, button elevation, and active glow effects.
+  * Fixed-height utility slots to eliminate layout shifts and content jumping during card flips and rating feedback.
+  * Animated rating confirmation badges with dynamic reset countdown hints and glowing neon-green **Next Card** / **Finish** CTAs.
+* **Audio & TTS Synchronization**:
+  * Automatic audio cutoff: Rating a card or navigating immediately cancels active Web Speech API or Piper neural TTS streams, preventing voice overlap.
+  * Distinct sound effects on card ratings (`correct` tone vs `wrong` alert).
+* **Written Mode & Study Controls**:
+  * Active typed-answer mode requiring exact input validation and live accuracy tracking before revealing card answers.
+  * Study controls for shuffling, bookmarked-only filtering, and term/definition swapping.
 
 ---
 
@@ -147,6 +166,23 @@ Text fields across questions, choices, formulas, and explanations support inline
 | `$$E = mc^2$$` | Centered display block equation | $$E = mc^2$$ |
 | `\phase{30}` | Electrical angle / phasor | $\angle 30^{\circ}$ |
 | `\SI{10}{k\Omega}` | SI unit formatting | $10\text{ k}\Omega$ |
+
+---
+
+### ⌨️ Flashcard Study & Navigation Hotkeys
+
+| Key | Action | Context / Behavior |
+|---|---|---|
+| `Space` / `↑` / `↓` | **Flip Card** | Toggle between card Front and Back |
+| `↓` (Arrow Down) | **Expand Explanation** | Open collapsible step-by-step solution / AI breakdown (when flipped) |
+| `↑` (Arrow Up) | **Collapse Explanation** | Close collapsible explanation and restore card focus |
+| `1` | **Again** (`< 1m`) | Reset repetitions to 0, reset interval to 1d, apply EF penalty |
+| `2` | **Hard** (`~5m`) | Retain repetitions, contract interval by 20%, decrease EF |
+| `3` | **Good** (`~10m`) | Advance repetition stage (1d $\to$ 6d $\to$ $\text{Int} \times \text{EF}$), adjust EF |
+| `4` | **Easy** (`4d+`) | Advance repetition stage with bonus $+0.15$ Ease Factor boost |
+| `Space` / `Enter` | **Next Card** | Advance to next scheduled card after rating |
+| `←` / `→` | **Prev / Skip** | Navigate to previous card or skip current card without rating |
+| `F` | **Swap Term / Def** | Toggle between Term $\to$ Definition and Definition $\to$ Term |
 
 ---
 
