@@ -336,6 +336,7 @@ export default function FlashcardLearn() {
 
   // ── Navigation ──
   const goNext = () => {
+    stop()
     if (isAutoplay) setIsAutoplay(false)
     if (currentIndex < sessionCards.length - 1) {
       setCurrentIndex(i => i + 1)
@@ -348,6 +349,7 @@ export default function FlashcardLearn() {
 
   const handleFinish = async () => {
     if (isSubmitting) return
+    stop()
     if (isAutoplay) setIsAutoplay(false)
     
     // Save SM-2 progress for the final card before exiting
@@ -359,6 +361,7 @@ export default function FlashcardLearn() {
     exitSession()
   }
   const goPrev = () => {
+    stop()
     if (isAutoplay) setIsAutoplay(false)
     if (currentIndex > 0) {
       setCurrentIndex(i => i - 1)
@@ -502,15 +505,15 @@ Provide a thorough explanation covering ALL of the following:
     const deck = decks.find(d => d.id === deckId)
     if (!deck) return
 
-    let cards: Card[] = []
+    let rawCards: Card[] = []
     try {
-      cards = await dbService.getCardsPrioritized(deckId)
-      if (cards.length === 0) return
+      rawCards = await dbService.getDueCards(deckId)
     } catch (e) {
       console.error('[FlashcardLearn] Failed to load cards:', e)
       return
     }
 
+    let cards = [...rawCards]
     if (flashModalSettings.bookmarkedOnly) {
       const bm = loadFCBookmarks()
       cards = cards.filter(c => bm.has(`fc_bookmark_${c.id}`))
@@ -520,13 +523,15 @@ Provide a thorough explanation covering ALL of the following:
       cards = shuffleArray(cards)
     }
 
-    if (cards.length === 0) return
-
     // Sync modal TTS setting into the existing fcTtsEnabled state
     setFcTtsEnabled(flashModalSettings.ttsEnabled)
 
     // Sync swap setting into existing FCSettings
-    setSettings(s => ({ ...s, swapTermDef: flashModalSettings.swappedTerms }))
+    setSettings(s => ({
+      ...s,
+      swapTermDef: flashModalSettings.swappedTerms,
+      bookmarkedOnly: flashModalSettings.bookmarkedOnly,
+    }))
 
     // Defer autoplay by one tick so swapTermDef/ttsEnabled are committed first
     if (flashModalSettings.autoplay) {
@@ -540,7 +545,7 @@ Provide a thorough explanation covering ALL of the following:
     setCurrentIndex(0)
     setIsFlipped(false)
     setSessionCards(cards)
-    setActiveDeck({ id: deck.id, title: deck.title, cards })
+    setActiveDeck({ id: deck.id, title: deck.title, cards: rawCards })
 
     // Initialize SM-2 session so rateCard() writes to DB
     setSessionMode('study')
@@ -828,19 +833,28 @@ Provide a thorough explanation covering ALL of the following:
         onZoomImage={setZoomedImage}
         onShowContext={setShowContext}
         onRateCard={sessionMode === 'preview' ? async () => {} : async (rating) => {
+          stop()
           await rateCard(rating)
           if (useSessionStore.getState().isFinished) { exitSession() }
         }}
         onGetContext={handleGetContext}
         onGoNext={sessionMode === 'preview' ? goNext : () => {
-          const nextIdx = useSessionStore.getState().currentIndex
-          if (useSessionStore.getState().isFinished) { exitSession(); return }
+          stop()
+          if (isAutoplay) setIsAutoplay(false)
+          let nextIdx = useSessionStore.getState().currentIndex
+          if (nextIdx <= currentIndex) {
+            nextIdx = currentIndex + 1
+            useSessionStore.setState({ currentIndex: nextIdx })
+          }
+          if (useSessionStore.getState().isFinished || nextIdx >= sessionCards.length) {
+            exitSession()
+            return
+          }
           setCurrentIndex(nextIdx)
           setIsFlipped(false)
           setWrittenAnswer('')
           setWrittenSubmitted(false)
           setWrittenCorrect(null)
-          goNext()
         }}
         onGoPrev={goPrev}
         stop={stop}
@@ -852,23 +866,38 @@ Provide a thorough explanation covering ALL of the following:
 
   // Empty session fallback
   if (activeDeck && sessionCards.length === 0) {
+    const isBookmarkedOnly = settings.bookmarkedOnly
     return (
       <div className="h-full bg-engine-black flex flex-col items-center justify-center gap-6 p-10 text-center">
         <div className="flex flex-col items-center gap-2">
-          <Bookmark className="w-12 h-12 text-[var(--accent-primary)] opacity-50 mb-2" />
-          <p className="text-text-muted font-['JetBrains_Mono'] text-lg">No cards match your current filters.</p>
-          <p className="text-[#555] font-['Rajdhani'] uppercase tracking-widest text-sm">
-            (You might have 'Bookmarked Only' enabled with no bookmarks in this deck)
-          </p>
+          {isBookmarkedOnly ? (
+            <>
+              <Bookmark className="w-12 h-12 text-[var(--accent-primary)] opacity-50 mb-2" />
+              <p className="text-text-muted font-['JetBrains_Mono'] text-lg">No cards match your current filters.</p>
+              <p className="text-[#555] font-['Rajdhani'] uppercase tracking-widest text-sm">
+                (You might have 'Bookmarked Only' enabled with no bookmarks in this deck)
+              </p>
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-12 h-12 text-[var(--accent-primary)] opacity-70 mb-2" />
+              <p className="text-text-muted font-['JetBrains_Mono'] text-lg">No cards due for review.</p>
+              <p className="text-[#555] font-['Rajdhani'] uppercase tracking-widest text-sm">
+                All cards in this deck are scheduled for future review.
+              </p>
+            </>
+          )}
         </div>
 
         <div className="flex gap-4">
-          <button
-            onClick={() => setSettings(s => ({ ...s, bookmarkedOnly: false }))}
-            className="px-6 py-3 bg-[var(--accent-primary)] text-black rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-colors shadow-[0_0_15px_rgba(0,255,65,0.2)]"
-          >
-            Show All Cards
-          </button>
+          {isBookmarkedOnly && (
+            <button
+              onClick={() => setSettings(s => ({ ...s, bookmarkedOnly: false }))}
+              className="px-6 py-3 bg-[var(--accent-primary)] text-black rounded font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-[var(--accent-dim)] transition-colors shadow-[0_0_15px_rgba(0,255,65,0.2)]"
+            >
+              Show All Cards
+            </button>
+          )}
           <button
             onClick={handleExit}
             className="px-6 py-3 bg-[#111] border border-[#333] text-text-muted hover:text-white hover:border-[#555] rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"

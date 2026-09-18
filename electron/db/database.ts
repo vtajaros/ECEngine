@@ -304,3 +304,38 @@ export function execute(sql: string, params: any[] = []): { changes: number; las
     lastInsertRowid: Number(result.lastInsertRowid),
   };
 }
+
+export function getCardsWithProgress(
+  topicId: string,
+  options?: { dueOnly?: boolean }
+): any[] {
+  let sql = `
+    SELECT c.id, c.topic_id, c.type, c.data, c.tags, c.difficulty, c.is_custom, c.order_index, c.created_at,
+           COALESCE(p.ease_factor, 2.5)    AS ease_factor,
+           COALESCE(p.repetitions, 0)      AS repetitions,
+           COALESCE(p.interval, 1)         AS interval,
+           p.next_review                   AS next_review,
+           p.last_reviewed                 AS last_reviewed,
+           COALESCE(p.correct_count, 0)    AS correct_count,
+           COALESCE(p.total_count, 0)      AS total_count,
+           p.last_result                   AS last_result
+    FROM cards c
+    LEFT JOIN progress p ON c.id = p.card_id
+    WHERE c.topic_id = ?
+  `;
+  const params: unknown[] = [topicId];
+
+  if (options?.dueOnly) {
+    sql += ` AND (p.next_review IS NULL OR p.next_review = '' OR p.next_review <= date('now', 'localtime'))`;
+    sql += ` ORDER BY
+      CASE WHEN p.next_review IS NULL OR p.next_review = '' THEN 0 ELSE 1 END ASC,
+      p.next_review ASC,
+      c.order_index ASC,
+      c.created_at ASC`;
+  } else {
+    sql += ` ORDER BY c.order_index ASC, c.created_at ASC`;
+  }
+
+  return queryAll(sql, params);
+}
+

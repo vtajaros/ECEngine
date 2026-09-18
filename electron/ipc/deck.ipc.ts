@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron'
-import { queryAll, execute, getDB } from '../db/database'
+import { queryAll, execute, getDB, getCardsWithProgress } from '../db/database'
 import crypto from 'crypto'
 import { z } from 'zod'
 
@@ -204,20 +204,7 @@ export function registerDeckHandlers(): void {
 
   ipcMain.handle('data:getCardsWithProgress', async (_, topicId: string) => {
     try {
-      const rows = queryAll(
-        `SELECT c.id, c.topic_id, c.type, c.data, c.tags, c.difficulty, c.is_custom, c.order_index, c.created_at,
-                COALESCE(p.ease_factor, 2.5)    AS ease_factor,
-                COALESCE(p.repetitions, 0)      AS repetitions,
-                COALESCE(p.interval, 1)         AS interval,
-                COALESCE(p.correct_count, 0)    AS correct_count,
-                COALESCE(p.total_count, 0)      AS total_count,
-                p.last_result
-         FROM cards c
-         LEFT JOIN progress p ON c.id = p.card_id
-         WHERE c.topic_id = ?
-         ORDER BY c.order_index ASC, c.created_at ASC`,
-        [topicId]
-      )
+      const rows = getCardsWithProgress(topicId, { dueOnly: false })
       return { success: true, data: rows }
     } catch (error) {
       return { success: false, error: (error as Error).message }
@@ -260,44 +247,80 @@ export function registerDeckHandlers(): void {
 
   ipcMain.handle('decks:getFormulaMastery', async () => {
     try {
-      // ── Type-scoped mastery ────────────────────────────────────────────────
-      // Mastery is computed only from cards of the "primary type" of each topic
-      // so that different study modalities don't bleed into each other:
+      // ── Type-scoped mastery (denominator = ALL cards, not just studied ones) ──
+      //
+      // The old formula computed:
+      //   SUM(correct_count) / SUM(total_count)
+      // over only cards that HAD a progress row.  This meant studying 3 cards
+      // correctly out of 100 would show 50 % mastery (3/6 attempts) instead of
+      // the correct 3 %.
+      //
+      // Fix: denominator is always COUNT(*) of all qualifying cards in the topic.
       //
       //   • MCQ deck (or mixed MCQ+flashcard)
-      //       → only MCQ card progress counts  (written by LooksFam Learn/Test)
-      //   • Pure flashcard deck
-      //       → only flashcard card progress counts  (written by SM-2 rating)
-      //   • Pure formula / concept deck
-      //       → only those card types count  (written by SM-2 rating)
+      //       mastery = SUM(correct_count across mcq cards) / COUNT(all mcq cards)
+      //       Rationale: a card never attempted contributes 0 correct out of 1 total.
+      //
+      //   • Pure flashcard / formula / concept deck  (SM-2 scored)
+      //       mastery = COUNT(cards where repetitions >= 2) / COUNT(all cards)
+      //       Rationale: repetitions >= 2 means the card has been seen at least
+      //       twice AND not reset back to 0 by an "Again" rating — a meaningful
+      //       signal that the learner actually knows the card.
+      //       Cards never studied have repetitions = NULL → counted as 0.
       //
       // Rule: if a topic has ANY mcq cards, MCQ is the primary type.
-      //       Otherwise, use whichever non-mcq type the topic actually has.
-      //       This prevents SM-2 flashcard data from diluting MCQ mastery
-      //       and vice-versa.
+      //       Otherwise SM-2 scoring applies.
+      //       This prevents SM-2 data from diluting MCQ mastery and vice-versa.
       const rows = queryAll(`
         WITH topic_flags AS (
           SELECT topic_id,
                  MAX(CASE WHEN type = 'mcq'       THEN 1 ELSE 0 END) AS has_mcq,
-                 MAX(CASE WHEN type = 'flashcard'  THEN 1 ELSE 0 END) AS has_flashcard
+                 MAX(CASE WHEN type = 'flashcard'  THEN 1 ELSE 0 END) AS has_flashcard,
+                 COUNT(*)                                              AS total_cards
           FROM   cards
           GROUP  BY topic_id
+        ),
+        -- Only the cards that count for each topic's mastery metric
+        eligible AS (
+          SELECT c.topic_id,
+                 tf.has_mcq,
+                 tf.has_flashcard,
+                 c.id        AS card_id,
+                 p.correct_count,
+                 p.total_count,
+                 p.repetitions
+          FROM   cards       c
+          JOIN   topic_flags tf ON c.topic_id = tf.topic_id
+          LEFT   JOIN progress p ON c.id = p.card_id
+          WHERE
+            (tf.has_mcq = 1 AND c.type = 'mcq')
+            OR
+            (tf.has_mcq = 0 AND tf.has_flashcard = 1 AND c.type = 'flashcard')
+            OR
+            (tf.has_mcq = 0 AND tf.has_flashcard = 0 AND c.type NOT IN ('mcq', 'flashcard'))
         )
-        SELECT c.topic_id,
-               CAST(SUM(p.correct_count) AS REAL) / NULLIF(SUM(p.total_count), 0) AS mastery
-        FROM   cards       c
-        JOIN   topic_flags tf ON c.topic_id = tf.topic_id
-        LEFT   JOIN progress p ON c.id = p.card_id
-        WHERE
-          -- MCQ deck or mixed deck: only MCQ cards drive mastery
-          (tf.has_mcq = 1 AND c.type = 'mcq')
-          OR
-          -- Pure flashcard deck (no MCQ cards): only flashcard cards
-          (tf.has_mcq = 0 AND tf.has_flashcard = 1 AND c.type = 'flashcard')
-          OR
-          -- Formula / concept only deck (no MCQ, no flashcard): count those types
-          (tf.has_mcq = 0 AND tf.has_flashcard = 0 AND c.type NOT IN ('mcq', 'flashcard'))
-        GROUP  BY c.topic_id
+        SELECT
+          topic_id,
+          CASE
+            -- MCQ primary: cards the user has ever answered correctly / total MCQ cards
+            -- Uses last_result='correct' so a card repeated 5 times still counts as 1,
+            -- not 5. Unstudied cards (no progress row) contribute 0.
+            WHEN has_mcq = 1 THEN
+              CAST(
+                SUM(CASE WHEN last_result = 'correct' THEN 1 ELSE 0 END)
+                AS REAL
+              ) / NULLIF(COUNT(*), 0)
+
+            -- SM-2 primary: "learned" cards (seen ≥2 times and not reset by Again)
+            -- divided by ALL cards in the deck (including never-studied ones).
+            ELSE
+              CAST(
+                SUM(CASE WHEN COALESCE(repetitions, 0) >= 2 THEN 1 ELSE 0 END)
+                AS REAL
+              ) / NULLIF(COUNT(*), 0)
+          END AS mastery
+        FROM eligible
+        GROUP BY topic_id
       `)
       return { success: true, data: rows }
     } catch (error) {

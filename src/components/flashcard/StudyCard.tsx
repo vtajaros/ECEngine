@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { motion } from 'framer-motion'
+import React, { useState, useRef, useEffect } from 'react'
+import { motion, useIsPresent } from 'framer-motion'
 import { Bookmark, Check, XCircle, ChevronDown, ChevronUp } from 'lucide-react'
 import { renderMath } from '../../lib/latex'
 import { getDynamicFontSize } from '../../lib/textUtils'
@@ -229,11 +229,13 @@ interface StudyCardProps {
   onZoomImage: (path: string) => void
   onExplanationOpen?: (open: boolean, measuredPx: number, hasImage: boolean) => void
   forceExplanationOpen?: boolean
+  direction?: number
 }
 
 export const StudyCard = React.memo(function StudyCard({
   card,
   currentIndex,
+  direction = 1,
   isFlipped,
   swapTermDef,
   writtenMode,
@@ -252,9 +254,33 @@ export const StudyCard = React.memo(function StudyCard({
   forceExplanationOpen,
 }: StudyCardProps) {
   const [explanationOpen, setExplanationOpen] = React.useState(false)
+  const isPresent = useIsPresent()
+  const wasFlippedRef = useRef(isFlipped)
+
+  useEffect(() => {
+    if (isPresent) {
+      wasFlippedRef.current = isFlipped
+    }
+  }, [isFlipped, isPresent])
+
+  const effectiveTransform = isPresent
+    ? isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
+    : wasFlippedRef.current ? 'rotateY(180deg)' : 'rotateY(0deg)'
+
+  const effectiveTransition = isPresent
+    ? 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
+    : 'none'
 
   return (
-    <motion.div key={`${card.id}-${currentIndex}`} initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30, pointerEvents: 'none' } as any} transition={{ duration: 0.2, ease: 'easeOut' }}>
+    <motion.div
+      key={`${card.id}-${currentIndex}`}
+      initial={{ opacity: 0, x: direction * 35 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: -direction * 35, pointerEvents: 'none' } as any}
+      transition={{ duration: 0.22, ease: 'easeOut' }}
+      className="w-full"
+      style={{ gridColumn: 1, gridRow: 1 }}
+    >
       {/* 3D Flip Card Container */}
       <div
         className={`w-full ${explanationOpen ? 'cursor-default' : 'cursor-pointer'}`}
@@ -267,8 +293,8 @@ export const StudyCard = React.memo(function StudyCard({
             width: '100%',
             minHeight: '350px',
             transformStyle: 'preserve-3d',
-            transition: 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-            transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+            transition: effectiveTransition,
+            transform: effectiveTransform,
             willChange: 'transform',
           }}
         >

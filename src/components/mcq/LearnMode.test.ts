@@ -6,10 +6,16 @@ function makeMockCards(count: number): Card[] {
   return Array.from({ length: count }, (_, i) => ({
     id: `card-${i + 1}`,
     type: 'mcq',
+    topicId: 'test-topic',
+    difficulty: 'medium',
+    tags: [],
+    isCustom: false,
+    createdAt: new Date().toISOString(),
     data: {
       question: `Question ${i + 1}`,
       choices: ['A', 'B', 'C', 'D'],
       answer: 0,
+      explanation: '',
     },
   }))
 }

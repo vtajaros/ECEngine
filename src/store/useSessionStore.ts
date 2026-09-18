@@ -96,7 +96,18 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       const nextIndex = state.currentIndex + 1
       const isFinished = nextIndex >= state.currentDeck.length
 
+      const updatedDeck = [...state.currentDeck]
+      updatedDeck[state.currentIndex] = {
+        ...currentCard,
+        easeFactor,
+        interval,
+        repetitions,
+        nextReview: nextReviewStr,
+        lastReviewed: new Date().toISOString(),
+      }
+
       set({
+        currentDeck: updatedDeck,
         sessionStats: newStats,
         currentIndex: nextIndex,
         isFlipped: false,

@@ -104,6 +104,8 @@ export function useTTS(ttsEnabled: boolean) {
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
   const currentSourceRef = useRef<AudioBufferSourceNode | null>(null)
   const currentGainRef = useRef<GainNode | null>(null)
+  // Track active speech ID so in-flight async operations (synthesize/decode/voiceschanged) can be cancelled immediately
+  const activeSpeechIdRef = useRef(0)
   // Fix 6: track pending voiceschanged listeners so they can be torn down
   const pendingVoicesListenerRef = useRef<(() => void) | null>(null)
   // Linux: track pending tts:ended unsubscribe function
@@ -118,6 +120,9 @@ export function useTTS(ttsEnabled: boolean) {
   }, [])
 
   const stop = useCallback(() => {
+    // Invalidate any in-flight synthesis or speech requests immediately
+    activeSpeechIdRef.current++
+
     // Stop Web Audio playback node immediately
     if (currentSourceRef.current) {
       try {
@@ -175,6 +180,7 @@ export function useTTS(ttsEnabled: boolean) {
   // Cancel in-flight speech and any pending listeners on unmount
   useEffect(() => {
     return () => {
+      activeSpeechIdRef.current++
       if (currentSourceRef.current) {
         try {
           currentSourceRef.current.stop()
@@ -198,6 +204,7 @@ export function useTTS(ttsEnabled: boolean) {
 
   const speak = useCallback(
     (text: string) => {
+      stop()
       if (!ttsEnabled || getSoundsMuted()) return
 
       const vol = getSoundsMuted() ? 0 : getSoundVolume()
@@ -206,14 +213,7 @@ export function useTTS(ttsEnabled: boolean) {
       const clean = cleanTextForSpeech(text)
       if (!clean) return
 
-      // Stop any prior speech
-      if (currentSourceRef.current) {
-        try {
-          currentSourceRef.current.stop()
-        } catch {}
-        currentSourceRef.current = null
-        currentGainRef.current = null
-      }
+      const speechId = ++activeSpeechIdRef.current
 
       // ── Linux path: Web Audio API playback from Piper synthesis ───────────
       if (isLinux) {
@@ -222,17 +222,21 @@ export function useTTS(ttsEnabled: boolean) {
 
         if (window.electron.tts.synthesize) {
           window.electron.tts.synthesize(clean, modelPath).then(async (res) => {
+            if (speechId !== activeSpeechIdRef.current) return
             if (!res.success || !res.audioData) {
+              if (speechId !== activeSpeechIdRef.current) return
               window.electron.tts.speak(clean, modelPath, vol)
               return
             }
             const ctx = getTTSAudioContext()
-            if (!ctx) return
+            if (!ctx || speechId !== activeSpeechIdRef.current) return
 
             try {
               const raw = res.audioData
-              const arrayBuffer = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength)
+              const arrayBuffer = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength) as ArrayBuffer
               const decoded = await ctx.decodeAudioData(arrayBuffer)
+              if (speechId !== activeSpeechIdRef.current) return
+
               const source = ctx.createBufferSource()
               const gain = ctx.createGain()
               const currentVol = getSoundsMuted() ? 0 : getSoundVolume()
@@ -251,14 +255,17 @@ export function useTTS(ttsEnabled: boolean) {
               source.start(0)
             } catch {
               // Fallback
+              if (speechId !== activeSpeechIdRef.current) return
               window.electron.tts.speak(clean, modelPath, vol)
             }
           }).catch(() => {
+            if (speechId !== activeSpeechIdRef.current) return
             window.electron.tts.speak(clean, modelPath, vol)
           })
           return
         }
 
+        if (speechId !== activeSpeechIdRef.current) return
         window.electron.tts.speak(clean, modelPath, vol)
         return
       }
@@ -284,6 +291,7 @@ export function useTTS(ttsEnabled: boolean) {
           fired = true
           window.speechSynthesis.removeEventListener('voiceschanged', onVoicesReady)
           pendingVoicesListenerRef.current = null
+          if (speechId !== activeSpeechIdRef.current) return
           const utterance = new SpeechSynthesisUtterance(clean)
           utterance.rate = 0.95
           utterance.pitch = 1
@@ -297,6 +305,7 @@ export function useTTS(ttsEnabled: boolean) {
         return
       }
 
+      if (speechId !== activeSpeechIdRef.current) return
       const utterance = new SpeechSynthesisUtterance(clean)
       utterance.rate = 0.95
       utterance.pitch = 1
@@ -305,11 +314,12 @@ export function useTTS(ttsEnabled: boolean) {
       utteranceRef.current = utterance
       window.speechSynthesis.speak(utterance)
     },
-    [ttsEnabled, cleanupLinuxListener]
+    [ttsEnabled, cleanupLinuxListener, stop]
   )
 
   const speakWithCallback = useCallback(
     (text: string, onEnd: () => void) => {
+      stop()
       if (!ttsEnabled || getSoundsMuted()) { onEnd(); return }
 
       const vol = getSoundsMuted() ? 0 : getSoundVolume()
@@ -318,14 +328,7 @@ export function useTTS(ttsEnabled: boolean) {
       const clean = cleanTextForSpeech(text)
       if (!clean) { onEnd(); return }
 
-      // Stop any prior speech
-      if (currentSourceRef.current) {
-        try {
-          currentSourceRef.current.stop()
-        } catch {}
-        currentSourceRef.current = null
-        currentGainRef.current = null
-      }
+      const speechId = ++activeSpeechIdRef.current
 
       // ── Linux path: Web Audio API playback from Piper synthesis ───────────
       if (isLinux) {
@@ -334,21 +337,27 @@ export function useTTS(ttsEnabled: boolean) {
 
         if (window.electron.tts.synthesize) {
           window.electron.tts.synthesize(clean, modelPath).then(async (res) => {
+            if (speechId !== activeSpeechIdRef.current) return
             if (!res.success || !res.audioData) {
+              if (speechId !== activeSpeechIdRef.current) return
               const unsub = window.electron.tts.onEnded(() => {
                 unsub()
+                if (speechId !== activeSpeechIdRef.current) return
                 onEnd()
               })
+              pendingTtsEndedUnsubRef.current = unsub
               window.electron.tts.speak(clean, modelPath, vol)
               return
             }
             const ctx = getTTSAudioContext()
-            if (!ctx) { onEnd(); return }
+            if (!ctx || speechId !== activeSpeechIdRef.current) return
 
             try {
               const raw = res.audioData
-              const arrayBuffer = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength)
+              const arrayBuffer = raw.buffer.slice(raw.byteOffset, raw.byteOffset + raw.byteLength) as ArrayBuffer
               const decoded = await ctx.decodeAudioData(arrayBuffer)
+              if (speechId !== activeSpeechIdRef.current) return
+
               const source = ctx.createBufferSource()
               const gain = ctx.createGain()
               const currentVol = getSoundsMuted() ? 0 : getSoundVolume()
@@ -363,31 +372,41 @@ export function useTTS(ttsEnabled: boolean) {
                   currentSourceRef.current = null
                   currentGainRef.current = null
                 }
-                onEnd()
+                if (speechId === activeSpeechIdRef.current) {
+                  onEnd()
+                }
               }
               source.start(0)
             } catch {
+              if (speechId !== activeSpeechIdRef.current) return
               const unsub = window.electron.tts.onEnded(() => {
                 unsub()
+                if (speechId !== activeSpeechIdRef.current) return
                 onEnd()
               })
+              pendingTtsEndedUnsubRef.current = unsub
               window.electron.tts.speak(clean, modelPath, vol)
             }
           }).catch(() => {
+            if (speechId !== activeSpeechIdRef.current) return
             const unsub = window.electron.tts.onEnded(() => {
               unsub()
+              if (speechId !== activeSpeechIdRef.current) return
               onEnd()
             })
+            pendingTtsEndedUnsubRef.current = unsub
             window.electron.tts.speak(clean, modelPath, vol)
           })
           return
         }
 
+        if (speechId !== activeSpeechIdRef.current) return
         const unsub = window.electron.tts.onEnded(() => {
           unsub()
           if (pendingTtsEndedUnsubRef.current === unsub) {
             pendingTtsEndedUnsubRef.current = null
           }
+          if (speechId !== activeSpeechIdRef.current) return
           onEnd()
         })
         pendingTtsEndedUnsubRef.current = unsub
@@ -416,12 +435,17 @@ export function useTTS(ttsEnabled: boolean) {
           fired = true
           window.speechSynthesis.removeEventListener('voiceschanged', onVoicesReady)
           pendingVoicesListenerRef.current = null
+          if (speechId !== activeSpeechIdRef.current) return
           const utterance = new SpeechSynthesisUtterance(clean)
           utterance.rate = 0.95
           utterance.pitch = 1
           utterance.volume = vol
-          utterance.onend = () => onEnd()
-          utterance.onerror = () => onEnd()
+          utterance.onend = () => {
+            if (speechId === activeSpeechIdRef.current) onEnd()
+          }
+          utterance.onerror = () => {
+            if (speechId === activeSpeechIdRef.current) onEnd()
+          }
           utterance.voice = getBestVoice(savedVoiceName)
           window.speechSynthesis.speak(utterance)
         }
@@ -431,17 +455,22 @@ export function useTTS(ttsEnabled: boolean) {
         return
       }
 
+      if (speechId !== activeSpeechIdRef.current) return
       const utterance = new SpeechSynthesisUtterance(clean)
       utterance.rate = 0.95
       utterance.pitch = 1
       utterance.volume = vol
-      utterance.onend = () => onEnd()
-      utterance.onerror = () => onEnd()
+      utterance.onend = () => {
+        if (speechId === activeSpeechIdRef.current) onEnd()
+      }
+      utterance.onerror = () => {
+        if (speechId === activeSpeechIdRef.current) onEnd()
+      }
       utterance.voice = getBestVoice(savedVoiceName)
       utteranceRef.current = utterance
       window.speechSynthesis.speak(utterance)
     },
-    [ttsEnabled, cleanupLinuxListener]
+    [ttsEnabled, cleanupLinuxListener, stop]
   )
 
   return { speak, stop, speakWithCallback }

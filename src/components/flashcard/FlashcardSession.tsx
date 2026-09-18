@@ -180,6 +180,37 @@ export function FlashcardSession({
 
   const { play } = useSound()
 
+  const handleRate = React.useCallback(async (rating: number) => {
+    if (selectedRating !== null || isSubmitting) return
+    // Cancel TTS immediately when an SM-2 rating button is clicked
+    stop()
+    setSelectedRating(rating)
+    setShowRatingFeedback(true)
+    if (rating === 1) {
+      play('wrong')
+    } else {
+      play('correct')
+    }
+    await onRateCard(rating)
+  }, [selectedRating, isSubmitting, stop, play, onRateCard])
+
+  // Rating keyboard shortcuts (1: Again, 2: Hard, 3: Good, 4: Easy)
+  useEffect(() => {
+    const handleRatingKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (mode !== 'study' || wasAutoplayed || isAutoplay || explanationOpen) return
+      if (!isFlipped && !(settings.writtenMode && writtenSubmitted)) return
+      if (selectedRating !== null || isSubmitting) return
+
+      if (e.key >= '1' && e.key <= '4') {
+        e.preventDefault()
+        handleRate(parseInt(e.key, 10))
+      }
+    }
+    window.addEventListener('keydown', handleRatingKey)
+    return () => window.removeEventListener('keydown', handleRatingKey)
+  }, [mode, wasAutoplayed, isAutoplay, explanationOpen, isFlipped, settings.writtenMode, writtenSubmitted, selectedRating, isSubmitting, handleRate])
+
   // Gate flip — block when explanation is open via click
   const gatedFlip = React.useCallback(() => {
     if (explanationOpen) return
@@ -188,17 +219,68 @@ export function FlashcardSession({
 
   const utilityVisible = (isFlipped || (settings.writtenMode && writtenSubmitted)) && !isAutoplay
 
-  useEffect(() => {
-    setIsNavigating(true)
-    // Reset ALL layout-affecting state in one batch so the column
-    // reaches its final scanning-mode height before the card animation starts.
+  const prevIndexRef = React.useRef(currentIndex)
+  const direction = currentIndex >= prevIndexRef.current ? 1 : -1
+  React.useEffect(() => {
+    prevIndexRef.current = currentIndex
+  }, [currentIndex])
+
+  // Synchronously reset layout-affecting state during render on index change
+  // so the new card mounts directly into its final resting geometry without a delayed frame.
+  const [prevCurrentIndex, setPrevCurrentIndex] = useState(currentIndex)
+  if (currentIndex !== prevCurrentIndex) {
+    setPrevCurrentIndex(currentIndex)
     setSelectedRating(null)
     setShowRatingFeedback(false)
     setExplanationOpen(false)
     setForceExplanationOpen(undefined)
     setAlignTop(false)
+    setIsNavigating(true)
+  }
 
-    // Re-enable margin transitions after card exit/enter settles
+  const handleNextCard = React.useCallback(() => {
+    setSelectedRating(null)
+    setShowRatingFeedback(false)
+    setExplanationOpen(false)
+    setForceExplanationOpen(undefined)
+    setAlignTop(false)
+    setIsNavigating(true)
+    if (currentIndex < sessionCards.length - 1) {
+      onGoNext()
+    } else {
+      onExit()
+    }
+  }, [currentIndex, sessionCards.length, onGoNext, onExit])
+
+  const handlePrevCard = React.useCallback(() => {
+    setSelectedRating(null)
+    setShowRatingFeedback(false)
+    setExplanationOpen(false)
+    setForceExplanationOpen(undefined)
+    setAlignTop(false)
+    setIsNavigating(true)
+    onGoPrev()
+  }, [onGoPrev])
+
+  // Allow Enter / Space to advance to the next card once a rating has been selected
+  useEffect(() => {
+    const handleNextKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return
+      if (selectedRating === null) return
+      if (e.key === 'Enter' || e.key === ' ' || e.code === 'Space') {
+        e.preventDefault()
+        e.stopPropagation()
+        handleNextCard()
+      }
+    }
+    window.addEventListener('keydown', handleNextKey, { capture: true })
+    return () => window.removeEventListener('keydown', handleNextKey, { capture: true })
+  }, [selectedRating, handleNextCard])
+
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop = 0
+    }
     const t = setTimeout(() => setIsNavigating(false), 300)
     return () => clearTimeout(t)
   }, [currentIndex])
@@ -331,7 +413,7 @@ export function FlashcardSession({
         )}
       </AnimatePresence>
 
-      {/* Card Area — single centered column, card + buttons + AI panel stacked together */}
+      {/* Card Area — single centered column */}
       <div ref={scrollContainerRef} className="flex-1 flex items-start justify-center min-h-0 px-6 lg:px-10 overflow-y-auto">
         <div
           className="w-full max-w-3xl flex flex-col gap-4"
@@ -341,168 +423,236 @@ export function FlashcardSession({
             transition: isNavigating ? 'none' : 'margin-top 0.3s ease-in-out',
           }}
         >
-
-          {showRatingFeedback && selectedRating !== null && (() => {
-            const fb = RATING_FEEDBACK[selectedRating]
-            return (
-              <motion.div
-                key="rating-feedback"
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2 }}
-                className="flex items-center gap-3 px-5 py-3 rounded-lg border bg-[#111]"
-                style={{ borderColor: fb.color }}
-              >
-                <span
-                  className="font-['Rajdhani'] font-bold uppercase tracking-widest text-sm"
-                  style={{ color: fb.color }}
-                >
-                  {fb.label}
-                </span>
-                <span className="text-[#888] font-['JetBrains_Mono'] text-xs">
-                  {fb.message}
-                </span>
-              </motion.div>
-            )
-          })()}
-
-          <AnimatePresence mode="wait">
-            <StudyCard
-              key={`studycard-${currentCard.id}-${currentIndex}`}
-              card={currentCard}
-              currentIndex={currentIndex}
-              isFlipped={isFlipped}
-              swapTermDef={settings.swapTermDef}
-              writtenMode={settings.writtenMode}
-              writtenAnswer={writtenAnswer}
-              writtenSubmitted={writtenSubmitted}
-              writtenCorrect={writtenCorrect}
-              isAutoplay={isAutoplay}
-              isBookmarked={isBookmarked}
-              onFlip={gatedFlip}
-              onBookmarkToggle={onBookmarkToggle}
-              onWrittenChange={onWrittenChange}
-              onWrittenSubmit={onWrittenSubmit}
-              onViewCard={onViewCard}
-              onZoomImage={onZoomImage}
-              forceExplanationOpen={forceExplanationOpen}
-              onExplanationOpen={(open, _measuredPx, hasImage) => {
-                setExplanationOpen(open)
-                if (!open) {
-                  setTimeout(() => setAlignTop(false), 300)
-                  return
-                }
-                // Shift up for image explanations or tall text (>120px ~ 4+ lines)
-                setAlignTop(hasImage || _measuredPx > 120)
-              }}
-            />
-          </AnimatePresence>
-
-          {/* Rating row — only in study mode when NOT autoplayed, opacity toggle, no layout shift */}
-          {mode === 'study' && !wasAutoplayed && (
-          <div className={`h-[84px] flex items-center justify-center w-full transition-opacity duration-100 ${explanationVisible ? 'opacity-0' : 'opacity-100'}`} {...(explanationOpen ? { inert: '' } : {})}>
-            <div className={`flex gap-3 transition-opacity duration-150 ${(isFlipped || (settings.writtenMode && writtenSubmitted)) && !isAutoplay && !explanationOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-              {[
-                { rating: 1, label: 'Again', sub: '< 1m', hint: 'Wrong or blank',         color: '#FF3333' },
-                { rating: 2, label: 'Hard',  sub: '~5m',  hint: 'Right but struggled',    color: '#FFB800' },
-                { rating: 3, label: 'Good',  sub: '~10m', hint: 'Right with some effort', color: '#00FF41' },
-                { rating: 4, label: 'Easy',  sub: '4d+',  hint: 'Instant recall',         color: '#00BFFF' },
-              ].map(({ rating, label, sub, hint, color }) => (
-                <button
-                  key={rating}
-                  onClick={async () => {
-                    if (selectedRating !== null) return
-                    setSelectedRating(rating)
-                    setShowRatingFeedback(true)
-                    if (rating === 1) {
-                      play('wrong')
-                    } else {
-                      play('correct')
-                    }
-                    await onRateCard(rating)
-                  }}
-                  disabled={isSubmitting || (selectedRating !== null && selectedRating !== rating)}
-                  className={`px-5 py-2 border rounded transition-all flex flex-col items-center disabled:opacity-40 disabled:cursor-not-allowed ${
-                    selectedRating === rating
-                      ? 'bg-[#1a1a1a] scale-105 shadow-[0_0_12px_rgba(0,0,0,0.4)]'
-                      : selectedRating !== null
-                        ? 'bg-[#111] opacity-40 cursor-not-allowed'
-                        : 'bg-[#111] hover:bg-[#161616] cursor-pointer'
-                  }`}
-                  style={{ borderColor: color, color }}
-                >
-                  <span className="font-['Rajdhani'] font-bold text-lg mb-0.5">{label}</span>
-                  <span className="text-xs text-text-muted">{sub}</span>
-                  <span className="text-[10px] text-[#555] mt-0.5 font-['JetBrains_Mono']">{hint}</span>
-                </button>
-              ))}
-              {isSubmitting && (
-                <div className="self-center ml-2 flex items-center gap-2 text-text-muted text-xs font-['Rajdhani'] animate-pulse">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
-                  Saving…
-                </div>
-              )}
-            </div>
+          {/* Card */}
+          <div
+            className="w-full relative min-h-[350px] overflow-hidden"
+            style={{ display: 'grid', gridTemplateColumns: '1fr', gridTemplateRows: '1fr' }}
+          >
+            <AnimatePresence initial={false}>
+              <StudyCard
+                key={`studycard-${currentCard.id}-${currentIndex}`}
+                card={currentCard}
+                currentIndex={currentIndex}
+                direction={direction}
+                isFlipped={isFlipped}
+                swapTermDef={settings.swapTermDef}
+                writtenMode={settings.writtenMode}
+                writtenAnswer={writtenAnswer}
+                writtenSubmitted={writtenSubmitted}
+                writtenCorrect={writtenCorrect}
+                isAutoplay={isAutoplay}
+                isBookmarked={isBookmarked}
+                onFlip={gatedFlip}
+                onBookmarkToggle={onBookmarkToggle}
+                onWrittenChange={onWrittenChange}
+                onWrittenSubmit={onWrittenSubmit}
+                onViewCard={onViewCard}
+                onZoomImage={onZoomImage}
+                forceExplanationOpen={forceExplanationOpen}
+                onExplanationOpen={(open, _measuredPx, hasImage) => {
+                  setExplanationOpen(open)
+                  if (!open) {
+                    setTimeout(() => setAlignTop(false), 300)
+                    return
+                  }
+                  setAlignTop(hasImage || _measuredPx > 120)
+                }}
+              />
+            </AnimatePresence>
           </div>
-          )}
 
-          {mode === 'study' && (wasAutoplayed || (showRatingFeedback && selectedRating !== null)) && !explanationOpen && (isFlipped || (settings.writtenMode && writtenSubmitted)) && !isAutoplay && (
-            <div className="flex justify-center">
-              {currentIndex < sessionCards.length - 1 ? (
-                <button
-                  onClick={onGoNext}
-                  className="flex items-center gap-2 px-8 py-3 rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest text-sm border-2 transition-all hover:opacity-80 bg-[#111]"
-                  style={{
-                    borderColor: '#00FF41',
-                    color: '#00FF41',
-                    boxShadow: '0 0 12px rgba(0,255,65,0.2)'
-                  }}
-                >
-                  Next Card <ArrowRight className="w-4 h-4" />
-                </button>
-              ) : (
-                <button
-                  onClick={onExit}
-                  className="flex items-center gap-2 px-8 py-3 rounded-lg font-['Rajdhani'] font-bold uppercase tracking-widest text-sm border-2 transition-all hover:opacity-80 bg-[#111]"
-                  style={{
-                    borderColor: '#00FF41',
-                    color: '#00FF41',
-                    boxShadow: '0 0 12px rgba(0,255,65,0.2)'
-                  }}
-                >
-                  Finish <ArrowRight className="w-4 h-4" />
-                </button>
-              )}
+          {/* SM-2 Rating Zone (study mode, not autoplayed) */}
+          {mode === 'study' && !wasAutoplayed && (
+            <div
+              className={`transition-opacity duration-100 ${explanationVisible ? 'opacity-0' : 'opacity-100'}`}
+              {...(explanationOpen ? { inert: '' } : {})}
+            >
+              {/* SM-2 rating buttons */}
+              <div className="h-[84px] flex items-center justify-center w-full">
+                <div className={`flex gap-3 transition-opacity duration-150 ${
+                  (isFlipped || (settings.writtenMode && writtenSubmitted)) && !isAutoplay && !explanationOpen
+                    ? 'opacity-100 pointer-events-auto'
+                    : 'opacity-0 pointer-events-none'
+                }`}>
+                  {[
+                    { rating: 1, label: 'Again', sub: '< 1m', hint: 'Wrong or blank',         color: '#FF3333' },
+                    { rating: 2, label: 'Hard',  sub: '~5m',  hint: 'Right but struggled',    color: '#FFB800' },
+                    { rating: 3, label: 'Good',  sub: '~10m', hint: 'Right with some effort', color: '#00FF41' },
+                    { rating: 4, label: 'Easy',  sub: '4d+',  hint: 'Instant recall',         color: '#00BFFF' },
+                  ].map(({ rating, label, sub, hint, color }) => {
+                    const isSelected = selectedRating === rating
+                    const isOtherSelected = selectedRating !== null && !isSelected
+                    return (
+                      <motion.button
+                        key={rating}
+                        onClick={() => handleRate(rating)}
+                        disabled={isSubmitting || isOtherSelected}
+                        whileHover={selectedRating === null ? { scale: 1.04, y: -2 } : {}}
+                        whileTap={selectedRating === null ? { scale: 0.95 } : {}}
+                        animate={{
+                          scale: isSelected ? 1.06 : isOtherSelected ? 0.95 : 1,
+                          opacity: isOtherSelected ? 0.25 : 1,
+                        }}
+                        transition={{ type: 'spring', stiffness: 450, damping: 25 }}
+                        className={`px-5 py-2.5 border rounded-lg flex flex-col items-center select-none ${
+                          isSelected ? 'cursor-default shadow-lg' : isOtherSelected ? 'cursor-not-allowed' : 'cursor-pointer'
+                        }`}
+                        style={{
+                          borderColor: color,
+                          color,
+                          backgroundColor: isSelected ? `${color}18` : '#111',
+                          boxShadow: isSelected ? `0 0 20px ${color}50, inset 0 0 12px ${color}20` : undefined,
+                        }}
+                      >
+                        <span className="font-['Rajdhani'] font-bold text-lg mb-0.5 tracking-wide leading-tight">{label}</span>
+                        <span className="text-xs text-text-muted font-['JetBrains_Mono']">{sub}</span>
+                        <span className="text-[10px] text-[#777] mt-0.5 font-['JetBrains_Mono']">{hint}</span>
+                      </motion.button>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
           )}
 
-          {/* Utility row — opacity toggle, no layout shift */}
-          <div className={`h-[40px] flex items-center justify-center gap-3 w-full transition-opacity duration-100 ${explanationVisible ? 'opacity-0' : 'opacity-100'}`} {...(explanationOpen ? { inert: '' } : {})}>
+          {/* Autoplay mode: show Next Card once wasAutoplayed */}
+          {mode === 'study' && wasAutoplayed && (
+            <AnimatePresence>
+              {!explanationOpen && (isFlipped || (settings.writtenMode && writtenSubmitted)) && !isAutoplay && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 6 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                  className="flex justify-center"
+                >
+                  <motion.button
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
+                    onClick={handleNextCard}
+                    className="flex items-center gap-2 px-8 py-2.5 rounded-full font-['Rajdhani'] font-bold uppercase tracking-widest text-sm border-2 bg-[#111] cursor-pointer"
+                    style={{ borderColor: '#00FF41', color: '#00FF41', boxShadow: '0 0 14px rgba(0,255,65,0.3)' }}
+                  >
+                    {currentIndex < sessionCards.length - 1 ? (
+                      <>Next Card <ArrowRight className="w-4 h-4" /></>
+                    ) : (
+                      <>Finish <ArrowRight className="w-4 h-4" /></>
+                    )}
+                  </motion.button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          )}
+
+          {/* Utility row — Prev / Get Context / Explain / Skip ── opacity only, no layout */}
+          <div
+            className={`h-[40px] flex items-center justify-center gap-3 w-full transition-opacity duration-100 ${explanationVisible ? 'opacity-0' : 'opacity-100'}`}
+            {...(explanationOpen ? { inert: '' } : {})}
+          >
             <div className={`flex items-center gap-3 transition-opacity duration-150 ${utilityVisible && !explanationOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-              <button onClick={onGoPrev} disabled={currentIndex === 0}
-                className="flex items-center gap-2 px-4 py-2 bg-[#111] border border-[#333] rounded text-text-muted font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-border-base hover:border-[#555] transition-all disabled:opacity-30 disabled:cursor-default text-xs">
+              <button
+                onClick={handlePrevCard}
+                disabled={currentIndex === 0}
+                className="flex items-center gap-2 px-4 py-2 bg-[#111] border border-[#333] rounded text-text-muted font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-border-base hover:border-[#555] transition-all disabled:opacity-30 disabled:cursor-default text-xs"
+              >
                 <ArrowLeft className="w-3 h-3" /> Prev
               </button>
               {onGetContext && (
-              <button onClick={onGetContext}
-                className="flex items-center gap-2 px-4 py-2 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-text-muted transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs">
-                <Copy className="w-3.5 h-3.5" /> Get Context
-              </button>
+                <button
+                  onClick={onGetContext}
+                  className="flex items-center gap-2 px-4 py-2 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-text-muted transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
+                >
+                  <Copy className="w-3.5 h-3.5" /> Get Context
+                </button>
               )}
               {onGetContext && onShowContext && (
-              <button onClick={() => onShowContext(!showContext)}
-                className="flex items-center gap-2 px-4 py-2 border border-[rgba(0,255,65,0.3)] rounded text-accent hover:bg-[rgba(0,255,65,0.08)] hover:border-accent transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs">
-                <Sparkles className="w-3.5 h-3.5" /> Explain
-              </button>
+                <button
+                  onClick={() => onShowContext(!showContext)}
+                  className="flex items-center gap-2 px-4 py-2 border border-[rgba(0,255,65,0.3)] rounded text-accent hover:bg-[rgba(0,255,65,0.08)] hover:border-accent transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
+                >
+                  <Sparkles className="w-3.5 h-3.5" /> Explain
+                </button>
               )}
-              <button onClick={onGoNext} disabled={currentIndex === sessionCards.length - 1}
-                className="flex items-center gap-2 px-4 py-2 bg-[#111] border border-[#333] rounded text-text-muted font-['Rajdhani'] font-bold uppercase tracking-widest hover:bg-border-base hover:border-[#555] transition-all disabled:opacity-30 disabled:cursor-default text-xs">
-                Next <ArrowRight className="w-3 h-3" />
+              {/* Skip — dimmed once rated (feedback+Next Card row below takes over) */}
+              <button
+                onClick={handleNextCard}
+                disabled={currentIndex === sessionCards.length - 1}
+                className={`flex items-center gap-2 px-4 py-2 bg-[#111] border rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all disabled:opacity-30 disabled:cursor-default text-xs ${
+                  selectedRating !== null
+                    ? 'border-[#222] text-[#444] pointer-events-none'
+                    : 'border-[#333] text-text-muted hover:bg-border-base hover:border-[#555]'
+                }`}
+              >
+                Skip <ArrowRight className="w-3 h-3" />
               </button>
             </div>
           </div>
 
-          {/* AI Context Panel — below buttons */}
+          {/* Feedback chip + Next Card — fixed h-[52px] slot BELOW utility row */}
+          {mode === 'study' && !wasAutoplayed && (
+            <div
+              className={`h-[52px] flex items-center justify-center w-full transition-opacity duration-100 ${explanationVisible ? 'opacity-0' : 'opacity-100'}`}
+              {...(explanationOpen ? { inert: '' } : {})}
+            >
+              <AnimatePresence>
+                {showRatingFeedback && selectedRating !== null && !explanationOpen && (isFlipped || (settings.writtenMode && writtenSubmitted)) && !isAutoplay && (() => {
+                  const fb = RATING_FEEDBACK[selectedRating]
+                  return (
+                    <motion.div
+                      key="rating-feedback-row"
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 6 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                      className="flex items-center gap-4"
+                    >
+                      {/* Feedback chip */}
+                      <div
+                        className="flex items-center gap-2 px-4 py-1.5 rounded-full border bg-[#111]"
+                        style={{ borderColor: fb.color + '88' }}
+                      >
+                        <span
+                          className="font-['Rajdhani'] font-bold uppercase tracking-widest text-sm"
+                          style={{ color: fb.color }}
+                        >
+                          {fb.label}
+                        </span>
+                        <span className="text-[#888] font-['JetBrains_Mono'] text-xs">
+                          {fb.message}
+                        </span>
+                        {isSubmitting && (
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#888" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin ml-1">
+                            <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+                          </svg>
+                        )}
+                      </div>
+
+                      {/* Next Card / Finish button */}
+                      <motion.button
+                        whileHover={{ scale: 1.04 }}
+                        whileTap={{ scale: 0.96 }}
+                        onClick={handleNextCard}
+                        className="flex items-center gap-2 px-6 py-1.5 rounded-full font-['Rajdhani'] font-bold uppercase tracking-widest text-sm border-2 bg-[#111] cursor-pointer"
+                        style={{
+                          borderColor: '#00FF41',
+                          color: '#00FF41',
+                          boxShadow: '0 0 14px rgba(0,255,65,0.3)',
+                        }}
+                      >
+                        {currentIndex < sessionCards.length - 1 ? (
+                          <>Next Card <ArrowRight className="w-3.5 h-3.5" /></>
+                        ) : (
+                          <>Finish <ArrowRight className="w-3.5 h-3.5" /></>
+                        )}
+                      </motion.button>
+                    </motion.div>
+                  )
+                })()}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* AI Context Panel */}
           {showContext && onShowContext && isFlipped && currentCard && !settings.writtenMode && (() => {
             const term = getFrontText(currentCard, settings.swapTermDef)
             const definition = getCorrectAnswer(currentCard, settings.swapTermDef)

@@ -29,6 +29,7 @@ const mockElectron = {
     importDecks: vi.fn(),
     getAllCardsByTopic: vi.fn(),
     getCardsPrioritized: vi.fn(),
+    getDueCards: vi.fn(),
     getCardsWithProgress: vi.fn(),
     saveExamSession: vi.fn(),
     getExamSessions: vi.fn(),
@@ -454,4 +455,102 @@ describe('dbService exam session methods', () => {
     await expect(dbService.clearExamSessions()).resolves.toBeUndefined()
   })
 })
+
+// ─── SM-2 Progress and Due Cards Loading ───────────────────────────────────────
+
+describe('dbService SM-2 progress and due card mapping', () => {
+  const rowWithProgress = {
+    ...makeCardRow({ id: 'card-sm2' }),
+    ease_factor: 2.65,
+    repetitions: 1,
+    interval: 1,
+    next_review: '2026-09-19',
+    last_reviewed: '2026-09-18T10:00:00.000Z',
+    correct_count: 5,
+    total_count: 6,
+    last_result: 'correct',
+  }
+
+  const rowWithoutProgress = {
+    ...makeCardRow({ id: 'card-new' }),
+    ease_factor: undefined,
+    repetitions: undefined,
+    interval: undefined,
+    next_review: null,
+    last_reviewed: null,
+    correct_count: undefined,
+    total_count: undefined,
+    last_result: null,
+  }
+
+  it('getDueCards preserves complete SM-2 state on loaded cards', async () => {
+    mockElectron.data.getDueCards.mockResolvedValue({
+      success: true,
+      data: [rowWithProgress],
+    })
+
+    const cards = await dbService.getDueCards('topic-1')
+    expect(cards).toHaveLength(1)
+    expect(cards[0].id).toBe('card-sm2')
+    expect(cards[0].easeFactor).toBe(2.65)
+    expect(cards[0].repetitions).toBe(1)
+    expect(cards[0].interval).toBe(1)
+    expect(cards[0].nextReview).toBe('2026-09-19')
+    expect(cards[0].lastReviewed).toBe('2026-09-18T10:00:00.000Z')
+    expect(cards[0].correct_count).toBe(5)
+    expect(cards[0].total_count).toBe(6)
+    expect(cards[0].last_result).toBe('correct')
+  })
+
+  it('getDueCards applies correct defaults for unreviewed cards', async () => {
+    mockElectron.data.getDueCards.mockResolvedValue({
+      success: true,
+      data: [rowWithoutProgress],
+    })
+
+    const cards = await dbService.getDueCards('topic-1')
+    expect(cards).toHaveLength(1)
+    expect(cards[0].id).toBe('card-new')
+    expect(cards[0].easeFactor).toBe(2.5)
+    expect(cards[0].repetitions).toBe(0)
+    expect(cards[0].interval).toBe(1)
+    expect(cards[0].nextReview).toBeNull()
+    expect(cards[0].lastReviewed).toBeNull()
+    expect(cards[0].correct_count).toBe(0)
+    expect(cards[0].total_count).toBe(0)
+    expect(cards[0].last_result).toBeNull()
+  })
+
+  it('getCardsPrioritized preserves complete SM-2 state', async () => {
+    mockElectron.data.getCardsPrioritized.mockResolvedValue({
+      success: true,
+      data: [rowWithProgress],
+    })
+
+    const cards = await dbService.getCardsPrioritized('topic-1')
+    expect(cards).toHaveLength(1)
+    expect(cards[0].easeFactor).toBe(2.65)
+    expect(cards[0].repetitions).toBe(1)
+    expect(cards[0].interval).toBe(1)
+    expect(cards[0].nextReview).toBe('2026-09-19')
+  })
+
+  it('getCardsWithProgress preserves complete SM-2 state including nextReview', async () => {
+    mockElectron.data.getCardsWithProgress.mockResolvedValue({
+      success: true,
+      data: [rowWithProgress],
+    })
+
+    const cards = await dbService.getCardsWithProgress('topic-1')
+    expect(cards).toHaveLength(1)
+    expect(cards[0].easeFactor).toBe(2.65)
+    expect(cards[0].repetitions).toBe(1)
+    expect(cards[0].interval).toBe(1)
+    expect(cards[0].nextReview).toBe('2026-09-19')
+    expect(cards[0].lastReviewed).toBe('2026-09-18T10:00:00.000Z')
+    expect(cards[0].correct_count).toBe(5)
+    expect(cards[0].total_count).toBe(6)
+  })
+})
+
 

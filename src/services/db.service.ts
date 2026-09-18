@@ -26,9 +26,7 @@ const CardWithProgressRowSchema = CardRowSchema.extend({
   last_result: z.string().nullable().optional(),
 })
 
-const CardPrioritizedRowSchema = CardRowSchema.extend({
-  next_review: z.string().nullable().optional(),
-})
+const CardPrioritizedRowSchema = CardWithProgressRowSchema
 
 const AccuracyTrendRowSchema = z.object({
   day: z.string(),
@@ -76,12 +74,14 @@ function parseCardRow(row: z.infer<typeof CardWithProgressRowSchema>, topicId?: 
     tags,
     isCustom: Boolean(row.is_custom),
     createdAt: row.created_at != null ? String(row.created_at) : '',
-    easeFactor: row.ease_factor,
-    repetitions: row.repetitions,
-    interval: row.interval,
-    correct_count: row.correct_count,
-    total_count: row.total_count,
-    last_result: row.last_result,
+    easeFactor: row.ease_factor ?? 2.5,
+    repetitions: row.repetitions ?? 0,
+    interval: row.interval ?? 1,
+    nextReview: row.next_review ?? null,
+    lastReviewed: row.last_reviewed ?? null,
+    correct_count: row.correct_count ?? 0,
+    total_count: row.total_count ?? 0,
+    last_result: row.last_result ?? null,
   }
 }
 

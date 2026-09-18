@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron'
-import { queryAll, execute } from '../db/database'
+import { queryAll, execute, getCardsWithProgress } from '../db/database'
 import { z } from 'zod'
 
 // ── Zod schemas ───────────────────────────────────────────────────────────────
@@ -121,20 +121,7 @@ export function registerProgressHandlers(): void {
 
   ipcMain.handle('data:getCardsPrioritized', async (_, topicId: string) => {
     try {
-      const rows = queryAll(`
-        SELECT c.id, c.topic_id, c.type, c.data, c.tags, c.difficulty, c.is_custom, c.created_at,
-               p.next_review
-        FROM cards c
-        LEFT JOIN progress p ON c.id = p.card_id
-        WHERE c.topic_id = ?
-        ORDER BY
-          CASE
-            WHEN p.next_review IS NULL THEN 0
-            WHEN p.next_review <= date('now', 'localtime') THEN 0
-            ELSE 1
-          END ASC,
-          COALESCE(p.next_review, '1970-01-01') ASC
-      `, [topicId])
+      const rows = getCardsWithProgress(topicId, { dueOnly: true })
       return { success: true, data: rows }
     } catch (error) {
       return { success: false, error: (error as Error).message }
@@ -143,15 +130,7 @@ export function registerProgressHandlers(): void {
 
   ipcMain.handle('data:getDueCards', async (_, topicId: string) => {
     try {
-      const rows = queryAll(`
-        SELECT c.id, c.topic_id, c.type, c.data, c.tags, c.difficulty, c.is_custom, c.created_at,
-               p.next_review
-        FROM cards c
-        LEFT JOIN progress p ON c.id = p.card_id
-        WHERE c.topic_id = ?
-          AND (p.next_review IS NULL OR p.next_review <= date('now', 'localtime'))
-        ORDER BY COALESCE(p.next_review, '1970-01-01') ASC
-      `, [topicId])
+      const rows = getCardsWithProgress(topicId, { dueOnly: true })
       return { success: true, data: rows }
     } catch (error) {
       return { success: false, error: (error as Error).message }

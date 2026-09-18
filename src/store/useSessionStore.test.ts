@@ -135,4 +135,62 @@ describe('useSessionStore', () => {
     expect(state.isFinished).toBe(true)
     expect(state.sessionStats.easy).toBe(2)
   })
+
+  it('rateCard preserves and uses loaded card SM-2 state instead of resetting to defaults', async () => {
+    // Card loaded from DB with prior progress: reps=1, interval=1, easeFactor=2.65
+    const cardWithProgress: Card = {
+      ...createMockCard('c-reviewed'),
+      repetitions: 1,
+      interval: 1,
+      easeFactor: 2.65,
+    }
+
+    useSessionStore.getState().startSession([cardWithProgress])
+
+    // Rate Easy (4)
+    await useSessionStore.getState().rateCard(4)
+
+    // With previous reps=1, interval=1, easeFactor=2.65:
+    // calculateSM2(4, 1, 1, 2.65) yields repetitions: 2, interval: 6, easeFactor: 2.8
+    expect(dbService.saveProgress).toHaveBeenCalledWith(
+      'c-reviewed',
+      expect.objectContaining({
+        repetitions: 2,
+        interval: 6,
+        easeFactor: 2.8,
+      }),
+      true
+    )
+
+    // Check currentDeck in store was updated with the new state
+    const currentDeck = useSessionStore.getState().currentDeck
+    expect(currentDeck[0].repetitions).toBe(2)
+    expect(currentDeck[0].interval).toBe(6)
+    expect(currentDeck[0].easeFactor).toBe(2.8)
+    expect(currentDeck[0].nextReview).toBeDefined()
+  })
+
+  it('first review on brand-new card uses defaults (0, 1, 2.5) and calculates next state', async () => {
+    const brandNewCard: Card = {
+      ...createMockCard('c-brand-new'),
+      repetitions: 0,
+      interval: 1,
+      easeFactor: 2.5,
+    }
+
+    useSessionStore.getState().startSession([brandNewCard])
+    await useSessionStore.getState().rateCard(4) // Easy
+
+    // calculateSM2(4, 0, 1, 2.5) yields repetitions: 1, interval: 1, easeFactor: 2.65
+    expect(dbService.saveProgress).toHaveBeenCalledWith(
+      'c-brand-new',
+      expect.objectContaining({
+        repetitions: 1,
+        interval: 1,
+        easeFactor: 2.65,
+      }),
+      true
+    )
+  })
 })
+

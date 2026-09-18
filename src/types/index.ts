@@ -21,10 +21,12 @@ export interface Card {
    * this flag is present and true.
    */
   isGenerated?: boolean
-  // Progress fields — populated when fetched via getCardsWithProgress, absent otherwise
+  // Progress fields — populated when fetched via getCardsWithProgress / getDueCards, absent otherwise
   easeFactor?: number
   repetitions?: number
   interval?: number
+  nextReview?: string | null
+  lastReviewed?: string | null
   correct_count?: number
   total_count?: number
   last_result?: string | null
