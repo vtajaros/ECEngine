@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
 import { app } from 'electron';
+import { NEW_SQL, dueOrNewSql } from './schedule';
 
 // Resolved lazily so that config.ipc can be imported without a circular dep.
 let resolveDBPathFn: (() => string) | null = null;
@@ -307,7 +308,8 @@ export function execute(sql: string, params: any[] = []): { changes: number; las
 
 export function getCardsWithProgress(
   topicId: string,
-  options?: { dueOnly?: boolean }
+  options?: { dueOnly?: boolean },
+  dbHandle?: Database.Database
 ): any[] {
   let sql = `
     SELECT c.id, c.topic_id, c.type, c.data, c.tags, c.difficulty, c.is_custom, c.order_index, c.created_at,
@@ -326,9 +328,9 @@ export function getCardsWithProgress(
   const params: unknown[] = [topicId];
 
   if (options?.dueOnly) {
-    sql += ` AND (p.next_review IS NULL OR p.next_review = '' OR p.next_review <= date('now', 'localtime'))`;
+    sql += ` AND ${dueOrNewSql()}`;
     sql += ` ORDER BY
-      CASE WHEN p.next_review IS NULL OR p.next_review = '' THEN 0 ELSE 1 END ASC,
+      CASE WHEN ${NEW_SQL} THEN 0 ELSE 1 END ASC,
       p.next_review ASC,
       c.order_index ASC,
       c.created_at ASC`;
@@ -336,6 +338,7 @@ export function getCardsWithProgress(
     sql += ` ORDER BY c.order_index ASC, c.created_at ASC`;
   }
 
-  return queryAll(sql, params);
+  const targetDb = dbHandle ?? getDB();
+  return targetDb.prepare(sql).all(params);
 }
 

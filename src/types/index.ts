@@ -103,3 +103,18 @@ export interface ExamSession {
   total: number
   answers: Record<string, number>
 }
+
+export interface ScheduleDay {
+  date: string
+  count: number
+}
+
+export interface FlashcardSchedule {
+  today: string
+  total: number
+  new: number
+  due: number
+  future: number
+  days: ScheduleDay[]
+  later: number
+}

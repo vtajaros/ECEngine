@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron'
-import { queryAll, execute, getCardsWithProgress } from '../db/database'
+import { queryAll, execute, getCardsWithProgress, getDB } from '../db/database'
+import { dueOrNewSql, getFlashcardSchedule } from '../db/schedule'
 import { z } from 'zod'
 
 // ── Zod schemas ───────────────────────────────────────────────────────────────
@@ -144,7 +145,7 @@ export function registerProgressHandlers(): void {
         FROM cards c
         LEFT JOIN progress p ON c.id = p.card_id
         WHERE c.topic_id = ?
-          AND (p.next_review IS NULL OR p.next_review <= date('now', 'localtime'))
+          AND ${dueOrNewSql()}
       `, [topicId]) as { count: number }[]
       return { success: true, data: row[0]?.count ?? 0 }
     } catch (error) {
@@ -152,30 +153,10 @@ export function registerProgressHandlers(): void {
     }
   })
 
-  ipcMain.handle('data:getDueBySubject', async () => {
+  ipcMain.handle('data:getFlashcardSchedule', async () => {
     try {
-      const rows = queryAll(`
-        SELECT
-          t.subject,
-          SUM(CASE WHEN p.next_review IS NULL OR p.next_review <= date('now', 'localtime') THEN 1 ELSE 0 END) AS due_today,
-          SUM(CASE WHEN p.next_review = date('now', 'localtime', '+1 day') THEN 1 ELSE 0 END) AS due_d1,
-          SUM(CASE WHEN p.next_review = date('now', 'localtime', '+2 days') THEN 1 ELSE 0 END) AS due_d2,
-          SUM(CASE WHEN p.next_review = date('now', 'localtime', '+3 days') THEN 1 ELSE 0 END) AS due_d3,
-          SUM(CASE WHEN p.next_review = date('now', 'localtime', '+4 days') THEN 1 ELSE 0 END) AS due_d4,
-          SUM(CASE WHEN p.next_review = date('now', 'localtime', '+5 days') THEN 1 ELSE 0 END) AS due_d5,
-          COUNT(c.id) AS total_cards
-        FROM topics t
-        JOIN cards c ON c.topic_id = t.id
-        LEFT JOIN progress p ON p.card_id = c.id
-        GROUP BY t.subject
-      `) as {
-        subject: string
-        due_today: number
-        due_d1: number; due_d2: number; due_d3: number
-        due_d4: number; due_d5: number
-        total_cards: number
-      }[]
-      return { success: true, data: rows }
+      const schedule = getFlashcardSchedule(getDB())
+      return { success: true, data: schedule }
     } catch (error) {
       return { success: false, error: (error as Error).message }
     }

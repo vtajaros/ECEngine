@@ -1,4 +1,4 @@
-import { Card, Progress } from '../types'
+import { Card, Progress, FlashcardSchedule } from '../types'
 import { calculateSM2 } from '../lib/sm2'
 import { z } from 'zod'
 
@@ -406,15 +406,9 @@ export const dbService = {
     return result.data as number
   },
 
-  getDueBySubject: async (): Promise<{
-    subject: string
-    due_today: number
-    due_d1: number; due_d2: number; due_d3: number
-    due_d4: number; due_d5: number
-    total_cards: number
-  }[]> => {
-    const result = await window.electron.data.getDueBySubject()
-    if (!result.success) throw new Error(result.error ?? 'Failed to get due by subject')
+  getFlashcardSchedule: async (): Promise<FlashcardSchedule> => {
+    const result = await window.electron.data.getFlashcardSchedule()
+    if (!result.success) throw new Error(result.error ?? 'Failed to get flashcard schedule')
     return result.data
   },
 

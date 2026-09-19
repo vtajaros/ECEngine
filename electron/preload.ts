@@ -51,7 +51,7 @@ contextBridge.exposeInMainWorld('electron', {
     getCardsPrioritized: (topicId: string) => ipcRenderer.invoke('data:getCardsPrioritized', topicId),
     getDueCards: (topicId: string) => ipcRenderer.invoke('data:getDueCards', topicId),
     getDueCardCount: (topicId: string) => ipcRenderer.invoke('data:getDueCardCount', topicId),
-    getDueBySubject: () => ipcRenderer.invoke('data:getDueBySubject'),
+    getFlashcardSchedule: () => ipcRenderer.invoke('data:getFlashcardSchedule'),
     recordCardResult: (payload: { cardId: string; isCorrect: boolean }) =>
       ipcRenderer.invoke('data:recordCardResult', payload),
     saveExamSession: (payload: any) => ipcRenderer.invoke('data:saveExamSession', payload),

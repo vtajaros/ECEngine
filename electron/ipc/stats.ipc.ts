@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron'
-import { queryAll } from '../db/database'
+import { queryAll, getDB } from '../db/database'
+import { getFlashcardSchedule } from '../db/schedule'
 
 export function registerStatsHandlers(): void {
   ipcMain.handle('data:getAccuracyTrendAll', async (_, startStr: string) => {
@@ -43,8 +44,7 @@ export function registerStatsHandlers(): void {
       const studiedRows = queryAll('SELECT COUNT(card_id) as count FROM progress WHERE repetitions > 0')
       const totalStudied = studiedRows[0]?.count || 0
 
-      const dueRows = queryAll("SELECT COUNT(id) as count FROM cards c LEFT JOIN progress p ON c.id = p.card_id WHERE p.next_review <= date('now', 'localtime') OR p.next_review IS NULL")
-      const dueToday = dueRows[0]?.count || 0
+      const dueToday = getFlashcardSchedule(getDB()).due
 
       const accRows = queryAll('SELECT CAST(SUM(correct_count) AS REAL) / NULLIF(SUM(total_count), 0) as accuracy FROM progress')
       const accuracy = accRows[0]?.accuracy
