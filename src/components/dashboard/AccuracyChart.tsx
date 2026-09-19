@@ -10,7 +10,7 @@ interface AccuracyChartProps {
   isLoading: boolean
 }
 
-export default function AccuracyChart({ data, subject, isLoading }: AccuracyChartProps) {
+function AccuracyChart({ data, subject, isLoading }: AccuracyChartProps) {
   const selectedSubject = subject as AccuracySubject
   
   return (
@@ -134,3 +134,5 @@ export default function AccuracyChart({ data, subject, isLoading }: AccuracyChar
     </div>
   )
 }
+
+export default React.memo(AccuracyChart)

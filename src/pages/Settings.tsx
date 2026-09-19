@@ -22,9 +22,6 @@ export default function Settings() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [advancedSyncEnabled, setAdvancedSyncEnabled] = useState(false);
   const [customWrongSound, setCustomWrongSound] = useState(() => getCustomWrongSoundEnabled())
-  const [showFormulaBank, setShowFormulaBank] = useState(
-    () => localStorage.getItem('ecengine:show-formula-bank') === 'true'
-  )
   const [katexScale, setKatexScale] = useState<number>(
     () => parseFloat(localStorage.getItem('ecengine:katex-scale') || '1.1')
   )
@@ -145,11 +142,6 @@ export default function Settings() {
   useEffect(() => {
     window.electron.config.updateSettings({ sidebarCollapsed }).catch(console.error)
   }, [sidebarCollapsed])
-
-  // Autosave showFormulaBank
-  useEffect(() => {
-    window.electron.config.updateSettings({ showFormulaBank }).catch(console.error)
-  }, [showFormulaBank])
 
   // Load available TTS voices — getVoices() is async in Chromium, fires voiceschanged event
   // On Linux, skip Web Speech API entirely — we use Piper TTS instead.
@@ -370,13 +362,6 @@ export default function Settings() {
           label: 'Minimize Sidebar on Start',
           type: 'custom-toggle',
           actionId: 'sidebar-collapse-toggle'
-        },
-        {
-          label: 'Show Formula Bank',
-          description: 'Show the Formula Bank page in the sidebar navigation.',
-          type: 'custom-toggle',
-          advanced: true,
-          actionId: 'formula-bank-toggle'
         },
         { label: 'Auto-Backup Progress Locally', type: 'toggle', current: true, advanced: true },
         { label: 'Images Storage Path', type: 'custom-path-picker', advanced: true },
@@ -940,20 +925,6 @@ export default function Settings() {
                           className={`w-14 h-7 rounded-full p-1 transition-colors ${katexBold ? 'bg-[rgba(0,255,65,0.2)] border border-accent' : 'bg-surface-2 border border-border-base'} focus:outline-none relative shadow-inner`}
                         >
                           <span className={`block w-5 h-5 rounded-full shadow-md transform transition-transform ${katexBold ? 'bg-accent translate-x-7 shadow-[0_0_8px_rgba(0,255,65,0.8)]' : 'bg-[#555] translate-x-0'}`} />
-                        </button>
-                      )}
-
-                      {opt.type === 'custom-toggle' && (opt as any).actionId === 'formula-bank-toggle' && (
-                        <button
-                          onClick={() => {
-                            const next = !showFormulaBank
-                            setShowFormulaBank(next)
-                            localStorage.setItem('ecengine:show-formula-bank', String(next))
-                            window.dispatchEvent(new Event('ecengine:settings-changed'))
-                          }}
-                          className={`w-14 h-7 rounded-full p-1 transition-colors ${showFormulaBank ? 'bg-[rgba(0,255,65,0.2)] border border-accent' : 'bg-surface-2 border border-border-base'} focus:outline-none relative shadow-inner`}
-                        >
-                          <span className={`block w-5 h-5 rounded-full shadow-md transform transition-transform ${showFormulaBank ? 'bg-accent translate-x-7 shadow-[0_0_8px_rgba(0,255,65,0.8)]' : 'bg-[#555] translate-x-0'}`} />
                         </button>
                       )}
 

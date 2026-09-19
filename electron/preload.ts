@@ -94,9 +94,9 @@ contextBridge.exposeInMainWorld('electron', {
     /** Returns whether an API key is configured — never returns the key value */
     getApiKeyStatus: (): Promise<{ configured: boolean }> =>
       ipcRenderer.invoke('config:getApiKey'),
-    getSettings: (): Promise<{ examDate?: string; preboardDate?: string | null; katexScale?: number; katexBold?: boolean; sidebarCollapsed?: boolean; showFormulaBank?: boolean }> =>
+    getSettings: (): Promise<{ examDate?: string; preboardDate?: string | null; katexScale?: number; katexBold?: boolean; sidebarCollapsed?: boolean }> =>
       ipcRenderer.invoke('config:getSettings'),
-    updateSettings: (settings: { examDate?: string; preboardDate?: string | null; katexScale?: number; katexBold?: boolean; sidebarCollapsed?: boolean; showFormulaBank?: boolean }): Promise<{ success: boolean; error?: string }> =>
+    updateSettings: (settings: { examDate?: string; preboardDate?: string | null; katexScale?: number; katexBold?: boolean; sidebarCollapsed?: boolean }): Promise<{ success: boolean; error?: string }> =>
       ipcRenderer.invoke('config:updateSettings', settings),
     getImagesPath: (): Promise<{ imagesPath: string }> =>
       ipcRenderer.invoke('config:getImagesPath'),

@@ -9,7 +9,6 @@ const TableOfContents = lazy(() => import('./pages/TableOfContents'))
 const LooksFamStudy = lazy(() => import('./pages/LooksFamStudy'))
 const FlashcardLearn = lazy(() => import('./pages/FlashcardLearn'))
 const Formulas       = lazy(() => import('./pages/Formulas'))
-const FormulaBank    = lazy(() => import('./pages/FormulaBank'))
 const AddDeck        = lazy(() => import('./pages/AddDeck'))
 const EditDeck       = lazy(() => import('./pages/EditDeck'))
 const Settings       = lazy(() => import('./pages/Settings'))
@@ -64,10 +63,6 @@ export const router = createHashRouter([
       {
         path: 'formulas',
         element: <ErrorBoundary><Lazy><Formulas /></Lazy></ErrorBoundary>
-      },
-      {
-        path: 'formula-bank',
-        element: <ErrorBoundary><Lazy><FormulaBank /></Lazy></ErrorBoundary>
       },
       {
         path: 'add-decks',

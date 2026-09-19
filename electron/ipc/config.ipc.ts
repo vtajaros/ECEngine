@@ -16,7 +16,6 @@ export interface AppConfig {
   katexScale?: number
   katexBold?: boolean
   sidebarCollapsed?: boolean
-  showFormulaBank?: boolean
 }
 
 export const ZOOM_STEPS = [0.8, 0.9, 1.0, 1.1, 1.2, 1.3] as const
@@ -180,7 +179,6 @@ export function registerConfigHandlers(): void {
       katexScale: config.katexScale,
       katexBold: config.katexBold,
       sidebarCollapsed: config.sidebarCollapsed,
-      showFormulaBank: config.showFormulaBank
     }
   })
 
@@ -190,7 +188,6 @@ const SAFE_SETTINGS_KEYS: readonly (keyof AppConfig)[] = [
   'katexScale',
   'katexBold',
   'sidebarCollapsed',
-  'showFormulaBank'
 ] as const
 
   /**

@@ -147,8 +147,8 @@ declare global {
       config: {
         setApiKey: (key: string) => Promise<{ success: boolean; error?: string }>
         getApiKeyStatus: () => Promise<{ configured: boolean }>
-        getSettings: () => Promise<{ examDate?: string; preboardDate?: string | null; katexScale?: number; katexBold?: boolean; sidebarCollapsed?: boolean; showFormulaBank?: boolean }>
-        updateSettings: (settings: { examDate?: string; preboardDate?: string | null; katexScale?: number; katexBold?: boolean; sidebarCollapsed?: boolean; showFormulaBank?: boolean }) => Promise<{ success: boolean; error?: string }>
+        getSettings: () => Promise<{ examDate?: string; preboardDate?: string | null; katexScale?: number; katexBold?: boolean; sidebarCollapsed?: boolean }>
+        updateSettings: (settings: { examDate?: string; preboardDate?: string | null; katexScale?: number; katexBold?: boolean; sidebarCollapsed?: boolean }) => Promise<{ success: boolean; error?: string }>
         getImagesPath: () => Promise<{ imagesPath: string }>
         selectImagesPath: () => Promise<{ success: boolean; canceled?: boolean; imagesPath?: string; error?: string }>
         setImagesPath: (imagesPath: string) => Promise<{ success: boolean; imagesPath?: string; error?: string }>

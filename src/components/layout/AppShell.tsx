@@ -9,7 +9,6 @@ import {
   Settings,
   Layers,
   ClipboardList,
-  FlaskConical,
 } from 'lucide-react'
 import { TitleBar } from './TitleBar'
 import { ZoomIndicator } from '../ui/ZoomIndicator'
@@ -26,9 +25,6 @@ export const AppShell: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(() =>
     localStorage.getItem('ecengine:sidebar-collapsed') === 'true'
   )
-  const [showFormulaBank, setShowFormulaBank] = useState(() =>
-    localStorage.getItem('ecengine:show-formula-bank') === 'true'
-  )
   const [isFullscreen, setIsFullscreen] = useState(false)
   const location = useLocation()
 
@@ -38,17 +34,6 @@ export const AppShell: React.FC = () => {
     }
   }, [])
 
-  useEffect(() => {
-    const handler = () => {
-      setShowFormulaBank(localStorage.getItem('ecengine:show-formula-bank') === 'true')
-    }
-    window.addEventListener('storage', handler)
-    window.addEventListener('ecengine:settings-changed', handler)
-    return () => {
-      window.removeEventListener('storage', handler)
-      window.removeEventListener('ecengine:settings-changed', handler)
-    }
-  }, [])
 
   useEffect(() => {
     let lastStepTime = 0
@@ -74,7 +59,6 @@ export const AppShell: React.FC = () => {
     { to: '/study', label: 'LooksFam', icon: Brain },
     { to: '/flashcards', label: 'Flashcards', icon: Layers },
     { to: '/formulas', label: 'Formulas', icon: Sigma },
-    ...(showFormulaBank ? [{ to: '/formula-bank', label: 'Formula Bank', icon: FlaskConical }] : []),
     { to: '/topics', label: 'EELE ToS', icon: BookOpen },
     { to: '/checklist', label: 'Checklist', icon: ClipboardList },
     { to: '/add-decks', label: 'Add Decks', icon: PlusCircle },

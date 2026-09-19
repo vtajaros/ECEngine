@@ -3,4 +3,5 @@ export { default as ExamCountdown } from './ExamCountdown'
 export { default as AccuracyChart } from './AccuracyChart'
 export { default as SessionHistory } from './SessionHistory'
 export { default as FlashcardSchedule } from './FlashcardSchedule'
+export { default as SubjectDonutChart } from './SubjectDonutChart'
 

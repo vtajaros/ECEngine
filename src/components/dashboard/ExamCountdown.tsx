@@ -9,7 +9,7 @@ interface ExamCountdownProps {
   onPreboardDateChange: (date: string | null) => void
 }
 
-export default function ExamCountdown({ examDate, onExamDateChange, preboardDate, onPreboardDateChange }: ExamCountdownProps) {
+function ExamCountdown({ examDate, onExamDateChange, preboardDate, onPreboardDateChange }: ExamCountdownProps) {
   const calculateTimeLeft = (target: string) => {
     const distance = new Date(`${target}T00:00:00`).getTime() - new Date().getTime()
     if (distance < 0) return { weeks: 0, days: 0, hours: 0, mins: 0, secs: 0 }
@@ -540,3 +540,5 @@ export default function ExamCountdown({ examDate, onExamDateChange, preboardDate
     </div>
   )
 }
+
+export default React.memo(ExamCountdown)

@@ -28,7 +28,7 @@ interface SessionHistoryProps {
   onSessionUpdated?: () => void
 }
 
-export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps) {
+function SessionHistory({ onSessionUpdated }: SessionHistoryProps) {
   const [sessions, setSessions] = useState<ExamSessionRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [modeFilter, setModeFilter] = useState<ModeFilter>('ALL')
@@ -579,3 +579,5 @@ export default function SessionHistory({ onSessionUpdated }: SessionHistoryProps
     </div>
   )
 }
+
+export default React.memo(SessionHistory)

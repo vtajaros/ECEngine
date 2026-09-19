@@ -6,7 +6,7 @@ interface ReviewHeatmapProps {
   year: number
 }
 
-export default function ReviewHeatmap({ activityHistory, year }: ReviewHeatmapProps) {
+function ReviewHeatmap({ activityHistory, year }: ReviewHeatmapProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
 
   const { grid, monthLabels, gridStartDate, gridEndDate, firstActiveWeekIndex } = useMemo(() => {
@@ -154,3 +154,5 @@ export default function ReviewHeatmap({ activityHistory, year }: ReviewHeatmapPr
     </div>
   )
 }
+
+export default React.memo(ReviewHeatmap)

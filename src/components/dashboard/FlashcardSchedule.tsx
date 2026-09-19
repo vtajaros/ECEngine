@@ -6,7 +6,7 @@ import { FlashcardSchedule as FlashcardScheduleData } from '../../types';
 import { buildScheduleView } from '../../lib/scheduleView';
 import { Tooltip } from '../ui/Tooltip';
 
-export default function FlashcardSchedule() {
+function FlashcardSchedule() {
   const [schedule, setSchedule] = useState<FlashcardScheduleData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -217,3 +217,5 @@ export default function FlashcardSchedule() {
     </div>
   );
 }
+
+export default React.memo(FlashcardSchedule)

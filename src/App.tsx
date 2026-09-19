@@ -40,10 +40,6 @@ export default function App() {
         localStorage.setItem('ecengine:sidebar-collapsed', settings.sidebarCollapsed ? 'true' : 'false')
         otherSettingsChanged = true
       }
-      if (settings.showFormulaBank !== undefined && (settings.showFormulaBank ? 'true' : 'false') !== localStorage.getItem('ecengine:show-formula-bank')) {
-        localStorage.setItem('ecengine:show-formula-bank', settings.showFormulaBank ? 'true' : 'false')
-        otherSettingsChanged = true
-      }
 
       if (changed) {
         updateKatexScale()
