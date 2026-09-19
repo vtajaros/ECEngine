@@ -56,7 +56,7 @@ export const TOS_ITEMS: Record<string, TosTopicItems> = {
   'EST-2.0': { items: 25, easy: 6, moderate: 12, difficult: 7 },
   'EST-3.0': { items: 15, easy: 4, moderate: 7, difficult: 4 },
   'EST-4.0': { items: 23, easy: 5, moderate: 11, difficult: 7 },
-  'EST-5.0': { items: 7, easy: 3, moderate: 1, difficult: 3 },
+  'EST-5.0': { items: 7, easy: 3, moderate: 1, difficult: 3, sharedWith: 'ELECS' },
   'EST-6.0': { items: 20, easy: 8, moderate: 5, difficult: 7 },
 }
 

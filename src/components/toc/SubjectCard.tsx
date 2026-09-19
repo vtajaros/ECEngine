@@ -172,7 +172,7 @@ function TopicRow({ topic, searchQuery }: { topic: Topic, searchQuery: string })
                   <span style={{ color: 'var(--tier-moderate)' }}>Moderate {tos.moderate}</span>
                   {' · '}
                   <span style={{ color: 'var(--tier-difficult)' }}>Difficult {tos.difficult}</span>
-                  {tos.sharedWith && ` · also tested under ${tos.sharedWith}`}
+                  {tos.sharedWith && ` · also shared with ${tos.sharedWith}`}
                 </div>
               )}
               {visibleSubtopics.length > 0 && (() => {

@@ -1786,7 +1786,7 @@
      "id": "EST-5.0",
      "name": "5.0 Electronics 3: Electronic Systems and Design",
      "items": 7,
-     "sharedWith": null,
+     "sharedWith": "ELECS",
      "printedLevels": null,
      "derivedLevels": {
       "K": 0,

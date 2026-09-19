@@ -1265,11 +1265,11 @@ export default function PrintView() {
     >
       {/* Header */}
       <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ textAlign: 'center', fontSize: '24px', fontWeight: 700, color: 'var(--pt-text-primary)', margin: topicDescription ? '0 0 6px 0' : '0 0 12px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        <h1 style={{ textAlign: 'center', fontSize: '32px', fontWeight: 700, lineHeight: 1.25, color: 'var(--pt-text-primary)', margin: topicDescription ? '0 0 8px 0' : '0 0 14px 0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
           {title}
         </h1>
         {topicDescription && (
-          <p style={{ textAlign: 'center', fontSize: '14px', color: 'var(--pt-text-secondary)', margin: '0 0 12px 0', fontStyle: 'italic', maxWidth: '80%', marginInline: 'auto' }}>
+          <p style={{ textAlign: 'center', fontSize: '16.5px', color: 'var(--pt-text-secondary)', margin: '0 0 14px 0', maxWidth: '85%', marginInline: 'auto', lineHeight: 1.45 }}>
             {topicDescription}
           </p>
         )}

@@ -7,6 +7,7 @@ dist/
 .env
 .env.local
 todo.md
+handoff.md
 fix.js
 fix.py
 electron.vite.config.*.mjs
