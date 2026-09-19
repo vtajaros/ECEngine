@@ -11,6 +11,17 @@ const RecordCardResultSchema = z.object({
   lastReviewed: z.string(),
 })
 
+const SaveProgressSchema = z.object({
+  cardId: z.string().min(1),
+  easeFactor: z.number(),
+  interval: z.number(),
+  repetitions: z.number(),
+  nextReview: z.string(),
+  lastReviewed: z.string(),
+  correctIncrement: z.number(),
+  lastResult: z.string(),
+})
+
 export function registerProgressHandlers(): void {
   /**
    * data:recordCardResult
@@ -46,8 +57,9 @@ export function registerProgressHandlers(): void {
       return { success: false, error: (error as Error).message }
     }
   })
-  ipcMain.handle('data:saveProgress', async (_, payload: { cardId: string, easeFactor: number, interval: number, repetitions: number, nextReview: string, lastReviewed: string, correctIncrement: number, lastResult: string }) => {
+  ipcMain.handle('data:saveProgress', async (_, payload: unknown) => {
     try {
+      const data = SaveProgressSchema.parse(payload)
       const sql = `
         INSERT INTO progress
           (card_id, ease_factor, interval, repetitions, next_review, last_reviewed,
@@ -64,15 +76,15 @@ export function registerProgressHandlers(): void {
           last_result   = excluded.last_result
       `
       execute(sql, [
-        payload.cardId,
-        payload.easeFactor,
-        payload.interval,
-        payload.repetitions,
-        payload.nextReview,
-        payload.lastReviewed,
-        payload.correctIncrement,
-        payload.lastResult,
-        payload.correctIncrement
+        data.cardId,
+        data.easeFactor,
+        data.interval,
+        data.repetitions,
+        data.nextReview,
+        data.lastReviewed,
+        data.correctIncrement,
+        data.lastResult,
+        data.correctIncrement
       ])
       return { success: true }
     } catch (error) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Settings as SettingsIcon, Monitor, Bell, Database, Shield, CheckCircle, AlertTriangle, X, RefreshCw, Info } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { dbService } from '../services/db.service'
@@ -335,11 +335,13 @@ export default function Settings() {
     }
   };
 
-  const filteredBySubject = exportSubjectFilter === 'ALL'
-    ? allTopics
-    : allTopics.filter(t => (SUBJECT_MAP[t.subject] ?? t.subject) === exportSubjectFilter);
+  const filteredTopics = useMemo(() => {
+    const filteredBySubject = exportSubjectFilter === 'ALL'
+      ? allTopics
+      : allTopics.filter(t => (SUBJECT_MAP[t.subject] ?? t.subject) === exportSubjectFilter);
 
-  const filteredTopics = filteredBySubject.filter(t => topicHasType(t, exportTypeFilter));
+    return filteredBySubject.filter(t => topicHasType(t, exportTypeFilter));
+  }, [allTopics, exportSubjectFilter, exportTypeFilter]);
 
   const sections = [
     {

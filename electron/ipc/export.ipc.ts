@@ -1,5 +1,6 @@
 import { ipcMain, dialog, BrowserWindow, app } from 'electron'
 import { queryAll, execute, getDB, getActiveDatabasePath } from '../db/database'
+import { resolveOrCreateFolderId } from '../db/folderHelpers'
 import { serializeMcqCard } from './mcq.serializer'
 import * as fs from 'fs'
 import * as fsp from 'fs/promises'
@@ -56,20 +57,7 @@ const ImportPayloadSchema = z.object({
   progress: z.array(ProgressSchema).optional(),
 })
 
-function resolveOrCreateFolderIdLocal(
-  db: any,
-  folderName: string,
-  scope: string = 'study'
-): string | null {
-  if (!folderName || folderName === 'Uncategorized') return null
-  const existing = db
-    .prepare(`SELECT id FROM folders WHERE name = ? COLLATE NOCASE AND scope = ? LIMIT 1`)
-    .get(folderName, scope) as { id: string } | undefined
-  if (existing) return existing.id
-  const newId = crypto.randomUUID()
-  db.prepare(`INSERT INTO folders (id, name, scope) VALUES (?, ?, ?)`).run(newId, folderName, scope)
-  return newId
-}
+
 
 export function registerExportHandlers(): void {
   ipcMain.handle('decks:exportToText', async (_, topicId: string | number, topicName: string) => {
@@ -198,7 +186,7 @@ export function registerExportHandlers(): void {
       const db = getDB()
       db.transaction(() => {
         for (const t of topics) {
-          const importFolderId = resolveOrCreateFolderIdLocal(db, t.folder_name ?? 'Uncategorized')
+          const importFolderId = resolveOrCreateFolderId(db, t.folder_name ?? 'Uncategorized', null, 'study')
           const folderExists = t.folder_id
             ? db.prepare('SELECT id FROM folders WHERE id = ? LIMIT 1').get(t.folder_id)
             : null

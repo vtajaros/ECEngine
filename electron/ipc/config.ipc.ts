@@ -184,14 +184,28 @@ export function registerConfigHandlers(): void {
     }
   })
 
+const SAFE_SETTINGS_KEYS: readonly (keyof AppConfig)[] = [
+  'examDate',
+  'preboardDate',
+  'katexScale',
+  'katexBold',
+  'sidebarCollapsed',
+  'showFormulaBank'
+] as const
+
   /**
    * 'config:updateSettings' - updates general settings.
    */
   ipcMain.handle('config:updateSettings', async (_event, settings: Partial<AppConfig>) => {
     try {
+      if (!settings || typeof settings !== 'object') {
+        return { success: false, error: 'Invalid settings payload' }
+      }
       const config = readConfig()
-      // Safely merge settings
-      Object.assign(config, settings)
+      const safeSettings = Object.fromEntries(
+        Object.entries(settings).filter(([k]) => (SAFE_SETTINGS_KEYS as readonly string[]).includes(k))
+      )
+      Object.assign(config, safeSettings)
       
       await writeConfig(config)
       return { success: true }

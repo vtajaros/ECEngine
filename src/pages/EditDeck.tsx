@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import {
   ArrowLeft, Save, ChevronDown, ChevronUp, Trash2, GripVertical, Plus,
   CheckCircle2, AlertCircle, RotateCcw, ImageIcon, X, Sigma,
@@ -1061,6 +1062,43 @@ export default function EditDeck() {
   const isFormulaDeck = cards.length > 0 && cards.every(c => c.type === 'formula')
   const scope = isFormulaDeck ? 'formula' : 'study'
 
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+  const listContainerRef = useRef<HTMLDivElement>(null)
+  const [scrollMargin, setScrollMargin] = useState(0)
+
+  useLayoutEffect(() => {
+    const updateMargin = () => {
+      if (scrollContainerRef.current && listContainerRef.current) {
+        const containerRect = scrollContainerRef.current.getBoundingClientRect()
+        const listRect = listContainerRef.current.getBoundingClientRect()
+        const offset = listRect.top - containerRect.top + scrollContainerRef.current.scrollTop
+        setScrollMargin(Math.max(0, Math.round(offset)))
+      }
+    }
+    updateMargin()
+    window.addEventListener('resize', updateMargin)
+
+    let observer: ResizeObserver | null = null
+    if (typeof ResizeObserver !== 'undefined' && scrollContainerRef.current) {
+      observer = new ResizeObserver(updateMargin)
+      observer.observe(scrollContainerRef.current)
+    }
+
+    return () => {
+      window.removeEventListener('resize', updateMargin)
+      observer?.disconnect()
+    }
+  }, [])
+
+  const virtualizer = useVirtualizer({
+    count: cards.length,
+    getScrollElement: () => scrollContainerRef.current,
+    estimateSize: () => 320,
+    getItemKey: (index) => cards[index]?.id ?? index,
+    overscan: 5,
+    scrollMargin,
+  })
+
   const handleGenerateSummary = async () => {
     if (cards.length === 0) {
       setToast({ type: 'error', msg: 'Please add some cards to generate a summary.' })
@@ -1434,7 +1472,7 @@ export default function EditDeck() {
       </div>
 
       {/* ── Scrollable Body ── */}
-      <div className="flex-1 overflow-y-auto show-scrollbar w-full">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto show-scrollbar w-full">
         <div className="w-full px-6 lg:px-10 xl:grid xl:grid-cols-3 xl:gap-6 flex flex-col gap-6 py-6 lg:py-8 items-center xl:items-start">
 
           {/* ── Metadata Section — Pane 1 (sticky left 1/3) */}
@@ -1710,21 +1748,42 @@ export default function EditDeck() {
                 onDragEnd={handleDragEnd}
               >
                 <SortableContext items={cards.map(c => c.id)} strategy={verticalListSortingStrategy}>
-                  <AnimatePresence>
-                    {cards.map((card, i) => (
-                      <SortableQuestionRow
-                        key={card.id}
-                        card={card}
-                        index={i}
-                        onUpdate={updateCard}
-                        onDelete={deleteCard}
-                        onError={(msg) => {
-                          setToast({ type: 'error', msg })
-                          setTimeout(() => setToast(null), 3000)
-                        }}
-                      />
-                    ))}
-                  </AnimatePresence>
+                  <div
+                    ref={listContainerRef}
+                    className="w-full relative"
+                    style={{ height: `${virtualizer.getTotalSize()}px` }}
+                  >
+                    {virtualizer.getVirtualItems().map(virtualRow => {
+                      const card = cards[virtualRow.index]
+                      if (!card) return null
+                      return (
+                        <div
+                          key={virtualRow.key}
+                          data-index={virtualRow.index}
+                          ref={virtualizer.measureElement}
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            transform: `translateY(${virtualRow.start - scrollMargin}px)`,
+                            paddingBottom: '0.75rem',
+                          }}
+                        >
+                          <SortableQuestionRow
+                            card={card}
+                            index={virtualRow.index}
+                            onUpdate={updateCard}
+                            onDelete={deleteCard}
+                            onError={(msg) => {
+                              setToast({ type: 'error', msg })
+                              setTimeout(() => setToast(null), 3000)
+                            }}
+                          />
+                        </div>
+                      )
+                    })}
+                  </div>
                 </SortableContext>
               </DndContext>
 

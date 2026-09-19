@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react'
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FileText, Table2, List, BookOpen, Bold, Loader2, CheckCircle2, AlertCircle, Minus, Square, X, Search, ChevronUp, ChevronDown } from 'lucide-react'
@@ -813,9 +813,9 @@ export default function PrintView() {
     }
   }
 
-  const mcqCards = cards.filter(isMCQ)
-  const flashcardCards = cards.filter(isFlashcard)
-  const formulaCards = cards.filter(isFormula)
+  const mcqCards = useMemo(() => cards.filter(isMCQ), [cards])
+  const flashcardCards = useMemo(() => cards.filter(isFlashcard), [cards])
+  const formulaCards = useMemo(() => cards.filter(isFormula), [cards])
 
   const isFlashcardOnly = flashcardCards.length > 0 && mcqCards.length === 0
   const hasFormulas = formulaCards.length > 0

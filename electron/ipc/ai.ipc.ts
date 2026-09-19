@@ -1,6 +1,8 @@
 import { ipcMain, net } from 'electron'
 import { resolveGroqApiKey } from './config.ipc'
 
+const GROQ_MODEL = 'openai/gpt-oss-120b'
+
 interface ExplainPayload {
   question: string
   choices: string[]
@@ -71,7 +73,7 @@ async function fetchFreshUsageLimits(apiKey: string): Promise<UsageLimits | null
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'openai/gpt-oss-120b',
+        model: GROQ_MODEL,
         messages: [{ role: 'user', content: 'hi' }],
         max_tokens: 1,
       }),
@@ -138,7 +140,7 @@ STRICT FORMATTING RULES:
           'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: 'openai/gpt-oss-120b',
+          model: GROQ_MODEL,
           messages: [
             {
               role: 'system',
@@ -215,7 +217,7 @@ STRICT FORMATTING RULES:
           'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: 'openai/gpt-oss-120b',
+          model: GROQ_MODEL,
           messages: [{ role: 'user', content: userPrompt }],
           max_tokens: 800,
           temperature: 0.4,
@@ -293,7 +295,7 @@ RULES:
           'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: 'openai/gpt-oss-120b',
+          model: GROQ_MODEL,
           messages: [
             {
               role: 'system',

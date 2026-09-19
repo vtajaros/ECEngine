@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron'
 import { queryAll, execute, getDB, getCardsWithProgress } from '../db/database'
+import { resolveOrCreateFolderId } from '../db/folderHelpers'
 import crypto from 'crypto'
 import { z } from 'zod'
 
@@ -66,32 +67,12 @@ const FolderRenameSchema = z.object({
 })
 
 
-// Helper to bridge legacy frontend (which sends folderName strings) to new folders table
-function resolveOrCreateFolderId(db: import('better-sqlite3').Database, folderName: string, explicitId: string | null | undefined, scope: string = 'study'): string | null {
-  if (explicitId) {
-    const row = db.prepare(`SELECT id FROM folders WHERE id = ? AND scope = ? LIMIT 1`).get(explicitId, scope) as { id: string } | undefined;
-    if (row) return row.id;
-    throw new Error(`Invalid folder ID: ${explicitId} does not exist in scope ${scope}`);
-  }
-  if (!folderName) return null;
-  
-  if (folderName === 'Uncategorized') {
-    const row = db.prepare(`SELECT id FROM folders WHERE name = 'Uncategorized' AND scope = ? LIMIT 1`).get(scope) as { id: string } | undefined;
-    return row?.id ?? null;
-  }
-  
-  const row = db.prepare(`SELECT id FROM folders WHERE name = ? COLLATE NOCASE AND scope = ? LIMIT 1`).get(folderName, scope) as { id: string } | undefined;
-  if (row) return row.id;
-  
-  const newId = crypto.randomUUID();
-  db.prepare(`INSERT INTO folders (id, name, scope) VALUES (?, ?, ?)`).run(newId, folderName, scope);
-  return newId;
-}
-
 export function registerDeckHandlers(): void {
   ipcMain.handle('decks:getTopics', async () => {
     try {
-      const rows = queryAll('SELECT * FROM topics') // basic generic for now, adapt if needed
+      const rows = queryAll(
+        'SELECT id, name, subject, description, parent_id, order_index, tags, created_at, folder_name, folder_id, is_favorite FROM topics'
+      )
       return { success: true, data: rows }
     } catch (error) {
       console.error('[Decks getTopics Error]', error)
@@ -101,7 +82,10 @@ export function registerDeckHandlers(): void {
 
   ipcMain.handle('decks:getCardsByTopic', async (_, topicId: string) => {
     try {
-      const rows = queryAll('SELECT * FROM cards WHERE topic_id = ?', [topicId])
+      const rows = queryAll(
+        'SELECT id, topic_id, type, data, difficulty, tags, is_custom, order_index, created_at FROM cards WHERE topic_id = ?',
+        [topicId]
+      )
       return { success: true, data: rows }
     } catch (error) {
       console.error('[Decks getCardsByTopic Error]', error)
@@ -406,12 +390,19 @@ export function registerDeckHandlers(): void {
     folderOrders: Array<{ folderName: string, orderIndex: number }>
   }) => {
     try {
-      getDB().transaction(() => {
+      if (!payload?.folderOrders || !Array.isArray(payload.folderOrders)) {
+        return { success: false, error: 'Invalid payload: folderOrders array required' }
+      }
+      const db = getDB()
+      db.transaction(() => {
         for (const { folderName, orderIndex } of payload.folderOrders) {
-          execute(
-            `UPDATE topics SET order_index = ? WHERE folder_name = ?`,
-            [orderIndex, folderName]
-          )
+          const folderId = resolveOrCreateFolderId(db, folderName, null)
+          if (folderId) {
+            execute(
+              `UPDATE folders SET order_index = ? WHERE id = ?`,
+              [orderIndex, folderId]
+            )
+          }
         }
       })()
       return { success: true }

@@ -130,6 +130,13 @@ const MIGRATIONS: Array<{ version: number; sql: string | string[] }> = [
       "ALTER TABLE topics ADD COLUMN is_favorite BOOLEAN DEFAULT 0",
       "CREATE INDEX IF NOT EXISTS idx_topics_is_favorite ON topics(is_favorite)"
     ]
+  },
+  {
+    // v10: Compound index covering (topic_id, type) for getFormulaMastery.
+    version: 10,
+    sql: [
+      "CREATE INDEX IF NOT EXISTS idx_cards_topic_type ON cards(topic_id, type)"
+    ]
   }
 ]
 
@@ -180,6 +187,7 @@ function ensureBootstrapTables(db: Database.Database) {
   db.exec("CREATE INDEX IF NOT EXISTS idx_next_review ON progress(next_review)");
   db.exec("CREATE INDEX IF NOT EXISTS idx_last_reviewed ON progress(last_reviewed)");
   db.exec("CREATE INDEX IF NOT EXISTS idx_cards_topic_id ON cards(topic_id)");
+  db.exec("CREATE INDEX IF NOT EXISTS idx_cards_topic_type ON cards(topic_id, type)");
   db.exec("CREATE INDEX IF NOT EXISTS idx_topics_subject ON topics(subject)");
 }
 
