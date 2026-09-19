@@ -46,6 +46,7 @@ declare global {
         updateFolderOrder: (folderOrders: Array<{ folderName: string, orderIndex: number }>) => Promise<{ success: boolean; error?: string }>
         toggleFavorite: (topicId: string) => Promise<{ success: boolean; isFavorite?: boolean; error?: string }>
         setFavorite: (topicId: string, isFavorite: boolean) => Promise<{ success: boolean; isFavorite?: boolean; error?: string }>
+        deleteTag: (tag: string) => Promise<{ success: boolean; affectedTopics?: number; error?: string }>
       }
       folders: {
         getAll(payload?: { scope?: string }): Promise<{ success: boolean; data?: FolderRow[]; error?: string }>

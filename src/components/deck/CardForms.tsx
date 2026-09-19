@@ -350,66 +350,34 @@ export const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; 
   }
   const labels = ['A', 'B', 'C', 'D']
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    // 10MB limit guardrail
-    if (file.size > 10 * 1024 * 1024) {
-      if (onError) onError('Image exceeds 10MB limit.')
-      e.target.value = ''
-      return
-    }
-
-    const path = (file as any).path
-    if (!path) return
-    try {
-      const result = await window.electron.saveImage(path)
-      if (result.success && result.filename) {
-        set({ imagePath: result.filename })
-      } else {
-        if (onError) onError(result.error || 'Failed to save image')
-      }
-    } catch (err: any) {
-      console.error(err)
-      if (onError) onError('Error saving image: ' + err.message)
-    }
-    e.target.value = ''
-  }
+  const handleImageUpload = makeImageUploadHandler(
+    f => set({ imagePath: f }),
+    onError
+  )
 
   return (
     <div className="flex flex-col gap-4">
-      {/* QUESTION (full width) */}
-      <div className="relative w-full">
-        <div className="flex items-center justify-between mb-1">
+      {/* QUESTION */}
+      <div className="flex items-start gap-4">
+        <div className="flex-1">
           <Label>Question</Label>
-          <div className="mr-[14px]">
-            {data.imagePath ? (
-              <div className="relative group flex items-center justify-center">
-                <img src={`ece-app://${data.imagePath}`} className="w-5 h-5 object-cover rounded border border-[#333]" />
-                <Tooltip content="Remove image" position="top" className="absolute -top-1 -right-1">
-                  <button type="button" onClick={() => set({ imagePath: undefined })} className="bg-[#FF4B4B] text-white p-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                    <X size={10} />
-                  </button>
-                </Tooltip>
-              </div>
-            ) : (
-              <Tooltip content="Add Image" position="top">
-                <label className="cursor-pointer text-text-muted hover:text-accent transition-colors">
-                  <ImageIcon size={16} />
-                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                </label>
-              </Tooltip>
-            )}
-          </div>
+          <MathInputField
+            value={data.question}
+            onChange={val => set({ question: val })}
+            placeholder="Enter question text..."
+            rows={6}
+            multiline={true}
+            defaultMathMode={false}
+          />
         </div>
-        <MathInputField
-          value={data.question}
-          onChange={val => set({ question: val })}
-          placeholder="Enter question text..."
-          rows={4}
-          multiline={true}
-        />
+        <div className="shrink-0 flex flex-col items-center justify-start mt-5">
+          <ImageSlot
+            value={data.imagePath}
+            onUpload={handleImageUpload}
+            onRemove={() => set({ imagePath: undefined })}
+            alt="Question image"
+          />
+        </div>
       </div>
 
       <div className="flex flex-col gap-3">

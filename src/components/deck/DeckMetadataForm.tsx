@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react'
 import { X, Plus, ChevronDown } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TOS_SUBJECT_COLORS } from '../../lib/tosData'
-import { PREDEFINED_TAGS } from '../../lib/constants'
+import { getAllAvailableTags, saveCustomTag, markTagDeleted } from '../../lib/tags'
+import { TagDeleteConfirmModal, AffectedDeck } from './TagDeleteConfirmModal'
 
 type Subject = 'Mathematics' | 'General Engineering & Applied Sciences' | 'Electronics Engineering' | 'Electronics Systems & Technologies'
 
@@ -43,6 +44,104 @@ interface DeckMetadataFormProps {
 export default function DeckMetadataForm({ metadata, setMetadata, scope, cards = [], onToast }: DeckMetadataFormProps) {
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false)
   const folderDropdownRef = React.useRef<HTMLDivElement>(null)
+
+  const [existingTopics, setExistingTopics] = useState<any[]>([])
+  const [pendingDeleteTag, setPendingDeleteTag] = useState<string | null>(null)
+  const [affectedDecks, setAffectedDecks] = useState<AffectedDeck[]>([])
+  const [isDeletingTag, setIsDeletingTag] = useState(false)
+  const [tagRefreshKey, setTagRefreshKey] = useState(0)
+
+  useEffect(() => {
+    async function fetchTopics() {
+      try {
+        const res = await window.electron?.decks?.getTopics()
+        if (res?.success && res.data) {
+          setExistingTopics(res.data)
+        }
+      } catch {}
+    }
+    fetchTopics()
+  }, [])
+
+  const availableTags = React.useMemo(() => {
+    return getAllAvailableTags(existingTopics)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [existingTopics, tagRefreshKey])
+
+  const handleInitiateDeleteTag = (tag: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const normalized = tag.trim().toLowerCase()
+    const affected: AffectedDeck[] = []
+    for (const t of existingTopics) {
+      if (!t.tags) continue
+      try {
+        const parsed = JSON.parse(t.tags)
+        if (Array.isArray(parsed) && parsed.some((x: any) => typeof x === 'string' && x.trim().toLowerCase() === normalized)) {
+          affected.push({ id: t.id, name: t.name || 'Untitled Deck', subject: t.subject, folderName: t.folder_name })
+        }
+      } catch {
+        const parts = String(t.tags).split(',').map((s: string) => s.trim().toLowerCase())
+        if (parts.includes(normalized)) {
+          affected.push({ id: t.id, name: t.name || 'Untitled Deck', subject: t.subject, folderName: t.folder_name })
+        }
+      }
+    }
+    setAffectedDecks(affected)
+    setPendingDeleteTag(tag)
+  }
+
+  const handleConfirmDeleteTag = async () => {
+    if (!pendingDeleteTag) return
+    setIsDeletingTag(true)
+    try {
+      if (window.electron?.decks?.deleteTag) {
+        await window.electron.decks.deleteTag(pendingDeleteTag)
+      }
+      markTagDeleted(pendingDeleteTag)
+
+      const normalized = pendingDeleteTag.trim().toLowerCase()
+      setMetadata(prev => ({
+        ...prev,
+        deckTags: prev.deckTags.filter(t => t.trim().toLowerCase() !== normalized)
+      }))
+
+      setExistingTopics(prev => prev.map(topic => {
+        if (!topic.tags) return topic
+        try {
+          const parsed = JSON.parse(topic.tags)
+          if (Array.isArray(parsed)) {
+            const updated = parsed.filter((x: any) => typeof x === 'string' && x.trim().toLowerCase() !== normalized)
+            return { ...topic, tags: JSON.stringify(updated) }
+          }
+        } catch {}
+        return topic
+      }))
+
+      setTagRefreshKey(k => k + 1)
+      onToast?.('success', `Tag "${pendingDeleteTag}" deleted.`)
+      setPendingDeleteTag(null)
+      setAffectedDecks([])
+    } catch (err: any) {
+      onToast?.('error', err?.message || 'Failed to delete tag')
+    } finally {
+      setIsDeletingTag(false)
+    }
+  }
+
+  const handleAddCustomTag = () => {
+    const tag = metadata.customTagInput.trim()
+    if (!tag) return
+    saveCustomTag(tag)
+    setMetadata(prev => {
+      const exists = prev.deckTags.some(t => t.toLowerCase() === tag.toLowerCase())
+      return {
+        ...prev,
+        deckTags: exists ? prev.deckTags : [...prev.deckTags, tag],
+        customTagInput: ''
+      }
+    })
+    setTagRefreshKey(k => k + 1)
+  }
 
   const handleGenerateSummary = async () => {
     if (cards.length === 0) {
@@ -262,33 +361,35 @@ export default function DeckMetadataForm({ metadata, setMetadata, scope, cards =
         <label className="text-[11px] text-accent font-['Rajdhani'] font-bold uppercase tracking-widest mb-3 block">
           Source Tags
         </label>
-        <div className="flex flex-wrap gap-3">
-          {PREDEFINED_TAGS.map(tag => {
-            const isSelected = metadata.deckTags.includes(tag)
+        <div className="flex flex-wrap gap-2.5">
+          {availableTags.map(tag => {
+            const isSelected = metadata.deckTags.some(t => t.toLowerCase() === tag.toLowerCase())
             return (
-              <button
+              <div
                 key={tag}
                 onClick={() => setMetadata(prev => {
-                  const next = prev.deckTags.includes(tag) ? prev.deckTags.filter(t => t !== tag) : [...prev.deckTags, tag]
+                  const next = isSelected
+                    ? prev.deckTags.filter(t => t.toLowerCase() !== tag.toLowerCase())
+                    : [...prev.deckTags, tag]
                   return { ...prev, deckTags: next }
                 })}
-                className={`px-4 py-2 rounded-full font-['Rajdhani'] uppercase tracking-wider text-xs font-bold transition-all border ${isSelected
-                  ? 'bg-accent/10 border-accent text-accent'
+                className={`group flex items-center gap-1.5 pl-3.5 pr-2 py-1.5 rounded-full font-['Rajdhani'] uppercase tracking-wider text-xs font-bold transition-all border cursor-pointer select-none ${isSelected
+                  ? 'bg-accent/15 border-accent text-accent shadow-[0_0_12px_rgba(0,255,65,0.15)]'
                   : 'bg-surface-2 border-[#333] text-text-muted hover:border-[#555] hover:text-text-primary'
                   }`}
               >
-                {tag}
-              </button>
+                <span>{tag}</span>
+                <button
+                  type="button"
+                  onClick={(e) => handleInitiateDeleteTag(tag, e)}
+                  title={`Delete tag "${tag}"`}
+                  className="w-4 h-4 rounded-full flex items-center justify-center text-text-muted hover:text-red-400 hover:bg-red-500/20 transition-all opacity-60 group-hover:opacity-100"
+                >
+                  <X size={11} />
+                </button>
+              </div>
             )
           })}
-          {metadata.deckTags.filter(t => !PREDEFINED_TAGS.includes(t)).map(tag => (
-            <div key={tag} className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-accent/10 border border-accent text-accent font-['Rajdhani'] uppercase tracking-wider text-xs font-bold">
-              {tag}
-              <button onClick={() => setMetadata(prev => ({ ...prev, deckTags: prev.deckTags.filter(t => t !== tag) }))} className="text-accent hover:text-white transition-colors cursor-pointer rounded-full p-0.5 -mr-2">
-                <X size={12} />
-              </button>
-            </div>
-          ))}
         </div>
 
         <div className="flex items-center gap-2 mt-3 w-full max-w-sm">
@@ -299,26 +400,34 @@ export default function DeckMetadataForm({ metadata, setMetadata, scope, cards =
             onChange={e => setMetadata(prev => ({ ...prev, customTagInput: e.target.value }))}
             onKeyDown={e => {
               if (e.key === 'Enter') {
-                e.preventDefault();
-                if (metadata.customTagInput.trim()) {
-                  setMetadata(prev => ({ ...prev, deckTags: [...prev.deckTags, prev.customTagInput.trim()], customTagInput: '' }));
-                }
+                e.preventDefault()
+                handleAddCustomTag()
               }
             }}
             className="flex-1 bg-[#111] border border-[#333] rounded px-3 py-2 text-sm text-text-primary placeholder-[#555] focus:border-accent focus:outline-none font-['Rajdhani'] uppercase tracking-wider transition-colors h-[38px]"
           />
           <button
-            onClick={() => {
-              if (metadata.customTagInput.trim()) {
-                setMetadata(prev => ({ ...prev, deckTags: [...prev.deckTags, prev.customTagInput.trim()], customTagInput: '' }));
-              }
-            }}
+            type="button"
+            onClick={handleAddCustomTag}
             className="w-[38px] h-[38px] bg-[#111] border border-[#333] text-text-muted flex items-center justify-center rounded hover:text-accent hover:border-accent transition-colors shrink-0"
           >
             <Plus size={18} />
           </button>
         </div>
       </div>
+
+      <TagDeleteConfirmModal
+        tag={pendingDeleteTag}
+        affectedDecks={affectedDecks}
+        isDeleting={isDeletingTag}
+        onConfirm={handleConfirmDeleteTag}
+        onCancel={() => {
+          if (!isDeletingTag) {
+            setPendingDeleteTag(null)
+            setAffectedDecks([])
+          }
+        }}
+      />
     </section>
   )
 }

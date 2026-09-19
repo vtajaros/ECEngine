@@ -19,6 +19,7 @@ contextBridge.exposeInMainWorld('electron', {
       ipcRenderer.invoke('decks:updateFolderOrder', { folderOrders }),
     toggleFavorite: (topicId: string) => ipcRenderer.invoke('decks:toggleFavorite', topicId),
     setFavorite: (topicId: string, isFavorite: boolean) => ipcRenderer.invoke('decks:setFavorite', { topicId, isFavorite }),
+    deleteTag: (tag: string) => ipcRenderer.invoke('decks:deleteTag', tag),
   },
   folders: {
     getAll: (payload?: { scope?: string }): Promise<any> => ipcRenderer.invoke('folders:getAll', payload),

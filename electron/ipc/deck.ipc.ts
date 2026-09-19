@@ -445,6 +445,57 @@ export function registerDeckHandlers(): void {
     }
   })
 
+  ipcMain.handle('decks:deleteTag', async (_, tagToDelete: string) => {
+    try {
+      if (!tagToDelete || typeof tagToDelete !== 'string') {
+        return { success: false, error: 'Invalid tag' }
+      }
+      const db = getDB()
+      const normalizedTarget = tagToDelete.trim().toLowerCase()
+      const rows = queryAll('SELECT id, tags FROM topics')
+      let affectedTopics = 0
+
+      db.transaction(() => {
+        for (const row of rows) {
+          if (!row.tags) continue
+          let tags: string[] = []
+          try {
+            const parsed = JSON.parse(row.tags)
+            tags = Array.isArray(parsed) ? parsed : []
+          } catch {
+            continue
+          }
+          const nextTags = tags.filter(t => typeof t === 'string' && t.trim().toLowerCase() !== normalizedTarget)
+          if (nextTags.length !== tags.length) {
+            execute('UPDATE topics SET tags = ? WHERE id = ?', [JSON.stringify(nextTags), row.id])
+            affectedTopics++
+          }
+        }
+
+        // Also clean up tags on cards table where applicable
+        const cardRows = queryAll("SELECT id, tags FROM cards WHERE tags IS NOT NULL AND tags != '' AND tags != '[]'")
+        for (const c of cardRows) {
+          try {
+            const parsed = JSON.parse(c.tags)
+            if (Array.isArray(parsed)) {
+              const nextTags = parsed.filter(t => typeof t === 'string' && t.trim().toLowerCase() !== normalizedTarget)
+              if (nextTags.length !== parsed.length) {
+                execute('UPDATE cards SET tags = ? WHERE id = ?', [JSON.stringify(nextTags), c.id])
+              }
+            }
+          } catch {
+            // Ignore parse errors on cards
+          }
+        }
+      })()
+
+      return { success: true, affectedTopics }
+    } catch (error) {
+      console.error('[Decks deleteTag Error]', error)
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
   // ── Folder handlers (v4) ──────────────────────────────────────────────────
 
   ipcMain.handle('folders:getAll', async (_, payload?: { scope: string }) => {

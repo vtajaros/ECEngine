@@ -11,7 +11,8 @@ import { FormattingGuideModal } from '../components/deck/CardForms'
 import { renderMath, isRawLatex } from '../lib/latex'
 import { getSubjectFilterClasses } from '../lib/subjectColors'
 import { TOS_SUBJECT_COLORS } from '../lib/tosData'
-import { PREDEFINED_TAGS } from '../lib/constants'
+import { getAllAvailableTags, saveCustomTag, markTagDeleted } from '../lib/tags'
+import { TagDeleteConfirmModal, AffectedDeck } from '../components/deck/TagDeleteConfirmModal'
 import { AIDescriptionButton } from '../components/deck/AIDescriptionButton'
 import { Tooltip } from '../components/ui/Tooltip'
 import { generateDeckSummary } from '../services/aiSummary.service'
@@ -1153,6 +1154,91 @@ export default function EditDeck() {
   const folderDropdownRef = React.useRef<HTMLDivElement>(null)
   const [customTagInput, setCustomTagInput] = useState('')
 
+  const [existingTopics, setExistingTopics] = useState<any[]>([])
+  const [pendingDeleteTag, setPendingDeleteTag] = useState<string | null>(null)
+  const [affectedDecks, setAffectedDecks] = useState<AffectedDeck[]>([])
+  const [isDeletingTag, setIsDeletingTag] = useState(false)
+  const [tagRefreshKey, setTagRefreshKey] = useState(0)
+
+  const availableTags = React.useMemo(() => {
+    return getAllAvailableTags(existingTopics)
+  }, [existingTopics, tagRefreshKey])
+
+  const handleInitiateDeleteTag = (tag: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const normalized = tag.trim().toLowerCase()
+    const affected: AffectedDeck[] = []
+    for (const t of existingTopics) {
+      if (!t.tags) continue
+      try {
+        const parsed = JSON.parse(t.tags)
+        if (Array.isArray(parsed) && parsed.some((x: any) => typeof x === 'string' && x.trim().toLowerCase() === normalized)) {
+          affected.push({ id: t.id, name: t.name || 'Untitled Deck', subject: t.subject, folderName: t.folder_name })
+        }
+      } catch {
+        const parts = String(t.tags).split(',').map((s: string) => s.trim().toLowerCase())
+        if (parts.includes(normalized)) {
+          affected.push({ id: t.id, name: t.name || 'Untitled Deck', subject: t.subject, folderName: t.folder_name })
+        }
+      }
+    }
+    setAffectedDecks(affected)
+    setPendingDeleteTag(tag)
+  }
+
+  const handleConfirmDeleteTag = async () => {
+    if (!pendingDeleteTag) return
+    setIsDeletingTag(true)
+    try {
+      if (window.electron?.decks?.deleteTag) {
+        await window.electron.decks.deleteTag(pendingDeleteTag)
+      }
+      markTagDeleted(pendingDeleteTag)
+
+      const normalized = pendingDeleteTag.trim().toLowerCase()
+      setDeckMeta(prev => {
+        const arr = prev.tags.split(',').map(t => t.trim()).filter(Boolean)
+        const next = arr.filter(t => t.toLowerCase() !== normalized)
+        return { ...prev, tags: next.join(', ') }
+      })
+
+      setExistingTopics(prev => prev.map(topic => {
+        if (!topic.tags) return topic
+        try {
+          const parsed = JSON.parse(topic.tags)
+          if (Array.isArray(parsed)) {
+            const updated = parsed.filter((x: any) => typeof x === 'string' && x.trim().toLowerCase() !== normalized)
+            return { ...topic, tags: JSON.stringify(updated) }
+          }
+        } catch {}
+        return topic
+      }))
+
+      setTagRefreshKey(k => k + 1)
+      setToast({ type: 'success', msg: `Tag "${pendingDeleteTag}" deleted.` })
+      setTimeout(() => setToast(null), 3000)
+      setPendingDeleteTag(null)
+      setAffectedDecks([])
+    } catch (err: any) {
+      setToast({ type: 'error', msg: err?.message || 'Failed to delete tag' })
+      setTimeout(() => setToast(null), 4000)
+    } finally {
+      setIsDeletingTag(false)
+    }
+  }
+
+  const handleAddCustomTag = () => {
+    const tag = customTagInput.trim()
+    if (!tag) return
+    saveCustomTag(tag)
+    const currentTags = deckMeta.tags.split(',').map(t => t.trim()).filter(Boolean)
+    if (!currentTags.some(t => t.toLowerCase() === tag.toLowerCase())) {
+      setDeckMeta(m => ({ ...m, tags: [...currentTags, tag].join(', ') }))
+    }
+    setCustomTagInput('')
+    setTagRefreshKey(k => k + 1)
+  }
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (folderDropdownRef.current && !folderDropdownRef.current.contains(event.target as Node)) {
@@ -1221,7 +1307,10 @@ export default function EditDeck() {
       setLoading(true)
       // ── Electron: load via IPC ──
       const topicsRes = await window.electron.decks.getTopics()
-          const topicRow = (topicsRes.data || []).find((t: any) => t.id === deckId)
+      if (topicsRes?.data) {
+        setExistingTopics(topicsRes.data)
+      }
+      const topicRow = (topicsRes.data || []).find((t: any) => t.id === deckId)
           if (topicRow) {
             const t = topicRow
             let parsedTags = ''
@@ -1653,26 +1742,35 @@ export default function EditDeck() {
               <label className="text-[11px] text-accent font-['Rajdhani'] font-bold uppercase tracking-widest mb-3 block">
                 Source Tags
               </label>
-              <div className="flex flex-wrap gap-2 mb-3">
-                {PREDEFINED_TAGS.map(tag => {
+              <div className="flex flex-wrap gap-2.5 mb-3">
+                {availableTags.map(tag => {
                   const currentTags = deckMeta.tags.split(',').map(t => t.trim()).filter(Boolean)
-                  const isSelected = currentTags.includes(tag)
+                  const isSelected = currentTags.some(t => t.toLowerCase() === tag.toLowerCase())
                   return (
-                    <button
+                    <div
                       key={tag}
-                      type="button"
                       onClick={() => {
                         const arr = deckMeta.tags.split(',').map(t => t.trim()).filter(Boolean)
-                        const next = isSelected ? arr.filter(t => t !== tag) : [...arr, tag]
+                        const next = isSelected
+                          ? arr.filter(t => t.toLowerCase() !== tag.toLowerCase())
+                          : [...arr, tag]
                         setDeckMeta(m => ({ ...m, tags: next.join(', ') }))
                       }}
-                      className={`px-4 py-2 rounded-full font-['Rajdhani'] uppercase tracking-wider text-xs font-bold transition-all border ${isSelected
-                          ? 'bg-accent/10 border-accent text-accent'
-                          : 'bg-surface-2 border-[#333] text-text-muted hover:border-[#555] hover:text-text-primary'
+                      className={`group flex items-center gap-1.5 pl-3.5 pr-2 py-1.5 rounded-full font-['Rajdhani'] uppercase tracking-wider text-xs font-bold transition-all border cursor-pointer select-none ${isSelected
+                        ? 'bg-accent/15 border-accent text-accent shadow-[0_0_12px_rgba(0,255,65,0.15)]'
+                        : 'bg-surface-2 border-[#333] text-text-muted hover:border-[#555] hover:text-text-primary'
                         }`}
                     >
-                      {tag}
-                    </button>
+                      <span>{tag}</span>
+                      <button
+                        type="button"
+                        onClick={(e) => handleInitiateDeleteTag(tag, e)}
+                        title={`Delete tag "${tag}"`}
+                        className="w-4 h-4 rounded-full flex items-center justify-center text-text-muted hover:text-red-400 hover:bg-red-500/20 transition-all opacity-60 group-hover:opacity-100"
+                      >
+                        <X size={11} />
+                      </button>
+                    </div>
                   )
                 })}
               </div>
@@ -1685,28 +1783,14 @@ export default function EditDeck() {
                   onKeyDown={e => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
-                      if (customTagInput.trim()) {
-                        const currentTags = deckMeta.tags.split(',').map(t => t.trim()).filter(Boolean);
-                        if (!currentTags.includes(customTagInput.trim())) {
-                          setDeckMeta(m => ({ ...m, tags: [...currentTags, customTagInput.trim()].join(', ') }));
-                        }
-                        setCustomTagInput('');
-                      }
+                      handleAddCustomTag();
                     }
                   }}
                   className="flex-1 bg-[#111] border border-[#333] rounded px-3 py-2 text-sm text-text-primary placeholder-[#555] focus:border-accent focus:outline-none font-['Rajdhani'] uppercase tracking-wider transition-colors h-[38px]"
                 />
                 <button
                   type="button"
-                  onClick={() => {
-                    if (customTagInput.trim()) {
-                      const currentTags = deckMeta.tags.split(',').map(t => t.trim()).filter(Boolean);
-                      if (!currentTags.includes(customTagInput.trim())) {
-                        setDeckMeta(m => ({ ...m, tags: [...currentTags, customTagInput.trim()].join(', ') }));
-                      }
-                      setCustomTagInput('');
-                    }
-                  }}
+                  onClick={handleAddCustomTag}
                   className="w-[38px] h-[38px] bg-[#111] border border-[#333] text-text-muted flex items-center justify-center rounded hover:text-accent hover:border-accent transition-colors shrink-0"
                 >
                   <Plus size={18} />
@@ -1842,6 +1926,19 @@ export default function EditDeck() {
       {showFormattingGuide && (
         <FormattingGuideModal onClose={() => setShowFormattingGuide(false)} />
       )}
+
+      <TagDeleteConfirmModal
+        tag={pendingDeleteTag}
+        affectedDecks={affectedDecks}
+        isDeleting={isDeletingTag}
+        onConfirm={handleConfirmDeleteTag}
+        onCancel={() => {
+          if (!isDeletingTag) {
+            setPendingDeleteTag(null)
+            setAffectedDecks([])
+          }
+        }}
+      />
     </div>
   )
 }
