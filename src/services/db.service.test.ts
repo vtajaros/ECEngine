@@ -551,6 +551,38 @@ describe('dbService SM-2 progress and due card mapping', () => {
     expect(cards[0].correct_count).toBe(5)
     expect(cards[0].total_count).toBe(6)
   })
+
+  describe('getAccuracyTrend', () => {
+    it('calls getAccuracyTrendAll with lookback days for ALL subject', async () => {
+      mockElectron.data.getAccuracyTrendAll.mockResolvedValue({
+        success: true,
+        data: [
+          { day: '2026-09-18', correct: 8, total: 10 },
+          { day: '2026-09-19', correct: 4, total: 5 },
+        ],
+      })
+
+      const trend = await dbService.getAccuracyTrend('ALL', 'day')
+      expect(mockElectron.data.getAccuracyTrendAll).toHaveBeenCalledWith(13)
+      expect(trend).toHaveLength(2)
+      expect(trend[0]).toEqual({ date: expect.any(String), acc: 80 })
+      expect(trend[1]).toEqual({ date: expect.any(String), acc: 80 })
+    })
+
+    it('calls getAccuracyTrendSubject with lookback days and full subject name', async () => {
+      mockElectron.data.getAccuracyTrendSubject.mockResolvedValue({
+        success: true,
+        data: [
+          { day: '2026-09-19', correct: 5, total: 5 },
+        ],
+      })
+
+      const trend = await dbService.getAccuracyTrend('MATH', 'day')
+      expect(mockElectron.data.getAccuracyTrendSubject).toHaveBeenCalledWith('Mathematics', 13)
+      expect(trend).toHaveLength(1)
+      expect(trend[0].acc).toBe(100)
+    })
+  })
 })
 
 

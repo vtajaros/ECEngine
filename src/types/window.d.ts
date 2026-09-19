@@ -62,8 +62,8 @@ declare global {
         saveProgress: (payload: { cardId: string, easeFactor: number, interval: number, repetitions: number, nextReview: string, lastReviewed: string, correctIncrement: number, lastResult: string }) => Promise<{ success: boolean; error?: string }>
         recordActivity: (payload: { today: string, correctInc: number, totalInc: number }) => Promise<{ success: boolean; error?: string }>
         getActivityHistory: () => Promise<{ success: boolean; data?: any; error?: string }>
-        getAccuracyTrendAll: (startStr: string) => Promise<{ success: boolean; data?: any; error?: string }>
-        getAccuracyTrendSubject: (fullSubject: string, startStr: string) => Promise<{ success: boolean; data?: any; error?: string }>
+        getAccuracyTrendAll: (lookbackOrStart: number | string) => Promise<{ success: boolean; data?: any; error?: string }>
+        getAccuracyTrendSubject: (fullSubject: string, lookbackOrStart: number | string) => Promise<{ success: boolean; data?: any; error?: string }>
         updateTimeSpent: (today: string, minutes: number) => Promise<{ success: boolean; error?: string }>
         getDashboardStats: () => Promise<{ success: boolean; data?: any; error?: string }>
         getSubjectBreakdown: () => Promise<{ success: boolean; data?: any; error?: string }>

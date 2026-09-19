@@ -37,7 +37,7 @@ export default function Dashboard() {
   const [selectedSubject, setSelectedSubject] = useState<AccuracySubject>('ALL')
   const [granularity, setGranularity]         = useState<AccuracyGranularity>('day')
   const [accuracyTrend, setAccuracyTrend]     = useState<{ date: string; acc: number | null }[]>([])
-  const [trendLoading, setTrendLoading]       = useState(false)
+  const [trendLoading, setTrendLoading]       = useState(true)
   
 
   // Derive the list of calendar years that have any tracked activity
@@ -349,9 +349,13 @@ export default function Dashboard() {
               <span className="whitespace-nowrap">Study Progress</span>
             </span>
             <span className="text-accent font-['JetBrains_Mono'] text-xs whitespace-nowrap">
-              {statsData.flashcardCount > 0
-                ? Math.round((statsData.totalStudied / statsData.flashcardCount) * 100)
-                : 0}% covered
+              {(() => {
+                const totalStudiedAll = statsData.totalStudied + statsData.mcqAnswered
+                const totalCards = statsData.totalCards || (statsData.flashcardCount + statsData.mcqCount)
+                if (totalCards <= 0 || totalStudiedAll <= 0) return '0% covered'
+                const pct = (totalStudiedAll / totalCards) * 100
+                return pct < 1 ? `${pct.toFixed(1)}% covered` : `${Math.round(pct)}% covered`
+              })()}
             </span>
           </h2>
 
@@ -467,23 +471,29 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <span className="font-['Rajdhani'] text-[10px] uppercase tracking-widest text-[#666] font-bold">Internalization Rate</span>
               <span className="font-['JetBrains_Mono'] text-[11px] text-accent">
-                {statsData.totalStudied > 0
-                  ? Math.round((statsData.internalized / statsData.totalStudied) * 100)
-                  : 0}%
+                {(() => {
+                  const totalStudiedAll = statsData.totalStudied + statsData.mcqAnswered
+                  return totalStudiedAll > 0
+                    ? Math.round((statsData.internalized / totalStudiedAll) * 100)
+                    : 0
+                })()}%
               </span>
             </div>
             <div className="w-full bg-surface-2 h-1 rounded-full overflow-hidden border border-border-base mt-1.5">
               <div
                 className="h-full rounded-full transition-all duration-700"
                 style={{
-                  width: `${statsData.totalStudied > 0 ? Math.min(100, Math.round((statsData.internalized / statsData.totalStudied) * 100)) : 0}%`,
+                  width: `${(() => {
+                    const totalStudiedAll = statsData.totalStudied + statsData.mcqAnswered
+                    return totalStudiedAll > 0 ? Math.min(100, Math.round((statsData.internalized / totalStudiedAll) * 100)) : 0
+                  })()}%`,
                   background: 'linear-gradient(90deg, #00FF41 0%, #00AA30 100%)',
                   boxShadow: '0 0 6px #00FF4140'
                 }}
               />
             </div>
             <p className="font-['Rajdhani'] text-[9px] text-text-muted mt-1.5 tracking-wider">
-              Cards reviewed ≥5 times are considered mastered
+              MCQs answered correctly &amp; flashcards with ≥2 repetitions are considered mastered
             </p>
           </div>
         </div>

@@ -281,4 +281,73 @@ describe('Migration Runner', () => {
     })
   })
 
+  describe('mastery calculation query (getFormulaMastery)', () => {
+    it('correctly executes without error and computes mastery for MCQ decks and pure formula/flashcard decks', () => {
+      const db = createFreshDB()
+      runMigrations(db)
+
+      // MCQ topic with 2 cards: 1 correct, 1 unstudied -> 50% mastery
+      db.prepare("INSERT INTO topics (id, name, subject, type) VALUES (?, ?, ?, ?)").run('t-mcq', 'Microps Lecture', 'ELECS', 'topic')
+      db.prepare("INSERT INTO cards (id, topic_id, type) VALUES (?, ?, ?)").run('mcq-1', 't-mcq', 'mcq')
+      db.prepare("INSERT INTO cards (id, topic_id, type) VALUES (?, ?, ?)").run('mcq-2', 't-mcq', 'mcq')
+      db.prepare("INSERT INTO progress (card_id, correct_count, total_count, last_result) VALUES (?, ?, ?, ?)").run('mcq-1', 1, 1, 'correct')
+
+      // Formula topic with 2 cards: 1 learned (reps=2), 1 unstudied -> 50% mastery
+      db.prepare("INSERT INTO topics (id, name, subject, type) VALUES (?, ?, ?, ?)").run('t-form', 'Math Formulas', 'MATH', 'topic')
+      db.prepare("INSERT INTO cards (id, topic_id, type) VALUES (?, ?, ?)").run('form-1', 't-form', 'formula')
+      db.prepare("INSERT INTO cards (id, topic_id, type) VALUES (?, ?, ?)").run('form-2', 't-form', 'formula')
+      db.prepare("INSERT INTO progress (card_id, repetitions) VALUES (?, ?)").run('form-1', 2)
+
+      const sql = `
+        WITH topic_flags AS (
+          SELECT topic_id,
+                 MAX(CASE WHEN type = 'mcq'       THEN 1 ELSE 0 END) AS has_mcq,
+                 MAX(CASE WHEN type = 'flashcard'  THEN 1 ELSE 0 END) AS has_flashcard,
+                 COUNT(*)                                              AS total_cards
+          FROM   cards
+          GROUP  BY topic_id
+        ),
+        eligible AS (
+          SELECT c.topic_id,
+                 tf.has_mcq,
+                 tf.has_flashcard,
+                 c.id        AS card_id,
+                 p.correct_count,
+                 p.total_count,
+                 p.repetitions,
+                 p.last_result
+          FROM   cards       c
+          JOIN   topic_flags tf ON c.topic_id = tf.topic_id
+          LEFT   JOIN progress p ON c.id = p.card_id
+          WHERE
+            (tf.has_mcq = 1 AND c.type = 'mcq')
+            OR
+            (tf.has_mcq = 0 AND tf.has_flashcard = 1 AND c.type = 'flashcard')
+            OR
+            (tf.has_mcq = 0 AND tf.has_flashcard = 0 AND c.type NOT IN ('mcq', 'flashcard'))
+        )
+        SELECT
+          topic_id,
+          CASE
+            WHEN has_mcq = 1 THEN
+              CAST(
+                SUM(CASE WHEN last_result = 'correct' THEN 1 ELSE 0 END)
+                AS REAL
+              ) / NULLIF(COUNT(*), 0)
+            ELSE
+              CAST(
+                SUM(CASE WHEN COALESCE(repetitions, 0) >= 2 THEN 1 ELSE 0 END)
+                AS REAL
+              ) / NULLIF(COUNT(*), 0)
+          END AS mastery
+        FROM eligible
+        GROUP BY topic_id
+      `
+      const rows = db.prepare(sql).all() as Array<{ topic_id: string; mastery: number }>
+      const map = Object.fromEntries(rows.map(r => [r.topic_id, r.mastery]))
+      expect(map['t-mcq']).toBe(0.5)
+      expect(map['t-form']).toBe(0.5)
+    })
+  })
+
 })

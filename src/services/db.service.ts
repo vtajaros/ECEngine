@@ -30,8 +30,8 @@ const CardPrioritizedRowSchema = CardWithProgressRowSchema
 
 const AccuracyTrendRowSchema = z.object({
   day: z.string(),
-  correct: z.number(),
-  total: z.number(),
+  correct: z.coerce.number().default(0),
+  total: z.coerce.number().default(0),
 })
 
 const ActivityHistoryRowSchema = z.object({
@@ -215,15 +215,13 @@ export const dbService = {
       return d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
     }
 
-    const startDate = new Date()
-    startDate.setDate(startDate.getDate() - lookback[granularity])
-    const startStr = toLocalDateString(startDate)
+    const lookbackDays = lookback[granularity]
 
     type RawRow = { day: string; correct: number; total: number }
     let rawRows: RawRow[] = []
 
     if (subject === 'ALL') {
-      const res = await window.electron.data.getAccuracyTrendAll(startStr)
+      const res = await window.electron.data.getAccuracyTrendAll(lookbackDays)
       if (!res.success) {
         throw new Error(`Database Operation Failed: ${res.error || 'Failed to get accuracy trend'}`)
       }
@@ -236,17 +234,17 @@ export const dbService = {
       }
     } else {
       const fullSubject = SUBJECT_FULL[subject] ?? subject
-      const res = await window.electron.data.getAccuracyTrendSubject(fullSubject, startStr)
+      const res = await window.electron.data.getAccuracyTrendSubject(fullSubject, lookbackDays)
       if (!res.success) {
         throw new Error(`Database Operation Failed: ${res.error || 'Failed to get subject accuracy trend'}`)
       }
       if (res.data) {
         rawRows = z.array(AccuracyTrendRowSchema).parse(
-          res.data.filter((r: any) => r.day != null)
+          res.data.filter((r: any) => r && r.day != null)
         ).map((r) => ({
-          day:     r.day,
-          correct: r.correct,
-          total:   r.total,
+          day:     String(r.day),
+          correct: Number(r.correct) || 0,
+          total:   Number(r.total)   || 0,
         }))
       }
     }

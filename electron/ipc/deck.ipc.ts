@@ -272,7 +272,8 @@ export function registerDeckHandlers(): void {
                  c.id        AS card_id,
                  p.correct_count,
                  p.total_count,
-                 p.repetitions
+                 p.repetitions,
+                 p.last_result
           FROM   cards       c
           JOIN   topic_flags tf ON c.topic_id = tf.topic_id
           LEFT   JOIN progress p ON c.id = p.card_id
