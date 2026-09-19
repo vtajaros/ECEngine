@@ -112,6 +112,15 @@ export const TOS_DATA: TOSSubject[] = [
           { name: '7.3 Correlation' },
         ],
       },
+      {
+        id: 'MATH-8.0',
+        name: '8.0 Feedback and Control Systems',
+        subtopics: [
+          { name: '8.1 Pole and Zero Determination' },
+          { name: '8.2 Transient Response' },
+          { name: '8.3 Block Diagram and Signal Flow' },
+        ],
+      },
     ],
   },
 

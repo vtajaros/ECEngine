@@ -1,0 +1,1894 @@
+{
+ "source": "EE2022-10_TOS.pdf (PRC Table of Specifications)",
+ "levels": [
+  "K",
+  "C",
+  "A",
+  "An",
+  "S",
+  "E"
+ ],
+ "subjects": {
+  "MATH": {
+   "label": "Mathematics",
+   "weightPct": 20,
+   "totalItems": 100,
+   "pdfTotals": {
+    "K": 11,
+    "C": 19,
+    "A": 40,
+    "An": 30,
+    "S": 0,
+    "E": 0
+   },
+   "topics": [
+    {
+     "id": "MATH-1.0",
+     "name": "1.0 Differential Calculus",
+     "items": 15,
+     "sharedWith": null,
+     "printedLevels": {
+      "K": 1,
+      "C": 3,
+      "A": 8,
+      "An": 3
+     },
+     "derivedLevels": {
+      "K": 1,
+      "C": 3,
+      "A": 8,
+      "An": 3,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Functions, Continuity, and Limits",
+       "items": 2,
+       "levels": {
+        "K": 1,
+        "C": 1
+       }
+      },
+      {
+       "label": "Derivatives and Its Applications",
+       "items": 3,
+       "levels": {
+        "C": 1,
+        "A": 2
+       }
+      },
+      {
+       "label": "Higher-Order Derivatives",
+       "items": 3,
+       "levels": {
+        "A": 2,
+        "An": 1
+       }
+      },
+      {
+       "label": "Parametric Equations",
+       "items": 4,
+       "levels": {
+        "C": 1,
+        "A": 2,
+        "An": 1
+       }
+      },
+      {
+       "label": "Partial Differentiation",
+       "items": 3,
+       "levels": {
+        "A": 2,
+        "An": 1
+       }
+      }
+     ]
+    },
+    {
+     "id": "MATH-2.0",
+     "name": "2.0 Integral Calculus",
+     "items": 15,
+     "sharedWith": null,
+     "printedLevels": {
+      "K": 2,
+      "C": 4,
+      "A": 6,
+      "An": 3
+     },
+     "derivedLevels": {
+      "K": 2,
+      "C": 4,
+      "A": 6,
+      "An": 3,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Integration Concepts/Formulas",
+       "items": 2,
+       "levels": {
+        "K": 1,
+        "C": 1
+       }
+      },
+      {
+       "label": "Integration Techniques",
+       "items": 4,
+       "levels": {
+        "C": 1,
+        "A": 1,
+        "An": 2
+       }
+      },
+      {
+       "label": "Improper Integrals",
+       "items": 3,
+       "levels": {
+        "C": 1,
+        "A": 1,
+        "An": 1
+       }
+      },
+      {
+       "label": "Application of Integral",
+       "items": 4,
+       "levels": {
+        "K": 1,
+        "C": 1,
+        "A": 2
+       }
+      },
+      {
+       "label": "Multiple Integration and its applications",
+       "items": 2,
+       "levels": {
+        "A": 2
+       }
+      }
+     ]
+    },
+    {
+     "id": "MATH-3.0",
+     "name": "3.0 Differential Equation",
+     "items": 15,
+     "sharedWith": null,
+     "printedLevels": {
+      "K": 1,
+      "C": 2,
+      "A": 10,
+      "An": 2
+     },
+     "derivedLevels": {
+      "K": 1,
+      "C": 2,
+      "A": 10,
+      "An": 2,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "First-Order, First-Degree ODE and its Applications",
+       "items": 6,
+       "levels": {
+        "K": 1,
+        "C": 1,
+        "A": 4
+       }
+      },
+      {
+       "label": "Higher-Order ODE and its Application",
+       "items": 4,
+       "levels": {
+        "C": 1,
+        "A": 2,
+        "An": 1
+       }
+      },
+      {
+       "label": "Laplace Transforms, Inverses, and its applications",
+       "items": 5,
+       "levels": {
+        "A": 4,
+        "An": 1
+       }
+      }
+     ]
+    },
+    {
+     "id": "MATH-4.0",
+     "name": "4.0 Advanced Engineering Mathematics for ECE",
+     "items": 15,
+     "sharedWith": null,
+     "printedLevels": {
+      "K": 0,
+      "C": 0,
+      "A": 10,
+      "An": 5
+     },
+     "derivedLevels": {
+      "K": 0,
+      "C": 0,
+      "A": 10,
+      "An": 5,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Complex Numbers and its Applications",
+       "items": 2,
+       "levels": {
+        "A": 2
+       }
+      },
+      {
+       "label": "Series and Transforms",
+       "items": 4,
+       "levels": {
+        "A": 2,
+        "An": 2
+       }
+      },
+      {
+       "label": "Ordinary and Partial Differential Equations",
+       "items": 3,
+       "levels": {
+        "A": 2,
+        "An": 1
+       }
+      },
+      {
+       "label": "Simultaneous linear and non-linear equations",
+       "items": 3,
+       "levels": {
+        "A": 2,
+        "An": 1
+       }
+      },
+      {
+       "label": "Numerical Differentiation, Integration and Optimization",
+       "items": 3,
+       "levels": {
+        "A": 2,
+        "An": 1
+       }
+      }
+     ]
+    },
+    {
+     "id": "MATH-5.0",
+     "name": "5.0 Engineering Data Analysis",
+     "items": 15,
+     "sharedWith": null,
+     "printedLevels": {
+      "K": 2,
+      "C": 3,
+      "A": 6,
+      "An": 4
+     },
+     "derivedLevels": {
+      "K": 2,
+      "C": 3,
+      "A": 6,
+      "An": 4,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Obtaining Data",
+       "items": 2,
+       "levels": {
+        "K": 1,
+        "C": 1
+       }
+      },
+      {
+       "label": "Statistical Sampling, distribution, and intervals",
+       "items": 5,
+       "levels": {
+        "A": 3,
+        "An": 2
+       }
+      },
+      {
+       "label": "Test of Hypothesis",
+       "items": 2,
+       "levels": {
+        "K": 1,
+        "C": 1
+       }
+      },
+      {
+       "label": "Regression and Correlation",
+       "items": 2,
+       "levels": {
+        "C": 1,
+        "A": 1
+       }
+      },
+      {
+       "label": "Design of experiments",
+       "items": 4,
+       "levels": {
+        "A": 2,
+        "An": 2
+       }
+      }
+     ]
+    },
+    {
+     "id": "MATH-6.0",
+     "name": "6.0 Electromagnetic",
+     "items": 9,
+     "sharedWith": "ELECTRONICS",
+     "printedLevels": {
+      "K": 3,
+      "C": 1,
+      "An": 5
+     },
+     "derivedLevels": {
+      "K": 3,
+      "C": 1,
+      "A": 0,
+      "An": 5,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Vector Analysis",
+       "items": 3,
+       "levels": {
+        "K": 1,
+        "An": 2
+       }
+      },
+      {
+       "label": "Directional derivative, gradient, divergence, curl",
+       "items": 3,
+       "levels": {
+        "K": 1,
+        "An": 2
+       }
+      },
+      {
+       "label": "Integral Theorems, Green’s Lemma, Divergence Theorem and Strokes’ Theorem",
+       "items": 3,
+       "levels": {
+        "K": 1,
+        "C": 1,
+        "An": 1
+       }
+      }
+     ]
+    },
+    {
+     "id": "MATH-7.0",
+     "name": "7.0 Signals, Spectra & Signal Processing",
+     "items": 8,
+     "sharedWith": "EST",
+     "printedLevels": {
+      "K": 2,
+      "C": 3,
+      "An": 3
+     },
+     "derivedLevels": {
+      "K": 2,
+      "C": 3,
+      "A": 0,
+      "An": 3,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Z-Transforms",
+       "items": 2,
+       "levels": {
+        "C": 1,
+        "An": 1
+       }
+      },
+      {
+       "label": "Convolution",
+       "items": 3,
+       "levels": {
+        "K": 1,
+        "C": 1,
+        "An": 1
+       }
+      },
+      {
+       "label": "Correlation",
+       "items": 3,
+       "levels": {
+        "K": 1,
+        "C": 1,
+        "An": 1
+       }
+      }
+     ]
+    },
+    {
+     "id": "MATH-8.0",
+     "name": "8.0 Feedback and Control Systems",
+     "items": 8,
+     "sharedWith": "ELEX",
+     "printedLevels": {
+      "C": 3,
+      "An": 5
+     },
+     "derivedLevels": {
+      "K": 0,
+      "C": 3,
+      "A": 0,
+      "An": 5,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Pole and zero determination",
+       "items": 2,
+       "levels": {
+        "C": 1,
+        "An": 1
+       }
+      },
+      {
+       "label": "Transient response",
+       "items": 3,
+       "levels": {
+        "C": 1,
+        "An": 2
+       }
+      },
+      {
+       "label": "Block diagram and signal flow",
+       "items": 3,
+       "levels": {
+        "C": 1,
+        "An": 2
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "GEAS": {
+   "label": "General Engineering and Applied Sciences",
+   "weightPct": 20,
+   "totalItems": 100,
+   "pdfTotals": {
+    "K": 40,
+    "C": 20,
+    "A": 21,
+    "An": 11,
+    "S": 8,
+    "E": 0
+   },
+   "topics": [
+    {
+     "id": "GEAS-1.0",
+     "name": "1.0 Chemistry for Engineers",
+     "items": 10,
+     "sharedWith": null,
+     "printedLevels": {
+      "K": 6,
+      "C": 4
+     },
+     "derivedLevels": {
+      "K": 6,
+      "C": 4,
+      "A": 0,
+      "An": 0,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Energy",
+       "items": 3,
+       "levels": {
+        "K": 2,
+        "C": 1
+       }
+      },
+      {
+       "label": "Chemistry of Engg Materials",
+       "items": 3,
+       "levels": {
+        "K": 2,
+        "C": 1
+       }
+      },
+      {
+       "label": "Chemistry of the Nano materials",
+       "items": 2,
+       "levels": {
+        "K": 1,
+        "C": 1
+       }
+      },
+      {
+       "label": "Chemistry of the Environment, and Special Topics specific to the field of expertise",
+       "items": 2,
+       "levels": {
+        "K": 1,
+        "C": 1
+       }
+      }
+     ]
+    },
+    {
+     "id": "GEAS-2.0",
+     "name": "2.0 Physics for Engineers",
+     "items": 15,
+     "sharedWith": null,
+     "printedLevels": {
+      "K": 10,
+      "C": 5
+     },
+     "derivedLevels": {
+      "K": 10,
+      "C": 5,
+      "A": 0,
+      "An": 0,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Work, Energy and Power, Impulse and Momentum, Kinematics, Dynamics, Rotation",
+       "items": 5,
+       "levels": {
+        "K": 3,
+        "C": 2
+       }
+      },
+      {
+       "label": "Dynamic of Rotation, Elasticity, Oscillations/Waves",
+       "items": 4,
+       "levels": {
+        "K": 2,
+        "C": 2
+       }
+      },
+      {
+       "label": "Fluids, Heat Transfer",
+       "items": 2,
+       "levels": {
+        "K": 2
+       }
+      },
+      {
+       "label": "Electrostatics, Electricity, Magnetism, Optics",
+       "items": 4,
+       "levels": {
+        "K": 3,
+        "C": 1
+       }
+      }
+     ]
+    },
+    {
+     "id": "GEAS-3.0",
+     "name": "3.0 Engineering Economics",
+     "items": 6,
+     "sharedWith": null,
+     "printedLevels": {
+      "K": 3,
+      "C": 3
+     },
+     "derivedLevels": {
+      "K": 3,
+      "C": 3,
+      "A": 0,
+      "An": 0,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Engg Economics Introduction Terms",
+       "items": 1,
+       "levels": {
+        "K": 1
+       }
+      },
+      {
+       "label": "Money-Time Relationship and Equivalence, and Basic Economy Study Methods",
+       "items": 2,
+       "levels": {
+        "K": 2
+       }
+      },
+      {
+       "label": "Decisions Under Certainty",
+       "items": 1,
+       "levels": {
+        "C": 1
+       }
+      },
+      {
+       "label": "Decisions Recognizing Risk, and Decision Admitting Uncertainty",
+       "items": 2,
+       "levels": {
+        "C": 2
+       }
+      }
+     ]
+    },
+    {
+     "id": "GEAS-4.0",
+     "name": "4.0 Engineering Management",
+     "items": 9,
+     "sharedWith": null,
+     "printedLevels": null,
+     "derivedLevels": {
+      "K": 7,
+      "C": 2,
+      "A": 0,
+      "An": 0,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Evolution of Mgt Theory, and Management and Its Function",
+       "items": 2,
+       "levels": {
+        "K": 2
+       }
+      },
+      {
+       "label": "Planning, Leading, Organizing and Controlling",
+       "items": 4,
+       "levels": {
+        "K": 4
+       }
+      },
+      {
+       "label": "Managing Product and Service Operations",
+       "items": 1,
+       "levels": {
+        "K": 1
+       }
+      },
+      {
+       "label": "Managing the Marketing Function, and Managing the Finance Function",
+       "items": 2,
+       "levels": {
+        "C": 2
+       }
+      }
+     ]
+    },
+    {
+     "id": "GEAS-5.0",
+     "name": "5.0 Technopreneurship 101",
+     "items": 10,
+     "sharedWith": null,
+     "printedLevels": {
+      "A": 5,
+      "An": 3,
+      "S": 2
+     },
+     "derivedLevels": {
+      "K": 0,
+      "C": 0,
+      "A": 4,
+      "An": 4,
+      "S": 2,
+      "E": 0
+     },
+     "levelsConflict": "PDF topic header says A=5,An=3 but its rows sum to A=4,An=4 (row item counts are consistent)",
+     "rows": [
+      {
+       "label": "Technopreneurship Introduction, Customers, and Value Proposition / Ethics, social responsibility, and Globalization",
+       "items": 3,
+       "levels": {
+        "A": 2,
+        "S": 1
+       }
+      },
+      {
+       "label": "Market Identification and Analysis, and Creating Competitive Advantage",
+       "items": 2,
+       "levels": {
+        "A": 1,
+        "An": 1
+       }
+      },
+      {
+       "label": "Business Models, and Introduction to Intellectual Property",
+       "items": 2,
+       "levels": {
+        "A": 1,
+        "An": 1
+       }
+      },
+      {
+       "label": "Execution and Business Plan, Financial Analysis, Accounting Basics, and Raising Capital",
+       "items": 3,
+       "levels": {
+        "An": 2,
+        "S": 1
+       }
+      }
+     ]
+    },
+    {
+     "id": "GEAS-6.0",
+     "name": "6.0 Physics 2",
+     "items": 10,
+     "sharedWith": null,
+     "printedLevels": {
+      "A": 6,
+      "An": 3,
+      "S": 1
+     },
+     "derivedLevels": {
+      "K": 0,
+      "C": 0,
+      "A": 6,
+      "An": 3,
+      "S": 1,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Thermodynamics, Condensed Matter, Atomic/Nuclear, and Condensed Matter",
+       "items": 4,
+       "levels": {
+        "A": 2,
+        "An": 1,
+        "S": 1
+       }
+      },
+      {
+       "label": "Electricity, Magnetism, and EM Induction",
+       "items": 3,
+       "levels": {
+        "A": 3
+       }
+      },
+      {
+       "label": "Inductance/AC",
+       "items": 2,
+       "levels": {
+        "A": 1,
+        "An": 1
+       }
+      },
+      {
+       "label": "Optics",
+       "items": 1,
+       "levels": {
+        "An": 1
+       }
+      }
+     ]
+    },
+    {
+     "id": "GEAS-7.0",
+     "name": "7.0 Materials Science and Engineering",
+     "items": 8,
+     "sharedWith": null,
+     "printedLevels": {
+      "K": 6,
+      "C": 2
+     },
+     "derivedLevels": {
+      "K": 7,
+      "C": 1,
+      "A": 0,
+      "An": 0,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": "PDF topic header says K=6,C=2 but its rows sum to K=7,C=1 (row item counts are consistent)",
+     "rows": [
+      {
+       "label": "Review Fundamentals, Modern material’s atomic structure and interatomic bonding,",
+       "items": 2,
+       "levels": {
+        "K": 2
+       }
+      },
+      {
+       "label": "The structure of crystalline materials, and Crystalline and non-crystalline materials Economic, environmental, and societal issues in Materials science and Engg, Imperfections in solid, Diffusion in solids, Mechanical properties of metals, and Application and Processing of metal alloys",
+       "items": 2,
+       "levels": {
+        "K": 2
+       }
+      },
+      {
+       "label": "Structure and properties of ceramics, Applications and processing of ceramics, Polymer textures and properties, Applications and processing of polymers, and Composites",
+       "items": 2,
+       "levels": {
+        "K": 2
+       }
+      },
+      {
+       "label": "Electrical properties, Dielectric behavior, Magnetic Optical, and Thermal properties",
+       "items": 2,
+       "levels": {
+        "K": 1,
+        "C": 1
+       }
+      }
+     ]
+    },
+    {
+     "id": "GEAS-8.0",
+     "name": "8.0 Computer Programming",
+     "items": 10,
+     "sharedWith": null,
+     "printedLevels": {
+      "K": 7,
+      "C": 3
+     },
+     "derivedLevels": {
+      "K": 7,
+      "C": 3,
+      "A": 0,
+      "An": 0,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Introduction to Object Oriented Programming and UML, and Object- Oriented Analysis and Design",
+       "items": 4,
+       "levels": {
+        "K": 4
+       }
+      },
+      {
+       "label": "Programming Language Fundamentals, and Advanced Programming Language Fundamentals",
+       "items": 3,
+       "levels": {
+        "K": 1,
+        "C": 2
+       }
+      },
+      {
+       "label": "Exception Handling",
+       "items": 1,
+       "levels": {
+        "K": 1
+       }
+      },
+      {
+       "label": "Graphical User Interface Programming",
+       "items": 2,
+       "levels": {
+        "K": 1,
+        "C": 1
+       }
+      }
+     ]
+    },
+    {
+     "id": "GEAS-9.0",
+     "name": "9.0 Environment Science and Engineering",
+     "items": 10,
+     "sharedWith": null,
+     "printedLevels": {
+      "A": 6,
+      "An": 2,
+      "S": 2
+     },
+     "derivedLevels": {
+      "K": 0,
+      "C": 0,
+      "A": 6,
+      "An": 2,
+      "S": 2,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Nature and Ecology, and Natural Systems and Resources",
+       "items": 4,
+       "levels": {
+        "A": 4
+       }
+      },
+      {
+       "label": "Environmental Concerns and Crisis",
+       "items": 2,
+       "levels": {
+        "A": 2
+       }
+      },
+      {
+       "label": "Environmental Impact Assessment",
+       "items": 2,
+       "levels": {
+        "An": 2
+       }
+      },
+      {
+       "label": "Sustainable Development",
+       "items": 2,
+       "levels": {
+        "S": 2
+       }
+      }
+     ]
+    },
+    {
+     "id": "GEAS-10.0",
+     "name": "10.0 ECE Laws, Contracts, Ethics, Standards & Safety",
+     "items": 10,
+     "sharedWith": null,
+     "printedLevels": {
+      "A": 4,
+      "An": 3,
+      "S": 3
+     },
+     "derivedLevels": {
+      "K": 0,
+      "C": 0,
+      "A": 4,
+      "An": 3,
+      "S": 3,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Fundamentals of the Laws, Obligations and Contracts",
+       "items": 2,
+       "levels": {
+        "A": 1,
+        "S": 1
+       }
+      },
+      {
+       "label": "Pledge of ECE & CSC Guidelines, The Board Examination, and Regulating the ECE Procession (PRC)",
+       "items": 3,
+       "levels": {
+        "A": 3
+       }
+      },
+      {
+       "label": "Practicing the ECE Profession",
+       "items": 1,
+       "levels": {
+        "An": 1
+       }
+      },
+      {
+       "label": "Other ECE Related Statutes, Safety Standards, and PEC Codes",
+       "items": 4,
+       "levels": {
+        "An": 2,
+        "S": 2
+       }
+      }
+     ]
+    },
+    {
+     "id": "GEAS-11.0",
+     "name": "11.0 CAD",
+     "items": 2,
+     "sharedWith": null,
+     "printedLevels": null,
+     "derivedLevels": {
+      "K": 1,
+      "C": 1,
+      "A": 0,
+      "An": 0,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Introduction to CAD Software and its environment, Snapping and construction elements, Dimensioning, Plotting and inputting of images",
+       "items": 2,
+       "levels": {
+        "K": 1,
+        "C": 1
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "ELECS": {
+   "label": "Electronics Engineering",
+   "weightPct": 30,
+   "totalItems": 100,
+   "pdfTotals": {
+    "K": 10,
+    "C": 20,
+    "A": 40,
+    "An": 22,
+    "S": 8,
+    "E": 0
+   },
+   "topics": [
+    {
+     "id": "ELECS-1.0",
+     "name": "1.0 DC Electrical Circuits",
+     "items": 12,
+     "sharedWith": null,
+     "printedLevels": null,
+     "derivedLevels": {
+      "K": 1,
+      "C": 1,
+      "A": 4,
+      "An": 6,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Resistive Network",
+       "items": 2,
+       "levels": {
+        "A": 1,
+        "An": 1
+       }
+      },
+      {
+       "label": "Mesh and Node Equations",
+       "items": 3,
+       "levels": {
+        "A": 1,
+        "An": 2
+       }
+      },
+      {
+       "label": "Network Theorems",
+       "items": 3,
+       "levels": {
+        "K": 1,
+        "C": 1,
+        "A": 1
+       }
+      },
+      {
+       "label": "Transient Analysis",
+       "items": 1,
+       "levels": {
+        "An": 1
+       }
+      },
+      {
+       "label": "Solution to DC Network Problems",
+       "items": 3,
+       "levels": {
+        "A": 1,
+        "An": 2
+       }
+      }
+     ]
+    },
+    {
+     "id": "ELECS-2.0",
+     "name": "2.0 AC Electrical Circuits",
+     "items": 12,
+     "sharedWith": null,
+     "printedLevels": null,
+     "derivedLevels": {
+      "K": 0,
+      "C": 0,
+      "A": 5,
+      "An": 5,
+      "S": 2,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Solution to AC Network Problems",
+       "items": 3,
+       "levels": {
+        "A": 1,
+        "An": 1,
+        "S": 1
+       }
+      },
+      {
+       "label": "Impedance and Admittance",
+       "items": 2,
+       "levels": {
+        "A": 1,
+        "An": 1
+       }
+      },
+      {
+       "label": "Resonance",
+       "items": 2,
+       "levels": {
+        "A": 1,
+        "An": 1
+       }
+      },
+      {
+       "label": "Power in AC Circuits",
+       "items": 2,
+       "levels": {
+        "A": 1,
+        "An": 1
+       }
+      },
+      {
+       "label": "Two-Port Network Parameters and Transfer Function",
+       "items": 3,
+       "levels": {
+        "A": 1,
+        "An": 1,
+        "S": 1
+       }
+      }
+     ]
+    },
+    {
+     "id": "ELECS-3.0",
+     "name": "3.0 Electromagnetics",
+     "items": 8,
+     "sharedWith": "MATH",
+     "printedLevels": null,
+     "derivedLevels": {
+      "K": 0,
+      "C": 4,
+      "A": 4,
+      "An": 0,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Steady Electric and Magnetic Fields",
+       "items": 2,
+       "levels": {
+        "C": 2
+       }
+      },
+      {
+       "label": "Dielectric and Magnetic Materials",
+       "items": 2,
+       "levels": {
+        "C": 2
+       }
+      },
+      {
+       "label": "Coupled and Magnetic Circuits",
+       "items": 2,
+       "levels": {
+        "A": 2
+       }
+      },
+      {
+       "label": "Time-Varying Fields and Maxwell’s Equation",
+       "items": 2,
+       "levels": {
+        "A": 2
+       }
+      }
+     ]
+    },
+    {
+     "id": "ELECS-4.0",
+     "name": "4.0 Electronic Devices and Circuits",
+     "items": 14,
+     "sharedWith": null,
+     "printedLevels": null,
+     "derivedLevels": {
+      "K": 3,
+      "C": 6,
+      "A": 3,
+      "An": 1,
+      "S": 1,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Diode Wave Shaping Circuits and Special Diode Applications",
+       "items": 3,
+       "levels": {
+        "C": 2,
+        "A": 1
+       }
+      },
+      {
+       "label": "BJT and FET Small Signal Analysis",
+       "items": 4,
+       "levels": {
+        "A": 2,
+        "An": 1,
+        "S": 1
+       }
+      },
+      {
+       "label": "Diode Equivalent Circuits",
+       "items": 1,
+       "levels": {
+        "K": 1
+       }
+      },
+      {
+       "label": "Voltage Multipliers, Power Supply, and Voltage Regulation",
+       "items": 2,
+       "levels": {
+        "C": 2
+       }
+      },
+      {
+       "label": "Bipolar Junction Transistor and FET",
+       "items": 4,
+       "levels": {
+        "K": 2,
+        "C": 2
+       }
+      }
+     ]
+    },
+    {
+     "id": "ELECS-5.0",
+     "name": "5.0 Electronic Circuit Analysis and Design",
+     "items": 14,
+     "sharedWith": null,
+     "printedLevels": null,
+     "derivedLevels": {
+      "K": 1,
+      "C": 5,
+      "A": 5,
+      "An": 2,
+      "S": 1,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "BJT and FET Frequency Response",
+       "items": 4,
+       "levels": {
+        "K": 1,
+        "C": 1,
+        "A": 1,
+        "An": 1
+       }
+      },
+      {
+       "label": "Cascade and Cascode Connections",
+       "items": 2,
+       "levels": {
+        "C": 1,
+        "A": 1
+       }
+      },
+      {
+       "label": "Current Mirrors and Current Source",
+       "items": 1,
+       "levels": {
+        "C": 1
+       }
+      },
+      {
+       "label": "Differential and Operational Amplifier",
+       "items": 2,
+       "levels": {
+        "C": 1,
+        "A": 1
+       }
+      },
+      {
+       "label": "Feedback Systems, Oscillators, and Filters",
+       "items": 5,
+       "levels": {
+        "C": 1,
+        "A": 2,
+        "An": 1,
+        "S": 1
+       }
+      }
+     ]
+    },
+    {
+     "id": "ELECS-6.0",
+     "name": "6.0 Electronic Systems and Design",
+     "items": 8,
+     "sharedWith": "EST",
+     "printedLevels": null,
+     "derivedLevels": {
+      "K": 1,
+      "C": 3,
+      "A": 2,
+      "An": 1,
+      "S": 1,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "SCR’s, UJT, PUT, TRIAC, DIAC, and other Thyristors",
+       "items": 2,
+       "levels": {
+        "C": 1,
+        "A": 1
+       }
+      },
+      {
+       "label": "Optoelectronic Devices and Sensors",
+       "items": 1,
+       "levels": {
+        "C": 1
+       }
+      },
+      {
+       "label": "Transducers, Data Acquisition, and Interfacing Techniques",
+       "items": 1,
+       "levels": {
+        "C": 1
+       }
+      },
+      {
+       "label": "Programmable Logic Controllers",
+       "items": 1,
+       "levels": {
+        "K": 1
+       }
+      },
+      {
+       "label": "Design and Integration in Building Management Systems and HVAC Controls, Security, Safety, and Surveillance Control Systems, and Audio-Video and Lighting Controls",
+       "items": 3,
+       "levels": {
+        "A": 1,
+        "An": 1,
+        "S": 1
+       }
+      }
+     ]
+    },
+    {
+     "id": "ELECS-7.0",
+     "name": "7.0 Logic Circuits and Switching Theory",
+     "items": 12,
+     "sharedWith": null,
+     "printedLevels": null,
+     "derivedLevels": {
+      "K": 0,
+      "C": 1,
+      "A": 6,
+      "An": 3,
+      "S": 2,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Boolean Algebra and Logic Gates",
+       "items": 3,
+       "levels": {
+        "A": 2,
+        "An": 1
+       }
+      },
+      {
+       "label": "Minimization of Combinational Logic Circuits",
+       "items": 4,
+       "levels": {
+        "A": 2,
+        "An": 1,
+        "S": 1
+       }
+      },
+      {
+       "label": "Sequential Logic Circuits",
+       "items": 3,
+       "levels": {
+        "A": 1,
+        "An": 1,
+        "S": 1
+       }
+      },
+      {
+       "label": "Algorithmic State Machine (ASM)",
+       "items": 1,
+       "levels": {
+        "A": 1
+       }
+      },
+      {
+       "label": "Asynchronous Sequential Logic",
+       "items": 1,
+       "levels": {
+        "C": 1
+       }
+      }
+     ]
+    },
+    {
+     "id": "ELECS-8.0",
+     "name": "8.0 Microprocessor & Microcontroller Systems and Design",
+     "items": 12,
+     "sharedWith": null,
+     "printedLevels": null,
+     "derivedLevels": {
+      "K": 4,
+      "C": 0,
+      "A": 6,
+      "An": 1,
+      "S": 1,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Microprocessor Unit",
+       "items": 3,
+       "levels": {
+        "A": 2,
+        "An": 1
+       }
+      },
+      {
+       "label": "Memory Subsystem",
+       "items": 2,
+       "levels": {
+        "K": 1,
+        "A": 1
+       }
+      },
+      {
+       "label": "I/O Subsystem",
+       "items": 2,
+       "levels": {
+        "K": 1,
+        "A": 1
+       }
+      },
+      {
+       "label": "Instruction Set Architecture and Assembly Programming",
+       "items": 2,
+       "levels": {
+        "K": 1,
+        "A": 1
+       }
+      },
+      {
+       "label": "Microcontrollers",
+       "items": 3,
+       "levels": {
+        "K": 1,
+        "A": 1,
+        "S": 1
+       }
+      }
+     ]
+    },
+    {
+     "id": "ELECS-9.0",
+     "name": "9.0 Feedback and Control Systems",
+     "items": 8,
+     "sharedWith": "MATH",
+     "printedLevels": null,
+     "derivedLevels": {
+      "K": 0,
+      "C": 0,
+      "A": 5,
+      "An": 3,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Block Diagram Representation and Signal Flow Graphs",
+       "items": 1,
+       "levels": {
+        "A": 1
+       }
+      },
+      {
+       "label": "LTI Systems and Transient Analysis",
+       "items": 1,
+       "levels": {
+        "A": 1
+       }
+      },
+      {
+       "label": "System Modeling and Transfer Function",
+       "items": 2,
+       "levels": {
+        "A": 1,
+        "An": 1
+       }
+      },
+      {
+       "label": "Poles and Zeros, Root Locus, and Stability Analysis",
+       "items": 2,
+       "levels": {
+        "A": 1,
+        "An": 1
+       }
+      },
+      {
+       "label": "Steady State Analysis and Frequency Response",
+       "items": 2,
+       "levels": {
+        "A": 1,
+        "An": 1
+       }
+      }
+     ]
+    }
+   ]
+  },
+  "EST": {
+   "label": "Electronics Systems and Technologies",
+   "weightPct": 30,
+   "totalItems": 100,
+   "pdfTotals": null,
+   "pdfTierTotals": {
+    "easy_KC": 30,
+    "moderate_A": 40,
+    "difficult_AnSE": 30
+   },
+   "topics": [
+    {
+     "id": "EST-1.0",
+     "name": "1.0 Signals, Spectra, Signal Processing",
+     "items": 10,
+     "sharedWith": null,
+     "printedLevels": null,
+     "derivedLevels": {
+      "K": 1,
+      "C": 3,
+      "A": 4,
+      "An": 2,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Classification and Characteristics of signals",
+       "items": 2,
+       "levels": {
+        "K": 1,
+        "C": 1
+       }
+      },
+      {
+       "label": "Sampling theorem and Aliasing",
+       "items": 2,
+       "levels": {
+        "A": 1,
+        "An": 1
+       }
+      },
+      {
+       "label": "Difference equations for FIR and IIR filters",
+       "items": 3,
+       "levels": {
+        "C": 1,
+        "A": 2
+       }
+      },
+      {
+       "label": "Convolution and correlation, Z transforms, Pole-zero-gain filters, Fourier transforms, Filtering, FiR/IIR",
+       "items": 3,
+       "levels": {
+        "C": 1,
+        "A": 1,
+        "An": 1
+       }
+      }
+     ]
+    },
+    {
+     "id": "EST-2.0",
+     "name": "2.0 Principles of Communications",
+     "items": 25,
+     "sharedWith": null,
+     "printedLevels": null,
+     "derivedLevels": {
+      "K": 2,
+      "C": 4,
+      "A": 12,
+      "An": 7,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Introduction to Communications Systems",
+       "items": 4,
+       "levels": {
+        "K": 1,
+        "C": 1,
+        "A": 2
+       }
+      },
+      {
+       "label": "Noise",
+       "items": 5,
+       "levels": {
+        "A": 3,
+        "An": 2
+       }
+      },
+      {
+       "label": "Amplitude Modulation, Single-Sideband Techniques, Frequency Modulation",
+       "items": 6,
+       "levels": {
+        "A": 4,
+        "An": 2
+       }
+      },
+      {
+       "label": "Radio Receivers",
+       "items": 3,
+       "levels": {
+        "C": 1,
+        "A": 1,
+        "An": 1
+       }
+      },
+      {
+       "label": "Pulse Modulation, Digital Modulation, Broadband Communication System",
+       "items": 7,
+       "levels": {
+        "K": 1,
+        "C": 2,
+        "A": 2,
+        "An": 2
+       }
+      }
+     ]
+    },
+    {
+     "id": "EST-3.0",
+     "name": "3.0 Digital Communications",
+     "items": 15,
+     "sharedWith": null,
+     "printedLevels": null,
+     "derivedLevels": {
+      "K": 1,
+      "C": 3,
+      "A": 7,
+      "An": 4,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Introduction to Digital Communications Systems",
+       "items": 2,
+       "levels": {
+        "K": 1,
+        "C": 1
+       }
+      },
+      {
+       "label": "Digital Transmission, PAM, PWM, PPM, Pulse Code Modulation",
+       "items": 3,
+       "levels": {
+        "A": 2,
+        "An": 1
+       }
+      },
+      {
+       "label": "Digital Communications, ASK, FSK, PSK, QAM",
+       "items": 4,
+       "levels": {
+        "C": 1,
+        "A": 2,
+        "An": 1
+       }
+      },
+      {
+       "label": "Basics of Information Theory, Error Detection",
+       "items": 2,
+       "levels": {
+        "A": 1,
+        "An": 1
+       }
+      },
+      {
+       "label": "FDM, TDM, WDM, FDMA, CDMA, TDMA",
+       "items": 4,
+       "levels": {
+        "C": 1,
+        "A": 2,
+        "An": 1
+       }
+      }
+     ]
+    },
+    {
+     "id": "EST-4.0",
+     "name": "4.0 Transmission and Antenna Systems",
+     "items": 23,
+     "sharedWith": null,
+     "printedLevels": null,
+     "derivedLevels": {
+      "K": 1,
+      "C": 4,
+      "A": 11,
+      "An": 7,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Transmission Lines Circuits, losses and parameters, Matching TL, Smith Chart",
+       "items": 5,
+       "levels": {
+        "K": 1,
+        "C": 1,
+        "A": 2,
+        "An": 1
+       }
+      },
+      {
+       "label": "Radio Wave Propagation, Power Density and Field Strength Calculations,",
+       "items": 8,
+       "levels": {
+        "C": 1,
+        "A": 5,
+        "An": 2
+       }
+      },
+      {
+       "label": "Antenna Systems",
+       "items": 6,
+       "levels": {
+        "C": 2,
+        "A": 2,
+        "An": 2
+       }
+      },
+      {
+       "label": "Wave guides, Fiber Optics",
+       "items": 4,
+       "levels": {
+        "A": 2,
+        "An": 2
+       }
+      }
+     ]
+    },
+    {
+     "id": "EST-5.0",
+     "name": "5.0 Electronics 3: Electronic Systems and Design",
+     "items": 7,
+     "sharedWith": null,
+     "printedLevels": null,
+     "derivedLevels": {
+      "K": 0,
+      "C": 3,
+      "A": 1,
+      "An": 3,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Optoelectronic Devices and Sensors, Transducers",
+       "items": 2,
+       "levels": {
+        "C": 1,
+        "An": 1
+       }
+      },
+      {
+       "label": "Interfacing techniques, Programmable Logic Controllers",
+       "items": 2,
+       "levels": {
+        "C": 1,
+        "An": 1
+       }
+      },
+      {
+       "label": "Building Management Systems including HVAC Controls, Security and Surveillance Control System, Audio-Video and Lighting Controls, Supervisory Controls and Data Acquisition, Fire and Life Safety Controls",
+       "items": 3,
+       "levels": {
+        "C": 1,
+        "A": 1,
+        "An": 1
+       }
+      }
+     ]
+    },
+    {
+     "id": "EST-6.0",
+     "name": "6.0 Data Communications",
+     "items": 20,
+     "sharedWith": null,
+     "printedLevels": null,
+     "derivedLevels": {
+      "K": 3,
+      "C": 5,
+      "A": 5,
+      "An": 7,
+      "S": 0,
+      "E": 0
+     },
+     "levelsConflict": null,
+     "rows": [
+      {
+       "label": "Introduction to Data Communications, Category of Data Communication, Configurations and Network Topology",
+       "items": 5,
+       "levels": {
+        "K": 1,
+        "C": 1,
+        "A": 2,
+        "An": 1
+       }
+      },
+      {
+       "label": "Transmission Modes, Two-wire vs. Four- Wire Circuits,",
+       "items": 4,
+       "levels": {
+        "C": 2,
+        "An": 2
+       }
+      },
+      {
+       "label": "Types of Synchronization, Network Components (Terminal, multiplexer, concentrators), Network Components (LCU, FEP, Serial Interface), Security, Cryptography",
+       "items": 3,
+       "levels": {
+        "K": 1,
+        "C": 1,
+        "A": 1
+       }
+      },
+      {
+       "label": "Open System Interconnection, System Network Architecture, TCP/IP Architecture, Character-Oriented Protocols, Bit-Oriented Protocols",
+       "items": 5,
+       "levels": {
+        "K": 1,
+        "C": 1,
+        "A": 1,
+        "An": 2
+       }
+      },
+      {
+       "label": "LAN/MAN/WAN/GAN, ISDN/B-ISDN",
+       "items": 3,
+       "levels": {
+        "A": 1,
+        "An": 2
+       }
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

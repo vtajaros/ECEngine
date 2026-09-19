@@ -1,21 +1,16 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ChevronDown, ChevronUp, RotateCcw, TrendingUp,
   Square, CheckSquare
 } from 'lucide-react'
 import { TOS_DATA, TOS_SUBJECT_COLORS, TOSSubject, TOSTopic } from '../../lib/tosData'
+import { useChecklistStore } from '../../store/useChecklistStore'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const STORAGE_REVIEWED = 'tos_checklist_reviewed_v1'
-const STORAGE_REFRESHER = 'tos_checklist_refresher_v1'
-const STORAGE_SELF_REVIEW = 'tos_checklist_selfReview_v1'
-
 const SUBJECT_CODES = ['MATH', 'ELECS', 'GEAS', 'EST'] as const
 type SubjectCode = typeof SUBJECT_CODES[number]
-
-
 
 /** Stable checklist key: "MATH::1.1 Functions, Continuity, Limits" */
 function subtopicKey(subjectCode: string, subtopicName: string): string {
@@ -25,29 +20,6 @@ function subtopicKey(subjectCode: string, subtopicName: string): string {
 /** Stable key for a parent topic accordion: "MATH::MATH-1.0" */
 function topicAccordionKey(subjectCode: string, topicId: string): string {
   return `${subjectCode}::${topicId}`
-}
-
-// ─── Persistence ─────────────────────────────────────────────────────────────
-
-function loadState(key: string): Record<string, boolean> {
-  try {
-    const raw = localStorage.getItem(key)
-    if (!raw) return {}
-    const data = JSON.parse(raw)
-    return typeof data === 'object' && data !== null
-      ? (data as Record<string, boolean>)
-      : {}
-  } catch {
-    return {}
-  }
-}
-
-function saveState(key: string, state: Record<string, boolean>): void {
-  try {
-    localStorage.setItem(key, JSON.stringify(state))
-  } catch {
-    // Storage quota exceeded — silently ignore
-  }
 }
 
 // ─── TopicAccordion ───────────────────────────────────────────────────────────
@@ -355,9 +327,16 @@ const SubjectTabBar: React.FC<SubjectTabBarProps> = ({ active, onChange, reviewe
 // ─── TOSTracker (Root) ────────────────────────────────────────────────────────
 
 export const TOSTracker: React.FC = () => {
-  const [reviewed, setReviewed] = useState<Record<string, boolean>>({})
-  const [refresher, setRefresher] = useState<Record<string, boolean>>({})
-  const [selfReview, setSelfReview] = useState<Record<string, boolean>>({})
+  const {
+    reviewed,
+    refresher,
+    selfReview,
+    toggleReview: handleToggleReview,
+    toggleRefresher: handleToggleRefresher,
+    toggleSelfReview: handleToggleSelfReview,
+    resetAll,
+  } = useChecklistStore()
+
   const [showReset, setShowReset] = useState(false)
   const [activeTab, setActiveTab] = useState<SubjectCode>('MATH')
 
@@ -368,48 +347,11 @@ export const TOSTracker: React.FC = () => {
     'EST::EST-1.0': true,
   })
 
-  // Load all states on mount
-  useEffect(() => {
-    setReviewed(loadState(STORAGE_REVIEWED))
-    setRefresher(loadState(STORAGE_REFRESHER))
-    setSelfReview(loadState(STORAGE_SELF_REVIEW))
-  }, [])
-
-  // Toggle handlers
-  const handleToggleReview = useCallback((key: string) => {
-    setReviewed(prev => {
-      const next = { ...prev, [key]: !prev[key] }
-      saveState(STORAGE_REVIEWED, next)
-      return next
-    })
-  }, [])
-
-  const handleToggleRefresher = useCallback((key: string) => {
-    setRefresher(prev => {
-      const next = { ...prev, [key]: !prev[key] }
-      saveState(STORAGE_REFRESHER, next)
-      return next
-    })
-  }, [])
-
-  const handleToggleSelfReview = useCallback((key: string) => {
-    setSelfReview(prev => {
-      const next = { ...prev, [key]: !prev[key] }
-      saveState(STORAGE_SELF_REVIEW, next)
-      return next
-    })
-  }, [])
-
   // Reset all progress
   const handleReset = useCallback(() => {
-    setReviewed({})
-    setRefresher({})
-    setSelfReview({})
-    saveState(STORAGE_REVIEWED, {})
-    saveState(STORAGE_REFRESHER, {})
-    saveState(STORAGE_SELF_REVIEW, {})
+    resetAll()
     setShowReset(false)
-  }, [])
+  }, [resetAll])
 
   const toggleTopic = useCallback((key: string) => {
     setExpandedTopics(prev => ({ ...prev, [key]: !prev[key] }))
@@ -441,7 +383,8 @@ export const TOSTracker: React.FC = () => {
     globalStats.pct >= 80 ? '#00FF41'
       : globalStats.pct >= 50 ? '#22c55e'
         : globalStats.pct >= 25 ? '#f59e0b'
-          : '#ef4444'
+          : globalStats.pct > 0 ? '#ef4444'
+            : '#333'
 
   const activeSubject = TOS_DATA.find(s => s.code === activeTab)!
   const hasAnyProgress =
@@ -473,14 +416,19 @@ export const TOSTracker: React.FC = () => {
             <div className="w-52 h-2.5 rounded-full bg-[#1e1e1e] overflow-hidden">
               <motion.div
                 className="h-full rounded-full"
+                initial={false}
                 animate={{ width: `${globalStats.pct}%` }}
                 transition={{ duration: 0.7, ease: 'easeOut' }}
-                style={{ background: progressColor, boxShadow: `0 0 10px ${progressColor}55` }}
+                style={{
+                  width: `${globalStats.pct}%`,
+                  background: progressColor,
+                  boxShadow: globalStats.pct > 0 ? `0 0 10px ${progressColor}55` : 'none',
+                }}
               />
             </div>
             <span
-              className="font-['JetBrains_Mono'] text-sm font-black min-w-[42px] text-right"
-              style={{ color: progressColor }}
+              className="font-['JetBrains_Mono'] text-sm font-black min-w-[42px] text-right transition-colors"
+              style={{ color: globalStats.pct > 0 ? progressColor : '#666' }}
             >
               {globalStats.pct}%
             </span>

@@ -95,6 +95,15 @@ export const TOC_DATA: SubjectArea[] = [
           { id: 'MATH-7.2', name: '7.2 Convolution' },
           { id: 'MATH-7.3', name: '7.3 Correlation' },
         ]
+      },
+      {
+        id: 'MATH-8.0',
+        name: '8.0 Feedback and Control Systems',
+        subtopics: [
+          { id: 'MATH-8.1', name: '8.1 Pole and Zero Determination' },
+          { id: 'MATH-8.2', name: '8.2 Transient Response' },
+          { id: 'MATH-8.3', name: '8.3 Block Diagram and Signal Flow' },
+        ]
       }
     ]
   },

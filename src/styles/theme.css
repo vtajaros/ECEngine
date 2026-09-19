@@ -19,6 +19,10 @@
   --color-warning:  #FFB800;
   --color-info:     #00BFFF;
 
+  --tier-easy:      #22C55E;
+  --tier-moderate:  #F59E0B;
+  --tier-difficult: #EF4444;
+
   --font-display:    'Orbitron', sans-serif;
   --font-body:       'JetBrains Mono', monospace;
   --font-ui:         'Rajdhani', sans-serif;

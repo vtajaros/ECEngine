@@ -2,6 +2,7 @@ import { RouterProvider } from 'react-router-dom'
 import { router } from './router'
 
 import { useEffect } from 'react'
+import './store/useChecklistStore'
 
 export default function App() {
   useEffect(() => {
