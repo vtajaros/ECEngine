@@ -124,8 +124,14 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 ---
 
 ### 📊 Board Exam Tools & Analytics
-* **2022 EELE Table of Specifications (ToS)**: Browse the official PRC Table of Specifications for Mathematics, Electronics Engineering, GEAS, and EST.
-* **Interactive Review Checklist**: Track completion status across the entire syllabus (marked as *For Review*, *Refresher*, or *Mastered*).
+* **2022 EELE Table of Specifications (ToS) & Cognitive Level Breakdown**:
+  * Complete coverage of official PRC Board Examination specifications across **Mathematics**, **Electronics Engineering**, **GEAS**, and **EST**.
+  * **Topic & Subject Item Breakdown**: Real-time item counts and proportional difficulty distribution bars (Easy `--tier-easy`, Moderate `--tier-moderate`, Difficult `--tier-difficult`).
+  * **Per-Row Exam Item Mapping**: Fine-grained mapping of subtopics to official exam items with cognitive level badges ($K$ Knowledge, $C$ Comprehension, $A$ Application, $An$ Analysis, $S$ Synthesis, $E$ Evaluation).
+  * **Grouped Syllabus Accordions**: Subtopic clusters grouped according to PDF specifications with search filtering and instant text highlighting.
+* **Interactive Review Checklist**:
+  * Synchronously preloaded in-memory state via `useChecklistStore` for instant, flicker-free tab transitions and offline `localStorage` persistence.
+  * Multi-column weighted progress tracking: *Review* (10%), *Refresher* (20%), and *Self Review* (70%) with dynamic subject badges and overall progress animations.
 * **Activity Heatmap & Trends**: 6-month study activity heatmap, subject accuracy trends, and mastery metrics.
 * **Exam Countdown Timer**: Live countdown clock targeting your scheduled Board Exam date.
 
@@ -314,19 +320,20 @@ ecengine/
 ├── src/                         # React Frontend (Renderer)
 │   ├── assets/                  # Brand assets, icons, bundled fonts (Rajdhani, JetBrains Mono, Orbitron)
 │   ├── components/              # Modular UI Components
-│   │   ├── ui/                  # Tooltip (auto-flipping), VolumeControl, FolderPanel, Toast
+│   │   ├── ui/                  # Tooltip (auto-flipping), VolumeControl, FolderPanel, Toast, TOSTracker
 │   │   ├── mcq/                 # MCQCard, LearnMode, TestMode, BookmarkedCardsModal
 │   │   ├── flashcard/           # FlashcardSession, FlashcardDeckBrowser, StudyCard
 │   │   ├── deck/                # CardForms, DeckCard, AIDescriptionButton, AdvancedFiltersPopover
 │   │   ├── study/               # StudyHeader, StudySessionStats
 │   │   ├── dashboard/           # ReviewHeatmap, SessionHistory, ExamCountdown
+│   │   ├── toc/                 # SubjectCard, Table of Specifications data, tosItems, tosRows
 │   │   └── layout/              # AppShell, custom TitleBar, navigation sidebar
 │   ├── hooks/                   # Business logic (SM-2, timer, TTS, sound volume, import)
-│   ├── lib/                     # LaTeX rendering, subject classifier, audio synthesis
-│   ├── pages/                   # Main views (Dashboard, LooksFam, FlashcardLearn, Formulas, PrintView, Settings, etc.)
+│   ├── lib/                     # LaTeX rendering, subject classifier, audio synthesis, tosData
+│   ├── pages/                   # Main views (Dashboard, LooksFam, FlashcardLearn, Formulas, PrintView, TOSChecklist, Settings, etc.)
 │   ├── services/                # db.service.ts (SQLite data access), aiSummary.service.ts (Groq summaries)
-│   ├── store/                   # Zustand stores (study, exam, deck states)
-│   └── styles/                  # Tailwind theme tokens, CSS variables, KaTeX customizations
+│   ├── store/                   # Zustand stores (useSessionStore for SM-2, useChecklistStore for ToS checklist)
+│   └── styles/                  # Tailwind theme tokens, CSS variables (--tier-*), KaTeX customizations
 ├── content/                     # Seed JSON deck files
 ├── scripts/                     # Seeding and content validation scripts
 ├── package.json                 # Dependencies and build configuration

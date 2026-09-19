@@ -86,6 +86,7 @@ src/                               <- RENDERER PROCESS
     window.d.ts                    <- electron IPC type declarations
   store/
     useSessionStore.ts             <- Zustand SM-2 session state
+    useChecklistStore.ts           <- Zustand ToS review checklist state
   services/
     db.service.ts                  <- renderer IPC wrapper + Zod validation
     aiSummary.service.ts / explain.service.ts
@@ -95,19 +96,21 @@ src/                               <- RENDERER PROCESS
   lib/
     sm2.ts / scrambler.ts / sampling.ts / parser.ts / quizletParser.ts
     latex.ts / scheduleView.ts / subjectClassifier.ts (31 KB)
-    formulaData.ts (34 KB) / tosData.ts (18 KB) / utils.ts / textUtils.ts
+    tosData.ts (18 KB) / utils.ts / textUtils.ts
     constants.ts / dashboardUtils.ts / subjectColors.ts / scheduleView.ts
     [test files for most of the above]
-  pages/ (13 files; largest: EditDeck 77 KB, Settings 75 KB, PrintView 67 KB, LooksFamStudy 65 KB)
+  pages/ (12 files; largest: EditDeck 77 KB [virtualized], Settings 75 KB, PrintView 67 KB, LooksFamStudy 65 KB)
   components/
     dashboard/ deck/ flashcard/ layout/ mcq/ study/ toc/ ui/
     deck/: CardForms 38 KB, ImportModals 39 KB
     flashcard/: FlashcardSession 31 KB
     mcq/: LearnMode 42 KB, TestMode 37 KB
+    toc/: SubjectCard.tsx, tosItems.ts, tosRows.ts, data.ts, tosRows.test.ts, tosItems.test.ts
+    ui/: TOSTracker.tsx, Tooltip, VolumeControl, FolderPanel
 ```
 
 **Summary:**
-- ~90 source files, ~30 test files
+- ~90 source files, 20 test files (264 passing tests)
 - Languages: TypeScript (main), TSX (renderer)
 - Framework: Electron 31 + React 18 + Vite (electron-vite) + TailwindCSS 3
 - Database: better-sqlite3 (local SQLite only, no network DB)
@@ -453,27 +456,56 @@ Test types: Unit, Integration. No E2E, no snapshot tests.
 
 ---
 
+# STEP 9.5 -- RECENTLY COMPLETED WORK (VERIFIED IN REPO)
+
+1. **Security & Data Integrity Fixes:**
+   - `config:updateSettings` allowlist (`electron/ipc/config.ipc.ts`): Filtered settings against `SAFE_SETTINGS_KEYS` to eliminate API key / DB path corruption risks.
+   - `resolveOrCreateFolderId` deduplication: Extracted to `electron/db/folderHelpers.ts` and shared across `deck.ipc.ts` and `export.ipc.ts`.
+   - `GROQ_MODEL` constant hoisted in `electron/ipc/ai.ipc.ts`.
+   - Added `SaveProgressSchema` Zod validation to `data:saveProgress` in `electron/ipc/progress.ipc.ts`.
+   - Fixed `decks:updateFolderOrder` in `electron/ipc/deck.ipc.ts` to update the `folders` table instead of `topics`.
+
+2. **Feature Streamlining & Cleanup:**
+   - Fully removed legacy `FormulaBank.tsx` and `src/lib/formulaData.ts`, consolidating formulas under `src/pages/Formulas.tsx`.
+
+3. **Performance & Virtualization:**
+   - Virtualized card list in `src/pages/EditDeck.tsx` using `@tanstack/react-virtual` to optimize large deck editing.
+   - Isolated `hoveredSubject` legend state in `src/pages/Dashboard.tsx` to eliminate re-renders across all child dashboard widgets during donut hover.
+
+4. **PRC 2022 EELE Table of Specifications (ToS) Integration:**
+   - Implemented `src/components/toc/tosItems.ts` and `src/components/toc/tosRows.ts` mapping subtopics to official exam items with cognitive levels (Knowledge, Comprehension, Application, Analysis, Synthesis, Evaluation).
+   - Added 10 tests across `tosItems.test.ts` and `tosRows.test.ts` validating tier math and item totals against official specs.
+   - Updated `src/components/toc/SubjectCard.tsx` with proportional tier distribution bars (`--tier-easy`, `--tier-moderate`, `--tier-difficult`), item counts, and cognitive level badges.
+
+5. **Review Checklist Store & Hydration Glitch Fix:**
+   - Created `src/store/useChecklistStore.ts` with synchronous `localStorage` reading to eliminate tab navigation unmount/hydration latency.
+   - Preloaded at app startup in `src/App.tsx`.
+   - Added unit test suite `src/store/useChecklistStore.test.ts` (6 tests).
+   - Updated `src/components/ui/TOSTracker.tsx` with `initial={false}`, inline width, and 0% neutral color threshold, eliminating the full-width red progress bar glitch during tab transitions.
+
+---
+
 # STEP 10 -- ACTIONABLE NEXT STEPS
 
-| # | Task | File Path(s) | Model | Complexity | Depends on |
+| # | Task | File Path(s) | Model | Complexity | Status / Depends on |
 |---|---|---|---|---|---|
-| 1 | Fix config:updateSettings allowlist | electron/ipc/config.ipc.ts . line 194 | Gemini Flash | S | -- |
-| 2 | Fix useExamTimer stale interval ref | src/hooks/useExamTimer.ts . line 17 | Gemini Flash | S | -- |
-| 3 | Hoist AI model constant | electron/ipc/ai.ipc.ts . lines 74, 141, 296 | Gemini Flash | S | -- |
-| 4 | Add Zod to data:saveProgress | electron/ipc/progress.ipc.ts . line 49 | Gemini Flash | S | -- |
-| 5 | Deduplicate resolveOrCreateFolderId | electron/ipc/deck.ipc.ts . line 70, electron/ipc/export.ipc.ts . line 59 | Gemini Flash | S | -- |
-| 6 | Fix decks:updateFolderOrder (wrong table) | electron/ipc/deck.ipc.ts . lines 406-420 | Claude Sonnet | M | -- |
-| 7 | Fix lost card IDs on updateDeckWithCards | electron/ipc/deck.ipc.ts . line 388 | Claude Sonnet | M | -- |
-| 8 | Replace SELECT * with explicit columns | electron/ipc/deck.ipc.ts . lines 94, 104 | Gemini Flash | S | -- |
+| 1 | Fix config:updateSettings allowlist | electron/ipc/config.ipc.ts · line 194 | Gemini Flash | S | [DONE] |
+| 2 | Fix useExamTimer stale interval ref | src/hooks/useExamTimer.ts · line 17 | Gemini Flash | S | Pending |
+| 3 | Hoist AI model constant | electron/ipc/ai.ipc.ts · lines 74, 141, 296 | Gemini Flash | S | [DONE] |
+| 4 | Add Zod to data:saveProgress | electron/ipc/progress.ipc.ts · line 49 | Gemini Flash | S | [DONE] |
+| 5 | Deduplicate resolveOrCreateFolderId | electron/ipc/deck.ipc.ts · line 70, electron/ipc/export.ipc.ts · line 59 | Gemini Flash | S | [DONE] |
+| 6 | Fix decks:updateFolderOrder (wrong table) | electron/ipc/deck.ipc.ts · lines 406-420 | Claude Sonnet | M | [DONE] |
+| 7 | Fix lost card IDs on updateDeckWithCards | electron/ipc/deck.ipc.ts · line 388 | Claude Sonnet | M | Pending |
+| 8 | Replace SELECT * with explicit columns | electron/ipc/deck.ipc.ts · lines 94, 104 | Gemini Flash | S | Pending |
 | 9 | Integration tests: deck CRUD + folder cascade | electron/ipc/deck.ipc.ts | Claude Sonnet or Gemini Pro | L | 5 |
 | 10 | Integration tests: progress IPC | electron/ipc/progress.ipc.ts | Claude Sonnet | M | 4 |
 | 11 | Round-trip export/import integration test | electron/ipc/export.ipc.ts | Claude Sonnet | M | -- |
-| 12 | Unit tests for sampling.ts | src/lib/sampling.ts | Claude Haiku | S | -- |
-| 13 | Split EditDeck.tsx into sub-components | src/pages/EditDeck.tsx | Gemini Pro | XL | -- |
-| 14 | Split Settings.tsx into sub-components | src/pages/Settings.tsx | Gemini Pro | XL | -- |
-| 15 | Update .env.example | .env.example | Gemini Flash | S | -- |
-| 16 | Add composite index (topic_id, type) on cards | electron/db/database.ts | Gemini Flash | S | -- |
-| 17 | Type parseImportedMCQs return values | src/lib/parser.ts | Gemini Flash | S | -- |
+| 12 | Unit tests for sampling.ts | src/lib/sampling.ts | Claude Haiku | S | Pending |
+| 13 | Split EditDeck.tsx into sub-components | src/pages/EditDeck.tsx | Gemini Pro | XL | [PARTIAL - Virtualized] |
+| 14 | Split Settings.tsx into sub-components | src/pages/Settings.tsx | Gemini Pro | XL | Pending |
+| 15 | Update .env.example | .env.example | Gemini Flash | S | Pending |
+| 16 | Add composite index (topic_id, type) on cards | electron/db/database.ts | Gemini Flash | S | Pending |
+| 17 | Type parseImportedMCQs return values | src/lib/parser.ts | Gemini Flash | S | Pending |
 
 ---
 
