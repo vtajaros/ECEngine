@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { BookOpen, Library, Sigma, Download, Zap, BookMarked, BarChart2, TrendingUp, Calendar, Edit2, Activity, Clock, X } from 'lucide-react'
+import { BookOpen, Library, Sigma, Download, Zap, BookMarked, TrendingUp, Calendar, Edit2, Activity, Clock, X } from 'lucide-react'
 import { getSubjectBadgeClasses } from '../lib/subjectColors'
 import { dbService, AccuracyGranularity, AccuracySubject } from '../services/db.service'
 import { motion, AnimatePresence } from 'framer-motion'
 
-import { ReviewHeatmap, ExamCountdown, AccuracyChart, SessionHistory } from '../components/dashboard'
+import { ReviewHeatmap, ExamCountdown, AccuracyChart, SessionHistory, FlashcardSchedule } from '../components/dashboard'
 import { SUBJECT_MAP, SUBJECT_LINE_COLOR } from '../lib/dashboardUtils'
 
 // ── Components ──────────────────────────────────────────────────────────────
@@ -174,23 +174,22 @@ export default function Dashboard() {
       {/* Analytics Row 1 */}
       <div className="shrink-0 grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Condensed KPIs */}
-        <div className="lg:col-span-1 flex flex-col gap-4 self-stretch">
-
+        <div className="lg:col-span-1 flex flex-col gap-3">
           {/* Total Decks — donut chart */}
-          <div className="bg-surface p-5 rounded-xl border border-border-base shadow-lg flex flex-col flex-1">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-['Rajdhani'] font-bold text-sm text-text-primary uppercase tracking-widest flex items-center gap-2">
-                <Library className="text-accent" size={13} />
+          <div className="bg-surface p-4 rounded-xl border border-border-base shadow-lg flex flex-col">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="font-['Rajdhani'] font-bold text-xs text-text-primary uppercase tracking-widest flex items-center gap-1.5">
+                <Library className="text-accent" size={12} />
                 Total Decks
               </h2>
             </div>
 
             {/* Donut + legend row */}
-            <div className="flex flex-col items-center gap-4 flex-1 justify-center relative" onMouseLeave={() => setHoveredSubject(null)}>
+            <div className="flex flex-col items-center gap-2.5 justify-center relative" onMouseLeave={() => setHoveredSubject(null)}>
               {/* SVG Donut */}
               {(() => {
                 const total = subjectCounts.reduce((s, r) => s + r.count, 0) || 1
-                const cx = 60, cy = 60, r = 46, stroke = 12
+                const cx = 48, cy = 48, r = 36, stroke = 9
                 const circumference = 2 * Math.PI * r
                 let offset = 0
                 const slices = subjectCounts.map(item => {
@@ -202,7 +201,7 @@ export default function Dashboard() {
                 })
                 return (
                   <div className="relative">
-                    <svg width="120" height="120" viewBox="0 0 120 120" className="shrink-0">
+                    <svg width="96" height="96" viewBox="0 0 96 96" className="shrink-0">
                       {/* Track */}
                       <circle cx={cx} cy={cy} r={r} fill="none" stroke="#222" strokeWidth={stroke} />
                       {/* Slices */}
@@ -215,7 +214,7 @@ export default function Dashboard() {
                             cx={cx} cy={cy} r={r}
                             fill="none"
                             stroke={s.color}
-                            strokeWidth={isHovered ? stroke + 6 : stroke}
+                            strokeWidth={isHovered ? stroke + 4 : stroke}
                             strokeDasharray={`${s.dash} ${circumference - s.dash}`}
                             strokeDashoffset={-(s.offset - circumference / 4)}
                             style={{ 
@@ -228,12 +227,12 @@ export default function Dashboard() {
                         )
                       })}
                       {/* Center label */}
-                      <text x={cx} y={cy - 6} textAnchor="middle" fill="#E8E8E8"
-                        fontSize="18" fontFamily="'JetBrains Mono', monospace" fontWeight="bold">
+                      <text x={cx} y={cy - 4} textAnchor="middle" fill="#E8E8E8"
+                        fontSize="15" fontFamily="'JetBrains Mono', monospace" fontWeight="bold">
                         {total}
                       </text>
-                      <text x={cx} y={cy + 12} textAnchor="middle" fill="#555"
-                        fontSize="9" fontFamily="'Rajdhani', sans-serif" fontWeight="bold"
+                      <text x={cx} y={cy + 10} textAnchor="middle" fill="#555"
+                        fontSize="8" fontFamily="'Rajdhani', sans-serif" fontWeight="bold"
                         letterSpacing="1">
                         DECKS
                       </text>
@@ -260,7 +259,7 @@ export default function Dashboard() {
               })()}
 
               {/* Legend */}
-              <div className="grid grid-cols-2 gap-1.5 w-full">
+              <div className="grid grid-cols-2 gap-1 w-full">
                 {subjectCounts.map((item, i) => {
                   const isHovered = hoveredSubject === item.subject
                   const isDimmed = hoveredSubject && hoveredSubject !== item.subject
@@ -268,7 +267,7 @@ export default function Dashboard() {
                     <div 
                       key={i} 
                       onMouseEnter={() => setHoveredSubject(item.subject)}
-                      className={`px-2 py-1 rounded border text-[9px] font-bold font-['Rajdhani'] uppercase tracking-wider text-center transition-all duration-200 cursor-pointer ${getSubjectClasses(item.subject)}`}
+                      className={`px-1.5 py-0.5 rounded border text-[8.5px] font-bold font-['Rajdhani'] uppercase tracking-wider text-center transition-all duration-200 cursor-pointer ${getSubjectClasses(item.subject)}`}
                       style={{
                         opacity: isDimmed ? 0.4 : 1,
                         boxShadow: isHovered ? `0 0 0 2px ${SUBJECT_COLORS[item.subject] ?? '#555'}40` : 'none',
@@ -283,39 +282,14 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Cards Studied + Accuracy — merged */}
-          <div className="bg-surface p-5 rounded-xl border border-border-base shadow-lg">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="font-['Rajdhani'] font-bold text-sm text-text-primary uppercase tracking-widest flex items-center gap-2">
-                <BarChart2 className="text-accent" size={13} />
-                Session Stats
-              </h2>
-            </div>
-            <div className="flex items-start gap-0 divide-x divide-[#2A2A2A]">
-              <div className="flex flex-col gap-0.5 flex-1 pr-4">
-                <span className="font-['Rajdhani'] text-[#666] uppercase tracking-widest text-[9px] font-bold">Studied</span>
-                <div className="flex items-baseline gap-1">
-                  <span className="font-['JetBrains_Mono'] text-xl font-bold text-text-primary">{(statsData.totalStudied || 0) + (statsData.mcqAnswered || 0)}</span>
-                  <span className="font-['Rajdhani'] text-accent font-bold text-[9px]">CARDS</span>
-                </div>
-              </div>
-              <div className="flex flex-col gap-0.5 flex-1 pl-4">
-                <span className="font-['Rajdhani'] text-[#666] uppercase tracking-widest text-[9px] font-bold">Avg. Accuracy</span>
-                <div className="flex items-baseline gap-1">
-                  <span className="font-['JetBrains_Mono'] text-xl font-bold text-text-primary">{statsData.accuracy || 0}</span>
-                  <span className="font-['Rajdhani'] text-accent font-bold text-[9px]">%</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
+          <FlashcardSchedule />
         </div>
 
         {/* ACTIVITY HEATMAP (Swapped to Top) */}
-        <div className="lg:col-span-3 p-8 bg-surface-2 rounded-xl border border-[rgba(0,255,65,0.05)] shadow-2xl flex flex-col items-center">
-            <div className="flex items-center justify-between mb-8 w-full">
-              <h2 className="font-['Rajdhani'] font-bold text-sm text-text-primary uppercase tracking-widest flex items-center">
-                <Clock className="mr-2 text-accent" size={16} />
+        <div className="lg:col-span-3 p-4 sm:p-5 bg-surface-2 rounded-xl border border-[rgba(0,255,65,0.05)] shadow-2xl flex flex-col">
+            <div className="flex items-center justify-between mb-2 w-full shrink-0">
+              <h2 className="font-['Rajdhani'] font-bold text-xs text-text-primary uppercase tracking-widest flex items-center">
+                <Clock className="mr-1.5 text-accent" size={14} />
                 Activity Monitoring
               </h2>
               <div className="flex items-center gap-3">
@@ -339,26 +313,51 @@ export default function Dashboard() {
                 )}
                 <div className="flex items-center gap-2 text-[10px] font-['Rajdhani'] font-bold text-[#444] uppercase tracking-widest">
                   <span>0H</span>
-                  <div className="w-3 h-3 rounded-sm bg-surface border border-border-subtle" />
-                  <div className="w-3 h-3 rounded-sm bg-[#003311]" />
-                  <div className="w-3 h-3 rounded-sm bg-[#006e21]" />
-                  <div className="w-3 h-3 rounded-sm bg-[#00a630]" />
-                  <div className="w-3 h-3 rounded-sm bg-accent" />
+                  <div className="w-2.5 h-2.5 rounded-sm bg-surface border border-border-subtle" />
+                  <div className="w-2.5 h-2.5 rounded-sm bg-[#003311]" />
+                  <div className="w-2.5 h-2.5 rounded-sm bg-[#006e21]" />
+                  <div className="w-2.5 h-2.5 rounded-sm bg-[#00a630]" />
+                  <div className="w-2.5 h-2.5 rounded-sm bg-accent" />
                   <span>2H+</span>
                 </div>
               </div>
             </div>
             
-            <div className="flex-1 w-full py-4 overflow-hidden">
-              <ReviewHeatmap activityHistory={history} year={heatmapYear} />
+            {/* Heatmap Area - Centered in remaining space */}
+            <div className="flex-1 w-full flex flex-col justify-center items-center py-2 min-h-0">
+              <div className="w-full overflow-hidden flex items-center justify-center">
+                <ReviewHeatmap activityHistory={history} year={heatmapYear} />
+              </div>
             </div>
 
-            {/* Streak Footer */}
-            <div className="w-full flex items-center justify-center pt-2 pb-1">
-              <p className="font-['Rajdhani'] uppercase tracking-widest text-[11px] font-bold" style={{ color: 'var(--text-secondary)' }}>
-                Study Streak:&nbsp;
-                <span style={{ color: 'var(--accent-primary)' }}>{statsData.streak || 0} Day{statsData.streak !== 1 ? 's' : ''}</span>
-              </p>
+            {/* Stats Footer */}
+            <div className="shrink-0 flex items-center justify-center gap-0 divide-x divide-[#2A2A2A] pt-2 mt-auto">
+              <div className="flex flex-col items-center gap-0.5 px-6">
+                <span className="font-['Rajdhani'] text-[#666] uppercase tracking-widest text-[8.5px] font-bold">
+                  Study Streak
+                </span>
+                <div className="flex items-baseline gap-1">
+                  <span className="font-['JetBrains_Mono'] text-base font-bold text-text-primary">
+                    {statsData.streak || 0}
+                  </span>
+                  <span className="font-['Rajdhani'] text-accent font-bold text-[8.5px]">
+                    {statsData.streak === 1 ? 'DAY' : 'DAYS'}
+                  </span>
+                </div>
+              </div>
+              <div className="flex flex-col items-center gap-0.5 px-6">
+                <span className="font-['Rajdhani'] text-[#666] uppercase tracking-widest text-[8.5px] font-bold">
+                  Avg. Accuracy
+                </span>
+                <div className="flex items-baseline gap-1">
+                  <span className="font-['JetBrains_Mono'] text-base font-bold text-text-primary">
+                    {statsData.accuracy || 0}
+                  </span>
+                  <span className="font-['Rajdhani'] text-accent font-bold text-[8.5px]">
+                    %
+                  </span>
+                </div>
+              </div>
             </div>
         </div>
       </div>

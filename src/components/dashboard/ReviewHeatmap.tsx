@@ -78,7 +78,7 @@ export default function ReviewHeatmap({ activityHistory, year }: ReviewHeatmapPr
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
-    const CELL = 16, GAP = 8, DAY_COL = 35
+    const CELL = 20, GAP = 8, DAY_COL = 35
     const targetWeek = firstActiveWeekIndex >= 0 ? Math.max(0, firstActiveWeekIndex - 1) : 0
     const scrollLeft = DAY_COL + targetWeek * (CELL + GAP)
     el.scrollLeft = scrollLeft
@@ -95,14 +95,14 @@ export default function ReviewHeatmap({ activityHistory, year }: ReviewHeatmapPr
   }
 
   return (
-    <div className="w-full [--cell-size:16px] [--gap-size:8px] flex items-start gap-2">
+    <div className="w-full [--cell-size:20px] [--gap-size:8px] flex items-start gap-2">
       {/* Day labels — fixed outside the scroll area so they stay visible */}
       <div className="shrink-0 flex flex-col">
         {/* Spacer matching the month-label row height */}
         <div className="h-5 mb-1" />
         <div className="flex flex-col text-[10px] font-['Rajdhani'] text-[#666] font-bold uppercase tracking-widest leading-none gap-2 w-[1.8rem] pr-1">
           {dayNames.map(d => (
-            <span key={d} className="h-4 flex items-center">{d}</span>
+            <span key={d} className="h-5 flex items-center">{d}</span>
           ))}
         </div>
       </div>
@@ -130,7 +130,7 @@ export default function ReviewHeatmap({ activityHistory, year }: ReviewHeatmapPr
           {/* Activity Grid */}
           <div className="flex gap-2">
             {grid.map((week, wi) => (
-              <div key={wi} className="flex flex-col gap-2 w-4">
+              <div key={wi} className="flex flex-col gap-2 w-5">
                 {week.map(day => {
                   const data = activityHistory[day] || { count: 0, timeSpent: 0 }
                   const timeH = Math.floor(data.timeSpent / 60)
@@ -141,7 +141,7 @@ export default function ReviewHeatmap({ activityHistory, year }: ReviewHeatmapPr
                   return (
                     <div
                       key={day}
-                      className={`w-4 h-4 rounded-[2px] ${getLevel(data.timeSpent)} transition-all hover:scale-125 cursor-help border shadow-sm ${isOutRange ? 'opacity-5 pointer-events-none' : ''}`}
+                      className={`w-5 h-5 rounded-[2.5px] ${getLevel(data.timeSpent)} transition-all hover:scale-125 cursor-help border shadow-sm ${isOutRange ? 'opacity-5 pointer-events-none' : ''}`}
                       title={isOutRange ? undefined : `${day}: ${timeH}h ${timeM}m study time`}
                     />
                   )
