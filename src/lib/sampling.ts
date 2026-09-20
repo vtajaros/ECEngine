@@ -1,7 +1,8 @@
 // src/lib/sampling.ts
 export interface CardWithWeight {
   id: string
-  ease_factor: number
+  ease_factor?: number
+  easeFactor?: number
   correct_count: number
   total_count: number
   last_result: string | null
@@ -12,8 +13,10 @@ export function weightedSample<T extends CardWithWeight>(cards: T[], n: number):
   if (n >= cards.length) return [...cards]
 
   const weights = cards.map(card => {
-    const accuracy = card.total_count > 0 ? card.correct_count / card.total_count : 0.5
-    const easePenalty = Math.max(0, (2.5 - card.ease_factor) / 2.5)
+    const accuracy =
+      (card.total_count ?? 0) > 0 ? (card.correct_count ?? 0) / (card.total_count ?? 0) : 0.5
+    const ease = card.easeFactor ?? card.ease_factor ?? 2.5
+    const easePenalty = Math.max(0, (2.5 - ease) / 2.5)
     const lastWrong = card.last_result === 'wrong' ? 1 : 0
     return (1 - accuracy) + easePenalty + lastWrong
   })
