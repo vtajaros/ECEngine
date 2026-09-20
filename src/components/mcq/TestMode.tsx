@@ -508,7 +508,7 @@ Please explain:
       if (!userAnswered) continue
       const isCorrect = answers[card.id] === mcq.answer
       progressWrites.push(
-        dbService.recordCardResult(card.id, isCorrect).catch(err => {
+        dbService.recordCardResult(card.id, isCorrect, { mode: 'test' }).catch(err => {
           console.warn('[TestMode] Failed to record card result:', err)
         })
       )
@@ -523,7 +523,7 @@ Please explain:
       const mcq = card.data as MCQData
       return answers[card.id] === mcq.answer
     }).map(card => card.id)
-    onComplete({ score: correct, total: testCards.length, bookmarked: bookmarkedIds.size, correctIds })
+    onComplete({ score: correct, total: testCards.length, bookmarked: testCards.filter(c => bookmarkedIds.has(c.id)).length, correctIds })
   }
 
   const formatTime = (seconds: number) => {

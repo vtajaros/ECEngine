@@ -41,6 +41,28 @@ const MIGRATIONS = [
       "ALTER TABLE study_activity ADD COLUMN total_count INTEGER DEFAULT 0",
     ],
   },
+  {
+    version: 11,
+    sql: [
+      `CREATE TABLE IF NOT EXISTS attempt_log (
+         id INTEGER PRIMARY KEY AUTOINCREMENT,
+         ts INTEGER NOT NULL,
+         day TEXT NOT NULL,
+         card_id TEXT NOT NULL,
+         topic_id TEXT,
+         subject TEXT,
+         card_type TEXT,
+         mode TEXT NOT NULL,
+         correct INTEGER NOT NULL,
+         quality INTEGER,
+         response_ms INTEGER
+       )`,
+      'CREATE INDEX IF NOT EXISTS idx_attempt_ts ON attempt_log(ts)',
+      'CREATE INDEX IF NOT EXISTS idx_attempt_day ON attempt_log(day)',
+      'CREATE INDEX IF NOT EXISTS idx_attempt_subject_ts ON attempt_log(subject, ts)',
+      'CREATE INDEX IF NOT EXISTS idx_attempt_card ON attempt_log(card_id)',
+    ],
+  },
 ]
 
 // ─── Minimal baseline schema (what schema.sql creates on fresh install) ───────
@@ -347,6 +369,23 @@ describe('Migration Runner', () => {
       const map = Object.fromEntries(rows.map(r => [r.topic_id, r.mastery]))
       expect(map['t-mcq']).toBe(0.5)
       expect(map['t-form']).toBe(0.5)
+    })
+  })
+
+  describe('migration v11 — attempt_log table', () => {
+    it('creates the attempt_log table after all migrations', () => {
+      const db = createFreshDB()
+      runMigrations(db)
+      const tables = (db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='attempt_log'").all() as Array<{ name: string }>)
+      expect(tables.length).toBe(1)
+      expect(tables[0].name).toBe('attempt_log')
+    })
+
+    it('sets user_version to 11 after all migrations', () => {
+      const db = createFreshDB()
+      runMigrations(db)
+      const version = db.pragma('user_version', { simple: true })
+      expect(version).toBe(11)
     })
   })
 

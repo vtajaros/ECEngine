@@ -30,3 +30,15 @@ export function resolveOrCreateFolderId(
   db.prepare(`INSERT INTO folders (id, name, scope) VALUES (?, ?, ?)`).run(newId, folderName, scope)
   return newId
 }
+/**
+ * Atomically renames a folder and syncs topics.folder_name so the renderer
+ * (which groups decks by folder_name) reflects the change immediately.
+ * The caller should NOT wrap this in its own transaction; the function owns one.
+ */
+export function renameFolder(db: Database.Database, folderId: string, newName: string): void {
+  const trimmed = newName.trim()
+  db.transaction(() => {
+    db.prepare(`UPDATE folders SET name = ? WHERE id = ?`).run(trimmed, folderId)
+    db.prepare(`UPDATE topics SET folder_name = ? WHERE folder_id = ?`).run(trimmed, folderId)
+  })()
+}

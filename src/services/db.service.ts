@@ -115,7 +115,8 @@ export const dbService = {
   saveProgress: async (
     cardId: string,
     progressUpdates: Partial<Progress>,
-    isCorrect: boolean
+    isCorrect: boolean,
+    opts?: { mode?: 'learn' | 'test' | 'flashcard'; responseMs?: number | null; answeredAt?: number | null; quality?: number }
   ) => {
     const { easeFactor, interval, repetitions, nextReview, lastReviewed } = progressUpdates
     const correctIncrement = isCorrect ? 1 : 0
@@ -129,7 +130,11 @@ export const dbService = {
       nextReview: nextReview || '',
       lastReviewed: lastReviewed || '',
       correctIncrement,
-      lastResult
+      lastResult,
+      ...(opts?.quality != null ? { quality: opts.quality } : {}),
+      ...(opts?.responseMs !== undefined ? { responseMs: opts.responseMs } : {}),
+      ...(opts?.answeredAt !== undefined ? { answeredAt: opts.answeredAt } : {}),
+      ...(opts?.mode != null ? { mode: opts.mode } : {}),
     })
 
     if (!result.success) {
@@ -421,9 +426,20 @@ export const dbService = {
    * Only call this for native DB MCQ cards (card.type === 'mcq' && !card.isGenerated).
    * Also records activity for dashboard streak tracking.
    */
-  recordCardResult: async (cardId: string, isCorrect: boolean): Promise<void> => {
+  recordCardResult: async (
+    cardId: string,
+    isCorrect: boolean,
+    opts?: { mode?: 'learn' | 'test'; responseMs?: number | null; answeredAt?: number | null }
+  ): Promise<void> => {
     const lastReviewed = new Date().toISOString()
-    const result = await window.electron.data.recordCardResult({ cardId, isCorrect, lastReviewed })
+    const result = await window.electron.data.recordCardResult({
+      cardId,
+      isCorrect,
+      lastReviewed,
+      ...(opts?.mode != null ? { mode: opts.mode } : {}),
+      ...(opts?.responseMs !== undefined ? { responseMs: opts.responseMs } : {}),
+      ...(opts?.answeredAt !== undefined ? { answeredAt: opts.answeredAt } : {}),
+    })
     if (!result.success) {
       throw new Error(`Database Operation Failed: ${result.error || 'Failed to record card result'}`)
     }

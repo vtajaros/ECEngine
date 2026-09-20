@@ -1,6 +1,7 @@
 import { ipcMain, dialog, BrowserWindow, app } from 'electron'
 import { queryAll, execute, getDB, getActiveDatabasePath } from '../db/database'
 import { resolveOrCreateFolderId } from '../db/folderHelpers'
+import { upsertImportedTopic } from '../db/importHelpers'
 import { serializeMcqCard } from './mcq.serializer'
 import * as fs from 'fs'
 import * as fsp from 'fs/promises'
@@ -21,6 +22,7 @@ const TopicSchema = z.object({
   folder_id: z.string().optional().nullable(),
   parent_id: z.string().optional().nullable(),
   order_index: z.number().optional().nullable(),
+  is_favorite: z.union([z.boolean(), z.number()]).optional().nullable(),
 })
 
 const CardSchema = z.object({
@@ -191,20 +193,7 @@ export function registerExportHandlers(): void {
             ? db.prepare('SELECT id FROM folders WHERE id = ? LIMIT 1').get(t.folder_id)
             : null
           const targetFolderId = folderExists ? t.folder_id : importFolderId
-          db.prepare(
-            `INSERT OR REPLACE INTO topics (id, name, subject, created_at, description, folder_name, folder_id, tags, order_index)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-          ).run(
-            t.id,
-            t.name,
-            t.subject,
-            t.created_at ?? Date.now() / 1000,
-            t.description ?? '',
-            t.folder_name ?? 'Uncategorized',
-            targetFolderId,
-            t.tags ?? '[]',
-            t.order_index ?? null
-          )
+          upsertImportedTopic(db, t, targetFolderId ?? null)
         }
         for (const c of cards) {
           execute(
@@ -245,6 +234,7 @@ export function registerExportHandlers(): void {
         execute('DELETE FROM progress')
         execute('DELETE FROM study_activity')
         execute('DELETE FROM exam_sessions')
+        execute('DELETE FROM attempt_log')
       })()
       return { success: true }
     } catch (error) {

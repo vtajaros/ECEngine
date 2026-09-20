@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron'
 import { queryAll, execute, getCardsWithProgress, getDB } from '../db/database'
 import { dueOrNewSql, getFlashcardSchedule } from '../db/schedule'
+import { logAttempt } from '../db/attemptLog'
 import { z } from 'zod'
 
 // ── Zod schemas ───────────────────────────────────────────────────────────────
@@ -9,6 +10,9 @@ const RecordCardResultSchema = z.object({
   cardId: z.string().min(1),
   isCorrect: z.boolean(),
   lastReviewed: z.string(),
+  mode: z.enum(['learn', 'test']).optional().default('learn'),
+  responseMs: z.number().nonnegative().optional().nullable(),
+  answeredAt: z.number().optional().nullable(),
 })
 
 const SaveProgressSchema = z.object({
@@ -20,6 +24,10 @@ const SaveProgressSchema = z.object({
   lastReviewed: z.string(),
   correctIncrement: z.number(),
   lastResult: z.string(),
+  quality: z.number().optional().nullable(),
+  responseMs: z.number().nonnegative().optional().nullable(),
+  answeredAt: z.number().optional().nullable(),
+  mode: z.enum(['learn', 'test', 'flashcard']).optional().default('flashcard'),
 })
 
 export function registerProgressHandlers(): void {
@@ -36,7 +44,7 @@ export function registerProgressHandlers(): void {
    */
   ipcMain.handle('data:recordCardResult', async (_, payload: unknown) => {
     try {
-      const { cardId, isCorrect, lastReviewed } = RecordCardResultSchema.parse(payload)
+      const { cardId, isCorrect, lastReviewed, mode, responseMs, answeredAt } = RecordCardResultSchema.parse(payload)
       const correctInc = isCorrect ? 1 : 0
       const lastResult = isCorrect ? 'correct' : 'wrong'
 
@@ -51,7 +59,12 @@ export function registerProgressHandlers(): void {
           last_result   = excluded.last_result,
           last_reviewed = excluded.last_reviewed
       `
-      execute(sql, [cardId, correctInc, lastResult, lastReviewed, correctInc])
+
+      getDB().transaction(() => {
+        execute(sql, [cardId, correctInc, lastResult, lastReviewed, correctInc])
+        logAttempt(getDB(), { cardId, mode, correct: isCorrect, responseMs, answeredAt })
+      })()
+
       return { success: true }
     } catch (error) {
       return { success: false, error: (error as Error).message }
@@ -75,17 +88,32 @@ export function registerProgressHandlers(): void {
           correct_count = correct_count + ?,
           last_result   = excluded.last_result
       `
-      execute(sql, [
-        data.cardId,
-        data.easeFactor,
-        data.interval,
-        data.repetitions,
-        data.nextReview,
-        data.lastReviewed,
-        data.correctIncrement,
-        data.lastResult,
-        data.correctIncrement
-      ])
+      // correct = true iff correctIncrement > 0
+      // (the renderer always sets correctIncrement to 1 for correct, 0 for wrong)
+      const isCorrect = data.correctIncrement > 0
+
+      getDB().transaction(() => {
+        execute(sql, [
+          data.cardId,
+          data.easeFactor,
+          data.interval,
+          data.repetitions,
+          data.nextReview,
+          data.lastReviewed,
+          data.correctIncrement,
+          data.lastResult,
+          data.correctIncrement
+        ])
+        logAttempt(getDB(), {
+          cardId: data.cardId,
+          mode: data.mode,
+          correct: isCorrect,
+          quality: data.quality,
+          responseMs: data.responseMs,
+          answeredAt: data.answeredAt,
+        })
+      })()
+
       return { success: true }
     } catch (error) {
       return { success: false, error: (error as Error).message }

@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { app } from 'electron';
 import { NEW_SQL, dueOrNewSql } from './schedule';
+import { ATTEMPT_LOG_DDL } from './attemptLog';
 
 // Resolved lazily so that config.ipc can be imported without a circular dep.
 let resolveDBPathFn: (() => string) | null = null;
@@ -137,6 +138,12 @@ const MIGRATIONS: Array<{ version: number; sql: string | string[] }> = [
     sql: [
       "CREATE INDEX IF NOT EXISTS idx_cards_topic_type ON cards(topic_id, type)"
     ]
+  },
+  {
+    // v11: Append-only attempt history table with per-answer timing and denormalized subject.
+    // No FK to cards so history survives card deletion.
+    version: 11,
+    sql: ATTEMPT_LOG_DDL,
   }
 ]
 

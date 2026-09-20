@@ -781,6 +781,7 @@ export default function LooksFamStudy() {
     if (setInfo) setActiveSessionTitle(setInfo.title)
 
     let filteredData: any[] = []
+    let realDeckCount = 0
 
     if (setId.startsWith('topic_')) {
       // Load real cards from DB
@@ -811,6 +812,7 @@ export default function LooksFamStudy() {
       const generated = generateMCQs(flashcards)
 
       filteredData = [...mcqs, ...generated]
+      realDeckCount = filteredData.length
     } else {
       // Mock flow
       filteredData = MOCK_MCQS;
@@ -818,9 +820,9 @@ export default function LooksFamStudy() {
       else if (activeSubject === 'ELECS') filteredData = MOCK_MCQS.filter(c => c.topicId.includes('elec') || c.topicId.includes('diode'));
       else if (activeSubject === 'GEAS') filteredData = MOCK_MCQS.filter(c => c.topicId.includes('geas'));
       else if (activeSubject === 'EST') filteredData = MOCK_MCQS.filter(c => c.topicId.includes('est') || c.topicId.includes('comms'));
-    }
 
-    if (filteredData.length === 0) filteredData = MOCK_MCQS;
+      if (filteredData.length === 0) filteredData = MOCK_MCQS;
+    }
 
     if (learnSettings.bookmarkedOnly) {
       const savedBookmarks = localStorage.getItem('bookmarkedIds')
@@ -859,6 +861,20 @@ export default function LooksFamStudy() {
       }
     }
 
+    if (setId.startsWith('topic_') && filteredData.length === 0) {
+      handleExit()
+      setIsSessionActive(false)
+      setMode('flashcard')
+      setActiveSessionSetId('')
+      setActiveSessionTitle('')
+      if (learnSettings.bookmarkedOnly && realDeckCount > 0) {
+        window.alert('No bookmarked questions in this deck.')
+      } else {
+        window.alert('This deck has no MCQs.')
+      }
+      return
+    }
+
     startSession(filteredData as any)
   }
 
@@ -875,6 +891,7 @@ export default function LooksFamStudy() {
     if (setInfo) setActiveSessionTitle(setInfo.title)
 
     let filteredData: any[] = []
+    let realDeckCount = 0
 
     if (setId.startsWith('topic_')) {
       // Load real cards from DB
@@ -905,6 +922,7 @@ export default function LooksFamStudy() {
       const generated = generateMCQs(flashcards)
 
       filteredData = [...mcqs, ...generated]
+      realDeckCount = filteredData.length
     } else {
       // Mock flow
       filteredData = MOCK_MCQS;
@@ -912,9 +930,9 @@ export default function LooksFamStudy() {
       else if (activeSubject === 'ELECS') filteredData = MOCK_MCQS.filter(c => c.topicId.includes('elec') || c.topicId.includes('diode'));
       else if (activeSubject === 'GEAS') filteredData = MOCK_MCQS.filter(c => c.topicId.includes('geas'));
       else if (activeSubject === 'EST') filteredData = MOCK_MCQS.filter(c => c.topicId.includes('est') || c.topicId.includes('comms'));
-    }
 
-    if (filteredData.length === 0) filteredData = MOCK_MCQS;
+      if (filteredData.length === 0) filteredData = MOCK_MCQS;
+    }
 
     if (testSettings.bookmarkedOnly) {
       const savedBookmarks = localStorage.getItem('bookmarkedIds')
@@ -950,6 +968,20 @@ export default function LooksFamStudy() {
       } else {
         filteredData = filteredData.slice(0, testSettings.itemCount)
       }
+    }
+
+    if (setId.startsWith('topic_') && filteredData.length === 0) {
+      handleExit()
+      setIsSessionActive(false)
+      setMode('flashcard')
+      setActiveSessionSetId('')
+      setActiveSessionTitle('')
+      if (testSettings.bookmarkedOnly && realDeckCount > 0) {
+        window.alert('No bookmarked questions in this deck.')
+      } else {
+        window.alert('This deck has no MCQs.')
+      }
+      return
     }
 
     startSession(filteredData as any)

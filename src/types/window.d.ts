@@ -59,7 +59,7 @@ declare global {
       data: {
         getCards: (topicId?: string) => Promise<{ success: boolean; data?: any; error?: string }>
         getProgress: (cardId: string) => Promise<{ success: boolean; data?: any; error?: string }>
-        saveProgress: (payload: { cardId: string, easeFactor: number, interval: number, repetitions: number, nextReview: string, lastReviewed: string, correctIncrement: number, lastResult: string }) => Promise<{ success: boolean; error?: string }>
+        saveProgress: (payload: { cardId: string, easeFactor: number, interval: number, repetitions: number, nextReview: string, lastReviewed: string, correctIncrement: number, lastResult: string, quality?: number | null, responseMs?: number | null, answeredAt?: number | null, mode?: 'learn' | 'test' | 'flashcard' }) => Promise<{ success: boolean; error?: string }>
         recordActivity: (payload: { today: string, correctInc: number, totalInc: number }) => Promise<{ success: boolean; error?: string }>
         getActivityHistory: () => Promise<{ success: boolean; data?: any; error?: string }>
         getAccuracyTrendAll: (lookbackOrStart: number | string) => Promise<{ success: boolean; data?: any; error?: string }>
@@ -81,7 +81,7 @@ declare global {
         getFlashcardSchedule: () => Promise<{ success: boolean; data?: any; error?: string }>
         getCardsWithProgress: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
         /** Write MCQ correctness without touching SM-2 fields. Safe to call for native MCQ cards only. */
-        recordCardResult: (payload: { cardId: string, isCorrect: boolean, lastReviewed: string }) => Promise<{ success: boolean; error?: string }>
+        recordCardResult: (payload: { cardId: string, isCorrect: boolean, lastReviewed: string, mode?: 'learn' | 'test', responseMs?: number | null, answeredAt?: number | null }) => Promise<{ success: boolean; error?: string }>
         saveExamSession: (payload: {
           id?: string
           topicId?: string | null

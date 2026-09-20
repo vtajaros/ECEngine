@@ -112,9 +112,23 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
   const [partitionWrongIds, setPartitionWrongIds] = useState<Set<string>>(new Set())
   const [partitionCorrectIds, setPartitionCorrectIds] = useState<Set<string>>(new Set())
   const [globalStats, setGlobalStats] = useState({ correctFirstTry: 0, wrongFirstTry: 0 })
-  const [cardStats, setCardStats] = useState<Record<string, { wasCorrectFirstTry: boolean, usedIDK: boolean, attemptCount: number }>>({})
-  const cardStatsRef = useRef<Record<string, { wasCorrectFirstTry: boolean, usedIDK: boolean, attemptCount: number }>>({})
+/**
+ * Per-card tracking stats during a Learn session.
+ * firstResponseMs is raw wall-clock, includes idle time, consumers must treat outliers robustly.
+ */
+interface LearnCardStat {
+  wasCorrectFirstTry: boolean
+  usedIDK: boolean
+  attemptCount: number
+  firstAnsweredAt?: number
+  /** Raw wall-clock response time in ms; includes idle time, consumers must treat outliers robustly. */
+  firstResponseMs?: number | null
+}
+
+  const [cardStats, setCardStats] = useState<Record<string, LearnCardStat>>({})
+  const cardStatsRef = useRef<Record<string, LearnCardStat>>({})
   cardStatsRef.current = cardStats
+  const shownAtRef = useRef<number>(0)
   const [zoomedImage, setZoomedImage] = useState<string | null>(null)
   const [showToast, setShowToast] = useState(false)
   const [explanationOpen, setExplanationOpen] = useState(false)
@@ -229,6 +243,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
   // re-reading the question at that point is disorienting.
   useEffect(() => {
     if (!currentCard || viewState !== 'question') return
+    shownAtRef.current = Date.now()
     if (!isMcq || !mcqData?.question) return
     speak(mcqData.question)
   }, [currentCard?.id, viewState])
@@ -295,10 +310,14 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
     const prevStats = cardStatsRef.current[cardId] || { wasCorrectFirstTry: false, usedIDK: false, attemptCount: 0 }
     const isFirstAttempt = prevStats.attemptCount === 0
 
-    const updatedStats = {
+    const updatedStats: LearnCardStat = {
       attemptCount: prevStats.attemptCount + 1,
       wasCorrectFirstTry: isFirstAttempt ? isCorrect : prevStats.wasCorrectFirstTry,
       usedIDK: isFirstAttempt ? isIdk : prevStats.usedIDK,
+      firstAnsweredAt: isFirstAttempt ? Date.now() : prevStats.firstAnsweredAt,
+      firstResponseMs: isFirstAttempt
+        ? (shownAtRef.current > 0 ? Date.now() - shownAtRef.current : null)
+        : prevStats.firstResponseMs,
     }
 
     cardStatsRef.current = {
@@ -359,7 +378,11 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
           const card = cards.find(c => c.id === id)
           if (card && card.type === 'mcq' && !card.isGenerated) {
             progressWrites.push(
-              dbService.recordCardResult(id, stats.wasCorrectFirstTry).catch(err => {
+              dbService.recordCardResult(id, stats.wasCorrectFirstTry, {
+                mode: 'learn',
+                responseMs: stats.firstResponseMs ?? null,
+                answeredAt: stats.firstAnsweredAt ?? null,
+              }).catch(err => {
                 console.warn('[LearnMode] Failed to record card result:', err)
               })
             )
@@ -374,7 +397,7 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled =
         onComplete({
           correct: flawlessCount,
           wrong: missedCount,
-          bookmarked: bookmarkedIds.size,
+          bookmarked: cards.filter(c => bookmarkedIds.has(c.id)).length,
           correctIds,
         })
       } else {

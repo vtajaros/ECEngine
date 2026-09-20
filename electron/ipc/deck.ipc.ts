@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron'
 import { queryAll, execute, getDB, getCardsWithProgress } from '../db/database'
-import { resolveOrCreateFolderId } from '../db/folderHelpers'
+import { resolveOrCreateFolderId, renameFolder } from '../db/folderHelpers'
+import { deleteCardsWithProgress } from '../db/cardHelpers'
 import crypto from 'crypto'
 import { z } from 'zod'
 
@@ -359,7 +360,6 @@ export function registerDeckHandlers(): void {
       const updateCard = db.prepare(
         'UPDATE cards SET type = ?, data = ?, order_index = ? WHERE id = ?'
       )
-      const deleteCard = db.prepare('DELETE FROM cards WHERE id = ?')
 
       db.transaction(() => {
         const finalFolderId = resolveOrCreateFolderId(db, payload.folderName, payload.folderId, payload.scope || 'study')
@@ -375,9 +375,7 @@ export function registerDeckHandlers(): void {
             updateCard.run(card.type, card.data, i, card.id)
           }
         }
-        for (const cardId of payload.deletedCardIds) {
-          deleteCard.run(cardId)
-        }
+        deleteCardsWithProgress(db, payload.deletedCardIds)
       })()
       return { success: true }
     } catch (error) {
@@ -641,7 +639,7 @@ export function registerDeckHandlers(): void {
       if (!payload.newName?.trim()) {
         return { success: false, error: 'Folder name cannot be empty.' }
       }
-      execute(`UPDATE folders SET name = ? WHERE id = ?`, [payload.newName.trim(), payload.folderId])
+      renameFolder(getDB(), payload.folderId, payload.newName)
       return { success: true }
     } catch (error) {
       return { success: false, error: (error as Error).message }
