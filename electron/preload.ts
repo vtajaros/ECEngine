@@ -61,6 +61,10 @@ contextBridge.exposeInMainWorld('electron', {
     clearExamSessions: () => ipcRenderer.invoke('data:clearExamSessions'),
     exportDatabaseAndImages: (): Promise<{ success: boolean; canceled?: boolean; folderPath?: string; error?: string }> =>
       ipcRenderer.invoke('data:exportDatabaseAndImages'),
+    getContentCoverage: () => ipcRenderer.invoke('data:getContentCoverage'),
+    getQuestionLengthDistribution: () => ipcRenderer.invoke('data:getQuestionLengthDistribution'),
+    getAnswerPositionCounts: () => ipcRenderer.invoke('data:getAnswerPositionCounts'),
+    getResponseTimeDistribution: () => ipcRenderer.invoke('data:getResponseTimeDistribution'),
   },
   file: {
     import: (filePath?: string) => ipcRenderer.invoke('file:import', filePath),

@@ -259,9 +259,15 @@ export function chiSquareGof(observed: number[], expectedProportions: number[]):
 
   const df = observed.length - 1
   const pValue = chi2Sf(chi2, df)
-  const cramersW = Math.sqrt(chi2 / total)
+  const w = cramersW(chi2, total)
 
-  return { chi2, df, pValue, cramersW, expected }
+  return { chi2, df, pValue, cramersW: w, expected }
+}
+
+/** Computes Cramér's W effect size for goodness-of-fit: sqrt(chi2 / n). */
+export function cramersW(chi2: number, n: number): number {
+  if (isNaN(chi2) || isNaN(n) || n <= 0 || chi2 < 0) return NaN
+  return Math.sqrt(chi2 / n)
 }
 
 /** Computes Chebyshev's minimum probability P(|X - mu| < k * sigma) >= 1 - 1/k^2 for k > 1. */

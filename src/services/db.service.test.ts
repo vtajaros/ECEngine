@@ -36,6 +36,10 @@ const mockElectron = {
     getExamSessions: vi.fn(),
     deleteExamSession: vi.fn(),
     clearExamSessions: vi.fn(),
+    getContentCoverage: vi.fn(),
+    getQuestionLengthDistribution: vi.fn(),
+    getAnswerPositionCounts: vi.fn(),
+    getResponseTimeDistribution: vi.fn(),
   },
   decks: {
 
@@ -624,6 +628,63 @@ describe('useDataVersionStore version bump on writes', () => {
 
     const versionBefore = useDataVersionStore.getState().version
     await expect(dbService.resetProgress()).rejects.toThrow('Locked')
+    expect(useDataVersionStore.getState().version).toBe(versionBefore)
+  })
+})
+
+describe('dbService read-only analytics methods', () => {
+  it('getContentCoverage returns data and does not bump version store', async () => {
+    const mockData = { MATH: { topics: 2, cards: 10 } }
+    mockElectron.data.getContentCoverage.mockResolvedValue({ success: true, data: mockData })
+
+    const versionBefore = useDataVersionStore.getState().version
+    const result = await dbService.getContentCoverage()
+
+    expect(result).toEqual(mockData)
+    expect(useDataVersionStore.getState().version).toBe(versionBefore)
+  })
+
+  it('getQuestionLengthDistribution returns data and does not bump version store', async () => {
+    const mockData = [{ subject: 'MATH', qlen: 50 }]
+    mockElectron.data.getQuestionLengthDistribution.mockResolvedValue({ success: true, data: mockData })
+
+    const versionBefore = useDataVersionStore.getState().version
+    const result = await dbService.getQuestionLengthDistribution()
+
+    expect(result).toEqual(mockData)
+    expect(useDataVersionStore.getState().version).toBe(versionBefore)
+  })
+
+  it('getAnswerPositionCounts returns data and does not bump version store', async () => {
+    const mockData = [{ position: 0, count: 5 }, { position: null, count: 1 }]
+    mockElectron.data.getAnswerPositionCounts.mockResolvedValue({ success: true, data: mockData })
+
+    const versionBefore = useDataVersionStore.getState().version
+    const result = await dbService.getAnswerPositionCounts()
+
+    expect(result).toEqual(mockData)
+    expect(useDataVersionStore.getState().version).toBe(versionBefore)
+  })
+
+  it('getResponseTimeDistribution returns data and does not bump version store', async () => {
+    const mockData = {
+      learn: [{ subject: 'MATH', responseMs: 5378 }],
+      flashcard: [{ subject: 'EST', responseMs: 7752 }],
+    }
+    mockElectron.data.getResponseTimeDistribution.mockResolvedValue({ success: true, data: mockData })
+
+    const versionBefore = useDataVersionStore.getState().version
+    const result = await dbService.getResponseTimeDistribution()
+
+    expect(result).toEqual(mockData)
+    expect(useDataVersionStore.getState().version).toBe(versionBefore)
+  })
+
+  it('throws on failure response without bumping version', async () => {
+    mockElectron.data.getContentCoverage.mockResolvedValue({ success: false, error: 'DB Error' })
+
+    const versionBefore = useDataVersionStore.getState().version
+    await expect(dbService.getContentCoverage()).rejects.toThrow('DB Error')
     expect(useDataVersionStore.getState().version).toBe(versionBefore)
   })
 })

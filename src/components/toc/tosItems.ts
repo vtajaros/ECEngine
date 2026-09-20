@@ -13,6 +13,14 @@
 
 export type TosSubjectCode = 'MATH' | 'ELECS' | 'GEAS' | 'EST'
 
+// PRC 2022 Table of Specifications (EE2022-10_TOS.pdf), "Weight" column, one value per subject's board exam. Note explicitly that this is distinct from item-count share: every subject's exam has 100 items regardless of weight, so item-count share across TOS_ITEMS is always 25/25/25/25 by construction and is NOT the same thing as this weight.
+export const TOS_SUBJECT_WEIGHTS: Record<TosSubjectCode, number> = {
+  MATH: 20,
+  GEAS: 20,
+  ELECS: 30,
+  EST: 30,
+}
+
 export interface TosTopicItems {
   /** Total exam items for this topic */
   items: number

@@ -511,6 +511,30 @@ export const dbService = {
     useDataVersionStore.getState().bump()
   },
 
+  getContentCoverage: async () => {
+    const result = await window.electron.data.getContentCoverage()
+    if (!result.success) throw new Error(result.error ?? 'Failed to get content coverage')
+    return result.data
+  },
+
+  getQuestionLengthDistribution: async () => {
+    const result = await window.electron.data.getQuestionLengthDistribution()
+    if (!result.success) throw new Error(result.error ?? 'Failed to get question length distribution')
+    return result.data
+  },
+
+  getAnswerPositionCounts: async () => {
+    const result = await window.electron.data.getAnswerPositionCounts()
+    if (!result.success) throw new Error(result.error ?? 'Failed to get answer position counts')
+    return result.data
+  },
+
+  getResponseTimeDistribution: async () => {
+    const result = await window.electron.data.getResponseTimeDistribution()
+    if (!result.success) throw new Error(result.error ?? 'Failed to get response time distribution')
+    return result.data
+  },
+
   updateFolderOrder: async (
     folderOrders: Array<{ folderName: string; orderIndex: number }>
   ): Promise<{ success: boolean; error?: string }> => {

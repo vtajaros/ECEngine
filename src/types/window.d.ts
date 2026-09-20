@@ -96,6 +96,10 @@ declare global {
         deleteExamSession: (id: string) => Promise<{ success: boolean; error?: string }>
         clearExamSessions: () => Promise<{ success: boolean; error?: string }>
         exportDatabaseAndImages: () => Promise<{ success: boolean; canceled?: boolean; folderPath?: string; error?: string }>
+        getContentCoverage: () => Promise<{ success: boolean; data?: any; error?: string }>
+        getQuestionLengthDistribution: () => Promise<{ success: boolean; data?: any; error?: string }>
+        getAnswerPositionCounts: () => Promise<{ success: boolean; data?: any; error?: string }>
+        getResponseTimeDistribution: () => Promise<{ success: boolean; data?: any; error?: string }>
       }
       file: {
         import: (filePath?: string) => Promise<{ success: boolean; data?: string; canceled?: boolean; error?: string }>

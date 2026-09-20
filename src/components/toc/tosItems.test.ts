@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { TOS_ITEMS, getSubjectTotals } from './tosItems'
+import { TOS_ITEMS, TOS_SUBJECT_WEIGHTS, getSubjectTotals } from './tosItems'
 import { TOC_DATA } from './data'
 
 // Topics present in the PDF but not yet in toc/data.ts. Remove entries as they are added.
@@ -18,6 +18,17 @@ describe('TOS item counts', () => {
     expect(getSubjectTotals('EST')).toEqual({ items: 100, easy: 30, moderate: 40, difficult: 30 })
     // GEAS is not 30/40/30 in the PDF: 40+20 easy, 21 application, 11+8 difficult
     expect(getSubjectTotals('GEAS')).toEqual({ items: 100, easy: 60, moderate: 21, difficult: 19 })
+  })
+
+  it('TOS_SUBJECT_WEIGHTS sums to 100 and matches PRC specifications', () => {
+    expect(TOS_SUBJECT_WEIGHTS).toEqual({
+      MATH: 20,
+      GEAS: 20,
+      ELECS: 30,
+      EST: 30,
+    })
+    const sum = Object.values(TOS_SUBJECT_WEIGHTS).reduce((acc, w) => acc + w, 0)
+    expect(sum).toBe(100)
   })
 
   it('every topic in toc/data.ts has item counts', () => {
