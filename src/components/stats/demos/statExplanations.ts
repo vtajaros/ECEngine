@@ -84,4 +84,36 @@ export const STAT_EXPLANATIONS: Record<string, StatExplanation> = {
     description: 'Degrees of freedom for a two-way contingency table equals (rows − 1) × (columns − 1).\n\nFor 4 subjects and 4 choices, df = (4 − 1) × (4 − 1) = 9, setting the critical threshold for evaluating χ².',
     takeaway: 'With 9 degrees of freedom, the test assesses position patterns across all 4 subjects simultaneously.',
   },
+  responseTimeMean: {
+    title: 'Mean Response Time',
+    formula: '\\bar{t} = \\frac{\\sum t_i}{n}',
+    description: 'The arithmetic average time taken to answer or rate a card, in seconds.\n\nBecause every attempt contributes to the total, pauses or long interruptions can pull the mean upward significantly.',
+    takeaway: 'Mean response time is sensitive to outliers and pauses — compare it against the median to detect skew.',
+  },
+  responseTimeMedian: {
+    title: 'Median Response Time',
+    formula: '\\tilde{t} = \\begin{cases} t_{(n+1)/2} & n \\text{ odd} \\\\[4pt] \\dfrac{t_{n/2} + t_{n/2+1}}{2} & n \\text{ even} \\end{cases}',
+    description: 'The middle response time in seconds once all attempt durations are sorted in order.\n\nHalf of your responses were faster than this value, and half were slower, making it immune to occasional distractions.',
+    takeaway: 'The median represents your typical review pace without distortion from extreme delays or breaks.',
+  },
+  zScoreOutlier: {
+    title: 'Outlier Count (|z| > 2)',
+    formula: 'z = \\dfrac{x - \\bar{x}}{s}',
+    description: 'Questions whose length falls more than 2 standard deviations away from the library-wide average.\n\nIn a standard normal distribution, fewer than 5% of observations naturally exceed this threshold.',
+    takeaway: 'A high outlier count suggests questions with unusually lengthy word problems or overly brief definitions.',
+  },
+  maxZScore: {
+    title: 'Maximum Z-Score',
+    formula: 'z = \\dfrac{x - \\bar{x}}{s}',
+    description: 'The largest standard deviation distance observed for any single question in the library.\n\nA z-score above 3 indicates an extreme statistical outlier that is exceptionally rare under normal variance.',
+    takeaway: 'Extreme z-scores pinpoint specific flashcards that may need formatting adjustments or splitting.',
+  },
+  extremeSubject: {
+    title: 'Extreme Outlier Subject',
+    formula: 'z = \\dfrac{x - \\bar{x}}{s}',
+    description: 'The subject category containing the library\'s single most extreme question length.\n\nCertain subjects like GEAS or EST often feature lengthy scenario problems, while MATH questions can be compact formulas.',
+    takeaway: 'Knowing which subject produces extreme questions helps balance study time and exam stamina.',
+  },
 }
+
+

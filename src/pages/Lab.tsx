@@ -5,6 +5,8 @@ import { QuestionLengthDemo } from '../components/stats/demos/QuestionLengthDemo
 import { AnswerPositionDemo } from '../components/stats/demos/AnswerPositionDemo'
 import { QuestionLengthAnovaDemo } from '../components/stats/demos/QuestionLengthAnovaDemo'
 import { AnswerPositionContingencyDemo } from '../components/stats/demos/AnswerPositionContingencyDemo'
+import { QuestionLengthZScoreDemo } from '../components/stats/demos/QuestionLengthZScoreDemo'
+import { ResponseTimeDemo } from '../components/stats/demos/ResponseTimeDemo'
 
 export default function Lab() {
   return (
@@ -22,16 +24,18 @@ export default function Lab() {
         </p>
       </header>
 
-      {/* Demos Grids */}
+      {/* Demos Grid: 3 columns on xl (3x2), 2 columns on lg/zoom (2x3 pairs), 1 column on mobile */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         <ContentCoverageDemo />
         <QuestionLengthDemo />
         <AnswerPositionDemo />
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 pb-6">
         <QuestionLengthAnovaDemo />
         <AnswerPositionContingencyDemo />
+        <QuestionLengthZScoreDemo />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 pb-6">
+        <ResponseTimeDemo />
       </div>
     </div>
   )

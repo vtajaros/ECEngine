@@ -4,6 +4,7 @@ import { ChevronDown, ChevronRight } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TOS_ITEMS, getSubjectTotals, TosSubjectCode } from './tosItems'
 import { TOS_ROWS, rowTiers, describeLevels, TosRow } from './tosRows'
+import { Tooltip } from '../ui/Tooltip'
 
 interface SubjectCardProps {
   subject: SubjectArea
@@ -18,36 +19,35 @@ function matchesSearch(text: string, query: string) {
 function RowBadges({ row }: { row: TosRow }) {
   const tiers = rowTiers(row.levels)
   return (
-    <span
-      className="inline-flex items-center gap-1.5 text-[11px] font-['JetBrains_Mono']"
-      title={describeLevels(row.levels)}
-    >
-      <span className="text-text-muted">{row.items} items</span>
-      {tiers.easy > 0 && (
-        <span
-          className="px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] font-bold text-[10px]"
-          style={{ color: 'var(--tier-easy)' }}
-        >
-          E{tiers.easy}
-        </span>
-      )}
-      {tiers.moderate > 0 && (
-        <span
-          className="px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] font-bold text-[10px]"
-          style={{ color: 'var(--tier-moderate)' }}
-        >
-          M{tiers.moderate}
-        </span>
-      )}
-      {tiers.difficult > 0 && (
-        <span
-          className="px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] font-bold text-[10px]"
-          style={{ color: 'var(--tier-difficult)' }}
-        >
-          D{tiers.difficult}
-        </span>
-      )}
-    </span>
+    <Tooltip content={describeLevels(row.levels)} position="top">
+      <span className="inline-flex items-center gap-1.5 text-[11px] font-['JetBrains_Mono']">
+        <span className="text-text-muted">{row.items} items</span>
+        {tiers.easy > 0 && (
+          <span
+            className="px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] font-bold text-[10px]"
+            style={{ color: 'var(--tier-easy)' }}
+          >
+            E{tiers.easy}
+          </span>
+        )}
+        {tiers.moderate > 0 && (
+          <span
+            className="px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] font-bold text-[10px]"
+            style={{ color: 'var(--tier-moderate)' }}
+          >
+            M{tiers.moderate}
+          </span>
+        )}
+        {tiers.difficult > 0 && (
+          <span
+            className="px-1.5 py-0.5 rounded bg-[var(--bg-elevated)] font-bold text-[10px]"
+            style={{ color: 'var(--tier-difficult)' }}
+          >
+            D{tiers.difficult}
+          </span>
+        )}
+      </span>
+    </Tooltip>
   )
 }
 
@@ -117,35 +117,39 @@ function TopicRow({ topic, searchQuery }: { topic: Topic, searchQuery: string })
               <span className="text-xs font-['JetBrains_Mono'] text-[var(--text-secondary)] bg-[var(--bg-elevated)] px-2 py-1 rounded border border-[#333]">
                 {tos.items} items
               </span>
-              <div
-                className="w-24 h-1.5 rounded overflow-hidden flex bg-[var(--bg-elevated)] shrink-0"
-                title={`Easy ${tos.easy} · Moderate ${tos.moderate} · Difficult ${tos.difficult}`}
+              <Tooltip
+                content={`Easy ${tos.easy} · Moderate ${tos.moderate} · Difficult ${tos.difficult}`}
+                position="top"
               >
-                {tos.easy > 0 && (
-                  <div
-                    style={{
-                      width: `${(tos.easy / tos.items) * 100}%`,
-                      backgroundColor: 'var(--tier-easy)',
-                    }}
-                  />
-                )}
-                {tos.moderate > 0 && (
-                  <div
-                    style={{
-                      width: `${(tos.moderate / tos.items) * 100}%`,
-                      backgroundColor: 'var(--tier-moderate)',
-                    }}
-                  />
-                )}
-                {tos.difficult > 0 && (
-                  <div
-                    style={{
-                      width: `${(tos.difficult / tos.items) * 100}%`,
-                      backgroundColor: 'var(--tier-difficult)',
-                    }}
-                  />
-                )}
-              </div>
+                <div
+                  className="w-24 h-1.5 rounded overflow-hidden flex bg-[var(--bg-elevated)] shrink-0"
+                >
+                  {tos.easy > 0 && (
+                    <div
+                      style={{
+                        width: `${(tos.easy / tos.items) * 100}%`,
+                        backgroundColor: 'var(--tier-easy)',
+                      }}
+                    />
+                  )}
+                  {tos.moderate > 0 && (
+                    <div
+                      style={{
+                        width: `${(tos.moderate / tos.items) * 100}%`,
+                        backgroundColor: 'var(--tier-moderate)',
+                      }}
+                    />
+                  )}
+                  {tos.difficult > 0 && (
+                    <div
+                      style={{
+                        width: `${(tos.difficult / tos.items) * 100}%`,
+                        backgroundColor: 'var(--tier-difficult)',
+                      }}
+                    />
+                  )}
+                </div>
+              </Tooltip>
             </>
           )}
           <span className="text-xs font-['JetBrains_Mono'] text-[var(--text-secondary)] bg-[var(--bg-elevated)] px-2 py-1 rounded border border-[#333]">
@@ -215,12 +219,13 @@ function TopicRow({ topic, searchQuery }: { topic: Topic, searchQuery: string })
                       className="border-l-2 border-border-base pl-3 my-1 flex flex-col"
                     >
                       <div className="flex items-center justify-between gap-3 py-1">
-                        <span
-                          className="text-[11px] font-['JetBrains_Mono'] text-text-muted truncate min-w-0"
-                          title={row.label}
-                        >
-                          {row.label}
-                        </span>
+                        <Tooltip content={row.label} position="top">
+                          <span
+                            className="text-[11px] font-['JetBrains_Mono'] text-text-muted truncate min-w-0"
+                          >
+                            {row.label}
+                          </span>
+                        </Tooltip>
                         <div className="ml-auto shrink-0">
                           <RowBadges row={row} />
                         </div>

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react'
 import { Upload, CheckCircle, AlertTriangle, FileJson } from 'lucide-react'
+import { useDataVersionStore } from '../store/useDataVersionStore'
 
 type Status = 'idle' | 'loading' | 'success' | 'error'
 
@@ -60,6 +61,7 @@ export default function ImportBackup() {
       console.log('[import] cards count:', pendingData.cards?.length)
       const result = await window.electron.data.importDecks(pendingData)
       if (!result.success) throw new Error(result.error || 'Import failed')
+      useDataVersionStore.getState().bump()
       setStatus('success')
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Import failed.')

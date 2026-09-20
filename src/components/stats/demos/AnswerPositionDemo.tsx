@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   BarChart,
   Bar,
@@ -10,14 +10,13 @@ import {
   Cell,
 } from 'recharts'
 import { HelpCircle, AlertTriangle } from 'lucide-react'
-import { dbService } from '../../../services/db.service'
 import { chiSquareGof, cramersW } from '../../../lib/stats/inference'
 import {
   CHART_TOOLTIP_STYLE,
   CHART_TOOLTIP_LABEL_STYLE,
   CHART_TOOLTIP_ITEM_STYLE,
 } from './chartTooltipStyle'
-import { useDataVersionStore } from '../../../store/useDataVersionStore'
+import { useDataLabStore } from '../../../store/useDataLabStore'
 import { StatInfoModal } from './StatInfoModal'
 import { STAT_EXPLANATIONS } from './statExplanations'
 
@@ -28,51 +27,26 @@ const POSITION_LABELS: Record<number, string> = {
   3: 'Choice D (3)',
 }
 
-const POSITION_COLORS = ['#38BDF8', '#818CF8', '#A78BFA', '#F472B6']
+const POSITION_COLORS = ['#00FF41', '#00FF41', '#00FF41', '#00FF41']
 
 export function AnswerPositionDemo() {
-  const dataVersion = useDataVersionStore((state) => state.version)
-  const [rows, setRows] = useState<Array<{ position: number | null; count: number }> | null>(null)
+  const rows = useDataLabStore((state) => state.answerPositionCounts)
+  const loading = useDataLabStore((state) => state.loading.answerPositionCounts)
+  const error = useDataLabStore((state) => state.errors.answerPositionCounts)
+  const fetchAnswerPositionCounts = useDataLabStore((state) => state.fetchAnswerPositionCounts)
   const [activeStatId, setActiveStatId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const isMountedRef = useRef(true)
 
   useEffect(() => {
-    isMountedRef.current = true
-    return () => {
-      isMountedRef.current = false
-    }
-  }, [])
-
-  const fetchData = useCallback(() => {
-    dbService
-      .getAnswerPositionCounts()
-      .then((res) => {
-        if (isMountedRef.current) {
-          setRows(res)
-          setLoading(false)
-        }
-      })
-      .catch((err) => {
-        if (isMountedRef.current) {
-          setError(err.message || 'Failed to load answer position counts')
-          setLoading(false)
-        }
-      })
-  }, [])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData, dataVersion])
+    fetchAnswerPositionCounts()
+  }, [fetchAnswerPositionCounts])
 
   useEffect(() => {
     const handleFocus = () => {
-      fetchData()
+      fetchAnswerPositionCounts()
     }
     window.addEventListener('focus', handleFocus)
     return () => window.removeEventListener('focus', handleFocus)
-  }, [fetchData])
+  }, [fetchAnswerPositionCounts])
 
   if (loading) {
     return (
@@ -161,7 +135,7 @@ export function AnswerPositionDemo() {
         </div>
 
         <div className="w-full h-52 relative">
-          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={150}>
+          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={150} debounce={300}>
             <BarChart data={chartData} margin={{ top: 12, right: 12, left: -10, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1E1E1E" />
               <XAxis
@@ -186,7 +160,7 @@ export function AnswerPositionDemo() {
                 ]}
                 cursor={{ fill: 'rgba(255,255,255,0.03)' }}
               />
-              <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="count" radius={[4, 4, 0, 0]} animationDuration={600} animationEasing="ease-out">
                 {chartData.map((entry) => (
                   <Cell key={`cell-pos-${entry.position}`} fill={entry.fill} />
                 ))}

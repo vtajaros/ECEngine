@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   BarChart,
   Bar,
@@ -10,7 +10,6 @@ import {
   Cell,
 } from 'recharts'
 import { BarChart as BarChartIcon, AlertCircle } from 'lucide-react'
-import { dbService } from '../../../services/db.service'
 import { oneWayAnova } from '../../../lib/stats/anova'
 import { mean } from '../../../lib/stats/descriptive'
 import { SUBJECT_LINE_COLOR } from '../../../lib/dashboardUtils'
@@ -19,55 +18,30 @@ import {
   CHART_TOOLTIP_LABEL_STYLE,
   CHART_TOOLTIP_ITEM_STYLE,
 } from './chartTooltipStyle'
-import { useDataVersionStore } from '../../../store/useDataVersionStore'
+import { useDataLabStore } from '../../../store/useDataLabStore'
 import { StatInfoModal } from './StatInfoModal'
 import { STAT_EXPLANATIONS } from './statExplanations'
 
 const SUBJECTS = ['MATH', 'GEAS', 'ELECS', 'EST'] as const
 
 export function QuestionLengthAnovaDemo() {
-  const dataVersion = useDataVersionStore((state) => state.version)
-  const [rows, setRows] = useState<Array<{ subject: string; qlen: number }> | null>(null)
+  const rows = useDataLabStore((state) => state.questionLengthDistribution)
+  const loading = useDataLabStore((state) => state.loading.questionLengthDistribution)
+  const error = useDataLabStore((state) => state.errors.questionLengthDistribution)
+  const fetchQuestionLengthDistribution = useDataLabStore((state) => state.fetchQuestionLengthDistribution)
   const [activeStatId, setActiveStatId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const isMountedRef = useRef(true)
 
   useEffect(() => {
-    isMountedRef.current = true
-    return () => {
-      isMountedRef.current = false
-    }
-  }, [])
-
-  const fetchData = useCallback(() => {
-    dbService
-      .getQuestionLengthDistribution()
-      .then((res) => {
-        if (isMountedRef.current) {
-          setRows(res)
-          setLoading(false)
-        }
-      })
-      .catch((err) => {
-        if (isMountedRef.current) {
-          setError(err.message || 'Failed to load question length distribution')
-          setLoading(false)
-        }
-      })
-  }, [])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData, dataVersion])
+    fetchQuestionLengthDistribution()
+  }, [fetchQuestionLengthDistribution])
 
   useEffect(() => {
     const handleFocus = () => {
-      fetchData()
+      fetchQuestionLengthDistribution()
     }
     window.addEventListener('focus', handleFocus)
     return () => window.removeEventListener('focus', handleFocus)
-  }, [fetchData])
+  }, [fetchQuestionLengthDistribution])
 
   if (loading) {
     return (
@@ -109,7 +83,7 @@ export function QuestionLengthAnovaDemo() {
             <BarChartIcon className="text-accent" size={16} />
             Question Length: One-Way ANOVA (MCQ)
           </h2>
-          <span className="font-['JetBrains_Mono'] text-xs text-text-muted shrink-0 whitespace-nowrap">
+          <span className="font-['JetBrains_Mono'] text-[10px] sm:text-[11px] text-text-muted">
             {groupCountsText}
           </span>
         </div>
@@ -161,13 +135,13 @@ export function QuestionLengthAnovaDemo() {
             <BarChartIcon className="text-accent" size={16} />
             Question Length: One-Way ANOVA (MCQ)
           </h2>
-          <span className="font-['JetBrains_Mono'] text-xs text-text-muted shrink-0 whitespace-nowrap">
+          <span className="font-['JetBrains_Mono'] text-[10px] sm:text-[11px] text-text-muted">
             {groupCountsText}
           </span>
         </div>
 
         <div className="w-full h-52 relative">
-          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={150}>
+          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={150} debounce={300}>
             <BarChart data={chartData} margin={{ top: 12, right: 12, left: -10, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1E1E1E" />
               <XAxis
@@ -193,7 +167,7 @@ export function QuestionLengthAnovaDemo() {
                 ]}
                 cursor={{ fill: 'rgba(255,255,255,0.03)' }}
               />
-              <Bar dataKey="mean" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="mean" radius={[4, 4, 0, 0]} animationDuration={600} animationEasing="ease-out">
                 {chartData.map((entry) => (
                   <Cell key={`cell-len-anova-${entry.subject}`} fill={entry.fill} />
                 ))}

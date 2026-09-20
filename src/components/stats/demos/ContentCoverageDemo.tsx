@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react'
+import React, { useEffect, useState } from 'react'
 import {
   BarChart,
   Bar,
@@ -10,7 +10,6 @@ import {
   Cell,
 } from 'recharts'
 import { Layers } from 'lucide-react'
-import { dbService } from '../../../services/db.service'
 import { TOS_SUBJECT_WEIGHTS } from '../../toc/tosItems'
 import { SUBJECT_LINE_COLOR } from '../../../lib/dashboardUtils'
 import {
@@ -18,55 +17,30 @@ import {
   CHART_TOOLTIP_LABEL_STYLE,
   CHART_TOOLTIP_ITEM_STYLE,
 } from './chartTooltipStyle'
-import { useDataVersionStore } from '../../../store/useDataVersionStore'
+import { useDataLabStore } from '../../../store/useDataLabStore'
 import { StatInfoModal } from './StatInfoModal'
 import { STAT_EXPLANATIONS } from './statExplanations'
 
 const SUBJECTS = ['MATH', 'GEAS', 'ELECS', 'EST'] as const
 
 export function ContentCoverageDemo() {
-  const dataVersion = useDataVersionStore((state) => state.version)
-  const [data, setData] = useState<Record<string, { topics: number; cards: number }> | null>(null)
+  const data = useDataLabStore((state) => state.contentCoverage)
+  const loading = useDataLabStore((state) => state.loading.contentCoverage)
+  const error = useDataLabStore((state) => state.errors.contentCoverage)
+  const fetchContentCoverage = useDataLabStore((state) => state.fetchContentCoverage)
   const [activeSubject, setActiveSubject] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const isMountedRef = useRef(true)
 
   useEffect(() => {
-    isMountedRef.current = true
-    return () => {
-      isMountedRef.current = false
-    }
-  }, [])
-
-  const fetchData = useCallback(() => {
-    dbService
-      .getContentCoverage()
-      .then((res) => {
-        if (isMountedRef.current) {
-          setData(res)
-          setLoading(false)
-        }
-      })
-      .catch((err) => {
-        if (isMountedRef.current) {
-          setError(err.message || 'Failed to load content coverage')
-          setLoading(false)
-        }
-      })
-  }, [])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData, dataVersion])
+    fetchContentCoverage()
+  }, [fetchContentCoverage])
 
   useEffect(() => {
     const handleFocus = () => {
-      fetchData()
+      fetchContentCoverage()
     }
     window.addEventListener('focus', handleFocus)
     return () => window.removeEventListener('focus', handleFocus)
-  }, [fetchData])
+  }, [fetchContentCoverage])
 
   if (loading) {
     return (
@@ -151,7 +125,7 @@ export function ContentCoverageDemo() {
         </div>
 
         <div className="w-full h-52 relative">
-          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={150}>
+          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={150} debounce={300}>
             <BarChart data={chartData} margin={{ top: 12, right: 12, left: -10, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1E1E1E" />
               <XAxis
@@ -176,7 +150,7 @@ export function ContentCoverageDemo() {
                 ]}
                 cursor={{ fill: 'rgba(255,255,255,0.03)' }}
               />
-              <Bar dataKey="cards" radius={[4, 4, 0, 0]}>
+              <Bar dataKey="cards" radius={[4, 4, 0, 0]} animationDuration={600} animationEasing="ease-out">
                 {chartData.map((entry) => (
                   <Cell key={`cell-${entry.subject}`} fill={entry.fill} />
                 ))}

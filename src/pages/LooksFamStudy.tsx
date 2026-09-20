@@ -24,6 +24,7 @@ import { dbService } from '../services/db.service'
 import { weightedSample } from '../lib/sampling'
 import { DeckGrid } from '../components/deck/DeckGrid'
 import { Tooltip } from '../components/ui/Tooltip'
+import { useDataVersionStore } from '../store/useDataVersionStore'
 import { PREDEFINED_TAGS } from '../lib/constants'
 import { BookmarkedCardsModal } from '../components/mcq/BookmarkedCardsModal'
 
@@ -609,6 +610,7 @@ export default function LooksFamStudy() {
     try {
       if (setToDelete.id.startsWith('topic_')) {
         await window.electron.decks.deleteTopic(setToDelete.id)
+        useDataVersionStore.getState().bump()
       }
       setAllSets(prev => prev.filter(s => s.id !== setToDelete.id))
       setSetToDelete(null)

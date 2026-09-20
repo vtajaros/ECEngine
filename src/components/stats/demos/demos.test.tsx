@@ -11,6 +11,9 @@ import { QuestionLengthDemo } from './QuestionLengthDemo'
 import { AnswerPositionDemo } from './AnswerPositionDemo'
 import { QuestionLengthAnovaDemo } from './QuestionLengthAnovaDemo'
 import { AnswerPositionContingencyDemo } from './AnswerPositionContingencyDemo'
+import { ResponseTimeDemo } from './ResponseTimeDemo'
+import { QuestionLengthZScoreDemo } from './QuestionLengthZScoreDemo'
+import { useDataLabStore } from '../../../store/useDataLabStore'
 
 // Mock Recharts ResponsiveContainer so children render synchronously in jsdom
 vi.mock('recharts', async (importOriginal) => {
@@ -44,6 +47,7 @@ describe('Data Lab Demo Components', () => {
   })
 
   afterEach(() => {
+    useDataLabStore.getState().reset()
     if (root && container) {
       act(() => {
         root!.unmount()
@@ -403,4 +407,119 @@ describe('Data Lab Demo Components', () => {
       expect(container?.querySelector('[data-testid="contingency-interpretation"]')).not.toBeNull()
     })
   })
+
+  describe('ResponseTimeDemo', () => {
+    it('renders loading state initially', async () => {
+      let resolvePromise: (val: any) => void
+      const pendingPromise = new Promise((resolve) => {
+        resolvePromise = resolve
+      })
+      vi.spyOn(dbService, 'getResponseTimeDistribution').mockReturnValue(pendingPromise as any)
+
+      await act(async () => {
+        root!.render(<ResponseTimeDemo />)
+      })
+
+      expect(container?.textContent).toContain('Loading response time distribution')
+
+      await act(async () => {
+        resolvePromise!({ learn: [], flashcard: [] })
+      })
+    })
+
+    it('renders combined insufficient-data gate when both modes have < 10 attempts (low production volume)', async () => {
+      const mockData = {
+        learn: Array(8).fill({ subject: 'MATH', responseMs: 2500 }),
+        flashcard: Array(7).fill({ subject: 'GEAS', responseMs: 1800 }),
+      }
+      vi.spyOn(dbService, 'getResponseTimeDistribution').mockResolvedValue(mockData)
+
+      await act(async () => {
+        root!.render(<ResponseTimeDemo />)
+      })
+
+      expect(container?.textContent).toContain('Response Time Distribution')
+      expect(container?.textContent).toContain('n(learn)=8 · n(flashcard)=7')
+      expect(container?.textContent).toContain('Not enough response-time data yet (n = 15)')
+      expect(container?.querySelector('[data-testid="insufficient-data-placeholder"]')).not.toBeNull()
+    })
+
+    it('renders chart and tiles when at least one mode has sufficient data (>= 10 attempts)', async () => {
+      const mockData = {
+        learn: Array(12).fill({ subject: 'MATH', responseMs: 3500 }),
+        flashcard: Array(4).fill({ subject: 'GEAS', responseMs: 2000 }),
+      }
+      vi.spyOn(dbService, 'getResponseTimeDistribution').mockResolvedValue(mockData)
+
+      await act(async () => {
+        root!.render(<ResponseTimeDemo />)
+      })
+
+      expect(container?.textContent).toContain('Response Time Distribution')
+      expect(container?.textContent).toContain('n(learn)=12 · n(flashcard)=4')
+      expect(container?.textContent).toContain('Learn Mode (MCQ)')
+      expect(container?.textContent).toContain('Mean')
+      expect(container?.textContent).toContain('Median')
+      expect(container?.textContent).toContain('3.5s')
+      expect(container?.querySelector('[data-testid="learn-mode-section"]')).not.toBeNull()
+      // Flashcard is insufficient (< 10)
+      expect(container?.textContent).toContain('Flashcard Mode (SM-2)')
+      expect(container?.textContent).toContain('Insufficient Data (n = 4 < 10)')
+      expect(container?.querySelector('[data-testid="flashcard-insufficient"]')).not.toBeNull()
+    })
+  })
+
+  describe('QuestionLengthZScoreDemo', () => {
+    it('renders loading state initially', async () => {
+      let resolvePromise: (val: any) => void
+      const pendingPromise = new Promise((resolve) => {
+        resolvePromise = resolve
+      })
+      vi.spyOn(dbService, 'getQuestionLengthDistribution').mockReturnValue(pendingPromise as any)
+
+      await act(async () => {
+        root!.render(<QuestionLengthZScoreDemo />)
+      })
+
+      expect(container?.textContent).toContain('Loading question length z-scores')
+
+      await act(async () => {
+        resolvePromise!([])
+      })
+    })
+
+    it('renders gate placeholder when total n < 10', async () => {
+      const mockRows = Array(8).fill({ subject: 'MATH', qlen: 80 })
+      vi.spyOn(dbService, 'getQuestionLengthDistribution').mockResolvedValue(mockRows)
+
+      await act(async () => {
+        root!.render(<QuestionLengthZScoreDemo />)
+      })
+
+      expect(container?.textContent).toContain('Insufficient Data (n = 8 < 10)')
+      expect(container?.querySelector('[data-testid="insufficient-data-placeholder"]')).not.toBeNull()
+    })
+
+    it('renders chart, tiles, and outlier classification when total n >= 10', async () => {
+      const mockRows = [
+        ...Array(15).fill({ subject: 'MATH', qlen: 50 }),
+        { subject: 'ELECS', qlen: 500 }, // extreme outlier
+      ]
+      vi.spyOn(dbService, 'getQuestionLengthDistribution').mockResolvedValue(mockRows)
+
+      await act(async () => {
+        root!.render(<QuestionLengthZScoreDemo />)
+      })
+
+      expect(container?.textContent).toContain('Outlier Detection via Z-Scores (Question Length)')
+      expect(container?.textContent).toContain('n = 16')
+      expect(container?.textContent).toContain('Outliers')
+      expect(container?.textContent).toContain('Most Extreme')
+      expect(container?.textContent).toContain('Extreme Subject')
+      expect(container?.textContent).toContain('ELECS')
+      expect(container?.querySelector('[data-testid="zscore-interpretation"]')).not.toBeNull()
+    })
+  })
 })
+
+

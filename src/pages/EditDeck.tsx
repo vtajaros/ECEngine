@@ -16,6 +16,7 @@ import { TagDeleteConfirmModal, AffectedDeck } from '../components/deck/TagDelet
 import { AIDescriptionButton } from '../components/deck/AIDescriptionButton'
 import { Tooltip } from '../components/ui/Tooltip'
 import { generateDeckSummary } from '../services/aiSummary.service'
+import { useDataVersionStore } from '../store/useDataVersionStore'
 import {
   DndContext,
   closestCenter,
@@ -1192,6 +1193,7 @@ export default function EditDeck() {
     try {
       if (window.electron?.decks?.deleteTag) {
         await window.electron.decks.deleteTag(pendingDeleteTag)
+        useDataVersionStore.getState().bump()
       }
       markTagDeleted(pendingDeleteTag)
 
@@ -1475,6 +1477,7 @@ export default function EditDeck() {
         deletedCardIds
       })
       if (!res.success) throw new Error(res.error)
+      useDataVersionStore.getState().bump()
       await loadCards()
       if (isNewFolder) {
         setToast({ type: 'success', msg: `Deck saved and new folder "${deckMeta.folderName.trim()}" created!` })

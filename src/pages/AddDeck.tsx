@@ -4,6 +4,7 @@ import { Tooltip } from '../components/ui/Tooltip'
 import { PREDEFINED_TAGS } from '../lib/constants'
 
 import { ImportModal, ImportFlashcardsModal } from '../components/deck/ImportModals'
+import { useDataVersionStore } from '../store/useDataVersionStore'
 import { CardEditor, EditCard } from '../components/deck/CardEditor'
 import { detectSubjectFromCards, hasCardContent, SubjectFullName as Subject } from '../lib/subjectClassifier'
 import React, { useState, useEffect, useCallback } from 'react'
@@ -435,6 +436,7 @@ export default function AddDeck() {
 
       const res = await window.electron.decks.addDeckWithCards(payload)
       if (!res.success) throw new Error(res.error)
+      useDataVersionStore.getState().bump()
       navigate(deckType === 'formula' ? '/formulas' : '/study')
     } catch (err: any) {
       console.error('Save failed', err)

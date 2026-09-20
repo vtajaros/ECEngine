@@ -3,9 +3,13 @@ import { router } from './router'
 
 import { useEffect } from 'react'
 import './store/useChecklistStore'
+import { useDataLabStore } from './store/useDataLabStore'
 
 export default function App() {
   useEffect(() => {
+    // Preload Data Lab analytics on app mount
+    useDataLabStore.getState().preloadAll()
+
     const updateKatexScale = () => {
       const scale = localStorage.getItem('ecengine:katex-scale') || '1.1'
       document.documentElement.style.setProperty('--katex-scale', `${scale}em`)

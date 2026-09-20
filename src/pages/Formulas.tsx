@@ -4,6 +4,7 @@ import { useFolderState } from '../hooks/useFolderState'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Link, useNavigate, useBlocker } from 'react-router-dom'
 import { useSessionStore } from '../store/useSessionStore'
+import { useDataVersionStore } from '../store/useDataVersionStore'
 import {
   Sigma,
   Layers,
@@ -297,6 +298,7 @@ export default function Formulas() {
     if (!setToDelete) return
     try {
       await window.electron.decks.deleteTopic(setToDelete.id)
+      useDataVersionStore.getState().bump()
       setDecks((prev) => prev.filter((s) => s.id !== setToDelete.id))
       setSetToDelete(null)
     } catch (err) {

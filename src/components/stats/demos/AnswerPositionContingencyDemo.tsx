@@ -1,56 +1,30 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Grid, AlertCircle, AlertTriangle } from 'lucide-react'
-import { dbService } from '../../../services/db.service'
 import { chiSquareIndependence } from '../../../lib/stats/contingency'
-import { useDataVersionStore } from '../../../store/useDataVersionStore'
+import { useDataLabStore } from '../../../store/useDataLabStore'
 import { StatInfoModal } from './StatInfoModal'
 import { STAT_EXPLANATIONS } from './statExplanations'
 
 const SUBJECTS = ['MATH', 'GEAS', 'ELECS', 'EST'] as const
 
 export function AnswerPositionContingencyDemo() {
-  const dataVersion = useDataVersionStore((state) => state.version)
-  const [rows, setRows] = useState<Array<{ subject: string; position: number | null; count: number }> | null>(null)
+  const rows = useDataLabStore((state) => state.answerPositionBySubject)
+  const loading = useDataLabStore((state) => state.loading.answerPositionBySubject)
+  const error = useDataLabStore((state) => state.errors.answerPositionBySubject)
+  const fetchAnswerPositionBySubject = useDataLabStore((state) => state.fetchAnswerPositionBySubject)
   const [activeStatId, setActiveStatId] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const isMountedRef = useRef(true)
 
   useEffect(() => {
-    isMountedRef.current = true
-    return () => {
-      isMountedRef.current = false
-    }
-  }, [])
-
-  const fetchData = useCallback(() => {
-    dbService
-      .getAnswerPositionBySubject()
-      .then((res) => {
-        if (isMountedRef.current) {
-          setRows(res)
-          setLoading(false)
-        }
-      })
-      .catch((err) => {
-        if (isMountedRef.current) {
-          setError(err.message || 'Failed to load answer position breakdown')
-          setLoading(false)
-        }
-      })
-  }, [])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData, dataVersion])
+    fetchAnswerPositionBySubject()
+  }, [fetchAnswerPositionBySubject])
 
   useEffect(() => {
     const handleFocus = () => {
-      fetchData()
+      fetchAnswerPositionBySubject()
     }
     window.addEventListener('focus', handleFocus)
     return () => window.removeEventListener('focus', handleFocus)
-  }, [fetchData])
+  }, [fetchAnswerPositionBySubject])
 
   if (loading) {
     return (

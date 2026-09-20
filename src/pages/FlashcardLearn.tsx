@@ -21,6 +21,7 @@ import { useIdleAwareTimer } from '../hooks/useIdleAwareTimer'
 import { FlashcardSession } from '../components/flashcard/FlashcardSession'
 import { FlashcardDeckBrowser } from '../components/flashcard/FlashcardDeckBrowser'
 import { useSessionStore } from '../store/useSessionStore'
+import { useDataVersionStore } from '../store/useDataVersionStore'
 import { PREDEFINED_TAGS } from '../lib/constants'
 
 type Subject = 'MATH' | 'GEAS' | 'ELECS' | 'EST'
@@ -297,6 +298,7 @@ export default function FlashcardLearn() {
     if (!setToDelete) return
     try {
       await window.electron.decks.deleteTopic(setToDelete.id)
+      useDataVersionStore.getState().bump()
       setDecks(prev => prev.filter(s => s.id !== setToDelete.id))
       setSetToDelete(null)
     } catch (err) {

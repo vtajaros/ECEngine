@@ -137,6 +137,20 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 
 ---
 
+### 🔬 Data Lab: Exploratory Data Analysis (EDA) & Statistics
+* **EDA Concepts, Live on Your Review Data**: An interactive Exploratory Data Analysis (EDA) suite that computes real-time inferential and descriptive statistics on question bank composition and personal study telemetry:
+  * **Content Coverage vs. PRC TOS Target**: Card counts and topic proportions across **MATH**, **GEAS**, **ELECS**, and **EST** compared directly against official PRC Board Examination TOS target weights (20%, 20%, 30%, 30%).
+  * **Mean Question Length by Subject (MCQ)**: Character length metrics per subject with total $N$, library mean, and median values to visualize problem statement right-skewness.
+  * **Answer Key Position Balance (MCQ)**: Chi-square goodness-of-fit ($\chi^2$), $p$-value, and Cramér's $V$ effect size tests measuring uniform distribution across choices A (0), B (1), C (2), and D (3) to evaluate option balance.
+  * **Question Length: One-Way ANOVA (MCQ)**: One-way Analysis of Variance testing whether question character length differs significantly across exam subjects ($F$-statistic, $p$-value, and degrees of freedom $df_1 / df_2$).
+  * **Answer Position vs. Subject Independence**: $4 \times 4$ contingency table and two-way Chi-Square Test of Independence ($\chi^2$, $p$-value, $df = 9$) testing whether correct answer placement is independent of subject category, rendered as a color-coded heatmap intensity grid.
+  * **Outlier Detection via Z-Scores**: Library-wide question length standardization ($z = \frac{x - \bar{x}}{s}$) categorizing questions into Typical ($|z| \le 2$), Outlier ($|z| > 2$), and Severe Outlier ($|z| > 3$), identifying extreme questions and their respective subject areas.
+  * **Response Time Distribution (MCQ vs. Flashcard)**: Unpooled response latency histograms and separate mean/median review paces comparing timed first-attempt MCQ recall (Learn Mode) against self-paced SM-2 spaced repetition (Flashcard Mode) in dark recessed cyber-styled panels.
+* **Interactive Stat Info Modals**: Click any statistical metric tile to open an in-depth modal featuring mathematical formulas rendered in KaTeX, conceptual explanations, and practical review takeaways.
+* **In-Memory Caching & Snappy Visualization**: Powered by a dedicated Zustand store (`useDataLabStore`) with background preloading on application launch and automatic cache refresh on study completion or deck imports. Features responsive 3×2 and 2×3 adaptive grids with smooth 600ms ease-out animations and cyber-terminal neon green styling.
+
+---
+
 ### 🤖 AI Explanations & Context Generation
 * **Groq AI Integration**: Direct integration with Groq (`llama-3.3-70b-versatile` / `openai/gpt-oss-120b`) for on-demand step-by-step problem explanations and automated deck summaries.
 * **AI-Powered Deck Summaries**: Single-click auto-generation of crisp deck summaries distilling up to 40 sample cards into clean topic phrases without introductory filler.
@@ -304,6 +318,18 @@ CREATE TABLE exam_sessions (
   total INTEGER DEFAULT 0,
   answers TEXT DEFAULT '{}'
 );
+
+-- Attempt telemetry for response time & performance analysis
+CREATE TABLE attempt_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  card_id TEXT NOT NULL,
+  session_id TEXT,
+  mode TEXT NOT NULL,          -- 'learn' | 'flashcard' | 'test'
+  response_ms INTEGER NOT NULL,
+  result TEXT,
+  created_at INTEGER NOT NULL,
+  FOREIGN KEY(card_id) REFERENCES cards(id) ON DELETE CASCADE
+);
 ```
 
 ---
@@ -316,7 +342,7 @@ ecengine/
 │   ├── main.ts                  # App lifecycle, window management, zoom, hotkeys
 │   ├── preload.ts               # contextBridge IPC API exposure
 │   ├── db/                      # SQLite connection, schema bootstrap, migrations (v1–v9)
-│   └── ipc/                     # Modular IPC handlers (DB, Deck, AI, Print, Config, TTS, Export)
+│   └── ipc/                     # Modular IPC handlers (DB, Deck, Analytics, AI, Print, Config, TTS, Export)
 ├── src/                         # React Frontend (Renderer)
 │   ├── assets/                  # Brand assets, icons, bundled fonts (Rajdhani, JetBrains Mono, Orbitron)
 │   ├── components/              # Modular UI Components
@@ -326,13 +352,15 @@ ecengine/
 │   │   ├── deck/                # CardForms, DeckCard, AIDescriptionButton, AdvancedFiltersPopover
 │   │   ├── study/               # StudyHeader, StudySessionStats
 │   │   ├── dashboard/           # ReviewHeatmap, SessionHistory, ExamCountdown
+│   │   ├── stats/demos/         # Data Lab EDA demos (ContentCoverage, QuestionLength, ANOVA, Contingency, Z-Score, ResponseTime, StatInfoModal)
 │   │   ├── toc/                 # SubjectCard, Table of Specifications data, tosItems, tosRows
 │   │   └── layout/              # AppShell, custom TitleBar, navigation sidebar
 │   ├── hooks/                   # Business logic (SM-2, timer, TTS, sound volume, import)
 │   ├── lib/                     # LaTeX rendering, subject classifier, audio synthesis, tosData
-│   ├── pages/                   # Main views (Dashboard, LooksFam, FlashcardLearn, Formulas, PrintView, TOSChecklist, Settings, etc.)
+│   │   └── stats/               # In-house statistical analysis suite (ANOVA, Chi-Square, descriptive, distributions, inference)
+│   ├── pages/                   # Main views (Dashboard, Lab, LooksFam, FlashcardLearn, Formulas, PrintView, TOSChecklist, Settings, etc.)
 │   ├── services/                # db.service.ts (SQLite data access), aiSummary.service.ts (Groq summaries)
-│   ├── store/                   # Zustand stores (useSessionStore for SM-2, useChecklistStore for ToS checklist)
+│   ├── store/                   # Zustand stores (useSessionStore, useChecklistStore, useDataLabStore)
 │   └── styles/                  # Tailwind theme tokens, CSS variables (--tier-*), KaTeX customizations
 ├── content/                     # Seed JSON deck files
 ├── scripts/                     # Seeding and content validation scripts
