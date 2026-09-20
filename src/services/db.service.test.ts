@@ -3,6 +3,7 @@
 // Zero real database calls — safe to run anytime.
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { useDataVersionStore } from '../store/useDataVersionStore'
 
 // ─── Mock window.electron before importing the service ────────────────────────
 // Must be set up before the module loads since db.service references
@@ -67,6 +68,8 @@ function makeCardRow(overrides: Record<string, any> = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  // Reset the version store so tests are independent
+  useDataVersionStore.setState({ version: 0 })
 })
 
 // ─── getCards ─────────────────────────────────────────────────────────────────
@@ -584,5 +587,46 @@ describe('dbService SM-2 progress and due card mapping', () => {
     })
   })
 })
+
+// ─── useDataVersionStore bump integration ─────────────────────────────────────
+
+describe('useDataVersionStore version bump on writes', () => {
+  it('saveProgress — version increments after a successful call', async () => {
+    mockElectron.data.saveProgress.mockResolvedValue({ success: true })
+    mockElectron.data.recordActivity.mockResolvedValue({ success: true })
+
+    const versionBefore = useDataVersionStore.getState().version
+    await dbService.saveProgress('card-1', { easeFactor: 2.5, interval: 1, repetitions: 0 }, true)
+    // saveProgress calls recordActivity which bumps; expect at least 1 bump
+    expect(useDataVersionStore.getState().version).toBeGreaterThan(versionBefore)
+  })
+
+  it('saveProgress — version does NOT increment when underlying IPC call resolves with success:false', async () => {
+    mockElectron.data.saveProgress.mockResolvedValue({ success: false, error: 'Write failed' })
+
+    const versionBefore = useDataVersionStore.getState().version
+    await expect(
+      dbService.saveProgress('card-1', { easeFactor: 2.5, interval: 1, repetitions: 0 }, true)
+    ).rejects.toThrow('Write failed')
+    expect(useDataVersionStore.getState().version).toBe(versionBefore)
+  })
+
+  it('resetProgress — version increments by 1 after a successful call', async () => {
+    mockElectron.data.resetProgress.mockResolvedValue({ success: true })
+
+    const versionBefore = useDataVersionStore.getState().version
+    await dbService.resetProgress()
+    expect(useDataVersionStore.getState().version).toBe(versionBefore + 1)
+  })
+
+  it('resetProgress — version does NOT increment when IPC resolves with success:false', async () => {
+    mockElectron.data.resetProgress.mockResolvedValue({ success: false, error: 'Locked' })
+
+    const versionBefore = useDataVersionStore.getState().version
+    await expect(dbService.resetProgress()).rejects.toThrow('Locked')
+    expect(useDataVersionStore.getState().version).toBe(versionBefore)
+  })
+})
+
 
 

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { useSessionStore } from './useSessionStore'
 import { dbService } from '../services/db.service'
 import { Card } from '../types'
@@ -26,6 +26,10 @@ describe('useSessionStore', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     vi.mocked(dbService.saveProgress).mockResolvedValue(undefined)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
   it('startSession with empty array → isFinished: true immediately', () => {
@@ -67,7 +71,12 @@ describe('useSessionStore', () => {
     expect(state.sessionStats.easy).toBe(1)
     expect(state.isFinished).toBe(true)
     expect(state.isSubmitting).toBe(false)
-    expect(dbService.saveProgress).toHaveBeenCalledWith('c1', expect.any(Object), true)
+    expect(dbService.saveProgress).toHaveBeenCalledWith(
+      'c1',
+      expect.any(Object),
+      true,
+      expect.objectContaining({ mode: 'flashcard', quality: 4 })
+    )
   })
 
   it('rateCard(1) → sessionStats.again === 1', async () => {
@@ -78,7 +87,12 @@ describe('useSessionStore', () => {
     const state = useSessionStore.getState()
     expect(state.sessionStats.again).toBe(1)
     expect(state.isFinished).toBe(false)
-    expect(dbService.saveProgress).toHaveBeenCalledWith('c1', expect.any(Object), false)
+    expect(dbService.saveProgress).toHaveBeenCalledWith(
+      'c1',
+      expect.any(Object),
+      false,
+      expect.objectContaining({ mode: 'flashcard', quality: 1 })
+    )
   })
 
   it('rateCard(3) → sessionStats.good === 1', async () => {
@@ -89,7 +103,12 @@ describe('useSessionStore', () => {
     const state = useSessionStore.getState()
     expect(state.sessionStats.good).toBe(1)
     expect(state.isFinished).toBe(false)
-    expect(dbService.saveProgress).toHaveBeenCalledWith('c1', expect.any(Object), true)
+    expect(dbService.saveProgress).toHaveBeenCalledWith(
+      'c1',
+      expect.any(Object),
+      true,
+      expect.objectContaining({ mode: 'flashcard', quality: 3 })
+    )
   })
 
   it('Concurrent rateCard — call rateCard(4) twice without awaiting first; second call must be dropped', async () => {
@@ -159,7 +178,8 @@ describe('useSessionStore', () => {
         interval: 6,
         easeFactor: 2.8,
       }),
-      true
+      true,
+      expect.objectContaining({ mode: 'flashcard', quality: 4 })
     )
 
     // Check currentDeck in store was updated with the new state
@@ -189,8 +209,75 @@ describe('useSessionStore', () => {
         interval: 1,
         easeFactor: 2.65,
       }),
-      true
+      true,
+      expect.objectContaining({ mode: 'flashcard', quality: 4 })
     )
+  })
+
+  it('rateCard passes mode flashcard, numeric quality, and responseMs equal to elapsed fake time', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(10000)
+    useSessionStore.getState().startSession([createMockCard('c1')])
+    expect(useSessionStore.getState().cardShownAt).toBe(10000)
+
+    vi.advanceTimersByTime(2500)
+    await useSessionStore.getState().rateCard(3)
+
+    expect(dbService.saveProgress).toHaveBeenCalledWith(
+      'c1',
+      expect.any(Object),
+      true,
+      {
+        mode: 'flashcard',
+        quality: 3,
+        responseMs: 2500,
+        answeredAt: 12500,
+      }
+    )
+  })
+
+  it('after a rating, cardShownAt is updated so next card responseMs is measured from advance, not session start', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(10000)
+    useSessionStore.getState().startSession([createMockCard('c1'), createMockCard('c2')])
+    expect(useSessionStore.getState().cardShownAt).toBe(10000)
+
+    // Card 1: 3000ms elapsed
+    vi.advanceTimersByTime(3000)
+    await useSessionStore.getState().rateCard(4)
+
+    // Advance should have updated cardShownAt to current fake time (13000)
+    expect(useSessionStore.getState().cardShownAt).toBe(13000)
+    expect(useSessionStore.getState().currentIndex).toBe(1)
+
+    // Card 2: 1500ms elapsed after advance
+    vi.advanceTimersByTime(1500)
+    await useSessionStore.getState().rateCard(2)
+
+    // Card 2 responseMs should be 1500, NOT 4500 (from session start)
+    expect(dbService.saveProgress).toHaveBeenLastCalledWith(
+      'c2',
+      expect.any(Object),
+      false,
+      {
+        mode: 'flashcard',
+        quality: 2,
+        responseMs: 1500,
+        answeredAt: 14500,
+      }
+    )
+  })
+
+  it('startSession resets cardShownAt', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(5000)
+    useSessionStore.getState().startSession([createMockCard('c1')])
+    expect(useSessionStore.getState().cardShownAt).toBe(5000)
+
+    // Advance time and call startSession again with a new session
+    vi.advanceTimersByTime(15000)
+    useSessionStore.getState().startSession([createMockCard('c2')])
+    expect(useSessionStore.getState().cardShownAt).toBe(20000)
   })
 })
 

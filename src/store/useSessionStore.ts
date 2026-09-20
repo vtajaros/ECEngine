@@ -18,6 +18,7 @@ interface SessionStore {
   isFinished: boolean
   /** True while a DB write is in-flight; blocks concurrent rateCard calls. */
   isSubmitting: boolean
+  cardShownAt: number
   startSession: (cards: Card[]) => void
   flipCard: () => void
   rateCard: (quality: number) => Promise<void>
@@ -30,6 +31,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   sessionStats: { again: 0, hard: 0, good: 0, easy: 0 },
   isFinished: false,
   isSubmitting: false,
+  cardShownAt: 0,
 
   startSession: (cards) => {
     set({
@@ -38,6 +40,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       isFlipped: false,
       sessionStats: { again: 0, hard: 0, good: 0, easy: 0 },
       isFinished: cards.length === 0,
+      cardShownAt: Date.now(),
     })
   },
 
@@ -77,13 +80,16 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       // quality 3 (Good) or 4 (Easy) = correct answer; 1 (Again) or 2 (Hard) = incorrect
       const isCorrect = quality >= 3
 
+      const answeredAt = Date.now()
+      const responseMs = state.cardShownAt > 0 ? answeredAt - state.cardShownAt : null
+
       await dbService.saveProgress(currentCard.id, {
         easeFactor,
         interval,
         repetitions,
         nextReview: nextReviewStr,           // e.g. "2026-06-15" — plain local date, no time component
         lastReviewed: new Date().toISOString() // full ISO kept for display/history only
-      }, isCorrect)
+      }, isCorrect, { mode: 'flashcard', quality, responseMs, answeredAt })
 
       // Re-read state after the await — index may not have changed but sessionStats
       // must be computed from the snapshot captured before the await.
@@ -112,6 +118,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
         currentIndex: nextIndex,
         isFlipped: false,
         isFinished,
+        cardShownAt: Date.now(),
       })
     } finally {
       // Always release the lock — even if the DB write throws (ErrorBoundary handles the throw).

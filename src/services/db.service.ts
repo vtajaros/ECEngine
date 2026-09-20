@@ -1,6 +1,7 @@
 import { Card, Progress, FlashcardSchedule } from '../types'
 import { calculateSM2 } from '../lib/sm2'
 import { z } from 'zod'
+import { useDataVersionStore } from '../store/useDataVersionStore'
 
 // ── IPC row schemas ───────────────────────────────────────────────────────────
 
@@ -141,7 +142,7 @@ export const dbService = {
       throw new Error(`Database Operation Failed: ${result.error || 'Failed to update progress'}`)
     }
 
-    // Also record activity for today
+    // Also record activity for today (which also bumps the version)
     await dbService.recordActivity(isCorrect)
   },
 
@@ -156,6 +157,7 @@ export const dbService = {
     if (!result.success) {
       throw new Error(`Database Operation Failed: ${result.error || 'Failed to record activity'}`)
     }
+    useDataVersionStore.getState().bump()
   },
 
   getActivityHistory: async (): Promise<Record<string, { count: number, timeSpent: number }>> => {
@@ -283,6 +285,7 @@ export const dbService = {
     if (!result.success) {
       throw new Error(`Database Operation Failed: ${result.error || 'Failed to update time spent'}`)
     }
+    useDataVersionStore.getState().bump()
   },
 
   getDashboardStats: async () => {
@@ -348,11 +351,13 @@ export const dbService = {
   clearAllData: async (): Promise<void> => {
     const r = await window.electron.data.clearAllData()
     if (!r.success) throw new Error(`Database Operation Failed: ${r.error || 'Failed to clear all data'}`)
+    useDataVersionStore.getState().bump()
   },
 
   resetProgress: async (): Promise<void> => {
     const r = await window.electron.data.resetProgress()
     if (!r.success) throw new Error(`Database Operation Failed: ${r.error || 'Failed to reset progress'}`)
+    useDataVersionStore.getState().bump()
   },
 
   exportDecks: async (): Promise<string> => {
@@ -372,6 +377,7 @@ export const dbService = {
       const parsed = JSON.parse(jsonData)
       const r = await window.electron.data.importDecks(parsed)
       if (!r.success) throw new Error(`Database Operation Failed: ${r.error || 'Failed to import decks'}`)
+      useDataVersionStore.getState().bump()
       return { success: true, message: r.data || 'Decks and progress imported successfully' }
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Failed to parse backup file'
@@ -444,6 +450,7 @@ export const dbService = {
       throw new Error(`Database Operation Failed: ${result.error || 'Failed to record card result'}`)
     }
     // Count MCQ answers toward daily activity / streak, consistent with flashcard sessions.
+    // recordActivity also bumps the data version store.
     await dbService.recordActivity(isCorrect)
   },
 
@@ -459,6 +466,7 @@ export const dbService = {
   }): Promise<{ id: string }> => {
     const result = await window.electron.data.saveExamSession(session)
     if (!result.success) throw new Error(result.error ?? 'Failed to save exam session')
+    useDataVersionStore.getState().bump()
     return result.data ?? { id: '' }
   },
 
@@ -494,11 +502,13 @@ export const dbService = {
   deleteExamSession: async (id: string): Promise<void> => {
     const result = await window.electron.data.deleteExamSession(id)
     if (!result.success) throw new Error(result.error ?? 'Failed to delete exam session')
+    useDataVersionStore.getState().bump()
   },
 
   clearExamSessions: async (): Promise<void> => {
     const result = await window.electron.data.clearExamSessions()
     if (!result.success) throw new Error(result.error ?? 'Failed to clear exam sessions')
+    useDataVersionStore.getState().bump()
   },
 
   updateFolderOrder: async (
