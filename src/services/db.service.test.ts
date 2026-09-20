@@ -39,6 +39,7 @@ const mockElectron = {
     getContentCoverage: vi.fn(),
     getQuestionLengthDistribution: vi.fn(),
     getAnswerPositionCounts: vi.fn(),
+    getAnswerPositionBySubject: vi.fn(),
     getResponseTimeDistribution: vi.fn(),
   },
   decks: {

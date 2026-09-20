@@ -529,6 +529,12 @@ export const dbService = {
     return result.data
   },
 
+  getAnswerPositionBySubject: async () => {
+    const result = await window.electron.data.getAnswerPositionBySubject()
+    if (!result.success) throw new Error(result.error ?? 'Failed to get answer position by subject')
+    return result.data
+  },
+
   getResponseTimeDistribution: async () => {
     const result = await window.electron.data.getResponseTimeDistribution()
     if (!result.success) throw new Error(result.error ?? 'Failed to get response time distribution')

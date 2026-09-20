@@ -18,6 +18,8 @@ import {
   CHART_TOOLTIP_ITEM_STYLE,
 } from './chartTooltipStyle'
 import { useDataVersionStore } from '../../../store/useDataVersionStore'
+import { StatInfoModal } from './StatInfoModal'
+import { STAT_EXPLANATIONS } from './statExplanations'
 
 const POSITION_LABELS: Record<number, string> = {
   0: 'Choice A (0)',
@@ -31,6 +33,7 @@ const POSITION_COLORS = ['#38BDF8', '#818CF8', '#A78BFA', '#F472B6']
 export function AnswerPositionDemo() {
   const dataVersion = useDataVersionStore((state) => state.version)
   const [rows, setRows] = useState<Array<{ position: number | null; count: number }> | null>(null)
+  const [activeStatId, setActiveStatId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const isMountedRef = useRef(true)
@@ -145,98 +148,133 @@ export function AnswerPositionDemo() {
   ]
 
   return (
-    <div className="bg-surface p-5 rounded-xl border border-border-base shadow-lg flex flex-col gap-3" data-testid="answer-position-demo">
-      <div className="flex items-center justify-between border-b border-border-base/50 pb-2.5">
-        <h2 className="font-['Rajdhani'] font-bold text-sm text-text-primary uppercase tracking-widest flex items-center gap-2">
-          <HelpCircle className="text-accent" size={16} />
-          Answer Key Position Balance (MCQ)
-        </h2>
-        <span className="font-['JetBrains_Mono'] text-xs text-text-muted">
-          n = {testedN.toLocaleString()}
-        </span>
-      </div>
-
-      <div className="w-full h-52 relative">
-        <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={150}>
-          <BarChart data={chartData} margin={{ top: 12, right: 12, left: -10, bottom: 4 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1E1E1E" />
-            <XAxis
-              dataKey="label"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: '#888', fontSize: 11, fontFamily: 'JetBrains Mono' }}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: '#666', fontSize: 10, fontFamily: 'JetBrains Mono' }}
-            />
-            <Tooltip
-              contentStyle={CHART_TOOLTIP_STYLE}
-              labelStyle={CHART_TOOLTIP_LABEL_STYLE}
-              itemStyle={CHART_TOOLTIP_ITEM_STYLE}
-              wrapperStyle={{ outline: 'none' }}
-              formatter={(value: any, _name: any, item: any) => [
-                `${Number(value).toLocaleString()} cards (${((Number(value) / testedN) * 100).toFixed(1)}%)`,
-                POSITION_LABELS[item.payload.position] || 'Option',
-              ]}
-              cursor={{ fill: 'rgba(255,255,255,0.03)' }}
-            />
-            <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-              {chartData.map((entry) => (
-                <Cell key={`cell-pos-${entry.position}`} fill={entry.fill} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      <div className="pt-2 border-t border-border-base/40 flex flex-col gap-2">
-        <div className="flex flex-col gap-2" data-testid="answer-position-interpretation">
-          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-            <div className="bg-surface-2 rounded-lg p-2 sm:p-3 border border-border-base flex flex-col items-center justify-center text-center min-w-0">
-              <span className="font-['JetBrains_Mono'] text-sm sm:text-base font-bold text-text-primary leading-tight whitespace-nowrap">
-                {gof.chi2.toFixed(2)}
-              </span>
-              <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-[#555] font-bold mt-1 whitespace-nowrap">
-                χ²
-              </span>
-            </div>
-            <div className="bg-surface-2 rounded-lg p-2 sm:p-3 border border-border-base flex flex-col items-center justify-center text-center min-w-0">
-              <span className="font-['JetBrains_Mono'] text-sm sm:text-base font-bold text-text-primary leading-tight whitespace-nowrap">
-                {pText}
-              </span>
-              <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-[#555] font-bold mt-1 whitespace-nowrap">
-                p-value
-              </span>
-            </div>
-            <div className="bg-surface-2 rounded-lg p-2 sm:p-3 border border-border-base flex flex-col items-center justify-center text-center min-w-0">
-              <span className="font-['JetBrains_Mono'] text-sm sm:text-base font-bold text-text-primary leading-tight whitespace-nowrap">
-                {wText}
-              </span>
-              <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-[#555] font-bold mt-1 whitespace-nowrap">
-                Cramér's W
-              </span>
-            </div>
-          </div>
-          <p className="font-['JetBrains_Mono'] text-xs text-text-muted leading-relaxed">
-            {effectInterpretation}
-          </p>
+    <>
+      <div className="bg-surface p-5 rounded-xl border border-border-base shadow-lg flex flex-col gap-3" data-testid="answer-position-demo">
+        <div className="flex items-center justify-between flex-wrap gap-x-2 gap-y-1 border-b border-border-base/50 pb-2.5">
+          <h2 className="font-['Rajdhani'] font-bold text-sm text-text-primary uppercase tracking-widest flex items-center gap-2">
+            <HelpCircle className="text-accent" size={16} />
+            Answer Key Position Balance (MCQ)
+          </h2>
+          <span className="font-['JetBrains_Mono'] text-xs text-text-muted shrink-0 whitespace-nowrap">
+            n = {testedN.toLocaleString()}
+          </span>
         </div>
 
-        {anomalyCount > 0 && (
-          <div
-            className="flex items-center gap-2 text-[11px] font-['JetBrains_Mono'] text-[#eab308] bg-[#eab308]/10 px-3 py-1.5 rounded border border-[#eab308]/20"
-            data-testid="answer-position-anomaly"
-          >
-            <AlertTriangle size={14} className="shrink-0" />
-            <span>
-              Data Quality Note: {anomalyCount.toLocaleString()} card(s) have unassigned or out-of-range answer keys (excluded from χ² test).
-            </span>
+        <div className="w-full h-52 relative">
+          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={150}>
+            <BarChart data={chartData} margin={{ top: 12, right: 12, left: -10, bottom: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1E1E1E" />
+              <XAxis
+                dataKey="label"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#888', fontSize: 11, fontFamily: 'JetBrains Mono' }}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#666', fontSize: 10, fontFamily: 'JetBrains Mono' }}
+              />
+              <Tooltip
+                contentStyle={CHART_TOOLTIP_STYLE}
+                labelStyle={CHART_TOOLTIP_LABEL_STYLE}
+                itemStyle={CHART_TOOLTIP_ITEM_STYLE}
+                wrapperStyle={{ outline: 'none' }}
+                formatter={(value: any, _name: any, item: any) => [
+                  `${Number(value).toLocaleString()} cards (${((Number(value) / testedN) * 100).toFixed(1)}%)`,
+                  POSITION_LABELS[item.payload.position] || 'Option',
+                ]}
+                cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+              />
+              <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                {chartData.map((entry) => (
+                  <Cell key={`cell-pos-${entry.position}`} fill={entry.fill} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="pt-2 border-t border-border-base/40 flex flex-col gap-2">
+          <div className="flex flex-col gap-2" data-testid="answer-position-interpretation">
+            <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+              <div
+                onClick={() => setActiveStatId('chiSquare')}
+                role="button"
+                tabIndex={0}
+                className="bg-surface-2 rounded-lg p-2 sm:p-3 border border-border-base flex flex-col items-center justify-center text-center min-w-0 cursor-pointer hover:border-accent/50 transition-colors"
+              >
+                <span className="font-['JetBrains_Mono'] text-sm sm:text-base font-bold text-text-primary leading-tight whitespace-nowrap">
+                  {gof.chi2.toFixed(2)}
+                </span>
+                <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-[#555] font-bold mt-1 whitespace-nowrap">
+                  χ²
+                </span>
+              </div>
+              <div
+                onClick={() => setActiveStatId('pValue')}
+                role="button"
+                tabIndex={0}
+                className="bg-surface-2 rounded-lg p-2 sm:p-3 border border-border-base flex flex-col items-center justify-center text-center min-w-0 cursor-pointer hover:border-accent/50 transition-colors"
+              >
+                <span className="font-['JetBrains_Mono'] text-sm sm:text-base font-bold text-text-primary leading-tight whitespace-nowrap">
+                  {pText}
+                </span>
+                <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-[#555] font-bold mt-1 whitespace-nowrap">
+                  p-value
+                </span>
+              </div>
+              <div
+                onClick={() => setActiveStatId('cramersW')}
+                role="button"
+                tabIndex={0}
+                className="bg-surface-2 rounded-lg p-2 sm:p-3 border border-border-base flex flex-col items-center justify-center text-center min-w-0 cursor-pointer hover:border-accent/50 transition-colors"
+              >
+                <span className="font-['JetBrains_Mono'] text-sm sm:text-base font-bold text-text-primary leading-tight whitespace-nowrap">
+                  {wText}
+                </span>
+                <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-[#555] font-bold mt-1 whitespace-nowrap">
+                  Cramér's W
+                </span>
+              </div>
+            </div>
+            <p className="font-['JetBrains_Mono'] text-xs text-text-muted leading-relaxed">
+              {effectInterpretation}
+            </p>
           </div>
-        )}
+
+          {anomalyCount > 0 && (
+            <div
+              className="flex items-center gap-2 text-[11px] font-['JetBrains_Mono'] text-[#eab308] bg-[#eab308]/10 px-3 py-1.5 rounded border border-[#eab308]/20"
+              data-testid="answer-position-anomaly"
+            >
+              <AlertTriangle size={14} className="shrink-0" />
+              <span>
+                Data Quality Note: {anomalyCount.toLocaleString()} card(s) have unassigned or out-of-range answer keys (excluded from χ² test).
+              </span>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      {activeStatId && (
+        <StatInfoModal
+          isOpen={!!activeStatId}
+          onClose={() => setActiveStatId(null)}
+          title={STAT_EXPLANATIONS[activeStatId].title}
+          value={
+            activeStatId === 'chiSquare'
+              ? gof.chi2.toFixed(2)
+              : activeStatId === 'pValue'
+              ? pText
+              : wText
+          }
+          formula={STAT_EXPLANATIONS[activeStatId].formula}
+          description={STAT_EXPLANATIONS[activeStatId].description}
+          takeaway={STAT_EXPLANATIONS[activeStatId].takeaway}
+        />
+      )}
+    </>
   )
 }
 export default AnswerPositionDemo

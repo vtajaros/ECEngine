@@ -3,6 +3,8 @@ import { FlaskConical } from 'lucide-react'
 import { ContentCoverageDemo } from '../components/stats/demos/ContentCoverageDemo'
 import { QuestionLengthDemo } from '../components/stats/demos/QuestionLengthDemo'
 import { AnswerPositionDemo } from '../components/stats/demos/AnswerPositionDemo'
+import { QuestionLengthAnovaDemo } from '../components/stats/demos/QuestionLengthAnovaDemo'
+import { AnswerPositionContingencyDemo } from '../components/stats/demos/AnswerPositionContingencyDemo'
 
 export default function Lab() {
   return (
@@ -20,11 +22,16 @@ export default function Lab() {
         </p>
       </header>
 
-      {/* Demos Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 pb-6">
+      {/* Demos Grids */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
         <ContentCoverageDemo />
         <QuestionLengthDemo />
         <AnswerPositionDemo />
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 pb-6">
+        <QuestionLengthAnovaDemo />
+        <AnswerPositionContingencyDemo />
       </div>
     </div>
   )

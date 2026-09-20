@@ -5,6 +5,7 @@ import {
   getContentCoverage,
   getQuestionLengthDistribution,
   getAnswerPositionCounts,
+  getAnswerPositionBySubject,
   getResponseTimeDistribution,
   registerAnalyticsHandlers,
 } from './analytics.ipc'
@@ -248,6 +249,52 @@ describe('analytics.ipc', () => {
         { position: 3, count: 1 },
         { position: null, count: 2 },
       ])
+    })
+  })
+
+  describe('getAnswerPositionBySubject', () => {
+    it('returns per-subject counts for positions 0-3 and groups out-of-range/null answers under position: null', () => {
+      const rows = getAnswerPositionBySubject((sql, params) => db.prepare(sql).all(params ?? []))
+
+      // Check MATH subject
+      expect(rows.find(r => r.subject === 'MATH' && r.position === 0)).toEqual({ subject: 'MATH', position: 0, count: 0 })
+      expect(rows.find(r => r.subject === 'MATH' && r.position === 1)).toEqual({ subject: 'MATH', position: 1, count: 2 })
+      expect(rows.find(r => r.subject === 'MATH' && r.position === 2)).toEqual({ subject: 'MATH', position: 2, count: 0 })
+      expect(rows.find(r => r.subject === 'MATH' && r.position === 3)).toEqual({ subject: 'MATH', position: 3, count: 0 })
+
+      // Check GEAS subject (has c3 pos 0, c5 pos 2, c6 pos 3, plus c7 pos 4 and c8 pos null)
+      expect(rows.find(r => r.subject === 'GEAS' && r.position === 0)).toEqual({ subject: 'GEAS', position: 0, count: 1 })
+      expect(rows.find(r => r.subject === 'GEAS' && r.position === 1)).toEqual({ subject: 'GEAS', position: 1, count: 0 })
+      expect(rows.find(r => r.subject === 'GEAS' && r.position === 2)).toEqual({ subject: 'GEAS', position: 2, count: 1 })
+      expect(rows.find(r => r.subject === 'GEAS' && r.position === 3)).toEqual({ subject: 'GEAS', position: 3, count: 1 })
+      expect(rows.find(r => r.subject === 'GEAS' && r.position === null)).toEqual({ subject: 'GEAS', position: null, count: 2 })
+    })
+
+    it('surfaces newly inserted anomalous/out-of-range positions under null bucket rather than dropping', () => {
+      // Insert an ELECS card with out-of-range answer (99)
+      db.prepare('INSERT INTO cards (id, topic_id, type, data) VALUES (?, ?, ?, ?)').run(
+        'c-anom-elecs',
+        't-elecs-1',
+        'mcq',
+        JSON.stringify({ question: 'Odd choice card', choices: ['A', 'B'], answer: 99 })
+      )
+
+      const rows = getAnswerPositionBySubject((sql, params) => db.prepare(sql).all(params ?? []))
+      const elecsNull = rows.find(r => r.subject === 'ELECS' && r.position === null)
+      expect(elecsNull).toEqual({ subject: 'ELECS', position: null, count: 1 })
+    })
+
+    it('invokes through IPC handler data:getAnswerPositionBySubject successfully', async () => {
+      const handler = handlers.get('data:getAnswerPositionBySubject')
+      expect(handler).toBeDefined()
+      const result = await handler!()
+      expect(result.success).toBe(true)
+      expect(Array.isArray(result.data)).toBe(true)
+      expect(result.data.find((r: any) => r.subject === 'GEAS' && r.position === null)).toEqual({
+        subject: 'GEAS',
+        position: null,
+        count: 2,
+      })
     })
   })
 

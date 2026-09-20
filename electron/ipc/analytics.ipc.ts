@@ -159,6 +159,62 @@ export function getResponseTimeDistribution(
   return result
 }
 
+/**
+ * Returns frequency counts of MCQ answer positions (0-3) grouped by normalized subject.
+ * Answers outside 0-3 or null are aggregated into a `position: null` bucket per subject
+ * as a data-quality signal.
+ */
+export function getAnswerPositionBySubject(
+  queryFn: (sql: string, params?: any[]) => any[] = queryAll
+): Array<{ subject: string; position: number | null; count: number }> {
+  const sql = `
+    SELECT t.subject,
+           json_extract(c.data, '$.answer') AS pos,
+           COUNT(*) AS n
+    FROM cards c
+    JOIN topics t ON c.topic_id = t.id
+    WHERE c.type = 'mcq'
+    GROUP BY t.subject, pos
+  `
+  const rows = queryFn(sql)
+  const standardSubjects = ['MATH', 'GEAS', 'ELECS', 'EST']
+  const subjectMap: Record<string, { counts: Record<number, number>; invalidCount: number }> = {}
+
+  for (const sub of standardSubjects) {
+    subjectMap[sub] = { counts: { 0: 0, 1: 0, 2: 0, 3: 0 }, invalidCount: 0 }
+  }
+
+  for (const row of rows) {
+    const code = normalizeSubject(row.subject)
+    if (!subjectMap[code]) {
+      subjectMap[code] = { counts: { 0: 0, 1: 0, 2: 0, 3: 0 }, invalidCount: 0 }
+    }
+    const n = Number(row.n) || 0
+    const rawPos = row.pos
+    const numPos =
+      rawPos !== null && rawPos !== undefined && rawPos !== '' ? Number(rawPos) : NaN
+
+    if (Number.isInteger(numPos) && numPos >= 0 && numPos <= 3) {
+      subjectMap[code].counts[numPos] += n
+    } else {
+      subjectMap[code].invalidCount += n
+    }
+  }
+
+  const result: Array<{ subject: string; position: number | null; count: number }> = []
+
+  for (const [subject, data] of Object.entries(subjectMap)) {
+    for (let pos = 0; pos <= 3; pos++) {
+      result.push({ subject, position: pos, count: data.counts[pos] })
+    }
+    if (data.invalidCount > 0) {
+      result.push({ subject, position: null, count: data.invalidCount })
+    }
+  }
+
+  return result
+}
+
 export function registerAnalyticsHandlers(): void {
   ipcMain.handle('data:getContentCoverage', async () => {
     try {
@@ -181,6 +237,15 @@ export function registerAnalyticsHandlers(): void {
   ipcMain.handle('data:getAnswerPositionCounts', async () => {
     try {
       const data = getAnswerPositionCounts()
+      return { success: true, data }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('data:getAnswerPositionBySubject', async () => {
+    try {
+      const data = getAnswerPositionBySubject()
       return { success: true, data }
     } catch (error) {
       return { success: false, error: (error as Error).message }

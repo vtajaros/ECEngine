@@ -19,12 +19,15 @@ import {
   CHART_TOOLTIP_ITEM_STYLE,
 } from './chartTooltipStyle'
 import { useDataVersionStore } from '../../../store/useDataVersionStore'
+import { StatInfoModal } from './StatInfoModal'
+import { STAT_EXPLANATIONS } from './statExplanations'
 
 const SUBJECTS = ['MATH', 'GEAS', 'ELECS', 'EST'] as const
 
 export function ContentCoverageDemo() {
   const dataVersion = useDataVersionStore((state) => state.version)
   const [data, setData] = useState<Record<string, { topics: number; cards: number }> | null>(null)
+  const [activeSubject, setActiveSubject] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const isMountedRef = useRef(true)
@@ -135,76 +138,93 @@ export function ContentCoverageDemo() {
   })
 
   return (
-    <div className="bg-surface p-5 rounded-xl border border-border-base shadow-lg flex flex-col gap-3" data-testid="content-coverage-demo">
-      <div className="flex items-center justify-between border-b border-border-base/50 pb-2.5">
-        <h2 className="font-['Rajdhani'] font-bold text-sm text-text-primary uppercase tracking-widest flex items-center gap-2">
-          <Layers className="text-accent" size={16} />
-          Content Coverage vs. PRC ToS Target
-        </h2>
-        <span className="font-['JetBrains_Mono'] text-xs text-text-muted">
-          {totalCards.toLocaleString()} cards · {totalTopics} topics
-        </span>
-      </div>
+    <>
+      <div className="bg-surface p-5 rounded-xl border border-border-base shadow-lg flex flex-col gap-3" data-testid="content-coverage-demo">
+        <div className="flex items-center justify-between flex-wrap gap-x-2 gap-y-1 border-b border-border-base/50 pb-2.5">
+          <h2 className="font-['Rajdhani'] font-bold text-sm text-text-primary uppercase tracking-widest flex items-center gap-2">
+            <Layers className="text-accent" size={16} />
+            Content Coverage vs. PRC ToS Target
+          </h2>
+          <span className="font-['JetBrains_Mono'] text-xs text-text-muted shrink-0 whitespace-nowrap">
+            {totalCards.toLocaleString()} cards · {totalTopics} topics
+          </span>
+        </div>
 
-      <div className="w-full h-52 relative">
-        <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={150}>
-          <BarChart data={chartData} margin={{ top: 12, right: 12, left: -10, bottom: 4 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1E1E1E" />
-            <XAxis
-              dataKey="subject"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: '#888', fontSize: 11, fontFamily: 'JetBrains Mono' }}
-            />
-            <YAxis
-              axisLine={false}
-              tickLine={false}
-              tick={{ fill: '#666', fontSize: 10, fontFamily: 'JetBrains Mono' }}
-            />
-            <Tooltip
-              contentStyle={CHART_TOOLTIP_STYLE}
-              labelStyle={CHART_TOOLTIP_LABEL_STYLE}
-              itemStyle={CHART_TOOLTIP_ITEM_STYLE}
-              wrapperStyle={{ outline: 'none' }}
-              formatter={(value: any, _name: any, item: any) => [
-                `${Number(value).toLocaleString()} cards (${item.payload.topics} topics)`,
-                'Cards',
-              ]}
-              cursor={{ fill: 'rgba(255,255,255,0.03)' }}
-            />
-            <Bar dataKey="cards" radius={[4, 4, 0, 0]}>
-              {chartData.map((entry) => (
-                <Cell key={`cell-${entry.subject}`} fill={entry.fill} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
+        <div className="w-full h-52 relative">
+          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={150}>
+            <BarChart data={chartData} margin={{ top: 12, right: 12, left: -10, bottom: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1E1E1E" />
+              <XAxis
+                dataKey="subject"
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#888', fontSize: 11, fontFamily: 'JetBrains Mono' }}
+              />
+              <YAxis
+                axisLine={false}
+                tickLine={false}
+                tick={{ fill: '#666', fontSize: 10, fontFamily: 'JetBrains Mono' }}
+              />
+              <Tooltip
+                contentStyle={CHART_TOOLTIP_STYLE}
+                labelStyle={CHART_TOOLTIP_LABEL_STYLE}
+                itemStyle={CHART_TOOLTIP_ITEM_STYLE}
+                wrapperStyle={{ outline: 'none' }}
+                formatter={(value: any, _name: any, item: any) => [
+                  `${Number(value).toLocaleString()} cards (${item.payload.topics} topics)`,
+                  'Cards',
+                ]}
+                cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+              />
+              <Bar dataKey="cards" radius={[4, 4, 0, 0]}>
+                {chartData.map((entry) => (
+                  <Cell key={`cell-${entry.subject}`} fill={entry.fill} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
 
-      <div className="pt-2 border-t border-border-base/40">
-        <div className="grid grid-cols-4 gap-1.5 sm:gap-2" data-testid="coverage-interpretation">
-          {subjectTiles.map(({ sub, pct, diffLabel }) => (
-            <div
-              key={sub}
-              className="bg-surface-2 rounded-lg p-2 sm:p-3 border border-border-base flex flex-col items-center justify-center text-center min-w-0"
-            >
-              <span
-                className="font-['Rajdhani'] text-[10px] uppercase tracking-widest font-bold mb-0.5"
-                style={{ color: SUBJECT_LINE_COLOR[sub] || '#888' }}
+        <div className="pt-2 border-t border-border-base/40">
+          <div className="grid grid-cols-4 gap-1.5 sm:gap-2" data-testid="coverage-interpretation">
+            {subjectTiles.map(({ sub, pct, diffLabel }) => (
+              <div
+                key={sub}
+                onClick={() => setActiveSubject(sub)}
+                role="button"
+                tabIndex={0}
+                className="bg-surface-2 rounded-lg p-2 sm:p-3 border border-border-base flex flex-col items-center justify-center text-center min-w-0 cursor-pointer hover:border-accent/50 transition-colors"
               >
-                {sub}
-              </span>
-              <span className="font-['JetBrains_Mono'] text-sm sm:text-base font-bold text-text-primary leading-tight whitespace-nowrap">
-                {pct}%
-              </span>
-              <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-[#555] font-bold mt-1 leading-tight">
-                {diffLabel}
-              </span>
-            </div>
-          ))}
+                <span
+                  className="font-['Rajdhani'] text-[10px] uppercase tracking-widest font-bold mb-0.5"
+                  style={{ color: SUBJECT_LINE_COLOR[sub] || '#888' }}
+                >
+                  {sub}
+                </span>
+                <span className="font-['JetBrains_Mono'] text-sm sm:text-base font-bold text-text-primary leading-tight whitespace-nowrap">
+                  {pct}%
+                </span>
+                <span className="font-['Rajdhani'] text-[9px] uppercase tracking-widest text-[#555] font-bold mt-1 leading-tight">
+                  {diffLabel}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+
+      {activeSubject && (
+        <StatInfoModal
+          isOpen={!!activeSubject}
+          onClose={() => setActiveSubject(null)}
+          title={STAT_EXPLANATIONS['subjectShare'].title}
+          value={`${chartData.find((d) => d.subject === activeSubject)?.cards.toLocaleString()} cards (${totalCards > 0 ? (((chartData.find((d) => d.subject === activeSubject)?.cards ?? 0) / totalCards) * 100).toFixed(1) : '0.0'}%)`}
+          formula={STAT_EXPLANATIONS['subjectShare'].formula}
+          description={STAT_EXPLANATIONS['subjectShare'].description}
+          takeaway={STAT_EXPLANATIONS['subjectShare'].takeaway}
+        />
+      )}
+    </>
   )
 }
 export default ContentCoverageDemo

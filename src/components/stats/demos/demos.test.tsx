@@ -9,6 +9,8 @@ import { dbService } from '../../../services/db.service'
 import { ContentCoverageDemo } from './ContentCoverageDemo'
 import { QuestionLengthDemo } from './QuestionLengthDemo'
 import { AnswerPositionDemo } from './AnswerPositionDemo'
+import { QuestionLengthAnovaDemo } from './QuestionLengthAnovaDemo'
+import { AnswerPositionContingencyDemo } from './AnswerPositionContingencyDemo'
 
 // Mock Recharts ResponsiveContainer so children render synchronously in jsdom
 vi.mock('recharts', async (importOriginal) => {
@@ -245,6 +247,160 @@ describe('Data Lab Demo Components', () => {
       // Data quality note for anomaly bucket
       expect(container?.textContent).toContain('Data Quality Note: 3 card(s) have unassigned or out-of-range answer keys')
       expect(container?.querySelector('[data-testid="answer-position-interpretation"]')).not.toBeNull()
+    })
+  })
+
+  describe('QuestionLengthAnovaDemo', () => {
+    it('renders loading state initially', async () => {
+      let resolvePromise: (val: any) => void
+      const pendingPromise = new Promise((resolve) => {
+        resolvePromise = resolve
+      })
+      vi.spyOn(dbService, 'getQuestionLengthDistribution').mockReturnValue(pendingPromise as any)
+
+      await act(async () => {
+        root!.render(<QuestionLengthAnovaDemo />)
+      })
+
+      expect(container?.textContent).toContain('Loading question length ANOVA')
+
+      await act(async () => {
+        resolvePromise!([])
+      })
+    })
+
+    it('renders gate placeholder when any subject group has < 5 values', async () => {
+      const mockRows = [
+        { subject: 'MATH', qlen: 80 },
+        { subject: 'MATH', qlen: 90 },
+        { subject: 'MATH', qlen: 100 },
+        { subject: 'MATH', qlen: 110 },
+        // MATH only has 4 items (< 5)
+        { subject: 'GEAS', qlen: 50 },
+        { subject: 'GEAS', qlen: 60 },
+        { subject: 'GEAS', qlen: 70 },
+        { subject: 'GEAS', qlen: 80 },
+        { subject: 'GEAS', qlen: 90 },
+        { subject: 'ELECS', qlen: 50 },
+        { subject: 'ELECS', qlen: 60 },
+        { subject: 'ELECS', qlen: 70 },
+        { subject: 'ELECS', qlen: 80 },
+        { subject: 'ELECS', qlen: 90 },
+        { subject: 'EST', qlen: 50 },
+        { subject: 'EST', qlen: 60 },
+        { subject: 'EST', qlen: 70 },
+        { subject: 'EST', qlen: 80 },
+        { subject: 'EST', qlen: 90 },
+      ]
+      vi.spyOn(dbService, 'getQuestionLengthDistribution').mockResolvedValue(mockRows)
+
+      await act(async () => {
+        root!.render(<QuestionLengthAnovaDemo />)
+      })
+
+      expect(container?.textContent).toContain('Insufficient Data (min 5 per subject)')
+      expect(container?.textContent).toContain('n(MATH)=4 · n(GEAS)=5 · n(ELECS)=5 · n(EST)=5')
+      expect(container?.querySelector('[data-testid="insufficient-data-placeholder"]')).not.toBeNull()
+    })
+
+    it('renders tiles, F-statistic, p-value, df, and interpretation when all groups >= 5', async () => {
+      const mockRows = [
+        ...Array(5).fill({ subject: 'MATH', qlen: 50 }),
+        ...Array(5).fill({ subject: 'GEAS', qlen: 60 }),
+        ...Array(5).fill({ subject: 'ELECS', qlen: 70 }),
+        ...Array(5).fill({ subject: 'EST', qlen: 80 }),
+      ]
+      vi.spyOn(dbService, 'getQuestionLengthDistribution').mockResolvedValue(mockRows)
+
+      await act(async () => {
+        root!.render(<QuestionLengthAnovaDemo />)
+      })
+
+      expect(container?.textContent).toContain('Question Length: One-Way ANOVA (MCQ)')
+      expect(container?.textContent).toContain('n(MATH)=5 · n(GEAS)=5 · n(ELECS)=5 · n(EST)=5')
+      expect(container?.textContent).toContain('F-statistic')
+      expect(container?.textContent).toContain('p-value')
+      expect(container?.textContent).toContain('df')
+      expect(container?.textContent).toContain('3 / 16')
+      expect(container?.querySelector('[data-testid="anova-interpretation"]')).not.toBeNull()
+    })
+  })
+
+  describe('AnswerPositionContingencyDemo', () => {
+    it('renders loading state initially', async () => {
+      let resolvePromise: (val: any) => void
+      const pendingPromise = new Promise((resolve) => {
+        resolvePromise = resolve
+      })
+      vi.spyOn(dbService, 'getAnswerPositionBySubject').mockReturnValue(pendingPromise as any)
+
+      await act(async () => {
+        root!.render(<AnswerPositionContingencyDemo />)
+      })
+
+      expect(container?.textContent).toContain('Loading position contingency test')
+
+      await act(async () => {
+        resolvePromise!([])
+      })
+    })
+
+    it('renders gate placeholder when expected counts < 5 or total N is 0', async () => {
+      // 1 card per position per subject -> expected counts = 1 (< 5)
+      const mockRows = [
+        { subject: 'MATH', position: 0, count: 1 },
+        { subject: 'MATH', position: 1, count: 1 },
+        { subject: 'MATH', position: 2, count: 1 },
+        { subject: 'MATH', position: 3, count: 1 },
+        { subject: 'GEAS', position: 0, count: 1 },
+        { subject: 'GEAS', position: 1, count: 1 },
+        { subject: 'GEAS', position: 2, count: 1 },
+        { subject: 'GEAS', position: 3, count: 1 },
+        { subject: 'ELECS', position: 0, count: 1 },
+        { subject: 'ELECS', position: 1, count: 1 },
+        { subject: 'ELECS', position: 2, count: 1 },
+        { subject: 'ELECS', position: 3, count: 1 },
+        { subject: 'EST', position: 0, count: 1 },
+        { subject: 'EST', position: 1, count: 1 },
+        { subject: 'EST', position: 2, count: 1 },
+        { subject: 'EST', position: 3, count: 1 },
+      ]
+      vi.spyOn(dbService, 'getAnswerPositionBySubject').mockResolvedValue(mockRows)
+
+      await act(async () => {
+        root!.render(<AnswerPositionContingencyDemo />)
+      })
+
+      expect(container?.textContent).toContain('Insufficient Data (Expected Counts < 5)')
+      expect(container?.querySelector('[data-testid="insufficient-data-placeholder"]')).not.toBeNull()
+    })
+
+    it('renders tiles, chi-square, p-value, df, and interpretation when expected counts >= 5', async () => {
+      // 5 cards per position per subject -> total 80 cards, expected = 5 in all cells
+      const subjects = ['MATH', 'GEAS', 'ELECS', 'EST']
+      const mockRows: Array<{ subject: string; position: number | null; count: number }> = []
+      for (const sub of subjects) {
+        for (let pos = 0; pos <= 3; pos++) {
+          mockRows.push({ subject: sub, position: pos, count: 5 })
+        }
+      }
+      mockRows.push({ subject: 'GEAS', position: null, count: 1 }) // 1 anomaly card
+
+      vi.spyOn(dbService, 'getAnswerPositionBySubject').mockResolvedValue(mockRows)
+
+      await act(async () => {
+        root!.render(<AnswerPositionContingencyDemo />)
+      })
+
+      expect(container?.textContent).toContain('Answer Position vs. Subject (Independence Test)')
+      expect(container?.textContent).toContain('n = 80')
+      expect(container?.textContent).toContain('χ²')
+      expect(container?.textContent).toContain('p-value')
+      expect(container?.textContent).toContain('df')
+      expect(container?.textContent).toContain('9')
+      expect(container?.textContent).toContain('No evidence that answer key position depends on subject')
+      expect(container?.textContent).toContain('Data Quality Note: 1 card(s) have unassigned or out-of-range answer keys')
+      expect(container?.querySelector('[data-testid="contingency-interpretation"]')).not.toBeNull()
     })
   })
 })

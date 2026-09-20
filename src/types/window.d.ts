@@ -99,6 +99,7 @@ declare global {
         getContentCoverage: () => Promise<{ success: boolean; data?: any; error?: string }>
         getQuestionLengthDistribution: () => Promise<{ success: boolean; data?: any; error?: string }>
         getAnswerPositionCounts: () => Promise<{ success: boolean; data?: any; error?: string }>
+        getAnswerPositionBySubject: () => Promise<{ success: boolean; data?: any; error?: string }>
         getResponseTimeDistribution: () => Promise<{ success: boolean; data?: any; error?: string }>
       }
       file: {

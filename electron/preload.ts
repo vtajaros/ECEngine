@@ -64,6 +64,7 @@ contextBridge.exposeInMainWorld('electron', {
     getContentCoverage: () => ipcRenderer.invoke('data:getContentCoverage'),
     getQuestionLengthDistribution: () => ipcRenderer.invoke('data:getQuestionLengthDistribution'),
     getAnswerPositionCounts: () => ipcRenderer.invoke('data:getAnswerPositionCounts'),
+    getAnswerPositionBySubject: () => ipcRenderer.invoke('data:getAnswerPositionBySubject'),
     getResponseTimeDistribution: () => ipcRenderer.invoke('data:getResponseTimeDistribution'),
   },
   file: {
