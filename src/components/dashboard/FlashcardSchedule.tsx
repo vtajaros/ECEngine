@@ -6,30 +6,18 @@ import { FlashcardSchedule as FlashcardScheduleData } from '../../types';
 import { buildScheduleView } from '../../lib/scheduleView';
 import { Tooltip } from '../ui/Tooltip';
 
-function FlashcardSchedule() {
-  const [schedule, setSchedule] = useState<FlashcardScheduleData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+import { useDashboardStore } from '../../store/useDashboardStore';
 
-  const loadSchedule = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await dbService.getFlashcardSchedule();
-      setSchedule(data);
-    } catch (err) {
-      console.error('[FlashcardSchedule] Failed to load schedule:', err);
-      setError((err as Error).message || 'Schedule unavailable');
-    } finally {
-      setLoading(false);
-    }
-  };
+function FlashcardSchedule() {
+  const schedule = useDashboardStore((s) => s.flashcardSchedule);
+  const scheduleLoading = useDashboardStore((s) => s.scheduleLoading);
+  const fetchFlashcardSchedule = useDashboardStore((s) => s.fetchFlashcardSchedule);
 
   useEffect(() => {
-    loadSchedule();
-  }, []);
+    fetchFlashcardSchedule();
+  }, [fetchFlashcardSchedule]);
 
-  if (loading) {
+  if (!schedule && scheduleLoading) {
     return (
       <div className="bg-surface p-4 rounded-xl border border-border-base shadow-lg flex flex-col gap-2.5 animate-pulse">
         <div className="flex items-center justify-between">
@@ -62,7 +50,7 @@ function FlashcardSchedule() {
     );
   }
 
-  if (error || !schedule) {
+  if (!schedule) {
     return (
       <div className="bg-surface p-4 rounded-xl border border-border-base shadow-lg flex flex-col gap-2.5">
         <div className="flex items-center justify-between">
@@ -77,7 +65,7 @@ function FlashcardSchedule() {
           </p>
           <button
             type="button"
-            onClick={loadSchedule}
+            onClick={() => fetchFlashcardSchedule(true)}
             className="px-2.5 py-1 rounded text-[11px] font-['Rajdhani'] font-bold uppercase tracking-wider bg-[#222] hover:bg-[#2A2A2A] text-text-primary border border-border-base transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             Retry

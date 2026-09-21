@@ -7,43 +7,31 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ReviewHeatmap, ExamCountdown, AccuracyChart, SessionHistory, FlashcardSchedule, SubjectDonutChart } from '../components/dashboard'
 import { SUBJECT_MAP, SUBJECT_LINE_COLOR } from '../lib/dashboardUtils'
 
+import { useDashboardStore } from '../store/useDashboardStore'
+
 // ── Components ──────────────────────────────────────────────────────────────
 
 export default function Dashboard() {
-  const [statsData, setStatsData] = useState({
-    totalDecks: 0,
-    totalCards: 0,
-    flashcardCount: 0,
-    mcqCount: 0,
-    mcqAnswered: 0,
-    totalStudied: 0,
-    internalized: 0,
-    accuracy: 0,
-    streak: 0,
-    dueToday: 0
-  })
+  const statsData = useDashboardStore((s) => s.statsData)
+  const subjectCounts = useDashboardStore((s) => s.subjectCounts)
+  const subjectProgress = useDashboardStore((s) => s.subjectProgress)
+  const history = useDashboardStore((s) => s.history)
+  const trendCache = useDashboardStore((s) => s.trendCache)
+  const trendLoading = useDashboardStore((s) => s.trendLoading)
+  const fetchDashboardData = useDashboardStore((s) => s.fetchDashboardData)
+  const fetchAccuracyTrend = useDashboardStore((s) => s.fetchAccuracyTrend)
 
-  const [subjectCounts, setSubjectCounts] = useState<any[]>([
-    { subject: 'MATH', count: 0 },
-    { subject: 'GEAS', count: 0 },
-    { subject: 'ELECS', count: 0 },
-    { subject: 'EST', count: 0 },
-  ])
-  const [subjectProgress, setSubjectProgress] = useState<any[]>([])
-
-  const [history, setHistory] = useState<Record<string, { count: number, timeSpent: number }>>({})
   const [heatmapYear, setHeatmapYear] = useState<number>(new Date().getFullYear())
-  
   const [selectedSubject, setSelectedSubject] = useState<AccuracySubject>('ALL')
-  const [granularity, setGranularity]         = useState<AccuracyGranularity>('day')
-  const [accuracyTrend, setAccuracyTrend]     = useState<{ date: string; acc: number | null }[]>([])
-  const [trendLoading, setTrendLoading]       = useState(true)
-  
+  const [granularity, setGranularity] = useState<AccuracyGranularity>('day')
+
+  const trendKey = `${selectedSubject}_${granularity}`
+  const accuracyTrend = trendCache[trendKey] || []
 
   // Derive the list of calendar years that have any tracked activity
   const availableYears = React.useMemo(() => {
     const yearSet = new Set<number>()
-    Object.keys(history).forEach(day => {
+    Object.keys(history).forEach((day) => {
       const y = parseInt(day.slice(0, 4), 10)
       if (!isNaN(y)) yearSet.add(y)
     })
@@ -63,65 +51,17 @@ export default function Dashboard() {
   }, [])
 
   useEffect(() => {
-    setTrendLoading(true)
-    dbService.getAccuracyTrend(selectedSubject, granularity)
-      .then(data => setAccuracyTrend(data))
-      .catch(err => console.error('AccuracyTrend fetch failed:', err))
-      .finally(() => setTrendLoading(false))
-  }, [selectedSubject, granularity])
+    fetchAccuracyTrend(selectedSubject, granularity)
+  }, [selectedSubject, granularity, fetchAccuracyTrend])
 
   useEffect(() => {
-    loadDashboardData()
-  }, [])
+    fetchDashboardData()
+  }, [fetchDashboardData])
 
-  const loadDashboardData = useCallback(async () => {
-    try {
-      const dbStats = await dbService.getDashboardStats()
-      const rawSubjectCounts = await dbService.getSubjectBreakdown()
-      const globalStats = await dbService.getGlobalStats()
-      const rawSubjectProgress = await dbService.getSubjectProgress()
-      const activityHistory = await dbService.getActivityHistory()
-
-      
-      // Use real history for heatmap
-      setHistory(activityHistory)
-
-      setStatsData({
-        totalDecks: globalStats.totalDecks,
-        totalCards: globalStats.totalCards,
-        flashcardCount: globalStats.flashcardCount ?? 0,
-        mcqCount: globalStats.mcqCount ?? 0,
-        mcqAnswered: globalStats.mcqAnswered ?? 0,
-        totalStudied: dbStats.totalStudied,
-        internalized: globalStats.internalized,
-        accuracy: dbStats.accuracy,
-        streak: dbStats.streak,
-        dueToday: dbStats.dueToday
-      })
-
-      const subjects = ['MATH', 'GEAS', 'ELECS', 'EST']
-      const formattedCounts = subjects.map(s => {
-        const found = rawSubjectCounts.find((r: any) => (SUBJECT_MAP[r.subject] || r.subject) === s)
-        return { subject: s, count: found ? found.count : 0 }
-      })
-      setSubjectCounts(formattedCounts)
-
-      const formattedProgress = subjects.map(s => {
-        const found = rawSubjectProgress.find((r: any) => (SUBJECT_MAP[r.subject] || r.subject) === s)
-        return {
-          subject: s,
-          percent: found && found.accuracy != null ? Math.round(found.accuracy * 100) : 0
-        }
-      })
-
-      setSubjectProgress(formattedProgress)
-
-
-
-    } catch (error) {
-      console.error('Failed to load dashboard data:', error)
-    }
-  }, [])
+  const loadDashboardData = useCallback(() => {
+    fetchDashboardData(true)
+    fetchAccuracyTrend(selectedSubject, granularity, true)
+  }, [fetchDashboardData, fetchAccuracyTrend, selectedSubject, granularity])
 
   const handleExamDateChange = useCallback((date: string) => {
     setExamDate(date)

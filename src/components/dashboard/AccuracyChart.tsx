@@ -104,8 +104,7 @@ function AccuracyChart({ data, subject, isLoading }: AccuracyChartProps) {
                 }}
                 activeDot={{ r: 5, fill: SUBJECT_LINE_COLOR[selectedSubject], stroke: '#0D0D0D', strokeWidth: 2 }}
                 connectNulls={true}
-                animationDuration={300}
-                animationEasing="ease-out"
+                isAnimationActive={false}
               />
             </LineChart>
           </ResponsiveContainer>

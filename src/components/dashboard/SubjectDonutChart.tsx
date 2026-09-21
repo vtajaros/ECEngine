@@ -53,21 +53,23 @@ export const SubjectDonutChart = React.memo(function SubjectDonutChart({ subject
             const isDimmed = hoveredSubject && hoveredSubject !== s.subject
             return (
               <circle
-                key={i}
+                key={s.subject}
                 cx={cx}
                 cy={cy}
                 r={r}
                 fill="none"
                 stroke={s.color}
-                strokeWidth={isHovered ? stroke + 4 : stroke}
+                strokeWidth={stroke}
                 strokeDasharray={`${s.dash} ${circumference - s.dash}`}
                 strokeDashoffset={-(s.offset - circumference / 4)}
                 style={{
-                  transition: 'stroke-width 0.2s ease, opacity 0.2s ease, stroke-dasharray 0.6s ease',
+                  transition: 'opacity 0.2s ease, filter 0.2s ease',
                   opacity: isDimmed ? 0.35 : 1,
+                  filter: isHovered ? `drop-shadow(0 0 5px ${s.color}) brightness(1.25)` : undefined,
                   cursor: 'pointer',
                 }}
                 onMouseEnter={() => setHoveredSubject(s.subject)}
+                onMouseLeave={() => setHoveredSubject(null)}
               />
             )
           })}
@@ -117,13 +119,14 @@ export const SubjectDonutChart = React.memo(function SubjectDonutChart({ subject
 
       {/* Legend */}
       <div className="grid grid-cols-2 gap-1 w-full">
-        {subjectCounts.map((item, i) => {
+        {subjectCounts.map((item) => {
           const isHovered = hoveredSubject === item.subject
           const isDimmed = hoveredSubject && hoveredSubject !== item.subject
           return (
             <div
-              key={i}
+              key={item.subject}
               onMouseEnter={() => setHoveredSubject(item.subject)}
+              onMouseLeave={() => setHoveredSubject(null)}
               className={`px-1.5 py-0.5 rounded border text-[8.5px] font-bold font-['Rajdhani'] uppercase tracking-wider text-center transition-all duration-200 cursor-pointer ${getSubjectBadgeClasses(item.subject)}`}
               style={{
                 opacity: isDimmed ? 0.4 : 1,

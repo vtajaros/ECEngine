@@ -3,6 +3,7 @@
 import { create } from 'zustand'
 import type { MCQData, Subject } from '../types'
 import { gauntletService, type GauntletCard } from '../services/gauntlet.service'
+import { dbService } from '../services/db.service'
 import { shuffle, shuffleChoices, isSafeToShuffleChoices } from '../lib/scrambler'
 import {
   GAUNTLET_SUBJECTS,
@@ -293,6 +294,10 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
     try {
       await gauntletService.saveRun(payload)
       set({ savedRunId: payload.id })
+      // Track Gauntlet session duration as study time for the activity heatmap.
+      // durationMs is the actual played time (excludes pauses in survival mode).
+      const minutes = payload.durationMs / 60_000
+      if (minutes > 0) dbService.updateTimeSpent(minutes).catch(console.error)
     } catch (e) {
       set({ saveError: (e as Error).message })
     }
