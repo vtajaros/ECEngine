@@ -17,3 +17,192 @@
   0%   { background-position: 0 0; }
   100% { background-position: 0 100vh; }
 }
+
+/* Gauntlet Backdrop & Title Animations (Transform & Opacity only) */
+@keyframes gauntlet-grid-scroll {
+  0% {
+    transform: perspective(400px) rotateX(60deg) translateY(0);
+  }
+  100% {
+    transform: perspective(400px) rotateX(60deg) translateY(40px);
+  }
+}
+
+@keyframes gauntlet-square-drift {
+  0% {
+    transform: translateY(110vh) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.5;
+  }
+  85% {
+    opacity: 0.5;
+  }
+  100% {
+    transform: translateY(-20vh) scale(1.1);
+    opacity: 0;
+  }
+}
+
+@keyframes gauntlet-scanline-drift {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+@keyframes gauntlet-scanline-sweep {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  5% {
+    opacity: 0.35;
+  }
+  95% {
+    opacity: 0.35;
+  }
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+@keyframes gauntlet-title-breathe {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px rgba(0, 255, 65, 0.5));
+  }
+  50% {
+    filter: drop-shadow(0 0 20px rgba(0, 255, 65, 0.95)) drop-shadow(0 0 35px rgba(0, 255, 65, 0.4));
+  }
+}
+
+@keyframes gauntlet-border-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes gauntlet-hand-sweep {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes gauntlet-flame-flicker {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.6));
+  }
+  25% {
+    transform: scale(1.05) rotate(-1deg);
+    filter: drop-shadow(0 0 8px rgba(239, 68, 68, 0.9));
+  }
+  50% {
+    transform: scale(0.96) rotate(1deg);
+    filter: drop-shadow(0 0 3px rgba(239, 68, 68, 0.5));
+  }
+  75% {
+    transform: scale(1.03) rotate(-0.5deg);
+    filter: drop-shadow(0 0 7px rgba(239, 68, 68, 0.8));
+  }
+}
+
+@keyframes gauntlet-trace-pulse {
+  0% {
+    stroke-dashoffset: 400;
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  85% {
+    opacity: 0.9;
+  }
+  100% {
+    stroke-dashoffset: -400;
+    opacity: 0;
+  }
+}
+
+@keyframes gauntlet-glyph-drift {
+  0% {
+    transform: translateY(110vh) rotate(0deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: var(--glyph-opacity, 0.2);
+  }
+  85% {
+    opacity: var(--glyph-opacity, 0.2);
+  }
+  100% {
+    transform: translateY(-20vh) rotate(var(--glyph-rot, 15deg));
+    opacity: 0;
+  }
+}
+
+@keyframes gauntlet-particle-drift {
+  0% {
+    transform: translateY(110vh) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    opacity: var(--dot-opacity, 0.6);
+  }
+  85% {
+    opacity: var(--dot-opacity, 0.6);
+  }
+  100% {
+    transform: translateY(-20vh) scale(1.2);
+    opacity: 0;
+  }
+}
+
+@keyframes gauntlet-glitch {
+  0%, 94%, 100% {
+    text-shadow: 0 0 12px rgba(0,255,65,0.7), 0 0 24px rgba(0,255,65,0.3);
+    transform: none;
+  }
+  95% {
+    text-shadow: -2px 0 #FF003C, 2px 0 #00FF41, 0 0 16px rgba(0,255,65,0.8);
+    transform: translate(-1px, 1px);
+  }
+  96% {
+    text-shadow: 2px 0 #FF003C, -2px 0 #00FF41;
+    transform: translate(1px, -1px);
+  }
+  97% {
+    text-shadow: 0 0 12px rgba(0,255,65,0.7);
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gauntlet-animated-grid,
+  .gauntlet-drift-square,
+  .gauntlet-glitch-title,
+  .gauntlet-scanline-bar,
+  .gauntlet-scanline-sweep,
+  .gauntlet-particle,
+  .gauntlet-glyph,
+  .gauntlet-trace-line,
+  .gauntlet-border-spinner,
+  .gauntlet-hand-sweep,
+  .gauntlet-flame-flicker {
+    animation: none !important;
+  }
+}
+
+.gauntlet-anim-paused * {
+  animation-play-state: paused !important;
+}

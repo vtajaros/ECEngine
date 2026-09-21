@@ -8,6 +8,7 @@ import { registerFileHandlers } from './ipc/file.ipc'
 import { registerConfigHandlers, resolveZoomIndex, persistZoomIndex, flushPendingConfigWrites, ZOOM_STEPS, DEFAULT_ZOOM_INDEX, initDBPathResolver } from './ipc/config.ipc'
 import { registerPrintHandlers } from './ipc/print.ipc'
 import { registerTTSHandlers, killAllTTSChildren } from './ipc/tts.ipc'
+import { registerGauntletHandlers } from './ipc/gauntlet.ipc'
 import { closeDB } from './db/database'
 
 // Exported so sibling IPC modules can reference the main window (e.g. as a parent).
@@ -187,6 +188,7 @@ app.whenReady().then(() => {
   registerConfigHandlers()
   registerPrintHandlers(() => mainWindow)
   registerTTSHandlers()
+  registerGauntletHandlers()
   handleImageProtocol()
   const printSession = session.fromPartition('print')
   handleImageProtocol(printSession)

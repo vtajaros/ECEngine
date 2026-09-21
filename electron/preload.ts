@@ -67,6 +67,17 @@ contextBridge.exposeInMainWorld('electron', {
     getAnswerPositionBySubject: () => ipcRenderer.invoke('data:getAnswerPositionBySubject'),
     getResponseTimeDistribution: () => ipcRenderer.invoke('data:getResponseTimeDistribution'),
   },
+  gauntlet: {
+    getPoolSizes: () => ipcRenderer.invoke('gauntlet:getPoolSizes'),
+    getQuestions: (payload: { counts: Array<{ subject: string; count: number }>; excludeIds?: string[] }) =>
+      ipcRenderer.invoke('gauntlet:getQuestions', payload),
+    getRatings: () => ipcRenderer.invoke('gauntlet:getRatings'),
+    saveRun: (payload: unknown) => ipcRenderer.invoke('gauntlet:saveRun', payload),
+    getRuns: (payload?: { limit?: number; offset?: number }) => ipcRenderer.invoke('gauntlet:getRuns', payload),
+    getRunAnswers: (runId: string) => ipcRenderer.invoke('gauntlet:getRunAnswers', runId),
+    getBests: () => ipcRenderer.invoke('gauntlet:getBests'),
+    getPaceStats: () => ipcRenderer.invoke('gauntlet:getPaceStats'),
+  },
   file: {
     import: (filePath?: string) => ipcRenderer.invoke('file:import', filePath),
     export: (data: unknown, savePath?: string) => ipcRenderer.invoke('file:export', data, savePath),

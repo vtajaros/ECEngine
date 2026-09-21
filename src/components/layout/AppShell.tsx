@@ -10,11 +10,13 @@ import {
   Settings,
   Layers,
   ClipboardList,
+  Timer,
 } from 'lucide-react'
 import { TitleBar } from './TitleBar'
 import { ZoomIndicator } from '../ui/ZoomIndicator'
 import { Tooltip } from '../ui/Tooltip'
 import { dbService } from '../../services/db.service'
+import { useLayoutStore } from '../../store/useLayoutStore'
 
 type NavItem = {
   to: string
@@ -26,6 +28,9 @@ export const AppShell: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(() =>
     localStorage.getItem('ecengine:sidebar-collapsed') === 'true'
   )
+  const forceCollapsed = useLayoutStore(s => s.forceCollapsed)
+  const isCollapsedEffective = isCollapsed || forceCollapsed
+
   const [isFullscreen, setIsFullscreen] = useState(false)
   const location = useLocation()
 
@@ -60,6 +65,7 @@ export const AppShell: React.FC = () => {
     { to: '/study', label: 'LooksFam', icon: Brain },
     { to: '/flashcards', label: 'Flashcards', icon: Layers },
     { to: '/formulas', label: 'Formulas', icon: Sigma },
+    { to: '/gauntlet', label: 'Gauntlet', icon: Timer },
     { to: '/lab', label: 'Data Lab', icon: FlaskConical },
     { to: '/topics', label: 'EELE ToS', icon: BookOpen },
     { to: '/checklist', label: 'Checklist', icon: ClipboardList },
@@ -71,7 +77,7 @@ export const AppShell: React.FC = () => {
     <div className={`flex flex-col h-screen overflow-hidden bg-engine-black text-[var(--text-primary)] font-['JetBrains_Mono'] ${isFullscreen ? '' : 'rounded-xl border border-[#333]'}`}>
       {!isFullscreen && (
         <TitleBar
-          isCollapsed={isCollapsed}
+          isCollapsed={isCollapsedEffective}
           onToggleSidebar={() => {
             const next = !isCollapsed;
             setIsCollapsed(next);
@@ -83,12 +89,12 @@ export const AppShell: React.FC = () => {
       <div className="flex flex-row flex-1 overflow-hidden">
         {/* Sidebar */}
         <aside
-          className={`${isCollapsed ? 'w-16' : 'w-[150px]'
-            } h-full bg-surface border-r border-border-base flex flex-col transition-all duration-300 shrink-0`}
+          className={`${isCollapsedEffective ? 'w-16' : 'w-[150px]'
+            } h-full bg-surface border-r border-border-base flex flex-col transition-all duration-300 shrink-0 relative z-10`}
         >
           {/* Logo + collapse toggle */}
-          <div className={`h-10 w-full shrink-0 flex items-center ${isCollapsed ? 'justify-center px-0' : 'justify-between px-2'}`}>
-            {!isCollapsed && (
+          <div className={`h-10 w-full shrink-0 flex items-center ${isCollapsedEffective ? 'justify-center px-0' : 'justify-between px-2'}`}>
+            {!isCollapsedEffective && (
               <div className="flex items-center gap-2 pl-1">
                 <img
                   src="/ecengine_icon.png"
@@ -107,9 +113,9 @@ export const AppShell: React.FC = () => {
               </div>
             )}
             <Tooltip
-              content={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              content={isCollapsedEffective ? 'Expand sidebar' : 'Collapse sidebar'}
               position="right"
-              className={isCollapsed ? 'w-full flex justify-center' : ''}
+              className={isCollapsedEffective ? 'w-full flex justify-center' : ''}
             >
               <button
                 onClick={() => {
@@ -156,10 +162,10 @@ export const AppShell: React.FC = () => {
                       {isActive && (
                         <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-accent shadow-[0_0_10px_#00FF41]" />
                       )}
-                      <div className={`${isCollapsed ? 'w-16' : 'w-12'} flex justify-center shrink-0`}>
+                      <div className={`${isCollapsedEffective ? 'w-16' : 'w-12'} flex justify-center shrink-0`}>
                         <item.icon size={18} />
                       </div>
-                      {!isCollapsed && (
+                      {!isCollapsedEffective && (
                         <span className="font-['Rajdhani'] text-sm font-medium tracking-wide whitespace-nowrap">
                           {item.label}
                         </span>
@@ -171,7 +177,7 @@ export const AppShell: React.FC = () => {
             ))}
           </nav>
 
-          {!isCollapsed && (
+          {!isCollapsedEffective && (
             <div className="text-[10px] text-gray-400 text-center pb-4 w-full font-rajdhani tracking-widest opacity-60">
               V1.0.0
             </div>
@@ -179,7 +185,7 @@ export const AppShell: React.FC = () => {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden bg-[#111111]">
+        <main className="relative z-0 flex-1 min-w-0 overflow-y-auto overflow-x-hidden bg-[#111111]">
           <Outlet />
         </main>
       </div>

@@ -4,6 +4,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import Database from 'better-sqlite3'
+import { GAUNTLET_DDL } from './gauntlet'
 
 // ─── Inline the migration definitions ────────────────────────────────────────
 // We duplicate just the MIGRATIONS array here so we don't have to boot
@@ -62,6 +63,10 @@ const MIGRATIONS = [
       'CREATE INDEX IF NOT EXISTS idx_attempt_subject_ts ON attempt_log(subject, ts)',
       'CREATE INDEX IF NOT EXISTS idx_attempt_card ON attempt_log(card_id)',
     ],
+  },
+  {
+    version: 12,
+    sql: GAUNTLET_DDL,
   },
 ]
 
@@ -380,12 +385,23 @@ describe('Migration Runner', () => {
       expect(tables.length).toBe(1)
       expect(tables[0].name).toBe('attempt_log')
     })
+  })
 
-    it('sets user_version to 11 after all migrations', () => {
+  describe('migration v12 — gauntlet tables', () => {
+    it('creates the gauntlet tables after all migrations', () => {
+      const db = createFreshDB()
+      runMigrations(db)
+      const tables = (db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name LIKE 'gauntlet_%'").all() as Array<{ name: string }>).map(t => t.name)
+      expect(tables).toContain('gauntlet_runs')
+      expect(tables).toContain('gauntlet_answers')
+      expect(tables).toContain('gauntlet_ratings')
+    })
+
+    it('sets user_version to 12 after all migrations', () => {
       const db = createFreshDB()
       runMigrations(db)
       const version = db.pragma('user_version', { simple: true })
-      expect(version).toBe(11)
+      expect(version).toBe(12)
     })
   })
 

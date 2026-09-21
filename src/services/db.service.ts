@@ -5,7 +5,7 @@ import { useDataVersionStore } from '../store/useDataVersionStore'
 
 // ── IPC row schemas ───────────────────────────────────────────────────────────
 
-const CardRowSchema = z.object({
+export const CardRowSchema = z.object({
   id: z.string(),
   topic_id: z.string(),
   type: z.enum(['flashcard', 'mcq', 'formula', 'concept']),
@@ -16,7 +16,7 @@ const CardRowSchema = z.object({
   created_at: z.union([z.number(), z.string()]).optional(),
 })
 
-const CardWithProgressRowSchema = CardRowSchema.extend({
+export const CardWithProgressRowSchema = CardRowSchema.extend({
   ease_factor: z.number().optional(),
   interval: z.number().optional(),
   repetitions: z.number().optional(),
@@ -50,7 +50,7 @@ const toLocalDateString = (date: Date): string => {
 }
 
 
-function parseCardRow(row: z.infer<typeof CardWithProgressRowSchema>, topicId?: string): Card {
+export function parseCardRow(row: z.infer<typeof CardWithProgressRowSchema>, topicId?: string): Card {
   let data: unknown = {}
   let tags: string[] = []
 

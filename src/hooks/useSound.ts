@@ -2,7 +2,7 @@
 import { useRef, useCallback, useState, useEffect } from 'react'
 import wrongSfx from '../assets/sounds/wrong.wav'
 
-export type SoundEvent = 'correct' | 'wrong' | 'roundComplete' | 'finish'
+export type SoundEvent = 'correct' | 'wrong' | 'roundComplete' | 'finish' | 'tick' | 'go'
 
 const CUSTOM_WRONG_SOUND_KEY = 'ecengine:wrongSound:enabled'
 const SESSION_MUTE_KEY = 'ecengine_sounds_muted'
@@ -209,6 +209,34 @@ function playFinishSound(ctx: AudioContext, masterVolume: number) {
   })
 }
 
+function playTickSound(ctx: AudioContext, masterVolume: number) {
+  const o = ctx.createOscillator()
+  const g = ctx.createGain()
+  o.connect(g); g.connect(ctx.destination)
+  o.type = 'sine'
+  o.frequency.setValueAtTime(880, ctx.currentTime)
+  g.gain.setValueAtTime(0.18 * masterVolume, ctx.currentTime)
+  g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.06)
+  o.start(ctx.currentTime)
+  o.stop(ctx.currentTime + 0.06)
+}
+
+function playGoSound(ctx: AudioContext, masterVolume: number) {
+  const notes = [659.25, 880]
+  notes.forEach((freq, i) => {
+    const o = ctx.createOscillator()
+    const g = ctx.createGain()
+    o.connect(g); g.connect(ctx.destination)
+    o.type = 'sine'
+    o.frequency.value = freq
+    const t = ctx.currentTime + i * 0.1
+    g.gain.setValueAtTime(0.2 * masterVolume, t)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.15)
+    o.start(t)
+    o.stop(t + 0.15)
+  })
+}
+
 // ── File-based wrong sound ────────────────────────────────────────────────────
 
 let cachedWrongBuffer: AudioBuffer | null = null
@@ -281,6 +309,12 @@ export function useSound() {
           break
         case 'finish':
           playFinishSound(ctx, vol)
+          break
+        case 'tick':
+          playTickSound(ctx, vol)
+          break
+        case 'go':
+          playGoSound(ctx, vol)
           break
       }
     } catch {

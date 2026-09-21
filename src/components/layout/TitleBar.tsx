@@ -33,6 +33,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({ isCollapsed, onToggleSidebar
   const routeLabels: Record<string, string> = {
     '/':           'Dashboard',
     '/study':      'LooksFam',
+    '/gauntlet':   'Gauntlet',
     '/flashcards': 'Flashcards',
     '/formulas':   'Formulas',
     '/topics':     'EELE ToS',
@@ -45,7 +46,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({ isCollapsed, onToggleSidebar
 
   return (
     <div 
-      className="w-full h-8 bg-surface text-gray-400 flex items-center justify-between select-none [-webkit-app-region:drag] relative shrink-0 px-0"
+      className="w-full h-8 bg-surface text-gray-400 flex items-center justify-between select-none [-webkit-app-region:drag] relative z-20 shrink-0 px-0"
       style={{ zoom: 100 / zoomLevel }}
     >
       {/* Left Side: Navigation (Anchored to Sidebar Width) */}

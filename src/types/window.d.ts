@@ -102,6 +102,16 @@ declare global {
         getAnswerPositionBySubject: () => Promise<{ success: boolean; data?: any; error?: string }>
         getResponseTimeDistribution: () => Promise<{ success: boolean; data?: any; error?: string }>
       }
+      gauntlet: {
+        getPoolSizes: () => Promise<{ success: boolean; data?: any; error?: string }>
+        getQuestions: (payload: { counts: Array<{ subject: string; count: number }>; excludeIds?: string[] }) => Promise<{ success: boolean; data?: any[]; error?: string }>
+        getRatings: () => Promise<{ success: boolean; data?: any; error?: string }>
+        saveRun: (payload: unknown) => Promise<{ success: boolean; data?: any; error?: string }>
+        getRuns: (payload?: { limit?: number; offset?: number }) => Promise<{ success: boolean; data?: any[]; error?: string }>
+        getRunAnswers: (runId: string) => Promise<{ success: boolean; data?: any[]; error?: string }>
+        getBests: () => Promise<{ success: boolean; data?: any[]; error?: string }>
+        getPaceStats: () => Promise<{ success: boolean; data?: Array<{ subject: string; n: number; avgMs: number }>; error?: string }>
+      }
       file: {
         import: (filePath?: string) => Promise<{ success: boolean; data?: string; canceled?: boolean; error?: string }>
         export: (data: unknown, savePath?: string) => Promise<{ success: boolean; canceled?: boolean; error?: string }>

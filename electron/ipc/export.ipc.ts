@@ -2,6 +2,7 @@ import { ipcMain, dialog, BrowserWindow, app } from 'electron'
 import { queryAll, execute, getDB, getActiveDatabasePath } from '../db/database'
 import { resolveOrCreateFolderId } from '../db/folderHelpers'
 import { upsertImportedTopic } from '../db/importHelpers'
+import { clearGauntletData } from '../db/gauntlet'
 import { serializeMcqCard } from './mcq.serializer'
 import * as fs from 'fs'
 import * as fsp from 'fs/promises'
@@ -261,6 +262,7 @@ export function registerExportHandlers(): void {
         execute('DELETE FROM exam_sessions')
         execute('DELETE FROM cards')
         execute('DELETE FROM topics')
+        clearGauntletData(getDB())
       })()
       return { success: true }
     } catch (error) {

@@ -4,6 +4,7 @@ import path from 'path';
 import { app } from 'electron';
 import { NEW_SQL, dueOrNewSql } from './schedule';
 import { ATTEMPT_LOG_DDL } from './attemptLog';
+import { GAUNTLET_DDL } from './gauntlet';
 
 // Resolved lazily so that config.ipc can be imported without a circular dep.
 let resolveDBPathFn: (() => string) | null = null;
@@ -144,6 +145,11 @@ const MIGRATIONS: Array<{ version: number; sql: string | string[] }> = [
     // No FK to cards so history survives card deletion.
     version: 11,
     sql: ATTEMPT_LOG_DDL,
+  },
+  {
+    // v12: Gauntlet mode tables (runs, per-answer log, per-subject ratings). Fully separate from progress/attempt_log.
+    version: 12,
+    sql: GAUNTLET_DDL,
   }
 ]
 

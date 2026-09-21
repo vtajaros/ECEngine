@@ -7,18 +7,20 @@ interface LeaveConfirmModalProps {
   onConfirm: () => void
   onCancel: () => void
   message?: string
+  isAbsolute?: boolean
 }
 
 export const LeaveConfirmModal: React.FC<LeaveConfirmModalProps> = ({ 
   isOpen, 
   onConfirm, 
   onCancel,
-  message = "You have an active study session. Leaving now will lose your current progress. Are you sure you want to exit?"
+  message = "You have an active study session. Leaving now will lose your current progress. Are you sure you want to exit?",
+  isAbsolute = false,
 }) => {
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+        <div className={`${isAbsolute ? 'absolute' : 'fixed'} inset-0 z-[999] flex items-center justify-center p-4`}>
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}

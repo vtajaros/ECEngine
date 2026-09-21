@@ -15,6 +15,7 @@ const EditDeck       = lazy(() => import('./pages/EditDeck'))
 const Settings       = lazy(() => import('./pages/Settings'))
 const PrintView      = lazy(() => import('./pages/PrintView'))
 const TOSChecklist   = lazy(() => import('./pages/TOSChecklist'))
+const Gauntlet       = lazy(() => import('./pages/Gauntlet'))
 
 
 function Lazy({ children }: { children: React.ReactNode }) {
@@ -56,6 +57,10 @@ export const router = createHashRouter([
       {
         path: 'study',
         element: <ErrorBoundary><Lazy><LooksFamStudy /></Lazy></ErrorBoundary>
+      },
+      {
+        path: 'gauntlet',
+        element: <ErrorBoundary><Lazy><Gauntlet /></Lazy></ErrorBoundary>
       },
       {
         path: 'flashcards',
