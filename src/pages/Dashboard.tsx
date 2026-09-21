@@ -139,7 +139,7 @@ export default function Dashboard() {
   )
 
   return (
-    <div className="h-full bg-engine-black px-8 pb-4 pt-4 lg:px-12 lg:pb-6 lg:pt-4 overflow-y-auto overflow-x-hidden flex flex-col gap-4">
+    <div className="h-full bg-transparent px-8 pb-4 pt-4 lg:px-12 lg:pb-6 lg:pt-4 overflow-y-auto overflow-x-hidden flex flex-col gap-4">
       {/* Header */}
       <header className="shrink-0 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>

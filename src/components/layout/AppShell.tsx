@@ -17,11 +17,29 @@ import { ZoomIndicator } from '../ui/ZoomIndicator'
 import { Tooltip } from '../ui/Tooltip'
 import { dbService } from '../../services/db.service'
 import { useLayoutStore } from '../../store/useLayoutStore'
+import { GauntletBackdrop } from '../gauntlet/GauntletBackdrop'
+import { useGauntletStore } from '../../store/useGauntletStore'
 
 type NavItem = {
   to: string
   label: string
   icon: React.ElementType
+}
+
+type BackdropIntensity = 'full' | 'dimmed' | 'subtle' | 'off'
+
+const ROUTE_BACKDROP_INTENSITY: Record<string, BackdropIntensity> = {
+  '/': 'full',
+  '/gauntlet': 'full', // Dynamically tuned: playing/summary -> 'subtle'
+  '/lab': 'subtle',
+  '/formulas': 'subtle',
+  '/study': 'dimmed',
+  '/flashcards': 'subtle',
+  '/topics': 'dimmed',
+  '/checklist': 'dimmed',
+  '/settings': 'subtle',
+  '/add-decks': 'dimmed',
+  '/edit-deck': 'dimmed',
 }
 
 export const AppShell: React.FC = () => {
@@ -33,13 +51,54 @@ export const AppShell: React.FC = () => {
 
   const [isFullscreen, setIsFullscreen] = useState(false)
   const location = useLocation()
+  const gauntletPhase = useGauntletStore(s => s.phase)
+
+  const [reduceBgEffects, setReduceBgEffects] = useState(() =>
+    localStorage.getItem('ecengine:reduce-bg-effects') === 'true'
+  )
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return false
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  })
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+
+  useEffect(() => {
+    const handleSettingsChange = () => {
+      setReduceBgEffects(localStorage.getItem('ecengine:reduce-bg-effects') === 'true')
+    }
+    window.addEventListener('ecengine:settings-changed', handleSettingsChange)
+    window.addEventListener('storage', handleSettingsChange)
+    return () => {
+      window.removeEventListener('ecengine:settings-changed', handleSettingsChange)
+      window.removeEventListener('storage', handleSettingsChange)
+    }
+  }, [])
+
+  const resolvedIntensity: BackdropIntensity = React.useMemo(() => {
+    const path = location.pathname
+    if (path.startsWith('/gauntlet')) {
+      return gauntletPhase === 'playing' || gauntletPhase === 'summary' ? 'subtle' : 'full'
+    }
+    const matchedKey = Object.keys(ROUTE_BACKDROP_INTENSITY).find(prefix =>
+      prefix === '/' ? path === '/' : path.startsWith(prefix)
+    )
+    return matchedKey ? ROUTE_BACKDROP_INTENSITY[matchedKey] : 'dimmed'
+  }, [location.pathname, gauntletPhase])
+
+  const isBackdropDisabled = reduceBgEffects || prefersReducedMotion
 
   useEffect(() => {
     if (window.electron?.windowControls?.onFullscreenChanged) {
       return window.electron.windowControls.onFullscreenChanged(setIsFullscreen)
     }
   }, [])
-
 
   useEffect(() => {
     let lastStepTime = 0
@@ -184,8 +243,17 @@ export const AppShell: React.FC = () => {
           )}
         </aside>
 
+        {/* Global animated backdrop mounted once behind main content */}
+        {!isBackdropDisabled && resolvedIntensity !== 'off' && (
+          <div className="absolute inset-0 pointer-events-none z-0">
+            <GauntletBackdrop
+              intensity={resolvedIntensity === 'full' ? 'full' : resolvedIntensity === 'subtle' ? 'subtle' : 'dimmed'}
+            />
+          </div>
+        )}
+
         {/* Main Content */}
-        <main className="relative z-0 flex-1 min-w-0 overflow-y-auto overflow-x-hidden bg-[#111111]">
+        <main className="relative z-10 flex-1 min-w-0 overflow-y-auto overflow-x-hidden bg-transparent">
           <Outlet />
         </main>
       </div>

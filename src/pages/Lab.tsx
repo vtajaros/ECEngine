@@ -10,7 +10,7 @@ import { ResponseTimeDemo } from '../components/stats/demos/ResponseTimeDemo'
 
 export default function Lab() {
   return (
-    <div className="h-full bg-engine-black px-8 pb-8 pt-6 lg:px-12 lg:pb-12 lg:pt-6 overflow-y-auto show-scrollbar w-full flex flex-col gap-6">
+    <div className="h-full bg-transparent px-8 pb-8 pt-6 lg:px-12 lg:pb-12 lg:pt-6 overflow-y-auto show-scrollbar w-full flex flex-col gap-6">
       {/* Header */}
       <header className="shrink-0 flex flex-col gap-1 border-b border-border-base pb-4">
         <div className="flex items-center gap-3">

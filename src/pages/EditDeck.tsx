@@ -1505,7 +1505,7 @@ export default function EditDeck() {
   }
 
   return (
-    <div className="h-full bg-engine-black flex flex-col overflow-hidden">
+    <div className="h-full bg-transparent flex flex-col overflow-hidden">
 
       {/* ── Toast ── */}
       <AnimatePresence>

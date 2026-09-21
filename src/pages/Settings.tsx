@@ -33,6 +33,10 @@ export default function Settings() {
     () => localStorage.getItem('ecengine:sidebar-collapsed') === 'true'
   )
 
+  const [reduceBgEffects, setReduceBgEffects] = useState(
+    () => localStorage.getItem('ecengine:reduce-bg-effects') === 'true'
+  )
+
   const [showExportModal, setShowExportModal] = useState(false);
   const [allTopics, setAllTopics] = useState<{ id: string; name: string; subject: string; types?: string }[]>([]);
   const [selectedTopicIds, setSelectedTopicIds] = useState<Set<string>>(new Set());
@@ -351,6 +355,12 @@ export default function Settings() {
           description: 'Render all LaTeX equations with a bold font weight.',
           type: 'custom-toggle',
           actionId: 'katex-bold-toggle'
+        },
+        {
+          label: 'Reduce Background Effects',
+          description: 'Turn off the animated background grid and particles for better performance on lower-end hardware.',
+          type: 'custom-toggle',
+          actionId: 'reduce-background-effects-toggle'
         }
       ]
     },
@@ -384,7 +394,7 @@ export default function Settings() {
   ]
 
   return (
-    <div className="h-full bg-engine-black px-8 pb-8 pt-6 lg:px-12 lg:pb-12 lg:pt-6 overflow-y-auto show-scrollbar w-full relative">
+    <div className="h-full bg-transparent px-8 pb-8 pt-6 lg:px-12 lg:pb-12 lg:pt-6 overflow-y-auto show-scrollbar w-full relative">
       <div className="max-w-3xl mx-auto">
         <header className="mb-12 flex flex-col items-center text-center gap-2">
           <h1 className="font-['Orbitron'] text-4xl font-bold text-text-primary tracking-wider flex items-center justify-center">
@@ -925,6 +935,20 @@ export default function Settings() {
                           className={`w-14 h-7 rounded-full p-1 transition-colors ${katexBold ? 'bg-[rgba(0,255,65,0.2)] border border-accent' : 'bg-surface-2 border border-border-base'} focus:outline-none relative shadow-inner`}
                         >
                           <span className={`block w-5 h-5 rounded-full shadow-md transform transition-transform ${katexBold ? 'bg-accent translate-x-7 shadow-[0_0_8px_rgba(0,255,65,0.8)]' : 'bg-[#555] translate-x-0'}`} />
+                        </button>
+                      )}
+
+                      {opt.type === 'custom-toggle' && (opt as any).actionId === 'reduce-background-effects-toggle' && (
+                        <button
+                          onClick={() => {
+                            const next = !reduceBgEffects
+                            setReduceBgEffects(next)
+                            localStorage.setItem('ecengine:reduce-bg-effects', String(next))
+                            window.dispatchEvent(new Event('ecengine:settings-changed'))
+                          }}
+                          className={`w-14 h-7 rounded-full p-1 transition-colors ${reduceBgEffects ? 'bg-[rgba(0,255,65,0.2)] border border-accent' : 'bg-surface-2 border border-border-base'} focus:outline-none relative shadow-inner`}
+                        >
+                          <span className={`block w-5 h-5 rounded-full shadow-md transform transition-transform ${reduceBgEffects ? 'bg-accent translate-x-7 shadow-[0_0_8px_rgba(0,255,65,0.8)]' : 'bg-[#555] translate-x-0'}`} />
                         </button>
                       )}
 

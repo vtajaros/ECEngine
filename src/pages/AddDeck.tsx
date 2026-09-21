@@ -447,7 +447,7 @@ export default function AddDeck() {
   }
 
   return (
-    <div className="h-full bg-engine-black overflow-y-auto show-scrollbar flex flex-col font-['JetBrains_Mono']">
+    <div className="h-full bg-transparent overflow-y-auto show-scrollbar flex flex-col font-['JetBrains_Mono']">
       <AnimatePresence>
         {toast && (
           <motion.div

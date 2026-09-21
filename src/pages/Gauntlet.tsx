@@ -5,7 +5,6 @@ import { useLayoutStore } from '../store/useLayoutStore'
 import { GauntletHome } from '../components/gauntlet/GauntletHome'
 import { GauntletSetup } from '../components/gauntlet/GauntletSetup'
 import { GauntletCountdown } from '../components/gauntlet/GauntletCountdown'
-import { GauntletBackdrop } from '../components/gauntlet/GauntletBackdrop'
 import { GauntletPauseModal } from '../components/gauntlet/GauntletPauseModal'
 import { LeaveConfirmModal } from '../components/ui/LeaveConfirmModal'
 import { ExplanationPanel } from '../components/ui/ExplanationPanel'
@@ -1296,10 +1295,7 @@ export default function Gauntlet() {
   }
 
   return (
-    <div className="relative h-full w-full overflow-hidden bg-[#0D0D0D]">
-      {/* Backdrop rendered behind all phases (dimmed/subtle for playing/summary to preserve text legibility) */}
-      <GauntletBackdrop intensity={phase === 'playing' || phase === 'summary' ? 'subtle' : 'full'} />
-
+    <div className="relative h-full w-full overflow-hidden bg-transparent">
       {/* Screens based on phase */}
       {phase === 'home' && <GauntletHome />}
 
