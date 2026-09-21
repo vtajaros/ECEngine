@@ -4,7 +4,7 @@ import { TOSTracker } from '../components/ui/TOSTracker'
 
 export default function TOSChecklist() {
   return (
-    <div className="h-full bg-[var(--bg-primary)] px-6 pb-6 pt-6 lg:px-12 lg:pb-12 lg:pt-6 overflow-y-auto show-scrollbar w-full">
+    <div className="h-full bg-transparent px-6 pb-6 pt-6 lg:px-12 lg:pb-12 lg:pt-6 overflow-y-auto show-scrollbar w-full">
       <div className="max-w-7xl mx-auto flex flex-col h-full">
         <header className="mb-8 flex flex-col items-center justify-center border-b border-[var(--bg-card)] pb-6 pt-4 shrink-0">
           <div className="flex flex-col items-center text-center px-4 gap-3">

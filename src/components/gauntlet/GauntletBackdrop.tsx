@@ -105,9 +105,9 @@ export const GauntletBackdrop: React.FC<GauntletBackdropProps> = ({ dimmed = fal
 
   const opacityClass =
     intensity === 'subtle'
-      ? 'opacity-25'
+      ? 'opacity-35'
       : intensity === 'dimmed' || dimmed
-      ? 'opacity-40'
+      ? 'opacity-50'
       : 'opacity-100'
 
   return (

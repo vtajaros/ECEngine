@@ -9,6 +9,7 @@ import {
   paceSource,
   itemsPlanWarning,
   tightTimerWarning,
+  getSurvivalDifficultyMultiplier,
   type AllocationStrategy,
   type GauntletMode,
 } from '../../lib/gauntlet'
@@ -406,26 +407,26 @@ export const GauntletSetup: React.FC = () => {
         ) : (
           /* Survival Mode Settings */
           <div className="flex flex-col gap-4">
-            {/* Lives: 3 / 5 */}
+            {/* Lives: 3 / 5 / 10 */}
             <div className="flex flex-col gap-1.5">
               <span className="font-['Rajdhani'] font-bold text-xs uppercase tracking-wider text-text-primary">
                 Starting Lives
               </span>
-              <div className="grid grid-cols-2 gap-3">
-                {[3, 5].map(lives => {
+              <div className="grid grid-cols-3 gap-2">
+                {[3, 5, 10].map(lives => {
                   const active = config.lives === lives
                   return (
                     <button
                       key={lives}
                       type="button"
                       onClick={() => setConfig(c => ({ ...c, lives }))}
-                      className={`py-3 rounded-xl font-['Orbitron'] font-bold text-sm tracking-wider flex items-center justify-center gap-2 transition-all ${
+                      className={`py-3 rounded-xl font-['Orbitron'] font-bold text-xs sm:text-sm tracking-wider flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
                         active
                           ? 'bg-[#ef4444] text-white shadow-[0_0_20px_rgba(239,68,68,0.4)]'
                           : 'bg-surface-2 border border-border-base text-text-muted hover:text-white'
                       }`}
                     >
-                      <Flame size={16} fill="currentColor" />
+                      <Flame size={15} fill="currentColor" />
                       {lives} LIVES
                     </button>
                   )
@@ -433,13 +434,20 @@ export const GauntletSetup: React.FC = () => {
               </div>
             </div>
 
-            {/* Per-Question Limit: 15 / 30 / 60 s */}
+            {/* Per-Question Limit: 20s, 30s, 45s, 60s, 2min, Unlimited */}
             <div className="flex flex-col gap-1.5">
               <span className="font-['Rajdhani'] font-bold text-xs uppercase tracking-wider text-text-primary">
                 Per-Question Time Limit
               </span>
               <div className="grid grid-cols-3 gap-2">
-                {[15, 30, 60].map(sec => {
+                {[
+                  { sec: 20, label: '20 SECONDS' },
+                  { sec: 30, label: '30 SECONDS' },
+                  { sec: 45, label: '45 SECONDS' },
+                  { sec: 60, label: '60 SECONDS' },
+                  { sec: 120, label: '2 MINUTES' },
+                  { sec: 0, label: 'UNLIMITED' },
+                ].map(({ sec, label }) => {
                   const active = config.perQuestionSec === sec
                   return (
                     <button
@@ -452,14 +460,33 @@ export const GauntletSetup: React.FC = () => {
                           : 'bg-surface-2 border border-border-base text-text-muted hover:text-white'
                       }`}
                     >
-                      {sec} SECONDS
+                      {label}
                     </button>
                   )
                 })}
               </div>
 
+              {/* Difficulty Multiplier Info */}
+              {(() => {
+                const diff = getSurvivalDifficultyMultiplier(config.perQuestionSec, config.lives)
+                return (
+                  <div className="mt-1 px-3 py-1.5 rounded-lg bg-surface-2 border border-border-base flex items-center justify-between text-xs font-['JetBrains_Mono']">
+                    <span className="text-text-muted">DIFFICULTY MULTIPLIER</span>
+                    {diff.isUnlimited ? (
+                      <span className="text-accent font-bold">
+                        Score: 0.08x • Rating: ±1 (Accuracy Mode)
+                      </span>
+                    ) : (
+                      <span className="text-accent font-bold">
+                        Score & Rating: {diff.scoreMult}x
+                      </span>
+                    )}
+                  </div>
+                )
+              })()}
+
               {/* Warnings (iii): Tight timer warning */}
-              {survivalTightWarning && (
+              {survivalTightWarning && config.perQuestionSec > 0 && (
                 <div className="mt-1 p-2 rounded-lg bg-[#FFB800]/10 border border-[#FFB800]/30 text-[#FFB800] text-xs font-['JetBrains_Mono'] flex items-center gap-2">
                   <Info size={14} className="shrink-0" />
                   <span>
@@ -502,14 +529,14 @@ export const GauntletSetup: React.FC = () => {
             </button>
             <div className="flex flex-col">
               <span className="font-['Rajdhani'] font-bold text-xs uppercase tracking-wider text-text-primary">
-                Rated Run
+                Ranked
               </span>
               <span className="text-[10px] font-['JetBrains_Mono'] text-text-muted">
                 {config.rated
                   ? isRatedRun({ subjects: config.subjects })
                     ? 'Counts toward subject Elo ratings'
-                    : 'Unrated: select all subjects without filters'
-                  : 'Practice run: ratings unchanged'}
+                    : 'Unranked: select all subjects without filters'
+                  : 'Unranked: ratings unchanged'}
               </span>
             </div>
           </div>

@@ -1078,7 +1078,7 @@ export default function LooksFamStudy() {
     }
 
     return (
-      <div className="h-full bg-[var(--bg-primary)] p-6 lg:p-10 flex flex-col relative overflow-y-auto w-full">
+      <div className="h-full bg-transparent p-6 lg:p-10 flex flex-col relative overflow-y-auto w-full">
         <LeaveConfirmModal
           isOpen={blocker.state === 'blocked' || showExitConfirm}
           onConfirm={() => {

@@ -319,7 +319,7 @@ export const SetupPanel: React.FC = () => {
               LIVES
             </span>
             <div className="flex gap-1.5 h-8">
-              {[3, 5].map(lives => (
+              {[3, 5, 10].map(lives => (
                 <button
                   key={lives}
                   type="button"
@@ -340,8 +340,15 @@ export const SetupPanel: React.FC = () => {
             <span className="text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest text-text-muted block mb-1">
               PER-QUESTION LIMIT
             </span>
-            <div className="flex gap-1.5 h-8">
-              {[15, 30, 60].map(sec => (
+            <div className="flex gap-1 h-8">
+              {[
+                { sec: 20, label: '20s' },
+                { sec: 30, label: '30s' },
+                { sec: 45, label: '45s' },
+                { sec: 60, label: '60s' },
+                { sec: 120, label: '2m' },
+                { sec: 0, label: '∞' },
+              ].map(({ sec, label }) => (
                 <button
                   key={sec}
                   type="button"
@@ -352,7 +359,7 @@ export const SetupPanel: React.FC = () => {
                       : 'bg-surface-2 text-text-muted border-border-base hover:text-text-primary'
                   }`}
                 >
-                  {sec}s
+                  {label}
                 </button>
               ))}
             </div>
@@ -378,7 +385,7 @@ export const SetupPanel: React.FC = () => {
           </button>
           <div className="flex flex-col">
             <span className="text-[11px] font-['Rajdhani'] font-bold uppercase tracking-wider text-text-primary leading-tight">
-              Rated Run
+              Ranked
             </span>
             <span className="text-[9px] text-text-muted leading-tight">
               {meetsRatedCriteria ? 'Updates per-subject ratings' : 'Requires all 4 subjects'}

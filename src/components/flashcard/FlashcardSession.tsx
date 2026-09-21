@@ -293,7 +293,7 @@ export function FlashcardSession({
   }
 
   return (
-    <div className="h-full bg-engine-black flex flex-col overflow-hidden relative">
+    <div className="h-full bg-transparent flex flex-col overflow-hidden relative">
       {/* Top Bar */}
       <div className="shrink-0 bg-[#111] border-b border-border-base px-6 py-4 flex items-center justify-between z-20">
         <LeaveConfirmModal

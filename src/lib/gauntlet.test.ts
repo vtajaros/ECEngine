@@ -7,6 +7,9 @@ import {
   ratingTier, paceForSubject, blendedPaceMs, paceSource, capacityItems, itemsPlanWarning, tightTimerWarning,
   updateSkipState,
   updateLifeBonusState,
+  getTimeMultiplier,
+  getLivesMultiplier,
+  getSurvivalDifficultyMultiplier,
 } from './gauntlet'
 
 describe('par / weight', () => {
@@ -335,5 +338,58 @@ describe('pace model and warnings', () => {
   it('detects tight timer warning in survival', () => {
     expect(tightTimerWarning({ perQuestionSec: 10, paceMs: 8000 })).toBe(true)
     expect(tightTimerWarning({ perQuestionSec: 15, paceMs: 8000 })).toBe(false)
+    expect(tightTimerWarning({ perQuestionSec: 0, paceMs: 8000 })).toBe(false)
+  })
+
+  describe('Survival difficulty multipliers and unlimited accuracy mode', () => {
+    it('computes time multipliers correctly', () => {
+      expect(getTimeMultiplier(20)).toBe(1.25)
+      expect(getTimeMultiplier(30)).toBe(1.0)
+      expect(getTimeMultiplier(45)).toBe(0.85)
+      expect(getTimeMultiplier(60)).toBe(0.7)
+      expect(getTimeMultiplier(120)).toBe(0.5)
+      expect(getTimeMultiplier(0)).toBe(0.08)
+    })
+
+    it('computes lives multipliers correctly', () => {
+      expect(getLivesMultiplier(3)).toBe(1.1)
+      expect(getLivesMultiplier(5)).toBe(1.0)
+      expect(getLivesMultiplier(10)).toBe(0.75)
+    })
+
+    it('combines difficulty multipliers for survival', () => {
+      const standard = getSurvivalDifficultyMultiplier(30, 5)
+      expect(standard.scoreMult).toBe(1.0)
+      expect(standard.eloMult).toBe(1.0)
+      expect(standard.isUnlimited).toBe(false)
+
+      const hard = getSurvivalDifficultyMultiplier(20, 3)
+      expect(hard.scoreMult).toBe(1.38)
+      expect(hard.eloMult).toBe(1.38)
+
+      const unlimited = getSurvivalDifficultyMultiplier(0, 10)
+      expect(unlimited.scoreMult).toBe(0.08)
+      expect(unlimited.eloMult).toBe(0.08)
+      expect(unlimited.isUnlimited).toBe(true)
+    })
+
+    it('scales scoreAnswer points with scoreMult', () => {
+      const normal = scoreAnswer({ outcome: 'correct', timeMs: 6000, parMs: 6000, weight: 1, streakBefore: 0 })
+      const scaled = scoreAnswer({ outcome: 'correct', timeMs: 6000, parMs: 6000, weight: 1, streakBefore: 0, scoreMult: 0.08 })
+      expect(normal.points).toBe(100)
+      expect(scaled.points).toBe(8)
+    })
+
+    it('awards fixed +1 / -1 Elo delta in unlimited accuracy mode', () => {
+      const r0 = { rating: 1000, answers: 5 }
+      const correctRes = applyAnswerToRating(r0, 1000, 'correct', 0.5, 0.08)
+      expect(correctRes.rating).toBe(1001)
+
+      const wrongRes = applyAnswerToRating(r0, 1000, 'wrong', 0, 0.08)
+      expect(wrongRes.rating).toBe(999)
+
+      const skippedRes = applyAnswerToRating(r0, 1000, 'skipped', 0, 0.08)
+      expect(skippedRes.rating).toBe(1000)
+    })
   })
 })

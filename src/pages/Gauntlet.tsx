@@ -83,9 +83,12 @@ const RunPlaceholder: React.FC<RunPlaceholderProps> = ({ onOpenPause, isModalOpe
   const [shakeWrong, setShakeWrong] = useState(false)
   const [pulseHeart, setPulseHeart] = useState(false)
 
+  const isUnlimitedSurvival = config.mode === 'survival' && config.perQuestionSec === 0
   const timeRemainingSec =
     config.mode === 'timed'
       ? Math.max(0, Math.ceil(((endsAt ?? 0) - now) / 1000))
+      : isUnlimitedSurvival
+      ? Math.floor((now - questionShownAt) / 1000)
       : Math.max(0, Math.ceil((config.perQuestionSec * 1000 - (now - questionShownAt)) / 1000))
 
   // Summary review state (declared unconditionally at top of component)
@@ -237,7 +240,7 @@ Please explain:
           s.expire()
         }
       } else if (s.config.mode === 'survival') {
-        if (curNow - s.questionShownAt >= s.config.perQuestionSec * 1000) {
+        if (s.config.perQuestionSec > 0 && curNow - s.questionShownAt >= s.config.perQuestionSec * 1000) {
           s.timeoutCurrent()
         }
       }
@@ -463,7 +466,7 @@ Please explain:
             </div>
           ) : (
             <div className="text-center py-2 text-text-muted font-['Rajdhani'] text-xs uppercase tracking-wider">
-              Practice Run • Ratings Unchanged
+              Unranked • Ratings Unchanged
             </div>
           )}
 
@@ -780,7 +783,7 @@ Please explain:
                               } else if (isPicked) {
                                 btnClass =
                                   'border-[#ef4444] bg-[rgba(255,51,51,0.08)] text-[#ddd]'
-                                badgeClass = 'bg-[#ef4444] text-white border-[#ef4444] font-bold'
+                                badgeClass = 'bg-[#ef4444] text-[#0D0D0D] border-[#ef4444] font-bold'
                                 textClass = 'text-[#aaa]'
                               }
 
@@ -932,16 +935,20 @@ Please explain:
   const totalDurationForThisTimer =
     config.mode === 'timed' ? config.durationSec : config.perQuestionSec
   const timerPercent =
-    totalDurationForThisTimer > 0
+    isUnlimitedSurvival
+      ? 100
+      : totalDurationForThisTimer > 0
       ? Math.min(100, Math.max(0, (timeRemainingSec / totalDurationForThisTimer) * 100))
       : 0
-  const isUrgentTimer = timeRemainingSec <= 5
+  const isUrgentTimer = !isUnlimitedSurvival && timeRemainingSec <= 5
 
   const minutes = Math.floor(timeRemainingSec / 60)
   const seconds = timeRemainingSec % 60
   const timeFormatted =
     config.mode === 'timed'
       ? `${minutes}:${seconds.toString().padStart(2, '0')}`
+      : isUnlimitedSurvival
+      ? `∞ ${timeRemainingSec}s`
       : `${timeRemainingSec}s`
 
   return (
@@ -1022,7 +1029,7 @@ Please explain:
           {/* Volume / Mute Control */}
           <VolumeControl className="text-text-muted hover:text-white" iconSize={16} />
 
-          {/* Quit Run Button (Relocated outside Question Card) */}
+          {/* Quit Button (Relocated outside Question Card) */}
           <button
             type="button"
             disabled={isModalOpen || revealState !== null}
@@ -1030,7 +1037,7 @@ Please explain:
             className="px-2.5 py-1.5 rounded-lg text-xs font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted hover:text-[#FF3333] hover:bg-[#FF3333]/10 border border-border-base hover:border-[#FF3333]/40 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <XCircle size={14} />
-            Quit Run
+            Quit
           </button>
         </div>
       </div>
@@ -1106,7 +1113,7 @@ Please explain:
                   } else if (isWrongPicked) {
                     btnStyle =
                       'border-danger bg-[rgba(255,51,51,0.08)] shadow-[0_0_16px_rgba(255,51,51,0.22)] cursor-default'
-                    prefixStyle = 'bg-danger text-white border-danger font-bold'
+                    prefixStyle = 'bg-danger text-[#0D0D0D] border-danger font-bold'
                     textStyle = 'text-[#aaa]'
                   } else {
                     btnStyle = 'border-[#222] bg-[#0e0e0e] opacity-50 cursor-default'

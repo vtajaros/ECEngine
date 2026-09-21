@@ -568,7 +568,7 @@ describe('Gauntlet Summary Review List', () => {
     expect(heading?.className).toContain('text-[#FF3333]')
   })
 
-  it('renders Quit Run button and VolumeControl in HUD during playing phase', async () => {
+  it('renders Quit button and VolumeControl in HUD during playing phase', async () => {
     useGauntletStore.setState({
       phase: 'playing',
       index: 0,
@@ -592,10 +592,10 @@ describe('Gauntlet Summary Review List', () => {
     })
 
     const quitBtn = Array.from(container!.querySelectorAll('button')).find(b =>
-      b.textContent?.includes('Quit Run'),
+      b.textContent?.trim() === 'Quit',
     )
     expect(quitBtn).toBeTruthy()
-    // Confirm Quit Run is outside the question card (inside the HUD header)
+    // Confirm Quit is outside the question card (inside the HUD header)
     const hudHeader = container!.querySelector('.bg-surface.rounded-xl')
     expect(hudHeader?.contains(quitBtn!)).toBe(true)
   })

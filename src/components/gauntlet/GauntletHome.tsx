@@ -257,7 +257,7 @@ export const GauntletHome: React.FC = () => {
                   className="font-['Orbitron'] font-bold text-[10px] sm:text-[11px] px-1.5 py-0.5 rounded text-black"
                   style={{
                     backgroundColor: color,
-                    color: subject === 'MATH' || subject === 'ELECS' ? '#ffffff' : '#000000',
+                    color: '#000000',
                   }}
                 >
                   {subject}

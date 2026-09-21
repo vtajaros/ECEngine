@@ -13,6 +13,7 @@ import {
   difficultyWeight,
   estimateParMs,
   extractFeatures,
+  getSurvivalDifficultyMultiplier,
   isRatedRun,
   pickNextIndex,
   scoreAnswer,
@@ -126,7 +127,7 @@ export function normalizeConfig(c: GauntletConfig): GauntletConfig {
     durationSec: clampInt(c.durationSec, 60, 7200),
     totalItems: clampInt(c.totalItems, 1, 500),
     lives: clampInt(c.lives, 1, 10),
-    perQuestionSec: clampInt(c.perQuestionSec, 5, 300),
+    perQuestionSec: c.perQuestionSec === 0 ? 0 : clampInt(c.perQuestionSec, 5, 300),
   }
 }
 
@@ -351,10 +352,28 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
       kind === 'skip' ? 'use_skip' : outcome === 'correct' ? 'correct' : 'wrong',
     )
 
-    const res = scoreAnswer({ outcome, timeMs, parMs: item.parMs, weight: item.weight, streakBefore: s.streak })
+    const survival = s.config.mode === 'survival'
+    const { scoreMult, eloMult } = survival
+      ? getSurvivalDifficultyMultiplier(s.config.perQuestionSec, s.config.lives)
+      : { scoreMult: 1, eloMult: 1 }
+
+    const res = scoreAnswer({
+      outcome,
+      timeMs,
+      parMs: item.parMs,
+      weight: item.weight,
+      streakBefore: s.streak,
+      scoreMult,
+    })
     const ratings = { ...s.ratings }
     if (s.rated) {
-      ratings[item.subject] = applyAnswerToRating(ratings[item.subject], item.cardRating, outcome, res.speedNorm)
+      ratings[item.subject] = applyAnswerToRating(
+        ratings[item.subject],
+        item.cardRating,
+        outcome,
+        res.speedNorm,
+        eloMult,
+      )
     }
 
     const record: AnswerRecord = {
@@ -367,7 +386,6 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
       streakAfter: res.streakAfter,
       answeredAt: now,
     }
-    const survival = s.config.mode === 'survival'
     let nextLifeBonusStreak = s.lifeBonusStreak
     let livesLeft = s.livesLeft
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react'
 import { Card, MCQData } from '../../types'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bookmark, Clock, ArrowRight, RefreshCw, ClipboardCheck, X, AlertTriangle, Copy, Sparkles, Volume2, VolumeX } from 'lucide-react'
+import { Bookmark, Clock, ArrowRight, RefreshCw, ClipboardCheck, X, AlertTriangle, Copy, Sparkles, Volume2, VolumeX, CheckCircle2, XCircle } from 'lucide-react'
 import { shuffle, shuffleChoices, isSafeToShuffleChoices } from '../../lib/scrambler'
 import { renderMath, renderPlainText } from '../../lib/latex'
 import { ExplanationPanel } from '../ui/ExplanationPanel'
@@ -91,27 +91,21 @@ const TestQuestionCard = memo(({
     <div
       id={`test-question-${index}`}
       onClick={() => onScrollTo(index)}
-      className={`flex-shrink-0 bg-[var(--bg-card)] border rounded-xl overflow-hidden shadow-lg transition-colors duration-300 relative cursor-pointer scroll-mt-20
+      className={`flex-shrink-0 bg-surface-2 border rounded-xl overflow-hidden shadow-lg transition-colors duration-300 relative cursor-pointer scroll-mt-20
         ${showFeedback
-          ? (isCorrect ? 'border-accent/30 bg-accent/5' : (isAnswered ? 'border-[#FF003C]/30 bg-[#FF003C]/5' : 'border-[#333]'))
+          ? (isCorrect ? 'border-accent/40 bg-accent/5' : (isAnswered ? 'border-danger/40 bg-danger/5' : 'border-[#333]'))
           : (isAnswered ? 'border-[#555]' : 'border-border-base')
         }`}
     >
-      <div className="p-6 border-b border-[#333] flex items-start gap-4">
+      <div className="p-6 border-b border-[#333] flex items-start justify-between gap-4">
         <div className="flex-1 flex flex-col h-auto pr-2">
-          <h3
-            className="font-['Rajdhani'] font-semibold text-[var(--text-primary)] whitespace-pre-wrap flex items-start gap-3 text-lg leading-relaxed"
-          >
-            <span
-              className="text-[var(--accent-primary)] font-bold shrink-0 text-base"
-            >
-              {index + 1}.
-            </span>
-            <span
-              className="flex-1 mt-[2px] mcq-question-text"
-              dangerouslySetInnerHTML={{ __html: renderMath(mcq.question) }}
-            />
-          </h3>
+          <span className="px-2.5 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold tracking-wider text-accent border border-accent/40 bg-accent/5 inline-block mb-3 self-start">
+            QUESTION {index + 1}
+          </span>
+          <div
+            className="text-white font-['Rajdhani'] font-semibold text-lg leading-relaxed whitespace-pre-wrap mcq-question-text"
+            dangerouslySetInnerHTML={{ __html: renderMath(mcq.question) }}
+          />
 
           {mcq.imagePath && (
             <div className="mt-4 w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-accent transition-all">
@@ -128,12 +122,12 @@ const TestQuestionCard = memo(({
         <button
           onClick={(e) => { e.stopPropagation(); onToggleBookmark(card.id) }}
           className={`p-2 rounded transition-colors ${isBookmarked
-            ? 'text-[var(--accent-primary)] bg-[var(--accent-primary)]/10'
+            ? 'text-accent bg-accent/10'
             : 'text-[#555] hover:bg-border-base hover:text-text-muted'
             }`}
           title={isBookmarked ? 'Remove Bookmark' : 'Bookmark Question'}
         >
-          <Bookmark className="w-5 h-5 fill-current" />
+          <Bookmark className={`w-5 h-5 ${isBookmarked ? 'fill-accent text-accent' : ''}`} />
         </button>
       </div>
 
@@ -144,28 +138,30 @@ const TestQuestionCard = memo(({
 
           const isSelected = userAnswer === cIdx
 
-          let stateStyles = 'border-[#2c2c2c] hover:border-accent hover:bg-[#1c1c1c] hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] bg-[#121212] text-text-primary'
-          let iconElement: React.ReactNode = null
-          let prefixStyles = 'text-[#888]'
+          let stateStyles = 'border-[#2c2c2c] hover:border-accent hover:bg-[#1c1c1c] hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] bg-[#121212] text-text-muted'
+          let prefixStyles = 'border-[#444] text-text-muted bg-surface/50 group-hover:border-accent group-hover:text-accent'
+          let textStyles = 'text-text-primary'
 
           if (showFeedback) {
             const isChoiceCorrect = cIdx === mcq.answer
             if (isChoiceCorrect) {
-              stateStyles = 'border-accent bg-[rgba(0,255,65,0.1)] text-accent shadow-[0_0_15px_rgba(0,255,65,0.15)]'
-              iconElement = <div className="text-accent font-bold">✓</div>
-              prefixStyles = 'text-accent font-bold'
+              stateStyles = 'border-accent bg-[rgba(0,255,65,0.08)] shadow-[0_0_16px_rgba(0,255,65,0.22)] cursor-default'
+              prefixStyles = 'bg-accent text-[#0D0D0D] border-accent font-bold'
+              textStyles = 'text-white'
             } else if (isSelected && !isChoiceCorrect) {
-              stateStyles = 'border-[#FF003C] bg-[rgba(255,0,60,0.1)] text-[#FF003C]'
-              iconElement = <div className="text-[#FF003C] font-bold">✗</div>
-              prefixStyles = 'text-[#FF003C] font-bold'
+              stateStyles = 'border-danger bg-[rgba(255,51,51,0.08)] shadow-[0_0_16px_rgba(255,51,51,0.22)] cursor-default'
+              prefixStyles = 'bg-danger text-[#0D0D0D] border-danger font-bold'
+              textStyles = 'text-[#aaa]'
             } else {
-              stateStyles = 'border-[#222] bg-[#0e0e0e] text-[#666] opacity-50'
-              prefixStyles = 'text-[#555]'
+              stateStyles = 'border-[#222] bg-[#0e0e0e] opacity-50 cursor-default'
+              prefixStyles = 'border-[#333] text-[#444] bg-[#0a0a0a]'
+              textStyles = 'text-[#555]'
             }
           } else {
             if (isSelected) {
-              stateStyles = 'border-[var(--accent-primary)] bg-[rgba(0,255,65,0.1)] text-[var(--accent-primary)]'
-              prefixStyles = 'text-[var(--accent-primary)] font-bold'
+              stateStyles = 'border-accent bg-[rgba(0,255,65,0.08)] shadow-[0_0_12px_rgba(0,255,65,0.15)] text-white'
+              prefixStyles = 'bg-accent/20 border-accent text-accent font-bold'
+              textStyles = 'text-white'
             }
           }
 
@@ -182,17 +178,22 @@ const TestQuestionCard = memo(({
               key={cIdx}
               onClick={(e) => { e.stopPropagation(); onSelectChoice(card.id, cIdx) }}
               disabled={viewState === 'review' || (settings.instantChecking && isAnswered)}
-              className={`flex items-center text-left py-4 px-4 min-h-[56px] rounded-lg border transition-all duration-200 font-['Rajdhani'] ${stateStyles} ${orderClass} ${viewState === 'review' || (settings.instantChecking && isAnswered) ? 'cursor-default' : 'cursor-pointer'
+              className={`w-full flex items-center text-left py-4 px-4 min-h-[56px] rounded-xl border transition-all duration-200 group font-['Rajdhani'] ${stateStyles} ${orderClass} ${viewState === 'review' || (settings.instantChecking && isAnswered) ? 'cursor-default' : 'cursor-pointer'
                 }`}
             >
-              <div className={`flex-shrink-0 mr-3 font-['JetBrains_Mono'] ${prefixStyles}`}>
-                {choiceLabel}.
+              <div className={`w-6 h-6 flex items-center justify-center rounded border font-['Rajdhani'] font-bold text-sm mr-3 shrink-0 transition-colors ${prefixStyles}`}>
+                {choiceLabel}
               </div>
               <span
-                className="flex-1 break-words font-['Rajdhani'] font-medium text-base leading-normal mcq-choice-text"
+                className={`flex-1 break-words font-['Rajdhani'] font-semibold tracking-wide text-base leading-snug mcq-choice-text ${textStyles}`}
                 dangerouslySetInnerHTML={{ __html: (mcq.choicesPlainText?.[cIdx] ? renderPlainText : renderMath)(choice) }}
               />
-              {iconElement && <div className="ml-4 flex-shrink-0">{iconElement}</div>}
+              {showFeedback && cIdx === mcq.answer && (
+                <CheckCircle2 className="text-accent ml-3 shrink-0" size={20} />
+              )}
+              {showFeedback && isSelected && cIdx !== mcq.answer && (
+                <XCircle className="text-danger ml-3 shrink-0" size={20} />
+              )}
             </button>
           )
         })}
@@ -606,7 +607,7 @@ Please explain:
     const percentage = score.total > 0 ? Math.round((score.correct / score.total) * 100) : 0
 
     return (
-      <div className="h-full bg-[var(--bg-primary)] flex flex-col relative overflow-hidden">
+      <div className="h-full bg-transparent flex flex-col relative overflow-hidden">
         {renderTopBar()}
         <LeaveConfirmModal
           isOpen={blocker.state === 'blocked' || showExitConfirm}
@@ -704,7 +705,7 @@ Please explain:
   const virtualItems = virtualizer.getVirtualItems()
 
   return (
-    <div className="h-full bg-[var(--bg-primary)] flex flex-col relative overflow-hidden">
+    <div className="h-full bg-transparent flex flex-col relative overflow-hidden">
       {renderTopBar()}
 
       <LeaveConfirmModal

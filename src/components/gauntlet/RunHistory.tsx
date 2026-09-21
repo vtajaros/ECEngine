@@ -130,7 +130,7 @@ export const RunHistory: React.FC<RunHistoryProps> = ({ hideHeader = false }) =>
                           : 'border border-border-base text-text-muted'
                       }`}
                     >
-                      {r.rated ? 'RATED' : 'PRACTICE'}
+                      {r.rated ? 'RANKED' : 'UNRANKED'}
                     </span>
                     <div>
                       <div className="flex items-center gap-1.5">

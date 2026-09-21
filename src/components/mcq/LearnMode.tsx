@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Card, MCQData } from '../../types'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bookmark, Play, AlertCircle, ArrowRight, Flag, X, Copy, Sparkles, Volume2, VolumeX } from 'lucide-react'
+import { Bookmark, Play, AlertCircle, ArrowRight, Flag, X, Copy, Sparkles, Volume2, VolumeX, CheckCircle2, XCircle } from 'lucide-react'
 import { renderMath, renderPlainText } from '../../lib/latex'
 import { shuffleChoices, isSafeToShuffleChoices } from '../../lib/scrambler'
 import Toast from '../ui/Toast'
@@ -578,7 +578,7 @@ Please explain:
     const overallCorrectFirstTryCount = cards.filter(c => cardStats[c.id]?.wasCorrectFirstTry).length
 
     return (
-      <div className="flex flex-col items-center justify-center p-6 lg:p-10 h-full bg-engine-black">
+      <div className="flex flex-col items-center justify-center p-6 lg:p-10 h-full bg-transparent">
         {renderLeaveConfirmModal()}
         <motion.div
           initial={{ y: "100%", opacity: 0 }}
@@ -740,7 +740,7 @@ Please explain:
   const totalWrongInPartition = partitionWrongIds.size
 
   return (
-    <div className="flex flex-col h-full bg-engine-black p-8 relative">
+    <div className="flex flex-col h-full bg-transparent p-8 relative">
       {renderLeaveConfirmModal()}
 
       <div className="max-w-3xl w-full mx-auto flex flex-wrap items-center justify-between gap-2 mb-4">
@@ -781,7 +781,7 @@ Please explain:
           key={currentCard.id}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-3xl mx-auto bg-surface-2 border border-border-base rounded-xl shadow-2xl p-10 relative flex flex-col overflow-y-auto"
+          className="w-full max-w-3xl mx-auto bg-surface-2 border border-border-base rounded-xl shadow-2xl p-6 sm:p-8 relative flex flex-col overflow-y-auto"
         >
           {/* Bookmark Toggle */}
           <button
@@ -792,8 +792,10 @@ Please explain:
             <Bookmark className={`w-6 h-6 ${isBookmarked ? 'fill-accent text-accent' : ''}`} />
           </button>
 
-          <div className="mb-10 pr-4 h-auto flex-none">
-            <span className="text-[var(--accent-primary)] font-['Rajdhani'] text-sm font-bold tracking-widest mb-3 block">Question {overallCurrentQuestion}</span>
+          <div className="mb-8 pr-4 h-auto flex-none">
+            <span className="px-2.5 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold tracking-wider text-accent border border-accent/40 bg-accent/5 inline-block mb-3">
+              QUESTION {overallCurrentQuestion}
+            </span>
             <div
               className="text-white font-['Rajdhani'] font-semibold mb-6 text-lg leading-relaxed whitespace-pre-wrap mcq-question-text"
               dangerouslySetInnerHTML={{ __html: renderMath(mcqData.question) }}
@@ -816,21 +818,22 @@ Please explain:
               const choice = mcqData.choices[idx];
               if (choice === undefined) return null;
 
-              let btnClass = "border-[#2c2c2c] bg-[#121212] hover:bg-[#1c1c1c] hover:border-accent hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] cursor-pointer"
-              let prefixClass = "text-[#888]"
+              let btnClass = "border-[#2c2c2c] bg-[#121212] hover:bg-[#1c1c1c] hover:border-accent hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] cursor-pointer text-text-muted"
+              let prefixClass = "border-[#444] text-text-muted bg-surface/50 group-hover:border-accent group-hover:text-accent"
               let textClass = "text-text-primary"
 
               if (viewState === 'feedback') {
                 if (idx === mcqData.answer) {
-                  btnClass = "border-[var(--color-correct)] bg-[rgba(0,255,65,0.06)] shadow-[0_0_15px_rgba(0,255,65,0.15)]"
-                  prefixClass = "text-[var(--color-correct)] font-bold"
+                  btnClass = "border-accent bg-[rgba(0,255,65,0.08)] shadow-[0_0_16px_rgba(0,255,65,0.22)] cursor-default"
+                  prefixClass = "bg-accent text-[#0D0D0D] border-accent font-bold"
                   textClass = "text-white"
                 } else if (idx === selectedChoiceIndex) {
-                  btnClass = "border-[var(--color-wrong)] bg-[rgba(255,51,51,0.06)]"
-                  prefixClass = "text-[var(--color-wrong)] font-bold"
+                  btnClass = "border-danger bg-[rgba(255,51,51,0.08)] shadow-[0_0_16px_rgba(255,51,51,0.22)] cursor-default"
+                  prefixClass = "bg-danger text-[#0D0D0D] border-danger font-bold"
                   textClass = "text-[#aaa]"
                 } else {
                   btnClass = "border-[#222] bg-[#0e0e0e] opacity-50 cursor-default"
+                  prefixClass = "border-[#333] text-[#444] bg-[#0a0a0a]"
                   textClass = "text-[#555]"
                 }
               }
@@ -846,15 +849,23 @@ Please explain:
                   key={idx}
                   onClick={() => viewState === 'question' && submitAnswer(idx)}
                   disabled={viewState === 'feedback'}
-                  className={`py-4 px-4 text-base rounded-lg border text-left flex items-center transition-all font-['Rajdhani'] ${btnClass} ${orderClass}`}
+                  className={`w-full text-left py-4 px-4 rounded-xl border flex items-center transition-all group disabled:cursor-not-allowed ${btnClass} ${orderClass}`}
                 >
-                  <span className={`font-['JetBrains_Mono'] mr-4 w-8 text-base flex-shrink-0 ${prefixClass}`}>
-                    {String.fromCharCode(65 + idx)}.
-                  </span>
                   <div
-                    className={`flex-1 text-left break-words font-['Rajdhani'] font-medium text-base leading-normal mcq-choice-text ${textClass}`}
+                    className={`w-6 h-6 flex items-center justify-center rounded border font-['Rajdhani'] font-bold text-sm mr-3 shrink-0 transition-colors ${prefixClass}`}
+                  >
+                    {String.fromCharCode(65 + idx)}
+                  </div>
+                  <div
+                    className={`flex-1 text-left break-words font-['Rajdhani'] font-semibold tracking-wide text-base leading-snug mcq-choice-text ${textClass}`}
                     dangerouslySetInnerHTML={{ __html: (mcqData.choicesPlainText?.[idx] ? renderPlainText : renderMath)(choice) }}
                   />
+                  {viewState === 'feedback' && idx === mcqData.answer && (
+                    <CheckCircle2 className="text-accent ml-3 shrink-0" size={20} />
+                  )}
+                  {viewState === 'feedback' && idx === selectedChoiceIndex && selectedChoiceIndex !== mcqData.answer && (
+                    <XCircle className="text-danger ml-3 shrink-0" size={20} />
+                  )}
                 </button>
               )
             })}

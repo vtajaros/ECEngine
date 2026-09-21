@@ -652,7 +652,7 @@ export default function Formulas() {
   // Empty session fallback
   if (activeDeck && sessionCards.length === 0) {
     return (
-      <div className="h-full bg-engine-black flex flex-col items-center justify-center gap-6 p-10 text-center">
+      <div className="h-full bg-transparent flex flex-col items-center justify-center gap-6 p-10 text-center">
         <div className="flex flex-col items-center gap-2">
           <Bookmark className="w-12 h-12 text-[var(--accent-primary)] opacity-50 mb-2" />
           <p className="text-text-muted font-['JetBrains_Mono'] text-lg">

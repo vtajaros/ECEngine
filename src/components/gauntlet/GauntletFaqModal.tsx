@@ -106,7 +106,7 @@ const FAQ_ITEMS: AccordionItem[] = [
           Each subject begins at an initial rating of <strong className="text-accent">1000</strong>.
         </p>
         <p className="text-text-muted">
-          Ratings update after every answer on rated runs using standard Elo curves adjusted for answer speed. Ratings remain <span className="text-[#FFB800] font-bold">PROVISIONAL</span> until 30 questions are answered in that subject.
+          Ratings update after every answer on ranked runs using standard Elo curves adjusted for answer speed. Ratings remain <span className="text-[#FFB800] font-bold">PROVISIONAL</span> until 30 questions are answered in that subject.
         </p>
         <p className="text-text-muted">
           Your <strong className="text-text-primary">Overall Rating</strong> is computed using the official PRC ECE Table of Specifications weights: <strong>MATH (20%)</strong>, <strong>GEAS (20%)</strong>, <strong>ELECS (30%)</strong>, and <strong>EST (30%)</strong>.

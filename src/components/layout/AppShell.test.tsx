@@ -110,7 +110,7 @@ describe('AppShell GauntletBackdrop integration', () => {
     expect(backdrops.length).toBe(1)
 
     const backdropContainer = backdrops[0].closest('[aria-hidden="true"]')
-    expect(backdropContainer?.className).toContain('opacity-25')
+    expect(backdropContainer?.className).toContain('opacity-35')
   })
 
   it('dynamically adapts intensity for /gauntlet based on phase', async () => {
@@ -133,7 +133,7 @@ describe('AppShell GauntletBackdrop integration', () => {
     backdrops = container!.querySelectorAll('.gauntlet-animated-grid')
     expect(backdrops.length).toBe(1)
     backdropContainer = backdrops[0].closest('[aria-hidden="true"]')
-    expect(backdropContainer?.className).toContain('opacity-25')
+    expect(backdropContainer?.className).toContain('opacity-35')
   })
 
   it('disables backdrop when ecengine:reduce-bg-effects is true in localStorage', async () => {

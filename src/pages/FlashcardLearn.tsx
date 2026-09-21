@@ -870,7 +870,7 @@ Provide a thorough explanation covering ALL of the following:
   if (activeDeck && sessionCards.length === 0) {
     const isBookmarkedOnly = settings.bookmarkedOnly
     return (
-      <div className="h-full bg-engine-black flex flex-col items-center justify-center gap-6 p-10 text-center">
+      <div className="h-full bg-transparent flex flex-col items-center justify-center gap-6 p-10 text-center">
         <div className="flex flex-col items-center gap-2">
           {isBookmarkedOnly ? (
             <>

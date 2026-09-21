@@ -487,5 +487,23 @@ describe('life-bonus streak in survival mode', () => {
     expect(store().lifeBonusStreak).toBe(0)
     expect(store().livesLeft).toBe(1)
   })
+
+  it('supports 10 lives and unlimited perQuestionSec in survival mode', async () => {
+    svc.getQuestions.mockResolvedValue(cards(10))
+    await store().startRun(survivalCfg({ lives: 10, perQuestionSec: 0 }))
+    store().beginRun()
+
+    expect(store().config.lives).toBe(10)
+    expect(store().livesLeft).toBe(10)
+    expect(store().config.perQuestionSec).toBe(0)
+
+    const initialRating = store().ratings.MATH.rating
+    vi.advanceTimersByTime(2000)
+    store().answer(0) // correct
+
+    // Unlimited timer gives +1 rating delta and low score
+    expect(store().ratings.MATH.rating).toBe(initialRating + 1)
+    expect(store().score).toBeLessThan(15) // small score ~8 points
+  })
 })
 

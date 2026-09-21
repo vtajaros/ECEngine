@@ -121,6 +121,7 @@ export interface ScoreInput {
   parMs: number
   weight: number
   streakBefore: number
+  scoreMult?: number
 }
 
 export interface ScoreResult {
@@ -132,15 +133,64 @@ export interface ScoreResult {
   fastWrong: boolean
 }
 
+/**
+ * Multiplier for Survival mode based on per-question time limit.
+ * 20s: 1.25 (fast reflex, high stakes)
+ * 30s: 1.00 (standard baseline)
+ * 45s: 0.85
+ * 60s: 0.70
+ * 120s: 0.50 (2 min)
+ * 0 (unlimited): 0.08 (pure accuracy test, minimal score & +-1 Elo delta)
+ */
+export function getTimeMultiplier(perQuestionSec: number): number {
+  if (perQuestionSec <= 0) return 0.08
+  if (perQuestionSec <= 20) return 1.25
+  if (perQuestionSec <= 30) return 1.0
+  if (perQuestionSec <= 45) return 0.85
+  if (perQuestionSec <= 60) return 0.7
+  if (perQuestionSec <= 120) return 0.5
+  return 0.4
+}
+
+/**
+ * Multiplier for Survival mode based on starting lives.
+ * 3 lives: 1.10 (high risk, few mistakes allowed)
+ * 5 lives: 1.00 (standard survival)
+ * 10 lives: 0.75 (forgiving practice)
+ */
+export function getLivesMultiplier(lives: number): number {
+  if (lives <= 3) return 1.1
+  if (lives <= 5) return 1.0
+  return 0.75
+}
+
+export function getSurvivalDifficultyMultiplier(perQuestionSec: number, lives: number): {
+  scoreMult: number
+  eloMult: number
+  isUnlimited: boolean
+} {
+  const isUnlimited = perQuestionSec === 0
+  const timeMult = getTimeMultiplier(perQuestionSec)
+  const livesMult = getLivesMultiplier(lives)
+  const combined = Math.round(timeMult * livesMult * 100) / 100
+
+  return {
+    scoreMult: isUnlimited ? 0.08 : combined,
+    eloMult: isUnlimited ? 0.08 : combined,
+    isUnlimited,
+  }
+}
+
 export function scoreAnswer(i: ScoreInput): ScoreResult {
   const T = TUNING
   const speed = speedMultiplier(i.timeMs, i.parMs)
   const sn = speedNorm(speed)
+  const mult = i.scoreMult ?? 1
 
   if (i.outcome === 'correct') {
     const streakMult = Math.min(T.streakCap, 1 + T.streakStep * i.streakBefore)
     return {
-      points: Math.round(T.basePoints * i.weight * speed * streakMult),
+      points: Math.max(1, Math.round(T.basePoints * i.weight * speed * streakMult * mult)),
       speed,
       speedNorm: sn,
       streakMult,
@@ -156,8 +206,8 @@ export function scoreAnswer(i: ScoreInput): ScoreResult {
 
   // wrong or timeout: easy (light) questions cost more, hard (heavy) ones cost less
   const fastWrong = i.outcome === 'wrong' && i.timeMs < i.parMs * T.fastWrongRatio
-  const penalty = Math.round((T.wrongBase / i.weight) * (fastWrong ? T.fastWrongMult : 1))
-  return { points: -penalty, speed, speedNorm: sn, streakMult: 1, streakAfter: 0, fastWrong }
+  const penalty = Math.round((T.wrongBase / i.weight) * (fastWrong ? T.fastWrongMult : 1) * mult)
+  return { points: -Math.max(1, penalty), speed, speedNorm: sn, streakMult: 1, streakAfter: 0, fastWrong }
 }
 
 // ── Skip-earn streak logic ──────────────────────────────────────────────────
@@ -260,11 +310,28 @@ export function applyAnswerToRating(
   opponentRating: number,
   outcome: AnswerOutcome,
   sn: number,
+  eloMult: number = 1,
 ): SubjectRating {
   const e = expectedScore(current.rating, opponentRating)
   const s = performanceScore(outcome, sn)
+  const rawDelta = kFactor(current.answers) * (s - e)
+
+  let delta: number
+  if (eloMult <= 0.1) {
+    // Unlimited time limit mode: gives +-1 (testing accuracy without farmable rating)
+    if (outcome === 'correct') {
+      delta = 1
+    } else if (outcome === 'wrong' || outcome === 'timeout') {
+      delta = -1
+    } else {
+      delta = 0
+    }
+  } else {
+    delta = rawDelta * eloMult
+  }
+
   return {
-    rating: current.rating + kFactor(current.answers) * (s - e),
+    rating: current.rating + delta,
     answers: current.answers + 1,
   }
 }
@@ -429,5 +496,6 @@ export function itemsPlanWarning(opts: {
 }
 
 export function tightTimerWarning(opts: { perQuestionSec: number; paceMs: number }): boolean {
+  if (opts.perQuestionSec <= 0) return false
   return opts.perQuestionSec * 1000 < 1.5 * opts.paceMs
 }

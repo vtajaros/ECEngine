@@ -62,6 +62,32 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 
 ---
 
+### ⚔️ Gauntlet Mode: Speed, Survival & Elo Ratings
+* **High-Octane Arcade Challenge**: Designed for rapid-fire recall and reflex conditioning under pressure, fully isolated from SM-2 spaced repetition, study decks, and attempt logs so you can push your speed without risking your core study intervals.
+* **Game Modes**:
+  * **Timed Mode ("Beat the Clock")**:
+    * Session presets: `1 min`, `2 min`, `3 min`, `5 min`, and `10 min`.
+    * Question distribution strategies: **PRC TOS Allocation** (20% MATH, 20% GEAS, 30% ELECS, 30% EST), **Equal Split**, or **Custom Counts**.
+    * Dynamic scoring: Combines question weight, answer speed multiplier (up to $1.5\times$ for answering under half par time), and active streak multiplier.
+    * **Skip Bank**: Earn $+1$ skip credit for every 20 consecutive correct answers.
+  * **Survival Mode ("Sudden Death")**:
+    * Starting lives presets: `3 Lives` (high stakes), `5 Lives` (standard), or `10 Lives` (forgiving practice).
+    * Per-question time limits: `20s` ($1.25\times$), `30s` ($1.00\times$), `45s` ($0.85\times$), `60s` ($0.70\times$), `2 min` ($0.50\times$), and `Unlimited` (Accuracy Mode).
+    * Dynamic difficulty multipliers: Scores and Elo deltas scale automatically based on selected timer and lives.
+    * **Life Bonus**: Earn $+1$ life for every 25 consecutive correct answers (capped at starting life count).
+    * **Accuracy Mode**: Unlimited per-question timer with minimal score multiplier ($0.08\times$) and strictly capped $\pm 1$ Elo rating adjustments, allowing deep calculation and accuracy validation without rating inflation.
+* **Ranked vs. Unranked Runs**:
+  * **Ranked**: Tracks per-subject Elo-style ratings across all 4 subjects with provisional rating indicators ($<30$ answers) and official PRC TOS-weighted overall rating score.
+  * **Unranked**: Casual practice runs leaving Elo ratings unchanged.
+* **Adaptive Cyberpunk Audio & Visuals**:
+  * Crossfading dynamic Web Audio background music that scales in intensity across regions (**Stealth**, **Low**, **Med**, **High**, **Boss**).
+  * Looping low-health audio overlay and glowing HUD pulse when down to your final life.
+* **Comprehensive Post-Run Review**:
+  * Two-column tactical breakdown: stats sidebar with accuracy, speed, rating deltas, and score metrics.
+  * Filterable question review list (All, Mistakes, Skipped/Timeout, Correct) with inline choices, full mathematical solutions, and one-click "Get Context" clipboard export.
+
+---
+
 ### 📐 Mathematical & LaTeX Rendering Engine
 * **Hybrid KaTeX + Plain Text Parser**: Supports raw LaTeX, inline `$...$` and block `$$...$$` math, alongside markdown styling (`**bold**`, `*italic*`, `__underline__`).
 * **Advanced Super/Subscript Parsing**:
@@ -330,6 +356,46 @@ CREATE TABLE attempt_log (
   created_at INTEGER NOT NULL,
   FOREIGN KEY(card_id) REFERENCES cards(id) ON DELETE CASCADE
 );
+
+-- Gauntlet high-stakes speed runs & answers
+CREATE TABLE gauntlet_runs (
+  id TEXT PRIMARY KEY,
+  started_at INTEGER NOT NULL,
+  ended_at INTEGER NOT NULL,
+  mode TEXT NOT NULL,          -- 'timed' | 'survival'
+  config TEXT NOT NULL,
+  rated INTEGER NOT NULL DEFAULT 0,
+  score INTEGER NOT NULL,
+  answered INTEGER NOT NULL,
+  correct INTEGER NOT NULL,
+  wrong INTEGER NOT NULL,
+  skipped INTEGER NOT NULL,
+  best_streak INTEGER NOT NULL,
+  duration_ms INTEGER NOT NULL,
+  end_reason TEXT NOT NULL
+);
+
+CREATE TABLE gauntlet_answers (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  run_id TEXT NOT NULL,
+  seq INTEGER NOT NULL,
+  card_id TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  outcome TEXT NOT NULL,       -- 'correct' | 'wrong' | 'skipped' | 'timeout'
+  time_ms INTEGER NOT NULL,
+  par_ms INTEGER NOT NULL,
+  points INTEGER NOT NULL,
+  streak_after INTEGER NOT NULL
+);
+
+-- Gauntlet Elo-style subject ratings
+CREATE TABLE gauntlet_ratings (
+  subject TEXT PRIMARY KEY,    -- 'MATH' | 'GEAS' | 'ELECS' | 'EST'
+  rating REAL NOT NULL,
+  answers INTEGER NOT NULL DEFAULT 0,
+  peak REAL,
+  updated_at INTEGER NOT NULL
+);
 ```
 
 ---
@@ -347,6 +413,7 @@ ecengine/
 │   ├── assets/                  # Brand assets, icons, bundled fonts (Rajdhani, JetBrains Mono, Orbitron)
 │   ├── components/              # Modular UI Components
 │   │   ├── ui/                  # Tooltip (auto-flipping), VolumeControl, FolderPanel, Toast, TOSTracker
+│   │   ├── gauntlet/            # GauntletHome, GauntletSetup, GauntletBackdrop, RatingsPanel, RunHistory, GauntletFaqModal
 │   │   ├── mcq/                 # MCQCard, LearnMode, TestMode, BookmarkedCardsModal
 │   │   ├── flashcard/           # FlashcardSession, FlashcardDeckBrowser, StudyCard
 │   │   ├── deck/                # CardForms, DeckCard, AIDescriptionButton, AdvancedFiltersPopover
@@ -355,12 +422,12 @@ ecengine/
 │   │   ├── stats/demos/         # Data Lab EDA demos (ContentCoverage, QuestionLength, ANOVA, Contingency, Z-Score, ResponseTime, StatInfoModal)
 │   │   ├── toc/                 # SubjectCard, Table of Specifications data, tosItems, tosRows
 │   │   └── layout/              # AppShell, custom TitleBar, navigation sidebar
-│   ├── hooks/                   # Business logic (SM-2, timer, TTS, sound volume, import)
-│   ├── lib/                     # LaTeX rendering, subject classifier, audio synthesis, tosData
+│   ├── hooks/                   # Business logic (SM-2, timer, TTS, useGauntletMusic, sound volume, import)
+│   ├── lib/                     # LaTeX rendering, subject classifier, audio synthesis, gauntlet scoring/Elo, tosData
 │   │   └── stats/               # In-house statistical analysis suite (ANOVA, Chi-Square, descriptive, distributions, inference)
-│   ├── pages/                   # Main views (Dashboard, Lab, LooksFam, FlashcardLearn, Formulas, PrintView, TOSChecklist, Settings, etc.)
+│   ├── pages/                   # Main views (Dashboard, Gauntlet, Lab, LooksFam, FlashcardLearn, Formulas, PrintView, TOSChecklist, Settings)
 │   ├── services/                # db.service.ts (SQLite data access), aiSummary.service.ts (Groq summaries)
-│   ├── store/                   # Zustand stores (useSessionStore, useChecklistStore, useDataLabStore)
+│   ├── store/                   # Zustand stores (useSessionStore, useGauntletStore, useChecklistStore, useDataLabStore)
 │   └── styles/                  # Tailwind theme tokens, CSS variables (--tier-*), KaTeX customizations
 ├── content/                     # Seed JSON deck files
 ├── scripts/                     # Seeding and content validation scripts
