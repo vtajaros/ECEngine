@@ -1,25 +1,16 @@
 import React, { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { getSubjectBadgeClasses } from '../../lib/subjectColors'
 
 interface SubjectDonutChartProps {
   subjectCounts: { subject: string; count: number }[]
 }
 
 const SUBJECT_COLORS: Record<string, string> = {
-  MATH: '#FB923C',
-  GEAS: '#60A5FA',
-  ELECS: '#F87171',
-  EST: '#22C55E',
-}
-
-const getSubjectClasses = (subject: string) => {
-  switch (subject) {
-    case 'MATH': return 'text-orange-400 border-orange-500/20 bg-orange-500/10'
-    case 'GEAS': return 'text-blue-400 border-blue-500/20 bg-blue-500/10'
-    case 'ELECS': return 'text-red-400 border-red-500/20 bg-red-500/10'
-    case 'EST': return 'text-green-500 border-green-600/20 bg-green-600/10'
-    default: return 'text-zinc-400 border-zinc-500/20 bg-zinc-500/10'
-  }
+  MATH: '#f59e0b',
+  GEAS: '#3b82f6',
+  ELECS: '#ef4444',
+  EST: '#22c55e',
 }
 
 export const SubjectDonutChart = React.memo(function SubjectDonutChart({ subjectCounts }: SubjectDonutChartProps) {
@@ -133,7 +124,7 @@ export const SubjectDonutChart = React.memo(function SubjectDonutChart({ subject
             <div
               key={i}
               onMouseEnter={() => setHoveredSubject(item.subject)}
-              className={`px-1.5 py-0.5 rounded border text-[8.5px] font-bold font-['Rajdhani'] uppercase tracking-wider text-center transition-all duration-200 cursor-pointer ${getSubjectClasses(item.subject)}`}
+              className={`px-1.5 py-0.5 rounded border text-[8.5px] font-bold font-['Rajdhani'] uppercase tracking-wider text-center transition-all duration-200 cursor-pointer ${getSubjectBadgeClasses(item.subject)}`}
               style={{
                 opacity: isDimmed ? 0.4 : 1,
                 boxShadow: isHovered ? `0 0 0 2px ${SUBJECT_COLORS[item.subject] ?? '#555'}40` : 'none',

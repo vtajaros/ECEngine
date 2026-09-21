@@ -245,7 +245,7 @@ function SessionHistory({ onSessionUpdated }: SessionHistoryProps) {
                 onClick={() => setSubjectFilter(subj)}
                 className={`px-2.5 py-1 text-[10px] font-bold font-['Rajdhani'] uppercase tracking-widest rounded transition-all ${
                   subjectFilter === subj
-                    ? 'text-black font-extrabold'
+                    ? (subj === 'ELECS' || subj === 'GEAS' ? 'text-white font-extrabold' : 'text-black font-extrabold')
                     : 'text-text-muted hover:text-text-primary'
                 }`}
                 style={subjectFilter === subj ? { backgroundColor: SUBJECT_LINE_COLOR[subj] } : {}}

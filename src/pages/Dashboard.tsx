@@ -280,7 +280,9 @@ export default function Dashboard() {
                     key={subj}
                     onClick={() => setSelectedSubject(subj)}
                     className={`px-3 py-1 text-[10px] font-bold font-['Rajdhani'] uppercase tracking-widest rounded transition-all duration-200 ${
-                      selectedSubject === subj ? 'text-black' : 'text-text-muted hover:text-text-primary hover:bg-border-base'
+                      selectedSubject === subj
+                        ? (subj === 'ELECS' || subj === 'GEAS' ? 'text-white' : 'text-black')
+                        : 'text-text-muted hover:text-text-primary hover:bg-border-base'
                     }`}
                     style={selectedSubject === subj ? { backgroundColor: SUBJECT_LINE_COLOR[subj] } : {}}
                   >
@@ -441,10 +443,7 @@ export default function Dashboard() {
           <div className="flex flex-col gap-3 flex-1">
             <span className="font-['Rajdhani'] font-bold text-[10px] uppercase tracking-widest text-[#666]">Subject Mastery</span>
             {subjectProgress.map((item: { subject: string; percent: number }) => {
-              const SUBJ_COLORS: Record<string, string> = {
-                MATH: '#F97316', GEAS: '#60A5FA', ELECS: '#F87171', EST: '#22C55E'
-              }
-              const color = SUBJ_COLORS[item.subject] ?? '#555'
+              const color = (SUBJECT_LINE_COLOR as Record<string, string>)[item.subject] ?? '#555'
               return (
                 <div key={item.subject}>
                   <div className="flex justify-between items-center mb-1">

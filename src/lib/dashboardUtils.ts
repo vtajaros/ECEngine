@@ -9,8 +9,8 @@ export const SUBJECT_MAP: Record<string, string> = {
 
 export const SUBJECT_LINE_COLOR: Record<AccuracySubject, string> = {
   ALL:   '#00FF41',
-  MATH:  '#FB923C',
-  GEAS:  '#60A5FA',
-  ELECS: '#F87171',
-  EST:   '#22C55E',
+  MATH:  '#f59e0b',
+  GEAS:  '#3b82f6',
+  ELECS: '#ef4444',
+  EST:   '#22c55e',
 }

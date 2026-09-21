@@ -159,13 +159,15 @@ export function AnswerPositionContingencyDemo() {
                     {sub}
                   </div>
                   {rowCounts.map((count, cIdx) => {
-                    const ratio = rowMax > 0 ? count / rowMax : 0
-                    const alpha = (0.15 + 0.6 * ratio).toFixed(3)
+                    const isEmpty = count === 0
                     return (
                       <div
                         key={cIdx}
-                        style={{ background: `rgba(0,255,65,${alpha})` }}
-                        className="h-8 sm:h-9 flex items-center justify-center font-['JetBrains_Mono'] text-xs text-text-primary font-semibold rounded-sm border border-border-base"
+                        className={`h-8 sm:h-9 flex items-center justify-center font-['JetBrains_Mono'] text-xs rounded-sm transition-all ${
+                          isEmpty
+                            ? 'bg-surface-2 text-text-muted border border-border-base'
+                            : 'bg-accent text-black font-bold border border-black/15 shadow-[0_0_8px_rgba(0,255,65,0.25)]'
+                        }`}
                       >
                         {count}
                       </div>
