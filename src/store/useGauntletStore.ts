@@ -16,6 +16,7 @@ import {
   isRatedRun,
   pickNextIndex,
   scoreAnswer,
+  updateLifeBonusState,
   updateSkipState,
   type AllocationStrategy,
   type AnswerOutcome,
@@ -182,6 +183,7 @@ const freshRun = () => ({
   bestStreak: 0,
   skipsAvailable: 1,
   skipEarnStreak: 0,
+  lifeBonusStreak: 0,
   livesLeft: 0,
   startedAt: 0,
   endsAt: null as number | null,
@@ -366,8 +368,23 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
       answeredAt: now,
     }
     const survival = s.config.mode === 'survival'
-    const loseLife = survival && (outcome === 'wrong' || outcome === 'timeout')
-    const livesLeft = loseLife ? s.livesLeft - 1 : s.livesLeft
+    let nextLifeBonusStreak = s.lifeBonusStreak
+    let livesLeft = s.livesLeft
+
+    if (survival) {
+      if (outcome === 'correct') {
+        const bonus = updateLifeBonusState({ streak: s.lifeBonusStreak }, 'correct')
+        nextLifeBonusStreak = bonus.streak
+        if (bonus.awardLife) {
+          livesLeft = Math.min(s.config.lives, livesLeft + bonus.awarded)
+        }
+      } else if (outcome === 'wrong' || outcome === 'timeout') {
+        const bonus = updateLifeBonusState({ streak: s.lifeBonusStreak }, outcome)
+        nextLifeBonusStreak = bonus.streak
+        livesLeft = livesLeft - 1
+      }
+    }
+
     const nextIndex = s.index + 1
     const queue = survival ? rampNext(s.queue, nextIndex, res.streakAfter) : s.queue
 
@@ -378,6 +395,7 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
       bestStreak: Math.max(s.bestStreak, res.streakAfter),
       skipsAvailable: nextSkipState.skipsAvailable,
       skipEarnStreak: nextSkipState.skipEarnStreak,
+      lifeBonusStreak: nextLifeBonusStreak,
       livesLeft,
       ratings,
       queue,
@@ -458,6 +476,7 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
           queue,
           index: 0,
           livesLeft: config.lives,
+          lifeBonusStreak: 0,
           startedAt: 0,
           endsAt: null,
           questionShownAt: 0,

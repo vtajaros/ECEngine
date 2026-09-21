@@ -418,3 +418,74 @@ describe('credit-gated skips', () => {
     expect(store().questionShownAt).toBe(shownAtBefore + 800)
   })
 })
+
+describe('life-bonus streak in survival mode', () => {
+  it('25-correct streak at 3/3 lives stays capped at 3', async () => {
+    svc.getQuestions.mockResolvedValue(cards(40))
+    await store().startRun(survivalCfg({ lives: 3 }))
+    store().beginRun()
+
+    expect(store().livesLeft).toBe(3)
+    expect(store().lifeBonusStreak).toBe(0)
+
+    for (let i = 0; i < 25; i++) {
+      vi.advanceTimersByTime(2000)
+      store().answer(0)
+    }
+
+    expect(store().lifeBonusStreak).toBe(25)
+    // Starting lives cap is 3, so livesLeft must not exceed 3
+    expect(store().livesLeft).toBe(3)
+  })
+
+  it('at 2/3 lives after losing one, a 25-streak brings it back to 3/3', async () => {
+    svc.getQuestions.mockResolvedValue(cards(40))
+    await store().startRun(survivalCfg({ lives: 3 }))
+    store().beginRun()
+
+    // Lose 1 life on wrong answer (answer 1 when correct is 0)
+    vi.advanceTimersByTime(2000)
+    store().answer(1)
+    expect(store().livesLeft).toBe(2)
+    expect(store().lifeBonusStreak).toBe(0)
+
+    // Answer 25 correct questions in a row
+    for (let i = 0; i < 25; i++) {
+      vi.advanceTimersByTime(2000)
+      store().answer(0)
+    }
+
+    expect(store().lifeBonusStreak).toBe(25)
+    expect(store().livesLeft).toBe(3)
+  })
+
+  it('wrong answer or timeout resets lifeBonusStreak to 0', async () => {
+    svc.getQuestions.mockResolvedValue(cards(40))
+    await store().startRun(survivalCfg({ lives: 3 }))
+    store().beginRun()
+
+    // 24 correct answers
+    for (let i = 0; i < 24; i++) {
+      vi.advanceTimersByTime(2000)
+      store().answer(0)
+    }
+    expect(store().lifeBonusStreak).toBe(24)
+
+    // Wrong answer on 25th question
+    vi.advanceTimersByTime(2000)
+    store().answer(1)
+    expect(store().lifeBonusStreak).toBe(0)
+    expect(store().livesLeft).toBe(2)
+
+    // Timeout also resets counter
+    for (let i = 0; i < 5; i++) {
+      vi.advanceTimersByTime(2000)
+      store().answer(0)
+    }
+    expect(store().lifeBonusStreak).toBe(5)
+    store().timeoutCurrent()
+    expect(store().lifeBonusStreak).toBe(0)
+    expect(store().livesLeft).toBe(1)
+  })
+})
+

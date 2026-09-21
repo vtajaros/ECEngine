@@ -16,6 +16,8 @@ import type { QueueItem } from '../store/useGauntletStore'
 import { AnimatePresence } from 'framer-motion'
 import Toast from '../components/ui/Toast'
 import { useSound } from '../hooks/useSound'
+import { useGauntletMusic, getTimedMusicRegion, getSurvivalMusicRegion } from '../hooks/useGauntletMusic'
+import { VolumeControl } from '../components/ui/VolumeControl'
 import {
   Timer,
   Heart,
@@ -75,11 +77,17 @@ const RunPlaceholder: React.FC<RunPlaceholderProps> = ({ onOpenPause, isModalOpe
   const backToHome = useGauntletStore(s => s.backToHome)
   const feedback = useGauntletStore(s => s.feedback)
   const { play } = useSound()
+  const music = useGauntletMusic()
 
   const [now, setNow] = useState(Date.now())
   const [revealState, setRevealState] = useState<RevealState | null>(null)
   const [shakeWrong, setShakeWrong] = useState(false)
   const [pulseHeart, setPulseHeart] = useState(false)
+
+  const timeRemainingSec =
+    config.mode === 'timed'
+      ? Math.max(0, Math.ceil(((endsAt ?? 0) - now) / 1000))
+      : Math.max(0, Math.ceil((config.perQuestionSec * 1000 - (now - questionShownAt)) / 1000))
 
   // Summary review state (declared unconditionally at top of component)
   const [outcomeFilter, setOutcomeFilter] = useState<'all' | 'wrong' | 'skipped_timeout' | 'correct'>('all')
@@ -119,6 +127,32 @@ Please explain:
   }, [])
 
   const lastSoundRef = useRef<string | null>(null)
+  const lastTickSecRef = useRef<number | null>(null)
+
+  // Reset tick ref when question index changes
+  useEffect(() => {
+    lastTickSecRef.current = null
+  }, [index])
+
+  // Play 'tick' sound once per integer second at 5, 4, 3, 2, 1 (not 0)
+  useEffect(() => {
+    if (phase !== 'playing' || revealState !== null || isModalOpen) {
+      lastTickSecRef.current = null
+      return
+    }
+
+    if (timeRemainingSec > 5) {
+      lastTickSecRef.current = null
+      return
+    }
+
+    if (timeRemainingSec >= 1 && timeRemainingSec <= 5) {
+      if (lastTickSecRef.current !== timeRemainingSec) {
+        lastTickSecRef.current = timeRemainingSec
+        play('tick')
+      }
+    }
+  }, [timeRemainingSec, phase, revealState, isModalOpen, play])
 
   // Play sounds on answer reveal and timeout
   useEffect(() => {
@@ -147,6 +181,31 @@ Please explain:
       play('wrong')
     }
   }, [feedback, play])
+
+  // Adaptive background music regions based on run mode, progress, and summary
+  useEffect(() => {
+    if (phase === 'summary') {
+      music.setState('combatOver')
+      music.setLowHealth(false)
+      return
+    }
+
+    if (phase !== 'playing') {
+      music.setLowHealth(false)
+      return
+    }
+
+    if (config.mode === 'timed') {
+      const timeRemainingSec = Math.max(0, ((endsAt ?? 0) - now) / 1000)
+      const targetRegion = getTimedMusicRegion(timeRemainingSec, config.durationSec)
+      music.setState(targetRegion)
+      music.setLowHealth(false)
+    } else if (config.mode === 'survival') {
+      const targetRegion = getSurvivalMusicRegion(livesLeft, config.lives)
+      music.setState(targetRegion)
+      music.setLowHealth(livesLeft === 1)
+    }
+  }, [phase, config.mode, config.durationSec, config.lives, endsAt, now, livesLeft, music])
 
   const lingerTimerRef = useRef<NodeJS.Timeout | null>(null)
   const shakeTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -301,7 +360,7 @@ Please explain:
   if (phase === 'summary') {
     const reasonLabels = {
       time: 'Time Expired',
-      lives: 'Lives Depleted',
+      lives: 'Game Over',
       queue: 'Queue Completed',
       quit: 'Run Forfeited',
     }
@@ -321,104 +380,141 @@ Please explain:
     })
 
     return (
-      <div className="max-w-3xl mx-auto w-full bg-surface rounded-2xl p-4 sm:p-5 border border-border-base flex flex-col gap-3 shadow-2xl my-auto">
-        <div className="text-center">
-          <span className="text-[11px] font-['Rajdhani'] font-bold uppercase tracking-widest text-text-muted">
-            Gauntlet Run Summary
-          </span>
-          <h2 className="font-['Orbitron'] font-bold text-xl sm:text-2xl text-accent mt-0.5 tracking-wide">
-            {endReason ? reasonLabels[endReason] : 'Run Complete'}
-          </h2>
-        </div>
-
-        {/* Score & Main Stats + Breakdown */}
-        <div className="bg-surface-2 p-2.5 sm:p-3 rounded-xl border border-border-base flex flex-col gap-2">
-          {/* Main 3 Stats */}
-          <div className="grid grid-cols-3 gap-2 sm:gap-3 text-center">
-            <div>
-              <span className="text-[10px] font-['Rajdhani'] uppercase tracking-wider text-text-muted block">
-                Final Score
-              </span>
-              <span className="font-['JetBrains_Mono'] font-bold text-xl sm:text-2xl text-accent">
-                {score.toLocaleString()}
-              </span>
-            </div>
-            <div>
-              <span className="text-[10px] font-['Rajdhani'] uppercase tracking-wider text-text-muted block">
-                Accuracy
-              </span>
-              <span className="font-['JetBrains_Mono'] font-bold text-base sm:text-lg text-text-primary">
-                {correctCount}/{answers.length}
-              </span>
-            </div>
-            <div>
-              <span className="text-[10px] font-['Rajdhani'] uppercase tracking-wider text-text-muted block">
-                Best Streak
-              </span>
-              <span className="font-['JetBrains_Mono'] font-bold text-base sm:text-lg text-text-primary">
-                {bestStreak}
-              </span>
-            </div>
-          </div>
-
-          {/* Answer Breakdown Sub-row */}
-          <div className="flex items-center justify-around text-[11px] sm:text-xs font-['JetBrains_Mono'] pt-1.5 border-t border-border-base/40">
-            <span className="text-[#00FF41]">✓ {correctCount} Correct</span>
-            <span className="text-[#ef4444]">✗ {wrongCount} Wrong</span>
-            <span className="text-text-muted">↷ {skippedCount} Skipped</span>
-          </div>
-        </div>
-
-        {/* Rating Deltas (if rated) */}
-        {rated ? (
-          <div className="flex flex-col gap-2 bg-surface-2/40 p-4 rounded-xl border border-border-base">
-            <span className="text-[11px] font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted flex items-center gap-1.5">
-              <Award size={13} className="text-accent" />
-              Rating Changes
+      <div className="max-w-6xl mx-auto w-full h-full max-h-full bg-surface rounded-2xl p-4 sm:p-5 border border-border-base flex flex-col lg:flex-row gap-4 lg:gap-5 shadow-2xl min-h-0 overflow-y-auto lg:overflow-hidden my-auto">
+        {/* LEFT COLUMN: Fixed-width Stats & Actions Sidebar */}
+        <div className="lg:w-80 shrink-0 flex flex-col gap-3 min-h-0 lg:overflow-y-auto pr-0.5">
+          {/* Header */}
+          <div className="text-center">
+            <span className="text-[11px] font-['Rajdhani'] font-bold uppercase tracking-widest text-text-muted">
+              Gauntlet Run Summary
             </span>
-            <div className="grid grid-cols-2 gap-2">
-              {config.subjects.map(s => {
-                const before = Math.round(ratingsBefore[s]?.rating ?? 1000)
-                const after = Math.round(ratings[s]?.rating ?? 1000)
-                const delta = after - before
-                const color = SUBJECT_LINE_COLOR[s]
-                return (
-                  <div key={s} className="flex items-center justify-between p-2 rounded bg-surface border border-border-base text-xs">
-                    <span className="font-['Orbitron'] font-bold" style={{ color }}>{s}</span>
-                    <span className="font-['JetBrains_Mono'] text-text-primary">
-                      {before} → {after}{' '}
-                      <strong className={delta >= 0 ? 'text-[#00FF41]' : 'text-[#ef4444]'}>
-                        ({delta >= 0 ? `+${delta}` : delta})
-                      </strong>
-                    </span>
-                  </div>
-                )
-              })}
+            <h2
+              className={`font-['Orbitron'] font-bold text-xl sm:text-2xl mt-0.5 tracking-wide ${
+                endReason === 'lives' ? 'text-[#FF3333]' : 'text-accent'
+              }`}
+            >
+              {endReason ? reasonLabels[endReason] : 'Run Complete'}
+            </h2>
+          </div>
+
+          {/* Score & Main Stats + Breakdown */}
+          <div className="bg-surface-2 p-2.5 sm:p-3 rounded-xl border border-border-base flex flex-col gap-2">
+            {/* Main 3 Stats */}
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div>
+                <span className="text-[10px] font-['Rajdhani'] uppercase tracking-wider text-text-muted block">
+                  Final Score
+                </span>
+                <span className="font-['JetBrains_Mono'] font-bold text-xl sm:text-2xl text-accent">
+                  {score.toLocaleString()}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] font-['Rajdhani'] uppercase tracking-wider text-text-muted block">
+                  Accuracy
+                </span>
+                <span className="font-['JetBrains_Mono'] font-bold text-base sm:text-lg text-text-primary">
+                  {correctCount}/{answers.length}
+                </span>
+              </div>
+              <div>
+                <span className="text-[10px] font-['Rajdhani'] uppercase tracking-wider text-text-muted block">
+                  Best Streak
+                </span>
+                <span className="font-['JetBrains_Mono'] font-bold text-base sm:text-lg text-text-primary">
+                  {bestStreak}
+                </span>
+              </div>
+            </div>
+
+            {/* Answer Breakdown Sub-row */}
+            <div className="flex items-center justify-around text-[11px] sm:text-xs font-['JetBrains_Mono'] pt-1.5 border-t border-border-base/40">
+              <span className="text-[#00FF41]">✓ {correctCount} Correct</span>
+              <span className="text-[#ef4444]">✗ {wrongCount} Wrong</span>
+              <span className="text-text-muted">↷ {skippedCount} Skipped</span>
             </div>
           </div>
-        ) : (
-          <div className="text-center py-2 text-text-muted font-['Rajdhani'] text-xs uppercase tracking-wider">
-            Practice Run • Ratings Unchanged
-          </div>
-        )}
 
-        {/* Save Status */}
-        {savedRunId && (
-          <div className="flex items-center justify-center gap-1.5 text-xs font-['JetBrains_Mono'] text-[#00FF41]">
-            <CheckCircle2 size={13} />
-            Run saved successfully
-          </div>
-        )}
-        {saveError && (
-          <div className="flex items-center justify-center gap-1.5 text-xs font-['JetBrains_Mono'] text-[#FF3333]">
-            <AlertCircle size={13} />
-            Error saving run: {saveError}
-          </div>
-        )}
+          {/* Rating Deltas (if rated) */}
+          {rated ? (
+            <div className="flex flex-col gap-2 bg-surface-2/40 p-3 rounded-xl border border-border-base">
+              <span className="text-[11px] font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted flex items-center gap-1.5">
+                <Award size={13} className="text-accent" />
+                Rating Changes
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-1.5">
+                {config.subjects.map(s => {
+                  const before = Math.round(ratingsBefore[s]?.rating ?? 1000)
+                  const after = Math.round(ratings[s]?.rating ?? 1000)
+                  const delta = after - before
+                  const color = SUBJECT_LINE_COLOR[s]
+                  return (
+                    <div key={s} className="flex items-center justify-between p-1.5 sm:p-2 rounded bg-surface border border-border-base text-xs">
+                      <span className="font-['Orbitron'] font-bold" style={{ color }}>{s}</span>
+                      <span className="font-['JetBrains_Mono'] text-text-primary">
+                        {before} → {after}{' '}
+                        <strong className={delta >= 0 ? 'text-[#00FF41]' : 'text-[#ef4444]'}>
+                          ({delta >= 0 ? `+${delta}` : delta})
+                        </strong>
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-2 text-text-muted font-['Rajdhani'] text-xs uppercase tracking-wider">
+              Practice Run • Ratings Unchanged
+            </div>
+          )}
 
-        {/* Question Review Section */}
-        <div className="flex flex-col gap-2.5 min-h-0 border-t border-border-base/70 pt-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border-base/50 pb-2">
+          {/* Save Status */}
+          {savedRunId && (
+            <div className="flex items-center justify-center gap-1.5 text-xs font-['JetBrains_Mono'] text-[#00FF41]">
+              <CheckCircle2 size={13} />
+              Run saved successfully
+            </div>
+          )}
+          {saveError && (
+            <div className="flex items-center justify-center gap-1.5 text-xs font-['JetBrains_Mono'] text-[#FF3333]">
+              <AlertCircle size={13} />
+              Error saving run: {saveError}
+            </div>
+          )}
+
+          {/* Action Buttons: Stacked vertically in Left Sidebar */}
+          <div className="flex flex-col gap-2 pt-2 border-t border-border-base mt-auto">
+            <button
+              type="button"
+              onClick={() => void startRun(config)}
+              className="w-full py-2.5 px-4 rounded-xl bg-accent text-black font-bold font-['Orbitron'] tracking-wider text-xs sm:text-sm hover:bg-[#00e63a] transition-all flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(0,255,65,0.25)]"
+            >
+              <RotateCcw size={14} />
+              RUN AGAIN
+            </button>
+            <button
+              type="button"
+              onClick={() => openSetup(config.mode)}
+              className="w-full py-2.5 px-4 rounded-xl bg-surface-2 border border-border-base hover:border-accent text-text-primary font-bold font-['Orbitron'] tracking-wider text-xs sm:text-sm transition-colors flex items-center justify-center gap-1.5"
+            >
+              <SlidersHorizontal size={14} />
+              NEW CONFIG
+            </button>
+            <button
+              type="button"
+              onClick={() => void backToHome()}
+              className="w-full py-2.5 px-4 rounded-xl bg-surface border border-border-base hover:border-[#666] text-text-muted hover:text-white font-bold font-['Orbitron'] tracking-wider text-xs sm:text-sm transition-colors flex items-center justify-center gap-1.5"
+            >
+              <Home size={14} />
+              BACK TO HOME
+            </button>
+          </div>
+        </div>
+
+        {/* RIGHT COLUMN: Pinned Filter Bar + Full-Height Scrollable Review List */}
+        <div className="flex-1 min-w-0 flex flex-col gap-2.5 min-h-0 border-t lg:border-t-0 lg:border-l border-border-base/70 pt-3 lg:pt-0 lg:pl-5">
+          {/* Pinned Filter Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border-base/50 pb-2 shrink-0">
             <span className="text-[11px] font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted">
               Answer Review ({filteredAnswers.length}/{answers.length})
             </span>
@@ -511,8 +607,8 @@ Please explain:
             </div>
           </div>
 
-          {/* Scrollable Answers List */}
-          <div className="flex flex-col gap-2 max-h-80 sm:max-h-96 lg:max-h-[28rem] overflow-y-auto pr-1">
+          {/* Full-Height Scrollable Answers List */}
+          <div className="flex-1 min-h-0 overflow-y-auto pr-1 flex flex-col gap-2">
             {filteredAnswers.length === 0 ? (
               <div className="py-6 text-center text-text-muted font-['Rajdhani'] text-xs uppercase tracking-wider">
                 No answers match the selected filter
@@ -794,34 +890,6 @@ Please explain:
           </div>
         </div>
 
-        {/* Action Buttons: RUN AGAIN / NEW CONFIG / BACK TO HOME */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-border-base">
-          <button
-            type="button"
-            onClick={() => void startRun(config)}
-            className="py-2.5 px-4 rounded-xl bg-accent text-black font-bold font-['Orbitron'] tracking-wider text-xs sm:text-sm hover:bg-[#00e63a] transition-all flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(0,255,65,0.25)] order-1"
-          >
-            <RotateCcw size={14} />
-            RUN AGAIN
-          </button>
-          <button
-            type="button"
-            onClick={() => openSetup(config.mode)}
-            className="py-2.5 px-4 rounded-xl bg-surface-2 border border-border-base hover:border-accent text-text-primary font-bold font-['Orbitron'] tracking-wider text-xs sm:text-sm transition-colors flex items-center justify-center gap-1.5 order-2"
-          >
-            <SlidersHorizontal size={14} />
-            NEW CONFIG
-          </button>
-          <button
-            type="button"
-            onClick={() => void backToHome()}
-            className="py-2.5 px-4 rounded-xl bg-surface border border-border-base hover:border-[#666] text-text-muted hover:text-white font-bold font-['Orbitron'] tracking-wider text-xs sm:text-sm transition-colors flex items-center justify-center gap-1.5 order-3"
-          >
-            <Home size={14} />
-            BACK TO HOME
-          </button>
-        </div>
-
         {/* Zoomed Image Modal */}
         {zoomedImage && (
           <div
@@ -862,10 +930,13 @@ Please explain:
   const currentItem = revealState ? revealState.item : selectCurrentItem({ queue, index })
   const mcq = revealState ? revealState.mcq : (currentItem?.card.data as MCQData | undefined)
 
-  const timeRemainingSec =
-    config.mode === 'timed'
-      ? Math.max(0, Math.ceil(((endsAt ?? 0) - now) / 1000))
-      : Math.max(0, Math.ceil((config.perQuestionSec * 1000 - (now - questionShownAt)) / 1000))
+  const totalDurationForThisTimer =
+    config.mode === 'timed' ? config.durationSec : config.perQuestionSec
+  const timerPercent =
+    totalDurationForThisTimer > 0
+      ? Math.min(100, Math.max(0, (timeRemainingSec / totalDurationForThisTimer) * 100))
+      : 0
+  const isUrgentTimer = timeRemainingSec <= 5
 
   const minutes = Math.floor(timeRemainingSec / 60)
   const seconds = timeRemainingSec % 60
@@ -877,8 +948,9 @@ Please explain:
   return (
     <div className="max-w-3xl mx-auto w-full flex flex-col gap-4 my-auto">
       {/* HUD Header */}
-      <div className="bg-surface rounded-xl p-3 border border-border-base flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="bg-surface rounded-xl p-3 border border-border-base flex items-center justify-between gap-3">
+        {/* Left HUD: Mode, Index, Score, Streak, Lives */}
+        <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
           <div className="flex items-center gap-1.5">
             <span className="font-['Orbitron'] font-bold text-xs uppercase text-accent tracking-wider">
               {config.mode}
@@ -908,12 +980,59 @@ Please explain:
           )}
         </div>
 
-        {/* Timer */}
-        <div className="flex items-center gap-1.5 font-['JetBrains_Mono'] font-bold text-sm text-text-primary bg-surface-2 px-3 py-1 rounded-lg border border-border-base">
-          <Timer size={14} className={timeRemainingSec <= 5 ? 'text-[#FF3333] animate-pulse' : 'text-accent'} />
-          <span className={timeRemainingSec <= 5 ? 'text-[#FF3333]' : 'text-text-primary'}>
-            {timeFormatted}
-          </span>
+        {/* Right HUD: Timer + VolumeControl + Quit Run */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Timer Chip with Draining Progress Bar and <=5s Shake */}
+          <div
+            className={`relative overflow-hidden flex items-center gap-1.5 font-['JetBrains_Mono'] font-bold text-sm bg-surface-2 px-3 py-1.5 rounded-lg border transition-all ${
+              isUrgentTimer
+                ? 'border-[#FF3333]/70 gauntlet-timer-shake shadow-[0_0_12px_rgba(255,51,51,0.25)]'
+                : 'border-border-base'
+            }`}
+          >
+            {/* Subtle background drain tint */}
+            <div
+              className={`absolute left-0 top-0 bottom-0 opacity-15 pointer-events-none transition-all duration-300 ${
+                isUrgentTimer ? 'bg-[#FF3333]' : 'bg-accent'
+              }`}
+              style={{ width: `${timerPercent}%` }}
+            />
+            {/* Draining progress bar track beneath */}
+            <div
+              className={`absolute left-0 bottom-0 h-1 transition-all duration-300 ${
+                isUrgentTimer ? 'bg-[#FF3333]' : 'bg-accent'
+              }`}
+              style={{ width: `${timerPercent}%` }}
+            />
+
+            <Timer
+              size={14}
+              className={`relative z-10 ${
+                isUrgentTimer ? 'text-[#FF3333] animate-pulse' : 'text-accent'
+              }`}
+            />
+            <span
+              className={`relative z-10 ${
+                isUrgentTimer ? 'text-[#FF3333]' : 'text-text-primary'
+              }`}
+            >
+              {timeFormatted}
+            </span>
+          </div>
+
+          {/* Volume / Mute Control */}
+          <VolumeControl className="text-text-muted hover:text-white" iconSize={16} />
+
+          {/* Quit Run Button (Relocated outside Question Card) */}
+          <button
+            type="button"
+            disabled={isModalOpen || revealState !== null}
+            onClick={onOpenPause}
+            className="px-2.5 py-1.5 rounded-lg text-xs font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted hover:text-[#FF3333] hover:bg-[#FF3333]/10 border border-border-base hover:border-[#FF3333]/40 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <XCircle size={14} />
+            Quit Run
+          </button>
         </div>
       </div>
 
@@ -1026,17 +1145,7 @@ Please explain:
           </div>
 
           {/* Bottom Actions */}
-          <div className="flex items-center justify-between pt-2 border-t border-border-base/60">
-            <button
-              type="button"
-              disabled={isModalOpen || revealState !== null}
-              onClick={onOpenPause}
-              className="px-3 py-1.5 rounded-lg text-xs font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted hover:text-[#FF3333] hover:bg-[#FF3333]/10 transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <XCircle size={14} />
-              Quit Run
-            </button>
-
+          <div className="flex items-center justify-end pt-2 border-t border-border-base/60">
             <button
               type="button"
               disabled={isModalOpen || revealState !== null || skipsAvailable === 0}
@@ -1069,6 +1178,25 @@ export default function Gauntlet() {
 
   const [isPauseModalOpen, setIsPauseModalOpen] = useState(false)
   const setForceCollapsed = useLayoutStore(s => s.setForceCollapsed)
+  const music = useGauntletMusic()
+
+  // Music lifecycle:
+  // - Pre-run: continuous stealth ambient across home, setup, loading, and countdown.
+  // - Playing: immediately shift gameplay floor to enemiesNearby.
+  useEffect(() => {
+    if (phase === 'home' || phase === 'setup' || phase === 'loading' || phase === 'countdown') {
+      music.start('stealth')
+    } else if (phase === 'playing') {
+      music.setState('enemiesNearby')
+    }
+  }, [phase, music])
+
+  // Stop music on page unmount
+  useEffect(() => {
+    return () => {
+      music.stop()
+    }
+  }, [music])
 
   // Force sidebar collapse during countdown and playing without modifying saved preference
   useEffect(() => {

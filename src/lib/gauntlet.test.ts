@@ -6,6 +6,7 @@ import {
   allocateCounts, pickNextIndex, isRatedRun, TUNING,
   ratingTier, paceForSubject, blendedPaceMs, paceSource, capacityItems, itemsPlanWarning, tightTimerWarning,
   updateSkipState,
+  updateLifeBonusState,
 } from './gauntlet'
 
 describe('par / weight', () => {
@@ -119,6 +120,87 @@ describe('speed and scoring', () => {
     const scoreRes = scoreAnswer({ outcome: 'skipped', timeMs: 500, parMs: 5000, weight: 1.1, streakBefore: 7 })
     expect(scoreRes.points).toBe(0)
     expect(scoreRes.streakAfter).toBe(7)
+  })
+})
+
+describe('life-bonus streak logic (Survival mode)', () => {
+  it('signals +1 life every 25 consecutive correct answers', () => {
+    let state = { streak: 0 }
+    for (let i = 0; i < 24; i++) {
+      const res = updateLifeBonusState(state, 'correct')
+      expect(res.awardLife).toBe(false)
+      expect(res.awarded).toBe(0)
+      state = { streak: res.streak }
+    }
+    expect(state.streak).toBe(24)
+
+    // 25th consecutive correct signals +1 life
+    const hit25 = updateLifeBonusState(state, 'correct')
+    expect(hit25.streak).toBe(25)
+    expect(hit25.awardLife).toBe(true)
+    expect(hit25.awarded).toBe(1)
+    state = { streak: hit25.streak }
+
+    // 26th to 49th do not award lives
+    for (let i = 25; i < 49; i++) {
+      const res = updateLifeBonusState(state, 'correct')
+      expect(res.awardLife).toBe(false)
+      expect(res.awarded).toBe(0)
+      state = { streak: res.streak }
+    }
+    expect(state.streak).toBe(49)
+
+    // 50th consecutive correct awards another life
+    const hit50 = updateLifeBonusState(state, 'correct')
+    expect(hit50.streak).toBe(50)
+    expect(hit50.awardLife).toBe(true)
+    expect(hit50.awarded).toBe(1)
+  })
+
+  it('wrong answer or timeout at 24 signals nothing and resets streak to 0', () => {
+    const stateAt24 = { streak: 24 }
+
+    const afterWrong = updateLifeBonusState(stateAt24, 'wrong')
+    expect(afterWrong.streak).toBe(0)
+    expect(afterWrong.awardLife).toBe(false)
+    expect(afterWrong.awarded).toBe(0)
+
+    const afterTimeout = updateLifeBonusState(stateAt24, 'timeout')
+    expect(afterTimeout.streak).toBe(0)
+    expect(afterTimeout.awardLife).toBe(false)
+    expect(afterTimeout.awarded).toBe(0)
+  })
+
+  it('life-bonus streak is completely independent of score streak and skip-earn streak', () => {
+    // Simulate 20 correct answers:
+    // skip-earn streak hits 20 (awards skip)
+    // life-bonus streak hits 20 (does NOT award life yet, needs 25)
+    let skipState = { skipsAvailable: 1, skipEarnStreak: 0 }
+    let lifeState = { streak: 0 }
+
+    for (let i = 0; i < 20; i++) {
+      skipState = updateSkipState(skipState, 'correct')
+      const lifeRes = updateLifeBonusState(lifeState, 'correct')
+      lifeState = { streak: lifeRes.streak }
+      if (i === 19) {
+        expect(skipState.skipsAvailable).toBe(2) // earned skip credit
+        expect(lifeRes.awardLife).toBe(false)   // not yet 25
+      }
+    }
+
+    // 5 more correct (total 25):
+    for (let i = 20; i < 25; i++) {
+      skipState = updateSkipState(skipState, 'correct')
+      const lifeRes = updateLifeBonusState(lifeState, 'correct')
+      lifeState = { streak: lifeRes.streak }
+      if (i === 24) {
+        expect(skipState.skipsAvailable).toBe(2) // next skip at 40
+        expect(lifeRes.awardLife).toBe(true)     // hits 25 -> awards life
+      }
+    }
+
+    expect(lifeState.streak).toBe(25)
+    expect(skipState.skipEarnStreak).toBe(25)
   })
 })
 

@@ -35,6 +35,7 @@ export const TUNING = {
   wrongBase: 50,
   skipPenalty: 0,
   skipEarnInterval: 20,
+  lifeBonusInterval: 25,
   fastWrongRatio: 0.25,
   fastWrongMult: 1.5,
   streakStep: 0.1,
@@ -193,6 +194,43 @@ export function updateSkipState(
   return {
     skipsAvailable: current.skipsAvailable,
     skipEarnStreak: 0,
+  }
+}
+
+// ── Life-bonus streak logic (Survival mode) ─────────────────────────────────
+
+export interface LifeBonusState {
+  streak: number
+}
+
+export interface LifeBonusResult {
+  streak: number
+  awardLife: boolean
+  awarded: number
+}
+
+/**
+ * Pure helper to update life-bonus streak for survival mode.
+ * - 'correct': increments streak; every 25 consecutive correct signals a bonus life (+1).
+ * - 'wrong' | 'timeout': resets streak to 0.
+ */
+export function updateLifeBonusState(
+  current: { streak: number },
+  action: 'correct' | 'wrong' | 'timeout',
+): LifeBonusResult {
+  if (action === 'correct') {
+    const nextStreak = current.streak + 1
+    const awardLife = nextStreak > 0 && nextStreak % TUNING.lifeBonusInterval === 0
+    return {
+      streak: nextStreak,
+      awardLife,
+      awarded: awardLife ? 1 : 0,
+    }
+  }
+  return {
+    streak: 0,
+    awardLife: false,
+    awarded: 0,
   }
 }
 

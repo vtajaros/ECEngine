@@ -219,6 +219,18 @@
   animation: gauntlet-life-pulse 400ms ease-in-out;
 }
 
+@keyframes gauntlet-timer-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-2px); }
+  40% { transform: translateX(2px); }
+  60% { transform: translateX(-1px); }
+  80% { transform: translateX(1px); }
+}
+
+.gauntlet-timer-shake {
+  animation: gauntlet-timer-shake 250ms ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .gauntlet-animated-grid,
   .gauntlet-drift-square,
@@ -233,7 +245,8 @@
   .gauntlet-flame-flicker,
   .gauntlet-card-shake,
   .gauntlet-edge-flash,
-  .gauntlet-heart-pulse {
+  .gauntlet-heart-pulse,
+  .gauntlet-timer-shake {
     animation: none !important;
   }
 }

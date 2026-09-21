@@ -73,11 +73,15 @@ vi.mock('../services/explain.service', () => ({
 }))
 
 const mockPlay = vi.fn()
-vi.mock('../hooks/useSound', () => ({
-  useSound: () => ({
-    play: mockPlay,
-  }),
-}))
+vi.mock('../hooks/useSound', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../hooks/useSound')>()
+  return {
+    ...actual,
+    useSound: () => ({
+      play: mockPlay,
+    }),
+  }
+})
 
 const mockItem = (id: string, subject: Subject, parMs = 6000): QueueItem => ({
   card: {
@@ -532,6 +536,106 @@ describe('Gauntlet Summary Review List', () => {
     })
 
     expect(mockPlay).not.toHaveBeenCalled()
+  })
+
+  it('renders "Game Over" in red text when endReason is lives', async () => {
+    useGauntletStore.setState({
+      phase: 'summary',
+      endReason: 'lives',
+      score: 500,
+      streak: 0,
+      bestStreak: 2,
+      answers: mockAnswers,
+      config: {
+        mode: 'survival',
+        subjects: ['MATH', 'GEAS'],
+        rated: false,
+        durationSec: 1200,
+        totalItems: 4,
+        allocation: 'tos',
+        customCounts: {},
+        lives: 3,
+        perQuestionSec: 30,
+      },
+    })
+
+    await act(async () => {
+      root!.render(renderWithRouter(<Gauntlet />))
+    })
+
+    const heading = container!.querySelector('h2')
+    expect(heading?.textContent).toBe('Game Over')
+    expect(heading?.className).toContain('text-[#FF3333]')
+  })
+
+  it('renders Quit Run button and VolumeControl in HUD during playing phase', async () => {
+    useGauntletStore.setState({
+      phase: 'playing',
+      index: 0,
+      skipsAvailable: 1,
+      queue: [mockItem('q1', 'MATH', 6000)],
+      config: {
+        mode: 'timed',
+        subjects: ['MATH'],
+        rated: false,
+        durationSec: 60,
+        totalItems: 1,
+        allocation: 'tos',
+        customCounts: {},
+        lives: 3,
+        perQuestionSec: 30,
+      },
+    })
+
+    await act(async () => {
+      root!.render(renderWithRouter(<Gauntlet />))
+    })
+
+    const quitBtn = Array.from(container!.querySelectorAll('button')).find(b =>
+      b.textContent?.includes('Quit Run'),
+    )
+    expect(quitBtn).toBeTruthy()
+    // Confirm Quit Run is outside the question card (inside the HUD header)
+    const hudHeader = container!.querySelector('.bg-surface.rounded-xl')
+    expect(hudHeader?.contains(quitBtn!)).toBe(true)
+  })
+
+  it('activates low-health music overlay at 1 life in survival mode and deactivates when not 1 life', async () => {
+    const { useGauntletMusic: getMusic } = await import('../hooks/useGauntletMusic')
+    const music = getMusic()
+
+    // 1 life in survival -> low health overlay active
+    await act(async () => {
+      useGauntletStore.setState({
+        phase: 'playing',
+        index: 0,
+        livesLeft: 1,
+        queue: [mockItem('q1', 'MATH', 6000)],
+        config: {
+          mode: 'survival',
+          subjects: ['MATH'],
+          rated: false,
+          durationSec: 60,
+          totalItems: 1,
+          allocation: 'tos',
+          customCounts: {},
+          lives: 3,
+          perQuestionSec: 30,
+        },
+      })
+      root!.render(renderWithRouter(<Gauntlet />))
+    })
+
+    expect(music.isLowHealthActive()).toBe(true)
+
+    // Regain life / 2 lives -> low health overlay deactivates
+    await act(async () => {
+      useGauntletStore.setState({
+        livesLeft: 2,
+      })
+    })
+
+    expect(music.isLowHealthActive()).toBe(false)
   })
 })
 
