@@ -61,9 +61,10 @@ const GLYPHS = [
 
 interface GauntletBackdropProps {
   dimmed?: boolean
+  intensity?: 'full' | 'dimmed' | 'subtle'
 }
 
-export const GauntletBackdrop: React.FC<GauntletBackdropProps> = ({ dimmed = false }) => {
+export const GauntletBackdrop: React.FC<GauntletBackdropProps> = ({ dimmed = false, intensity }) => {
   const [isTabHidden, setIsTabHidden] = useState(false)
   const [parallax, setParallax] = useState({ x: 0, y: 0 })
   const rAFRef = useRef<number | null>(null)
@@ -102,13 +103,20 @@ export const GauntletBackdrop: React.FC<GauntletBackdropProps> = ({ dimmed = fal
     }
   }, [])
 
+  const opacityClass =
+    intensity === 'subtle'
+      ? 'opacity-25'
+      : intensity === 'dimmed' || dimmed
+      ? 'opacity-40'
+      : 'opacity-100'
+
   return (
     <div
       ref={containerRef}
       aria-hidden="true"
       className={`absolute inset-0 pointer-events-none select-none overflow-hidden bg-[#0D0D0D] transition-opacity duration-300 ${
         isTabHidden ? 'gauntlet-anim-paused' : ''
-      } ${dimmed ? 'opacity-40' : 'opacity-100'}`}
+      } ${opacityClass}`}
     >
       {/* 2. Vignette Layer: center slightly lighter, edges dark so center content stays legible */}
       <div

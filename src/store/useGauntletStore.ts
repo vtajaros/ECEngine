@@ -16,6 +16,7 @@ import {
   isRatedRun,
   pickNextIndex,
   scoreAnswer,
+  updateSkipState,
   type AllocationStrategy,
   type AnswerOutcome,
   type GauntletMode,
@@ -179,6 +180,8 @@ const freshRun = () => ({
   score: 0,
   streak: 0,
   bestStreak: 0,
+  skipsAvailable: 1,
+  skipEarnStreak: 0,
   livesLeft: 0,
   startedAt: 0,
   endsAt: null as number | null,
@@ -211,6 +214,7 @@ interface GauntletStore extends RunState {
   resumeRun: () => void
   answer: (choiceIndex: number) => void
   skip: () => void
+  extendLinger: (deltaMs: number) => void
   timeoutCurrent: () => void
   expire: () => void
   quit: () => void
@@ -325,6 +329,7 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
   const commit = (kind: 'answer' | 'skip' | 'timeout', chosen: number | null): void => {
     const s = get()
     if (s.phase !== 'playing' || s.pausedAt !== null) return
+    if (kind === 'skip' && s.skipsAvailable <= 0) return
     const item = s.queue[s.index]
     if (!item) return
     const now = Date.now()
@@ -338,6 +343,11 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
     const outcome: AnswerOutcome =
       kind === 'skip' ? 'skipped' : kind === 'timeout' ? 'timeout' : chosen === correctIndex ? 'correct' : 'wrong'
     const timeMs = kind === 'timeout' ? s.config.perQuestionSec * 1000 : Math.max(0, now - s.questionShownAt)
+
+    const nextSkipState = updateSkipState(
+      { skipsAvailable: s.skipsAvailable, skipEarnStreak: s.skipEarnStreak },
+      kind === 'skip' ? 'use_skip' : outcome === 'correct' ? 'correct' : 'wrong',
+    )
 
     const res = scoreAnswer({ outcome, timeMs, parMs: item.parMs, weight: item.weight, streakBefore: s.streak })
     const ratings = { ...s.ratings }
@@ -366,6 +376,8 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
       score: s.score + res.points,
       streak: res.streakAfter,
       bestStreak: Math.max(s.bestStreak, res.streakAfter),
+      skipsAvailable: nextSkipState.skipsAvailable,
+      skipEarnStreak: nextSkipState.skipEarnStreak,
       livesLeft,
       ratings,
       queue,
@@ -494,6 +506,14 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
 
     answer: choiceIndex => commit('answer', choiceIndex),
     skip: () => commit('skip', null),
+    extendLinger: deltaMs => {
+      const s = get()
+      if (s.phase !== 'playing' || s.pausedAt !== null) return
+      set({
+        endsAt: s.endsAt !== null ? s.endsAt + deltaMs : null,
+        questionShownAt: s.questionShownAt + deltaMs,
+      })
+    },
     timeoutCurrent: () => commit('timeout', null),
 
     expire: () => {

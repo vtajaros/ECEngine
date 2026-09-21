@@ -187,6 +187,38 @@
   }
 }
 
+@keyframes gauntlet-wrong-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.gauntlet-card-shake {
+  animation: gauntlet-wrong-shake 250ms ease-in-out;
+}
+
+@keyframes gauntlet-red-flash {
+  0% { opacity: 0; }
+  25% { opacity: 0.9; }
+  100% { opacity: 0; }
+}
+
+.gauntlet-edge-flash {
+  animation: gauntlet-red-flash 350ms ease-out forwards;
+}
+
+@keyframes gauntlet-life-pulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0px #ef4444); }
+  30% { transform: scale(1.35); filter: drop-shadow(0 0 10px #ef4444); }
+  60% { transform: scale(0.95); filter: drop-shadow(0 0 14px #ef4444); }
+}
+
+.gauntlet-heart-pulse {
+  animation: gauntlet-life-pulse 400ms ease-in-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .gauntlet-animated-grid,
   .gauntlet-drift-square,
@@ -198,7 +230,10 @@
   .gauntlet-trace-line,
   .gauntlet-border-spinner,
   .gauntlet-hand-sweep,
-  .gauntlet-flame-flicker {
+  .gauntlet-flame-flicker,
+  .gauntlet-card-shake,
+  .gauntlet-edge-flash,
+  .gauntlet-heart-pulse {
     animation: none !important;
   }
 }

@@ -33,7 +33,8 @@ export const TUNING = {
   // scoring
   basePoints: 100,
   wrongBase: 50,
-  skipPenalty: 20,
+  skipPenalty: 0,
+  skipEarnInterval: 20,
   fastWrongRatio: 0.25,
   fastWrongMult: 1.5,
   streakStep: 0.1,
@@ -148,13 +149,51 @@ export function scoreAnswer(i: ScoreInput): ScoreResult {
   }
 
   if (i.outcome === 'skipped') {
-    return { points: -T.skipPenalty, speed, speedNorm: sn, streakMult: 1, streakAfter: 0, fastWrong: false }
+    const streakMult = Math.min(T.streakCap, 1 + T.streakStep * i.streakBefore)
+    return { points: 0, speed, speedNorm: sn, streakMult, streakAfter: i.streakBefore, fastWrong: false }
   }
 
   // wrong or timeout: easy (light) questions cost more, hard (heavy) ones cost less
   const fastWrong = i.outcome === 'wrong' && i.timeMs < i.parMs * T.fastWrongRatio
   const penalty = Math.round((T.wrongBase / i.weight) * (fastWrong ? T.fastWrongMult : 1))
   return { points: -penalty, speed, speedNorm: sn, streakMult: 1, streakAfter: 0, fastWrong }
+}
+
+// ── Skip-earn streak logic ──────────────────────────────────────────────────
+
+export interface SkipState {
+  skipsAvailable: number
+  skipEarnStreak: number
+}
+
+/**
+ * Pure helper to update skip-earn streak and banked skip credits.
+ * - 'correct': increments skipEarnStreak; every 20 consecutive correct awards +1 skip credit.
+ * - 'wrong' | 'timeout': resets skipEarnStreak to 0.
+ * - 'use_skip': consumes 1 skip credit and resets skipEarnStreak to 0.
+ */
+export function updateSkipState(
+  current: SkipState,
+  action: 'correct' | 'wrong' | 'timeout' | 'use_skip',
+): SkipState {
+  if (action === 'use_skip') {
+    return {
+      skipsAvailable: Math.max(0, current.skipsAvailable - 1),
+      skipEarnStreak: 0,
+    }
+  }
+  if (action === 'correct') {
+    const nextStreak = current.skipEarnStreak + 1
+    const earned = nextStreak > 0 && nextStreak % TUNING.skipEarnInterval === 0
+    return {
+      skipsAvailable: current.skipsAvailable + (earned ? 1 : 0),
+      skipEarnStreak: nextStreak,
+    }
+  }
+  return {
+    skipsAvailable: current.skipsAvailable,
+    skipEarnStreak: 0,
+  }
 }
 
 // ── Rating (Elo-style, per subject) ──────────────────────────────────────────

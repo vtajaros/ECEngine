@@ -5,6 +5,7 @@ import {
   expectedScore, kFactor, performanceScore, applyAnswerToRating, overallRating,
   allocateCounts, pickNextIndex, isRatedRun, TUNING,
   ratingTier, paceForSubject, blendedPaceMs, paceSource, capacityItems, itemsPlanWarning, tightTimerWarning,
+  updateSkipState,
 } from './gauntlet'
 
 describe('par / weight', () => {
@@ -62,13 +63,62 @@ describe('speed and scoring', () => {
     expect(fast.points).toBe(-75)
     expect(fast.fastWrong).toBe(true)
   })
-  it('skips cost a flat penalty and reset the streak; timeouts are never fast-wrong', () => {
+  it('earned skips award 0 points and preserve streak; timeouts are never fast-wrong', () => {
     const skip = scoreAnswer({ outcome: 'skipped', timeMs: 1000, parMs: 6000, weight: 1, streakBefore: 4 })
-    expect(skip.points).toBe(-TUNING.skipPenalty)
-    expect(skip.streakAfter).toBe(0)
+    expect(skip.points).toBe(0)
+    expect(skip.streakAfter).toBe(4)
     const to = scoreAnswer({ outcome: 'timeout', timeMs: 100, parMs: 6000, weight: 1, streakBefore: 4 })
     expect(to.fastWrong).toBe(false)
     expect(to.points).toBe(-50)
+  })
+  it('skip-earn streak grants +1 credit every 20 correct in a row', () => {
+    let state = { skipsAvailable: 1, skipEarnStreak: 0 }
+    for (let i = 0; i < 19; i++) {
+      state = updateSkipState(state, 'correct')
+    }
+    expect(state.skipsAvailable).toBe(1)
+    expect(state.skipEarnStreak).toBe(19)
+
+    // 20th consecutive correct grants 1 credit
+    state = updateSkipState(state, 'correct')
+    expect(state.skipsAvailable).toBe(2)
+    expect(state.skipEarnStreak).toBe(20)
+
+    // 40th consecutive correct grants another credit
+    for (let i = 0; i < 20; i++) {
+      state = updateSkipState(state, 'correct')
+    }
+    expect(state.skipsAvailable).toBe(3)
+    expect(state.skipEarnStreak).toBe(40)
+  })
+  it('wrong answer or timeout at 19 in a row grants nothing and resets skipEarnStreak to 0', () => {
+    let state = { skipsAvailable: 1, skipEarnStreak: 0 }
+    for (let i = 0; i < 19; i++) {
+      state = updateSkipState(state, 'correct')
+    }
+    expect(state.skipsAvailable).toBe(1)
+    expect(state.skipEarnStreak).toBe(19)
+
+    // Wrong answer resets streak, preserves banked skips
+    const afterWrong = updateSkipState(state, 'wrong')
+    expect(afterWrong.skipsAvailable).toBe(1)
+    expect(afterWrong.skipEarnStreak).toBe(0)
+
+    // Timeout resets streak, preserves banked skips
+    const afterTimeout = updateSkipState(state, 'timeout')
+    expect(afterTimeout.skipsAvailable).toBe(1)
+    expect(afterTimeout.skipEarnStreak).toBe(0)
+  })
+  it('using a credit resets skip-earn streak and decrements skips without touching score streak or points', () => {
+    const state = { skipsAvailable: 2, skipEarnStreak: 15 }
+    const afterUse = updateSkipState(state, 'use_skip')
+    expect(afterUse.skipsAvailable).toBe(1)
+    expect(afterUse.skipEarnStreak).toBe(0)
+
+    // Scoring result preserves score streak and awards 0 points
+    const scoreRes = scoreAnswer({ outcome: 'skipped', timeMs: 500, parMs: 5000, weight: 1.1, streakBefore: 7 })
+    expect(scoreRes.points).toBe(0)
+    expect(scoreRes.streakAfter).toBe(7)
   })
 })
 

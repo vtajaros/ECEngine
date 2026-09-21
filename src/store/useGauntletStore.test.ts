@@ -334,3 +334,87 @@ describe('survival', () => {
     expect(store().endReason).toBe('queue')
   })
 })
+
+describe('credit-gated skips', () => {
+  it('initializes with 1 available skip and 0 skip-earn streak', async () => {
+    svc.getQuestions.mockResolvedValue(cards(5))
+    await store().startRun(timedCfg({ totalItems: 5 }))
+    expect(store().skipsAvailable).toBe(1)
+    expect(store().skipEarnStreak).toBe(0)
+  })
+
+  it('earns a skip credit upon achieving a 20-correct streak', async () => {
+    svc.getQuestions.mockResolvedValue(cards(25))
+    await store().startRun(timedCfg({ totalItems: 25 }))
+    store().beginRun()
+
+    for (let i = 0; i < 20; i++) {
+      vi.advanceTimersByTime(2000)
+      store().answer(0)
+    }
+
+    expect(store().skipEarnStreak).toBe(20)
+    expect(store().skipsAvailable).toBe(2) // 1 starting + 1 earned
+  })
+
+  it('skip is a no-op when skipsAvailable === 0', async () => {
+    svc.getQuestions.mockResolvedValue(cards(5))
+    await store().startRun(timedCfg({ totalItems: 5 }))
+    store().beginRun()
+
+    // Use initial skip
+    vi.advanceTimersByTime(2000)
+    store().skip()
+    expect(store().skipsAvailable).toBe(0)
+    expect(store().answers).toHaveLength(1)
+    expect(store().index).toBe(1)
+
+    // Attempt second skip with 0 credits -> no-op
+    vi.advanceTimersByTime(2000)
+    store().skip()
+    expect(store().skipsAvailable).toBe(0)
+    expect(store().answers).toHaveLength(1)
+    expect(store().index).toBe(1)
+  })
+
+  it('using a skip preserves score streak, costs 0 points, and resets skipEarnStreak', async () => {
+    svc.getQuestions.mockResolvedValue(cards(10))
+    await store().startRun(timedCfg({ totalItems: 10 }))
+    store().beginRun()
+
+    // 3 correct answers
+    for (let i = 0; i < 3; i++) {
+      vi.advanceTimersByTime(2000)
+      store().answer(0)
+    }
+    const scoreBefore = store().score
+    expect(store().streak).toBe(3)
+    expect(store().skipEarnStreak).toBe(3)
+    expect(store().skipsAvailable).toBe(1)
+
+    // Use skip
+    vi.advanceTimersByTime(2000)
+    store().skip()
+
+    expect(store().score).toBe(scoreBefore) // 0 penalty
+    expect(store().streak).toBe(3) // streak preserved!
+    expect(store().skipsAvailable).toBe(0) // credit consumed
+    expect(store().skipEarnStreak).toBe(0) // skip-earn streak reset to 0
+    expect(store().answers[3].points).toBe(0)
+    expect(store().answers[3].outcome).toBe('skipped')
+  })
+
+  it('extendLinger extends endsAt and questionShownAt by deltaMs', async () => {
+    svc.getQuestions.mockResolvedValue(cards(5))
+    await store().startRun(timedCfg({ totalItems: 5, durationSec: 300 }))
+    store().beginRun()
+
+    const endsAtBefore = store().endsAt!
+    const shownAtBefore = store().questionShownAt
+
+    store().extendLinger(800)
+
+    expect(store().endsAt).toBe(endsAtBefore + 800)
+    expect(store().questionShownAt).toBe(shownAtBefore + 800)
+  })
+})

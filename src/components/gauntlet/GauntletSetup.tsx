@@ -18,7 +18,6 @@ import {
   useGauntletStore,
   type GauntletConfig,
 } from '../../store/useGauntletStore'
-import { GauntletBackdrop } from './GauntletBackdrop'
 
 const loadConfigForMode = (mode: GauntletMode): GauntletConfig => {
   try {
@@ -156,10 +155,7 @@ export const GauntletSetup: React.FC = () => {
   }, [closeSetup, handleStart])
 
   return (
-    <div className="absolute inset-0 z-20 min-h-0 w-full flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-[#0D0D0D]">
-      {/* Dimmed Cyber Backdrop */}
-      <GauntletBackdrop dimmed />
-
+    <div className="absolute inset-0 z-20 min-h-0 w-full flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
       {/* Centered Setup Card (max-w ~720px) */}
       <div className="relative z-10 w-full max-w-[720px] bg-[#141414] border border-[#262626] rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.8)] p-5 sm:p-6 flex flex-col gap-4">
         {/* Header: Back arrow + Mode Icon & Title */}

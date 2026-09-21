@@ -3,7 +3,6 @@ import { Flame, HelpCircle, History } from 'lucide-react'
 import { GAUNTLET_SUBJECTS, TUNING, overallRating, ratingTier } from '../../lib/gauntlet'
 import { SUBJECT_LINE_COLOR } from '../../lib/dashboardUtils'
 import { useGauntletStore } from '../../store/useGauntletStore'
-import { GauntletBackdrop } from './GauntletBackdrop'
 import { GauntletFaqModal } from './GauntletFaqModal'
 import { GauntletRecordsModal } from './GauntletRecordsModal'
 
@@ -94,10 +93,7 @@ export const GauntletHome: React.FC = () => {
   }
 
   return (
-    <div className="relative h-full min-h-0 w-full flex items-center justify-center p-4 sm:p-6 overflow-hidden bg-[#0D0D0D] select-none">
-      {/* Animated Cyber Backdrop */}
-      <GauntletBackdrop />
-
+    <div className="relative h-full min-h-0 w-full flex items-center justify-center p-4 sm:p-6 overflow-hidden select-none">
       {/* Main Foreground Container: Centered vertically and horizontally */}
       <div className="relative z-10 w-full max-w-2xl flex flex-col items-center text-center my-auto">
         {/* Animated GAUNTLET Title with 4s breathing glow + 6s glitch shimmer */}
