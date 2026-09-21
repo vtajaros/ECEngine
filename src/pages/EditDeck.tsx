@@ -5,9 +5,10 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import {
   ArrowLeft, Save, ChevronDown, ChevronUp, Trash2, GripVertical, Plus,
   CheckCircle2, AlertCircle, RotateCcw, ImageIcon, X, Sigma,
-  Calculator, FlaskConical, Zap, Cpu, FileText, Type, Eye, EyeOff
+  Calculator, FlaskConical, Zap, Cpu, FileText, Type, Eye, EyeOff, Upload
 } from 'lucide-react'
 import { FormattingGuideModal } from '../components/deck/CardForms'
+import { ImportModal, ImportFlashcardsModal } from '../components/deck/ImportModals'
 import { renderMath, isRawLatex } from '../lib/latex'
 import { getSubjectFilterClasses } from '../lib/subjectColors'
 import { TOS_SUBJECT_COLORS } from '../lib/tosData'
@@ -90,6 +91,7 @@ interface EditCard {
   type: 'mcq' | 'flashcard' | 'formula'
   data: MCQEdit | FlashcardEdit | FormulaEdit
   isNew?: boolean
+  defaultExpanded?: boolean
 }
 
 interface MCQEdit {
@@ -906,7 +908,7 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
 }
 
 const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<HTMLElement> }> = ({ card, index, onUpdate, onDelete, onError, dragHandleProps }) => {
-  const [expanded, setExpanded] = useState(card.isNew ?? false)
+  const [expanded, setExpanded] = useState(card.defaultExpanded ?? (card.isNew ?? false))
 
   const preview = card.type === 'mcq'
     ? (card.data as MCQEdit).question || '(empty question)'
@@ -1032,6 +1034,9 @@ const SortableQuestionRow: React.FC<CardRowProps> = (props) => {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
+let _uid = 0
+const uid = () => `new_${Date.now()}_${++_uid}`
+
 export default function EditDeck() {
   const { deckId } = useParams<{ deckId: string }>()
   const navigate = useNavigate()
@@ -1057,6 +1062,7 @@ export default function EditDeck() {
   const [loading, setLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [showFormattingGuide, setShowFormattingGuide] = useState(false)
+  const [importModalType, setImportModalType] = useState<'none' | 'mcq' | 'flashcard'>('none')
   const [isExporting, setIsExporting] = useState(false)
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false)
@@ -1425,7 +1431,7 @@ export default function EditDeck() {
   }, [saveSnapshot])
 
   const addCard = (type: 'mcq' | 'flashcard' | 'formula') => {
-    const id = `new_${Date.now()}`
+    const id = uid()
     const data: EditCard = type === 'mcq'
       ? { id, type, data: { question: '', choices: ['', '', '', ''], answer: 0, explanation: '', choicesPlainText: [true, true, true, true] }, isNew: true }
       : type === 'formula'
@@ -1444,6 +1450,73 @@ export default function EditDeck() {
         return arrayMove(prev, oldIndex, newIndex)
       })
     }
+  }
+
+  const handleImportMCQs = (imported: { mcqData?: any }[]) => {
+    const newRows: EditCard[] = imported.filter(c => c.mcqData).map(c => ({
+      id: uid(),
+      type: 'mcq',
+      isNew: true,
+      defaultExpanded: false,
+      data: {
+        question: c.mcqData.question || '',
+        choices: [
+          c.mcqData.choices?.[0] || '',
+          c.mcqData.choices?.[1] || '',
+          c.mcqData.choices?.[2] || '',
+          c.mcqData.choices?.[3] || '',
+        ] as [string, string, string, string],
+        answer: c.mcqData.answer !== undefined ? c.mcqData.answer : 0,
+        explanation: c.mcqData.explanation || '',
+        choicesPlainText: [true, true, true, true]
+      }
+    }))
+
+    if (newRows.length === 0) return
+
+    saveSnapshot(cardsRef.current)
+    setCards(prev => {
+      const isAllEmpty = prev.length > 0 && prev.every(c => {
+        if (!c.isNew) return false
+        if (c.type === 'mcq') return !(c.data as MCQEdit).question.trim()
+        if (c.type === 'formula') return !(c.data as FormulaEdit).name.trim()
+        return !(c.data as FlashcardEdit).front.trim()
+      })
+      if (isAllEmpty) return newRows
+      return [...prev, ...newRows]
+    })
+    setToast({ type: 'success', msg: `Imported ${newRows.length} MCQ${newRows.length > 1 ? 's' : ''}` })
+    setTimeout(() => setToast(null), 3000)
+  }
+
+  const handleImportFlashcards = (imported: { flashcardData?: any }[]) => {
+    const newRows: EditCard[] = imported.filter(c => c.flashcardData).map(c => ({
+      id: uid(),
+      type: 'flashcard',
+      isNew: true,
+      defaultExpanded: false,
+      data: {
+        front: c.flashcardData.front || '',
+        back: c.flashcardData.back || '',
+        explanation: c.flashcardData.explanation || '',
+      }
+    }))
+
+    if (newRows.length === 0) return
+
+    saveSnapshot(cardsRef.current)
+    setCards(prev => {
+      const isAllEmpty = prev.length > 0 && prev.every(c => {
+        if (!c.isNew) return false
+        if (c.type === 'mcq') return !(c.data as MCQEdit).question.trim()
+        if (c.type === 'formula') return !(c.data as FormulaEdit).name.trim()
+        return !(c.data as FlashcardEdit).front.trim()
+      })
+      if (isAllEmpty) return newRows
+      return [...prev, ...newRows]
+    })
+    setToast({ type: 'success', msg: `Imported ${newRows.length} flashcard${newRows.length > 1 ? 's' : ''}` })
+    setTimeout(() => setToast(null), 3000)
   }
 
   // ── Save: full transactional diff write ──────────────────────────────────
@@ -1820,13 +1893,31 @@ export default function EditDeck() {
           {/* ── Cards Pane — Pane 2 (right 2/3) */}
           <div className="w-full max-w-4xl xl:max-w-none xl:col-span-2 flex flex-col gap-4">
             <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <h2 className="font-['Rajdhani'] font-bold uppercase tracking-widest text-text-muted text-xs">
-                  Questions
-                </h2>
-                <span className="text-[#555] font-['JetBrains_Mono'] text-xs">
-                  {cards.length} {cards.length === 1 ? 'item' : 'items'} total
-                </span>
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <h2 className="font-['Rajdhani'] font-bold uppercase tracking-widest text-text-muted text-xs">
+                    Questions
+                  </h2>
+                  <span className="text-[#555] font-['JetBrains_Mono'] text-xs">
+                    {cards.length} {cards.length === 1 ? 'item' : 'items'} total
+                  </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-3 justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setImportModalType('mcq')}
+                    className="flex items-center gap-2 px-4 py-2 rounded border border-[#333] bg-surface-2 text-text-muted hover:text-accent hover:border-accent/50 font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all"
+                  >
+                    <Upload size={14} /> Import MCQs
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImportModalType('flashcard')}
+                    className="flex items-center gap-2 px-4 py-2 rounded border border-[#333] bg-surface-2 text-text-muted hover:text-accent hover:border-accent/50 font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all"
+                  >
+                    <Upload size={14} /> Import Flashcards
+                  </button>
+                </div>
               </div>
 
               <DndContext
@@ -1925,6 +2016,20 @@ export default function EditDeck() {
 
         </div>
       </div>
+
+      {importModalType === 'mcq' && (
+        <ImportModal
+          onImportCards={handleImportMCQs}
+          onClose={() => setImportModalType('none')}
+        />
+      )}
+
+      {importModalType === 'flashcard' && (
+        <ImportFlashcardsModal
+          onImportCards={handleImportFlashcards}
+          onClose={() => setImportModalType('none')}
+        />
+      )}
 
       {showFormattingGuide && (
         <FormattingGuideModal onClose={() => setShowFormattingGuide(false)} />
