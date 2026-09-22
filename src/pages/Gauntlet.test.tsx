@@ -566,6 +566,38 @@ describe('Gauntlet Summary Review List', () => {
     const heading = container!.querySelector('h2')
     expect(heading?.textContent).toBe('Game Over')
     expect(heading?.className).toContain('text-[#FF3333]')
+    expect(mockPlay).toHaveBeenCalledWith('gameOver')
+  })
+
+  it('renders time spent and survival header in summary for survival mode', async () => {
+    useGauntletStore.setState({
+      phase: 'summary',
+      endReason: 'lives',
+      score: 1200,
+      streak: 0,
+      bestStreak: 5,
+      durationMs: 145000, // 2m 25s
+      answers: mockAnswers,
+      config: {
+        mode: 'survival',
+        subjects: ['MATH', 'GEAS'],
+        rated: false,
+        durationSec: 1200,
+        totalItems: 4,
+        allocation: 'tos',
+        customCounts: {},
+        lives: 3,
+        perQuestionSec: 30,
+      },
+    })
+
+    await act(async () => {
+      root!.render(renderWithRouter(<Gauntlet />))
+    })
+
+    expect(container!.textContent).toContain('Survival Session Summary')
+    expect(container!.textContent).toContain('Time Spent')
+    expect(container!.textContent).toContain('2m 25s')
   })
 
   it('renders Quit button and VolumeControl in HUD during playing phase', async () => {

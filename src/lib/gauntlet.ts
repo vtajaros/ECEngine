@@ -35,7 +35,7 @@ export const TUNING = {
   wrongBase: 50,
   skipPenalty: 0,
   skipEarnInterval: 20,
-  lifeBonusInterval: 25,
+  lifeBonusInterval: 10,
   fastWrongRatio: 0.25,
   fastWrongMult: 1.5,
   streakStep: 0.1,
@@ -261,7 +261,7 @@ export interface LifeBonusResult {
 
 /**
  * Pure helper to update life-bonus streak for survival mode.
- * - 'correct': increments streak; every 25 consecutive correct signals a bonus life (+1).
+ * - 'correct': increments streak; every 10 consecutive correct signals a bonus life (+1).
  * - 'wrong' | 'timeout': resets streak to 0.
  */
 export function updateLifeBonusState(
@@ -499,3 +499,16 @@ export function tightTimerWarning(opts: { perQuestionSec: number; paceMs: number
   if (opts.perQuestionSec <= 0) return false
   return opts.perQuestionSec * 1000 < 1.5 * opts.paceMs
 }
+
+/** Format duration in ms into a human-friendly string (e.g. "3m 42s", "0m 45s", "1h 05m 12s"). */
+export function formatRunDuration(ms: number): string {
+  const totalSec = Math.max(0, Math.floor(ms / 1000))
+  const h = Math.floor(totalSec / 3600)
+  const m = Math.floor((totalSec % 3600) / 60)
+  const s = totalSec % 60
+  if (h > 0) {
+    return `${h}h ${m.toString().padStart(2, '0')}m ${s.toString().padStart(2, '0')}s`
+  }
+  return `${m}m ${s.toString().padStart(2, '0')}s`
+}
+

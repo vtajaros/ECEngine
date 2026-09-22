@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Flame, HelpCircle, History } from 'lucide-react'
+import { Flame, HelpCircle, History, Award } from 'lucide-react'
 import { GAUNTLET_SUBJECTS, TUNING, overallRating, ratingTier } from '../../lib/gauntlet'
 import { SUBJECT_LINE_COLOR } from '../../lib/dashboardUtils'
 import { useGauntletStore } from '../../store/useGauntletStore'
 import { GauntletFaqModal } from './GauntletFaqModal'
 import { GauntletRecordsModal } from './GauntletRecordsModal'
+import { GauntletRanksModal } from './GauntletRanksModal'
 
 // Number count-up hook (~600ms cubic ease-out)
 function useCountUp(target: number, durationMs = 600): number {
@@ -39,6 +40,7 @@ export const GauntletHome: React.FC = () => {
 
   const [isFaqOpen, setIsFaqOpen] = useState(false)
   const [isRecordsOpen, setIsRecordsOpen] = useState(false)
+  const [isRanksOpen, setIsRanksOpen] = useState(false)
 
   // 3D tilt state for each card
   const [timedTilt, setTimedTilt] = useState({ rx: 0, ry: 0 })
@@ -275,9 +277,14 @@ export const GauntletHome: React.FC = () => {
             )
           })}
 
-          {/* OVERALL Chip (slightly larger) */}
-          <div className="bg-[#141414] border border-accent/40 rounded-xl px-2.5 sm:px-3 py-1.5 flex items-center gap-1.5 sm:gap-2 text-xs shadow-[0_0_12px_rgba(0,255,65,0.1)] shrink-0">
-            <span className="font-['Orbitron'] font-bold text-[11px] text-accent">
+          {/* OVERALL Chip (slightly larger, clickable to open rankings info) */}
+          <button
+            type="button"
+            onClick={() => setIsRanksOpen(true)}
+            title="Click to view Elo Ranking Tiers"
+            className="bg-[#141414] border border-accent/40 hover:border-accent rounded-xl px-2.5 sm:px-3 py-1.5 flex items-center gap-1.5 sm:gap-2 text-xs shadow-[0_0_12px_rgba(0,255,65,0.1)] hover:shadow-[0_0_16px_rgba(0,255,65,0.25)] shrink-0 transition-all cursor-pointer group"
+          >
+            <span className="font-['Orbitron'] font-bold text-[11px] text-accent group-hover:underline">
               OVERALL
             </span>
             <span className="font-['JetBrains_Mono'] font-bold text-white text-sm">
@@ -291,11 +298,20 @@ export const GauntletHome: React.FC = () => {
                 PROV
               </span>
             )}
-          </div>
+          </button>
         </div>
 
         {/* Footer Buttons directly under the ratings row */}
-        <div className="mt-4 sm:mt-5 flex items-center justify-center gap-6">
+        <div className="mt-4 sm:mt-5 flex items-center justify-center gap-4 sm:gap-6">
+          <button
+            type="button"
+            onClick={() => setIsRanksOpen(true)}
+            className="text-text-muted hover:text-text-primary text-xs font-['Rajdhani'] font-bold uppercase tracking-widest flex items-center gap-1.5 transition-colors py-1.5 px-3 rounded hover:bg-surface-2 cursor-pointer"
+          >
+            <Award size={14} className="text-accent" />
+            Rankings
+          </button>
+
           <button
             type="button"
             onClick={() => setIsFaqOpen(true)}
@@ -317,6 +333,12 @@ export const GauntletHome: React.FC = () => {
       </div>
 
       {/* Modals */}
+      <GauntletRanksModal
+        isOpen={isRanksOpen}
+        onClose={() => setIsRanksOpen(false)}
+        overallRating={overall.rating}
+        isProvisional={overall.provisional}
+      />
       <GauntletFaqModal isOpen={isFaqOpen} onClose={() => setIsFaqOpen(false)} />
       <GauntletRecordsModal isOpen={isRecordsOpen} onClose={() => setIsRecordsOpen(false)} />
     </div>

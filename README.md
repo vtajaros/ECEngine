@@ -74,7 +74,7 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
     * Starting lives presets: `3 Lives` (high stakes), `5 Lives` (standard), or `10 Lives` (forgiving practice).
     * Per-question time limits: `20s` ($1.25\times$), `30s` ($1.00\times$), `45s` ($0.85\times$), `60s` ($0.70\times$), `2 min` ($0.50\times$), and `Unlimited` (Accuracy Mode).
     * Dynamic difficulty multipliers: Scores and Elo deltas scale automatically based on selected timer and lives.
-    * **Life Bonus**: Earn $+1$ life for every 25 consecutive correct answers (capped at starting life count).
+    * **Life Bonus**: Earn $+1$ life for every 10 consecutive correct answers (capped at starting life count).
     * **Accuracy Mode**: Unlimited per-question timer with minimal score multiplier ($0.08\times$) and strictly capped $\pm 1$ Elo rating adjustments, allowing deep calculation and accuracy validation without rating inflation.
 * **Ranked vs. Unranked Runs**:
   * **Ranked**: Tracks per-subject Elo-style ratings across all 4 subjects with provisional rating indicators ($<30$ answers) and official PRC TOS-weighted overall rating score.

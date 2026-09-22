@@ -101,13 +101,24 @@ const FAQ_ITEMS: AccordionItem[] = [
     title: 'Elo Ratings & Subject Mastery',
     icon: Award,
     content: (
-      <div className="space-y-2 text-text-primary text-xs font-['JetBrains_Mono'] leading-relaxed">
+      <div className="space-y-2.5 text-text-primary text-xs font-['JetBrains_Mono'] leading-relaxed">
         <p>
           Each subject begins at an initial rating of <strong className="text-accent">1000</strong>.
         </p>
         <p className="text-text-muted">
           Ratings update after every answer on ranked runs using standard Elo curves adjusted for answer speed. Ratings remain <span className="text-[#FFB800] font-bold">PROVISIONAL</span> until 30 questions are answered in that subject.
         </p>
+        <div className="p-2 rounded bg-surface-2 border border-border-base space-y-1 text-[11px]">
+          <span className="font-bold text-accent block uppercase font-['Orbitron'] text-[10px]">Rank Tiers:</span>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-text-muted">
+            <div><strong className="text-slate-400">ROOKIE:</strong> &lt; 1000</div>
+            <div><strong className="text-sky-400">CONTENDER:</strong> 1000–1149</div>
+            <div><strong className="text-accent">CHALLENGER:</strong> 1150–1299</div>
+            <div><strong className="text-[#FFB800]">EXPERT:</strong> 1300–1449</div>
+            <div><strong className="text-purple-400">MASTER:</strong> 1450–1599</div>
+            <div><strong className="text-[#FF3333]">LEGEND:</strong> 1600+</div>
+          </div>
+        </div>
         <p className="text-text-muted">
           Your <strong className="text-text-primary">Overall Rating</strong> is computed using the official PRC ECE Table of Specifications weights: <strong>MATH (20%)</strong>, <strong>GEAS (20%)</strong>, <strong>ELECS (30%)</strong>, and <strong>EST (30%)</strong>.
         </p>

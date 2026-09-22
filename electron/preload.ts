@@ -77,6 +77,7 @@ contextBridge.exposeInMainWorld('electron', {
     getRunAnswers: (runId: string) => ipcRenderer.invoke('gauntlet:getRunAnswers', runId),
     getBests: () => ipcRenderer.invoke('gauntlet:getBests'),
     getPaceStats: () => ipcRenderer.invoke('gauntlet:getPaceStats'),
+    resetRatings: () => ipcRenderer.invoke('gauntlet:resetRatings'),
   },
   file: {
     import: (filePath?: string) => ipcRenderer.invoke('file:import', filePath),

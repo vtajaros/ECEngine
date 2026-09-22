@@ -12,6 +12,7 @@ import {
   getBests,
   getPaceStats,
   clearGauntletData,
+  resetRatings,
   GauntletRunInput,
 } from './gauntlet'
 
@@ -410,6 +411,54 @@ describe('Gauntlet DB persistence', () => {
     expect(getRuns(db)).toEqual([])
     expect(getRunAnswers(db, 'run-to-clear')).toEqual([])
     expect(getRatings(db)).toEqual([])
+  })
+
+  it('resetRatings deletes gauntlet_ratings but preserves runs and answers', () => {
+    saveRun(db, {
+      id: 'run-preserve',
+      startedAt: 1000,
+      endedAt: 2000,
+      mode: 'survival',
+      config: {},
+      rated: true,
+      score: 100,
+      answered: 1,
+      correct: 1,
+      wrong: 0,
+      skipped: 0,
+      bestStreak: 1,
+      durationMs: 1000,
+      endReason: 'time',
+      ratingsAfter: { MATH: { rating: 1050, answers: 1 } },
+      answers: [
+        {
+          seq: 0,
+          cardId: 'c-math',
+          subject: 'MATH',
+          chosen: 0,
+          answerIndex: 0,
+          outcome: 'correct',
+          timeMs: 2000,
+          parMs: 5000,
+          points: 100,
+          streakAfter: 1,
+          choices: ['A', 'B'],
+          answeredAt: 1500,
+        },
+      ],
+    })
+
+    expect(getRatings(db).length).toBe(1)
+    expect(getRuns(db).length).toBe(1)
+    expect(getRunAnswers(db, 'run-preserve').length).toBe(1)
+
+    resetRatings(db)
+
+    // Ratings cleared
+    expect(getRatings(db)).toEqual([])
+    // Runs and answers remain intact
+    expect(getRuns(db).length).toBe(1)
+    expect(getRunAnswers(db, 'run-preserve').length).toBe(1)
   })
 
   it('computes pace stats with exclusions and LIMIT 800 window', () => {

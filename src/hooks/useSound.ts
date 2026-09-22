@@ -2,7 +2,7 @@
 import { useRef, useCallback, useState, useEffect } from 'react'
 import wrongSfx from '../assets/sounds/wrong.wav'
 
-export type SoundEvent = 'correct' | 'wrong' | 'roundComplete' | 'finish' | 'tick' | 'go'
+export type SoundEvent = 'correct' | 'wrong' | 'roundComplete' | 'finish' | 'tick' | 'go' | 'gameOver'
 
 const CUSTOM_WRONG_SOUND_KEY = 'ecengine:wrongSound:enabled'
 const SESSION_MUTE_KEY = 'ecengine_sounds_muted'
@@ -237,6 +237,34 @@ function playGoSound(ctx: AudioContext, masterVolume: number) {
   })
 }
 
+function playGameOverSound(ctx: AudioContext, masterVolume: number) {
+  const notes = [
+    { freq: 311.13, start: 0, duration: 0.2, type: 'triangle' as const },
+    { freq: 261.63, start: 0.2, duration: 0.2, type: 'triangle' as const },
+    { freq: 196.00, start: 0.4, duration: 0.25, type: 'triangle' as const },
+    { freq: 130.81, start: 0.65, duration: 0.7, type: 'sawtooth' as const, slideTo: 98.0 },
+  ]
+
+  notes.forEach(({ freq, start, duration, type, slideTo }) => {
+    const o = ctx.createOscillator()
+    const g = ctx.createGain()
+    o.connect(g)
+    g.connect(ctx.destination)
+    o.type = type
+
+    const t = ctx.currentTime + start
+    o.frequency.setValueAtTime(freq, t)
+    if (slideTo) {
+      o.frequency.exponentialRampToValueAtTime(slideTo, t + duration)
+    }
+
+    g.gain.setValueAtTime(0.2 * masterVolume, t)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + duration)
+    o.start(t)
+    o.stop(t + duration)
+  })
+}
+
 // ── File-based wrong sound ────────────────────────────────────────────────────
 
 let cachedWrongBuffer: AudioBuffer | null = null
@@ -315,6 +343,9 @@ export function useSound() {
           break
         case 'go':
           playGoSound(ctx, vol)
+          break
+        case 'gameOver':
+          playGameOverSound(ctx, vol)
           break
       }
     } catch {

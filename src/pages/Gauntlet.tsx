@@ -17,8 +17,10 @@ import Toast from '../components/ui/Toast'
 import { useSound } from '../hooks/useSound'
 import { useGauntletMusic, getTimedMusicRegion, getSurvivalMusicRegion } from '../hooks/useGauntletMusic'
 import { VolumeControl } from '../components/ui/VolumeControl'
+import { formatRunDuration } from '../lib/gauntlet'
 import {
   Timer,
+  Clock,
   Heart,
   XCircle,
   SkipForward,
@@ -66,6 +68,7 @@ const RunPlaceholder: React.FC<RunPlaceholderProps> = ({ onOpenPause, isModalOpe
   const ratingsBefore = useGauntletStore(s => s.ratingsBefore)
   const ratings = useGauntletStore(s => s.ratings)
   const answers = useGauntletStore(s => s.answers)
+  const durationMs = useGauntletStore(s => s.durationMs)
 
   const answer = useGauntletStore(s => s.answer)
   const skip = useGauntletStore(s => s.skip)
@@ -184,6 +187,22 @@ Please explain:
     }
   }, [feedback, play])
 
+  // Play game over sound when lives run out (summary phase with endReason === 'lives')
+  const lastSummarySoundRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (phase !== 'summary') {
+      lastSummarySoundRef.current = null
+      return
+    }
+    const key = `summary-${endReason}`
+    if (lastSummarySoundRef.current === key) return
+    lastSummarySoundRef.current = key
+
+    if (endReason === 'lives') {
+      play('gameOver')
+    }
+  }, [phase, endReason, play])
+
   // Adaptive background music regions based on run mode, progress, and summary
   useEffect(() => {
     if (phase === 'summary') {
@@ -257,7 +276,7 @@ Please explain:
     }
   }, [])
 
-  // Handle answering choice with 800ms reveal linger
+  // Handle answering choice with reveal linger (correct: 1300ms, wrong: 800ms)
   const handleAnswer = useCallback(
     (choiceIdx: number) => {
       if (revealState !== null || isModalOpen) return
@@ -268,9 +287,10 @@ Please explain:
       const mcq = item.card.data as MCQData
       const isCorrect = choiceIdx === mcq.answer
       const isWrong = !isCorrect
+      const lingerMs = isCorrect ? 1300 : 800
 
-      // Extend timer deadlines by 800ms so linger consumes zero run time
-      extendLinger(800)
+      // Extend timer deadlines so linger consumes zero run time
+      extendLinger(lingerMs)
 
       setRevealState({
         chosen: choiceIdx,
@@ -297,7 +317,7 @@ Please explain:
         setRevealState(null)
         setShakeWrong(false)
         answer(choiceIdx)
-      }, 800)
+      }, lingerMs)
     },
     [revealState, isModalOpen, extendLinger, answer],
   )
@@ -381,6 +401,10 @@ Please explain:
       return true
     })
 
+    const runDurationMs = durationMs > 0
+      ? durationMs
+      : answers.reduce((sum, a) => sum + (a.timeMs || 0), 0)
+
     return (
       <div className="max-w-6xl mx-auto w-full h-full max-h-full bg-surface rounded-2xl p-4 sm:p-5 border border-border-base flex flex-col lg:flex-row gap-4 lg:gap-5 shadow-2xl min-h-0 overflow-y-auto lg:overflow-hidden my-auto">
         {/* LEFT COLUMN: Fixed-width Stats & Actions Sidebar */}
@@ -388,7 +412,7 @@ Please explain:
           {/* Header */}
           <div className="text-center">
             <span className="text-[11px] font-['Rajdhani'] font-bold uppercase tracking-widest text-text-muted">
-              Gauntlet Run Summary
+              {config.mode === 'survival' ? 'Survival Session Summary' : 'Gauntlet Run Summary'}
             </span>
             <h2
               className={`font-['Orbitron'] font-bold text-xl sm:text-2xl mt-0.5 tracking-wide ${
@@ -401,33 +425,71 @@ Please explain:
 
           {/* Score & Main Stats + Breakdown */}
           <div className="bg-surface-2 p-2.5 sm:p-3 rounded-xl border border-border-base flex flex-col gap-2">
-            {/* Main 3 Stats */}
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div>
-                <span className="text-[10px] font-['Rajdhani'] uppercase tracking-wider text-text-muted block">
-                  Final Score
-                </span>
-                <span className="font-['JetBrains_Mono'] font-bold text-xl sm:text-2xl text-accent">
-                  {score.toLocaleString()}
-                </span>
+            {/* Main Stats: 2x2 grid for survival (including Time Spent), 3-col for timed */}
+            {config.mode === 'survival' ? (
+              <div className="grid grid-cols-2 gap-2 text-center">
+                <div>
+                  <span className="text-[10px] font-['Rajdhani'] uppercase tracking-wider text-text-muted block">
+                    Final Score
+                  </span>
+                  <span className="font-['JetBrains_Mono'] font-bold text-lg sm:text-xl text-accent">
+                    {score.toLocaleString()}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-['Rajdhani'] uppercase tracking-wider text-text-muted block flex items-center justify-center gap-1">
+                    <Clock size={10} className="text-text-muted" />
+                    Time Spent
+                  </span>
+                  <span className="font-['JetBrains_Mono'] font-bold text-base sm:text-lg text-white">
+                    {formatRunDuration(runDurationMs)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-['Rajdhani'] uppercase tracking-wider text-text-muted block">
+                    Accuracy
+                  </span>
+                  <span className="font-['JetBrains_Mono'] font-bold text-base sm:text-lg text-text-primary">
+                    {correctCount}/{answers.length}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-['Rajdhani'] uppercase tracking-wider text-text-muted block">
+                    Best Streak
+                  </span>
+                  <span className="font-['JetBrains_Mono'] font-bold text-base sm:text-lg text-text-primary">
+                    {bestStreak}
+                  </span>
+                </div>
               </div>
-              <div>
-                <span className="text-[10px] font-['Rajdhani'] uppercase tracking-wider text-text-muted block">
-                  Accuracy
-                </span>
-                <span className="font-['JetBrains_Mono'] font-bold text-base sm:text-lg text-text-primary">
-                  {correctCount}/{answers.length}
-                </span>
+            ) : (
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <span className="text-[10px] font-['Rajdhani'] uppercase tracking-wider text-text-muted block">
+                    Final Score
+                  </span>
+                  <span className="font-['JetBrains_Mono'] font-bold text-xl sm:text-2xl text-accent">
+                    {score.toLocaleString()}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-['Rajdhani'] uppercase tracking-wider text-text-muted block">
+                    Accuracy
+                  </span>
+                  <span className="font-['JetBrains_Mono'] font-bold text-base sm:text-lg text-text-primary">
+                    {correctCount}/{answers.length}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-['Rajdhani'] uppercase tracking-wider text-text-muted block">
+                    Best Streak
+                  </span>
+                  <span className="font-['JetBrains_Mono'] font-bold text-base sm:text-lg text-text-primary">
+                    {bestStreak}
+                  </span>
+                </div>
               </div>
-              <div>
-                <span className="text-[10px] font-['Rajdhani'] uppercase tracking-wider text-text-muted block">
-                  Best Streak
-                </span>
-                <span className="font-['JetBrains_Mono'] font-bold text-base sm:text-lg text-text-primary">
-                  {bestStreak}
-                </span>
-              </div>
-            </div>
+            )}
 
             {/* Answer Breakdown Sub-row */}
             <div className="flex items-center justify-around text-[11px] sm:text-xs font-['JetBrains_Mono'] pt-1.5 border-t border-border-base/40">

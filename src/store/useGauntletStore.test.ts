@@ -420,7 +420,7 @@ describe('credit-gated skips', () => {
 })
 
 describe('life-bonus streak in survival mode', () => {
-  it('25-correct streak at 3/3 lives stays capped at 3', async () => {
+  it('10-correct streak at 3/3 lives stays capped at 3', async () => {
     svc.getQuestions.mockResolvedValue(cards(40))
     await store().startRun(survivalCfg({ lives: 3 }))
     store().beginRun()
@@ -428,17 +428,17 @@ describe('life-bonus streak in survival mode', () => {
     expect(store().livesLeft).toBe(3)
     expect(store().lifeBonusStreak).toBe(0)
 
-    for (let i = 0; i < 25; i++) {
+    for (let i = 0; i < 10; i++) {
       vi.advanceTimersByTime(2000)
       store().answer(0)
     }
 
-    expect(store().lifeBonusStreak).toBe(25)
+    expect(store().lifeBonusStreak).toBe(10)
     // Starting lives cap is 3, so livesLeft must not exceed 3
     expect(store().livesLeft).toBe(3)
   })
 
-  it('at 2/3 lives after losing one, a 25-streak brings it back to 3/3', async () => {
+  it('at 2/3 lives after losing one, a 10-streak brings it back to 3/3', async () => {
     svc.getQuestions.mockResolvedValue(cards(40))
     await store().startRun(survivalCfg({ lives: 3 }))
     store().beginRun()
@@ -449,13 +449,13 @@ describe('life-bonus streak in survival mode', () => {
     expect(store().livesLeft).toBe(2)
     expect(store().lifeBonusStreak).toBe(0)
 
-    // Answer 25 correct questions in a row
-    for (let i = 0; i < 25; i++) {
+    // Answer 10 correct questions in a row
+    for (let i = 0; i < 10; i++) {
       vi.advanceTimersByTime(2000)
       store().answer(0)
     }
 
-    expect(store().lifeBonusStreak).toBe(25)
+    expect(store().lifeBonusStreak).toBe(10)
     expect(store().livesLeft).toBe(3)
   })
 
@@ -464,14 +464,14 @@ describe('life-bonus streak in survival mode', () => {
     await store().startRun(survivalCfg({ lives: 3 }))
     store().beginRun()
 
-    // 24 correct answers
-    for (let i = 0; i < 24; i++) {
+    // 9 correct answers
+    for (let i = 0; i < 9; i++) {
       vi.advanceTimersByTime(2000)
       store().answer(0)
     }
-    expect(store().lifeBonusStreak).toBe(24)
+    expect(store().lifeBonusStreak).toBe(9)
 
-    // Wrong answer on 25th question
+    // Wrong answer on 10th question
     vi.advanceTimersByTime(2000)
     store().answer(1)
     expect(store().lifeBonusStreak).toBe(0)

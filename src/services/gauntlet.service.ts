@@ -65,4 +65,9 @@ export const gauntletService = {
     }
     return stats
   },
+
+  async resetRatings(): Promise<void> {
+    const res = await window.electron.gauntlet.resetRatings()
+    if (!res.success) throw new Error(res.error || 'Failed to reset ratings')
+  },
 }

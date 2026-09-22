@@ -102,4 +102,13 @@ export function registerGauntletHandlers(): void {
   ipcMain.handle('gauntlet:getPaceStats', async () => {
     try { return { success: true, data: G.getPaceStats(getDB()) } } catch (e) { return fail(e) }
   })
+
+  ipcMain.handle('gauntlet:resetRatings', async () => {
+    try {
+      G.resetRatings(getDB())
+      return { success: true }
+    } catch (e) {
+      return fail(e)
+    }
+  })
 }

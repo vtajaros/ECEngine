@@ -188,6 +188,7 @@ const freshRun = () => ({
   lifeBonusStreak: 0,
   livesLeft: 0,
   startedAt: 0,
+  durationMs: 0,
   endsAt: null as number | null,
   questionShownAt: 0,
   pausedAt: null as number | null,
@@ -288,7 +289,12 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
     const s = get()
     if (s.phase !== 'playing') return
     const endedAt = Date.now()
-    set({ phase: 'summary', endReason: reason, pausedAt: null })
+    const rawDuration = s.startedAt > 0 ? endedAt - s.startedAt : 0
+    const durationMs = Math.max(
+      0,
+      Math.round(s.config.mode === 'timed' ? Math.min(rawDuration, s.config.durationSec * 1000) : rawDuration),
+    )
+    set({ phase: 'summary', endReason: reason, pausedAt: null, durationMs })
     if (s.answers.length === 0) return
     const payload = buildRunPayload(s, reason, endedAt)
     try {

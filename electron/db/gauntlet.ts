@@ -261,3 +261,8 @@ export function clearGauntletData(db: Database.Database): void {
     db.prepare('DELETE FROM gauntlet_ratings').run()
   })()
 }
+
+export function resetRatings(db: Database.Database): void {
+  db.prepare('DELETE FROM gauntlet_ratings').run()
+}
+

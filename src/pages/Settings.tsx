@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { Settings as SettingsIcon, Monitor, Bell, Database, Shield, CheckCircle, AlertTriangle, X, RefreshCw, Info } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { dbService } from '../services/db.service'
+import { gauntletService } from '../services/gauntlet.service'
+import { useGauntletStore } from '../store/useGauntletStore'
 import { getCustomWrongSoundEnabled, setCustomWrongSoundEnabled } from '../hooks/useSound'
 import { SUBJECT_MAP, getSubjectBadgeClasses } from '../lib/subjectColors'
 
@@ -17,6 +19,7 @@ function topicHasType(topic: { types?: string }, filter: 'ALL' | 'FC' | 'MCQ'): 
 export default function Settings() {
 
   const [resetResetMenuOpen, setResetResetMenuOpen] = useState(false);
+  const [resetEloModalOpen, setResetEloModalOpen] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
   const [deleteCountdown, setDeleteCountdown] = useState(0);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -252,6 +255,19 @@ export default function Settings() {
     }
   };
 
+  const handleResetElo = async () => {
+    try {
+      await gauntletService.resetRatings();
+      await useGauntletStore.getState().loadHub().catch(() => {});
+      setResetEloModalOpen(false);
+      setToastMessage('Gauntlet ELO ratings reset successfully!');
+      setTimeout(() => setToastMessage(null), 3000);
+    } catch (error) {
+      setToastMessage((error as Error).message);
+      setTimeout(() => setToastMessage(null), 3000);
+    }
+  };
+
   const handleClearAllDecks = async () => {
     // Delete from SQL/Web DB (FK-safe order)
     await dbService.clearAllData();
@@ -388,6 +404,15 @@ export default function Settings() {
         { label: 'Import Decks', type: 'action', buttonText: 'IMPORT JSON', actionId: 'import', advanced: true },
         { label: 'Export Decks', type: 'action', buttonText: 'EXPORT JSON', actionId: 'export', advanced: true },
         { label: 'Reset Mastery Progress', type: 'action', buttonText: 'Reset Progress', actionId: 'reset-progress', advanced: true },
+        {
+          label: 'Reset Gauntlet ELO',
+          description: 'Reset all subject Elo ratings and rank tiers back to 1000 (provisional).',
+          type: 'action',
+          buttonText: 'RESET ELO',
+          danger: true,
+          actionId: 'reset-elo',
+          advanced: true,
+        },
         { label: 'Clear All Decks', type: 'action', buttonText: 'CLEAR ALL DECKS', danger: true, actionId: 'clear-all', advanced: true },
       ]
     }
@@ -1067,6 +1092,8 @@ export default function Settings() {
                               handleExportDatabaseAndImages();
                             } else if ((opt as any).actionId === 'reset-progress') {
                               setResetResetMenuOpen(true);
+                            } else if ((opt as any).actionId === 'reset-elo') {
+                              setResetEloModalOpen(true);
                             } else if ((opt as any).actionId === 'clear-all') {
                               setShowClearModal(true);
                             } else if ((opt as any).actionId === 'export') {
@@ -1162,6 +1189,60 @@ export default function Settings() {
               </div>
               <button
                 onClick={() => setResetResetMenuOpen(false)}
+                className="absolute top-4 right-4 text-[#444] hover:text-white transition-colors p-1"
+              >
+                <X size={20} />
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Reset Gauntlet ELO Modal */}
+      <AnimatePresence>
+        {resetEloModalOpen && (
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setResetEloModalOpen(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-md bg-[#111] border border-[#333] rounded-xl shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden"
+            >
+              <div className="h-1 w-full bg-gradient-to-r from-transparent via-[#FF3333] to-transparent" />
+              <div className="p-8 flex flex-col items-center text-center">
+                <div className="w-16 h-16 rounded-full bg-[#FF3333]/10 border border-[#FF3333]/30 flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(255,51,51,0.1)]">
+                  <AlertTriangle className="w-8 h-8 text-[#FF3333]" />
+                </div>
+                <h3 className="text-2xl font-['Orbitron'] font-bold text-white mb-4 tracking-widest uppercase">
+                  Reset Gauntlet ELO
+                </h3>
+                <p className="text-text-muted font-['JetBrains_Mono'] mb-8 leading-relaxed text-sm">
+                  Are you sure you want to reset all Gauntlet Elo ratings across all subjects back to 1000 (provisional)? Your past runs and study history will be preserved, but your current subject ratings will be reset.
+                </p>
+                <div className="flex flex-col gap-3 w-full">
+                  <button
+                    onClick={handleResetElo}
+                    className="w-full py-4 bg-[#FF3333] hover:bg-[#D92626] text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(255,51,51,0.2)] hover:shadow-[0_0_25px_rgba(255,51,51,0.4)]"
+                  >
+                    Confirm Reset
+                  </button>
+                  <button
+                    onClick={() => setResetEloModalOpen(false)}
+                    className="w-full py-4 bg-surface border border-[#333] hover:border-[#555] text-text-muted hover:text-white rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+              <button
+                onClick={() => setResetEloModalOpen(false)}
                 className="absolute top-4 right-4 text-[#444] hover:text-white transition-colors p-1"
               >
                 <X size={20} />
