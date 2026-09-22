@@ -335,7 +335,12 @@ const MathInputField: React.FC<MathInputFieldProps> = ({
 }
 
 export const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?: boolean; onError?: (msg: string) => void; cardId: string }> = ({ data, onChange, isNew, onError, cardId }) => {
-  const [showSolution, setShowSolution] = useState(!!data.explanation)
+  const hasSolution = Boolean(
+    (data.explanation && data.explanation.trim().length > 0) ||
+    data.solutionImagePath
+  )
+  const [showSolution, setShowSolution] = useState(hasSolution)
+  const isSolutionOpen = showSolution || hasSolution
   const [showSolutionPreview, setShowSolutionPreview] = useState(false)
   const set = (patch: Partial<MCQEdit>) => onChange({ ...data, ...patch })
   const setChoice = (i: number, val: string) => {
@@ -407,7 +412,7 @@ export const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; 
       </div>
 
       <div className="w-full">
-        {!showSolution ? (
+        {!isSolutionOpen ? (
           <button
             type="button"
             onClick={() => setShowSolution(true)}
@@ -416,7 +421,7 @@ export const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; 
             + Add Solution
           </button>
         ) : (
-          <>
+          <div className="flex flex-col gap-1 transition-all">
             <div className="flex items-center justify-between mb-1">
               <Label>Solution</Label>
               <div className="flex items-center gap-2 mr-[6px]">
@@ -436,6 +441,17 @@ export const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; 
                   onRemove={() => set({ solutionImagePath: undefined })}
                   alt="Solution image"
                 />
+                {!hasSolution && (
+                  <Tooltip content="Hide solution" position="top">
+                    <button
+                      type="button"
+                      onClick={() => setShowSolution(false)}
+                      className="text-text-muted hover:text-[#FF4B4B] transition-colors p-0.5"
+                    >
+                      <X size={14} />
+                    </button>
+                  </Tooltip>
+                )}
               </div>
             </div>
             <MathInputField
@@ -454,7 +470,7 @@ export const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; 
                 />
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </div>

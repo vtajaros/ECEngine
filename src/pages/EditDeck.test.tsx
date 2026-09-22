@@ -50,6 +50,7 @@ describe('EditDeck Import Functionality', () => {
         updateDeckWithCards: vi.fn().mockResolvedValue({ success: true }),
         exportToText: vi.fn().mockResolvedValue({ success: true }),
       },
+      summarizeDeck: vi.fn().mockResolvedValue({ success: true, text: 'Deck summary' }),
       data: {
         getAllCardsByTopic: vi.fn().mockResolvedValue({
           success: true,
@@ -254,6 +255,79 @@ A: V = I * R`
     // Now cards count should be 2
     expect(container?.textContent).toContain('2 items total')
     expect(container?.textContent).toContain("Ohm's Law")
+  })
+
+  it('keeps solution area uncollapsed when MCQ has solutionImagePath', async () => {
+    // Mock card with solutionImagePath and empty explanation
+    ;(window as any).electron.data.getAllCardsByTopic.mockResolvedValueOnce({
+      success: true,
+      data: [
+        {
+          id: 'card-with-solution-img',
+          type: 'mcq',
+          data: JSON.stringify({
+            question: 'Question with image solution',
+            choices: ['A', 'B', 'C', 'D'],
+            answer: 1,
+            explanation: '',
+            solutionImagePath: 'sol_diag.png',
+          }),
+        },
+      ],
+    })
+
+    await renderComponent()
+
+    // Expand the card by clicking its title or card header
+    const cardTitle = Array.from(container?.querySelectorAll('span') || []).find(s =>
+      s.textContent?.includes('Question with image solution')
+    )
+    expect(cardTitle).toBeTruthy()
+
+    await act(async () => {
+      cardTitle?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+
+    // Solution label and image should be visible, NOT the "+ Add Solution" button
+    expect(container?.textContent).toContain('Solution')
+    const addSolBtn = Array.from(container?.querySelectorAll('button') || []).find(b =>
+      b.textContent?.includes('+ Add Solution')
+    )
+    expect(addSolBtn).toBeUndefined()
+    expect(container?.querySelector('img[alt="Solution image"]')).not.toBeNull()
+  })
+
+  it('preserves expanded state of cards when saving changes', async () => {
+    await renderComponent()
+
+    // Initially collapsed
+    expect(container?.querySelector('input[type="radio"]')).toBeNull()
+
+    // Click to expand the card
+    const cardTitle = Array.from(container?.querySelectorAll('span') || []).find(s =>
+      s.textContent?.includes('Existing Question 1')
+    )
+    expect(cardTitle).toBeTruthy()
+
+    await act(async () => {
+      cardTitle?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+
+    // Now expanded, radio inputs are present
+    expect(container?.querySelector('input[type="radio"]')).not.toBeNull()
+
+    // Click Save Changes button
+    const saveBtn = Array.from(container?.querySelectorAll('button') || []).find(b =>
+      b.textContent?.includes('Save Changes')
+    )
+    expect(saveBtn).toBeTruthy()
+
+    await act(async () => {
+      saveBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+
+    // Card should still be expanded after save completes!
+    expect(container?.querySelector('input[type="radio"]')).not.toBeNull()
   })
 })
 

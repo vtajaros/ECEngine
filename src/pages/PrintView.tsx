@@ -646,7 +646,7 @@ export default function PrintView() {
   // Keyboard shortcut: Ctrl+F / Cmd+F → open find; Escape → close lightbox or find bar
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+      if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'F')) {
         e.preventDefault()
         if (findOpen) {
           findInputRef.current?.focus()

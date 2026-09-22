@@ -348,7 +348,9 @@ const MathInputField: React.FC<MathInputFieldProps> = ({
 
 // ── FormulaForm: maps name→front, latex→back ──────────────────────────────────
 const FormulaForm: React.FC<{ data: FormulaEdit; onChange: (d: FormulaEdit) => void; isNew?: boolean; onError?: (msg: string) => void }> = ({ data, onChange, onError }) => {
-  const [showExplanation, setShowExplanation] = useState(!!(data.explanation || data.explanationImagePath))
+  const hasExplanation = Boolean((data.explanation && data.explanation.trim().length > 0) || data.explanationImagePath)
+  const [showExplanation, setShowExplanation] = useState(hasExplanation)
+  const isExplanationOpen = showExplanation || hasExplanation
   const [showExplanationPreview, setShowExplanationPreview] = useState(false)
 
   const handleExplanationImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -525,13 +527,20 @@ const FormulaForm: React.FC<{ data: FormulaEdit; onChange: (d: FormulaEdit) => v
 interface CardRowProps {
   card: EditCard
   index: number
+  isExpanded: boolean
+  onToggleExpand: (id: string) => void
   onUpdate: (id: string, data: Partial<EditCard>) => void
   onDelete: (id: string) => void
   onError?: (msg: string) => void
 }
 
 const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?: boolean; onError?: (msg: string) => void }> = ({ data, onChange, isNew, onError }) => {
-  const [showSolution, setShowSolution] = useState(!!data.explanation)
+  const hasSolution = Boolean(
+    (data.explanation && data.explanation.trim().length > 0) ||
+    data.solutionImagePath
+  )
+  const [showSolution, setShowSolution] = useState(hasSolution)
+  const isSolutionOpen = showSolution || hasSolution
   const [showSolutionPreview, setShowSolutionPreview] = useState(false)
   const set = (patch: Partial<MCQEdit>) => onChange({ ...data, ...patch })
   const setChoice = (i: number, val: string) => {
@@ -663,8 +672,8 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
         ))}
       </div>
 
-      <div>
-        {!showSolution ? (
+      <div className="w-full">
+        {!isSolutionOpen ? (
           <button
             type="button"
             onClick={() => setShowSolution(true)}
@@ -673,7 +682,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
             + Add Solution
           </button>
         ) : (
-          <>
+          <div className="flex flex-col gap-1 transition-all">
             <div className="flex items-center justify-between mb-1">
               <Label>Solution</Label>
               <div className="flex items-center gap-2 mr-[6px]">
@@ -704,6 +713,17 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
                     </label>
                   </Tooltip>
                 )}
+                {!hasSolution && (
+                  <Tooltip content="Hide solution" position="top">
+                    <button
+                      type="button"
+                      onClick={() => setShowSolution(false)}
+                      className="text-text-muted hover:text-[#FF4B4B] transition-colors p-0.5"
+                    >
+                      <X size={14} />
+                    </button>
+                  </Tooltip>
+                )}
               </div>
             </div>
             <MathInputField
@@ -723,7 +743,7 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
                 />
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
     </div>
@@ -731,7 +751,9 @@ const MCQForm: React.FC<{ data: MCQEdit; onChange: (d: MCQEdit) => void; isNew?:
 }
 
 const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit) => void; isNew?: boolean; onError?: (msg: string) => void }> = ({ data, onChange, isNew, onError }) => {
-  const [showExplanation, setShowExplanation] = useState(!!(data.explanation || data.explanationImagePath))
+  const hasExplanation = Boolean((data.explanation && data.explanation.trim().length > 0) || data.explanationImagePath)
+  const [showExplanation, setShowExplanation] = useState(hasExplanation)
+  const isExplanationOpen = showExplanation || hasExplanation
   const [showExplanationPreview, setShowExplanationPreview] = useState(false)
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -851,7 +873,7 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
 
       {/* EXPLANATION */}
       <div className="w-full">
-        {!showExplanation ? (
+        {!isExplanationOpen ? (
           <button type="button" onClick={() => setShowExplanation(true)}
             className="text-[11px] font-['Rajdhani'] uppercase tracking-widest text-text-muted hover:text-accent transition-colors font-bold">
             + Add Explanation
@@ -907,9 +929,7 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
   )
 }
 
-const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<HTMLElement> }> = ({ card, index, onUpdate, onDelete, onError, dragHandleProps }) => {
-  const [expanded, setExpanded] = useState(card.defaultExpanded ?? (card.isNew ?? false))
-
+const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<HTMLElement> }> = ({ card, index, isExpanded, onToggleExpand, onUpdate, onDelete, onError, dragHandleProps }) => {
   const preview = card.type === 'mcq'
     ? (card.data as MCQEdit).question || '(empty question)'
     : card.type === 'formula'
@@ -920,12 +940,12 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
 
   return (
     <div
-      className={`rounded-lg border transition-colors ${expanded ? 'border-accent/30 bg-[#0f1a0f]' : 'border-border-base bg-[#111] hover:border-[#333]'}`}
+      className={`rounded-lg border transition-colors ${isExpanded ? 'border-accent/30 bg-[#0f1a0f]' : 'border-border-base bg-[#111] hover:border-[#333]'}`}
     >
       {/* Collapsed row */}
       <div
         className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none"
-        onClick={() => setExpanded(e => !e)}
+        onClick={() => onToggleExpand(card.id)}
       >
         <Tooltip content="Drag to reorder" position="top">
           <span
@@ -960,11 +980,11 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
         >
           <Trash2 className="w-4 h-4" />
         </button>
-        {expanded ? <ChevronUp className="w-4 h-4 text-[#555] flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-[#555] flex-shrink-0" />}
+        {isExpanded ? <ChevronUp className="w-4 h-4 text-[#555] flex-shrink-0" /> : <ChevronDown className="w-4 h-4 text-[#555] flex-shrink-0" />}
       </div>
 
       <AnimatePresence>
-        {expanded && (
+        {isExpanded && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
@@ -1058,6 +1078,7 @@ export default function EditDeck() {
     folderId: null
   })
   const [cards, setCards] = useState<EditCard[]>([])
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set())
   const [originalCardIds, setOriginalCardIds] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
@@ -1309,10 +1330,10 @@ export default function EditDeck() {
   }, [scope])
 
   // ── Load from DB ──────────────────────────────────────────────────────────
-  const loadCards = useCallback(async () => {
+  const loadCards = useCallback(async (isInitial = false) => {
     if (!deckId) return
     try {
-      setLoading(true)
+      if (isInitial) setLoading(true)
       // ── Electron: load via IPC ──
       const topicsRes = await window.electron.decks.getTopics()
       if (topicsRes?.data) {
@@ -1408,17 +1429,43 @@ export default function EditDeck() {
         })
         setCards(loaded)
         setOriginalCardIds(new Set(loaded.map(c => c.id)))
+
+        // Preserve expanded cards by position/id across background reloads
+        if (!isInitial) {
+          setExpandedIds(prev => {
+            const next = new Set<string>()
+            const prevCards = cardsRef.current
+            prevCards.forEach((c, idx) => {
+              if (prev.has(c.id) && loaded[idx]) {
+                next.add(loaded[idx].id)
+              }
+            })
+            return next
+          })
+        }
       }
     } catch (err) {
       console.error('[EditDeck] Load error', err)
     } finally {
-      setLoading(false)
+      if (isInitial) setLoading(false)
     }
   }, [deckId])
 
   useEffect(() => {
-    loadCards()
+    loadCards(true)
   }, [loadCards])
+
+  const toggleExpand = useCallback((id: string) => {
+    setExpandedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }, [])
 
   // ── Card mutations ────────────────────────────────────────────────────────
   const updateCard = useCallback((id: string, patch: Partial<EditCard>) => {
@@ -1428,6 +1475,11 @@ export default function EditDeck() {
   const deleteCard = useCallback((id: string) => {
     saveSnapshot(cardsRef.current)
     setCards(prev => prev.filter(c => c.id !== id))
+    setExpandedIds(prev => {
+      const next = new Set(prev)
+      next.delete(id)
+      return next
+    })
   }, [saveSnapshot])
 
   const addCard = (type: 'mcq' | 'flashcard' | 'formula') => {
@@ -1438,6 +1490,7 @@ export default function EditDeck() {
         ? { id, type, data: { name: '', latex: '', description: '', variables: '', explanation: '', explanationImagePath: undefined, imageBack: undefined }, isNew: true }
         : { id, type, data: { front: '', back: '' }, isNew: true }
     setCards(prev => [...prev, data])
+    setExpandedIds(prev => new Set(prev).add(id))
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -1551,7 +1604,7 @@ export default function EditDeck() {
       })
       if (!res.success) throw new Error(res.error)
       useDataVersionStore.getState().bump()
-      await loadCards()
+      await loadCards(false)
       if (isNewFolder) {
         setToast({ type: 'success', msg: `Deck saved and new folder "${deckMeta.folderName.trim()}" created!` })
       } else {
@@ -1951,6 +2004,8 @@ export default function EditDeck() {
                           <SortableQuestionRow
                             card={card}
                             index={virtualRow.index}
+                            isExpanded={expandedIds.has(card.id)}
+                            onToggleExpand={toggleExpand}
                             onUpdate={updateCard}
                             onDelete={deleteCard}
                             onError={(msg) => {
