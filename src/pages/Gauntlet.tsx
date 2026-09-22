@@ -849,10 +849,16 @@ Please explain:
                                 textClass = 'text-[#aaa]'
                               }
 
+                              let orderClass = ''
+                              if (idx === 0) orderClass = 'order-1'
+                              else if (idx === 1) orderClass = 'order-2 sm:order-3'
+                              else if (idx === 2) orderClass = 'order-3 sm:order-2'
+                              else if (idx === 3) orderClass = 'order-4'
+
                               return (
                                 <div
                                   key={idx}
-                                  className={`p-2.5 rounded-lg border flex items-center gap-2.5 text-xs font-['Rajdhani'] ${btnClass}`}
+                                  className={`p-2.5 rounded-lg border flex items-center gap-2.5 text-xs font-['Rajdhani'] ${btnClass} ${orderClass}`}
                                 >
                                   <span
                                     className={`w-5 h-5 rounded flex items-center justify-center font-bold text-[11px] shrink-0 border ${badgeClass}`}
@@ -1184,13 +1190,19 @@ Please explain:
                   }
                 }
 
+                let orderClass = ''
+                if (i === 0) orderClass = 'order-1'
+                else if (i === 1) orderClass = 'order-2 md:order-3'
+                else if (i === 2) orderClass = 'order-3 md:order-2'
+                else if (i === 3) orderClass = 'order-4'
+
                 return (
                   <button
                     key={i}
                     type="button"
                     disabled={isModalOpen || isRevealed}
                     onClick={() => handleAnswer(i)}
-                    className={`w-full text-left py-4 px-4 rounded-xl border flex items-center transition-all group disabled:cursor-not-allowed ${btnStyle}`}
+                    className={`w-full text-left py-4 px-4 rounded-xl border flex items-center transition-all group disabled:cursor-not-allowed ${btnStyle} ${orderClass}`}
                   >
                     <div
                       className={`w-6 h-6 flex items-center justify-center rounded border font-['Rajdhani'] font-bold text-sm mr-3 shrink-0 transition-colors ${prefixStyle}`}
