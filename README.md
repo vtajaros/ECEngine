@@ -4,7 +4,7 @@
   <p><strong>The Ultimate Cyberpunk-Utility Study Command Center for the Philippine Electronics Engineering (ECE) & ECT Licensure Exams</strong></p>
   
   <p>
-    <img src="https://img.shields.io/badge/version-1.0.0-00FF41.svg?style=flat-square" alt="version" />
+    <img src="https://img.shields.io/badge/version-0.1.0-00FF41.svg?style=flat-square" alt="version" />
     <img src="https://img.shields.io/badge/Electron-31.0-47848F.svg?style=flat-square&logo=electron" alt="Electron" />
     <img src="https://img.shields.io/badge/React-18.3-61DAFB.svg?style=flat-square&logo=react" alt="React" />
     <img src="https://img.shields.io/badge/TypeScript-5.5-3178C6.svg?style=flat-square&logo=typescript" alt="TypeScript" />
@@ -178,7 +178,7 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 ---
 
 ### 🤖 AI Explanations & Context Generation
-* **Groq AI Integration**: Direct integration with Groq (`llama-3.3-70b-versatile` / `openai/gpt-oss-120b`) for on-demand step-by-step problem explanations and automated deck summaries.
+* **Groq AI Integration**: Direct integration with Groq (`openai/gpt-oss-120b`) for on-demand step-by-step problem explanations and automated deck summaries.
 * **AI-Powered Deck Summaries**: Single-click auto-generation of crisp deck summaries distilling up to 40 sample cards into clean topic phrases without introductory filler.
 * **"Get Context" Exporter**: One-click extraction of formatted problem context to the clipboard for use with ChatGPT, Claude, Gemini, or DeepSeek.
 * **Live AI Usage & Rate-Limit Dashboard**: Track Groq API rate limits (requests per minute/day and tokens per minute) in real time from Settings, featuring progress indicators, rate-limit warnings (>85%), and dynamic reset countdown timers.
@@ -320,6 +320,7 @@ CREATE TABLE folders (
 CREATE INDEX IF NOT EXISTS idx_next_review ON progress(next_review);
 CREATE INDEX IF NOT EXISTS idx_last_reviewed ON progress(last_reviewed);
 CREATE INDEX IF NOT EXISTS idx_cards_topic_id ON cards(topic_id);
+CREATE INDEX IF NOT EXISTS idx_cards_topic_type ON cards(topic_id, type);
 CREATE INDEX IF NOT EXISTS idx_topics_folder_id ON topics(folder_id);
 CREATE INDEX IF NOT EXISTS idx_topics_subject ON topics(subject);
 CREATE INDEX IF NOT EXISTS idx_topics_is_favorite ON topics(is_favorite);
@@ -345,17 +346,25 @@ CREATE TABLE exam_sessions (
   answers TEXT DEFAULT '{}'
 );
 
--- Attempt telemetry for response time & performance analysis
+-- Attempt telemetry for response time & performance analysis (survives card deletion)
 CREATE TABLE attempt_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ts INTEGER NOT NULL,
+  day TEXT NOT NULL,           -- YYYY-MM-DD
   card_id TEXT NOT NULL,
-  session_id TEXT,
+  topic_id TEXT,
+  subject TEXT,
+  card_type TEXT,
   mode TEXT NOT NULL,          -- 'learn' | 'flashcard' | 'test'
-  response_ms INTEGER NOT NULL,
-  result TEXT,
-  created_at INTEGER NOT NULL,
-  FOREIGN KEY(card_id) REFERENCES cards(id) ON DELETE CASCADE
+  correct INTEGER NOT NULL,
+  quality INTEGER,
+  response_ms INTEGER
 );
+
+CREATE INDEX IF NOT EXISTS idx_attempt_ts ON attempt_log(ts);
+CREATE INDEX IF NOT EXISTS idx_attempt_day ON attempt_log(day);
+CREATE INDEX IF NOT EXISTS idx_attempt_subject_ts ON attempt_log(subject, ts);
+CREATE INDEX IF NOT EXISTS idx_attempt_card ON attempt_log(card_id);
 
 -- Gauntlet high-stakes speed runs & answers
 CREATE TABLE gauntlet_runs (
@@ -372,7 +381,10 @@ CREATE TABLE gauntlet_runs (
   skipped INTEGER NOT NULL,
   best_streak INTEGER NOT NULL,
   duration_ms INTEGER NOT NULL,
-  end_reason TEXT NOT NULL
+  end_reason TEXT NOT NULL,
+  ratings_before TEXT,
+  ratings_after TEXT,
+  subject_breakdown TEXT
 );
 
 CREATE TABLE gauntlet_answers (
@@ -381,11 +393,15 @@ CREATE TABLE gauntlet_answers (
   seq INTEGER NOT NULL,
   card_id TEXT NOT NULL,
   subject TEXT NOT NULL,
+  chosen INTEGER,
+  answer_index INTEGER NOT NULL,
   outcome TEXT NOT NULL,       -- 'correct' | 'wrong' | 'skipped' | 'timeout'
   time_ms INTEGER NOT NULL,
   par_ms INTEGER NOT NULL,
   points INTEGER NOT NULL,
-  streak_after INTEGER NOT NULL
+  streak_after INTEGER NOT NULL,
+  choices TEXT,
+  answered_at INTEGER NOT NULL
 );
 
 -- Gauntlet Elo-style subject ratings
@@ -396,6 +412,10 @@ CREATE TABLE gauntlet_ratings (
   peak REAL,
   updated_at INTEGER NOT NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_gauntlet_runs_started ON gauntlet_runs(started_at);
+CREATE INDEX IF NOT EXISTS idx_gauntlet_answers_run ON gauntlet_answers(run_id, seq);
+CREATE INDEX IF NOT EXISTS idx_gauntlet_answers_card ON gauntlet_answers(card_id);
 ```
 
 ---
@@ -407,7 +427,7 @@ ecengine/
 ├── electron/                    # Electron Backend Process
 │   ├── main.ts                  # App lifecycle, window management, zoom, hotkeys
 │   ├── preload.ts               # contextBridge IPC API exposure
-│   ├── db/                      # SQLite connection, schema bootstrap, migrations (v1–v9)
+│   ├── db/                      # SQLite connection, schema bootstrap, migrations (v1–v12)
 │   └── ipc/                     # Modular IPC handlers (DB, Deck, Analytics, AI, Print, Config, TTS, Export)
 ├── src/                         # React Frontend (Renderer)
 │   ├── assets/                  # Brand assets, icons, bundled fonts (Rajdhani, JetBrains Mono, Orbitron)
@@ -430,7 +450,7 @@ ecengine/
 │   ├── store/                   # Zustand stores (useSessionStore, useGauntletStore, useChecklistStore, useDataLabStore)
 │   └── styles/                  # Tailwind theme tokens, CSS variables (--tier-*), KaTeX customizations
 ├── content/                     # Seed JSON deck files
-├── scripts/                     # Seeding and content validation scripts
+├── scripts/                     # Database seeding script (seed-db.ts)
 ├── package.json                 # Dependencies and build configuration
 ├── tailwind.config.ts           # Semantic design tokens and container queries
 └── electron.vite.config.ts      # Vite configuration for React and Electron
@@ -441,7 +461,7 @@ ecengine/
 ## 🛠 Getting Started & Development
 
 ### Prerequisites
-* **Node.js**: `v20.x` or `v22.x` LTS recommended
+* **Node.js**: `v20.x` or `v22.x` LTS recommended (Active LTS baseline for native module compatibility with `better-sqlite3` and `sharp`)
 * **npm** (comes with Node.js)
 * **C++ Build Tools**:
   * **Windows**: `npm install --global --production windows-build-tools` or Visual Studio C++ build tools (required for native `better-sqlite3` compilation)
@@ -610,7 +630,6 @@ wget https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/ryan/medi
 | `npm run preview` | Preview production build locally |
 | `npm run package` | Generate distributable installers (`.exe`, `.AppImage`, `.dmg`) via `electron-builder` |
 | `npm run seed` | Parse `content/` JSON files and populate `ecengine.sqlite` |
-| `npm run validate-content` | Validate JSON structure and questions in `content/` |
 | `npm run test` | Run test suite with Vitest |
 
 ---
