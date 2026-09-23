@@ -361,6 +361,11 @@ export default function Settings() {
       icon: <Monitor size={20} className="text-accent" />,
       options: [
         {
+          label: 'Minimize Sidebar on Start',
+          type: 'custom-toggle',
+          actionId: 'sidebar-collapse-toggle'
+        },
+        {
           label: 'Equation Font Size',
           description: 'Adjust the global font size for LaTeX equations.',
           type: 'custom-slider',
@@ -381,14 +386,9 @@ export default function Settings() {
       ]
     },
     {
-      title: 'Data & Sync',
+      title: 'Advanced Settings',
       icon: <Database size={20} className="text-accent" />,
       options: [
-        {
-          label: 'Minimize Sidebar on Start',
-          type: 'custom-toggle',
-          actionId: 'sidebar-collapse-toggle'
-        },
         { label: 'Auto-Backup Progress Locally', type: 'toggle', current: true, advanced: true },
         { label: 'Images Storage Path', type: 'custom-path-picker', advanced: true },
         { label: 'Database File Location', type: 'custom-db-path-picker', advanced: true },
@@ -888,7 +888,7 @@ export default function Settings() {
                   {section.icon}
                   <span className="ml-3">{section.title}</span>
                 </div>
-                {section.title === 'Data & Sync' && (
+                {section.title === 'Advanced Settings' && (
                   <div className="flex items-center gap-3">
                     <span className="font-['Orbitron'] text-[10px] text-[#666] tracking-wider uppercase font-bold">Unlock Advanced</span>
                     <button
@@ -904,7 +904,7 @@ export default function Settings() {
               <div className="bg-[#111111] p-6 lg:p-8 rounded-lg border border-surface-2 shadow-lg space-y-8">
                 {section.options.map((opt, idy) => {
                   const isAdvanced = (opt as any).advanced;
-                  const isDisabled = isAdvanced && section.title === 'Data & Sync' && !advancedSyncEnabled;
+                  const isDisabled = isAdvanced && section.title === 'Advanced Settings' && !advancedSyncEnabled;
 
                   return (
                     <div key={idy} className={`flex flex-row items-center justify-between gap-4 transition-all duration-300 ${isDisabled ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
