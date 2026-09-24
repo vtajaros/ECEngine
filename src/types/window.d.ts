@@ -191,6 +191,8 @@ declare global {
         minimize: () => void
         maximize: () => void
         close: () => void
+        isMaximized?: () => Promise<boolean>
+        onMaximizedChanged?: (callback: (isMaximized: boolean) => void) => () => void
         onFullscreenChanged: (callback: (isFullscreen: boolean) => void) => () => void
       }
       print: {

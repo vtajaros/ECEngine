@@ -1,11 +1,12 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { FileText, Table2, List, BookOpen, Bold, Loader2, CheckCircle2, AlertCircle, Minus, Square, X, Search, ChevronUp, ChevronDown } from 'lucide-react'
+import { FileText, Table2, List, BookOpen, Bold, Loader2, CheckCircle2, AlertCircle, X, Search, ChevronUp, ChevronDown } from 'lucide-react'
 import { dbService } from '../services/db.service'
 import { Card, MCQData, FlashcardData, FormulaData } from '../types'
 import { renderMath, renderPlainText } from '../lib/latex'
 import { Tooltip } from '../components/ui/Tooltip'
+import { WindowControls } from '../components/layout/WindowControls'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -863,31 +864,7 @@ export default function PrintView() {
       </div>
 
       {/* Right Side: Window Controls */}
-      {controls && (
-        <div className="flex h-full ml-auto [-webkit-app-region:no-drag]">
-          <button
-            onClick={() => controls?.minimize()}
-            className="px-3 h-full hover:bg-[#333] hover:text-white transition-colors flex items-center justify-center"
-            title="Minimize"
-          >
-            <Minus size={12} />
-          </button>
-          <button
-            onClick={() => controls?.maximize()}
-            className="px-3 h-full hover:bg-[#333] hover:text-white transition-colors flex items-center justify-center"
-            title="Maximize"
-          >
-            <Square size={10} />
-          </button>
-          <button
-            onClick={() => controls?.close()}
-            className="px-3 h-full hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center"
-            title="Close"
-          >
-            <X size={14} />
-          </button>
-        </div>
-      )}
+      {controls && <WindowControls />}
     </div>
   )
 

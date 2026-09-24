@@ -47,6 +47,14 @@ export function registerPrintHandlers(getMainWindow: () => Electron.BrowserWindo
 
       printWindow.webContents.setVisualZoomLevelLimits(1, 1)
 
+      printWindow.on('maximize', () => {
+        printWindow?.webContents.send('window:maximized', true)
+      })
+
+      printWindow.on('unmaximize', () => {
+        printWindow?.webContents.send('window:maximized', false)
+      })
+
       printWindow.on('closed', () => {
         printWindow = null
       })

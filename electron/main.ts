@@ -82,6 +82,14 @@ function createWindow() {
     mainWindow!.show()
   })
 
+  mainWindow.on('maximize', () => {
+    mainWindow?.webContents.send('window:maximized', true)
+  })
+
+  mainWindow.on('unmaximize', () => {
+    mainWindow?.webContents.send('window:maximized', false)
+  })
+
   mainWindow.on('closed', () => {
     mainWindow = null
   })
@@ -204,18 +212,24 @@ app.whenReady().then(() => {
   })
 
   // Window Control Handlers
-  ipcMain.on('window-minimize', () => {
-    BrowserWindow.getFocusedWindow()?.minimize()
+  ipcMain.on('window-minimize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender) || BrowserWindow.getFocusedWindow()
+    win?.minimize()
   })
-  ipcMain.on('window-maximize', () => {
-    const win = BrowserWindow.getFocusedWindow()
+  ipcMain.on('window-maximize', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender) || BrowserWindow.getFocusedWindow()
     if (win) {
       if (win.isMaximized()) win.unmaximize()
       else win.maximize()
     }
   })
-  ipcMain.on('window-close', () => {
-    BrowserWindow.getFocusedWindow()?.close()
+  ipcMain.on('window-close', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender) || BrowserWindow.getFocusedWindow()
+    win?.close()
+  })
+  ipcMain.handle('window-is-maximized', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender) || BrowserWindow.getFocusedWindow()
+    return win?.isMaximized() ?? false
   })
 
   createWindow()

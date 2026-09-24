@@ -1,7 +1,8 @@
-import { Zap, Minus, Square, X, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { Tooltip } from '../ui/Tooltip'
+import { WindowControls } from './WindowControls'
 
 interface TitleBarProps {
   isCollapsed?: boolean;
@@ -9,7 +10,6 @@ interface TitleBarProps {
 }
 
 export const TitleBar: React.FC<TitleBarProps> = ({ isCollapsed, onToggleSidebar }) => {
-  const controls = (window as any).electron?.windowControls
   const navigate = useNavigate()
   const location = useLocation()
   
@@ -75,29 +75,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({ isCollapsed, onToggleSidebar
       </div>
 
       {/* Right Side: Window Controls */}
-      <div className="flex h-full ml-auto [-webkit-app-region:no-drag]">
-        <button
-          onClick={() => controls?.minimize()}
-          className="px-3 h-full hover:bg-[#333] transition-colors flex items-center justify-center"
-          title="Minimize"
-        >
-          <Minus size={12} />
-        </button>
-        <button
-          onClick={() => controls?.maximize()}
-          className="px-3 h-full hover:bg-[#333] transition-colors flex items-center justify-center"
-          title="Maximize"
-        >
-          <Square size={10} />
-        </button>
-        <button
-          onClick={() => controls?.close()}
-          className="px-3 h-full hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center"
-          title="Close"
-        >
-          <X size={14} />
-        </button>
-      </div>
+      <WindowControls />
     </div>
   )
 }

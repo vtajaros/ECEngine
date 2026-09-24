@@ -160,6 +160,12 @@ contextBridge.exposeInMainWorld('electron', {
     minimize: () => ipcRenderer.send('window-minimize'),
     maximize: () => ipcRenderer.send('window-maximize'),
     close: () => ipcRenderer.send('window-close'),
+    isMaximized: (): Promise<boolean> => ipcRenderer.invoke('window-is-maximized'),
+    onMaximizedChanged: (callback: (isMaximized: boolean) => void) => {
+      const listener = (_event: any, isMax: boolean) => callback(isMax)
+      ipcRenderer.on('window:maximized', listener)
+      return () => { ipcRenderer.removeListener('window:maximized', listener) }
+    },
     onFullscreenChanged: (callback: (isFullscreen: boolean) => void) => {
       const listener = (_event: any, isFullscreen: boolean) => callback(isFullscreen)
       ipcRenderer.on('window:fullscreen', listener)
