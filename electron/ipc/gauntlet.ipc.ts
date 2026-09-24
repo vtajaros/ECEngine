@@ -57,6 +57,19 @@ const GetRunsSchema = z.object({
   offset: z.number().int().min(0).default(0),
 }).default({ limit: 50, offset: 0 })
 
+const FlagQuestionSchema = z.object({
+  cardId: z.string().min(1),
+  reason: z.string().max(500).optional(),
+})
+
+const UnflagQuestionSchema = z.object({
+  cardId: z.string().min(1),
+})
+
+const GetFlaggedQuestionsSchema = z.object({
+  cardIds: z.array(z.string().min(1)).optional(),
+}).optional()
+
 const fail = (e: unknown) => ({ success: false, error: (e as Error).message })
 
 export function registerGauntletHandlers(): void {
@@ -107,6 +120,35 @@ export function registerGauntletHandlers(): void {
     try {
       G.resetRatings(getDB())
       return { success: true }
+    } catch (e) {
+      return fail(e)
+    }
+  })
+
+  ipcMain.handle('gauntlet:flagQuestion', async (_, payload: unknown) => {
+    try {
+      const { cardId, reason } = FlagQuestionSchema.parse(payload)
+      G.flagQuestion(getDB(), cardId, reason)
+      return { success: true }
+    } catch (e) {
+      return fail(e)
+    }
+  })
+
+  ipcMain.handle('gauntlet:unflagQuestion', async (_, payload: unknown) => {
+    try {
+      const { cardId } = UnflagQuestionSchema.parse(payload)
+      G.unflagQuestion(getDB(), cardId)
+      return { success: true }
+    } catch (e) {
+      return fail(e)
+    }
+  })
+
+  ipcMain.handle('gauntlet:getFlaggedQuestions', async (_, payload: unknown) => {
+    try {
+      const parsed = GetFlaggedQuestionsSchema.parse(payload)
+      return { success: true, data: G.getFlaggedQuestions(getDB(), parsed?.cardIds) }
     } catch (e) {
       return fail(e)
     }

@@ -1,8 +1,10 @@
 // src/hooks/useSound.ts
 import { useRef, useCallback, useState, useEffect } from 'react'
 import wrongSfx from '../assets/sounds/wrong.wav'
+import gameOverSfx from '../assets/sounds/gameover.mp3'
+import plusOneSfx from '../assets/sounds/plusone.mp3'
 
-export type SoundEvent = 'correct' | 'wrong' | 'roundComplete' | 'finish' | 'tick' | 'go' | 'gameOver'
+export type SoundEvent = 'correct' | 'wrong' | 'roundComplete' | 'finish' | 'tick' | 'go' | 'gameOver' | 'plusOne'
 
 const CUSTOM_WRONG_SOUND_KEY = 'ecengine:wrongSound:enabled'
 const SESSION_MUTE_KEY = 'ecengine_sounds_muted'
@@ -237,7 +239,7 @@ function playGoSound(ctx: AudioContext, masterVolume: number) {
   })
 }
 
-function playGameOverSound(ctx: AudioContext, masterVolume: number) {
+function playSynthGameOverSound(ctx: AudioContext, masterVolume: number) {
   const notes = [
     { freq: 311.13, start: 0, duration: 0.2, type: 'triangle' as const },
     { freq: 261.63, start: 0.2, duration: 0.2, type: 'triangle' as const },
@@ -265,9 +267,11 @@ function playGameOverSound(ctx: AudioContext, masterVolume: number) {
   })
 }
 
-// ── File-based wrong sound ────────────────────────────────────────────────────
+// ── File-based sounds ─────────────────────────────────────────────────────────
 
 let cachedWrongBuffer: AudioBuffer | null = null
+let cachedGameOverBuffer: AudioBuffer | null = null
+let cachedPlusOneBuffer: AudioBuffer | null = null
 
 function playCustomWrongSound(ctx: AudioContext, masterVolume: number) {
   const playBuf = (decoded: AudioBuffer) => {
@@ -295,6 +299,62 @@ function playCustomWrongSound(ctx: AudioContext, masterVolume: number) {
     .catch(() => {
       // File failed — fall back to synth silently
       playSynthWrongSound(ctx, masterVolume)
+    })
+}
+
+function playGameOverSound(ctx: AudioContext, masterVolume: number) {
+  const playBuf = (decoded: AudioBuffer) => {
+    const source = ctx.createBufferSource()
+    const gain = ctx.createGain()
+    source.buffer = decoded
+    gain.gain.value = 0.8 * masterVolume
+    source.connect(gain)
+    gain.connect(ctx.destination)
+    source.start(ctx.currentTime)
+  }
+
+  if (cachedGameOverBuffer) {
+    playBuf(cachedGameOverBuffer)
+    return
+  }
+
+  fetch(gameOverSfx)
+    .then(res => res.arrayBuffer())
+    .then(buf => ctx.decodeAudioData(buf))
+    .then(decoded => {
+      cachedGameOverBuffer = decoded
+      playBuf(decoded)
+    })
+    .catch(() => {
+      playSynthGameOverSound(ctx, masterVolume)
+    })
+}
+
+function playPlusOneSound(ctx: AudioContext, masterVolume: number) {
+  const playBuf = (decoded: AudioBuffer) => {
+    const source = ctx.createBufferSource()
+    const gain = ctx.createGain()
+    source.buffer = decoded
+    gain.gain.value = 0.8 * masterVolume
+    source.connect(gain)
+    gain.connect(ctx.destination)
+    source.start(ctx.currentTime)
+  }
+
+  if (cachedPlusOneBuffer) {
+    playBuf(cachedPlusOneBuffer)
+    return
+  }
+
+  fetch(plusOneSfx)
+    .then(res => res.arrayBuffer())
+    .then(buf => ctx.decodeAudioData(buf))
+    .then(decoded => {
+      cachedPlusOneBuffer = decoded
+      playBuf(decoded)
+    })
+    .catch(() => {
+      playRoundCompleteSound(ctx, masterVolume)
     })
 }
 
@@ -346,6 +406,9 @@ export function useSound() {
           break
         case 'gameOver':
           playGameOverSound(ctx, vol)
+          break
+        case 'plusOne':
+          playPlusOneSound(ctx, vol)
           break
       }
     } catch {

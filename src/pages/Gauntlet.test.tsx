@@ -7,6 +7,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import Gauntlet from './Gauntlet'
 import { useGauntletStore, resetGauntletStore } from '../store/useGauntletStore'
+import { gauntletService } from '../services/gauntlet.service'
 import type { AnswerRecord, QueueItem } from '../store/useGauntletStore'
 import type { MCQData, Subject } from '../types'
 
@@ -65,6 +66,9 @@ vi.mock('../services/gauntlet.service', () => ({
     getPaceStats: vi.fn().mockResolvedValue({}),
     getQuestions: vi.fn().mockResolvedValue([]),
     saveRun: vi.fn().mockResolvedValue({ success: true, id: 'run-123' }),
+    getFlaggedQuestions: vi.fn().mockResolvedValue({}),
+    flagQuestion: vi.fn().mockResolvedValue(undefined),
+    unflagQuestion: vi.fn().mockResolvedValue(undefined),
   },
 }))
 
@@ -569,6 +573,41 @@ describe('Gauntlet Summary Review List', () => {
     expect(mockPlay).toHaveBeenCalledWith('gameOver')
   })
 
+  it('plays plusOne sound when life bonus feedback is triggered', async () => {
+    useGauntletStore.setState({
+      phase: 'playing',
+      index: 0,
+      livesLeft: 3,
+      queue: [mockItem('q1', 'MATH', 6000)],
+      feedback: {
+        id: 99,
+        outcome: 'correct',
+        points: 100,
+        streak: 10,
+        streakMult: 1.5,
+        fastWrong: false,
+        lifeBonus: true,
+      },
+      config: {
+        mode: 'survival',
+        subjects: ['MATH'],
+        rated: false,
+        durationSec: 60,
+        totalItems: 1,
+        allocation: 'tos',
+        customCounts: {},
+        lives: 3,
+        perQuestionSec: 30,
+      },
+    })
+
+    await act(async () => {
+      root!.render(renderWithRouter(<Gauntlet />))
+    })
+
+    expect(mockPlay).toHaveBeenCalledWith('plusOne')
+  })
+
   it('renders time spent and survival header in summary for survival mode', async () => {
     useGauntletStore.setState({
       phase: 'summary',
@@ -669,5 +708,189 @@ describe('Gauntlet Summary Review List', () => {
 
     expect(music.isLowHealthActive()).toBe(false)
   })
+
+  it('renders LEARN MISSED button when there are missed questions in summary', async () => {
+    setupSummaryState()
+
+    await act(async () => {
+      root!.render(renderWithRouter(<Gauntlet />))
+    })
+
+    const learnMissedBtn = container!.querySelector('[data-testid="learn-missed-button"]')
+    expect(learnMissedBtn).toBeTruthy()
+    expect(learnMissedBtn?.textContent).toContain('LEARN MISSED (3)')
+
+    const headerBtn = container!.querySelector('[data-testid="learn-missed-header-button"]')
+    expect(headerBtn).toBeTruthy()
+    expect(headerBtn?.textContent).toContain('Learn 3 Missed')
+  })
+
+  it('does not render LEARN MISSED button when all questions are correct', async () => {
+    useGauntletStore.setState({
+      phase: 'summary',
+      endReason: 'queue',
+      score: 400,
+      streak: 4,
+      bestStreak: 4,
+      answers: [
+        {
+          seq: 0,
+          item: mockItem('c1', 'MATH', 6000),
+          chosen: 1,
+          outcome: 'correct',
+          timeMs: 4000,
+          points: 100,
+          streakAfter: 1,
+          answeredAt: Date.now(),
+        },
+      ],
+      config: {
+        mode: 'timed',
+        subjects: ['MATH'],
+        rated: false,
+        durationSec: 1200,
+        totalItems: 1,
+        allocation: 'tos',
+        customCounts: {},
+        lives: 3,
+        perQuestionSec: 30,
+      },
+    })
+
+    await act(async () => {
+      root!.render(renderWithRouter(<Gauntlet />))
+    })
+
+    const learnMissedBtn = container!.querySelector('[data-testid="learn-missed-button"]')
+    expect(learnMissedBtn).toBeNull()
+  })
+
+  it('starts LearnMode when clicking LEARN MISSED and returns to summary on exit', async () => {
+    setupSummaryState()
+
+    await act(async () => {
+      root!.render(renderWithRouter(<Gauntlet />))
+    })
+
+    const learnMissedBtn = container!.querySelector('[data-testid="learn-missed-button"]') as HTMLButtonElement
+    expect(learnMissedBtn).toBeTruthy()
+
+    await act(async () => {
+      learnMissedBtn.click()
+    })
+
+    // Confirm LearnMode is mounted
+    expect(container!.textContent).toContain('Exit Learn Mode')
+    expect(container!.textContent).toContain('to retry')
+
+    // Click Exit Learn Mode
+    const exitBtn = Array.from(container!.querySelectorAll('button')).find(
+      b => b.textContent?.includes('Exit Learn Mode'),
+    )
+    expect(exitBtn).toBeTruthy()
+
+    await act(async () => {
+      exitBtn!.click()
+    })
+
+    // Confirm Leave modal is shown, then confirm leave
+    const confirmLeaveBtn = Array.from(container!.querySelectorAll('button')).find(
+      b => b.textContent?.includes('Leave') || b.textContent?.includes('Yes'),
+    )
+    expect(confirmLeaveBtn).toBeTruthy()
+
+    await act(async () => {
+      confirmLeaveBtn!.click()
+    })
+
+    // Back in Summary
+    expect(container!.textContent).toContain('Gauntlet Run Summary')
+    expect(container!.querySelector('[data-testid="learn-missed-button"]')).toBeTruthy()
+  })
+
+  it('renders Flag Question button and opens modal to flag question', async () => {
+    setupSummaryState()
+
+    await act(async () => {
+      root!.render(renderWithRouter(<Gauntlet />))
+    })
+
+    // Expand row 1
+    const row = container!.querySelector('[data-testid="review-row-summary-0"]') as HTMLElement
+    await act(async () => {
+      row.click()
+    })
+
+    // Flag button should be visible in expanded row
+    const flagBtn = container!.querySelector('[data-testid="flag-btn-0"]') as HTMLButtonElement
+    expect(flagBtn).toBeTruthy()
+    expect(flagBtn.textContent).toContain('Flag Question')
+
+    // Click Flag Question to open modal
+    await act(async () => {
+      flagBtn.click()
+    })
+
+    const modal = container!.querySelector('[data-testid="flag-modal"]')
+    expect(modal).toBeTruthy()
+    expect(modal!.textContent).toContain('Flag Question')
+    expect(modal!.textContent).toContain('Select a reason:')
+
+    // Select reason 'Missing image or diagram'
+    const reasonBtn = container!.querySelector('[data-testid="flag-reason-missing-image-or-diagram"]') as HTMLButtonElement
+    expect(reasonBtn).toBeTruthy()
+
+    await act(async () => {
+      reasonBtn.click()
+    })
+
+    expect(gauntletService.flagQuestion).toHaveBeenCalledWith('c1', 'Missing image or diagram')
+
+    // Modal should close and badge should appear
+    expect(container!.querySelector('[data-testid="flag-modal"]')).toBeNull()
+    const badge = container!.querySelector('[data-testid="flag-badge-0"]')
+    expect(badge).toBeTruthy()
+    expect(badge!.textContent).toContain('FLAGGED')
+  })
+
+  it('unflags a flagged question from the modal', async () => {
+    ;(gauntletService.getFlaggedQuestions as any).mockResolvedValueOnce({
+      c1: { reason: 'Missing image or diagram', flaggedAt: Date.now() },
+    })
+    setupSummaryState()
+
+    await act(async () => {
+      root!.render(renderWithRouter(<Gauntlet />))
+    })
+
+    // Row 0 has FLAGGED badge
+    const badge = container!.querySelector('[data-testid="flag-badge-0"]')
+    expect(badge).toBeTruthy()
+
+    // Expand row 0
+    const row = container!.querySelector('[data-testid="review-row-summary-0"]') as HTMLElement
+    await act(async () => {
+      row.click()
+    })
+
+    const flagBtn = container!.querySelector('[data-testid="flag-btn-0"]') as HTMLButtonElement
+    expect(flagBtn.textContent).toContain('Flagged (Missing image or diagram)')
+
+    // Click to open modal
+    await act(async () => {
+      flagBtn.click()
+    })
+
+    const unflagBtn = container!.querySelector('[data-testid="unflag-confirm-btn"]') as HTMLButtonElement
+    expect(unflagBtn).toBeTruthy()
+
+    await act(async () => {
+      unflagBtn.click()
+    })
+
+    expect(gauntletService.unflagQuestion).toHaveBeenCalledWith('c1')
+    expect(container!.querySelector('[data-testid="flag-badge-0"]')).toBeNull()
+  })
 })
+
 

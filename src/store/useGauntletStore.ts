@@ -16,6 +16,7 @@ import {
   extractFeatures,
   getSurvivalDifficultyMultiplier,
   isRatedRun,
+  isScoreLifeBonus,
   pickNextIndex,
   scoreAnswer,
   updateLifeBonusState,
@@ -82,6 +83,7 @@ export interface Feedback {
   streak: number
   streakMult: number
   fastWrong: boolean
+  lifeBonus?: boolean
 }
 
 export interface HubData {
@@ -399,13 +401,27 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
     }
     let nextLifeBonusStreak = s.lifeBonusStreak
     let livesLeft = s.livesLeft
+    let lifeBonusAwarded = false
 
     if (survival) {
       if (outcome === 'correct') {
-        const bonus = updateLifeBonusState({ streak: s.lifeBonusStreak }, 'correct')
-        nextLifeBonusStreak = bonus.streak
-        if (bonus.awardLife) {
-          livesLeft = Math.min(s.config.lives, livesLeft + bonus.awarded)
+        const streakBonus = updateLifeBonusState({ streak: s.lifeBonusStreak }, 'correct')
+        nextLifeBonusStreak = streakBonus.streak
+        let bonusLives = streakBonus.awardLife ? streakBonus.awarded : 0
+
+        const prevCorrect = s.answers.filter(a => a.outcome === 'correct').length
+        const nextCorrect = prevCorrect + 1
+        const scoreBonusAwarded = isScoreLifeBonus(nextCorrect)
+        if (scoreBonusAwarded) {
+          bonusLives += 1
+        }
+
+        if (streakBonus.awardLife || scoreBonusAwarded) {
+          lifeBonusAwarded = true
+        }
+
+        if (bonusLives > 0) {
+          livesLeft = Math.min(s.config.lives, livesLeft + bonusLives)
         }
       } else if (outcome === 'wrong' || outcome === 'timeout') {
         const bonus = updateLifeBonusState({ streak: s.lifeBonusStreak }, outcome)
@@ -437,6 +453,7 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
         streak: res.streakAfter,
         streakMult: res.streakMult,
         fastWrong: res.fastWrong,
+        lifeBonus: lifeBonusAwarded,
       },
     })
 

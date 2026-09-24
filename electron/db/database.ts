@@ -150,7 +150,19 @@ const MIGRATIONS: Array<{ version: number; sql: string | string[] }> = [
     // v12: Gauntlet mode tables (runs, per-answer log, per-subject ratings). Fully separate from progress/attempt_log.
     version: 12,
     sql: GAUNTLET_DDL,
-  }
+  },
+  {
+    // v13: Gauntlet flagged cards (excluded from Gauntlet pool)
+    version: 13,
+    sql: [
+      `CREATE TABLE IF NOT EXISTS gauntlet_flagged_cards (
+         card_id TEXT PRIMARY KEY,
+         reason TEXT,
+         flagged_at INTEGER NOT NULL
+       )`,
+      'CREATE INDEX IF NOT EXISTS idx_gauntlet_flagged_card ON gauntlet_flagged_cards(card_id)',
+    ],
+  },
 ]
 
 /**

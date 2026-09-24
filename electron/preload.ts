@@ -78,6 +78,12 @@ contextBridge.exposeInMainWorld('electron', {
     getBests: () => ipcRenderer.invoke('gauntlet:getBests'),
     getPaceStats: () => ipcRenderer.invoke('gauntlet:getPaceStats'),
     resetRatings: () => ipcRenderer.invoke('gauntlet:resetRatings'),
+    flagQuestion: (payload: { cardId: string; reason?: string }) =>
+      ipcRenderer.invoke('gauntlet:flagQuestion', payload),
+    unflagQuestion: (payload: { cardId: string }) =>
+      ipcRenderer.invoke('gauntlet:unflagQuestion', payload),
+    getFlaggedQuestions: (payload?: { cardIds?: string[] }) =>
+      ipcRenderer.invoke('gauntlet:getFlaggedQuestions', payload),
   },
   file: {
     import: (filePath?: string) => ipcRenderer.invoke('file:import', filePath),

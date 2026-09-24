@@ -11,6 +11,9 @@ export function deleteCardsWithProgress(db: Database.Database, cardIds: string[]
   const deleteCard = db.prepare('DELETE FROM cards WHERE id = ?')
   for (const id of cardIds) {
     deleteProgress.run(id)
+    try {
+      db.prepare('DELETE FROM gauntlet_flagged_cards WHERE card_id = ?').run(id)
+    } catch {}
     deleteCard.run(id)
   }
 }

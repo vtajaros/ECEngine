@@ -36,6 +36,7 @@ export const TUNING = {
   skipPenalty: 0,
   skipEarnInterval: 20,
   lifeBonusInterval: 10,
+  lifeBonusScoreInterval: 20,
   fastWrongRatio: 0.25,
   fastWrongMult: 1.5,
   streakStep: 0.1,
@@ -282,6 +283,14 @@ export function updateLifeBonusState(
     awardLife: false,
     awarded: 0,
   }
+}
+
+/**
+ * Pure helper to check if score milestone (e.g. 20 correct answers) in survival mode awards a bonus life.
+ * Separate from the 10-consecutive-correct streak bonus.
+ */
+export function isScoreLifeBonus(correctCount: number): boolean {
+  return correctCount > 0 && correctCount % TUNING.lifeBonusScoreInterval === 0
 }
 
 // ── Rating (Elo-style, per subject) ──────────────────────────────────────────

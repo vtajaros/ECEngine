@@ -505,5 +505,50 @@ describe('life-bonus streak in survival mode', () => {
     expect(store().ratings.MATH.rating).toBe(initialRating + 1)
     expect(store().score).toBeLessThan(15) // small score ~8 points
   })
+
+  it('awards +1 life when score reaches 20 correct answers even if streak is broken', async () => {
+    svc.getQuestions.mockResolvedValue(cards(40))
+    await store().startRun(survivalCfg({ lives: 3 }))
+    store().beginRun()
+
+    // Lose 2 lives on wrong answers
+    vi.advanceTimersByTime(2000)
+    store().answer(1)
+    vi.advanceTimersByTime(2000)
+    store().answer(1)
+    expect(store().livesLeft).toBe(1)
+
+    // Answer 19 correct questions with a break in streak (e.g. 15 correct, 1 wrong to lose life, then 4 correct)
+    // Wait: if we answer 15 correct:
+    // At 10 streak -> +1 life (livesLeft becomes 2)
+    for (let i = 0; i < 15; i++) {
+      vi.advanceTimersByTime(2000)
+      store().answer(0)
+    }
+    expect(store().livesLeft).toBe(2)
+    expect(store().lifeBonusStreak).toBe(15)
+
+    // Wrong answer on 16th question: streak resets to 0, livesLeft becomes 1, total correct is 15
+    vi.advanceTimersByTime(2000)
+    store().answer(1)
+    expect(store().livesLeft).toBe(1)
+    expect(store().lifeBonusStreak).toBe(0)
+
+    // Answer 4 more correct: total correct becomes 19, streak is 4 (< 10)
+    for (let i = 0; i < 4; i++) {
+      vi.advanceTimersByTime(2000)
+      store().answer(0)
+    }
+    expect(store().livesLeft).toBe(1)
+    expect(store().lifeBonusStreak).toBe(4)
+
+    // Answer 20th correct question: streak is 5 (< 10), but total correct hits 20!
+    vi.advanceTimersByTime(2000)
+    store().answer(0)
+    expect(store().lifeBonusStreak).toBe(5)
+    // Life awarded from 20-correct milestone!
+    expect(store().livesLeft).toBe(2)
+    expect(store().feedback?.lifeBonus).toBe(true)
+  })
 })
 

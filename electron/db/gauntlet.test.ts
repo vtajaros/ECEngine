@@ -14,6 +14,9 @@ import {
   clearGauntletData,
   resetRatings,
   GauntletRunInput,
+  flagQuestion,
+  unflagQuestion,
+  getFlaggedQuestions,
 } from './gauntlet'
 
 const SCHEMA = `
@@ -500,4 +503,51 @@ describe('Gauntlet DB persistence', () => {
     expect(stats.length).toBe(1)
     expect(stats[0]).toEqual({ subject: 'ELECS', n: 800, avgMs: 2000 })
   })
+
+  // (10) Question Flagging & Exclusion from Gauntlet Pool
+  describe('Question Flagging & Exclusion', () => {
+    it('excludes flagged cards from getPoolSizes and sampleQuestions', () => {
+      insertCard(db, 'math-1', 'top-math', 'mcq', { question: 'Q1', choices: ['A', 'B'], answerIndex: 0 })
+      insertCard(db, 'math-2', 'top-math', 'mcq', { question: 'Q2', choices: ['A', 'B'], answerIndex: 0 })
+
+      // Initially 2 cards in pool
+      expect(getPoolSizes(db).MATH).toBe(2)
+      let sampled = sampleQuestions(db, 'MATH', 10)
+      expect(sampled.length).toBe(2)
+
+      // Flag math-1
+      flagQuestion(db, 'math-1', 'Error in question or choices')
+
+      // Pool size should drop to 1
+      expect(getPoolSizes(db).MATH).toBe(1)
+
+      // sampleQuestions should only return math-2
+      sampled = sampleQuestions(db, 'MATH', 10)
+      expect(sampled.length).toBe(1)
+      expect(sampled[0].id).toBe('math-2')
+
+      // Unflag math-1
+      unflagQuestion(db, 'math-1')
+
+      // Pool size restored to 2
+      expect(getPoolSizes(db).MATH).toBe(2)
+      sampled = sampleQuestions(db, 'MATH', 10)
+      expect(sampled.length).toBe(2)
+    })
+
+    it('retrieves flagged questions with reasons', () => {
+      flagQuestion(db, 'card-err', 'Error in question')
+      flagQuestion(db, 'card-no-img', 'Missing image')
+
+      const all = getFlaggedQuestions(db)
+      expect(all['card-err']).toBeDefined()
+      expect(all['card-err'].reason).toBe('Error in question')
+      expect(all['card-no-img']).toBeDefined()
+      expect(all['card-no-img'].reason).toBe('Missing image')
+
+      const filtered = getFlaggedQuestions(db, ['card-err'])
+      expect(Object.keys(filtered)).toEqual(['card-err'])
+    })
+  })
 })
+

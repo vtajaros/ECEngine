@@ -68,6 +68,17 @@ const MIGRATIONS = [
     version: 12,
     sql: GAUNTLET_DDL,
   },
+  {
+    version: 13,
+    sql: [
+      `CREATE TABLE IF NOT EXISTS gauntlet_flagged_cards (
+         card_id TEXT PRIMARY KEY,
+         reason TEXT,
+         flagged_at INTEGER NOT NULL
+       )`,
+      'CREATE INDEX IF NOT EXISTS idx_gauntlet_flagged_card ON gauntlet_flagged_cards(card_id)',
+    ],
+  },
 ]
 
 // ─── Minimal baseline schema (what schema.sql creates on fresh install) ───────
@@ -395,13 +406,24 @@ describe('Migration Runner', () => {
       expect(tables).toContain('gauntlet_runs')
       expect(tables).toContain('gauntlet_answers')
       expect(tables).toContain('gauntlet_ratings')
+      expect(tables).toContain('gauntlet_flagged_cards')
+    })
+  })
+
+  describe('migration v13 — gauntlet flagged cards', () => {
+    it('creates the gauntlet_flagged_cards table after all migrations', () => {
+      const db = createFreshDB()
+      runMigrations(db)
+      const tables = (db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='gauntlet_flagged_cards'").all() as Array<{ name: string }>)
+      expect(tables.length).toBe(1)
+      expect(tables[0].name).toBe('gauntlet_flagged_cards')
     })
 
-    it('sets user_version to 12 after all migrations', () => {
+    it('sets user_version to 13 after all migrations', () => {
       const db = createFreshDB()
       runMigrations(db)
       const version = db.pragma('user_version', { simple: true })
-      expect(version).toBe(12)
+      expect(version).toBe(13)
     })
   })
 

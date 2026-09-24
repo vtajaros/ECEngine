@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react'
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useBlocker } from 'react-router-dom'
 import { useGauntletStore, selectCurrentItem } from '../store/useGauntletStore'
 import { useLayoutStore } from '../store/useLayoutStore'
@@ -8,9 +8,12 @@ import { GauntletCountdown } from '../components/gauntlet/GauntletCountdown'
 import { GauntletPauseModal } from '../components/gauntlet/GauntletPauseModal'
 import { LeaveConfirmModal } from '../components/ui/LeaveConfirmModal'
 import { ExplanationPanel } from '../components/ui/ExplanationPanel'
+import { LearnMode } from '../components/mcq/LearnMode'
+import { gauntletService } from '../services/gauntlet.service'
+import { dbService } from '../services/db.service'
 import { renderMath, renderPlainText } from '../lib/latex'
 import { SUBJECT_LINE_COLOR } from '../lib/dashboardUtils'
-import type { MCQData, Subject } from '../types'
+import type { Card, MCQData, Subject } from '../types'
 import type { QueueItem } from '../store/useGauntletStore'
 import { AnimatePresence } from 'framer-motion'
 import Toast from '../components/ui/Toast'
@@ -34,6 +37,8 @@ import {
   SlidersHorizontal,
   Home,
   X,
+  Brain,
+  Flag,
 } from 'lucide-react'
 
 // TEMP: replaced by GauntletPlay / GauntletSummary in Phase 2B-2 / 2B-3
@@ -100,7 +105,34 @@ const RunPlaceholder: React.FC<RunPlaceholderProps> = ({ onOpenPause, isModalOpe
   const [expandedSeq, setExpandedSeq] = useState<number | null>(null)
   const [explainingSeq, setExplainingSeq] = useState<number | null>(null)
   const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('Context copied to clipboard — paste into Gemini, ChatGPT, or Claude')
   const [zoomedImage, setZoomedImage] = useState<string | null>(null)
+  const [isLearningMissed, setIsLearningMissed] = useState(false)
+  const [flaggedMap, setFlaggedMap] = useState<Record<string, { reason: string | null; flaggedAt: number }>>({})
+  const [flagModalCard, setFlagModalCard] = useState<{ id: string; question: string } | null>(null)
+
+  const missedCards = useMemo(() => {
+    const map = new Map<string, Card>()
+    for (const a of answers) {
+      if (a.outcome !== 'correct' && a.item?.card) {
+        map.set(a.item.card.id, a.item.card)
+      }
+    }
+    return Array.from(map.values())
+  }, [answers])
+
+  useEffect(() => {
+    if (phase !== 'summary' || answers.length === 0) return
+    const cardIds = answers.map(a => a.item.card.id)
+    if (typeof gauntletService?.getFlaggedQuestions === 'function') {
+      const res = gauntletService.getFlaggedQuestions(cardIds)
+      if (res && typeof res.then === 'function') {
+        res
+          .then(map => setFlaggedMap(map || {}))
+          .catch(err => console.error('Failed to load flagged questions:', err))
+      }
+    }
+  }, [phase, answers])
 
   const handleGetContext = useCallback((mcq: MCQData) => {
     if (!mcq || !Array.isArray(mcq.choices)) return
@@ -127,6 +159,7 @@ Please explain:
 ---`
 
     navigator.clipboard.writeText(template).then(() => {
+      setToastMessage('Context copied to clipboard — paste into Gemini, ChatGPT, or Claude')
       setShowToast(true)
     })
   }, [])
@@ -187,6 +220,18 @@ Please explain:
     }
   }, [feedback, play])
 
+  // Play plusOne sound when life bonus milestone/streak is triggered
+  const lastLifeBonusSoundRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!feedback) return
+    if (feedback.lifeBonus) {
+      const key = `lifeBonus-${feedback.id}`
+      if (lastLifeBonusSoundRef.current === key) return
+      lastLifeBonusSoundRef.current = key
+      play('plusOne')
+    }
+  }, [feedback, play])
+
   // Play game over sound when lives run out (summary phase with endReason === 'lives')
   const lastSummarySoundRef = useRef<string | null>(null)
   useEffect(() => {
@@ -206,6 +251,10 @@ Please explain:
   // Adaptive background music regions based on run mode, progress, and summary
   useEffect(() => {
     if (phase === 'summary') {
+      if (isLearningMissed) {
+        music.stop()
+        return
+      }
       music.setState('combatOver')
       music.setLowHealth(false)
       return
@@ -233,15 +282,17 @@ Please explain:
   const heartTimerRef = useRef<NodeJS.Timeout | null>(null)
   const prevLivesRef = useRef(livesLeft)
 
-  // Pulse heart on life loss
+  // Pulse heart on life loss, play plusOne sound on life gain
   useEffect(() => {
     if (prevLivesRef.current > livesLeft) {
       setPulseHeart(true)
       if (heartTimerRef.current) clearTimeout(heartTimerRef.current)
       heartTimerRef.current = setTimeout(() => setPulseHeart(false), 400)
+    } else if (prevLivesRef.current < livesLeft && phase === 'playing' && !feedback?.lifeBonus) {
+      play('plusOne')
     }
     prevLivesRef.current = livesLeft
-  }, [livesLeft])
+  }, [livesLeft, phase, play, feedback])
 
   // Drive the clock and re-render countdown
   useEffect(() => {
@@ -380,6 +431,39 @@ Please explain:
   }, [phase, isModalOpen, revealState, handleAnswer])
 
   if (phase === 'summary') {
+    if (isLearningMissed && missedCards.length > 0) {
+      const modeLabel = config.mode === 'survival' ? 'Survival' : 'Timed'
+      return (
+        <div className="fixed inset-0 z-50 bg-[#0D0D0D] flex flex-col overflow-y-auto">
+          <LearnMode
+            cards={missedCards}
+            title={`Gauntlet ${modeLabel} — Missed Items`}
+            ttsEnabled={false}
+            shuffleChoices={true}
+            onComplete={stats => {
+              dbService
+                .saveExamSession({
+                  topicId: null,
+                  mode: 'learn',
+                  score: stats.correct,
+                  total: missedCards.length,
+                  answers: JSON.stringify({
+                    deckTitle: `Gauntlet ${modeLabel} - Missed Items`,
+                    correctFirstTry: stats.correct,
+                    wrongFirstTry: stats.wrong,
+                    bookmarkedCount: stats.bookmarked,
+                  }),
+                })
+                .catch(err => {
+                  console.error('Failed to save learn session:', err)
+                })
+            }}
+            onExit={() => setIsLearningMissed(false)}
+          />
+        </div>
+      )
+    }
+
     const reasonLabels = {
       time: 'Time Expired',
       lives: 'Game Over',
@@ -548,10 +632,25 @@ Please explain:
 
           {/* Action Buttons: Stacked vertically in Left Sidebar */}
           <div className="flex flex-col gap-2 pt-2 border-t border-border-base mt-auto">
+            {missedCards.length > 0 && (
+              <button
+                type="button"
+                data-testid="learn-missed-button"
+                onClick={() => setIsLearningMissed(true)}
+                className="w-full py-2.5 px-4 rounded-xl bg-accent text-black font-bold font-['Orbitron'] tracking-wider text-xs sm:text-sm hover:bg-[#00e63a] transition-all flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(0,255,65,0.25)]"
+              >
+                <Brain size={14} />
+                LEARN MISSED ({missedCards.length})
+              </button>
+            )}
             <button
               type="button"
               onClick={() => void startRun(config)}
-              className="w-full py-2.5 px-4 rounded-xl bg-accent text-black font-bold font-['Orbitron'] tracking-wider text-xs sm:text-sm hover:bg-[#00e63a] transition-all flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(0,255,65,0.25)]"
+              className={`w-full py-2.5 px-4 rounded-xl font-bold font-['Orbitron'] tracking-wider text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 ${
+                missedCards.length === 0
+                  ? 'bg-accent text-black hover:bg-[#00e63a] shadow-[0_0_15px_rgba(0,255,65,0.25)]'
+                  : 'bg-surface-2 border border-border-base hover:border-accent text-text-primary'
+              }`}
             >
               <RotateCcw size={14} />
               RUN AGAIN
@@ -579,9 +678,22 @@ Please explain:
         <div className="flex-1 min-w-0 flex flex-col gap-2.5 min-h-0 border-t lg:border-t-0 lg:border-l border-border-base/70 pt-3 lg:pt-0 lg:pl-5">
           {/* Pinned Filter Controls */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border-base/50 pb-2 shrink-0">
-            <span className="text-[11px] font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted">
-              Answer Review ({filteredAnswers.length}/{answers.length})
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted">
+                Answer Review ({filteredAnswers.length}/{answers.length})
+              </span>
+              {missedCards.length > 0 && (
+                <button
+                  type="button"
+                  data-testid="learn-missed-header-button"
+                  onClick={() => setIsLearningMissed(true)}
+                  className="px-2 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold bg-accent/15 border border-accent/40 text-accent hover:bg-accent/25 transition-colors flex items-center gap-1"
+                >
+                  <Brain size={11} />
+                  Learn {missedCards.length} Missed
+                </button>
+              )}
+            </div>
 
             {/* Filter Controls */}
             <div className="flex flex-wrap items-center gap-2">
@@ -776,6 +888,16 @@ Please explain:
                             TOO FAST
                           </span>
                         )}
+                        {flaggedMap[a.item.card.id] && (
+                          <span
+                            data-testid={`flag-badge-${a.seq}`}
+                            className="px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-['Orbitron'] font-bold bg-[#ef4444]/15 text-[#ef4444] border border-[#ef4444]/30 flex items-center gap-1"
+                            title={flaggedMap[a.item.card.id]?.reason ? `Flagged: ${flaggedMap[a.item.card.id].reason}` : 'Flagged (Excluded from Gauntlet)'}
+                          >
+                            <Flag size={9} className="fill-[#ef4444]" />
+                            FLAGGED
+                          </span>
+                        )}
 
                         {/* Points */}
                         <span
@@ -913,8 +1035,8 @@ Please explain:
                           </div>
                         )}
 
-                        {/* Row Actions: Get Context + AI Explain */}
-                        <div className="flex items-center gap-2 pt-1">
+                        {/* Row Actions: Get Context + AI Explain + Flag Question */}
+                        <div className="flex items-center gap-2 pt-1 flex-wrap">
                           <button
                             type="button"
                             onClick={e => {
@@ -937,6 +1059,25 @@ Please explain:
                           >
                             <Sparkles size={13} className="text-accent" />
                             {explainingSeq === a.seq ? 'Hide AI Explanation' : 'AI Explain'}
+                          </button>
+
+                          <button
+                            type="button"
+                            data-testid={`flag-btn-${a.seq}`}
+                            onClick={e => {
+                              e.stopPropagation()
+                              setFlagModalCard({ id: a.item.card.id, question: mcq.question })
+                            }}
+                            className={`px-2.5 py-1 rounded text-xs font-['Rajdhani'] font-bold flex items-center gap-1.5 transition-colors ${
+                              flaggedMap[a.item.card.id]
+                                ? 'bg-[#ef4444]/20 border border-[#ef4444] text-[#ef4444] hover:bg-[#ef4444]/30'
+                                : 'bg-surface border border-border-base hover:border-amber-400 text-text-muted hover:text-amber-400'
+                            }`}
+                          >
+                            <Flag size={13} className={flaggedMap[a.item.card.id] ? 'fill-[#ef4444]' : ''} />
+                            {flaggedMap[a.item.card.id]
+                              ? `Flagged${flaggedMap[a.item.card.id]?.reason ? ` (${flaggedMap[a.item.card.id].reason})` : ''}`
+                              : 'Flag Question'}
                           </button>
                         </div>
 
@@ -983,11 +1124,140 @@ Please explain:
           </div>
         )}
 
+        {/* Flag Modal */}
+        {flagModalCard && (
+          <div
+            data-testid="flag-modal"
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={() => setFlagModalCard(null)}
+          >
+            <div
+              className="bg-surface border border-border-base rounded-2xl max-w-md w-full p-5 shadow-2xl flex flex-col gap-4"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-border-base/60 pb-3">
+                <div className="flex items-center gap-2">
+                  <Flag size={18} className="text-[#ef4444]" />
+                  <h3 className="font-['Orbitron'] font-bold text-base text-white">
+                    {flaggedMap[flagModalCard.id] ? 'Manage Question Flag' : 'Flag Question'}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  data-testid="flag-modal-close-btn"
+                  onClick={() => setFlagModalCard(null)}
+                  className="p-1 rounded text-text-muted hover:text-white"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="text-xs text-text-muted font-['Rajdhani'] leading-relaxed">
+                {flaggedMap[flagModalCard.id] ? (
+                  <div>
+                    <p className="text-text-primary mb-2">
+                      This question is currently <strong>flagged and excluded</strong> from all Gauntlet modes.
+                    </p>
+                    {flaggedMap[flagModalCard.id]?.reason && (
+                      <p className="p-2 rounded bg-surface-2 border border-border-base text-amber-400 font-mono text-[11px]">
+                        Reason: {flaggedMap[flagModalCard.id].reason}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p>
+                    Flag this question so it <strong>will not be picked</strong> as an MCQ in Gauntlet (timed or survival mode).
+                  </p>
+                )}
+              </div>
+
+              {flaggedMap[flagModalCard.id] ? (
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-border-base/60">
+                  <button
+                    type="button"
+                    onClick={() => setFlagModalCard(null)}
+                    className="px-3 py-1.5 rounded-lg border border-border-base text-text-muted hover:text-white text-xs font-['Rajdhani'] font-bold"
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="unflag-confirm-btn"
+                    onClick={async () => {
+                      try {
+                        await gauntletService.unflagQuestion(flagModalCard.id)
+                        setFlaggedMap(prev => {
+                          const next = { ...prev }
+                          delete next[flagModalCard.id]
+                          return next
+                        })
+                        setFlagModalCard(null)
+                        setToastMessage('Question unflagged — restored to Gauntlet pool')
+                        setShowToast(true)
+                      } catch (err: any) {
+                        console.error('Failed to unflag question:', err)
+                      }
+                    }}
+                    className="px-3.5 py-1.5 rounded-lg bg-surface border border-accent text-accent hover:bg-accent/15 text-xs font-['Orbitron'] font-bold"
+                  >
+                    Unflag Question
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <span className="text-[11px] font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted">
+                    Select a reason:
+                  </span>
+                  {[
+                    'Error in question or choices',
+                    'Missing image or diagram',
+                    'Hard problem solving question',
+                    'Other issue',
+                  ].map(reason => (
+                    <button
+                      key={reason}
+                      type="button"
+                      data-testid={`flag-reason-${reason.replace(/\s+/g, '-').toLowerCase()}`}
+                      onClick={async () => {
+                        try {
+                          await gauntletService.flagQuestion(flagModalCard.id, reason)
+                          setFlaggedMap(prev => ({
+                            ...prev,
+                            [flagModalCard.id]: { reason, flaggedAt: Date.now() },
+                          }))
+                          setFlagModalCard(null)
+                          setToastMessage('Question flagged — excluded from Gauntlet pool')
+                          setShowToast(true)
+                        } catch (err: any) {
+                          console.error('Failed to flag question:', err)
+                        }
+                      }}
+                      className="text-left p-2.5 rounded-xl border border-border-base bg-surface-2 hover:bg-surface-2/80 hover:border-amber-400 text-xs font-['Rajdhani'] font-semibold text-text-primary transition-all flex items-center justify-between group"
+                    >
+                      <span>{reason}</span>
+                      <Flag size={12} className="text-text-muted group-hover:text-amber-400" />
+                    </button>
+                  ))}
+                  <div className="flex justify-end pt-2 border-t border-border-base/60 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => setFlagModalCard(null)}
+                      className="px-3 py-1.5 rounded-lg border border-border-base text-text-muted hover:text-white text-xs font-['Rajdhani'] font-bold"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Toast confirmation */}
         <AnimatePresence>
           {showToast && (
             <Toast
-              message="Context copied to clipboard — paste into Gemini, ChatGPT, or Claude"
+              message={toastMessage}
               onDismiss={() => setShowToast(false)}
             />
           )}

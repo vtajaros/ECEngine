@@ -70,4 +70,20 @@ export const gauntletService = {
     const res = await window.electron.gauntlet.resetRatings()
     if (!res.success) throw new Error(res.error || 'Failed to reset ratings')
   },
+
+  async flagQuestion(cardId: string, reason?: string): Promise<void> {
+    const res = await window.electron.gauntlet.flagQuestion({ cardId, reason })
+    if (!res.success) throw new Error(res.error || 'Failed to flag question')
+  },
+
+  async unflagQuestion(cardId: string): Promise<void> {
+    const res = await window.electron.gauntlet.unflagQuestion({ cardId })
+    if (!res.success) throw new Error(res.error || 'Failed to unflag question')
+  },
+
+  async getFlaggedQuestions(cardIds?: string[]): Promise<Record<string, { reason: string | null; flaggedAt: number }>> {
+    const res = await window.electron.gauntlet.getFlaggedQuestions({ cardIds })
+    if (!res.success) throw new Error(res.error || 'Failed to get flagged questions')
+    return res.data ?? {}
+  },
 }

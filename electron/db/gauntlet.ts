@@ -54,14 +54,21 @@ export const GAUNTLET_DDL: string[] = [
      peak REAL,
      updated_at INTEGER NOT NULL
    )`,
+  `CREATE TABLE IF NOT EXISTS gauntlet_flagged_cards (
+     card_id TEXT PRIMARY KEY,
+     reason TEXT,
+     flagged_at INTEGER NOT NULL
+   )`,
   'CREATE INDEX IF NOT EXISTS idx_gauntlet_runs_started ON gauntlet_runs(started_at)',
   'CREATE INDEX IF NOT EXISTS idx_gauntlet_answers_run ON gauntlet_answers(run_id, seq)',
   'CREATE INDEX IF NOT EXISTS idx_gauntlet_answers_card ON gauntlet_answers(card_id)',
+  'CREATE INDEX IF NOT EXISTS idx_gauntlet_flagged_card ON gauntlet_flagged_cards(card_id)',
 ]
 
 // Problem-solving MCQs carry a solution image; Gauntlet v1 excludes them.
 const NOT_PROBLEM_SOLVING = `(json_extract(c.data, '$.solutionImagePath') IS NULL OR json_extract(c.data, '$.solutionImagePath') = '')`
 const VALID_MCQ = `(json_type(c.data, '$.choices') = 'array' AND json_array_length(c.data, '$.choices') >= 2)`
+const NOT_FLAGGED = `(c.id NOT IN (SELECT card_id FROM gauntlet_flagged_cards))`
 
 const safeParse = (s: unknown): unknown => {
   if (typeof s !== 'string') return null
@@ -73,7 +80,7 @@ export function getPoolSizes(db: Database.Database): Record<GauntletSubjectCode,
   const stmt = db.prepare(`
     SELECT COUNT(*) AS n
     FROM cards c JOIN topics t ON t.id = c.topic_id
-    WHERE c.type = 'mcq' AND t.subject = ? AND ${NOT_PROBLEM_SOLVING} AND ${VALID_MCQ}
+    WHERE c.type = 'mcq' AND t.subject = ? AND ${NOT_PROBLEM_SOLVING} AND ${VALID_MCQ} AND ${NOT_FLAGGED}
   `)
   ;(Object.keys(SUBJECT_DB_NAME) as GauntletSubjectCode[]).forEach(code => {
     out[code] = (stmt.get(SUBJECT_DB_NAME[code]) as { n: number }).n
@@ -94,7 +101,7 @@ export function sampleQuestions(
     FROM cards c
     JOIN topics t ON t.id = c.topic_id
     LEFT JOIN (SELECT DISTINCT card_id FROM gauntlet_answers) g ON g.card_id = c.id
-    WHERE c.type = 'mcq' AND t.subject = ? AND ${NOT_PROBLEM_SOLVING} AND ${VALID_MCQ}
+    WHERE c.type = 'mcq' AND t.subject = ? AND ${NOT_PROBLEM_SOLVING} AND ${VALID_MCQ} AND ${NOT_FLAGGED}
       AND c.id NOT IN (SELECT value FROM json_each(?))
     ORDER BY (g.card_id IS NOT NULL), RANDOM()
     LIMIT ?
@@ -264,5 +271,38 @@ export function clearGauntletData(db: Database.Database): void {
 
 export function resetRatings(db: Database.Database): void {
   db.prepare('DELETE FROM gauntlet_ratings').run()
+}
+
+export function flagQuestion(db: Database.Database, cardId: string, reason?: string): void {
+  db.prepare(`
+    INSERT INTO gauntlet_flagged_cards (card_id, reason, flagged_at)
+    VALUES (?, ?, ?)
+    ON CONFLICT(card_id) DO UPDATE SET reason = excluded.reason, flagged_at = excluded.flagged_at
+  `).run(cardId, reason ?? null, Date.now())
+}
+
+export function unflagQuestion(db: Database.Database, cardId: string): void {
+  db.prepare('DELETE FROM gauntlet_flagged_cards WHERE card_id = ?').run(cardId)
+}
+
+export function getFlaggedQuestions(
+  db: Database.Database,
+  cardIds?: string[],
+): Record<string, { reason: string | null; flaggedAt: number }> {
+  let rows: Array<{ card_id: string; reason: string | null; flagged_at: number }> = []
+  if (cardIds && cardIds.length > 0) {
+    rows = db.prepare(`
+      SELECT card_id, reason, flagged_at
+      FROM gauntlet_flagged_cards
+      WHERE card_id IN (SELECT value FROM json_each(?))
+    `).all(JSON.stringify(cardIds)) as any[]
+  } else {
+    rows = db.prepare('SELECT card_id, reason, flagged_at FROM gauntlet_flagged_cards').all() as any[]
+  }
+  const result: Record<string, { reason: string | null; flaggedAt: number }> = {}
+  for (const r of rows) {
+    result[r.card_id] = { reason: r.reason, flaggedAt: r.flagged_at }
+  }
+  return result
 }
 

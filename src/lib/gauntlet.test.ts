@@ -7,6 +7,7 @@ import {
   ratingTier, paceForSubject, blendedPaceMs, paceSource, capacityItems, itemsPlanWarning, tightTimerWarning,
   updateSkipState,
   updateLifeBonusState,
+  isScoreLifeBonus,
   getTimeMultiplier,
   getLivesMultiplier,
   getSurvivalDifficultyMultiplier,
@@ -205,6 +206,16 @@ describe('life-bonus streak logic (Survival mode)', () => {
 
     expect(lifeState.streak).toBe(20)
     expect(skipState.skipEarnStreak).toBe(20)
+  })
+
+  it('isScoreLifeBonus awards a life at every 20 total correct answers', () => {
+    expect(isScoreLifeBonus(0)).toBe(false)
+    expect(isScoreLifeBonus(10)).toBe(false)
+    expect(isScoreLifeBonus(19)).toBe(false)
+    expect(isScoreLifeBonus(20)).toBe(true)
+    expect(isScoreLifeBonus(21)).toBe(false)
+    expect(isScoreLifeBonus(40)).toBe(true)
+    expect(isScoreLifeBonus(60)).toBe(true)
   })
 })
 
