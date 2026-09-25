@@ -1,7 +1,9 @@
 import type { Card } from '../types'
 import { parseCardRow, CardWithProgressRowSchema } from './db.service'
+import { reshapeRunsToEloHistory, SubjectEloPoint } from '../lib/gauntlet'
 
 export type GauntletSubjectCode = 'MATH' | 'GEAS' | 'ELECS' | 'EST'
+export type { SubjectEloPoint }
 
 export interface GauntletCard extends Card {
   subjectCode: GauntletSubjectCode
@@ -42,6 +44,11 @@ export const gauntletService = {
     const res = await window.electron.gauntlet.getRuns(opts)
     if (!res.success) throw new Error(res.error || 'Failed to get runs')
     return res.data ?? []
+  },
+
+  async getEloHistory(opts?: { limit?: number; offset?: number }): Promise<SubjectEloPoint[]> {
+    const runs = await this.getRuns(opts)
+    return reshapeRunsToEloHistory(runs)
   },
 
   async getRunAnswers(runId: string): Promise<any[]> {

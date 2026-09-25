@@ -5,8 +5,9 @@ import React, { act } from 'react'
 import { createRoot, Root } from 'react-dom/client'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
-import Gauntlet from './Gauntlet'
+import Gauntlet, { LINGER_CORRECT_MS, LINGER_WRONG_MS, LINGER_SKIP_MS } from './Gauntlet'
 import { useGauntletStore, resetGauntletStore } from '../store/useGauntletStore'
+import { useLayoutStore } from '../store/useLayoutStore'
 import { gauntletService } from '../services/gauntlet.service'
 import type { AnswerRecord, QueueItem } from '../store/useGauntletStore'
 import type { MCQData, Subject } from '../types'
@@ -162,12 +163,14 @@ describe('Gauntlet Summary Review List', () => {
     mockPlay.mockClear()
     localStorage.clear()
     resetGauntletStore()
+    useLayoutStore.setState({ forceCollapsed: false })
     container = document.createElement('div')
     document.body.appendChild(container)
     root = createRoot(container)
   })
 
   afterEach(() => {
+    vi.useRealTimers()
     if (root && container) {
       act(() => {
         root!.unmount()
@@ -890,6 +893,152 @@ describe('Gauntlet Summary Review List', () => {
 
     expect(gauntletService.unflagQuestion).toHaveBeenCalledWith('c1')
     expect(container!.querySelector('[data-testid="flag-badge-0"]')).toBeNull()
+  })
+
+  it('manages forceCollapsed: true during playing, false when isLearningMissed is true', async () => {
+    useGauntletStore.setState({
+      phase: 'playing',
+      queue: [mockItem('c1', 'MATH')],
+      index: 0,
+      answers: mockAnswers,
+      config: {
+        mode: 'timed',
+        subjects: ['MATH'],
+        rated: false,
+        durationSec: 1200,
+        totalItems: 1,
+        allocation: 'tos',
+        customCounts: {},
+        lives: 3,
+        perQuestionSec: 30,
+      },
+    })
+
+    await act(async () => {
+      root!.render(renderWithRouter(<Gauntlet />))
+    })
+
+    expect(useLayoutStore.getState().forceCollapsed).toBe(true)
+
+    // Switch to summary with missed questions
+    await act(async () => {
+      setupSummaryState()
+    })
+    expect(useLayoutStore.getState().forceCollapsed).toBe(false)
+
+    // Click Learn Missed
+    const learnMissedBtn = container!.querySelector('[data-testid="learn-missed-button"]') as HTMLButtonElement
+    expect(learnMissedBtn).toBeTruthy()
+    await act(async () => {
+      learnMissedBtn.click()
+    })
+
+    // forceCollapsed remains false when isLearningMissed is true
+    expect(useLayoutStore.getState().forceCollapsed).toBe(false)
+  })
+
+  it('sets forceCollapsed to true during countdown phase and resets on unmount', async () => {
+    useGauntletStore.setState({
+      phase: 'countdown',
+    })
+
+    await act(async () => {
+      root!.render(renderWithRouter(<Gauntlet />))
+    })
+
+    expect(useLayoutStore.getState().forceCollapsed).toBe(true)
+
+    act(() => {
+      root!.unmount()
+      root = null
+    })
+
+    expect(useLayoutStore.getState().forceCollapsed).toBe(false)
+  })
+
+  it('defines updated linger constants (1800ms for correct, wrong, skip)', () => {
+    expect(LINGER_CORRECT_MS).toBe(1800)
+    expect(LINGER_WRONG_MS).toBe(1800)
+    expect(LINGER_SKIP_MS).toBe(1800)
+  })
+
+  it('holds displayed countdown steady for full linger duration in survival mode', async () => {
+    vi.useFakeTimers()
+    const now0 = 1000000
+    vi.setSystemTime(now0)
+
+    useGauntletStore.setState({
+      phase: 'playing',
+      index: 0,
+      queue: Array.from({ length: 15 }, (_, i) => mockItem(`q${i + 1}`, 'MATH', 6000)),
+      questionShownAt: now0,
+      startedAt: now0,
+      endsAt: null,
+      livesLeft: 3,
+      config: {
+        mode: 'survival',
+        subjects: ['MATH'],
+        rated: false,
+        durationSec: 1200,
+        totalItems: 15,
+        allocation: 'tos',
+        customCounts: {},
+        lives: 3,
+        perQuestionSec: 30,
+      },
+    })
+
+    await act(async () => {
+      root!.render(renderWithRouter(<Gauntlet />))
+    })
+
+    const timerSpan = container!.querySelector('.lucide-timer')?.nextElementSibling as HTMLElement
+    expect(timerSpan?.textContent).toBe('30s')
+
+    // Advance 5 seconds
+    await act(async () => {
+      vi.advanceTimersByTime(5000)
+    })
+    expect(timerSpan?.textContent).toBe('25s')
+
+    // Answer choice B (correct: 1800ms linger)
+    const choiceButtons = Array.from(container!.querySelectorAll('button')).filter(b =>
+      b.textContent?.includes('Choice'),
+    )
+    await act(async () => {
+      choiceButtons[1].click()
+    })
+
+    // Countdown before advancing during linger
+    const timerDuringLinger = timerSpan?.textContent
+
+    // Advance 500ms into linger window
+    await act(async () => {
+      vi.advanceTimersByTime(500)
+    })
+    // Countdown must hold steady during linger
+    expect(timerSpan?.textContent).toBe(timerDuringLinger)
+
+    // Advance another 500ms (1000ms total into linger)
+    await act(async () => {
+      vi.advanceTimersByTime(500)
+    })
+    expect(timerSpan?.textContent).toBe(timerDuringLinger)
+
+    // Complete linger (remaining 800ms -> 1800ms total)
+    await act(async () => {
+      vi.advanceTimersByTime(800)
+    })
+
+    // Now question 2 has loaded (index 1)
+    expect(useGauntletStore.getState().index).toBe(1)
+    expect(timerSpan?.textContent).toBe('30s')
+
+    // Advance 3 seconds on new question
+    await act(async () => {
+      vi.advanceTimersByTime(3000)
+    })
+    expect(timerSpan?.textContent).toBe('27s')
   })
 })
 

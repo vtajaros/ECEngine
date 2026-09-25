@@ -41,10 +41,16 @@ import {
   Flag,
 } from 'lucide-react'
 
+export const LINGER_CORRECT_MS = 1800
+export const LINGER_WRONG_MS = 1800
+export const LINGER_SKIP_MS = 1800
+
 // TEMP: replaced by GauntletPlay / GauntletSummary in Phase 2B-2 / 2B-3
 interface RunPlaceholderProps {
   onOpenPause: () => void
   isModalOpen: boolean
+  isLearningMissed: boolean
+  setIsLearningMissed: (val: boolean) => void
 }
 
 interface RevealState {
@@ -55,7 +61,12 @@ interface RevealState {
   mcq: MCQData
 }
 
-const RunPlaceholder: React.FC<RunPlaceholderProps> = ({ onOpenPause, isModalOpen }) => {
+const RunPlaceholder: React.FC<RunPlaceholderProps> = ({
+  onOpenPause,
+  isModalOpen,
+  isLearningMissed,
+  setIsLearningMissed,
+}) => {
   const phase = useGauntletStore(s => s.phase)
   const config = useGauntletStore(s => s.config)
   const score = useGauntletStore(s => s.score)
@@ -107,7 +118,6 @@ const RunPlaceholder: React.FC<RunPlaceholderProps> = ({ onOpenPause, isModalOpe
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('Context copied to clipboard — paste into Gemini, ChatGPT, or Claude')
   const [zoomedImage, setZoomedImage] = useState<string | null>(null)
-  const [isLearningMissed, setIsLearningMissed] = useState(false)
   const [flaggedMap, setFlaggedMap] = useState<Record<string, { reason: string | null; flaggedAt: number }>>({})
   const [flagModalCard, setFlagModalCard] = useState<{ id: string; question: string } | null>(null)
 
@@ -297,13 +307,17 @@ Please explain:
   // Drive the clock and re-render countdown
   useEffect(() => {
     if (phase !== 'playing') return
+    if (revealState === null) {
+      setNow(Date.now())
+    }
     const intervalId = setInterval(() => {
+      // Freeze clock / timeouts while reveal linger is active
+      if (revealState !== null) return
+
       const curNow = Date.now()
       setNow(curNow)
       const s = useGauntletStore.getState()
       if (s.phase !== 'playing' || s.pausedAt !== null) return
-      // Freeze clock / timeouts while reveal linger is active
-      if (revealState !== null) return
 
       if (s.config.mode === 'timed') {
         if (s.endsAt !== null && curNow >= s.endsAt) {
@@ -327,7 +341,7 @@ Please explain:
     }
   }, [])
 
-  // Handle answering choice with reveal linger (correct: 1300ms, wrong: 800ms)
+  // Handle answering choice with reveal linger (1800ms)
   const handleAnswer = useCallback(
     (choiceIdx: number) => {
       if (revealState !== null || isModalOpen) return
@@ -338,7 +352,7 @@ Please explain:
       const mcq = item.card.data as MCQData
       const isCorrect = choiceIdx === mcq.answer
       const isWrong = !isCorrect
-      const lingerMs = isCorrect ? 1300 : 800
+      const lingerMs = isCorrect ? LINGER_CORRECT_MS : LINGER_WRONG_MS
 
       // Extend timer deadlines so linger consumes zero run time
       extendLinger(lingerMs)
@@ -367,13 +381,14 @@ Please explain:
       lingerTimerRef.current = setTimeout(() => {
         setRevealState(null)
         setShakeWrong(false)
+        setNow(Date.now())
         answer(choiceIdx)
       }, lingerMs)
     },
     [revealState, isModalOpen, extendLinger, answer],
   )
 
-  // Handle skip with 800ms reveal linger
+  // Handle skip with 1800ms reveal linger
   const handleSkip = useCallback(() => {
     if (revealState !== null || isModalOpen) return
     const s = useGauntletStore.getState()
@@ -382,8 +397,8 @@ Please explain:
     if (!item) return
     const mcq = item.card.data as MCQData
 
-    // Extend timer deadlines by 800ms
-    extendLinger(800)
+    // Extend timer deadlines by LINGER_SKIP_MS
+    extendLinger(LINGER_SKIP_MS)
 
     setRevealState({
       chosen: null,
@@ -396,8 +411,9 @@ Please explain:
     if (lingerTimerRef.current) clearTimeout(lingerTimerRef.current)
     lingerTimerRef.current = setTimeout(() => {
       setRevealState(null)
+      setNow(Date.now())
       skip()
-    }, 800)
+    }, LINGER_SKIP_MS)
   }, [revealState, isModalOpen, extendLinger, skip])
 
   // Keyboard shortcuts 1-4 and A-D
@@ -1527,6 +1543,7 @@ export default function Gauntlet() {
   const quit = useGauntletStore(s => s.quit)
 
   const [isPauseModalOpen, setIsPauseModalOpen] = useState(false)
+  const [isLearningMissed, setIsLearningMissed] = useState(false)
   const setForceCollapsed = useLayoutStore(s => s.setForceCollapsed)
   const music = useGauntletMusic()
 
@@ -1548,10 +1565,20 @@ export default function Gauntlet() {
     }
   }, [music])
 
-  // Force sidebar collapse during countdown and playing without modifying saved preference
+  // Force sidebar collapse during countdown and playing without modifying saved preference,
+  // but explicitly false whenever isLearningMissed is true so the sidebar reappears during Learn Mode.
   useEffect(() => {
-    setForceCollapsed(phase === 'countdown' || phase === 'playing')
-  }, [phase, setForceCollapsed])
+    const shouldForceCollapse =
+      !isLearningMissed && (phase === 'countdown' || (phase === 'playing' && !isLearningMissed))
+    setForceCollapsed(shouldForceCollapse)
+  }, [phase, isLearningMissed, setForceCollapsed])
+
+  // Reset isLearningMissed when phase changes away from playing/summary
+  useEffect(() => {
+    if (phase !== 'playing' && phase !== 'summary') {
+      setIsLearningMissed(false)
+    }
+  }, [phase])
 
   // Reset forceCollapsed on unmount
   useEffect(() => {
@@ -1661,6 +1688,8 @@ export default function Gauntlet() {
           <RunPlaceholder
             onOpenPause={handleOpenPause}
             isModalOpen={isPauseModalOpen || blocker.state === 'blocked'}
+            isLearningMissed={isLearningMissed}
+            setIsLearningMissed={setIsLearningMissed}
           />
         </div>
       )}

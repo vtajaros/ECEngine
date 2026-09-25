@@ -4,8 +4,11 @@ import { BookOpen, Library, Sigma, Download, Zap, BookMarked, TrendingUp, Calend
 import { dbService, AccuracyGranularity, AccuracySubject } from '../services/db.service'
 import { motion, AnimatePresence } from 'framer-motion'
 
-import { ReviewHeatmap, ExamCountdown, AccuracyChart, SessionHistory, FlashcardSchedule, SubjectDonutChart } from '../components/dashboard'
-import { SUBJECT_MAP, SUBJECT_LINE_COLOR } from '../lib/dashboardUtils'
+import { ReviewHeatmap, ExamCountdown, AccuracyChart, SessionHistory, FlashcardSchedule, SubjectDonutChart, SubjectEloChart } from '../components/dashboard'
+import { SUBJECT_MAP, SUBJECT_LINE_COLOR, GAUNTLET_SUBJECT_COLORS } from '../lib/dashboardUtils'
+import { gauntletService } from '../services/gauntlet.service'
+import { getWeakestSubject, SubjectEloPoint, SubjectRating } from '../lib/gauntlet'
+import type { Subject } from '../types'
 
 import { useDashboardStore } from '../store/useDashboardStore'
 
@@ -24,6 +27,10 @@ export default function Dashboard() {
   const [heatmapYear, setHeatmapYear] = useState<number>(new Date().getFullYear())
   const [selectedSubject, setSelectedSubject] = useState<AccuracySubject>('ALL')
   const [granularity, setGranularity] = useState<AccuracyGranularity>('day')
+  const [chartTab, setChartTab] = useState<'accuracy' | 'gauntlet'>('accuracy')
+  const [eloHistory, setEloHistory] = useState<SubjectEloPoint[]>([])
+  const [weakestSubject, setWeakestSubject] = useState<{ subject: Subject; rating: number } | null>(null)
+  const [eloLoading, setEloLoading] = useState(false)
 
   const trendKey = `${selectedSubject}_${granularity}`
   const accuracyTrend = trendCache[trendKey] || []
@@ -50,18 +57,41 @@ export default function Dashboard() {
     }).catch(err => console.error('Failed to load settings', err))
   }, [])
 
+  const loadGauntletData = useCallback(async () => {
+    setEloLoading(true)
+    try {
+      const [points, ratings] = await Promise.all([
+        gauntletService.getEloHistory({ limit: 100 }),
+        gauntletService.getRatings().catch(() => []),
+      ])
+      setEloHistory(points)
+
+      const map: Partial<Record<Subject, SubjectRating>> = {}
+      for (const r of ratings) {
+        map[r.subject as Subject] = { rating: r.rating, answers: r.answers }
+      }
+      setWeakestSubject(getWeakestSubject(map))
+    } catch (err) {
+      console.error('Failed to load gauntlet Elo data', err)
+    } finally {
+      setEloLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     fetchAccuracyTrend(selectedSubject, granularity)
   }, [selectedSubject, granularity, fetchAccuracyTrend])
 
   useEffect(() => {
     fetchDashboardData()
-  }, [fetchDashboardData])
+    loadGauntletData()
+  }, [fetchDashboardData, loadGauntletData])
 
   const loadDashboardData = useCallback(() => {
     fetchDashboardData(true)
     fetchAccuracyTrend(selectedSubject, granularity, true)
-  }, [fetchDashboardData, fetchAccuracyTrend, selectedSubject, granularity])
+    loadGauntletData()
+  }, [fetchDashboardData, fetchAccuracyTrend, selectedSubject, granularity, loadGauntletData])
 
   const handleExamDateChange = useCallback((date: string) => {
     setExamDate(date)
@@ -199,88 +229,180 @@ export default function Dashboard() {
 
       {/* Row 2 */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* ACCURACY TREND */}
+        {/* ACCURACY TREND / GAUNTLET RATINGS */}
         <div className="lg:col-span-3 bg-surface border border-border-base rounded-xl p-4 shadow-xl relative overflow-hidden flex flex-col">
 
           {/* Header */}
           <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
-            <h2 className="font-['Rajdhani'] font-bold text-sm text-text-primary uppercase tracking-widest flex items-center shrink-0">
-              <Activity
-                className="mr-2 shrink-0 transition-colors duration-300"
-                size={16}
-                style={{ color: SUBJECT_LINE_COLOR[selectedSubject] }}
-              />
-              {selectedSubject === 'ALL' ? 'Accuracy Trend' : `${selectedSubject} Accuracy`}
-            </h2>
+            {chartTab === 'accuracy' ? (
+              <h2 className="font-['Rajdhani'] font-bold text-sm text-text-primary uppercase tracking-widest flex items-center shrink-0">
+                <Activity
+                  className="mr-2 shrink-0 transition-colors duration-300"
+                  size={16}
+                  style={{ color: SUBJECT_LINE_COLOR[selectedSubject] }}
+                />
+                {selectedSubject === 'ALL' ? 'Accuracy Trend' : `${selectedSubject} Accuracy`}
+              </h2>
+            ) : (
+              <h2 className="font-['Rajdhani'] font-bold text-sm text-text-primary uppercase tracking-widest flex items-center shrink-0">
+                <Zap
+                  className="mr-2 shrink-0 transition-colors duration-300 text-accent"
+                  size={16}
+                  style={{ color: selectedSubject === 'ALL' ? '#00FF41' : GAUNTLET_SUBJECT_COLORS[selectedSubject] }}
+                />
+                {selectedSubject === 'ALL' ? 'Gauntlet Rating Trend' : `${selectedSubject} Gauntlet Rating`}
+              </h2>
+            )}
 
             <div className="flex items-center gap-2 flex-wrap justify-end">
-              <div className="flex flex-wrap gap-1 bg-[#111] p-1 rounded-lg border border-border-base">
-                {(['ALL', 'MATH', 'GEAS', 'ELECS', 'EST'] as const).map(subj => (
-                  <button
-                    key={subj}
-                    onClick={() => setSelectedSubject(subj)}
-                    className={`px-3 py-1 text-[10px] font-bold font-['Rajdhani'] uppercase tracking-widest rounded transition-all duration-200 ${
-                      selectedSubject === subj
-                        ? (subj === 'ELECS' || subj === 'GEAS' ? 'text-white' : 'text-black')
-                        : 'text-text-muted hover:text-text-primary hover:bg-border-base'
-                    }`}
-                    style={selectedSubject === subj ? { backgroundColor: SUBJECT_LINE_COLOR[subj] } : {}}
-                  >
-                    {subj}
-                  </button>
-                ))}
+              {/* Chart Mode Toggle */}
+              <div className="flex items-center gap-1 bg-[#111] p-1 rounded-lg border border-border-base">
+                <button
+                  onClick={() => setChartTab('accuracy')}
+                  className={`px-2.5 py-1 text-[10px] font-bold font-['Rajdhani'] uppercase tracking-widest rounded flex items-center gap-1.5 transition-all duration-200 ${
+                    chartTab === 'accuracy'
+                      ? 'bg-accent text-black shadow-sm'
+                      : 'text-text-muted hover:text-text-primary'
+                  }`}
+                >
+                  <Activity size={12} />
+                  Accuracy
+                </button>
+                <button
+                  onClick={() => setChartTab('gauntlet')}
+                  className={`px-2.5 py-1 text-[10px] font-bold font-['Rajdhani'] uppercase tracking-widest rounded flex items-center gap-1.5 transition-all duration-200 ${
+                    chartTab === 'gauntlet'
+                      ? 'bg-accent text-black shadow-sm'
+                      : 'text-text-muted hover:text-text-primary'
+                  }`}
+                >
+                  <Zap size={12} />
+                  Gauntlet Elo
+                </button>
               </div>
 
-              <div className="relative">
-                <select
-                  value={granularity}
-                  onChange={e => setGranularity(e.target.value as AccuracyGranularity)}
-                  className="appearance-none bg-[#111] border border-border-subtle text-text-muted text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest rounded-lg pl-3 pr-7 py-[6px] focus:outline-none focus:border-[#444] hover:text-text-primary cursor-pointer transition-colors"
-                >
-                  <option value="day">Daily</option>
-                  <option value="week">Weekly</option>
-                  <option value="month">Monthly</option>
-                </select>
-                <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2" width="8" height="5" viewBox="0 0 8 5" fill="none">
-                  <path d="M0 0L4 5L8 0" fill="#555" />
-                </svg>
+              {/* Subject Filter Pills — Active for both Accuracy and Gauntlet Elo */}
+              <div className="flex flex-wrap gap-1 bg-[#111] p-1 rounded-lg border border-border-base">
+                {(['ALL', 'MATH', 'GEAS', 'ELECS', 'EST'] as const).map(subj => {
+                  const isActive = selectedSubject === subj
+                  const color = chartTab === 'accuracy'
+                    ? SUBJECT_LINE_COLOR[subj]
+                    : (subj === 'ALL' ? '#00FF41' : GAUNTLET_SUBJECT_COLORS[subj])
+                  const textColor = isActive
+                    ? (chartTab === 'accuracy' && (subj === 'ELECS' || subj === 'GEAS') ? 'text-white' : 'text-black')
+                    : 'text-text-muted hover:text-text-primary hover:bg-border-base'
+
+                  return (
+                    <button
+                      key={subj}
+                      onClick={() => setSelectedSubject(subj)}
+                      className={`px-3 py-1 text-[10px] font-bold font-['Rajdhani'] uppercase tracking-widest rounded transition-all duration-200 ${textColor}`}
+                      style={isActive ? { backgroundColor: color } : {}}
+                    >
+                      {subj}
+                    </button>
+                  )
+                })}
               </div>
+
+              {/* Granularity dropdown — Accuracy tab only */}
+              {chartTab === 'accuracy' && (
+                <div className="relative">
+                  <select
+                    value={granularity}
+                    onChange={e => setGranularity(e.target.value as AccuracyGranularity)}
+                    className="appearance-none bg-[#111] border border-border-subtle text-text-muted text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest rounded-lg pl-3 pr-7 py-[6px] focus:outline-none focus:border-[#444] hover:text-text-primary cursor-pointer transition-colors"
+                  >
+                    <option value="day">Daily</option>
+                    <option value="week">Weekly</option>
+                    <option value="month">Monthly</option>
+                  </select>
+                  <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2" width="8" height="5" viewBox="0 0 8 5" fill="none">
+                    <path d="M0 0L4 5L8 0" fill="#555" />
+                  </svg>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Chart */}
-          <AccuracyChart
-            data={accuracyChartData}
-            subject={selectedSubject}
-            isLoading={trendLoading}
-          />
+          {chartTab === 'accuracy' ? (
+            <>
+              <AccuracyChart
+                data={accuracyChartData}
+                subject={selectedSubject}
+                isLoading={trendLoading}
+              />
 
-          {/* Footer drill-down legend — ALL tab only */}
-          <AnimatePresence>
-            {selectedSubject === 'ALL' && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
-              >
-                <div className="flex gap-4 justify-center items-center pt-4 border-t border-[#1E1E1E] mt-4">
-                  {(['MATH', 'GEAS', 'ELECS', 'EST'] as const).map(s => (
+              {/* Footer drill-down legend — ALL tab only */}
+              <AnimatePresence>
+                {selectedSubject === 'ALL' && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="flex gap-4 justify-center items-center pt-4 border-t border-[#1E1E1E] mt-4">
+                      {(['MATH', 'GEAS', 'ELECS', 'EST'] as const).map(s => (
+                        <button
+                          key={s}
+                          onClick={() => setSelectedSubject(s)}
+                          className="flex items-center gap-1.5 text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest text-[#555] hover:text-text-primary transition-colors"
+                        >
+                          <span className="inline-block w-4 h-[2px] rounded-full" style={{ backgroundColor: SUBJECT_LINE_COLOR[s] }} />
+                          {s}
+                        </button>
+                      ))}
+                      <span className="text-text-muted font-['Rajdhani'] text-[9px] tracking-widest">↑ CLICK TO DRILL IN</span>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </>
+          ) : (
+            <>
+              <SubjectEloChart
+                data={eloHistory}
+                subject={selectedSubject}
+                isLoading={eloLoading}
+              />
+
+              {/* Gauntlet subject legend footer */}
+              <div className="flex gap-4 justify-center items-center pt-4 border-t border-[#1E1E1E] mt-4 flex-wrap">
+                {selectedSubject === 'ALL' ? (
+                  <>
+                    {(['MATH', 'GEAS', 'ELECS', 'EST'] as const).map(s => (
+                      <button
+                        key={s}
+                        onClick={() => setSelectedSubject(s)}
+                        className="flex items-center gap-1.5 text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest text-[#888] hover:text-text-primary transition-colors"
+                      >
+                        <span className="inline-block w-4 h-[2px] rounded-full" style={{ backgroundColor: GAUNTLET_SUBJECT_COLORS[s] }} />
+                        <span style={{ color: GAUNTLET_SUBJECT_COLORS[s] }}>{s}</span>
+                      </button>
+                    ))}
+                    <span className="text-text-muted font-['Rajdhani'] text-[9px] tracking-widest">
+                      ↑ CLICK TO DRILL IN · 1000 = BASE RATING
+                    </span>
+                  </>
+                ) : (
+                  <>
                     <button
-                      key={s}
-                      onClick={() => setSelectedSubject(s)}
-                      className="flex items-center gap-1.5 text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest text-[#555] hover:text-text-primary transition-colors"
+                      onClick={() => setSelectedSubject('ALL')}
+                      className="flex items-center gap-1.5 text-[10px] font-['Rajdhani'] font-bold uppercase tracking-widest text-text-muted hover:text-text-primary transition-colors"
                     >
-                      <span className="inline-block w-4 h-[2px] rounded-full" style={{ backgroundColor: SUBJECT_LINE_COLOR[s] }} />
-                      {s}
+                      <span>← SHOW ALL SUBJECTS</span>
                     </button>
-                  ))}
-                  <span className="text-text-muted font-['Rajdhani'] text-[9px] tracking-widest">↑ CLICK TO DRILL IN</span>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                    <span className="text-text-muted font-['Rajdhani'] text-[9px] tracking-widest">
+                      1000 = BASE RATING
+                    </span>
+                  </>
+                )}
+              </div>
+            </>
+          )}
         </div>
 
         {/* Study Progress Panel */}

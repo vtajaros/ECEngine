@@ -14,3 +14,10 @@ export const SUBJECT_LINE_COLOR: Record<AccuracySubject, string> = {
   ELECS: '#ef4444',
   EST:   '#22c55e',
 }
+
+export const GAUNTLET_SUBJECT_COLORS: Record<'MATH' | 'GEAS' | 'ELECS' | 'EST', string> = {
+  MATH:  '#FB923C',
+  GEAS:  '#60A5FA',
+  ELECS: '#F87171',
+  EST:   '#22C55E',
+}

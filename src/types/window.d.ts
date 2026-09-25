@@ -106,6 +106,7 @@ declare global {
         getPoolSizes: () => Promise<{ success: boolean; data?: any; error?: string }>
         getQuestions: (payload: { counts: Array<{ subject: string; count: number }>; excludeIds?: string[] }) => Promise<{ success: boolean; data?: any[]; error?: string }>
         getRatings: () => Promise<{ success: boolean; data?: any; error?: string }>
+        resetRatings: () => Promise<{ success: boolean; error?: string }>
         saveRun: (payload: unknown) => Promise<{ success: boolean; data?: any; error?: string }>
         getRuns: (payload?: { limit?: number; offset?: number }) => Promise<{ success: boolean; data?: any[]; error?: string }>
         getRunAnswers: (runId: string) => Promise<{ success: boolean; data?: any[]; error?: string }>

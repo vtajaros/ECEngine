@@ -521,3 +521,93 @@ export function formatRunDuration(ms: number): string {
   return `${m}m ${s.toString().padStart(2, '0')}s`
 }
 
+/**
+ * Returns the subject with the lowest current rating among GAUNTLET_SUBJECTS
+ * (treating unplayed subjects as defaultRating()), or null if all are unplayed/tied.
+ */
+export function getWeakestSubject(
+  ratings: Partial<Record<Subject, SubjectRating>>
+): { subject: Subject; rating: number } | null {
+  const items = GAUNTLET_SUBJECTS.map(subject => ({
+    subject,
+    rating: ratings[subject]?.rating ?? defaultRating().rating,
+    answers: ratings[subject]?.answers ?? 0,
+  }))
+
+  const allUnplayed = items.every(i => i.answers === 0)
+  if (allUnplayed) return null
+
+  const allTied = items.every(i => i.rating === items[0].rating)
+  if (allTied) return null
+
+  let weakest = items[0]
+  for (let i = 1; i < items.length; i++) {
+    if (items[i].rating < weakest.rating) {
+      weakest = items[i]
+    }
+  }
+
+  return { subject: weakest.subject, rating: weakest.rating }
+}
+
+export interface SubjectEloPoint {
+  date: string
+  timestamp: number
+  MATH: number | null
+  GEAS: number | null
+  ELECS: number | null
+  EST: number | null
+}
+
+/**
+ * Takes getRuns() output and reshapes it into chronologically ascending points
+ * of { date, timestamp, MATH, GEAS, ELECS, EST } based on ratings_after.
+ */
+export function reshapeRunsToEloHistory(runs: any[]): SubjectEloPoint[] {
+  if (!Array.isArray(runs) || runs.length === 0) return []
+
+  // getRuns returns DESC (newest first). Sort chronologically ascending (oldest first).
+  const sorted = [...runs].sort((a, b) => {
+    const timeA = typeof a.startedAt === 'number' ? a.startedAt : (a.started_at ?? 0)
+    const timeB = typeof b.startedAt === 'number' ? b.startedAt : (b.started_at ?? 0)
+    return timeA - timeB
+  })
+
+  const points: SubjectEloPoint[] = []
+
+  for (const r of sorted) {
+    let ratingsAfter = r.ratingsAfter
+    if (!ratingsAfter && typeof r.ratings_after === 'string') {
+      try { ratingsAfter = JSON.parse(r.ratings_after) } catch { ratingsAfter = null }
+    } else if (!ratingsAfter && r.ratings_after && typeof r.ratings_after === 'object') {
+      ratingsAfter = r.ratings_after
+    }
+
+    if (!ratingsAfter || typeof ratingsAfter !== 'object' || Object.keys(ratingsAfter).length === 0) {
+      continue
+    }
+
+    const startedAt = typeof r.startedAt === 'number' ? r.startedAt : (r.started_at ?? 0)
+    const d = new Date(startedAt)
+    const date = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+
+    const getRating = (sub: string): number | null => {
+      const entry = ratingsAfter[sub]
+      if (entry == null) return null
+      const num = typeof entry === 'number' ? entry : entry.rating
+      return typeof num === 'number' && !isNaN(num) ? Math.round(num) : null
+    }
+
+    points.push({
+      date,
+      timestamp: startedAt,
+      MATH: getRating('MATH'),
+      GEAS: getRating('GEAS'),
+      ELECS: getRating('ELECS'),
+      EST: getRating('EST'),
+    })
+  }
+
+  return points
+}
+

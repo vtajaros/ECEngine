@@ -12,6 +12,8 @@ import {
   getLivesMultiplier,
   getSurvivalDifficultyMultiplier,
   formatRunDuration,
+  getWeakestSubject,
+  reshapeRunsToEloHistory,
 } from './gauntlet'
 
 describe('par / weight', () => {
@@ -418,6 +420,129 @@ describe('pace model and warnings', () => {
 
     it('formats hours, minutes, and seconds correctly', () => {
       expect(formatRunDuration(3665000)).toBe('1h 01m 05s')
+    })
+  })
+
+  describe('getWeakestSubject', () => {
+    it('returns null when all subjects are unplayed', () => {
+      expect(getWeakestSubject({})).toBeNull()
+      expect(
+        getWeakestSubject({
+          MATH: { rating: 1000, answers: 0 },
+          GEAS: { rating: 1000, answers: 0 },
+          ELECS: { rating: 1000, answers: 0 },
+          EST: { rating: 1000, answers: 0 },
+        })
+      ).toBeNull()
+    })
+
+    it('returns null when all played subjects are tied at the same rating', () => {
+      expect(
+        getWeakestSubject({
+          MATH: { rating: 1100, answers: 10 },
+          GEAS: { rating: 1100, answers: 10 },
+          ELECS: { rating: 1100, answers: 10 },
+          EST: { rating: 1100, answers: 10 },
+        })
+      ).toBeNull()
+    })
+
+    it('returns the subject with the lowest rating when one is lowest', () => {
+      const res = getWeakestSubject({
+        MATH: { rating: 1050, answers: 10 },
+        GEAS: { rating: 920, answers: 10 },
+        ELECS: { rating: 1150, answers: 10 },
+        EST: { rating: 1000, answers: 10 },
+      })
+      expect(res).toEqual({ subject: 'GEAS', rating: 920 })
+    })
+
+    it('treats unplayed subjects as defaultRating (1000)', () => {
+      // MATH has dropped below 1000, others unplayed (1000) -> MATH is weakest
+      const res1 = getWeakestSubject({
+        MATH: { rating: 950, answers: 5 },
+      })
+      expect(res1).toEqual({ subject: 'MATH', rating: 950 })
+
+      // MATH has risen above 1000, others unplayed (1000) -> lowest is 1000 (first unplayed subject)
+      const res2 = getWeakestSubject({
+        MATH: { rating: 1150, answers: 5 },
+      })
+      expect(res2?.rating).toBe(1000)
+      expect(['GEAS', 'ELECS', 'EST']).toContain(res2?.subject)
+    })
+  })
+
+  describe('reshapeRunsToEloHistory', () => {
+    it('returns empty array when runs is empty or non-array', () => {
+      expect(reshapeRunsToEloHistory([])).toEqual([])
+      expect(reshapeRunsToEloHistory(null as any)).toEqual([])
+    })
+
+    it('reverses DESC runs into chronologically ascending points and extracts per-subject ratings', () => {
+      const mockRuns = [
+        {
+          id: 'run-2',
+          startedAt: 1700002000,
+          ratingsAfter: {
+            MATH: { rating: 1060.4, answers: 12 },
+            GEAS: { rating: 980.2, answers: 10 },
+            ELECS: { rating: 1010.0, answers: 8 },
+            EST: { rating: 1040.1, answers: 14 },
+          },
+        },
+        {
+          id: 'run-1',
+          startedAt: 1700001000,
+          ratingsAfter: {
+            MATH: { rating: 1020.1, answers: 6 },
+            GEAS: { rating: 1000.0, answers: 5 },
+            ELECS: { rating: 990.4, answers: 4 },
+            EST: { rating: 1015.3, answers: 7 },
+          },
+        },
+      ]
+
+      const points = reshapeRunsToEloHistory(mockRuns)
+      expect(points).toHaveLength(2)
+      // First point should be run-1 (older)
+      expect(points[0].timestamp).toBe(1700001000)
+      expect(points[0].MATH).toBe(1020)
+      expect(points[0].GEAS).toBe(1000)
+      expect(points[0].ELECS).toBe(990)
+      expect(points[0].EST).toBe(1015)
+
+      // Second point should be run-2 (newer)
+      expect(points[1].timestamp).toBe(1700002000)
+      expect(points[1].MATH).toBe(1060)
+      expect(points[1].GEAS).toBe(980)
+      expect(points[1].ELECS).toBe(1010)
+      expect(points[1].EST).toBe(1040)
+    })
+
+    it('handles stringified ratings_after from raw SQLite rows and skips unrated runs', () => {
+      const rawRows = [
+        {
+          id: 'unrated-run',
+          started_at: 1700000500,
+          ratings_after: null,
+        },
+        {
+          id: 'run-3',
+          started_at: 1700003000,
+          ratings_after: JSON.stringify({
+            MATH: { rating: 1080, answers: 15 },
+          }),
+        },
+      ]
+
+      const points = reshapeRunsToEloHistory(rawRows)
+      expect(points).toHaveLength(1)
+      expect(points[0].timestamp).toBe(1700003000)
+      expect(points[0].MATH).toBe(1080)
+      expect(points[0].GEAS).toBeNull()
+      expect(points[0].ELECS).toBeNull()
+      expect(points[0].EST).toBeNull()
     })
   })
 })
