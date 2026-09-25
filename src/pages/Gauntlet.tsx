@@ -1461,26 +1461,15 @@ Please explain:
 
           {/* Question Meta */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span
-                className="px-2 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold tracking-wider"
-                style={{
-                  color: SUBJECT_LINE_COLOR[currentItem.subject],
-                  border: `1px solid ${SUBJECT_LINE_COLOR[currentItem.subject]}`,
-                }}
-              >
-                {currentItem.subject}
-              </span>
-              {currentItem.card.tosTopicId && (
-                <Tooltip content={formatTosBadge(currentItem.card.tosTopicId) || currentItem.card.tosTopicId} position="top">
-                  <span
-                    className="px-2 py-0.5 rounded text-[10px] font-['JetBrains_Mono'] font-bold tracking-wide border border-border-base bg-[#181818] text-[#888] cursor-default"
-                  >
-                    {formatTosBadge(currentItem.card.tosTopicId) || currentItem.card.tosTopicId}
-                  </span>
-                </Tooltip>
-              )}
-            </div>
+            <span
+              className="px-2 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold tracking-wider"
+              style={{
+                color: SUBJECT_LINE_COLOR[currentItem.subject],
+                border: `1px solid ${SUBJECT_LINE_COLOR[currentItem.subject]}`,
+              }}
+            >
+              {currentItem.subject}
+            </span>
           </div>
 
           {/* Question Text */}

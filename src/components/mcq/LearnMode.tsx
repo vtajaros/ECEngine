@@ -3,7 +3,6 @@ import { Card, MCQData } from '../../types'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bookmark, Play, AlertCircle, ArrowRight, Flag, X, Copy, Sparkles, Volume2, VolumeX, CheckCircle2, XCircle } from 'lucide-react'
 import { renderMath, renderPlainText } from '../../lib/latex'
-import { formatTosBadge } from '../../lib/tosClassification'
 import { shuffleChoices, isSafeToShuffleChoices } from '../../lib/scrambler'
 import Toast from '../ui/Toast'
 import { ExplanationPanel } from '../ui/ExplanationPanel'
@@ -824,20 +823,9 @@ Please explain:
           </Tooltip>
 
           <div className="mb-8 pr-4 h-auto flex-none">
-            <div className="flex flex-wrap items-center gap-2 mb-3">
-              <span className="px-2.5 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold tracking-wider text-accent border border-accent/40 bg-accent/5">
-                QUESTION {overallCurrentQuestion}
-              </span>
-              {currentCard.tosTopicId && (
-                <Tooltip content={formatTosBadge(currentCard.tosTopicId) || currentCard.tosTopicId} position="top">
-                  <span
-                    className="px-2 py-0.5 rounded text-[10px] font-['JetBrains_Mono'] font-bold tracking-wide border border-accent/30 bg-[#181818] text-accent/90 cursor-default"
-                  >
-                    {formatTosBadge(currentCard.tosTopicId) || currentCard.tosTopicId}
-                  </span>
-                </Tooltip>
-              )}
-            </div>
+            <span className="px-2.5 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold tracking-wider text-accent border border-accent/40 bg-accent/5 inline-block mb-3">
+              QUESTION {overallCurrentQuestion}
+            </span>
             <div
               className="text-white font-['Rajdhani'] font-semibold mb-6 text-lg leading-relaxed whitespace-pre-wrap mcq-question-text"
               dangerouslySetInnerHTML={{ __html: renderMath(mcqData.question) }}

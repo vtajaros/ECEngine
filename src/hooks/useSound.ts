@@ -260,7 +260,7 @@ function playSynthGameOverSound(ctx: AudioContext, masterVolume: number) {
       o.frequency.exponentialRampToValueAtTime(slideTo, t + duration)
     }
 
-    g.gain.setValueAtTime(0.2 * masterVolume, t)
+    g.gain.setValueAtTime(0.16 * masterVolume, t)
     g.gain.exponentialRampToValueAtTime(0.0001, t + duration)
     o.start(t)
     o.stop(t + duration)
@@ -307,7 +307,7 @@ function playGameOverSound(ctx: AudioContext, masterVolume: number) {
     const source = ctx.createBufferSource()
     const gain = ctx.createGain()
     source.buffer = decoded
-    gain.gain.value = 0.8 * masterVolume
+    gain.gain.value = 0.64 * masterVolume
     source.connect(gain)
     gain.connect(ctx.destination)
     source.start(ctx.currentTime)
