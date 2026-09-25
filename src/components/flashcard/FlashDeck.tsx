@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { RefreshCw, CheckCircle } from 'lucide-react'
 import { useSessionStore } from '../../store/useSessionStore'
 import { useSound } from '../../hooks/useSound'
+import { Tooltip } from '../ui/Tooltip'
 interface FlashDeckProps {
   cards: Card[]
   onComplete?: () => void
@@ -112,16 +113,17 @@ export const FlashDeck: React.FC<FlashDeckProps> = ({
         <div className="flex justify-between items-center text-sm font-['Rajdhani'] uppercase tracking-wider text-text-muted">
           <div className="flex items-center gap-4">
             <span>{isFinished ? 'Session Complete' : `Card ${currentIndex + 1} of ${activeCards.length}`}</span>
-            <button
-              onClick={() => { setIsSwapped(!isSwapped); setSwapResetKey(k => k + 1); }}
-              className={`flex items-center gap-2 px-2 py-0.5 rounded text-[10px] font-bold border transition-all ${isSwapped
-                ? 'bg-accent/20 text-accent border-accent'
-                : 'bg-surface text-text-muted border-[#333] hover:border-[#555] hover:text-text-primary'
-                }`}
-              title="Toggle Term/Definition Swap (Shortcut: F)"
-            >
-              {isSwapped ? 'SWAPPED (DEF → TERM)' : 'SWAP TERM/DEF'}
-            </button>
+            <Tooltip content="Toggle Term/Definition Swap (F)" position="top">
+              <button
+                onClick={() => { setIsSwapped(!isSwapped); setSwapResetKey(k => k + 1); }}
+                className={`flex items-center gap-2 px-2 py-0.5 rounded text-[10px] font-bold border transition-all ${isSwapped
+                  ? 'bg-accent/20 text-accent border-accent'
+                  : 'bg-surface text-text-muted border-[#333] hover:border-[#555] hover:text-text-primary'
+                  }`}
+              >
+                {isSwapped ? 'SWAPPED (DEF → TERM)' : 'SWAP TERM/DEF'}
+              </button>
+            </Tooltip>
           </div>
           {!isFinished && <span>{Math.round((currentIndex / activeCards.length) * 100)}%</span>}
         </div>

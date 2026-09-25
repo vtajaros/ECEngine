@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Volume2, Volume1, VolumeX } from 'lucide-react'
 import { useSoundVolume } from '../../hooks/useSound'
+import { Tooltip } from './Tooltip'
 
 interface VolumeControlProps {
   className?: string
@@ -71,21 +72,22 @@ export const VolumeControl: React.FC<VolumeControlProps> = ({
         setIsHovered(false)
       }}
       onWheel={handleWheel}
-      title={isMuted ? 'Unmute sounds' : `Sound Volume: ${percentLabel}%`}
     >
       {/* Speaker / Mute Button */}
-      <button
-        type="button"
-        onClick={handleToggleClick}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        className={`p-2 rounded focus:outline-none transition-colors flex items-center justify-center shrink-0 cursor-pointer ${
-          isMuted ? 'text-danger hover:text-danger/80' : 'text-text-muted hover:text-white'
-        }`}
-        aria-label={isMuted ? 'Unmute sounds' : 'Mute sounds'}
-      >
-        <VolumeIcon size={iconSize} className="transition-transform duration-150 active:scale-90" />
-      </button>
+      <Tooltip content={isMuted ? 'Unmute sounds' : `Sound Volume: ${percentLabel}%`} position="top">
+        <button
+          type="button"
+          onClick={handleToggleClick}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          className={`p-2 rounded focus:outline-none transition-colors flex items-center justify-center shrink-0 cursor-pointer ${
+            isMuted ? 'text-danger hover:text-danger/80' : 'text-text-muted hover:text-white'
+          }`}
+          aria-label={isMuted ? 'Unmute sounds' : 'Mute sounds'}
+        >
+          <VolumeIcon size={iconSize} className="transition-transform duration-150 active:scale-90" />
+        </button>
+      </Tooltip>
 
       {/* YouTube-style Expandable Volume Slider */}
       <div

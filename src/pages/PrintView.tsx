@@ -1092,50 +1092,53 @@ export default function PrintView() {
           border: '1px solid var(--bg-elevated)',
         }}
       >
-        <motion.button
-          onClick={() => setScale(s => Math.max(MIN_SCALE, Math.round((s - SCALE_STEP) * 10) / 10))}
-          whileTap={{ scale: 0.9 }}
-          title="Zoom Out"
-          style={{
-            width: '24px', height: '24px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            borderRadius: 'var(--radius-sm)',
-            border: 'none', cursor: 'pointer',
-            background: 'transparent',
-            color: 'var(--text-secondary)',
-            fontSize: '16px', fontWeight: 700,
-            transition: 'all 0.15s',
-          }}
-        >−</motion.button>
-        <span
-          onClick={() => setScale(1)}
-          title="Reset zoom"
-          style={{
-            fontSize: '11px', fontWeight: 700,
-            color: 'var(--text-primary)',
-            fontFamily: 'var(--font-ui)',
-            minWidth: '30px', textAlign: 'center',
-            cursor: 'pointer',
-            letterSpacing: '0.04em',
-          }}
-        >
-          {Math.round(scale * 100)}%
-        </span>
-        <motion.button
-          onClick={() => setScale(s => Math.min(MAX_SCALE, Math.round((s + SCALE_STEP) * 10) / 10))}
-          whileTap={{ scale: 0.9 }}
-          title="Zoom In"
-          style={{
-            width: '24px', height: '24px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            borderRadius: 'var(--radius-sm)',
-            border: 'none', cursor: 'pointer',
-            background: 'transparent',
-            color: 'var(--text-secondary)',
-            fontSize: '16px', fontWeight: 700,
-            transition: 'all 0.15s',
-          }}
-        >+</motion.button>
+        <Tooltip content="Zoom Out" position="bottom">
+          <motion.button
+            onClick={() => setScale(s => Math.max(MIN_SCALE, Math.round((s - SCALE_STEP) * 10) / 10))}
+            whileTap={{ scale: 0.9 }}
+            style={{
+              width: '24px', height: '24px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderRadius: 'var(--radius-sm)',
+              border: 'none', cursor: 'pointer',
+              background: 'transparent',
+              color: 'var(--text-secondary)',
+              fontSize: '16px', fontWeight: 700,
+              transition: 'all 0.15s',
+            }}
+          >−</motion.button>
+        </Tooltip>
+        <Tooltip content="Reset zoom" position="bottom">
+          <span
+            onClick={() => setScale(1)}
+            style={{
+              fontSize: '11px', fontWeight: 700,
+              color: 'var(--text-primary)',
+              fontFamily: 'var(--font-ui)',
+              minWidth: '30px', textAlign: 'center',
+              cursor: 'pointer',
+              letterSpacing: '0.04em',
+            }}
+          >
+            {Math.round(scale * 100)}%
+          </span>
+        </Tooltip>
+        <Tooltip content="Zoom In" position="bottom">
+          <motion.button
+            onClick={() => setScale(s => Math.min(MAX_SCALE, Math.round((s + SCALE_STEP) * 10) / 10))}
+            whileTap={{ scale: 0.9 }}
+            style={{
+              width: '24px', height: '24px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderRadius: 'var(--radius-sm)',
+              border: 'none', cursor: 'pointer',
+              background: 'transparent',
+              color: 'var(--text-secondary)',
+              fontSize: '16px', fontWeight: 700,
+              transition: 'all 0.15s',
+            }}
+          >+</motion.button>
+        </Tooltip>
       </div>
 
       {/* Find / Search button */}
@@ -1575,43 +1578,46 @@ export default function PrintView() {
             {findQuery ? (findTotal === 0 ? 'No results' : `${findIndex + 1} / ${findTotal}`) : ''}
           </span>
           {/* Prev */}
-          <button
-            onClick={() => navigateFind(-1)}
-            disabled={findTotal === 0}
-            title="Previous match (Shift+Enter)"
-            style={{
-              background: 'transparent', border: 'none', cursor: findTotal > 0 ? 'pointer' : 'not-allowed',
-              color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', padding: '2px',
-              borderRadius: '4px', opacity: findTotal === 0 ? 0.4 : 1,
-            }}
-          >
-            <ChevronUp size={15} />
-          </button>
+          <Tooltip content="Previous match (Shift+Enter)" position="bottom">
+            <button
+              onClick={() => navigateFind(-1)}
+              disabled={findTotal === 0}
+              style={{
+                background: 'transparent', border: 'none', cursor: findTotal > 0 ? 'pointer' : 'not-allowed',
+                color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', padding: '2px',
+                borderRadius: '4px', opacity: findTotal === 0 ? 0.4 : 1,
+              }}
+            >
+              <ChevronUp size={15} />
+            </button>
+          </Tooltip>
           {/* Next */}
-          <button
-            onClick={() => navigateFind(1)}
-            disabled={findTotal === 0}
-            title="Next match (Enter)"
-            style={{
-              background: 'transparent', border: 'none', cursor: findTotal > 0 ? 'pointer' : 'not-allowed',
-              color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', padding: '2px',
-              borderRadius: '4px', opacity: findTotal === 0 ? 0.4 : 1,
-            }}
-          >
-            <ChevronDown size={15} />
-          </button>
+          <Tooltip content="Next match (Enter)" position="bottom">
+            <button
+              onClick={() => navigateFind(1)}
+              disabled={findTotal === 0}
+              style={{
+                background: 'transparent', border: 'none', cursor: findTotal > 0 ? 'pointer' : 'not-allowed',
+                color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', padding: '2px',
+                borderRadius: '4px', opacity: findTotal === 0 ? 0.4 : 1,
+              }}
+            >
+              <ChevronDown size={15} />
+            </button>
+          </Tooltip>
           {/* Close */}
-          <button
-            onClick={closeFind}
-            title="Close (Esc)"
-            style={{
-              background: 'transparent', border: 'none', cursor: 'pointer',
-              color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', padding: '2px',
-              borderRadius: '4px',
-            }}
-          >
-            <X size={14} />
-          </button>
+          <Tooltip content="Close (Esc)" position="bottom">
+            <button
+              onClick={closeFind}
+              style={{
+                background: 'transparent', border: 'none', cursor: 'pointer',
+                color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', padding: '2px',
+                borderRadius: '4px',
+              }}
+            >
+              <X size={14} />
+            </button>
+          </Tooltip>
         </div>
       )}
 
@@ -1653,13 +1659,14 @@ export default function PrintView() {
             className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4 lg:p-10 cursor-zoom-out backdrop-blur-sm print:hidden"
             onClick={() => setZoomedImage(null)}
           >
-            <button
-              className="absolute top-6 right-6 text-text-muted hover:text-accent transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-accent"
-              onClick={() => setZoomedImage(null)}
-              title="Close"
-            >
-              <X size={24} />
-            </button>
+            <Tooltip content="Close (Esc)" position="left">
+              <button
+                className="absolute top-6 right-6 text-text-muted hover:text-accent transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-accent z-10"
+                onClick={() => setZoomedImage(null)}
+              >
+                <X size={24} />
+              </button>
+            </Tooltip>
             <motion.img
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}

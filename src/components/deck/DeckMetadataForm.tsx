@@ -411,14 +411,15 @@ export default function DeckMetadataForm({ metadata, setMetadata, scope, cards =
                   }`}
               >
                 <span>{tag}</span>
-                <button
-                  type="button"
-                  onClick={(e) => handleInitiateDeleteTag(tag, e)}
-                  title={`Delete tag "${tag}"`}
-                  className="w-4 h-4 rounded-full flex items-center justify-center text-text-muted hover:text-red-400 hover:bg-red-500/20 transition-all opacity-60 group-hover:opacity-100"
-                >
-                  <X size={11} />
-                </button>
+                <Tooltip content={`Delete tag "${tag}"`} position="top">
+                  <button
+                    type="button"
+                    onClick={(e) => handleInitiateDeleteTag(tag, e)}
+                    className="w-4 h-4 rounded-full flex items-center justify-center text-text-muted hover:text-red-400 hover:bg-red-500/20 transition-all opacity-60 group-hover:opacity-100"
+                  >
+                    <X size={11} />
+                  </button>
+                </Tooltip>
               </div>
             )
           })}

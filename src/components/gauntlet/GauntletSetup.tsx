@@ -19,6 +19,7 @@ import {
   useGauntletStore,
   type GauntletConfig,
 } from '../../store/useGauntletStore'
+import { Tooltip } from '../ui/Tooltip'
 
 const loadConfigForMode = (mode: GauntletMode): GauntletConfig => {
   try {
@@ -162,14 +163,15 @@ export const GauntletSetup: React.FC = () => {
         {/* Header: Back arrow + Mode Icon & Title */}
         <div className="flex items-center justify-between border-b border-border-base/70 pb-3">
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={closeSetup}
-              className="w-8 h-8 rounded-lg bg-surface border border-border-base hover:border-text-primary text-text-muted hover:text-white flex items-center justify-center transition-colors"
-              title="Back to Mode Selection (Esc)"
-            >
-              <ArrowLeft size={16} />
-            </button>
+            <Tooltip content="Back to Mode Selection (Esc)" position="right">
+              <button
+                type="button"
+                onClick={closeSetup}
+                className="w-8 h-8 rounded-lg bg-surface border border-border-base hover:border-text-primary text-text-muted hover:text-white flex items-center justify-center transition-colors"
+              >
+                <ArrowLeft size={16} />
+              </button>
+            </Tooltip>
             <div className="flex items-center gap-2">
               {setupMode === 'timed' ? (
                 <Timer size={22} className="text-accent" />

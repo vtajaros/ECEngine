@@ -3,6 +3,7 @@ import { X, Cpu, Copy, Check, Terminal, Sparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { getExplanation } from '../../services/explain.service'
 import { renderMath } from '../../lib/latex'
+import { Tooltip } from './Tooltip'
 
 export interface ExplanationPanelProps {
   question: string
@@ -78,24 +79,25 @@ export const ExplanationPanel: React.FC<ExplanationPanelProps> = ({
         {/* Actions (Copy) */}
         <div className="flex items-center gap-1.5">
           {!loading && explanation && (
-            <button
-              onClick={handleCopy}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded text-text-muted hover:text-white hover:bg-[#1a1d24] border border-transparent hover:border-[#2a2f3d] transition-all font-['JetBrains_Mono',monospace] text-xs cursor-pointer"
-              title="Copy explanation"
-              aria-label="Copy explanation"
-            >
-              {copied ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-accent" />
-                  <span className="text-[10px] font-bold text-accent">COPIED</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5" />
-                  <span className="text-[10px] text-text-muted hover:text-white">COPY</span>
-                </>
-              )}
-            </button>
+            <Tooltip content="Copy explanation" position="top">
+              <button
+                onClick={handleCopy}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded text-text-muted hover:text-white hover:bg-[#1a1d24] border border-transparent hover:border-[#2a2f3d] transition-all font-['JetBrains_Mono',monospace] text-xs cursor-pointer"
+                aria-label="Copy explanation"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-accent" />
+                    <span className="text-[10px] font-bold text-accent">COPIED</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-3.5 h-3.5" />
+                    <span className="text-[10px] text-text-muted hover:text-white">COPY</span>
+                  </>
+                )}
+              </button>
+            </Tooltip>
           )}
         </div>
       </div>

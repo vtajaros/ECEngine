@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { HelpCircle, X, ChevronDown, ShieldCheck, Zap, Award, Target, Flame, type LucideIcon } from 'lucide-react'
+import { Tooltip } from '../ui/Tooltip'
 
 interface GauntletFaqModalProps {
   isOpen: boolean
@@ -197,14 +198,15 @@ export const GauntletFaqModal: React.FC<GauntletFaqModalProps> = ({ isOpen, onCl
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={onClose}
-                className="w-8 h-8 rounded-lg bg-surface border border-border-base hover:border-text-primary text-text-muted hover:text-white flex items-center justify-center transition-colors"
-                title="Close (Esc)"
-              >
-                <X size={18} />
-              </button>
+              <Tooltip content="Close (Esc)" position="left">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="w-8 h-8 rounded-lg bg-surface border border-border-base hover:border-text-primary text-text-muted hover:text-white flex items-center justify-center transition-colors"
+                >
+                  <X size={18} />
+                </button>
+              </Tooltip>
             </div>
 
             {/* Scrollable Accordion Body */}

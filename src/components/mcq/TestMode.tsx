@@ -105,12 +105,13 @@ const TestQuestionCard = memo(({
               QUESTION {index + 1}
             </span>
             {card.tosTopicId && (
-              <span
-                className="px-2.5 py-0.5 rounded text-[10px] font-['JetBrains_Mono'] font-bold tracking-wide border border-accent/30 bg-[#181818] text-accent/90"
-                title={formatTosBadge(card.tosTopicId) || ''}
-              >
-                {formatTosBadge(card.tosTopicId) || card.tosTopicId}
-              </span>
+              <Tooltip content={formatTosBadge(card.tosTopicId) || card.tosTopicId} position="top">
+                <span
+                  className="px-2.5 py-0.5 rounded text-[10px] font-['JetBrains_Mono'] font-bold tracking-wide border border-accent/30 bg-[#181818] text-accent/90 cursor-default"
+                >
+                  {formatTosBadge(card.tosTopicId) || card.tosTopicId}
+                </span>
+              </Tooltip>
             )}
           </div>
           <div
@@ -130,16 +131,17 @@ const TestQuestionCard = memo(({
           )}
         </div>
 
-        <button
-          onClick={(e) => { e.stopPropagation(); onToggleBookmark(card.id) }}
-          className={`p-2 rounded transition-colors ${isBookmarked
-            ? 'text-accent bg-accent/10'
-            : 'text-[#555] hover:bg-border-base hover:text-text-muted'
-            }`}
-          title={isBookmarked ? 'Remove Bookmark' : 'Bookmark Question'}
-        >
-          <Bookmark className={`w-5 h-5 ${isBookmarked ? 'fill-accent text-accent' : ''}`} />
-        </button>
+        <Tooltip content={isBookmarked ? 'Remove Bookmark' : 'Bookmark Question'} position="top">
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleBookmark(card.id) }}
+            className={`p-2 rounded transition-colors ${isBookmarked
+              ? 'text-accent bg-accent/10'
+              : 'text-[#555] hover:bg-border-base hover:text-text-muted'
+              }`}
+          >
+            <Bookmark className={`w-5 h-5 ${isBookmarked ? 'fill-accent text-accent' : ''}`} />
+          </button>
+        </Tooltip>
       </div>
 
       <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
@@ -565,13 +567,14 @@ Please explain:
   const renderTopBar = () => (
     <div className="sticky top-0 left-0 w-full bg-[var(--bg-secondary)] border-b border-[var(--bg-card)] shadow-lg z-50 flex flex-row items-center justify-between gap-2 px-6 py-4 shrink-0">
       <div className="flex items-center gap-6 flex-1 min-w-0">
-        <button
-          onClick={() => { if (viewState === 'test') setShowExitConfirm(true); else handleExit() }}
-          className="text-text-muted hover:text-[var(--text-primary)] transition-colors flex items-center justify-center p-2 rounded hover:bg-border-base shrink-0"
-          title="Exit Test"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        <Tooltip content="Exit Test" position="bottom">
+          <button
+            onClick={() => { if (viewState === 'test') setShowExitConfirm(true); else handleExit() }}
+            className="text-text-muted hover:text-[var(--text-primary)] transition-colors flex items-center justify-center p-2 rounded hover:bg-border-base shrink-0"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </Tooltip>
         <div className="flex flex-col flex-1 min-w-0">
           <span className="text-[var(--text-primary)] font-['Rajdhani'] tracking-widest font-bold text-2xl truncate uppercase flex items-center min-w-0">
             {title ? (
@@ -876,13 +879,14 @@ Please explain:
             className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4 lg:p-10 cursor-zoom-out backdrop-blur-sm"
             onClick={() => setZoomedImage(null)}
           >
-            <button
-              className="absolute top-6 right-6 text-text-muted hover:text-accent transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-accent"
-              onClick={() => setZoomedImage(null)}
-              title="Close"
-            >
-              <X size={24} />
-            </button>
+            <Tooltip content="Close (Esc)" position="bottom">
+              <button
+                className="absolute top-6 right-6 text-text-muted hover:text-accent transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-accent"
+                onClick={() => setZoomedImage(null)}
+              >
+                <X size={24} />
+              </button>
+            </Tooltip>
             <motion.img
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}

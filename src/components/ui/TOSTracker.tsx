@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { TOS_DATA, TOS_SUBJECT_COLORS, TOSSubject, TOSTopic } from '../../lib/tosData'
 import { useChecklistStore } from '../../store/useChecklistStore'
+import { Tooltip } from './Tooltip'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -107,27 +108,33 @@ const TopicAccordion: React.FC<TopicAccordionProps> = ({
         {/* REVIEW all-done indicator */}
         <td className="px-3 py-3 text-center w-24">
           {allReviewed && (
-            <span title="All subtopics reviewed">
-              <CheckSquare size={18} className="text-accent mx-auto opacity-70" />
-            </span>
+            <Tooltip content="All subtopics reviewed" position="top">
+              <span className="inline-flex items-center justify-center">
+                <CheckSquare size={18} className="text-accent mx-auto opacity-70" />
+              </span>
+            </Tooltip>
           )}
         </td>
 
         {/* REFRESHER all-done indicator */}
         <td className="px-3 py-3 text-center w-24">
           {allRefresher && (
-            <span title="All subtopics refreshed">
-              <CheckSquare size={18} className="text-accent mx-auto opacity-70" />
-            </span>
+            <Tooltip content="All subtopics refreshed" position="top">
+              <span className="inline-flex items-center justify-center">
+                <CheckSquare size={18} className="text-accent mx-auto opacity-70" />
+              </span>
+            </Tooltip>
           )}
         </td>
 
         {/* SELF REVIEW all-done indicator */}
         <td className="px-3 py-3 text-center w-24">
           {allSelfReview && (
-            <span title="All subtopics self-reviewed">
-              <CheckSquare size={18} className="text-accent mx-auto opacity-70" />
-            </span>
+            <Tooltip content="All subtopics self-reviewed" position="top">
+              <span className="inline-flex items-center justify-center">
+                <CheckSquare size={18} className="text-accent mx-auto opacity-70" />
+              </span>
+            </Tooltip>
           )}
         </td>
       </tr>
@@ -437,14 +444,15 @@ export const TOSTracker: React.FC = () => {
           {hasAnyProgress && (
             <div className="border-l border-border-base pl-4">
               {!showReset ? (
-                <button
-                  onClick={() => setShowReset(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded bg-surface hover:bg-red-950/20 text-gray-400 hover:text-red-400 transition-all border border-[#2d2d2d] hover:border-red-900/50 text-xs font-['Rajdhani'] uppercase tracking-widest font-semibold"
-                  title="Reset all checklist progress"
-                >
-                  <RotateCcw size={12} />
-                  Reset
-                </button>
+                <Tooltip content="Reset all checklist progress" position="top">
+                  <button
+                    onClick={() => setShowReset(true)}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded bg-surface hover:bg-red-950/20 text-gray-400 hover:text-red-400 transition-all border border-[#2d2d2d] hover:border-red-900/50 text-xs font-['Rajdhani'] uppercase tracking-widest font-semibold"
+                  >
+                    <RotateCcw size={12} />
+                    Reset
+                  </button>
+                </Tooltip>
               ) : (
                 <div className="flex items-center gap-1.5 bg-black/60 px-2.5 py-1.5 rounded border border-red-900/40">
                   <span className="font-['JetBrains_Mono'] text-[10px] text-red-400">Confirm Reset?</span>

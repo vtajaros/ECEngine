@@ -970,12 +970,13 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
           )}
         </span>
         {card.tosTopicId && (
-          <span
-            className="text-[9px] font-['JetBrains_Mono'] font-bold px-1.5 py-0.5 rounded border border-border-base bg-[#181818] text-[#888] truncate max-w-[130px] flex-shrink-0"
-            title={formatTosBadge(card.tosTopicId) || ''}
-          >
-            {card.tosTopicId}
-          </span>
+          <Tooltip content={formatTosBadge(card.tosTopicId) || card.tosTopicId} position="top">
+            <span
+              className="text-[9px] font-['JetBrains_Mono'] font-bold px-1.5 py-0.5 rounded border border-border-base bg-[#181818] text-[#888] truncate max-w-[130px] flex-shrink-0 cursor-default"
+            >
+              {card.tosTopicId}
+            </span>
+          </Tooltip>
         )}
         <span className={`text-[10px] font-['JetBrains_Mono'] font-bold px-2 py-0.5 rounded border uppercase flex-shrink-0 ${card.type === 'mcq'
             ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
@@ -1971,14 +1972,15 @@ export default function EditDeck() {
                         }`}
                     >
                       <span>{tag}</span>
-                      <button
-                        type="button"
-                        onClick={(e) => handleInitiateDeleteTag(tag, e)}
-                        title={`Delete tag "${tag}"`}
-                        className="w-4 h-4 rounded-full flex items-center justify-center text-text-muted hover:text-red-400 hover:bg-red-500/20 transition-all opacity-60 group-hover:opacity-100"
-                      >
-                        <X size={11} />
-                      </button>
+                      <Tooltip content={`Delete tag "${tag}"`} position="top">
+                        <button
+                          type="button"
+                          onClick={(e) => handleInitiateDeleteTag(tag, e)}
+                          className="w-4 h-4 rounded-full flex items-center justify-center text-text-muted hover:text-red-400 hover:bg-red-500/20 transition-all opacity-60 group-hover:opacity-100"
+                        >
+                          <X size={11} />
+                        </button>
+                      </Tooltip>
                     </div>
                   )
                 })}
@@ -2036,16 +2038,20 @@ export default function EditDeck() {
                   </span>
                 </div>
                 <div className="flex flex-wrap items-center gap-3 justify-end">
-                  <button
-                    type="button"
-                    onClick={handleAutoClassifyTos}
-                    disabled={isClassifyingTos || cards.length === 0}
-                    className="flex items-center gap-2 px-4 py-2 rounded border border-accent/40 bg-surface-2 text-accent hover:bg-accent/10 hover:border-accent font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Automatically classify and tag all cards in this deck using the offline PRC TOS classifier"
+                  <Tooltip
+                    content="Automatically classify and tag all cards in this deck using the offline PRC TOS classifier"
+                    position="top"
                   >
-                    <Tag size={14} className={isClassifyingTos ? 'animate-spin' : ''} />
-                    {isClassifyingTos ? 'Tagging...' : 'Auto-Tag TOS'}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={handleAutoClassifyTos}
+                      disabled={isClassifyingTos || cards.length === 0}
+                      className="flex items-center gap-2 px-4 py-2 rounded border border-accent/40 bg-surface-2 text-accent hover:bg-accent/10 hover:border-accent font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Tag size={14} className={isClassifyingTos ? 'animate-spin' : ''} />
+                      {isClassifyingTos ? 'Tagging...' : 'Auto-Tag Cards'}
+                    </button>
+                  </Tooltip>
                   <button
                     type="button"
                     onClick={() => setImportModalType('mcq')}

@@ -627,23 +627,25 @@ Please explain:
                     <div className="flex items-start justify-between gap-4 mb-2">
                       <span className="font-['Rajdhani'] font-bold text-text-muted whitespace-nowrap mt-0.5">Q{overallPos}</span>
                       <div className="text-text-primary font-['JetBrains_Mono'] text-[13px] leading-relaxed flex-1 mcq-question-text" dangerouslySetInnerHTML={{ __html: renderMath(mcq.question) }} />
-                      <button
-                        onClick={() => toggleBookmark(c.id)}
-                        className={`p-1 rounded transition-colors shrink-0 mt-0.5 ${bookmarkedIds.has(c.id) ? 'text-accent bg-accent/10' : 'text-[#555] hover:text-accent hover:bg-accent/5'}`}
-                        title="Bookmark Question"
-                      >
-                        <Bookmark className={`w-4 h-4 ${bookmarkedIds.has(c.id) ? 'fill-current' : ''}`} />
-                      </button>
-                      <button
-                        onClick={() => setOpenExplanationId(openExplanationId === idx ? null : idx)}
-                        className={`p-1 rounded transition-colors shrink-0 mt-0.5 border ${openExplanationId === idx
-                          ? 'border-accent text-accent bg-[rgba(0,255,65,0.1)]'
-                          : 'border-[rgba(0,255,65,0.3)] text-accent hover:bg-[rgba(0,255,65,0.08)] hover:border-accent'
-                          }`}
-                        title={openExplanationId === idx ? 'Hide explanation' : 'AI Explain'}
-                      >
-                        <Sparkles className="w-4 h-4" />
-                      </button>
+                      <Tooltip content="Bookmark Question" position="top">
+                        <button
+                          onClick={() => toggleBookmark(c.id)}
+                          className={`p-1 rounded transition-colors shrink-0 mt-0.5 ${bookmarkedIds.has(c.id) ? 'text-accent bg-accent/10' : 'text-[#555] hover:text-accent hover:bg-accent/5'}`}
+                        >
+                          <Bookmark className={`w-4 h-4 ${bookmarkedIds.has(c.id) ? 'fill-current' : ''}`} />
+                        </button>
+                      </Tooltip>
+                      <Tooltip content={openExplanationId === idx ? 'Hide Explanation' : 'AI Explain'} position="top">
+                        <button
+                          onClick={() => setOpenExplanationId(openExplanationId === idx ? null : idx)}
+                          className={`p-1 rounded transition-colors shrink-0 mt-0.5 border ${openExplanationId === idx
+                            ? 'border-accent text-accent bg-[rgba(0,255,65,0.1)]'
+                            : 'border-[rgba(0,255,65,0.3)] text-accent hover:bg-[rgba(0,255,65,0.08)] hover:border-accent'
+                            }`}
+                        >
+                          <Sparkles className="w-4 h-4" />
+                        </button>
+                      </Tooltip>
                     </div>
                     <div className="pl-8 flex items-start justify-between gap-2">
                       <div className="flex items-start gap-2">
@@ -812,13 +814,14 @@ Please explain:
           className="w-full bg-surface-2 border border-border-base rounded-xl shadow-2xl p-6 sm:p-8 relative flex flex-col"
         >
           {/* Bookmark Toggle */}
-          <button
-            onClick={() => toggleBookmark()}
-            className="absolute top-6 right-6 text-[#666] hover:text-[var(--accent-primary)] transition-colors"
-            title="Bookmark"
-          >
-            <Bookmark className={`w-6 h-6 ${isBookmarked ? 'fill-accent text-accent' : ''}`} />
-          </button>
+          <Tooltip content="Bookmark" position="top">
+            <button
+              onClick={() => toggleBookmark()}
+              className="absolute top-6 right-6 text-[#666] hover:text-[var(--accent-primary)] transition-colors"
+            >
+              <Bookmark className={`w-6 h-6 ${isBookmarked ? 'fill-accent text-accent' : ''}`} />
+            </button>
+          </Tooltip>
 
           <div className="mb-8 pr-4 h-auto flex-none">
             <div className="flex flex-wrap items-center gap-2 mb-3">
@@ -826,12 +829,13 @@ Please explain:
                 QUESTION {overallCurrentQuestion}
               </span>
               {currentCard.tosTopicId && (
-                <span
-                  className="px-2 py-0.5 rounded text-[10px] font-['JetBrains_Mono'] font-bold tracking-wide border border-accent/30 bg-[#181818] text-accent/90"
-                  title={formatTosBadge(currentCard.tosTopicId) || ''}
-                >
-                  {formatTosBadge(currentCard.tosTopicId) || currentCard.tosTopicId}
-                </span>
+                <Tooltip content={formatTosBadge(currentCard.tosTopicId) || currentCard.tosTopicId} position="top">
+                  <span
+                    className="px-2 py-0.5 rounded text-[10px] font-['JetBrains_Mono'] font-bold tracking-wide border border-accent/30 bg-[#181818] text-accent/90 cursor-default"
+                  >
+                    {formatTosBadge(currentCard.tosTopicId) || currentCard.tosTopicId}
+                  </span>
+                </Tooltip>
               )}
             </div>
             <div
@@ -1038,13 +1042,14 @@ Please explain:
             className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4 lg:p-10 cursor-zoom-out"
             onClick={() => setZoomedImage(null)}
           >
-            <button
-              className="absolute top-6 right-6 text-text-muted hover:text-accent transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-accent"
-              onClick={() => setZoomedImage(null)}
-              title="Close"
-            >
-              <X size={24} />
-            </button>
+            <Tooltip content="Close (Esc)" position="bottom">
+              <button
+                className="absolute top-6 right-6 text-text-muted hover:text-accent transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-accent"
+                onClick={() => setZoomedImage(null)}
+              >
+                <X size={24} />
+              </button>
+            </Tooltip>
             <motion.img
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}

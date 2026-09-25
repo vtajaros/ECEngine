@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useEffect } from 'react'
+import { Tooltip } from '../ui/Tooltip'
 
 interface ReviewHeatmapProps {
   activityHistory: Record<string, { count: number; timeSpent: number }>
@@ -198,12 +199,27 @@ function ReviewHeatmap({ activityHistory, year, monthsToShow = 6 }: ReviewHeatma
                   const timeM = Math.floor(data.timeSpent) % 60
                   const isOutRange = day < startDateStr || day > endDateStr
 
+                  if (isOutRange) {
+                    return (
+                      <div
+                        key={day}
+                        data-date={day}
+                        className={`w-5 h-5 rounded-[2.5px] ${getLevel(data.timeSpent, data.count)} opacity-5 pointer-events-none border shadow-sm`}
+                      />
+                    )
+                  }
+
                   return (
-                    <div
+                    <Tooltip
                       key={day}
-                      className={`w-5 h-5 rounded-[2.5px] ${getLevel(data.timeSpent, data.count)} transition-all hover:scale-125 cursor-help border shadow-sm ${isOutRange ? 'opacity-5 pointer-events-none' : ''}`}
-                      title={isOutRange ? undefined : `${day}: ${timeH}h ${timeM}m study time`}
-                    />
+                      content={`${day}: ${timeH}h ${timeM}m study time`}
+                      position="top"
+                    >
+                      <div
+                        data-date={day}
+                        className={`w-5 h-5 rounded-[2.5px] ${getLevel(data.timeSpent, data.count)} transition-all hover:scale-125 cursor-help border shadow-sm`}
+                      />
+                    </Tooltip>
                   )
                 })}
               </div>

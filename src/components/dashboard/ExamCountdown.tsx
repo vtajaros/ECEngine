@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Edit2, Calendar, X, AlertCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Tooltip } from '../ui/Tooltip'
 
 interface ExamCountdownProps {
   examDate: string
@@ -168,20 +169,22 @@ function ExamCountdown({ examDate, onExamDateChange, preboardDate, onPreboardDat
       {/* PREBOARD TIMER OR ADD BUTTON */}
       {preboardDate && preboardTimeLeft ? (
         <div className="bg-surface border border-warn/10 rounded-lg px-4 py-2 flex items-center gap-6 shadow-xl relative group">
-          <button
-            onClick={openPreboardModal}
-            className="absolute -top-2 -right-2 p-1.5 bg-surface border border-[#333] rounded-full text-[#666] hover:text-warn opacity-70 hover:opacity-100 transition-all z-10 shadow-lg"
-            title="Change preboard date"
-          >
-            <Edit2 size={12} />
-          </button>
-          <button
-            onClick={removePreboardDate}
-            className="absolute -top-2 -right-8 p-1.5 bg-surface border border-[#333] rounded-full text-[#666] hover:text-danger opacity-70 hover:opacity-100 transition-all z-10 shadow-lg"
-            title="Remove preboard date"
-          >
-            <X size={12} />
-          </button>
+          <Tooltip content="Change preboard date" position="top">
+            <button
+              onClick={openPreboardModal}
+              className="absolute -top-2 -right-2 p-1.5 bg-surface border border-[#333] rounded-full text-[#666] hover:text-warn opacity-70 hover:opacity-100 transition-all z-10 shadow-lg"
+            >
+              <Edit2 size={12} />
+            </button>
+          </Tooltip>
+          <Tooltip content="Remove preboard date" position="top">
+            <button
+              onClick={removePreboardDate}
+              className="absolute -top-2 -right-8 p-1.5 bg-surface border border-[#333] rounded-full text-[#666] hover:text-danger opacity-70 hover:opacity-100 transition-all z-10 shadow-lg"
+            >
+              <X size={12} />
+            </button>
+          </Tooltip>
 
           <div className="flex flex-col">
             <span className="text-[10px] font-['Orbitron'] text-warn uppercase tracking-widest opacity-80">
@@ -228,13 +231,14 @@ function ExamCountdown({ examDate, onExamDateChange, preboardDate, onPreboardDat
 
       {/* EXAM TARGET TIMER */}
       <div className={`bg-surface border border-accent/10 rounded-lg flex items-center shadow-xl relative group transition-all duration-300 ${(!preboardDate || !preboardTimeLeft) ? 'px-8 py-3 gap-10' : 'px-4 py-2 gap-6'}`}>
-        <button
-          onClick={openDateModal}
-          className={`absolute p-1.5 bg-surface border border-[#333] rounded-full text-[#666] hover:text-accent opacity-70 hover:opacity-100 transition-all z-10 shadow-lg ${(!preboardDate || !preboardTimeLeft) ? '-top-3 -right-3 scale-110' : '-top-2 -right-2'}`}
-          title="Change exam date"
-        >
-          <Edit2 size={12} />
-        </button>
+        <Tooltip content="Change exam date" position="top">
+          <button
+            onClick={openDateModal}
+            className={`absolute p-1.5 bg-surface border border-[#333] rounded-full text-[#666] hover:text-accent opacity-70 hover:opacity-100 transition-all z-10 shadow-lg ${(!preboardDate || !preboardTimeLeft) ? '-top-3 -right-3 scale-110' : '-top-2 -right-2'}`}
+          >
+            <Edit2 size={12} />
+          </button>
+        </Tooltip>
 
         <div className="flex flex-col transition-all duration-300">
           <span className={`font-['Orbitron'] text-accent uppercase tracking-widest opacity-80 ${(!preboardDate || !preboardTimeLeft) ? 'text-xs mb-0.5' : 'text-[10px]'}`}>
@@ -506,13 +510,14 @@ function ExamCountdown({ examDate, onExamDateChange, preboardDate, onPreboardDat
 
                 <div className="flex gap-3 px-6 pb-6">
                   {preboardDate && (
-                    <button
-                      onClick={removePreboardDate}
-                      className="px-4 py-2.5 bg-danger/10 border border-danger/20 rounded-xl text-danger font-['Rajdhani'] font-bold text-xs uppercase tracking-widest hover:bg-danger/20 transition-all"
-                      title="Remove Preboard Date"
-                    >
-                      <X size={16} />
-                    </button>
+                    <Tooltip content="Remove Preboard Date" position="top">
+                      <button
+                        onClick={removePreboardDate}
+                        className="px-4 py-2.5 bg-danger/10 border border-danger/20 rounded-xl text-danger font-['Rajdhani'] font-bold text-xs uppercase tracking-widest hover:bg-danger/20 transition-all"
+                      >
+                        <X size={16} />
+                      </button>
+                    </Tooltip>
                   )}
                   <button
                     onClick={closePreboardModal}

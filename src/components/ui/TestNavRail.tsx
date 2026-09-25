@@ -1,5 +1,6 @@
 import React, { memo, useEffect, useRef } from 'react'
 import { Check } from 'lucide-react'
+import { Tooltip } from './Tooltip'
 
 // ─── Props ────────────────────────────────────────────────────────────────────
 
@@ -98,30 +99,35 @@ export const TestNavRail = memo(({
             const isActive = i === currentIndex
 
             return (
-              <button
+              <Tooltip
                 key={i}
-                ref={isActive ? activeChipRef : null}
-                onClick={() => onNavigate(i)}
-                title={`Question ${i + 1}${answered ? ' (Answered)' : ''}`}
-                className={[
-                  'font-["Rajdhani"] text-sm select-none transition-all duration-150 ease-in-out',
-                  'flex items-center justify-start gap-2 w-full',
-                  'py-1.5 px-3 rounded-md',
-                  isActive
-                    ? 'text-white font-bold bg-white/5 border-l-2 border-accent pl-2.5'
-                    : answered
-                      ? 'text-green-400 font-medium hover:text-green-300 hover:bg-white/5'
-                      : 'text-zinc-400 font-medium hover:text-white hover:bg-white/5'
-                ].join(' ')}
+                content={`Question ${i + 1}${answered ? ' (Answered)' : ''}`}
+                position="right"
+                className="w-full"
               >
-                <span className="flex items-center gap-1">
-                  <span>Question </span>
-                  <span>{i + 1}</span>
-                </span>
-                {answered && (
-                  <Check className="w-3 h-3 text-green-400 shrink-0 ml-1.5" />
-                )}
-              </button>
+                <button
+                  ref={isActive ? activeChipRef : null}
+                  onClick={() => onNavigate(i)}
+                  className={[
+                    'font-["Rajdhani"] text-sm select-none transition-all duration-150 ease-in-out',
+                    'flex items-center justify-start gap-2 w-full',
+                    'py-1.5 px-3 rounded-md',
+                    isActive
+                      ? 'text-white font-bold bg-white/5 border-l-2 border-accent pl-2.5'
+                      : answered
+                        ? 'text-green-400 font-medium hover:text-green-300 hover:bg-white/5'
+                        : 'text-zinc-400 font-medium hover:text-white hover:bg-white/5'
+                  ].join(' ')}
+                >
+                  <span className="flex items-center gap-1">
+                    <span>Question </span>
+                    <span>{i + 1}</span>
+                  </span>
+                  {answered && (
+                    <Check className="w-3 h-3 text-green-400 shrink-0 ml-1.5" />
+                  )}
+                </button>
+              </Tooltip>
             )
           })}
         </div>

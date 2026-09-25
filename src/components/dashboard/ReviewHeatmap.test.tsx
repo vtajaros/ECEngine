@@ -55,8 +55,8 @@ describe('ReviewHeatmap', () => {
     expect(text).not.toContain('JUL')
     expect(text).not.toContain('AUG')
 
-    const cellsWithTitle = container?.querySelectorAll('[title*="2026-09-10"]')
-    expect(cellsWithTitle?.length).toBe(1)
+    const cells = container?.querySelectorAll('[data-date*="2026-09-10"]')
+    expect(cells?.length).toBe(1)
   })
 
   it('starts from March when first study data is in March', () => {

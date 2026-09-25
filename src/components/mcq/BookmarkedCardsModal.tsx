@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Bookmark, BookmarkX, ChevronDown, ChevronUp, Search } from 'lucide-react'
 import { Card, MCQData, FlashcardData } from '../../types'
 import { renderMath } from '../../lib/latex'
+import { Tooltip } from '../ui/Tooltip'
 
 interface BookmarkedCardsModalProps {
   topicId: string
@@ -282,17 +283,18 @@ function BookmarkRow({ card, idx, isBookmarked, onToggle }: BookmarkRowProps) {
       </div>
 
       {/* Bookmark toggle */}
-      <button
-        onClick={(e) => { e.stopPropagation(); onToggle() }}
-        className={`shrink-0 p-1.5 rounded border transition-all mt-0.5 ${
-          isBookmarked
-            ? 'border-accent/30 text-accent bg-accent/5 hover:bg-danger/10 hover:border-danger/30 hover:text-danger'
-            : 'border-[#2a2a2a] text-[#444] hover:border-accent/40 hover:text-accent hover:bg-accent/5'
-        }`}
-        title={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
-      >
-        {isBookmarked ? <BookmarkX size={14} /> : <Bookmark size={14} />}
-      </button>
+      <Tooltip content={isBookmarked ? 'Remove bookmark' : 'Add bookmark'} position="top">
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggle() }}
+          className={`shrink-0 p-1.5 rounded border transition-all mt-0.5 ${
+            isBookmarked
+              ? 'border-accent/30 text-accent bg-accent/5 hover:bg-danger/10 hover:border-danger/30 hover:text-danger'
+              : 'border-[#2a2a2a] text-[#444] hover:border-accent/40 hover:text-accent hover:bg-accent/5'
+          }`}
+        >
+          {isBookmarked ? <BookmarkX size={14} /> : <Bookmark size={14} />}
+        </button>
+      </Tooltip>
       </div>
 
       <AnimatePresence>

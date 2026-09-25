@@ -7,6 +7,7 @@ import type { Card, MCQData, FlashcardData } from '../../types'
 import type { FormulaData } from '../../types'
 import { AutoFitText } from '../ui/AutoFitText'
 import { formatTosBadge } from '../../lib/tosClassification'
+import { Tooltip } from '../ui/Tooltip'
 
 // ── Pure helper functions (extracted from FlashcardLearn) ──────────────────
 // These are exported so FlashcardLearn.tsx can use them in its TTS/autoplay effects.
@@ -313,9 +314,11 @@ export const StudyCard = React.memo(function StudyCard({
             }}
           >
             {/* Bookmark */}
-            <button onClick={(e) => { e.stopPropagation(); onBookmarkToggle(card.id) }} className="absolute top-5 right-5 z-10 text-[#666] hover:text-[var(--accent-primary)] transition-colors" title="Bookmark">
-              <Bookmark className={`w-6 h-6 ${isBookmarked ? 'fill-accent text-accent' : ''}`} />
-            </button>
+            <Tooltip content="Bookmark" position="top">
+              <button onClick={(e) => { e.stopPropagation(); onBookmarkToggle(card.id) }} className="absolute top-5 right-5 z-10 text-[#666] hover:text-[var(--accent-primary)] transition-colors">
+                <Bookmark className={`w-6 h-6 ${isBookmarked ? 'fill-accent text-accent' : ''}`} />
+              </button>
+            </Tooltip>
 
             {/* Card Label */}
             <div className="px-8 pt-6 pb-2 flex items-center justify-between">
@@ -323,12 +326,13 @@ export const StudyCard = React.memo(function StudyCard({
                 {swapTermDef ? 'Definition' : 'Term'}
               </span>
               {card.tosTopicId && (
-                <span
-                  className="px-2 py-0.5 text-[10px] font-['JetBrains_Mono'] font-bold bg-[#181818] text-accent/90 rounded border border-accent/30 mr-8"
-                  title={formatTosBadge(card.tosTopicId) || ''}
-                >
-                  {formatTosBadge(card.tosTopicId) || card.tosTopicId}
-                </span>
+                <Tooltip content={formatTosBadge(card.tosTopicId) || card.tosTopicId} position="top">
+                  <span
+                    className="px-2 py-0.5 text-[10px] font-['JetBrains_Mono'] font-bold bg-[#181818] text-accent/90 rounded border border-accent/30 mr-8 cursor-default"
+                  >
+                    {formatTosBadge(card.tosTopicId) || card.tosTopicId}
+                  </span>
+                </Tooltip>
               )}
             </div>
 
@@ -374,12 +378,13 @@ export const StudyCard = React.memo(function StudyCard({
                 {swapTermDef ? 'Term' : 'Definition'}
               </span>
               {card.tosTopicId && (
-                <span
-                  className="px-2 py-0.5 text-[10px] font-['JetBrains_Mono'] font-bold bg-[#181818] text-accent/90 rounded border border-accent/30"
-                  title={formatTosBadge(card.tosTopicId) || ''}
-                >
-                  {formatTosBadge(card.tosTopicId) || card.tosTopicId}
-                </span>
+                <Tooltip content={formatTosBadge(card.tosTopicId) || card.tosTopicId} position="top">
+                  <span
+                    className="px-2 py-0.5 text-[10px] font-['JetBrains_Mono'] font-bold bg-[#181818] text-accent/90 rounded border border-accent/30 cursor-default"
+                  >
+                    {formatTosBadge(card.tosTopicId) || card.tosTopicId}
+                  </span>
+                </Tooltip>
               )}
             </div>
 

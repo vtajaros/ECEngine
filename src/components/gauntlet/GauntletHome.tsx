@@ -6,6 +6,7 @@ import { useGauntletStore } from '../../store/useGauntletStore'
 import { GauntletFaqModal } from './GauntletFaqModal'
 import { GauntletRecordsModal } from './GauntletRecordsModal'
 import { GauntletRanksModal } from './GauntletRanksModal'
+import { Tooltip } from '../ui/Tooltip'
 
 // Number count-up hook (~600ms cubic ease-out)
 function useCountUp(target: number, durationMs = 600): number {
@@ -268,37 +269,39 @@ export const GauntletHome: React.FC = () => {
                   {countedMap[subject]}
                 </span>
                 {isProvisional && (
-                  <span
-                    className="w-1.5 h-1.5 rounded-full bg-[#FFB800] shadow-[0_0_6px_#FFB800]"
-                    title="Provisional (< 30 answers)"
-                  />
+                  <Tooltip content="Provisional (< 30 answers)" position="top">
+                    <span
+                      className="w-1.5 h-1.5 rounded-full bg-[#FFB800] shadow-[0_0_6px_#FFB800] inline-block"
+                    />
+                  </Tooltip>
                 )}
               </div>
             )
           })}
 
           {/* OVERALL Chip (slightly larger, clickable to open rankings info) */}
-          <button
-            type="button"
-            onClick={() => setIsRanksOpen(true)}
-            title="Click to view Elo Ranking Tiers"
-            className="bg-[#141414] border border-accent/40 hover:border-accent rounded-xl px-2.5 sm:px-3 py-1.5 flex items-center gap-1.5 sm:gap-2 text-xs shadow-[0_0_12px_rgba(0,255,65,0.1)] hover:shadow-[0_0_16px_rgba(0,255,65,0.25)] shrink-0 transition-all cursor-pointer group"
-          >
-            <span className="font-['Orbitron'] font-bold text-[11px] text-accent group-hover:underline">
-              OVERALL
-            </span>
-            <span className="font-['JetBrains_Mono'] font-bold text-white text-sm">
-              {countedOverall}
-            </span>
-            <span className="font-['Rajdhani'] font-bold text-[10px] text-accent px-1.5 py-0.2 bg-accent/15 rounded uppercase tracking-wider">
-              {overallTier.name}
-            </span>
-            {overall.provisional && (
-              <span className="text-[10px] font-['Rajdhani'] font-bold text-[#FFB800] uppercase tracking-wider">
-                PROV
+          <Tooltip content="Click to view Elo Ranking Tiers" position="top">
+            <button
+              type="button"
+              onClick={() => setIsRanksOpen(true)}
+              className="bg-[#141414] border border-accent/40 hover:border-accent rounded-xl px-2.5 sm:px-3 py-1.5 flex items-center gap-1.5 sm:gap-2 text-xs shadow-[0_0_12px_rgba(0,255,65,0.1)] hover:shadow-[0_0_16px_rgba(0,255,65,0.25)] shrink-0 transition-all cursor-pointer group"
+            >
+              <span className="font-['Orbitron'] font-bold text-[11px] text-accent group-hover:underline">
+                OVERALL
               </span>
-            )}
-          </button>
+              <span className="font-['JetBrains_Mono'] font-bold text-white text-sm">
+                {countedOverall}
+              </span>
+              <span className="font-['Rajdhani'] font-bold text-[10px] text-accent px-1.5 py-0.2 bg-accent/15 rounded uppercase tracking-wider">
+                {overallTier.name}
+              </span>
+              {overall.provisional && (
+                <span className="text-[10px] font-['Rajdhani'] font-bold text-[#FFB800] uppercase tracking-wider">
+                  PROV
+                </span>
+              )}
+            </button>
+          </Tooltip>
         </div>
 
         {/* Footer Buttons directly under the ratings row */}

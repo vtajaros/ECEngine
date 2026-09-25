@@ -6,6 +6,7 @@ import { gauntletService } from '../services/gauntlet.service'
 import { useGauntletStore } from '../store/useGauntletStore'
 import { getCustomWrongSoundEnabled, setCustomWrongSoundEnabled } from '../hooks/useSound'
 import { SUBJECT_MAP, getSubjectBadgeClasses } from '../lib/subjectColors'
+import { Tooltip } from '../components/ui/Tooltip'
 
 function topicHasType(topic: { types?: string }, filter: 'ALL' | 'FC' | 'MCQ'): boolean {
   if (filter === 'ALL') return true
@@ -522,15 +523,16 @@ export default function Settings() {
                         GROQ API
                       </span>
                     </div>
-                    <button
-                      onClick={() => loadUsageLimits(true)}
-                      disabled={loadingUsage}
-                      className="flex items-center gap-1.5 px-3 py-1 text-xs font-['Rajdhani'] uppercase tracking-wider text-text-muted hover:text-accent border border-surface-2 hover:border-accent/40 rounded transition-all disabled:opacity-40"
-                      title="Refresh usage limits"
-                    >
-                      <RefreshCw size={12} className={loadingUsage ? 'animate-spin text-accent' : ''} />
-                      <span>{loadingUsage ? 'Refreshing...' : 'Refresh'}</span>
-                    </button>
+                    <Tooltip content="Refresh usage limits" position="top">
+                      <button
+                        onClick={() => loadUsageLimits(true)}
+                        disabled={loadingUsage}
+                        className="flex items-center gap-1.5 px-3 py-1 text-xs font-['Rajdhani'] uppercase tracking-wider text-text-muted hover:text-accent border border-surface-2 hover:border-accent/40 rounded transition-all disabled:opacity-40"
+                      >
+                        <RefreshCw size={12} className={loadingUsage ? 'animate-spin text-accent' : ''} />
+                        <span>{loadingUsage ? 'Refreshing...' : 'Refresh'}</span>
+                      </button>
+                    </Tooltip>
                   </div>
 
                   <p className="text-[#888] text-xs font-['Rajdhani'] tracking-wide">
@@ -1037,7 +1039,8 @@ export default function Settings() {
 
                       {opt.type === 'custom-path-picker' && (
                         <div className="flex items-center gap-4 flex-1 justify-end min-w-0">
-                          <input
+                          <Tooltip content={imagesPath || 'No images path configured'} position="top" className="w-full max-w-[480px]">
+                            <input
                             type="text"
                             value={imagesPath}
                             onChange={(e) => setImagesPath(e.target.value)}
@@ -1058,11 +1061,11 @@ export default function Settings() {
                                 (e.target as HTMLInputElement).blur();
                               }
                             }}
-                            title={imagesPath}
-                            className="font-['JetBrains_Mono'] text-[#999] text-xs bg-[#0D0D0D] border border-surface-2 focus:border-accent outline-none rounded px-3 py-1.5 w-full max-w-[480px]"
+                            className="font-['JetBrains_Mono'] text-[#999] text-xs bg-[#0D0D0D] border border-surface-2 focus:border-accent outline-none rounded px-3 py-1.5 w-full"
                           />
-                          <button
-                            onClick={handleSelectImagesPath}
+                        </Tooltip>
+                        <button
+                          onClick={handleSelectImagesPath}
                             className="px-4 py-2 border border-accent text-accent hover:bg-[rgba(0,255,65,0.1)] hover:shadow-[0_0_10px_rgba(0,255,65,0.5)] rounded font-['Rajdhani'] uppercase tracking-wider text-xs md:text-sm font-bold transition-all shrink-0"
                           >
                             Browse
@@ -1072,32 +1075,33 @@ export default function Settings() {
 
                       {opt.type === 'custom-db-path-picker' && (
                         <div className="flex items-center gap-4 flex-1 justify-end min-w-0">
-                          <input
-                            type="text"
-                            value={dbPath}
-                            onChange={(e) => setDbPath(e.target.value)}
-                            onBlur={async () => {
-                              if (dbPath === savedDbPathRef.current) return;
-                              const res = await window.electron.config.setDBPath(dbPath);
-                              if (res && res.success) {
-                                if (res.dbPath) {
-                                  setDbPath(res.dbPath);
-                                  savedDbPathRef.current = res.dbPath;
+                          <Tooltip content={dbPath || 'No database path configured'} position="top" className="w-full max-w-[480px]">
+                            <input
+                              type="text"
+                              value={dbPath}
+                              onChange={(e) => setDbPath(e.target.value)}
+                              onBlur={async () => {
+                                if (dbPath === savedDbPathRef.current) return;
+                                const res = await window.electron.config.setDBPath(dbPath);
+                                if (res && res.success) {
+                                  if (res.dbPath) {
+                                    setDbPath(res.dbPath);
+                                    savedDbPathRef.current = res.dbPath;
+                                  }
+                                  setToastMessage('Database path saved — restart to apply.');
+                                } else if (res && res.error) {
+                                  setToastMessage(`Error saving path: ${res.error}`);
                                 }
-                                setToastMessage('Database path saved — restart to apply.');
-                              } else if (res && res.error) {
-                                setToastMessage(`Error saving path: ${res.error}`);
-                              }
-                              setTimeout(() => setToastMessage(null), 4000);
-                            }}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                (e.target as HTMLInputElement).blur();
-                              }
-                            }}
-                            title={dbPath}
-                            className="font-['JetBrains_Mono'] text-[#999] text-xs bg-[#0D0D0D] border border-surface-2 focus:border-accent outline-none rounded px-3 py-1.5 w-full max-w-[480px]"
-                          />
+                                setTimeout(() => setToastMessage(null), 4000);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  (e.target as HTMLInputElement).blur();
+                                }
+                              }}
+                              className="font-['JetBrains_Mono'] text-[#999] text-xs bg-[#0D0D0D] border border-surface-2 focus:border-accent outline-none rounded px-3 py-1.5 w-full"
+                            />
+                          </Tooltip>
                           <button
                             onClick={async () => {
                               const res = await window.electron.config.selectDBPath();

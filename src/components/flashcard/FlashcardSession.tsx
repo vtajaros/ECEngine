@@ -672,13 +672,14 @@ export function FlashcardSession({
             className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4 lg:p-10 cursor-zoom-out backdrop-blur-sm"
             onClick={() => onZoomImage(null)}
           >
-            <button
-              className="absolute top-6 right-6 text-text-muted hover:text-accent transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-accent"
-              onClick={() => onZoomImage(null)}
-              title="Close"
-            >
-              <X size={24} />
-            </button>
+            <Tooltip content="Close (Esc)" position="left">
+              <button
+                className="absolute top-6 right-6 text-text-muted hover:text-accent transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-accent z-10"
+                onClick={() => onZoomImage(null)}
+              >
+                <X size={24} />
+              </button>
+            </Tooltip>
             <motion.img
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}

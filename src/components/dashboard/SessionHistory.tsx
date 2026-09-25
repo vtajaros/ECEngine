@@ -401,16 +401,19 @@ function SessionHistory({ onSessionUpdated }: SessionHistoryProps) {
                         <span className={`px-1.5 py-0.2 rounded border text-[9px] font-bold font-['Rajdhani'] uppercase tracking-wider shrink-0 ${getSubjectBadgeClasses(subject)}`}>
                           {subject}
                         </span>
-                        <h4 
-                          className="font-['Rajdhani'] font-bold text-sm text-text-primary tracking-wide uppercase truncate"
-                          dangerouslySetInnerHTML={{ __html: renderMath(title) }}
-                          title={title}
-                        />
+                        <Tooltip content={title} position="top" className="min-w-0 max-w-full">
+                          <h4 
+                            className="font-['Rajdhani'] font-bold text-sm text-text-primary tracking-wide uppercase truncate"
+                            dangerouslySetInnerHTML={{ __html: renderMath(title) }}
+                          />
+                        </Tooltip>
                       </div>
                       {description.trim() !== '' && (
-                        <p className="text-xs text-text-muted font-['JetBrains_Mono'] line-clamp-1 leading-relaxed mt-0.5" title={description}>
-                          {description}
-                        </p>
+                        <Tooltip content={description} position="top" className="min-w-0 max-w-full">
+                          <p className="text-xs text-text-muted font-['JetBrains_Mono'] line-clamp-1 leading-relaxed mt-0.5">
+                            {description}
+                          </p>
+                        </Tooltip>
                       )}
                       <div className="flex items-center gap-2 mt-1 text-[10px] text-text-muted font-['JetBrains_Mono']">
                         <Calendar size={11} className="text-[#555] shrink-0" />

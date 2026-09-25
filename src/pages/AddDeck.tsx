@@ -608,16 +608,20 @@ export default function AddDeck() {
 
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-3 justify-end">
-              <button
-                type="button"
-                onClick={handleAutoClassifyTos}
-                disabled={isClassifyingTos || cards.length === 0}
-                className="flex items-center gap-2 px-4 py-2 rounded border border-accent/40 bg-surface-2 text-accent hover:bg-accent/10 hover:border-accent font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Automatically classify and tag all cards in this deck using the offline PRC TOS classifier"
+              <Tooltip
+                content="Automatically classify and tag all cards in this deck using the offline PRC TOS classifier"
+                position="top"
               >
-                <Tag size={14} className={isClassifyingTos ? 'animate-spin' : ''} />
-                {isClassifyingTos ? 'Tagging...' : 'Auto-Tag TOS'}
-              </button>
+                <button
+                  type="button"
+                  onClick={handleAutoClassifyTos}
+                  disabled={isClassifyingTos || cards.length === 0}
+                  className="flex items-center gap-2 px-4 py-2 rounded border border-accent/40 bg-surface-2 text-accent hover:bg-accent/10 hover:border-accent font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Tag size={14} className={isClassifyingTos ? 'animate-spin' : ''} />
+                  {isClassifyingTos ? 'Tagging...' : 'Auto-Tag Cards'}
+                </button>
+              </Tooltip>
               <button
                 onClick={() => openImportModal('mcq')}
                 className="flex items-center gap-2 px-4 py-2 rounded border border-[#333] bg-surface-2 text-text-muted hover:text-accent hover:border-accent/50 font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all"

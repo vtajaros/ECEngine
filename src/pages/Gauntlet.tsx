@@ -8,6 +8,7 @@ import { GauntletCountdown } from '../components/gauntlet/GauntletCountdown'
 import { GauntletPauseModal } from '../components/gauntlet/GauntletPauseModal'
 import { LeaveConfirmModal } from '../components/ui/LeaveConfirmModal'
 import { ExplanationPanel } from '../components/ui/ExplanationPanel'
+import { Tooltip } from '../components/ui/Tooltip'
 import { LearnMode } from '../components/mcq/LearnMode'
 import { gauntletService } from '../services/gauntlet.service'
 import { dbService } from '../services/db.service'
@@ -667,9 +668,11 @@ Please explain:
                 <div className="flex flex-col gap-1">
                   {weakInRun.map(([tid, s]) => (
                     <div key={tid} className="flex items-center justify-between text-[11px] font-['JetBrains_Mono'] bg-surface px-2 py-1 rounded border border-border-base/50">
-                      <span className="text-text-primary truncate max-w-[170px]" title={formatTosBadge(tid) || tid}>
-                        {formatTosBadge(tid) || tid}
-                      </span>
+                      <Tooltip content={formatTosBadge(tid) || tid} position="top">
+                        <span className="text-text-primary truncate max-w-[170px] cursor-default">
+                          {formatTosBadge(tid) || tid}
+                        </span>
+                      </Tooltip>
                       <span className="text-danger font-bold shrink-0">
                         {s.wrong}/{s.total} missed
                       </span>
@@ -883,12 +886,13 @@ Please explain:
                         </span>
 
                         {a.item.card.tosTopicId && (
-                          <span
-                            className="px-1.5 py-0.5 rounded text-[9px] font-['JetBrains_Mono'] font-bold border border-border-base bg-[#181818] text-[#888] shrink-0"
-                            title={formatTosBadge(a.item.card.tosTopicId) || ''}
-                          >
-                            {a.item.card.tosTopicId}
-                          </span>
+                          <Tooltip content={formatTosBadge(a.item.card.tosTopicId) || a.item.card.tosTopicId} position="top">
+                            <span
+                              className="px-1.5 py-0.5 rounded text-[9px] font-['JetBrains_Mono'] font-bold border border-border-base bg-[#181818] text-[#888] shrink-0 cursor-default"
+                            >
+                              {a.item.card.tosTopicId}
+                            </span>
+                          </Tooltip>
                         )}
 
                         {/* Outcome Icon */}
@@ -948,14 +952,15 @@ Please explain:
                           </span>
                         )}
                         {flaggedMap[a.item.card.id] && (
-                          <span
-                            data-testid={`flag-badge-${a.seq}`}
-                            className="px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-['Orbitron'] font-bold bg-[#ef4444]/15 text-[#ef4444] border border-[#ef4444]/30 flex items-center gap-1"
-                            title={flaggedMap[a.item.card.id]?.reason ? `Flagged: ${flaggedMap[a.item.card.id].reason}` : 'Flagged (Excluded from Gauntlet)'}
-                          >
-                            <Flag size={9} className="fill-[#ef4444]" />
-                            FLAGGED
-                          </span>
+                          <Tooltip content={flaggedMap[a.item.card.id]?.reason ? `Flagged: ${flaggedMap[a.item.card.id].reason}` : 'Flagged (Excluded from Gauntlet)'} position="top">
+                            <span
+                              data-testid={`flag-badge-${a.seq}`}
+                              className="px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-['Orbitron'] font-bold bg-[#ef4444]/15 text-[#ef4444] border border-[#ef4444]/30 flex items-center gap-1 cursor-default"
+                            >
+                              <Flag size={9} className="fill-[#ef4444]" />
+                              FLAGGED
+                            </span>
+                          </Tooltip>
                         )}
 
                         {/* Points */}
@@ -1467,12 +1472,13 @@ Please explain:
                 {currentItem.subject}
               </span>
               {currentItem.card.tosTopicId && (
-                <span
-                  className="px-2 py-0.5 rounded text-[10px] font-['JetBrains_Mono'] font-bold tracking-wide border border-border-base bg-[#181818] text-[#888]"
-                  title={formatTosBadge(currentItem.card.tosTopicId) || ''}
-                >
-                  {formatTosBadge(currentItem.card.tosTopicId) || currentItem.card.tosTopicId}
-                </span>
+                <Tooltip content={formatTosBadge(currentItem.card.tosTopicId) || currentItem.card.tosTopicId} position="top">
+                  <span
+                    className="px-2 py-0.5 rounded text-[10px] font-['JetBrains_Mono'] font-bold tracking-wide border border-border-base bg-[#181818] text-[#888] cursor-default"
+                  >
+                    {formatTosBadge(currentItem.card.tosTopicId) || currentItem.card.tosTopicId}
+                  </span>
+                </Tooltip>
               )}
             </div>
           </div>

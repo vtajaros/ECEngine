@@ -5,6 +5,7 @@ import { Card, FlashcardData } from '../../types'
 import { renderMath } from '../../lib/latex'
 import { getDynamicFontSize } from '../../lib/textUtils'
 import { formatTosBadge } from '../../lib/tosClassification'
+import { Tooltip } from '../ui/Tooltip'
 interface FlashCardProps {
   card: Card
   onRate: (rating: number) => void // 1: Again, 2: Hard, 3: Good, 4: Easy
@@ -111,12 +112,13 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting
             <div className="flex justify-between items-start mb-4">
               <div className="flex flex-wrap items-center gap-2">
                 {card.tosTopicId && (
-                  <span
-                    className="px-2 py-0.5 text-[11px] font-['JetBrains_Mono'] font-bold bg-[#181818] text-accent/90 rounded border border-accent/30"
-                    title={formatTosBadge(card.tosTopicId) || ''}
-                  >
-                    {formatTosBadge(card.tosTopicId) || card.tosTopicId}
-                  </span>
+                  <Tooltip content={formatTosBadge(card.tosTopicId) || card.tosTopicId} position="top">
+                    <span
+                      className="px-2 py-0.5 text-[11px] font-['JetBrains_Mono'] font-bold bg-[#181818] text-accent/90 rounded border border-accent/30 cursor-default"
+                    >
+                      {formatTosBadge(card.tosTopicId) || card.tosTopicId}
+                    </span>
+                  </Tooltip>
                 )}
                 {card.tags.map(tag => (
                   <span key={tag} className="px-2 py-1 text-xs font-['Rajdhani'] bg-[#111111] text-accent rounded border border-surface-2 uppercase">
@@ -217,13 +219,14 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting
             className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center p-4 lg:p-10 cursor-zoom-out backdrop-blur-sm"
             onClick={() => setZoomedImage(null)}
           >
-            <button
-              className="absolute top-6 right-6 text-text-muted hover:text-accent transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-accent"
-              onClick={() => setZoomedImage(null)}
-              title="Close"
-            >
-              <X size={24} />
-            </button>
+            <Tooltip content="Close (Esc)" position="bottom">
+              <button
+                className="absolute top-6 right-6 text-text-muted hover:text-accent transition-colors p-2 bg-[#111] rounded-full border border-[#333] hover:border-accent"
+                onClick={() => setZoomedImage(null)}
+              >
+                <X size={24} />
+              </button>
+            </Tooltip>
             <motion.img
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}

@@ -66,12 +66,13 @@ export const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttr
           )}
         </span>
         {card.tosTopicId && (
-          <span
-            className="text-[9px] font-['JetBrains_Mono'] font-bold px-1.5 py-0.5 rounded border border-border-base bg-[#181818] text-[#888] truncate max-w-[130px] flex-shrink-0"
-            title={formatTosBadge(card.tosTopicId) || ''}
-          >
-            {card.tosTopicId}
-          </span>
+          <Tooltip content={formatTosBadge(card.tosTopicId) || card.tosTopicId} position="top">
+            <span
+              className="text-[9px] font-['JetBrains_Mono'] font-bold px-1.5 py-0.5 rounded border border-border-base bg-[#181818] text-[#888] truncate max-w-[130px] flex-shrink-0 cursor-default"
+            >
+              {card.tosTopicId}
+            </span>
+          </Tooltip>
         )}
         <span className={`text-[10px] font-['JetBrains_Mono'] font-bold px-2 py-0.5 rounded border uppercase flex-shrink-0 ${card.type === 'mcq'
           ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
