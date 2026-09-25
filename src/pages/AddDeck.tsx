@@ -9,8 +9,9 @@ import { CardEditor, EditCard } from '../components/deck/CardEditor'
 import { detectSubjectFromCards, hasCardContent, SubjectFullName as Subject } from '../lib/subjectClassifier'
 import React, { useState, useEffect, useCallback } from 'react'
 import {
-  X, Save, ArrowLeft, FileText, Upload, AlertCircle, Check, Trash2, Plus, PlusCircle, Calculator, FlaskConical, Zap, Cpu, Layers, Wand2, GripVertical, ChevronDown, ChevronUp, AlertTriangle, RotateCcw, ImageIcon, Menu, Sigma, Type
+  X, Save, ArrowLeft, FileText, Upload, AlertCircle, Check, Trash2, Plus, PlusCircle, Calculator, FlaskConical, Zap, Cpu, Layers, Wand2, GripVertical, ChevronDown, ChevronUp, AlertTriangle, RotateCcw, ImageIcon, Menu, Sigma, Type, Sparkles
 } from 'lucide-react'
+import { getTosTopicsBySubject } from '../lib/tosClassification'
 import { getSubjectFilterClasses } from '../lib/subjectColors'
 import { TOS_SUBJECT_COLORS } from '../lib/tosData'
 import { useNavigate, Link, useSearchParams } from 'react-router-dom'
@@ -429,7 +430,8 @@ export default function AddDeck() {
             id: cardId,
             type: card.type,
             data: serializeCardData(cleanedData),
-            is_custom: 1
+            is_custom: 1,
+            tos_topic_id: card.tosTopicId || metadata.defaultTosTopicId || null,
           }
         })
       };
@@ -562,7 +564,7 @@ export default function AddDeck() {
               </button>
             </div>
 
-            {/* Import Buttons */}
+            {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-3 justify-end">
               <button
                 onClick={() => openImportModal('mcq')}
@@ -593,6 +595,7 @@ export default function AddDeck() {
                       key={card.id}
                       card={card}
                       index={i}
+                      subject={metadata.subject}
                       onUpdate={updateCard}
                       onDelete={deleteCard}
                       onError={handleCardError}

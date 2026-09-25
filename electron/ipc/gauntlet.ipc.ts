@@ -112,6 +112,10 @@ export function registerGauntletHandlers(): void {
     try { return { success: true, data: G.getBests(getDB()) } } catch (e) { return fail(e) }
   })
 
+  ipcMain.handle('gauntlet:getWeakTosTopics', async (_, payload: { subject?: G.GauntletSubjectCode; limit?: number } = {}) => {
+    try { return { success: true, data: G.getWeakTosTopics(getDB(), payload?.subject, payload?.limit) } } catch (e) { return fail(e) }
+  })
+
   ipcMain.handle('gauntlet:getPaceStats', async () => {
     try { return { success: true, data: G.getPaceStats(getDB()) } } catch (e) { return fail(e) }
   })

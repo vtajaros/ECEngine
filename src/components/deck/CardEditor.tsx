@@ -6,23 +6,26 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Tooltip } from '../ui/Tooltip'
 import { MCQEdit, FormulaEdit, FlashcardEdit, MCQForm, FlashcardForm, FormulaForm } from './CardForms'
 import { renderMath } from '../../lib/latex'
+import { getTosTopicsBySubject, formatTosBadge } from '../../lib/tosClassification'
 
 export interface EditCard {
   id: string
   type: 'mcq' | 'flashcard' | 'formula'
   data: MCQEdit | FlashcardEdit | FormulaEdit
   isNew?: boolean
+  tosTopicId?: string | null
 }
 
 interface CardRowProps {
   card: EditCard
   index: number
+  subject?: string
   onUpdate: (id: string, data: Partial<EditCard>) => void
   onDelete: (id: string) => void
   onError?: (msg: string) => void
 }
 
-export const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<HTMLElement> }> = ({ card, index, onUpdate, onDelete, onError, dragHandleProps }) => {
+export const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<HTMLElement> }> = ({ card, index, subject, onUpdate, onDelete, onError, dragHandleProps }) => {
   const [expanded, setExpanded] = useState(card.isNew ?? false)
 
   const preview = card.type === 'mcq'
@@ -62,6 +65,14 @@ export const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttr
             truncated
           )}
         </span>
+        {card.tosTopicId && (
+          <span
+            className="text-[9px] font-['JetBrains_Mono'] font-bold px-1.5 py-0.5 rounded border border-border-base bg-[#181818] text-[#888] truncate max-w-[130px] flex-shrink-0"
+            title={formatTosBadge(card.tosTopicId) || ''}
+          >
+            {card.tosTopicId}
+          </span>
+        )}
         <span className={`text-[10px] font-['JetBrains_Mono'] font-bold px-2 py-0.5 rounded border uppercase flex-shrink-0 ${card.type === 'mcq'
           ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
           : card.type === 'formula'
@@ -90,6 +101,25 @@ export const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttr
             className="overflow-hidden"
           >
             <div className="px-4 pb-5 pt-2 border-t border-surface">
+              <div className="flex items-center justify-between gap-3 mb-3 pb-2 border-b border-[#222]">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted">
+                    TOS Category:
+                  </span>
+                  <select
+                    value={card.tosTopicId || ''}
+                    onChange={e => onUpdate(card.id, { tosTopicId: e.target.value || null })}
+                    className="bg-[#151515] border border-border-base rounded px-2 py-0.5 text-xs font-['JetBrains_Mono'] text-text-primary focus:border-accent outline-none"
+                  >
+                    <option value="">(Default from Deck / None)</option>
+                    {getTosTopicsBySubject(subject).map(t => (
+                      <option key={t.id} value={t.id}>
+                        {t.fullLabel}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
               {card.type === 'mcq' ? (
                 <MCQForm
                   data={card.data as MCQEdit}

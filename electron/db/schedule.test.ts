@@ -22,6 +22,7 @@ describe('Flashcard Schedule Data Layer', () => {
         data TEXT DEFAULT '{}',
         difficulty TEXT,
         tags TEXT,
+        tos_topic_id TEXT,
         is_custom BOOLEAN DEFAULT 0,
         order_index INTEGER DEFAULT 0,
         created_at INTEGER DEFAULT (strftime('%s', 'now'))

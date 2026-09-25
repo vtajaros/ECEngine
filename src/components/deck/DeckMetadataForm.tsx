@@ -20,6 +20,7 @@ import { EditCard } from './CardEditor'
 import { AIDescriptionButton } from './AIDescriptionButton'
 import { Tooltip } from '../ui/Tooltip'
 import { generateDeckSummary } from '../../services/aiSummary.service'
+import { getTosTopicsBySubject } from '../../lib/tosClassification'
 
 export type DeckMetadata = {
   title: string
@@ -31,6 +32,7 @@ export type DeckMetadata = {
   existingFolders: { id: string, name: string }[]
   showFolderDropdown: boolean
   deckTags: string[]
+  defaultTosTopicId?: string | null
 }
 
 interface DeckMetadataFormProps {
@@ -355,6 +357,29 @@ export default function DeckMetadataForm({ metadata, setMetadata, scope, cards =
             )
           })}
         </div>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <label className="text-[11px] text-accent font-['Rajdhani'] font-bold uppercase tracking-widest block">
+            Default TOS Category
+          </label>
+          <span className="text-[10px] text-[#666] font-['JetBrains_Mono']">
+            Applies to cards in this deck
+          </span>
+        </div>
+        <select
+          value={metadata.defaultTosTopicId || ''}
+          onChange={e => setMetadata(prev => ({ ...prev, defaultTosTopicId: e.target.value || null }))}
+          className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-text-primary text-xs font-['JetBrains_Mono'] focus:border-accent focus:bg-[#111] outline-none transition-colors"
+        >
+          <option value="">None / Mixed Topics</option>
+          {getTosTopicsBySubject(metadata.subject).map(t => (
+            <option key={t.id} value={t.id}>
+              {t.fullLabel}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div>

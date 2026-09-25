@@ -13,6 +13,7 @@ import { gauntletService } from '../services/gauntlet.service'
 import { dbService } from '../services/db.service'
 import { renderMath, renderPlainText } from '../lib/latex'
 import { SUBJECT_LINE_COLOR } from '../lib/dashboardUtils'
+import { formatTosBadge } from '../lib/tosClassification'
 import type { Card, MCQData, Subject } from '../types'
 import type { QueueItem } from '../store/useGauntletStore'
 import { AnimatePresence } from 'framer-motion'
@@ -639,12 +640,45 @@ Please explain:
               Run saved successfully
             </div>
           )}
-          {saveError && (
-            <div className="flex items-center justify-center gap-1.5 text-xs font-['JetBrains_Mono'] text-[#FF3333]">
-              <AlertCircle size={13} />
-              Error saving run: {saveError}
-            </div>
-          )}
+          {/* Problem Topics in Run */}
+          {(() => {
+            const topicStats = new Map<string, { total: number; wrong: number }>()
+            for (const a of answers) {
+              const tid = a.item.card.tosTopicId
+              if (!tid) continue
+              const curr = topicStats.get(tid) || { total: 0, wrong: 0 }
+              curr.total++
+              if (a.outcome === 'wrong' || a.outcome === 'timeout') curr.wrong++
+              topicStats.set(tid, curr)
+            }
+            const weakInRun = Array.from(topicStats.entries())
+              .filter(([_, s]) => s.wrong > 0)
+              .sort((a, b) => b[1].wrong - a[1].wrong)
+              .slice(0, 3)
+
+            if (weakInRun.length === 0) return null
+
+            return (
+              <div className="flex flex-col gap-1.5 bg-surface-2/40 p-2.5 rounded-xl border border-border-base">
+                <span className="text-[10px] font-['Rajdhani'] font-bold uppercase tracking-wider text-warn flex items-center gap-1.5">
+                  <AlertCircle size={12} className="text-warn" />
+                  Struggling Topics (Focus Area)
+                </span>
+                <div className="flex flex-col gap-1">
+                  {weakInRun.map(([tid, s]) => (
+                    <div key={tid} className="flex items-center justify-between text-[11px] font-['JetBrains_Mono'] bg-surface px-2 py-1 rounded border border-border-base/50">
+                      <span className="text-text-primary truncate max-w-[170px]" title={formatTosBadge(tid) || tid}>
+                        {formatTosBadge(tid) || tid}
+                      </span>
+                      <span className="text-danger font-bold shrink-0">
+                        {s.wrong}/{s.total} missed
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })()}
 
           {/* Action Buttons: Stacked vertically in Left Sidebar */}
           <div className="flex flex-col gap-2 pt-2 border-t border-border-base mt-auto">
@@ -847,6 +881,15 @@ Please explain:
                         >
                           {a.item.subject}
                         </span>
+
+                        {a.item.card.tosTopicId && (
+                          <span
+                            className="px-1.5 py-0.5 rounded text-[9px] font-['JetBrains_Mono'] font-bold border border-border-base bg-[#181818] text-[#888] shrink-0"
+                            title={formatTosBadge(a.item.card.tosTopicId) || ''}
+                          >
+                            {a.item.card.tosTopicId}
+                          </span>
+                        )}
 
                         {/* Outcome Icon */}
                         <span className="shrink-0">
@@ -1413,15 +1456,25 @@ Please explain:
 
           {/* Question Meta */}
           <div className="flex items-center justify-between">
-            <span
-              className="px-2 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold tracking-wider"
-              style={{
-                color: SUBJECT_LINE_COLOR[currentItem.subject],
-                border: `1px solid ${SUBJECT_LINE_COLOR[currentItem.subject]}`,
-              }}
-            >
-              {currentItem.subject}
-            </span>
+            <div className="flex items-center gap-2">
+              <span
+                className="px-2 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold tracking-wider"
+                style={{
+                  color: SUBJECT_LINE_COLOR[currentItem.subject],
+                  border: `1px solid ${SUBJECT_LINE_COLOR[currentItem.subject]}`,
+                }}
+              >
+                {currentItem.subject}
+              </span>
+              {currentItem.card.tosTopicId && (
+                <span
+                  className="px-2 py-0.5 rounded text-[10px] font-['JetBrains_Mono'] font-bold tracking-wide border border-border-base bg-[#181818] text-[#888]"
+                  title={formatTosBadge(currentItem.card.tosTopicId) || ''}
+                >
+                  {formatTosBadge(currentItem.card.tosTopicId) || currentItem.card.tosTopicId}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Question Text */}

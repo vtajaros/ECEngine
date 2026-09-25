@@ -20,6 +20,9 @@ contextBridge.exposeInMainWorld('electron', {
     toggleFavorite: (topicId: string) => ipcRenderer.invoke('decks:toggleFavorite', topicId),
     setFavorite: (topicId: string, isFavorite: boolean) => ipcRenderer.invoke('decks:setFavorite', { topicId, isFavorite }),
     deleteTag: (tag: string) => ipcRenderer.invoke('decks:deleteTag', tag),
+    batchUpdateCardTosTopic: (updates: Array<{ id: string; tos_topic_id: string | null }>) =>
+      ipcRenderer.invoke('decks:batchUpdateCardTosTopic', updates),
+    getUntaggedCards: () => ipcRenderer.invoke('decks:getUntaggedCards'),
   },
   folders: {
     getAll: (payload?: { scope?: string }): Promise<any> => ipcRenderer.invoke('folders:getAll', payload),
@@ -84,6 +87,8 @@ contextBridge.exposeInMainWorld('electron', {
       ipcRenderer.invoke('gauntlet:unflagQuestion', payload),
     getFlaggedQuestions: (payload?: { cardIds?: string[] }) =>
       ipcRenderer.invoke('gauntlet:getFlaggedQuestions', payload),
+    getWeakTosTopics: (payload?: { subject?: string; limit?: number }) =>
+      ipcRenderer.invoke('gauntlet:getWeakTosTopics', payload),
   },
   file: {
     import: (filePath?: string) => ipcRenderer.invoke('file:import', filePath),

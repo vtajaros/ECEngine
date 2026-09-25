@@ -163,6 +163,14 @@ const MIGRATIONS: Array<{ version: number; sql: string | string[] }> = [
       'CREATE INDEX IF NOT EXISTS idx_gauntlet_flagged_card ON gauntlet_flagged_cards(card_id)',
     ],
   },
+  {
+    // v14: Table of Specifications (TOS) category classification for cards
+    version: 14,
+    sql: [
+      'ALTER TABLE cards ADD COLUMN tos_topic_id TEXT',
+      'CREATE INDEX IF NOT EXISTS idx_cards_tos_topic ON cards(tos_topic_id)',
+    ],
+  },
 ]
 
 /**
@@ -345,7 +353,7 @@ export function getCardsWithProgress(
   dbHandle?: Database.Database
 ): any[] {
   let sql = `
-    SELECT c.id, c.topic_id, c.type, c.data, c.tags, c.difficulty, c.is_custom, c.order_index, c.created_at,
+    SELECT c.id, c.topic_id, c.type, c.data, c.tags, c.difficulty, c.is_custom, c.order_index, c.created_at, c.tos_topic_id,
            COALESCE(p.ease_factor, 2.5)    AS ease_factor,
            COALESCE(p.repetitions, 0)      AS repetitions,
            COALESCE(p.interval, 1)         AS interval,

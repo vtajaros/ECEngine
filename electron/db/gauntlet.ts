@@ -88,7 +88,82 @@ export function getPoolSizes(db: Database.Database): Record<GauntletSubjectCode,
   return out
 }
 
-/** Random MCQs for one subject: unseen-in-Gauntlet first, then previously seen, always random within each group. */
+export interface WeakTopicStat {
+  tosTopicId: string
+  subject: GauntletSubjectCode
+  totalAnswers: number
+  correctAnswers: number
+  wrongAnswers: number
+  accuracy: number
+}
+
+/**
+ * Return user's weakest Table of Specifications (TOS) topics from Gauntlet history.
+ * A topic is flagged as weak if the user has answered at least 3 questions in it and accuracy < 70%.
+ */
+export function getWeakTosTopics(
+  db: Database.Database,
+  subject?: GauntletSubjectCode,
+  limit = 5,
+): WeakTopicStat[] {
+  let sql = `
+    SELECT c.tos_topic_id,
+           t.subject,
+           COUNT(*) as total_answers,
+           SUM(CASE WHEN a.outcome = 'correct' THEN 1 ELSE 0 END) as correct_answers,
+           SUM(CASE WHEN a.outcome IN ('wrong', 'timeout') THEN 1 ELSE 0 END) as wrong_answers,
+           CAST(SUM(CASE WHEN a.outcome = 'correct' THEN 1 ELSE 0 END) AS REAL) / COUNT(*) as accuracy
+    FROM gauntlet_answers a
+    JOIN cards c ON c.id = a.card_id
+    JOIN topics t ON t.id = c.topic_id
+    WHERE c.tos_topic_id IS NOT NULL AND c.tos_topic_id != ''
+  `
+  const params: unknown[] = []
+  if (subject) {
+    sql += ` AND t.subject = ?`
+    params.push(SUBJECT_DB_NAME[subject])
+  }
+  sql += `
+    GROUP BY c.tos_topic_id
+    HAVING total_answers >= 3 AND accuracy < 0.70
+    ORDER BY accuracy ASC, wrong_answers DESC
+    LIMIT ?
+  `
+  params.push(limit)
+
+  try {
+    const rows = db.prepare(sql).all(...params) as Array<{
+      tos_topic_id: string
+      subject: string
+      total_answers: number
+      correct_answers: number
+      wrong_answers: number
+      accuracy: number
+    }>
+
+    return rows.map(r => {
+      let code: GauntletSubjectCode = 'MATH'
+      for (const [k, v] of Object.entries(SUBJECT_DB_NAME)) {
+        if (v === r.subject) {
+          code = k as GauntletSubjectCode
+          break
+        }
+      }
+      return {
+        tosTopicId: r.tos_topic_id,
+        subject: code,
+        totalAnswers: r.total_answers,
+        correctAnswers: r.correct_answers,
+        wrongAnswers: r.wrong_answers,
+        accuracy: Math.round(r.accuracy * 100) / 100,
+      }
+    })
+  } catch {
+    return []
+  }
+}
+
+/** Random MCQs for one subject: prioritizing struggling TOS topics, then unseen-in-Gauntlet first, then previously seen, always random within each group. */
 export function sampleQuestions(
   db: Database.Database,
   subject: GauntletSubjectCode,
@@ -96,16 +171,28 @@ export function sampleQuestions(
   excludeIds: string[] = [],
 ): Array<Record<string, unknown>> {
   if (count <= 0) return []
+
+  const weakTopics = getWeakTosTopics(db, subject, 5).map(w => w.tosTopicId)
+
   const rows = db.prepare(`
-    SELECT c.id, c.topic_id, c.type, c.data, c.difficulty, c.tags, c.is_custom, c.created_at, t.subject
+    SELECT c.id, c.topic_id, c.type, c.data, c.difficulty, c.tags, c.is_custom, c.created_at, c.tos_topic_id, t.subject
     FROM cards c
     JOIN topics t ON t.id = c.topic_id
     LEFT JOIN (SELECT DISTINCT card_id FROM gauntlet_answers) g ON g.card_id = c.id
     WHERE c.type = 'mcq' AND t.subject = ? AND ${NOT_PROBLEM_SOLVING} AND ${VALID_MCQ} AND ${NOT_FLAGGED}
       AND c.id NOT IN (SELECT value FROM json_each(?))
-    ORDER BY (g.card_id IS NOT NULL), RANDOM()
+    ORDER BY
+      CASE WHEN c.tos_topic_id IN (SELECT value FROM json_each(?)) THEN 0 ELSE 1 END,
+      (g.card_id IS NOT NULL),
+      RANDOM()
     LIMIT ?
-  `).all(SUBJECT_DB_NAME[subject], JSON.stringify(excludeIds), count) as Array<Record<string, unknown>>
+  `).all(
+    SUBJECT_DB_NAME[subject],
+    JSON.stringify(excludeIds),
+    JSON.stringify(weakTopics),
+    count,
+  ) as Array<Record<string, unknown>>
+
   return rows.map(r => ({ ...r, subject_code: subject }))
 }
 

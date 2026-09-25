@@ -5,7 +5,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import {
   ArrowLeft, Save, ChevronDown, ChevronUp, Trash2, GripVertical, Plus,
   CheckCircle2, AlertCircle, RotateCcw, ImageIcon, X, Sigma,
-  Calculator, FlaskConical, Zap, Cpu, FileText, Type, Eye, EyeOff, Upload
+  Calculator, FlaskConical, Zap, Cpu, FileText, Type, Eye, EyeOff, Upload, Sparkles
 } from 'lucide-react'
 import { FormattingGuideModal } from '../components/deck/CardForms'
 import { ImportModal, ImportFlashcardsModal } from '../components/deck/ImportModals'
@@ -18,6 +18,7 @@ import { AIDescriptionButton } from '../components/deck/AIDescriptionButton'
 import { Tooltip } from '../components/ui/Tooltip'
 import { generateDeckSummary } from '../services/aiSummary.service'
 import { useDataVersionStore } from '../store/useDataVersionStore'
+import { getTosTopicsBySubject, formatTosBadge } from '../lib/tosClassification'
 import {
   DndContext,
   closestCenter,
@@ -92,6 +93,7 @@ interface EditCard {
   data: MCQEdit | FlashcardEdit | FormulaEdit
   isNew?: boolean
   defaultExpanded?: boolean
+  tosTopicId?: string | null
 }
 
 interface MCQEdit {
@@ -528,6 +530,7 @@ interface CardRowProps {
   card: EditCard
   index: number
   isExpanded: boolean
+  subject?: string
   onToggleExpand: (id: string) => void
   onUpdate: (id: string, data: Partial<EditCard>) => void
   onDelete: (id: string) => void
@@ -929,7 +932,7 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
   )
 }
 
-const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<HTMLElement> }> = ({ card, index, isExpanded, onToggleExpand, onUpdate, onDelete, onError, dragHandleProps }) => {
+const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<HTMLElement> }> = ({ card, index, isExpanded, subject, onToggleExpand, onUpdate, onDelete, onError, dragHandleProps }) => {
   const preview = card.type === 'mcq'
     ? (card.data as MCQEdit).question || '(empty question)'
     : card.type === 'formula'
@@ -966,6 +969,14 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
             truncated
           )}
         </span>
+        {card.tosTopicId && (
+          <span
+            className="text-[9px] font-['JetBrains_Mono'] font-bold px-1.5 py-0.5 rounded border border-border-base bg-[#181818] text-[#888] truncate max-w-[130px] flex-shrink-0"
+            title={formatTosBadge(card.tosTopicId) || ''}
+          >
+            {card.tosTopicId}
+          </span>
+        )}
         <span className={`text-[10px] font-['JetBrains_Mono'] font-bold px-2 py-0.5 rounded border uppercase flex-shrink-0 ${card.type === 'mcq'
             ? 'text-[#00BFFF] border-[#00BFFF]/30 bg-[#00BFFF]/10'
             : card.type === 'formula'
@@ -993,6 +1004,25 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
             className="overflow-hidden"
           >
             <div className="px-4 pb-8 pt-4 border-t border-surface min-h-[220px]">
+              <div className="flex items-center justify-between gap-3 mb-3 pb-2 border-b border-[#222]">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted">
+                    TOS Category:
+                  </span>
+                  <select
+                    value={card.tosTopicId || ''}
+                    onChange={e => onUpdate(card.id, { tosTopicId: e.target.value || null })}
+                    className="bg-[#151515] border border-border-base rounded px-2.5 py-1 text-xs font-['JetBrains_Mono'] text-text-primary focus:border-accent outline-none"
+                  >
+                    <option value="">(Default from Deck / None)</option>
+                    {getTosTopicsBySubject(subject).map(t => (
+                      <option key={t.id} value={t.id}>
+                        {t.fullLabel}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
               {card.type === 'mcq' ? (
                 <MCQForm
                   data={card.data as MCQEdit}
@@ -1374,7 +1404,7 @@ export default function EditDeck() {
                 if (parsed.imagePath) d.imagePath = parsed.imagePath
                 if (parsed.solutionImagePath) d.solutionImagePath = parsed.solutionImagePath
                 if (parsed.choicesPlainText) d.choicesPlainText = parsed.choicesPlainText
-                return { id: row.id, type: 'mcq', data: d } as EditCard
+                return { id: row.id, type: 'mcq', data: d, tosTopicId: row.tos_topic_id ?? null } as EditCard
               } else if (row.type === 'formula') {
                 // Normalise field names: support canonical camelCase AND any
                 // snake_case aliases that may appear in exported/imported data.
@@ -1414,7 +1444,7 @@ export default function EditDeck() {
                 if (parsed.imagePathFront) d.imagePathFront = parsed.imagePathFront
                 if (parsed.imageBack) d.imageBack = parsed.imageBack
                 if (parsed.backIsPlainText) d.backIsPlainText = parsed.backIsPlainText
-                return { id: row.id, type: 'formula', data: d } as EditCard
+                return { id: row.id, type: 'formula', data: d, tosTopicId: row.tos_topic_id ?? null } as EditCard
               } else {
                 const d: FlashcardEdit = {
                   front: parsed.front ?? '',
@@ -1424,7 +1454,7 @@ export default function EditDeck() {
                 if (parsed.imageBack) d.imageBack = parsed.imageBack
                 if (parsed.explanation) d.explanation = parsed.explanation
                 if (parsed.explanationImagePath) d.explanationImagePath = parsed.explanationImagePath
-                return { id: row.id, type: 'flashcard', data: d } as EditCard
+                return { id: row.id, type: 'flashcard', data: d, tosTopicId: row.tos_topic_id ?? null } as EditCard
               }
         })
         setCards(loaded)
@@ -1598,7 +1628,8 @@ export default function EditDeck() {
           id: card.id,
           type: card.type,
           data: JSON.stringify(card.data),
-          isNew: card.isNew ?? false
+          isNew: card.isNew ?? false,
+          tos_topic_id: card.tosTopicId ?? null,
         })),
         deletedCardIds
       })
@@ -2005,6 +2036,7 @@ export default function EditDeck() {
                             card={card}
                             index={virtualRow.index}
                             isExpanded={expandedIds.has(card.id)}
+                            subject={deckMeta.subject}
                             onToggleExpand={toggleExpand}
                             onUpdate={updateCard}
                             onDelete={deleteCard}

@@ -12,6 +12,7 @@ export interface Card {
   data: CardData
   difficulty: Difficulty
   tags: string[]
+  tosTopicId?: string | null
   isCustom: boolean
   createdAt: string
   /**

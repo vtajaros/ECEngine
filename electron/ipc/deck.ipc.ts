@@ -11,6 +11,7 @@ const CardInputSchema = z.object({
   data: z.string().min(1),
   is_custom: z.number().int().min(0).max(1).optional(),
   isNew: z.boolean().optional(),
+  tos_topic_id: z.string().nullable().optional(),
 })
 
 const AddDeckPayloadSchema = z.object({
@@ -84,7 +85,7 @@ export function registerDeckHandlers(): void {
   ipcMain.handle('decks:getCardsByTopic', async (_, topicId: string) => {
     try {
       const rows = queryAll(
-        'SELECT id, topic_id, type, data, difficulty, tags, is_custom, order_index, created_at FROM cards WHERE topic_id = ?',
+        'SELECT id, topic_id, type, data, difficulty, tags, is_custom, order_index, created_at, tos_topic_id FROM cards WHERE topic_id = ?',
         [topicId]
       )
       return { success: true, data: rows }
@@ -103,7 +104,7 @@ export function registerDeckHandlers(): void {
     folderName: string,
     folderId?: string | null,       // ← add
     scope?: string,
-    cards: Array<{id: string, type: string, data: string, is_custom: number}>
+    cards: Array<{id: string, type: string, data: string, is_custom: number, tos_topic_id?: string | null}>
   }) => {
     try {
       AddDeckPayloadSchema.parse(payload)
@@ -117,8 +118,8 @@ export function registerDeckHandlers(): void {
 
         for (const card of payload.cards) {
           execute(
-            `INSERT INTO cards (id, topic_id, type, data, is_custom) VALUES (?, ?, ?, ?, ?)`,
-            [card.id, payload.topicId, card.type, card.data, card.is_custom]
+            `INSERT INTO cards (id, topic_id, type, data, is_custom, tos_topic_id) VALUES (?, ?, ?, ?, ?, ?)`,
+            [card.id, payload.topicId, card.type, card.data, card.is_custom, card.tos_topic_id ?? null]
           )
         }
       })()
@@ -176,7 +177,7 @@ export function registerDeckHandlers(): void {
   ipcMain.handle('data:getAllCardsByTopic', async (_, topicId: string) => {
     try {
       const rows = queryAll(`
-        SELECT id, topic_id, type, data, tags, difficulty, is_custom, order_index, created_at
+        SELECT id, topic_id, type, data, tags, difficulty, is_custom, order_index, created_at, tos_topic_id
         FROM cards
         WHERE topic_id = ?
         ORDER BY order_index ASC, created_at ASC
@@ -348,17 +349,17 @@ export function registerDeckHandlers(): void {
     folderName: string,
     folderId?: string | null,
     scope?: string,
-    cards: Array<{ id: string, type: string, data: string, isNew: boolean }>,
+    cards: Array<{ id: string, type: string, data: string, isNew: boolean, tos_topic_id?: string | null }>,
     deletedCardIds: string[]
   }) => {
     try {
       UpdateDeckPayloadSchema.parse(payload)
       const db = getDB()
       const insertCard = db.prepare(
-        'INSERT INTO cards (id, topic_id, type, data, difficulty, tags, order_index) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        'INSERT INTO cards (id, topic_id, type, data, difficulty, tags, order_index, tos_topic_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
       )
       const updateCard = db.prepare(
-        'UPDATE cards SET type = ?, data = ?, order_index = ? WHERE id = ?'
+        'UPDATE cards SET type = ?, data = ?, order_index = ?, tos_topic_id = ? WHERE id = ?'
       )
 
       db.transaction(() => {
@@ -370,14 +371,43 @@ export function registerDeckHandlers(): void {
         for (let i = 0; i < payload.cards.length; i++) {
           const card = payload.cards[i]
           if (card.isNew) {
-            insertCard.run(crypto.randomUUID(), payload.deckId, card.type, card.data, 'medium', '[]', i)
+            insertCard.run(crypto.randomUUID(), payload.deckId, card.type, card.data, 'medium', '[]', i, card.tos_topic_id ?? null)
           } else {
-            updateCard.run(card.type, card.data, i, card.id)
+            updateCard.run(card.type, card.data, i, card.tos_topic_id ?? null, card.id)
           }
         }
         deleteCardsWithProgress(db, payload.deletedCardIds)
       })()
       return { success: true }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('decks:batchUpdateCardTosTopic', async (_, updates: Array<{ id: string; tos_topic_id: string | null }>) => {
+    try {
+      const db = getDB()
+      const stmt = db.prepare('UPDATE cards SET tos_topic_id = ? WHERE id = ?')
+      db.transaction(() => {
+        for (const item of updates) {
+          stmt.run(item.tos_topic_id ?? null, item.id)
+        }
+      })()
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('decks:getUntaggedCards', async () => {
+    try {
+      const rows = queryAll(`
+        SELECT c.id, c.data, c.type, t.subject, t.name as topic_name
+        FROM cards c
+        JOIN topics t ON c.topic_id = t.id
+        WHERE c.tos_topic_id IS NULL OR c.tos_topic_id = ''
+      `)
+      return { success: true, data: rows }
     } catch (error) {
       return { success: false, error: (error as Error).message }
     }

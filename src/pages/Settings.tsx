@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { Settings as SettingsIcon, Monitor, Bell, Database, Shield, CheckCircle, AlertTriangle, X, RefreshCw, Info } from 'lucide-react'
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { Settings as SettingsIcon, Monitor, Bell, Database, Shield, CheckCircle, AlertTriangle, X, RefreshCw, Info, Sparkles } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { dbService } from '../services/db.service'
 import { gauntletService } from '../services/gauntlet.service'

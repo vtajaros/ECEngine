@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Bookmark, Clock, ArrowRight, RefreshCw, ClipboardCheck, X, AlertTriangle, Copy, Sparkles, Volume2, VolumeX, CheckCircle2, XCircle } from 'lucide-react'
 import { shuffle, shuffleChoices, isSafeToShuffleChoices } from '../../lib/scrambler'
 import { renderMath, renderPlainText } from '../../lib/latex'
+import { formatTosBadge } from '../../lib/tosClassification'
 import { ExplanationPanel } from '../ui/ExplanationPanel'
 import { Tooltip } from '../ui/Tooltip'
 import Toast from '../ui/Toast'
@@ -99,9 +100,19 @@ const TestQuestionCard = memo(({
     >
       <div className="p-6 border-b border-[#333] flex items-start justify-between gap-4">
         <div className="flex-1 flex flex-col h-auto pr-2">
-          <span className="px-2.5 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold tracking-wider text-accent border border-accent/40 bg-accent/5 inline-block mb-3 self-start">
-            QUESTION {index + 1}
-          </span>
+          <div className="flex flex-wrap items-center gap-2 mb-3 self-start">
+            <span className="px-2.5 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold tracking-wider text-accent border border-accent/40 bg-accent/5 inline-block">
+              QUESTION {index + 1}
+            </span>
+            {card.tosTopicId && (
+              <span
+                className="px-2.5 py-0.5 rounded text-[10px] font-['JetBrains_Mono'] font-bold tracking-wide border border-accent/30 bg-[#181818] text-accent/90"
+                title={formatTosBadge(card.tosTopicId) || ''}
+              >
+                {formatTosBadge(card.tosTopicId) || card.tosTopicId}
+              </span>
+            )}
+          </div>
           <div
             className="text-white font-['Rajdhani'] font-semibold text-lg leading-relaxed whitespace-pre-wrap mcq-question-text"
             dangerouslySetInnerHTML={{ __html: renderMath(mcq.question) }}

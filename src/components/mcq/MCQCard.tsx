@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, MCQData } from '../../types'
 import { renderMath, renderPlainText } from '../../lib/latex'
+import { formatTosBadge } from '../../lib/tosClassification'
 import { CheckCircle2, XCircle } from 'lucide-react'
 
 interface MCQCardProps {
@@ -63,8 +64,16 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
       
       {/* Target Question Card */}
       <div className="w-full bg-surface-2 border border-[#111111] shadow-xl rounded-lg p-5 flex flex-col mb-4 relative">
-        <div className="absolute top-0 right-8 px-4 py-1 -translate-y-1/2 bg-engine-black border border-t-0 rounded-b-md text-xs font-['Rajdhani'] uppercase tracking-widest text-accent">
-          {card.tags[0] || 'Topic'}
+        <div className="absolute top-0 right-8 px-4 py-1 -translate-y-1/2 bg-engine-black border border-t-0 rounded-b-md text-xs font-['Rajdhani'] uppercase tracking-widest text-accent flex items-center gap-2">
+          {card.tosTopicId && (
+            <span
+              className="text-[10px] font-['JetBrains_Mono'] font-bold text-amber-400"
+              title={formatTosBadge(card.tosTopicId) || ''}
+            >
+              {card.tosTopicId}
+            </span>
+          )}
+          <span>{card.tags[0] || 'Topic'}</span>
         </div>
         
         <div className="flex justify-between items-center mb-4">

@@ -17,6 +17,7 @@ import {
   flagQuestion,
   unflagQuestion,
   getFlaggedQuestions,
+  getWeakTosTopics,
 } from './gauntlet'
 
 const SCHEMA = `
@@ -33,6 +34,7 @@ const SCHEMA = `
     data TEXT,
     difficulty TEXT,
     tags TEXT,
+    tos_topic_id TEXT,
     is_custom INTEGER DEFAULT 0,
     created_at INTEGER DEFAULT 0
   );
@@ -58,11 +60,12 @@ function insertCard(
   topicId: string,
   type = 'mcq',
   dataObj: Record<string, unknown> = { question: 'Q', choices: ['A', 'B'], answerIndex: 0 },
+  tosTopicId: string | null = null,
 ) {
   db.prepare(`
-    INSERT INTO cards (id, topic_id, type, data, difficulty, tags, is_custom, created_at)
-    VALUES (?, ?, ?, ?, 'medium', '[]', 0, 1000)
-  `).run(id, topicId, type, JSON.stringify(dataObj))
+    INSERT INTO cards (id, topic_id, type, data, difficulty, tags, tos_topic_id, is_custom, created_at)
+    VALUES (?, ?, ?, ?, 'medium', '[]', ?, 0, 1000)
+  `).run(id, topicId, type, JSON.stringify(dataObj), tosTopicId)
 }
 
 describe('Gauntlet DB persistence', () => {
@@ -547,6 +550,82 @@ describe('Gauntlet DB persistence', () => {
 
       const filtered = getFlaggedQuestions(db, ['card-err'])
       expect(Object.keys(filtered)).toEqual(['card-err'])
+    })
+  })
+
+  // (11) Weak TOS Topic Detection & Adaptive Question Sampling
+  describe('Weak TOS Topic Detection & Adaptive Question Sampling', () => {
+    it('detects weak TOS topics based on Gauntlet answers', () => {
+      insertCard(db, 'c1', 'top-elecs', 'mcq', { question: 'Q1', choices: ['A', 'B'], answerIndex: 0 }, 'ELECS-1.0')
+      insertCard(db, 'c2', 'top-elecs', 'mcq', { question: 'Q2', choices: ['A', 'B'], answerIndex: 0 }, 'ELECS-1.0')
+      insertCard(db, 'c3', 'top-elecs', 'mcq', { question: 'Q3', choices: ['A', 'B'], answerIndex: 0 }, 'ELECS-2.0')
+
+      // Record answers: 1 correct, 3 wrong for c1/c2 (ELECS-1.0) => 25% accuracy
+      saveRun(db, {
+        id: 'run-weak',
+        startedAt: 1000,
+        endedAt: 2000,
+        mode: 'survival',
+        config: {},
+        rated: false,
+        score: 50,
+        answered: 4,
+        correct: 1,
+        wrong: 3,
+        skipped: 0,
+        bestStreak: 1,
+        durationMs: 1000,
+        endReason: 'lives',
+        answers: [
+          { seq: 0, cardId: 'c1', subject: 'ELECS', chosen: 0, answerIndex: 0, outcome: 'correct', timeMs: 1000, parMs: 5000, points: 100, streakAfter: 1, choices: ['A', 'B'], answeredAt: 1100 },
+          { seq: 1, cardId: 'c1', subject: 'ELECS', chosen: 1, answerIndex: 0, outcome: 'wrong', timeMs: 1000, parMs: 5000, points: 0, streakAfter: 0, choices: ['A', 'B'], answeredAt: 1200 },
+          { seq: 2, cardId: 'c2', subject: 'ELECS', chosen: 1, answerIndex: 0, outcome: 'wrong', timeMs: 1000, parMs: 5000, points: 0, streakAfter: 0, choices: ['A', 'B'], answeredAt: 1300 },
+          { seq: 3, cardId: 'c2', subject: 'ELECS', chosen: 1, answerIndex: 0, outcome: 'wrong', timeMs: 1000, parMs: 5000, points: 0, streakAfter: 0, choices: ['A', 'B'], answeredAt: 1400 },
+        ],
+      })
+
+      const weak = getWeakTosTopics(db, 'ELECS')
+      expect(weak.length).toBe(1)
+      expect(weak[0].tosTopicId).toBe('ELECS-1.0')
+      expect(weak[0].accuracy).toBe(0.25)
+      expect(weak[0].totalAnswers).toBe(4)
+      expect(weak[0].wrongAnswers).toBe(3)
+    })
+
+    it('prioritizes questions in struggling TOS topics in sampleQuestions', () => {
+      // 2 cards in ELECS-1.0 (weak) and 2 in ELECS-2.0 (neutral)
+      insertCard(db, 'weak-1', 'top-elecs', 'mcq', { question: 'W1', choices: ['A', 'B'], answerIndex: 0 }, 'ELECS-1.0')
+      insertCard(db, 'weak-2', 'top-elecs', 'mcq', { question: 'W2', choices: ['A', 'B'], answerIndex: 0 }, 'ELECS-1.0')
+      insertCard(db, 'other-1', 'top-elecs', 'mcq', { question: 'O1', choices: ['A', 'B'], answerIndex: 0 }, 'ELECS-2.0')
+      insertCard(db, 'other-2', 'top-elecs', 'mcq', { question: 'O2', choices: ['A', 'B'], answerIndex: 0 }, 'ELECS-2.0')
+
+      // Record failures on ELECS-1.0
+      saveRun(db, {
+        id: 'run-weak-2',
+        startedAt: 1000,
+        endedAt: 2000,
+        mode: 'survival',
+        config: {},
+        rated: false,
+        score: 0,
+        answered: 3,
+        correct: 0,
+        wrong: 3,
+        skipped: 0,
+        bestStreak: 0,
+        durationMs: 1000,
+        endReason: 'lives',
+        answers: [
+          { seq: 0, cardId: 'weak-1', subject: 'ELECS', chosen: 1, answerIndex: 0, outcome: 'wrong', timeMs: 1000, parMs: 5000, points: 0, streakAfter: 0, choices: ['A', 'B'], answeredAt: 1100 },
+          { seq: 1, cardId: 'weak-1', subject: 'ELECS', chosen: 1, answerIndex: 0, outcome: 'wrong', timeMs: 1000, parMs: 5000, points: 0, streakAfter: 0, choices: ['A', 'B'], answeredAt: 1200 },
+          { seq: 2, cardId: 'weak-2', subject: 'ELECS', chosen: 1, answerIndex: 0, outcome: 'wrong', timeMs: 1000, parMs: 5000, points: 0, streakAfter: 0, choices: ['A', 'B'], answeredAt: 1300 },
+        ],
+      })
+
+      // Sample 2 questions — both should be from ELECS-1.0 because it's weak
+      const sampled = sampleQuestions(db, 'ELECS', 2)
+      expect(sampled.length).toBe(2)
+      expect(sampled.every(s => s.tos_topic_id === 'ELECS-1.0')).toBe(true)
     })
   })
 })

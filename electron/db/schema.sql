@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS cards (
   data TEXT NOT NULL, -- JSON string
   difficulty TEXT,
   tags TEXT, -- JSON string
+  tos_topic_id TEXT, -- e.g. 'ELECS-1.0'
   is_custom BOOLEAN DEFAULT 0,
   order_index INTEGER DEFAULT 0,
   created_at INTEGER DEFAULT (strftime('%s', 'now')),

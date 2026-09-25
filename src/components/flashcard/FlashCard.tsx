@@ -4,6 +4,7 @@ import { X } from 'lucide-react'
 import { Card, FlashcardData } from '../../types'
 import { renderMath } from '../../lib/latex'
 import { getDynamicFontSize } from '../../lib/textUtils'
+import { formatTosBadge } from '../../lib/tosClassification'
 interface FlashCardProps {
   card: Card
   onRate: (rating: number) => void // 1: Again, 2: Hard, 3: Good, 4: Easy
@@ -108,7 +109,15 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting
             style={{ backfaceVisibility: 'hidden' }}
           >
             <div className="flex justify-between items-start mb-4">
-              <div className="flex gap-2">
+              <div className="flex flex-wrap items-center gap-2">
+                {card.tosTopicId && (
+                  <span
+                    className="px-2 py-0.5 text-[11px] font-['JetBrains_Mono'] font-bold bg-[#181818] text-accent/90 rounded border border-accent/30"
+                    title={formatTosBadge(card.tosTopicId) || ''}
+                  >
+                    {formatTosBadge(card.tosTopicId) || card.tosTopicId}
+                  </span>
+                )}
                 {card.tags.map(tag => (
                   <span key={tag} className="px-2 py-1 text-xs font-['Rajdhani'] bg-[#111111] text-accent rounded border border-surface-2 uppercase">
                     {tag}

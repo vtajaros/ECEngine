@@ -6,6 +6,7 @@ import { getDynamicFontSize } from '../../lib/textUtils'
 import type { Card, MCQData, FlashcardData } from '../../types'
 import type { FormulaData } from '../../types'
 import { AutoFitText } from '../ui/AutoFitText'
+import { formatTosBadge } from '../../lib/tosClassification'
 
 // ── Pure helper functions (extracted from FlashcardLearn) ──────────────────
 // These are exported so FlashcardLearn.tsx can use them in its TTS/autoplay effects.
@@ -317,10 +318,18 @@ export const StudyCard = React.memo(function StudyCard({
             </button>
 
             {/* Card Label */}
-            <div className="px-8 pt-6 pb-2">
+            <div className="px-8 pt-6 pb-2 flex items-center justify-between">
               <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-text-muted">
                 {swapTermDef ? 'Definition' : 'Term'}
               </span>
+              {card.tosTopicId && (
+                <span
+                  className="px-2 py-0.5 text-[10px] font-['JetBrains_Mono'] font-bold bg-[#181818] text-accent/90 rounded border border-accent/30 mr-8"
+                  title={formatTosBadge(card.tosTopicId) || ''}
+                >
+                  {formatTosBadge(card.tosTopicId) || card.tosTopicId}
+                </span>
+              )}
             </div>
 
             {/* Front Content */}
@@ -360,10 +369,18 @@ export const StudyCard = React.memo(function StudyCard({
             }}
           >
             {/* Card Label */}
-            <div className="px-8 pt-6 pb-2">
+            <div className="px-8 pt-6 pb-2 flex items-center justify-between">
               <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-text-muted">
                 {swapTermDef ? 'Term' : 'Definition'}
               </span>
+              {card.tosTopicId && (
+                <span
+                  className="px-2 py-0.5 text-[10px] font-['JetBrains_Mono'] font-bold bg-[#181818] text-accent/90 rounded border border-accent/30"
+                  title={formatTosBadge(card.tosTopicId) || ''}
+                >
+                  {formatTosBadge(card.tosTopicId) || card.tosTopicId}
+                </span>
+              )}
             </div>
 
             {/* Back Content */}

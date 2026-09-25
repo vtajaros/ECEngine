@@ -12,6 +12,7 @@ export const CardRowSchema = z.object({
   data: z.string(),
   difficulty: z.enum(['easy', 'medium', 'hard']).nullable().optional(),
   tags: z.string().nullable().optional(),
+  tos_topic_id: z.string().nullable().optional(),
   is_custom: z.union([z.boolean(), z.number()]).optional(),
   created_at: z.union([z.number(), z.string()]).optional(),
 })
@@ -73,6 +74,7 @@ export function parseCardRow(row: z.infer<typeof CardWithProgressRowSchema>, top
     data: data as Card['data'],
     difficulty: row.difficulty as Card['difficulty'],
     tags,
+    tosTopicId: row.tos_topic_id ?? null,
     isCustom: Boolean(row.is_custom),
     createdAt: row.created_at != null ? String(row.created_at) : '',
     easeFactor: row.ease_factor ?? 2.5,
@@ -556,6 +558,12 @@ export const dbService = {
     },
     setFavorite: async (topicId: string, isFavorite: boolean) => {
       return window.electron.decks.setFavorite(topicId, isFavorite)
+    },
+    batchUpdateCardTosTopic: async (updates: Array<{ id: string; tos_topic_id: string | null }>) => {
+      return window.electron.decks.batchUpdateCardTosTopic(updates)
+    },
+    getUntaggedCards: async () => {
+      return window.electron.decks.getUntaggedCards()
     },
   },
 }

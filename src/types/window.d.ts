@@ -27,7 +27,7 @@ declare global {
           folderName: string
           folderId: string | null
           scope: string
-          cards: Array<{ id: string; type: string; data: string; is_custom: number }>
+          cards: Array<{ id: string; type: string; data: string; is_custom: number; tos_topic_id?: string | null }>
         }) => Promise<{ success: boolean; error?: string }>
         deleteTopic: (topicId: string) => Promise<{ success: boolean; error?: string }>
         exportToText: (topicId: number | string, topicName: string) => Promise<{ success: boolean; error?: string }>
@@ -38,7 +38,7 @@ declare global {
         updateDeckWithCards: (payload: {
           deckId: string, title: string, subject: string, description: string,
           tags: string, folderName: string, folderId: string | null, scope: string,
-          cards: Array<{ id: string, type: string, data: string, isNew: boolean }>,
+          cards: Array<{ id: string, type: string, data: string, isNew: boolean, tos_topic_id?: string | null }>,
           deletedCardIds: string[]
         }) => Promise<{ success: boolean; error?: string }>
 
@@ -47,6 +47,8 @@ declare global {
         toggleFavorite: (topicId: string) => Promise<{ success: boolean; isFavorite?: boolean; error?: string }>
         setFavorite: (topicId: string, isFavorite: boolean) => Promise<{ success: boolean; isFavorite?: boolean; error?: string }>
         deleteTag: (tag: string) => Promise<{ success: boolean; affectedTopics?: number; error?: string }>
+        batchUpdateCardTosTopic: (updates: Array<{ id: string; tos_topic_id: string | null }>) => Promise<{ success: boolean; error?: string }>
+        getUntaggedCards: () => Promise<{ success: boolean; data?: Array<{ id: string; data: string; type: string; subject: string; topic_name: string }>; error?: string }>
       }
       folders: {
         getAll(payload?: { scope?: string }): Promise<{ success: boolean; data?: FolderRow[]; error?: string }>
@@ -115,6 +117,18 @@ declare global {
         flagQuestion: (payload: { cardId: string; reason?: string }) => Promise<{ success: boolean; error?: string }>
         unflagQuestion: (payload: { cardId: string }) => Promise<{ success: boolean; error?: string }>
         getFlaggedQuestions: (payload?: { cardIds?: string[] }) => Promise<{ success: boolean; data?: Record<string, { reason: string | null; flaggedAt: number }>; error?: string }>
+        getWeakTosTopics: (payload?: { subject?: string; limit?: number }) => Promise<{
+          success: boolean
+          data?: Array<{
+            tosTopicId: string
+            subject: 'MATH' | 'GEAS' | 'ELECS' | 'EST'
+            totalAnswers: number
+            correctAnswers: number
+            wrongAnswers: number
+            accuracy: number
+          }>
+          error?: string
+        }>
       }
       file: {
         import: (filePath?: string) => Promise<{ success: boolean; data?: string; canceled?: boolean; error?: string }>

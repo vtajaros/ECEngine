@@ -78,6 +78,12 @@ export const gauntletService = {
     if (!res.success) throw new Error(res.error || 'Failed to reset ratings')
   },
 
+  async getWeakTosTopics(opts?: { subject?: GauntletSubjectCode; limit?: number }) {
+    const res = await window.electron.gauntlet.getWeakTosTopics(opts)
+    if (!res.success) throw new Error(res.error || 'Failed to get weak TOS topics')
+    return res.data ?? []
+  },
+
   async flagQuestion(cardId: string, reason?: string): Promise<void> {
     const res = await window.electron.gauntlet.flagQuestion({ cardId, reason })
     if (!res.success) throw new Error(res.error || 'Failed to flag question')
