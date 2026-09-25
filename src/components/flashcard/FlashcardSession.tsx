@@ -4,6 +4,7 @@ import { Settings2, X, ArrowLeft, ArrowRight, RotateCcw, Play, Pause,
          Volume2, VolumeX, Copy, Sparkles } from 'lucide-react'
 import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
 import { Tooltip } from '@/components/ui/Tooltip'
+import { GetContextDropdown } from '@/components/ui/GetContextDropdown'
 import { StudyCard, getFrontText, getCorrectAnswer } from './StudyCard'
 import { FlashcardContextPanel } from './FlashcardContextPanel'
 import { useSessionStore } from '../../store/useSessionStore'
@@ -130,6 +131,7 @@ export function FlashcardSession({
   const [alignTop, setAlignTop] = useState(false)
   const [forceExplanationOpen, setForceExplanationOpen] = useState<boolean | undefined>(undefined)
   const [isNavigating, setIsNavigating] = useState(false)
+  const [localToastMessage, setLocalToastMessage] = useState<string | null>(null)
   const scrollContainerRef = React.useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -558,12 +560,28 @@ export function FlashcardSession({
                 <ArrowLeft className="w-3 h-3" /> Prev
               </button>
               {onGetContext && (
-                <button
-                  onClick={onGetContext}
-                  className="flex items-center gap-2 px-4 py-2 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-text-muted transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
-                >
-                  <Copy className="w-3.5 h-3.5" /> Get Context
-                </button>
+                <GetContextDropdown
+                  size="md"
+                  direction="up"
+                  align="center"
+                  testId="fc-get-context"
+                  contextData={{
+                    front: getFrontText(currentCard, settings.swapTermDef),
+                    back: getCorrectAnswer(currentCard, settings.swapTermDef),
+                    explanation: (currentCard.data as any)?.explanation,
+                    subject: (currentCard as any).subject ?? null,
+                    tosTopicId: currentCard.tosTopicId,
+                    deckName: activeDeck.title,
+                    cardNumber: currentIndex + 1,
+                    totalInDeck: sessionCards.length,
+                    image: (currentCard.data as any)?.image ?? null,
+                    solutionImage: (currentCard.data as any)?.solutionImage ?? null,
+                  }}
+                  onCopied={(_type, msg) => {
+                    setLocalToastMessage(msg)
+                    setTimeout(() => setLocalToastMessage(null), 3000)
+                  }}
+                />
               )}
               {onGetContext && onShowContext && (
                 <button
@@ -693,9 +711,9 @@ export function FlashcardSession({
       </AnimatePresence>
 
       {/* Clipboard toast */}
-      {showToast && (
+      {(showToast || localToastMessage) && (
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[300] bg-surface border border-[#333] text-text-primary text-xs font-['Rajdhani'] uppercase tracking-widest px-5 py-3 rounded-lg shadow-2xl whitespace-nowrap">
-          Context copied — paste into Gemini, ChatGPT, or Claude
+          {localToastMessage || 'Context copied — paste into Gemini, ChatGPT, or Claude'}
         </div>
       )}
     </div>

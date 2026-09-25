@@ -19,6 +19,7 @@ import type { Card, MCQData, Subject } from '../types'
 import type { QueueItem } from '../store/useGauntletStore'
 import { AnimatePresence } from 'framer-motion'
 import Toast from '../components/ui/Toast'
+import { GetContextDropdown } from '../components/ui/GetContextDropdown'
 import { useSound } from '../hooks/useSound'
 import { useGauntletMusic, getTimedMusicRegion, getSurvivalMusicRegion } from '../hooks/useGauntletMusic'
 import { VolumeControl } from '../components/ui/VolumeControl'
@@ -1116,17 +1117,29 @@ Please explain:
 
                         {/* Row Actions: Get Context + AI Explain + Flag Question */}
                         <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
-                          <button
-                            type="button"
-                            onClick={e => {
-                              e.stopPropagation()
-                              handleGetContext(mcq)
+                          <GetContextDropdown
+                            size="sm"
+                            direction="up"
+                            align="center"
+                            testId={`get-context-${a.seq}`}
+                            contextData={{
+                              question: mcq.question,
+                              choices: mcq.choices,
+                              answer: mcq.answer,
+                              explanation: mcq.explanation,
+                              subject: a.item.subject,
+                              tosTopicId: a.item.card.tosTopicId,
+                              deckName: a.item.card.deckName,
+                              cardNumber: a.item.card.cardNumber,
+                              totalInDeck: a.item.card.totalInDeck,
+                              image: (a.item.card as any).image ?? null,
+                              solutionImage: (a.item.card as any).solutionImage ?? null,
                             }}
-                            className="px-2.5 py-1 rounded bg-surface border border-[rgba(255,255,255,0.2)] hover:border-text-muted text-[#CCCCCC] hover:text-white text-xs font-['Rajdhani'] font-bold flex items-center gap-1.5 transition-colors"
-                          >
-                            <Copy size={13} />
-                            Get Context
-                          </button>
+                            onCopied={(_type, msg) => {
+                              setToastMessage(msg)
+                              setShowToast(true)
+                            }}
+                          />
 
                           <button
                             type="button"

@@ -7,6 +7,7 @@ import { renderMath, renderPlainText } from '../../lib/latex'
 import { formatTosBadge } from '../../lib/tosClassification'
 import { ExplanationPanel } from '../ui/ExplanationPanel'
 import { Tooltip } from '../ui/Tooltip'
+import { GetContextDropdown } from '../ui/GetContextDropdown'
 import Toast from '../ui/Toast'
 import { useBlocker } from 'react-router-dom'
 import { LeaveConfirmModal } from '../ui/LeaveConfirmModal'
@@ -42,11 +43,14 @@ interface TestQuestionCardProps {
   currentVisibleIndex: number
   settings: { instantChecking: boolean }
   openExplanationId: number | null
+  deckTitle?: string
+  totalCards?: number
   onSelectChoice: (cardId: string, choiceIndex: number) => void
   onToggleBookmark: (cardId: string) => void
   onScrollTo: (index: number) => void
   onToggleExplanation: (index: number) => void
-  onGetContext: (mcq: MCQData) => void
+  onGetContext?: (mcq: MCQData) => void
+  onToast?: (msg: string) => void
   onSetZoomedImage: (path: string) => void
 }
 
@@ -59,11 +63,14 @@ const TestQuestionCard = memo(({
   currentVisibleIndex,
   settings,
   openExplanationId,
+  deckTitle,
+  totalCards,
   onSelectChoice,
   onToggleBookmark,
   onScrollTo,
   onToggleExplanation,
   onGetContext,
+  onToast,
   onSetZoomedImage,
 }: TestQuestionCardProps) => {
   const mcq = card.data as MCQData
@@ -236,15 +243,28 @@ const TestQuestionCard = memo(({
 
       {viewState === 'review' && (
         <div className="px-6 pb-6 pt-1 flex items-center gap-3">
-          <Tooltip content="Copy context to paste into GPT/Gemini/Claude for a better AI explanation.">
-            <button
-              onClick={(e) => { e.stopPropagation(); onGetContext(mcq) }}
-              className="flex items-center gap-1.5 px-3 py-1.5 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-text-muted transition-colors font-['Rajdhani'] uppercase tracking-widest text-[0.75rem]"
-            >
-              <Copy size={12} />
-              Get Context
-            </button>
-          </Tooltip>
+          <GetContextDropdown
+            size="sm"
+            direction="down"
+            align="left"
+            testId={`test-get-context-${index}`}
+            contextData={{
+              question: mcq.question,
+              choices: mcq.choices,
+              answer: mcq.answer,
+              explanation: mcq.explanation,
+              subject: (card as any).subject ?? null,
+              tosTopicId: card.tosTopicId,
+              deckName: deckTitle,
+              cardNumber: card.cardNumber ?? (index + 1),
+              totalInDeck: totalCards,
+              image: (mcq as any).image ?? null,
+              solutionImage: mcq.solutionImagePath ?? (mcq as any).solutionImage ?? null,
+            }}
+            onCopied={(_type, msg) => {
+              onToast?.(msg)
+            }}
+          />
 
           <Tooltip position="right" content="Explain using GPT-OSS-120B">
             <button
@@ -297,6 +317,12 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
   const [openExplanationId, setOpenExplanationId] = useState<number | null>(null)
   const [showExitConfirm, setShowExitConfirm] = useState(false)
   const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('Context copied to clipboard — paste into Gemini, ChatGPT, or Claude')
+
+  const handleShowToast = useCallback((msg: string) => {
+    setToastMessage(msg)
+    setShowToast(true)
+  }, [])
 
   // Scroll tracking
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -435,7 +461,10 @@ Please explain:
 3. Any relevant formula, law, or concept that applies
 4. A memory tip or way to remember this for the board exam
 ---`
-    navigator.clipboard.writeText(template).then(() => setShowToast(true))
+    navigator.clipboard.writeText(template).then(() => {
+      setToastMessage('Context copied to clipboard — paste into Gemini, ChatGPT, or Claude')
+      setShowToast(true)
+    })
   }, [])
 
   useEffect(() => {
@@ -788,11 +817,14 @@ Please explain:
                     currentVisibleIndex={currentVisibleIndex}
                     settings={settings}
                     openExplanationId={openExplanationId}
+                    deckTitle={title}
+                    totalCards={testCards.length}
                     onSelectChoice={handleSelectChoice}
                     onToggleBookmark={toggleBookmark}
                     onScrollTo={scrollToQuestion}
                     onToggleExplanation={handleToggleExplanation}
                     onGetContext={handleGetContext}
+                    onToast={handleShowToast}
                     onSetZoomedImage={setZoomedImage}
                   />
                 </div>
@@ -863,7 +895,7 @@ Please explain:
       <AnimatePresence>
         {showToast && (
           <Toast
-            message="Context copied to clipboard — paste into Gemini, ChatGPT, or Claude"
+            message={toastMessage}
             onDismiss={() => setShowToast(false)}
           />
         )}

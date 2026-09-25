@@ -7,6 +7,7 @@ import { shuffleChoices, isSafeToShuffleChoices } from '../../lib/scrambler'
 import Toast from '../ui/Toast'
 import { ExplanationPanel } from '../ui/ExplanationPanel'
 import { Tooltip } from '../ui/Tooltip'
+import { GetContextDropdown } from '../ui/GetContextDropdown'
 import { LeaveConfirmModal } from '../ui/LeaveConfirmModal'
 import { useBlocker } from 'react-router-dom'
 import { dbService } from '../../services/db.service'
@@ -132,6 +133,7 @@ interface LearnCardStat {
   const shownAtRef = useRef<number>(0)
   const [zoomedImage, setZoomedImage] = useState<string | null>(null)
   const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('Context copied to clipboard — paste into Gemini, ChatGPT, or Claude')
   const [explanationOpen, setExplanationOpen] = useState(false)
   // Summary view: which question row has its panel open (null = all closed)
   const [openExplanationId, setOpenExplanationId] = useState<number | null>(null)
@@ -540,35 +542,6 @@ interface LearnCardStat {
     setSelectedChoiceIndex(null)
     setChoiceStatus('unanswered')
     setZoomedImage(null)
-  }
-
-  const handleGetContext = () => {
-    if (!mcqData) return
-
-    const template = `---
-Please explain the correct answer to this multiple choice question:
-
-QUESTION:
-${mcqData.question}
-
-CHOICES:
-A. ${mcqData.choices[0]}
-B. ${mcqData.choices[1]}
-C. ${mcqData.choices[2]}
-D. ${mcqData.choices[3]}
-
-CORRECT ANSWER: ${String.fromCharCode(65 + mcqData.answer)}. ${mcqData.choices[mcqData.answer]}
-
-Please explain:
-1. Why the correct answer is right
-2. Why each of the other choices is wrong
-3. Any relevant formula, law, or concept that applies
-4. A memory tip or way to remember this for the board exam
----`
-
-    navigator.clipboard.writeText(template).then(() => {
-      setShowToast(true)
-    })
   }
 
   if (!cards || cards.length === 0) return null
@@ -991,15 +964,29 @@ Please explain:
               })()}
 
               <div className="flex items-center gap-3 flex-wrap justify-center">
-                <Tooltip content="Copy context to paste into GPT/Gemini/Claude for a better AI explanation.">
-                  <button
-                    onClick={handleGetContext}
-                    className="flex items-center gap-2 px-4 py-2 border border-[rgba(255,255,255,0.3)] rounded text-[#CCCCCC] hover:text-white hover:border-text-muted transition-colors font-['Rajdhani'] uppercase tracking-widest text-xs"
-                  >
-                    <Copy size={14} />
-                    Get Context
-                  </button>
-                </Tooltip>
+                <GetContextDropdown
+                  size="md"
+                  direction="up"
+                  align="center"
+                  testId="learn-get-context"
+                  contextData={{
+                    question: mcqData.question,
+                    choices: mcqData.choices,
+                    answer: mcqData.answer,
+                    explanation: mcqData.explanation,
+                    subject: (currentCard as any).subject ?? null,
+                    tosTopicId: currentCard.tosTopicId,
+                    deckName: title,
+                    cardNumber: currentCard.cardNumber ?? (currentCardIndex + 1),
+                    totalInDeck: cards.length,
+                    image: (mcqData as any).image ?? null,
+                    solutionImage: (mcqData as any).solutionImage ?? null,
+                  }}
+                  onCopied={(_type, msg) => {
+                    setToastMessage(msg)
+                    setShowToast(true)
+                  }}
+                />
 
                 <Tooltip position="right" content="Explain using GPT-OSS-120B">
                   <button
@@ -1020,7 +1007,7 @@ Please explain:
       <AnimatePresence>
         {showToast && (
           <Toast
-            message="Context copied to clipboard — paste into Gemini, ChatGPT, or Claude"
+            message={toastMessage}
             onDismiss={() => setShowToast(false)}
           />
         )}

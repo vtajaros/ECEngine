@@ -199,7 +199,10 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 ### 🤖 AI Explanations & Context Generation
 * **Groq AI Integration**: Direct integration with Groq (`openai/gpt-oss-120b`) for on-demand step-by-step problem explanations and automated deck summaries.
 * **AI-Powered Deck Summaries**: Single-click auto-generation of crisp deck summaries distilling up to 40 sample cards into clean topic phrases without introductory filler.
-* **"Get Context" Exporter**: One-click extraction of formatted problem context to the clipboard for use with ChatGPT, Claude, Gemini, or DeepSeek.
+* **Dual "Get Context" Split Exporter (`GetContextDropdown`)**:
+  * **1-Click Text Explanation**: Copies a structured problem prompt to the clipboard (question, choices, correct answer, subject, and TOS topic) requesting step-by-step derivations, distractor analysis, formulas, and board exam memory tips.
+  * **Visual & Diagram Prompt**: Specialized prompt directing external AI (ChatGPT, Claude, Gemini, Midjourney) to produce mental models, renderable technical diagram code (Mermaid.js, ASCII schematics, SVG), and tailored image-generation prompts.
+  * Universal integration across **Gauntlet Review**, **Learn Mode**, **Test Mode**, and **Flashcard Study**.
 * **Live AI Usage & Rate-Limit Dashboard**: Track Groq API rate limits (requests per minute/day and tokens per minute) in real time from Settings, featuring progress indicators, rate-limit warnings (>85%), and dynamic reset countdown timers.
 
 ---
@@ -461,7 +464,7 @@ ecengine/
 ├── src/                         # React Frontend (Renderer)
 │   ├── assets/                  # Brand assets, icons, bundled fonts (Rajdhani, JetBrains Mono, Orbitron)
 │   ├── components/              # Modular UI Components
-│   │   ├── ui/                  # Tooltip (auto-flipping), VolumeControl, FolderPanel, Toast, TOSTracker
+│   │   ├── ui/                  # Tooltip (auto-flipping), GetContextDropdown (split-button), VolumeControl, FolderPanel, Toast, TOSTracker
 │   │   ├── gauntlet/            # GauntletHome, GauntletSetup, GauntletBackdrop, RatingsPanel, RunHistory, GauntletFaqModal, GauntletRecordsModal
 │   │   ├── mcq/                 # MCQCard, LearnMode, TestMode, BookmarkedCardsModal
 │   │   ├── flashcard/           # FlashcardSession, FlashcardDeckBrowser, StudyCard
