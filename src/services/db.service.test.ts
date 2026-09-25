@@ -43,9 +43,10 @@ const mockElectron = {
     getResponseTimeDistribution: vi.fn(),
   },
   decks: {
-
     updateFolderOrder: vi.fn(),
     getFormulaMastery: vi.fn(),
+    classifyDatabaseTos: vi.fn(),
+    classifyCardsBatch: vi.fn(),
   },
 }
 
@@ -689,6 +690,44 @@ describe('dbService read-only analytics methods', () => {
     expect(useDataVersionStore.getState().version).toBe(versionBefore)
   })
 })
+
+describe('dbService.decks TOS classification', () => {
+  it('calls window.electron.decks.classifyDatabaseTos with payload', async () => {
+    const mockResult = {
+      success: true,
+      data: {
+        total_cards: 100,
+        auto_classified_cards: 80,
+        subtopic_count: 50,
+        parent_count: 30,
+        flagged_for_review: 0,
+        subject_distribution: { ELECS: 80 },
+        top_classifications: { 'ELECS-1.1': 50 },
+      },
+    }
+    mockElectron.decks.classifyDatabaseTos.mockResolvedValue(mockResult)
+
+    const result = await dbService.decks.classifyDatabaseTos({ cardType: 'all' })
+    expect(mockElectron.decks.classifyDatabaseTos).toHaveBeenCalledWith({ cardType: 'all' })
+    expect(result).toEqual(mockResult)
+  })
+
+  it('calls window.electron.decks.classifyCardsBatch with card array', async () => {
+    const mockCards = [
+      { id: 'c1', subject: 'MATH', deckName: 'Calculus', text: 'Derivative of sin(x)' },
+    ]
+    const mockResult = {
+      success: true,
+      data: [{ id: 'c1', tosTopicId: 'MATH-1.2', confident: true }],
+    }
+    mockElectron.decks.classifyCardsBatch.mockResolvedValue(mockResult)
+
+    const result = await dbService.decks.classifyCardsBatch(mockCards)
+    expect(mockElectron.decks.classifyCardsBatch).toHaveBeenCalledWith(mockCards)
+    expect(result).toEqual(mockResult)
+  })
+})
+
 
 
 

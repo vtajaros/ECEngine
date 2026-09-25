@@ -565,6 +565,12 @@ export const dbService = {
     getUntaggedCards: async () => {
       return window.electron.decks.getUntaggedCards()
     },
+    classifyDatabaseTos: async (payload?: { deckId?: string; cardType?: string }) => {
+      return window.electron.decks.classifyDatabaseTos(payload)
+    },
+    classifyCardsBatch: async (cards: Array<{ id: string; subject?: string; deckName?: string; text?: string; data?: string; type?: string }>) => {
+      return window.electron.decks.classifyCardsBatch(cards)
+    },
   },
 }
 

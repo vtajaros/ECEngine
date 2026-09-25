@@ -49,6 +49,31 @@ declare global {
         deleteTag: (tag: string) => Promise<{ success: boolean; affectedTopics?: number; error?: string }>
         batchUpdateCardTosTopic: (updates: Array<{ id: string; tos_topic_id: string | null }>) => Promise<{ success: boolean; error?: string }>
         getUntaggedCards: () => Promise<{ success: boolean; data?: Array<{ id: string; data: string; type: string; subject: string; topic_name: string }>; error?: string }>
+        classifyDatabaseTos: (payload?: { deckId?: string; cardType?: string }) => Promise<{
+          success: boolean
+          data?: {
+            total_cards: number
+            auto_classified_cards: number
+            subtopic_count: number
+            parent_count: number
+            flagged_for_review: number
+            subject_distribution: Record<string, number>
+            top_classifications: Record<string, number>
+          }
+          error?: string
+        }>
+        classifyCardsBatch: (cards: Array<{
+          id: string
+          subject?: string
+          deckName?: string
+          text?: string
+          data?: string
+          type?: string
+        }>) => Promise<{
+          success: boolean
+          data?: Array<{ id: string; tosTopicId: string | null; confident: boolean }>
+          error?: string
+        }>
       }
       folders: {
         getAll(payload?: { scope?: string }): Promise<{ success: boolean; data?: FolderRow[]; error?: string }>

@@ -347,6 +347,27 @@ export default function Settings() {
     }
   };
 
+  const [isClassifyingTos, setIsClassifyingTos] = useState(false);
+
+  const handleClassifyDatabaseTos = async () => {
+    if (isClassifyingTos) return;
+    setIsClassifyingTos(true);
+    try {
+      const res = await window.electron.decks.classifyDatabaseTos({ cardType: 'all' });
+      if (res?.success && res.data) {
+        setToastMessage(`TOS Classification Complete: ${res.data.auto_classified_cards} cards classified (${res.data.subtopic_count} subtopics, ${res.data.parent_count} parent topics)`);
+      } else {
+        setToastMessage(`Classification failed: ${res?.error || 'Unknown error'}`);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setToastMessage(`Classification failed: ${err?.message || String(err)}`);
+    } finally {
+      setIsClassifyingTos(false);
+      setTimeout(() => setToastMessage(null), 4000);
+    }
+  };
+
   const filteredTopics = useMemo(() => {
     const filteredBySubject = exportSubjectFilter === 'ALL'
       ? allTopics
@@ -400,6 +421,15 @@ export default function Settings() {
           actionId: 'export-db-images',
           advanced: true,
           disabled: isExportingData,
+        },
+        {
+          label: 'Auto-Classify Database (TOS)',
+          description: 'Run offline PRC Table of Specifications classifier to tag all cards in the database with their decimal subtopics.',
+          type: 'action',
+          buttonText: isClassifyingTos ? 'CLASSIFYING...' : 'CLASSIFY DATABASE (TOS)',
+          actionId: 'classify-database-tos',
+          advanced: true,
+          disabled: isClassifyingTos,
         },
         { label: 'Import Decks', type: 'action', buttonText: 'IMPORT JSON', actionId: 'import', advanced: true },
         { label: 'Export Decks', type: 'action', buttonText: 'EXPORT JSON', actionId: 'export', advanced: true },
@@ -1107,6 +1137,8 @@ export default function Settings() {
                               setShowExportModal(true);
                             } else if ((opt as any).actionId === 'import') {
                               handleImportDecks();
+                            } else if ((opt as any).actionId === 'classify-database-tos') {
+                              handleClassifyDatabaseTos();
                             }
                           }}
                           className={`px-4 py-2 border rounded font-['Rajdhani'] uppercase tracking-wider text-xs md:text-sm font-bold transition-all ${(opt as any).disabled

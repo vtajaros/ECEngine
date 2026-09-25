@@ -23,6 +23,10 @@ contextBridge.exposeInMainWorld('electron', {
     batchUpdateCardTosTopic: (updates: Array<{ id: string; tos_topic_id: string | null }>) =>
       ipcRenderer.invoke('decks:batchUpdateCardTosTopic', updates),
     getUntaggedCards: () => ipcRenderer.invoke('decks:getUntaggedCards'),
+    classifyDatabaseTos: (payload?: { deckId?: string; cardType?: string }) =>
+      ipcRenderer.invoke('decks:classifyDatabaseTos', payload),
+    classifyCardsBatch: (cards: Array<{ id: string; subject?: string; deckName?: string; text?: string; data?: string; type?: string }>) =>
+      ipcRenderer.invoke('decks:classifyCardsBatch', cards),
   },
   folders: {
     getAll: (payload?: { scope?: string }): Promise<any> => ipcRenderer.invoke('folders:getAll', payload),

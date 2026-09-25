@@ -9,7 +9,7 @@ import { CardEditor, EditCard } from '../components/deck/CardEditor'
 import { detectSubjectFromCards, hasCardContent, SubjectFullName as Subject } from '../lib/subjectClassifier'
 import React, { useState, useEffect, useCallback } from 'react'
 import {
-  X, Save, ArrowLeft, FileText, Upload, AlertCircle, Check, Trash2, Plus, PlusCircle, Calculator, FlaskConical, Zap, Cpu, Layers, Wand2, GripVertical, ChevronDown, ChevronUp, AlertTriangle, RotateCcw, ImageIcon, Menu, Sigma, Type, Sparkles
+  X, Save, ArrowLeft, FileText, Upload, AlertCircle, Check, Trash2, Plus, PlusCircle, Calculator, FlaskConical, Zap, Cpu, Layers, Wand2, GripVertical, ChevronDown, ChevronUp, AlertTriangle, RotateCcw, ImageIcon, Menu, Sigma, Type, Sparkles, Tag
 } from 'lucide-react'
 import { getSubjectFilterClasses } from '../lib/subjectColors'
 import { TOS_SUBJECT_COLORS } from '../lib/tosData'
@@ -181,6 +181,49 @@ export default function AddDeck() {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
     toastTimerRef.current = setTimeout(() => setToast(null), 3000)
   }, [])
+
+  const [isClassifyingTos, setIsClassifyingTos] = useState(false)
+
+  const handleAutoClassifyTos = async () => {
+    if (cards.length === 0 || isClassifyingTos) return
+    setIsClassifyingTos(true)
+    try {
+      saveSnapshot(cardsRef.current)
+      const payload = cards.map(c => ({
+        id: c.id,
+        type: c.type,
+        data: typeof c.data === 'string' ? c.data : JSON.stringify(c.data),
+        subject: metadata.subject,
+        deckName: metadata.title,
+      }))
+      const res = await window.electron.decks.classifyCardsBatch(payload)
+      if (res?.success && res.data) {
+        const resultMap = new Map(res.data.map(item => [item.id, item.tosTopicId]))
+        let changed = 0
+        setCards(prev => prev.map(c => {
+          const newTos = resultMap.get(c.id)
+          if (newTos !== undefined && newTos !== c.tosTopicId) {
+            changed++
+            return { ...c, tosTopicId: newTos }
+          }
+          return c
+        }))
+        const taggedCount = res.data.filter(d => d.tosTopicId).length
+        setToast({
+          type: 'success',
+          msg: `Auto-tagged ${taggedCount} cards with TOS topics (${changed} updated)`,
+        })
+      } else {
+        setToast({ type: 'error', msg: res?.error || 'Classification failed' })
+      }
+    } catch (err: any) {
+      setToast({ type: 'error', msg: err?.message || 'Classification failed' })
+    } finally {
+      setIsClassifyingTos(false)
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = setTimeout(() => setToast(null), 3000)
+    }
+  }
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -565,6 +608,16 @@ export default function AddDeck() {
 
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-3 justify-end">
+              <button
+                type="button"
+                onClick={handleAutoClassifyTos}
+                disabled={isClassifyingTos || cards.length === 0}
+                className="flex items-center gap-2 px-4 py-2 rounded border border-accent/40 bg-surface-2 text-accent hover:bg-accent/10 hover:border-accent font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Automatically classify and tag all cards in this deck using the offline PRC TOS classifier"
+              >
+                <Tag size={14} className={isClassifyingTos ? 'animate-spin' : ''} />
+                {isClassifyingTos ? 'Tagging...' : 'Auto-Tag TOS'}
+              </button>
               <button
                 onClick={() => openImportModal('mcq')}
                 className="flex items-center gap-2 px-4 py-2 rounded border border-[#333] bg-surface-2 text-text-muted hover:text-accent hover:border-accent/50 font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all"

@@ -1,7 +1,10 @@
-import { ipcMain } from 'electron'
-import { queryAll, execute, getDB, getCardsWithProgress } from '../db/database'
+import { ipcMain, app } from 'electron'
+import { queryAll, execute, getDB, getCardsWithProgress, getActiveDatabasePath } from '../db/database'
 import { resolveOrCreateFolderId, renameFolder } from '../db/folderHelpers'
 import { deleteCardsWithProgress } from '../db/cardHelpers'
+import { spawn } from 'child_process'
+import path from 'path'
+import fs from 'fs'
 import crypto from 'crypto'
 import { z } from 'zod'
 
@@ -68,6 +71,61 @@ const FolderRenameSchema = z.object({
   newName: z.string().min(1),
 })
 
+
+function getPythonScriptPath(): string {
+  const possiblePaths = [
+    path.join(app ? app.getAppPath() : process.cwd(), 'scripts', 'classify_database_tos.py'),
+    path.join(process.cwd(), 'scripts', 'classify_database_tos.py'),
+    path.join(__dirname, '../../scripts/classify_database_tos.py'),
+  ]
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) return p
+  }
+  return possiblePaths[0]
+}
+
+function runPythonClassifier(args: string[], stdinData?: string): Promise<{ stdout: string; stderr: string; code: number }> {
+  return new Promise((resolve) => {
+    const pythonCmd = process.platform === 'win32' ? 'python' : 'python3'
+    const scriptPath = getPythonScriptPath()
+
+    if (!fs.existsSync(scriptPath)) {
+      return resolve({
+        stdout: '',
+        stderr: `Classifier script not found at: ${scriptPath}`,
+        code: 1,
+      })
+    }
+
+    const child = spawn(pythonCmd, [scriptPath, ...args], {
+      windowsHide: true,
+    })
+
+    let stdout = ''
+    let stderr = ''
+
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk.toString()
+    })
+
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk.toString()
+    })
+
+    child.on('error', (err) => {
+      stderr += err.message
+    })
+
+    child.on('close', (code) => {
+      resolve({ stdout, stderr, code: code ?? 0 })
+    })
+
+    if (stdinData !== undefined) {
+      child.stdin.write(stdinData)
+      child.stdin.end()
+    }
+  })
+}
 
 export function registerDeckHandlers(): void {
   ipcMain.handle('decks:getTopics', async () => {
@@ -409,6 +467,54 @@ export function registerDeckHandlers(): void {
       `)
       return { success: true, data: rows }
     } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('decks:classifyDatabaseTos', async (_, payload?: { deckId?: string; cardType?: string }) => {
+    try {
+      const dbPath = getActiveDatabasePath()
+      const args = ['--apply', '--json', '--db', dbPath]
+      if (payload?.deckId) {
+        args.push('--deck-id', payload.deckId)
+      }
+      args.push('--card-type', payload?.cardType || 'all')
+
+      const { stdout, stderr, code } = await runPythonClassifier(args)
+      if (code !== 0) {
+        return { success: false, error: stderr || `Classifier exited with code ${code}` }
+      }
+
+      const parsed = JSON.parse(stdout)
+      return { success: true, data: parsed }
+    } catch (error) {
+      console.error('[Decks classifyDatabaseTos Error]', error)
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('decks:classifyCardsBatch', async (_, cards: Array<{
+    id: string
+    subject?: string
+    deckName?: string
+    text?: string
+    data?: string
+    type?: string
+  }>) => {
+    try {
+      if (!Array.isArray(cards) || cards.length === 0) {
+        return { success: true, data: [] }
+      }
+
+      const { stdout, stderr, code } = await runPythonClassifier(['--stdin'], JSON.stringify(cards))
+      if (code !== 0) {
+        return { success: false, error: stderr || `Classifier exited with code ${code}` }
+      }
+
+      const parsed = JSON.parse(stdout)
+      return { success: true, data: parsed }
+    } catch (error) {
+      console.error('[Decks classifyCardsBatch Error]', error)
       return { success: false, error: (error as Error).message }
     }
   })
