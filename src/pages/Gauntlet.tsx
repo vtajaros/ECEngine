@@ -450,7 +450,7 @@ Please explain:
     if (isLearningMissed && missedCards.length > 0) {
       const modeLabel = config.mode === 'survival' ? 'Survival' : 'Timed'
       return (
-        <div className="fixed inset-0 z-50 bg-[#0D0D0D] flex flex-col overflow-y-auto">
+        <div className="w-full h-full flex flex-col">
           <LearnMode
             cards={missedCards}
             title={`Gauntlet ${modeLabel} — Missed Items`}
@@ -1684,7 +1684,9 @@ export default function Gauntlet() {
       )}
 
       {(phase === 'playing' || phase === 'summary') && (
-        <div className="absolute inset-0 z-10 h-full px-8 pb-4 pt-4 lg:px-12 lg:pb-6 lg:pt-4 overflow-y-auto overflow-x-hidden flex flex-col gap-4">
+        <div className={`absolute inset-0 z-10 h-full flex flex-col ${
+          isLearningMissed ? 'p-0 overflow-hidden' : 'px-8 pb-4 pt-4 lg:px-12 lg:pb-6 lg:pt-4 gap-4 overflow-y-auto overflow-x-hidden'
+        }`}>
           <RunPlaceholder
             onOpenPause={handleOpenPause}
             isModalOpen={isPauseModalOpen || blocker.state === 'blocked'}

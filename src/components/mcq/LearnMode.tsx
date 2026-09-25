@@ -740,48 +740,75 @@ Please explain:
   const totalWrongInPartition = partitionWrongIds.size
 
   return (
-    <div className="flex flex-col h-full bg-transparent p-8 relative">
+    <div className="flex flex-col h-full w-full bg-transparent px-4 py-4 sm:px-8 sm:py-6 relative overflow-y-auto">
       {renderLeaveConfirmModal()}
 
-      <div className="max-w-3xl w-full mx-auto flex flex-wrap items-center justify-between gap-2 mb-4">
-        <div className="flex flex-col flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-4 text-text-primary font-['JetBrains_Mono'] font-bold text-sm tracking-wider uppercase mb-3">
-            <span>Question {overallCurrentQuestion} of {cards.length}</span>
-            {title && (
-              <span className="text-accent font-['Orbitron'] font-bold text-lg tracking-[0.1em] uppercase whitespace-nowrap flex-shrink-0">
-                {title}
+      <div className="max-w-3xl mx-auto w-full flex flex-col gap-4 my-auto">
+        {/* HUD Header Card */}
+        <div className="bg-surface rounded-xl p-3 sm:p-4 border border-border-base flex flex-col gap-3 shadow-xl shrink-0">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            {/* Title & Counter */}
+            <div className="flex items-center gap-2.5 sm:gap-3 flex-wrap min-w-0">
+              {title ? (
+                <h2 className="font-['Orbitron'] font-bold text-xs sm:text-sm uppercase text-accent tracking-wider truncate">
+                  {title}
+                </h2>
+              ) : (
+                <h2 className="font-['Orbitron'] font-bold text-xs sm:text-sm uppercase text-accent tracking-wider">
+                  Learn Mode
+                </h2>
+              )}
+
+              <span className="text-text-muted text-xs font-['JetBrains_Mono'] tracking-wider bg-[#111] px-2.5 py-0.5 rounded border border-border-base shrink-0">
+                Question {overallCurrentQuestion} of {cards.length}
               </span>
-            )}
+
+              {partitions.length > 1 && (
+                <span className="px-2 py-0.5 rounded text-[9px] font-['Rajdhani'] font-bold uppercase tracking-wider bg-[#111] border border-border-base text-text-muted shrink-0">
+                  Round {currentPartitionIndex + 1}/{partitions.length}
+                </span>
+              )}
+            </div>
+
+            {/* Actions & Counters */}
+            <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+              <div className="flex items-center gap-3 text-[11px] font-['JetBrains_Mono'] font-bold uppercase tracking-wider">
+                <span className="flex items-center gap-1.5 text-accent">
+                  <span className="w-1.5 h-1.5 rounded-full bg-accent inline-block" />
+                  {totalCorrectInPartition} correct
+                </span>
+                <span className="flex items-center gap-1.5 text-danger">
+                  <span className="w-1.5 h-1.5 rounded-full bg-danger inline-block" />
+                  {totalWrongInPartition} to retry
+                </span>
+              </div>
+
+              <VolumeControl />
+
+              <button
+                onClick={() => setShowExitConfirm(true)}
+                className="px-3 py-1.5 border border-border-base bg-[#111] hover:bg-border-base text-text-muted hover:text-white rounded-lg transition-all font-['Rajdhani'] font-bold uppercase tracking-wider text-xs shadow-sm"
+              >
+                Exit Learn Mode
+              </button>
+            </div>
           </div>
-          <div className="w-64 max-w-full bg-surface h-[6px] rounded-full overflow-hidden mb-3">
+
+          {/* Progress Bar Track */}
+          <div className="w-full bg-[#111] h-[3px] rounded-full overflow-hidden border border-border-subtle/50">
             <div
               className="h-full bg-accent transition-all duration-300 ease-in-out shadow-[0_0_8px_rgba(0,255,65,0.6)]"
               style={{ width: `${(overallCurrentQuestion / cards.length) * 100}%` }}
             />
           </div>
-          <div className="text-[11px] font-['JetBrains_Mono'] font-bold uppercase tracking-widest flex items-center gap-4 text-text-muted">
-            <span className="flex items-center gap-1.5 text-accent"><div className="w-2 h-2 rounded-full bg-accent"></div> ✓ {totalCorrectInPartition} correct</span>
-            <span className="flex items-center gap-1.5 text-danger"><div className="w-2 h-2 rounded-full bg-danger"></div> ✗ {totalWrongInPartition} to retry</span>
-          </div>
         </div>
 
-        <div className="flex justify-end items-center gap-3">
-          <VolumeControl />
-          <button
-            onClick={() => setShowExitConfirm(true)}
-            className="px-4 py-2 border border-[#333] bg-[#111]/80 text-[#d0d0d0] hover:text-white hover:border-[#666] hover:bg-[#1a1a1a] rounded transition-all font-['Rajdhani'] font-bold uppercase tracking-widest text-sm shadow-sm"
-          >
-            Exit Learn Mode
-          </button>
-        </div>
-      </div>
-
-      <div className="flex-1 flex items-center justify-center w-full">
+        {/* Question Card */}
         <motion.div
           key={currentCard.id}
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-3xl mx-auto bg-surface-2 border border-border-base rounded-xl shadow-2xl p-6 sm:p-8 relative flex flex-col overflow-y-auto"
+          className="w-full bg-surface-2 border border-border-base rounded-xl shadow-2xl p-6 sm:p-8 relative flex flex-col"
         >
           {/* Bookmark Toggle */}
           <button
