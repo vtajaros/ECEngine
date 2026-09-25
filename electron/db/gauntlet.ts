@@ -174,8 +174,8 @@ export function sampleQuestions(
 
   const weakTopics = getWeakTosTopics(db, subject, 5).map(w => w.tosTopicId)
 
-  const rows = db.prepare(`
-    SELECT c.id, c.topic_id, c.type, c.data, c.difficulty, c.tags, c.is_custom, c.created_at, c.tos_topic_id, t.subject
+  const sampled = db.prepare(`
+    SELECT c.id, c.topic_id, c.type, c.data, c.difficulty, c.tags, c.is_custom, c.created_at, c.tos_topic_id, t.subject, t.name AS deck_name
     FROM cards c
     JOIN topics t ON t.id = c.topic_id
     LEFT JOIN (SELECT DISTINCT card_id FROM gauntlet_answers) g ON g.card_id = c.id
@@ -193,7 +193,53 @@ export function sampleQuestions(
     count,
   ) as Array<Record<string, unknown>>
 
-  return rows.map(r => ({ ...r, subject_code: subject }))
+  if (sampled.length === 0) return []
+
+  const topicIds = Array.from(new Set(sampled.map(r => r.topic_id as string).filter(Boolean)))
+  const topicCardMap = new Map<string, { index: number; total: number }>()
+
+  if (topicIds.length > 0) {
+    const placeholders = topicIds.map(() => '?').join(',')
+    let allTopicCards: Array<{ id: string; topic_id: string }> = []
+    try {
+      allTopicCards = db.prepare(`
+        SELECT id, topic_id
+        FROM cards
+        WHERE topic_id IN (${placeholders})
+        ORDER BY order_index ASC, created_at ASC
+      `).all(...topicIds) as Array<{ id: string; topic_id: string }>
+    } catch {
+      allTopicCards = db.prepare(`
+        SELECT id, topic_id
+        FROM cards
+        WHERE topic_id IN (${placeholders})
+        ORDER BY created_at ASC
+      `).all(...topicIds) as Array<{ id: string; topic_id: string }>
+    }
+
+    const byTopic = new Map<string, string[]>()
+    for (const tc of allTopicCards) {
+      if (!byTopic.has(tc.topic_id)) byTopic.set(tc.topic_id, [])
+      byTopic.get(tc.topic_id)!.push(tc.id)
+    }
+
+    for (const [_, ids] of byTopic) {
+      ids.forEach((id, idx) => {
+        topicCardMap.set(id, { index: idx + 1, total: ids.length })
+      })
+    }
+  }
+
+  return sampled.map(r => {
+    const pos = topicCardMap.get(r.id as string)
+    return {
+      ...r,
+      subject_code: subject,
+      deck_name: (r.deck_name as string) || 'Deck',
+      card_number: pos?.index ?? 1,
+      total_in_deck: pos?.total ?? 1,
+    }
+  })
 }
 
 export interface RatingsMap {

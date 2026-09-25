@@ -25,7 +25,8 @@ interface LearnModeProps {
   // session store and co-located with the other learn settings.
   ttsEnabled?: boolean
   shuffleChoices?: boolean
-  onComplete: (stats: { correct: number; wrong: number; bookmarked: number; correctIds: string[] }) => void
+  recordProgress?: boolean
+  onComplete?: (stats: { correct: number; wrong: number; bookmarked: number; correctIds: string[] }) => void
   onExit: () => void
 }
 
@@ -74,7 +75,7 @@ export function partitionCards(cards: Card[], partitionSize = 5, minTrailingSize
 type QuestionStatus = 'unanswered' | 'correct' | 'wrong'
 type ViewState = 'question' | 'feedback' | 'partition-complete' | 'summary'
 
-export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled = false, shuffleChoices = false, onComplete, onExit }) => {
+export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled = false, shuffleChoices = false, recordProgress = true, onComplete, onExit }) => {
   // Partitioning logic
   const PARTITION_SIZE = 5
 
@@ -373,28 +374,30 @@ interface LearnCardStat {
       if (currentPartitionIndex === partitions.length - 1) {
         play('finish')
         const allCardStats = cardStatsRef.current
-        const progressWrites: Promise<void>[] = []
-        for (const [id, stats] of Object.entries(allCardStats)) {
-          const card = cards.find(c => c.id === id)
-          if (card && card.type === 'mcq' && !card.isGenerated) {
-            progressWrites.push(
-              dbService.recordCardResult(id, stats.wasCorrectFirstTry, {
-                mode: 'learn',
-                responseMs: stats.firstResponseMs ?? null,
-                answeredAt: stats.firstAnsweredAt ?? null,
-              }).catch(err => {
-                console.warn('[LearnMode] Failed to record card result:', err)
-              })
-            )
+        if (recordProgress) {
+          const progressWrites: Promise<void>[] = []
+          for (const [id, stats] of Object.entries(allCardStats)) {
+            const card = cards.find(c => c.id === id)
+            if (card && card.type === 'mcq' && !card.isGenerated) {
+              progressWrites.push(
+                dbService.recordCardResult(id, stats.wasCorrectFirstTry, {
+                  mode: 'learn',
+                  responseMs: stats.firstResponseMs ?? null,
+                  answeredAt: stats.firstAnsweredAt ?? null,
+                }).catch(err => {
+                  console.warn('[LearnMode] Failed to record card result:', err)
+                })
+              )
+            }
           }
+          Promise.all(progressWrites).catch(() => { /* already caught above */ })
         }
-        Promise.all(progressWrites).catch(() => { /* already caught above */ })
 
         const flawlessCount = cards.filter(c => allCardStats[c.id]?.wasCorrectFirstTry === true).length
         const missedCount = cards.length - flawlessCount
         const correctIds = cards.filter(c => allCardStats[c.id]?.wasCorrectFirstTry === true).map(c => c.id)
 
-        onComplete({
+        onComplete?.({
           correct: flawlessCount,
           wrong: missedCount,
           bookmarked: cards.filter(c => bookmarkedIds.has(c.id)).length,
@@ -812,20 +815,23 @@ Please explain:
           animate={{ opacity: 1, y: 0 }}
           className="w-full bg-surface-2 border border-border-base rounded-xl shadow-2xl p-6 sm:p-8 relative flex flex-col"
         >
-          {/* Bookmark Toggle */}
-          <Tooltip content="Bookmark" position="top">
-            <button
-              onClick={() => toggleBookmark()}
-              className="absolute top-6 right-6 text-[#666] hover:text-[var(--accent-primary)] transition-colors"
-            >
-              <Bookmark className={`w-6 h-6 ${isBookmarked ? 'fill-accent text-accent' : ''}`} />
-            </button>
-          </Tooltip>
+          <div className="mb-8 h-auto flex-none">
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <span className="px-2.5 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold tracking-wider text-accent border border-accent/40 bg-accent/5 inline-block">
+                QUESTION {overallCurrentQuestion}
+              </span>
 
-          <div className="mb-8 pr-4 h-auto flex-none">
-            <span className="px-2.5 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold tracking-wider text-accent border border-accent/40 bg-accent/5 inline-block mb-3">
-              QUESTION {overallCurrentQuestion}
-            </span>
+              {/* Bookmark Toggle */}
+              <Tooltip content="Bookmark" position="top">
+                <button
+                  type="button"
+                  onClick={() => toggleBookmark()}
+                  className="text-[#666] hover:text-[var(--accent-primary)] transition-colors p-1"
+                >
+                  <Bookmark className={`w-5 h-5 ${isBookmarked ? 'fill-accent text-accent' : ''}`} />
+                </button>
+              </Tooltip>
+            </div>
             <div
               className="text-white font-['Rajdhani'] font-semibold mb-6 text-lg leading-relaxed whitespace-pre-wrap mcq-question-text"
               dangerouslySetInnerHTML={{ __html: renderMath(mcqData.question) }}

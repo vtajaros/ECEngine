@@ -36,6 +36,7 @@ const SCHEMA = `
     tags TEXT,
     tos_topic_id TEXT,
     is_custom INTEGER DEFAULT 0,
+    order_index INTEGER DEFAULT 0,
     created_at INTEGER DEFAULT 0
   );
 `
@@ -137,6 +138,9 @@ describe('Gauntlet DB persistence', () => {
     expect(math1.length).toBe(1)
     expect(math1[0].id).toBe('c-math-1')
     expect(math1[0].subject_code).toBe('MATH')
+    expect(math1[0].deck_name).toBe('Test Topic')
+    expect(math1[0].card_number).toBe(1)
+    expect(math1[0].total_in_deck).toBe(1)
 
     const excluded = sampleQuestions(db, 'ELECS', 10, ['c-el-1', 'c-el-2'])
     expect(excluded.length).toBe(1)

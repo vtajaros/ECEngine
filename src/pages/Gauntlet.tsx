@@ -41,6 +41,7 @@ import {
   X,
   Brain,
   Flag,
+  Folder,
 } from 'lucide-react'
 
 export const LINGER_CORRECT_MS = 1800
@@ -458,24 +459,8 @@ Please explain:
             title={`Gauntlet ${modeLabel} — Missed Items`}
             ttsEnabled={false}
             shuffleChoices={true}
-            onComplete={stats => {
-              dbService
-                .saveExamSession({
-                  topicId: null,
-                  mode: 'learn',
-                  score: stats.correct,
-                  total: missedCards.length,
-                  answers: JSON.stringify({
-                    deckTitle: `Gauntlet ${modeLabel} - Missed Items`,
-                    correctFirstTry: stats.correct,
-                    wrongFirstTry: stats.wrong,
-                    bookmarkedCount: stats.bookmarked,
-                  }),
-                })
-                .catch(err => {
-                  console.error('Failed to save learn session:', err)
-                })
-            }}
+            recordProgress={false}
+            onComplete={() => {}}
             onExit={() => setIsLearningMissed(false)}
           />
         </div>
@@ -895,6 +880,22 @@ Please explain:
                           </Tooltip>
                         )}
 
+                        {/* Deck & Card Location Badge */}
+                        {a.item.card.deckName && (
+                          <Tooltip
+                            content={`Deck: ${a.item.card.deckName} • Card #${a.item.card.cardNumber ?? '?'}${a.item.card.totalInDeck ? `/${a.item.card.totalInDeck}` : ''}`}
+                            position="top"
+                          >
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-['JetBrains_Mono'] font-medium border border-border-base bg-[#141414] text-[#aaa] shrink-0 flex items-center gap-1 max-w-[130px] sm:max-w-[170px] cursor-default">
+                              <Folder size={10} className="text-text-muted shrink-0" />
+                              <span className="truncate">{a.item.card.deckName}</span>
+                              <span className="text-accent shrink-0 font-bold">
+                                #{a.item.card.cardNumber ?? '?'}
+                              </span>
+                            </span>
+                          </Tooltip>
+                        )}
+
                         {/* Outcome Icon */}
                         <span className="shrink-0">
                           {a.outcome === 'correct' && (
@@ -989,6 +990,20 @@ Please explain:
                     {/* Expanded Detail Panel */}
                     {isExpanded && (
                       <div className="px-4 pb-4 pt-2 border-t border-border-base/60 flex flex-col gap-3">
+                        {/* Deck Location Header */}
+                        {a.item.card.deckName && (
+                          <div className="flex items-center gap-2 text-xs font-['JetBrains_Mono'] text-text-muted pt-1">
+                            <span className="flex items-center gap-1.5 text-accent font-semibold">
+                              <Folder size={13} className="text-accent shrink-0" />
+                              {a.item.card.deckName}
+                            </span>
+                            <span>•</span>
+                            <span className="text-white font-medium">
+                              Card #{a.item.card.cardNumber ?? '?'}{a.item.card.totalInDeck ? ` of ${a.item.card.totalInDeck}` : ''}
+                            </span>
+                          </div>
+                        )}
+
                         {/* Full Question Text */}
                         <div
                           className="text-white font-['Rajdhani'] font-semibold text-sm sm:text-base leading-relaxed whitespace-pre-wrap mcq-question-text"
@@ -1100,7 +1115,7 @@ Please explain:
                         )}
 
                         {/* Row Actions: Get Context + AI Explain + Flag Question */}
-                        <div className="flex items-center gap-2 pt-1 flex-wrap">
+                        <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
                           <button
                             type="button"
                             onClick={e => {

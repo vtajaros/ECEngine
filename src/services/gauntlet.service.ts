@@ -26,6 +26,9 @@ export const gauntletService = {
     return rows.map((r: any) => ({
       ...parseCardRow(CardWithProgressRowSchema.parse(r)),
       subjectCode: r.subject_code as GauntletSubjectCode,
+      deckName: r.deck_name as string | undefined,
+      cardNumber: r.card_number as number | undefined,
+      totalInDeck: r.total_in_deck as number | undefined,
     }))
   },
 

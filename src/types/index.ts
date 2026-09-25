@@ -15,6 +15,9 @@ export interface Card {
   tosTopicId?: string | null
   isCustom: boolean
   createdAt: string
+  deckName?: string
+  cardNumber?: number
+  totalInDeck?: number
   /**
    * Set to `true` on MCQ cards synthesised from flashcards via generateMCQs().
    * These cards reuse the source flashcard's DB id — writing progress into that

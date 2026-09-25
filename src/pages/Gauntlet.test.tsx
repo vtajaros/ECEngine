@@ -98,6 +98,9 @@ const mockItem = (id: string, subject: Subject, parMs = 6000): QueueItem => ({
     subjectCode: subject,
     isCustom: false,
     createdAt: '2026-01-01T00:00:00.000Z',
+    deckName: 'Algebra Fundamentals',
+    cardNumber: 3,
+    totalInDeck: 20,
     data: {
       question: `Question for ${id}`,
       choices: ['Choice Alpha', 'Choice Beta', 'Choice Gamma', 'Choice Delta'],
@@ -287,6 +290,8 @@ describe('Gauntlet Summary Review List', () => {
       row.click()
     })
 
+    expect(container?.textContent).toContain('Algebra Fundamentals')
+    expect(container?.textContent).toContain('Card #3 of 20')
     expect(container?.textContent).toContain('Choice Alpha')
     expect(container?.textContent).toContain('Choice Beta')
     expect(container?.textContent).toContain('Explanation for c1')
