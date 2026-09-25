@@ -18,7 +18,7 @@ import { AIDescriptionButton } from '../components/deck/AIDescriptionButton'
 import { Tooltip } from '../components/ui/Tooltip'
 import { generateDeckSummary } from '../services/aiSummary.service'
 import { useDataVersionStore } from '../store/useDataVersionStore'
-import { getTosTopicsBySubject, formatTosBadge } from '../lib/tosClassification'
+import { getTosTopicGroupsBySubject, formatTosBadge } from '../lib/tosClassification'
 import {
   DndContext,
   closestCenter,
@@ -1012,13 +1012,20 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
                   <select
                     value={card.tosTopicId || ''}
                     onChange={e => onUpdate(card.id, { tosTopicId: e.target.value || null })}
-                    className="bg-[#151515] border border-border-base rounded px-2.5 py-1 text-xs font-['JetBrains_Mono'] text-text-primary focus:border-accent outline-none"
+                    className="bg-[#151515] border border-border-base rounded px-2.5 py-1 text-xs font-['JetBrains_Mono'] text-text-primary focus:border-accent outline-none max-w-[280px]"
                   >
                     <option value="">(Default from Deck / None)</option>
-                    {getTosTopicsBySubject(subject).map(t => (
-                      <option key={t.id} value={t.id}>
-                        {t.fullLabel}
-                      </option>
+                    {getTosTopicGroupsBySubject(subject).map(group => (
+                      <optgroup key={group.parent.id} label={`${group.parent.code} ${group.parent.title}`}>
+                        <option value={group.parent.id}>
+                          {group.parent.code} {group.parent.title} (General)
+                        </option>
+                        {group.subtopics.map(sub => (
+                          <option key={sub.id} value={sub.id}>
+                            {sub.code} {sub.title}
+                          </option>
+                        ))}
+                      </optgroup>
                     ))}
                   </select>
                 </div>

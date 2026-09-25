@@ -20,7 +20,7 @@ import { EditCard } from './CardEditor'
 import { AIDescriptionButton } from './AIDescriptionButton'
 import { Tooltip } from '../ui/Tooltip'
 import { generateDeckSummary } from '../../services/aiSummary.service'
-import { getTosTopicsBySubject } from '../../lib/tosClassification'
+import { getTosTopicGroupsBySubject } from '../../lib/tosClassification'
 
 export type DeckMetadata = {
   title: string
@@ -374,10 +374,17 @@ export default function DeckMetadataForm({ metadata, setMetadata, scope, cards =
           className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-text-primary text-xs font-['JetBrains_Mono'] focus:border-accent focus:bg-[#111] outline-none transition-colors"
         >
           <option value="">None / Mixed Topics</option>
-          {getTosTopicsBySubject(metadata.subject).map(t => (
-            <option key={t.id} value={t.id}>
-              {t.fullLabel}
-            </option>
+          {getTosTopicGroupsBySubject(metadata.subject).map(group => (
+            <optgroup key={group.parent.id} label={`${group.parent.code} ${group.parent.title}`}>
+              <option value={group.parent.id}>
+                {group.parent.code} {group.parent.title} (All / General)
+              </option>
+              {group.subtopics.map(sub => (
+                <option key={sub.id} value={sub.id}>
+                  {sub.code} {sub.title}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
       </div>
