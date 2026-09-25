@@ -55,7 +55,9 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 ---
 
 ### 📝 Multiple Choice (MCQ) & "LooksFam" Engine
-* **Learn Mode**: Immediate feedback with instant answer validation, detailed solution breakdowns, and AI-powered explanations.
+* **Learn Mode**: Immediate feedback with instant answer validation, detailed solution breakdowns, and AI-powered explanations. Features an ergonomic question header with an integrated, non-overlapping bookmark button.
+* **Partitioned Learning Rounds**: Breaks large question sets into manageable batches (default 5 cards per round) with dynamic retry queues for incorrect items until 100% mastery is achieved.
+* **Isolated Practice Mode**: Supports clean practice runs (e.g. for Gauntlet missed items) that reinforce concepts without altering core SM-2 intervals, attempt logs, or session history.
 * **Test Mode**: Simulates exam conditions with randomized choice orders, live timer, and a comprehensive end-of-test summary.
 * **Bookmarked Items Manager**: Quickly review, preview, and manage bookmarked questions directly from the deck browser with a dedicated legend and modal.
 * **Choice Shuffling**: Automatically randomizes options on every run while preserving correct answer mappings.
@@ -64,6 +66,7 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 
 ### ⚔️ Gauntlet Mode: Speed, Survival & Elo Ratings
 * **High-Octane Arcade Challenge**: Designed for rapid-fire recall and reflex conditioning under pressure, fully isolated from SM-2 spaced repetition, study decks, and attempt logs so you can push your speed without risking your core study intervals.
+* **Adaptive TOS-Prioritized Sampling**: Intelligently identifies your weakest Table of Specifications (TOS) topics (subtopics with $\ge 3$ attempts and $< 70\%$ accuracy) and prioritizes them in question generation, automatically targeting problem areas without sacrificing variety.
 * **Game Modes**:
   * **Timed Mode ("Beat the Clock")**:
     * Session presets: `1 min`, `2 min`, `3 min`, `5 min`, and `10 min`.
@@ -76,15 +79,22 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
     * Dynamic difficulty multipliers: Scores and Elo deltas scale automatically based on selected timer and lives.
     * **Life Bonus**: Earn $+1$ life for every 10 consecutive correct answers (capped at starting life count).
     * **Accuracy Mode**: Unlimited per-question timer with minimal score multiplier ($0.08\times$) and strictly capped $\pm 1$ Elo rating adjustments, allowing deep calculation and accuracy validation without rating inflation.
+* **Clean In-Game Focus**: In-run question cards keep topic classifications hidden during Survival and Time Trial play, preventing syllabus topic spoilers while answering.
 * **Ranked vs. Unranked Runs**:
   * **Ranked**: Tracks per-subject Elo-style ratings across all 4 subjects with provisional rating indicators ($<30$ answers) and official PRC TOS-weighted overall rating score.
   * **Unranked**: Casual practice runs leaving Elo ratings unchanged.
 * **Adaptive Cyberpunk Audio & Visuals**:
   * Crossfading dynamic Web Audio background music that scales in intensity across regions (**Stealth**, **Low**, **Med**, **High**, **Boss**).
   * Looping low-health audio overlay and glowing HUD pulse when down to your final life.
+  * Calibrated audio feedback with balanced sound effects and game over volume.
 * **Comprehensive Post-Run Review**:
-  * Two-column tactical breakdown: stats sidebar with accuracy, speed, rating deltas, and score metrics.
-  * Filterable question review list (All, Mistakes, Skipped/Timeout, Correct) with inline choices, full mathematical solutions, and one-click "Get Context" clipboard export.
+  * **Two-Column Tactical Breakdown**: Stats sidebar with accuracy, speed, rating deltas, and score metrics.
+  * **Struggling Topics Focus Area**: Highlights top problem TOS topics from the run with miss ratios to immediately focus review.
+  * **Question Origin & Deck Tracking**: Every reviewed question displays its source deck name and 1-based card position in that deck (e.g. `📁 [Deck Name] #[number]` badge and `📁 [Deck Name] • Card #[number] of [total]`), enabling instant cross-referencing with your original study decks.
+  * **Question Flagging & Exclusion**: Directly flag broken or ambiguous questions from the review screen with custom reason tags; flagged questions are automatically excluded from subsequent Gauntlet pools.
+  * **Learn Missed Items**: Launch an on-demand Learn Mode session targeting only the questions missed in that run, cleanly isolated from core session history and statistics.
+  * **Centered Tactical Action Bar**: Quick controls for **Get Context** (formatted clipboard export for AI), **AI Explain** (inline step-by-step breakdown), and **Flag Question**.
+  * **Filterable Review List**: Filter by All, Mistakes, Skipped/Timeout, or Correct with inline choices and full mathematical solutions.
 
 ---
 
@@ -159,7 +169,16 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
   * Synchronously preloaded in-memory state via `useChecklistStore` for instant, flicker-free tab transitions and offline `localStorage` persistence.
   * Multi-column weighted progress tracking: *Review* (10%), *Refresher* (20%), and *Self Review* (70%) with dynamic subject badges and overall progress animations.
 * **Activity Heatmap & Trends**: 6-month study activity heatmap, subject accuracy trends, and mastery metrics.
+* **Gauntlet Subject Elo History Chart (`SubjectEloChart`)**: Interactive dashboard chart visualizing Elo rating evolution over time across **MATH**, **GEAS**, **ELECS**, and **EST** with hover telemetry and subject toggling.
 * **Exam Countdown Timer**: Live countdown clock targeting your scheduled Board Exam date.
+
+---
+
+### 🏷️ Table of Specifications (TOS) Classification System
+* **Official PRC ECE Board Exam Taxonomy**: Built-in hierarchy encompassing 34 parent topics ($x.0$) and 181 granular subtopics ($x.x$) across Mathematics, Electronics Engineering, GEAS, and EST per official PRC Board Examination specifications.
+* **Card & Question Categorization**: Assign decimal TOS topic tags to questions in the Deck Editor with an organized, searchable dropdown and formatted badge previews.
+* **Automated AI Batch Classifier**: Python and Groq AI classifier script integration (`scripts/classify_database_tos.py`) for automated syllabus mapping, parsing question contents to accurately tag whole databases with decimal TOS subtopic codes.
+* **Syllabus-Linked Gauntlet Targeting**: Classifications link directly with Gauntlet telemetry, automatically detecting struggling subtopics ($<70\%$ accuracy) to prioritize them in practice runs.
 
 ---
 
@@ -287,6 +306,7 @@ CREATE TABLE cards (
   data TEXT NOT NULL,          -- JSON payload of question/choices/latex/explanation
   difficulty TEXT DEFAULT 'medium',
   tags TEXT DEFAULT '[]',
+  tos_topic_id TEXT,           -- e.g. 'ELECS-1.0' or 'ELECS-1.1'
   is_custom BOOLEAN DEFAULT 0,
   order_index INTEGER DEFAULT 0,
   created_at INTEGER DEFAULT (strftime('%s', 'now')),
@@ -321,6 +341,7 @@ CREATE INDEX IF NOT EXISTS idx_next_review ON progress(next_review);
 CREATE INDEX IF NOT EXISTS idx_last_reviewed ON progress(last_reviewed);
 CREATE INDEX IF NOT EXISTS idx_cards_topic_id ON cards(topic_id);
 CREATE INDEX IF NOT EXISTS idx_cards_topic_type ON cards(topic_id, type);
+CREATE INDEX IF NOT EXISTS idx_cards_tos_topic ON cards(tos_topic_id);
 CREATE INDEX IF NOT EXISTS idx_topics_folder_id ON topics(folder_id);
 CREATE INDEX IF NOT EXISTS idx_topics_subject ON topics(subject);
 CREATE INDEX IF NOT EXISTS idx_topics_is_favorite ON topics(is_favorite);
@@ -413,9 +434,17 @@ CREATE TABLE gauntlet_ratings (
   updated_at INTEGER NOT NULL
 );
 
+-- Flagged questions excluded from Gauntlet pool
+CREATE TABLE gauntlet_flagged_cards (
+  card_id TEXT PRIMARY KEY REFERENCES cards(id) ON DELETE CASCADE,
+  reason TEXT,
+  flagged_at INTEGER NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_gauntlet_runs_started ON gauntlet_runs(started_at);
 CREATE INDEX IF NOT EXISTS idx_gauntlet_answers_run ON gauntlet_answers(run_id, seq);
 CREATE INDEX IF NOT EXISTS idx_gauntlet_answers_card ON gauntlet_answers(card_id);
+CREATE INDEX IF NOT EXISTS idx_gauntlet_flagged_card ON gauntlet_flagged_cards(card_id);
 ```
 
 ---
@@ -427,18 +456,18 @@ ecengine/
 ├── electron/                    # Electron Backend Process
 │   ├── main.ts                  # App lifecycle, window management, zoom, hotkeys
 │   ├── preload.ts               # contextBridge IPC API exposure
-│   ├── db/                      # SQLite connection, schema bootstrap, migrations (v1–v12)
+│   ├── db/                      # SQLite connection, schema bootstrap, migrations (v1–v14)
 │   └── ipc/                     # Modular IPC handlers (DB, Deck, Analytics, AI, Print, Config, TTS, Export)
 ├── src/                         # React Frontend (Renderer)
 │   ├── assets/                  # Brand assets, icons, bundled fonts (Rajdhani, JetBrains Mono, Orbitron)
 │   ├── components/              # Modular UI Components
 │   │   ├── ui/                  # Tooltip (auto-flipping), VolumeControl, FolderPanel, Toast, TOSTracker
-│   │   ├── gauntlet/            # GauntletHome, GauntletSetup, GauntletBackdrop, RatingsPanel, RunHistory, GauntletFaqModal
+│   │   ├── gauntlet/            # GauntletHome, GauntletSetup, GauntletBackdrop, RatingsPanel, RunHistory, GauntletFaqModal, GauntletRecordsModal
 │   │   ├── mcq/                 # MCQCard, LearnMode, TestMode, BookmarkedCardsModal
 │   │   ├── flashcard/           # FlashcardSession, FlashcardDeckBrowser, StudyCard
 │   │   ├── deck/                # CardForms, DeckCard, AIDescriptionButton, AdvancedFiltersPopover
 │   │   ├── study/               # StudyHeader, StudySessionStats
-│   │   ├── dashboard/           # ReviewHeatmap, SessionHistory, ExamCountdown
+│   │   ├── dashboard/           # ReviewHeatmap, SessionHistory, ExamCountdown, SubjectEloChart
 │   │   ├── stats/demos/         # Data Lab EDA demos (ContentCoverage, QuestionLength, ANOVA, Contingency, Z-Score, ResponseTime, StatInfoModal)
 │   │   ├── toc/                 # SubjectCard, Table of Specifications data, tosItems, tosRows
 │   │   └── layout/              # AppShell, custom TitleBar, navigation sidebar
@@ -450,7 +479,7 @@ ecengine/
 │   ├── store/                   # Zustand stores (useSessionStore, useGauntletStore, useChecklistStore, useDataLabStore)
 │   └── styles/                  # Tailwind theme tokens, CSS variables (--tier-*), KaTeX customizations
 ├── content/                     # Seed JSON deck files
-├── scripts/                     # Database seeding script (seed-db.ts)
+├── scripts/                     # Seeding (seed-db.ts) & TOS classifier (classify_database_tos.py)
 ├── package.json                 # Dependencies and build configuration
 ├── tailwind.config.ts           # Semantic design tokens and container queries
 └── electron.vite.config.ts      # Vite configuration for React and Electron
