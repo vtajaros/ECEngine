@@ -14,6 +14,7 @@ import { getSubjectFilterClasses } from '../lib/subjectColors'
 import { TOS_SUBJECT_COLORS } from '../lib/tosData'
 import { getAllAvailableTags, saveCustomTag, markTagDeleted } from '../lib/tags'
 import { TagDeleteConfirmModal, AffectedDeck } from '../components/deck/TagDeleteConfirmModal'
+import { AutoTagConfirmModal } from '../components/deck/AutoTagConfirmModal'
 import { AIDescriptionButton } from '../components/deck/AIDescriptionButton'
 import { Tooltip } from '../components/ui/Tooltip'
 import { generateDeckSummary } from '../services/aiSummary.service'
@@ -85,6 +86,7 @@ interface DeckMeta {
   tags: string
   folderName: string
   folderId: string | null
+  defaultTosTopicId?: string | null
 }
 
 interface EditCard {
@@ -1113,7 +1115,8 @@ export default function EditDeck() {
     subject: 'Electronics Engineering',
     tags: '',
     folderName: '',
-    folderId: null
+    folderId: null,
+    defaultTosTopicId: null,
   })
   const [cards, setCards] = useState<EditCard[]>([])
   const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set())
@@ -1125,6 +1128,7 @@ export default function EditDeck() {
   const [isExporting, setIsExporting] = useState(false)
   const [toast, setToast] = useState<{ type: 'success' | 'error'; msg: string } | null>(null)
   const [isGeneratingSummary, setIsGeneratingSummary] = useState(false)
+  const [showAutoTagModal, setShowAutoTagModal] = useState(false)
 
   const isFormulaDeck = cards.length > 0 && cards.every(c => c.type === 'formula')
   const scope = isFormulaDeck ? 'formula' : 'study'
@@ -1340,27 +1344,54 @@ export default function EditDeck() {
 
   const [isClassifyingTos, setIsClassifyingTos] = useState(false)
 
-  const handleAutoClassifyTos = async () => {
+  const onAutoTagClick = () => {
+    if (cards.length === 0 || isClassifyingTos) return
+    const currentlyTagged = cards.filter(c => !!c.tosTopicId).length
+    if (currentlyTagged > 0) {
+      setShowAutoTagModal(true)
+    } else {
+      executeAutoClassifyTos('overwrite')
+    }
+  }
+
+  const executeAutoClassifyTos = async (mode: 'overwrite' | 'untagged-only') => {
+    setShowAutoTagModal(false)
     if (cards.length === 0 || isClassifyingTos) return
     setIsClassifyingTos(true)
     try {
       saveSnapshot(cardsRef.current)
-      const payload = cards.map(c => ({
+      const targetCards = mode === 'untagged-only'
+        ? cards.filter(c => !c.tosTopicId)
+        : cards
+
+      if (targetCards.length === 0) {
+        setToast({ type: 'success', msg: 'All cards already have a TOS category assigned.' })
+        return
+      }
+
+      const payload = targetCards.map(c => ({
         id: c.id,
         type: c.type,
         data: typeof c.data === 'string' ? c.data : JSON.stringify(c.data),
         subject: deckMeta.subject,
         deckName: deckMeta.title,
+        deckDescription: deckMeta.description,
+        defaultTosTopicId: deckMeta.defaultTosTopicId || null,
       }))
       const res = await window.electron.decks.classifyCardsBatch(payload)
       if (res?.success && res.data) {
         const resultMap = new Map(res.data.map(item => [item.id, item.tosTopicId]))
         let changed = 0
         setCards(prev => prev.map(c => {
-          const newTos = resultMap.get(c.id)
-          if (newTos !== undefined && newTos !== c.tosTopicId) {
-            changed++
-            return { ...c, tosTopicId: newTos }
+          if (mode === 'untagged-only' && c.tosTopicId) {
+            return c
+          }
+          if (resultMap.has(c.id)) {
+            const newTos = resultMap.get(c.id) || null
+            if (newTos !== c.tosTopicId) {
+              changed++
+              return { ...c, tosTopicId: newTos }
+            }
           }
           return c
         }))
@@ -1509,6 +1540,26 @@ export default function EditDeck() {
         })
         setCards(loaded)
         setOriginalCardIds(new Set(loaded.map(c => c.id)))
+
+        // Infer defaultTosTopicId from loaded cards if available
+        const tosCounts: Record<string, number> = {}
+        for (const c of loaded) {
+          if (c.tosTopicId) {
+            tosCounts[c.tosTopicId] = (tosCounts[c.tosTopicId] || 0) + 1
+          }
+        }
+        let topTos: string | null = null
+        let maxCount = 0
+        for (const [tid, cnt] of Object.entries(tosCounts)) {
+          if (cnt > maxCount) {
+            maxCount = cnt
+            topTos = tid
+          }
+        }
+        setDeckMeta(m => ({
+          ...m,
+          defaultTosTopicId: m.defaultTosTopicId || topTos || null
+        }))
 
         // Preserve expanded cards by position/id across background reloads
         if (!isInitial) {
@@ -1679,7 +1730,7 @@ export default function EditDeck() {
           type: card.type,
           data: JSON.stringify(card.data),
           isNew: card.isNew ?? false,
-          tos_topic_id: card.tosTopicId ?? null,
+          tos_topic_id: card.tosTopicId || deckMeta.defaultTosTopicId || null,
         })),
         deletedCardIds
       })
@@ -1721,7 +1772,7 @@ export default function EditDeck() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className={`fixed top-4 right-4 z-[200] flex items-center gap-3 px-5 py-3 rounded-lg border shadow-2xl font-['Rajdhani'] tracking-wider text-sm ${toast.type === 'success'
+            className={`fixed top-14 right-6 z-[200] flex items-center gap-3 px-5 py-3 rounded-lg border shadow-2xl font-['Rajdhani'] tracking-wider text-sm ${toast.type === 'success'
                 ? 'bg-[#0a1a0a] border-accent/40 text-accent'
                 : 'bg-[#1a0a0a] border-[#FF4444]/40 text-[#FF4444]'
               }`}
@@ -1949,6 +2000,36 @@ export default function EditDeck() {
             </div>
 
             <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[11px] text-accent font-['Rajdhani'] font-bold uppercase tracking-widest block">
+                  Default TOS Category
+                </label>
+                <span className="text-[10px] text-[#666] font-['JetBrains_Mono']">
+                  Applies to cards in this deck
+                </span>
+              </div>
+              <select
+                value={deckMeta.defaultTosTopicId || ''}
+                onChange={e => setDeckMeta(m => ({ ...m, defaultTosTopicId: e.target.value || null }))}
+                className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-text-primary text-xs font-['JetBrains_Mono'] focus:border-accent focus:bg-[#111] outline-none transition-colors"
+              >
+                <option value="">None / Mixed Topics</option>
+                {getTosTopicGroupsBySubject(deckMeta.subject).map(group => (
+                  <optgroup key={group.parent.id} label={`${group.parent.code} ${group.parent.title}`}>
+                    <option value={group.parent.id}>
+                      {group.parent.code} {group.parent.title} (All / General)
+                    </option>
+                    {group.subtopics.map(sub => (
+                      <option key={sub.id} value={sub.id}>
+                        {sub.code} {sub.title}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </div>
+
+            <div>
               <label className="text-[11px] text-accent font-['Rajdhani'] font-bold uppercase tracking-widest mb-3 block">
                 Source Tags
               </label>
@@ -2040,11 +2121,11 @@ export default function EditDeck() {
                 <div className="flex flex-wrap items-center gap-3 justify-end">
                   <Tooltip
                     content="Automatically classify and tag all cards in this deck using the offline PRC TOS classifier"
-                    position="top"
+                    position="bottom"
                   >
                     <button
                       type="button"
-                      onClick={handleAutoClassifyTos}
+                      onClick={onAutoTagClick}
                       disabled={isClassifyingTos || cards.length === 0}
                       className="flex items-center gap-2 px-4 py-2 rounded border border-accent/40 bg-surface-2 text-accent hover:bg-accent/10 hover:border-accent font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -2198,6 +2279,15 @@ export default function EditDeck() {
             setAffectedDecks([])
           }
         }}
+      />
+
+      <AutoTagConfirmModal
+        isOpen={showAutoTagModal}
+        taggedCount={cards.filter(c => !!c.tosTopicId).length}
+        totalCount={cards.length}
+        onOverwriteAll={() => executeAutoClassifyTos('overwrite')}
+        onTagUntaggedOnly={() => executeAutoClassifyTos('untagged-only')}
+        onClose={() => setShowAutoTagModal(false)}
       />
     </div>
   )

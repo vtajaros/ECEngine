@@ -497,6 +497,8 @@ export function registerDeckHandlers(): void {
     id: string
     subject?: string
     deckName?: string
+    deckDescription?: string
+    defaultTosTopicId?: string | null
     text?: string
     data?: string
     type?: string

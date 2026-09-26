@@ -85,8 +85,8 @@ export function normalizeSubjectCode(subj?: string | null): Subject | null {
   const s = subj.toUpperCase().trim()
   if (s.startsWith('MATH')) return 'MATH'
   if (s.startsWith('GEAS')) return 'GEAS'
+  if (s.includes('SYSTEM') || s.startsWith('EST') || s.includes('COMM')) return 'EST'
   if (s.startsWith('ELEC')) return 'ELECS'
-  if (s.startsWith('EST') || s.startsWith('COMM')) return 'EST'
   return null
 }
 

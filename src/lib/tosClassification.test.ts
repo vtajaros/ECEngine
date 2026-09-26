@@ -26,6 +26,8 @@ describe('tosClassification', () => {
     expect(normalizeSubjectCode('Mathematics')).toBe('MATH')
     expect(normalizeSubjectCode('ELECS')).toBe('ELECS')
     expect(normalizeSubjectCode('Electronics Engineering')).toBe('ELECS')
+    expect(normalizeSubjectCode('Electronics Systems & Technologies')).toBe('EST')
+    expect(normalizeSubjectCode('Electronics Systems and Technologies')).toBe('EST')
     expect(normalizeSubjectCode('GEAS')).toBe('GEAS')
     expect(normalizeSubjectCode('EST')).toBe('EST')
     expect(normalizeSubjectCode('unknown')).toBeNull()

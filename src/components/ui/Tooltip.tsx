@@ -34,16 +34,19 @@ export function computeTooltipPosition(
   const w = tooltipWidth;
   const h = tooltipHeight;
 
+  const TITLEBAR_HEIGHT = 34;
+  const minTop = padding + TITLEBAR_HEIGHT;
+
   // 1. Determine placement (auto-flip if requested position overflows viewport)
   if (preferredPosition === 'top') {
-    const spaceAbove = anchorRect.top - gap;
+    const spaceAbove = anchorRect.top - gap - TITLEBAR_HEIGHT;
     const spaceBelow = viewportHeight - anchorRect.bottom - gap;
     if (spaceAbove < h + padding && spaceBelow > spaceAbove) {
       placement = 'bottom';
     }
   } else if (preferredPosition === 'bottom') {
     const spaceBelow = viewportHeight - anchorRect.bottom - gap;
-    const spaceAbove = anchorRect.top - gap;
+    const spaceAbove = anchorRect.top - gap - TITLEBAR_HEIGHT;
     if (spaceBelow < h + padding && spaceAbove > spaceBelow) {
       placement = 'top';
     }
@@ -77,8 +80,8 @@ export function computeTooltipPosition(
       top = anchorRect.bottom + gap;
     }
 
-    // Clamp top inside viewport
-    top = Math.max(padding, Math.min(viewportHeight - padding - h, top));
+    // Clamp top inside viewport, below the custom titlebar
+    top = Math.max(minTop, Math.min(viewportHeight - padding - h, top));
 
     // Center horizontally on anchor
     left = anchorCenterX - w / 2;
@@ -103,8 +106,8 @@ export function computeTooltipPosition(
     // Center vertically on anchor
     top = anchorCenterY - h / 2;
 
-    // Clamp top inside viewport
-    top = Math.max(padding, Math.min(viewportHeight - padding - h, top));
+    // Clamp top inside viewport, below the custom titlebar
+    top = Math.max(minTop, Math.min(viewportHeight - padding - h, top));
 
     // Arrow vertically points to anchor center
     const rawArrowTop = anchorCenterY - top;

@@ -302,26 +302,53 @@ SUBTOPIC_RULES = {
 
         # 4.0 Electronic Devices and Circuits
         'ELECS-4.1': [  # Diode Wave Shaping and Special Diode Applications
-            r'\bclipper circuit\b', r'\bclamper circuit\b', r'\bzener diode\b', r'\bvaractor diode\b',
-            r'\btunnel diode\b', r'\bschottky diode\b', r'\bwave shaping circuit\b', r'\bled\b', r'\bphotodiodes?\b'
+            r'\bclipper circuit\b', r'\bclamper circuit\b', r'\bclipping circuit\b', r'\bclamping circuit\b',
+            r'\bzener diode\b', r'\bzener breakdown\b', r'\bvaractor diode\b',
+            r'\btunnel diode\b', r'\bschottky diode\b', r'\bwave shaping circuit\b', r'\bled\b', r'\bphotodiodes?\b',
+            r'\blight-emitting diode\b', r'\bavalanche diode\b', r'\bpin diode\b', r'\bstep recovery diode\b'
         ],
         'ELECS-4.2': [  # BJT and FET Small Signal Analysis
-            r'\bre model\b', r'\bhybrid.pi model\b', r'\bsmall[- ]signal model\b', r'\btransconductances?\b',
-            r'\bsmall[- ]signal (?:input|output) impedance\b', r'\bsmall[- ]signal voltage gain\b'
+            r'\bre model\b', r'\bhybrid[- .]pi model\b', r'\bhybrid parameters?\b', r'\bh-parameters?\b',
+            r'\bsmall[- ]signal model\b', r'\bsmall[- ]signal analysis\b', r'\btransconductances?\b',
+            r'\bsmall[- ]signal (?:input|output) impedance\b', r'\bsmall[- ]signal voltage gain\b',
+            r'\bac equivalent circuit\b', r'\bmidband gain\b', r'\bac resistance of (?:the )?emitter\b',
+            r'\bvoltage gain provided by\b', r'\bcurrent gain provided by\b', r'\binput impedance of\b'
         ],
         'ELECS-4.3': [  # Diode Equivalent Circuits
             r'\bdiode equivalent circuit\b', r'\bideal diode model\b', r'\bbarrier potential\b',
-            r'\bforward resistance\b', r'\breverse saturation current\b', r'\bshockley (?:diode )?equation\b'
+            r'\bforward resistance\b', r'\breverse saturation current\b', r'\bshockley (?:diode )?equation\b',
+            r'\bpn junction\b', r'\bp-n junction\b', r'\bdepletion region\b', r'\bbuilt-in potential\b',
+            r'\bforward bias\b', r'\breverse bias\b', r'\bdiode characteristics\b', r'\bdiodes?\b'
         ],
         'ELECS-4.4': [  # Voltage Multipliers, Power Supply, Voltage Regulation
             r'\brectifiers?\b', r'\bhalf-wave rectif\w*', r'\bfull-wave rectif\w*', r'\bbridge rectifier\b',
-            r'\bvoltage multiplier\b', r'\bvoltage doubler\b', r'\bripple factor\b', r'\bvoltage regulat\w*',
-            r'\bpower supply circuit\b'
+            r'\bvoltage multiplier\b', r'\bvoltage doubler\b', r'\bvoltage tripler\b', r'\bvoltage quadrupler\b',
+            r'\bripple factor\b', r'\bripple voltage\b', r'\bvoltage regulat\w*',
+            r'\bpower supply circuit\b', r'\bline regulation\b', r'\bload regulation\b',
+            r'\bfilter capacitor\b', r'\bchoke input filter\b', r'\bpi filter\b', r'\b78xx\b', r'\b79xx\b', r'\blm317\b'
         ],
         'ELECS-4.5': [  # Bipolar Junction Transistor and FET
-            r'\bbjt\b', r'\btransistor biasing\b', r'\bnpn transistor\b', r'\bpnp transistor\b',
-            r'\bcommon emitter\b', r'\bcommon base\b', r'\bcommon collector\b', r'\bjfet\b', r'\bmosfet\b',
-            r'\bpinch-offs?\b', r'\bdrain current\b', r'\bgate voltage\b', r'\bthreshold voltage\b'
+            r'\bbjt\b', r'\bbipolar junction transistors?\b', r'\btransistor(?:s)?\b',
+            r'\btransistor biasing\b', r'\bnpn\b', r'\bpnp\b', r'\bnpn transistor\b', r'\bpnp transistor\b',
+            r'\bcommon emitter\b', r'\bcommon base\b', r'\bcommon collector\b',
+            r'\bce configuration\b', r'\bcb configuration\b', r'\bcc configuration\b',
+            r'\bce amplifier\b', r'\bcb amplifier\b', r'\bcc amplifier\b',
+            r'\bemitter follower\b', r'\bsource follower\b',
+            r'\bcollector\b', r'\bemitter\b', r'\bbase region\b', r'\bbase terminal\b',
+            r'\bcollector terminal\b', r'\bemitter terminal\b', r'\bterminals? in a transistor\b',
+            r'\bactive region\b', r'\bsaturation (?:mode|region)?\b', r'\bcutoff (?:mode|region)?\b',
+            r'\bdc load line\b', r'\bac load line\b', r'\bload line\b', r'\bq[- ]point\b', r'\bquiescent point\b',
+            r'\boperating point\b', r'\bcurrent gain\b',
+            r'\bhfe\b', r'\bbeta dc\b', r'\balpha dc\b', r'\btransistor parameter\b',
+            r'\bdop(?:ing|ed|ants?)\b', r'\border of doping\b', r'\bdoping (?:order|level|concentration)?\b', r'\bearly effect\b', r'\bbase-width modulation\b',
+            r'\bjfet\b', r'\bmosfet\b', r'\bfets?\b', r'\bfield effect transistor\b',
+            r'\bjunction field effect transistor\b', r'\bmetal oxide semiconductor\b',
+            r'\bpinch-offs?\b', r'\bdrain current\b', r'\bgate voltage\b', r'\bthreshold voltage\b',
+            r'\bdepletion[- ]mode\b', r'\benhancement[- ]mode\b', r'\bcmos\b', r'\bgate-to-source\b', r'\bdrain-to-source\b',
+            r'\bcollector current\b', r'\bbase current\b', r'\bemitter current\b',
+            r'\bvoltage divider bias\b', r'\bfixed bias\b', r'\bemitter bias\b', r'\bcollector feedback bias\b',
+            r'\btransistor acts as (?:a )?switch\b', r'\bswitch and an? amplifier\b',
+            r'\bhighest gain provided by\b', r'\bhigher gain provided by\b'
         ],
 
         # 5.0 Electronic Circuit Analysis and Design
@@ -506,8 +533,14 @@ SUBTOPIC_RULES = {
             r'\binternal rate of return\b', r'\birr\b', r'\bbenefit-cost ratio\b'
         ],
         'GEAS-3.4': [  # Decisions Under Certainty
-            r'\bbreak-even (?:point|analysis)\b', r'\bdepreciation\b', r'\bstraight[- ]line depreciation\b',
-            r'\bdeclining balance\b', r'\bsum-of-the-years\b', r'\bsalvage value\b', r'\bcapitalized cost\b'
+            r'\bbreak-even\b', r'\bbreak even\b', r'\bto break even\b',
+            r'\bbreak-even (?:point|analysis|quantity|volume)\b',
+            r'\bvariable costs?\b', r'\bfixed costs?\b',
+            r'\baverage selling price\b', r'\bselling price (?:per|of)\b',
+            r'\bproduction capacity\b',
+            r'\bdepreciation\b', r'\bstraight[- ]line depreciation\b',
+            r'\bdeclining balance\b', r'\bsum-of-the-years\b',
+            r'\bsalvage value\b', r'\bcapitalized cost\b', r'\bbook value\b'
         ],
         'GEAS-3.5': [  # Decisions Recognizing Risk
             r'\bdecision tree\b', r'\bexpected monetary value\b', r'\brisk analysis\b', r'\bprobabilistic risk\b'
@@ -553,7 +586,14 @@ SUBTOPIC_RULES = {
             r'\bporter\'?s five forces\b', r'\bswot analysis\b', r'\bcompetitive advantage\b'
         ],
         'GEAS-5.5': [  # Business Models and Intellectual Property
-            r'\bbusiness model canvas\b', r'\bpatents?\b', r'\bintellectual property\b', r'\btrademarks?\b', r'\bcopyright\b'
+            r'\bbusiness models?\b', r'\bbusiness model canvas\b',
+            r'\bb2b\b', r'\bbusiness-to-business\b',
+            r'\bb2c\b', r'\bbusiness-to-consumer\b',
+            r'\bc2c\b', r'\bconsumer-to-consumer\b',
+            r'\bb2g\b', r'\bbusiness-to-government\b',
+            r'\bonline marketplace\b', r'\be-commerce (?:business )?model\b',
+            r'\bfreemium\b', r'\bsubscription model\b', r'\bmarketplace model\b',
+            r'\bpatents?\b', r'\bintellectual property\b', r'\btrademarks?\b', r'\bcopyrights?\b'
         ],
         'GEAS-5.6': [  # Execution and Business Plan
             r'\bmvp\b', r'\bminimum viable product\b', r'\bpitch deck\b', r'\bbusiness plan\b'
@@ -633,38 +673,77 @@ SUBTOPIC_RULES = {
 
         # 9.0 Environment Science and Engineering
         'GEAS-9.1': [  # Nature and Ecology
-            r'\becosystems?\b', r'\bfood chain\b', r'\bbiodiversit(?:y|ies)\b', r'\becolog(?:y|ies)\b'
+            r'\becosystems?\b', r'\bfood chain\b', r'\bfood web\b', r'\btrophic levels?\b',
+            r'\bbiodiversit(?:y|ies)\b', r'\becolog(?:y|ies)\b',
+            r'\bnutrient cycles?\b', r'\bbiogeochemical cycles?\b',
+            r'\bhydrologic(?:al)? (?:cycle|process)\b', r'\bwater cycle\b',
+            r'\bpart of the water cycle\b', r'\bevaporation\b', r'\bcondensation\b',
+            r'\bprecipitation (?:and|or) collection\b', r'\bprecipitation\b',
+            r'\btranspiration\b', r'\bevapotranspiration\b', r'\brunoff\b',
+            r'\bpercolation\b', r'\bgroundwater\b', r'\baquifers?\b',
+            r'\bnitrogen cycle\b', r'\bcarbon cycle\b', r'\bphosphorus cycle\b', r'\bsulfur cycle\b',
+            r'\bproducers? and consumers?\b', r'\bdecomposers?\b', r'\bbiomes?\b', r'\bhabitat\b',
+            r'\bcarrying capacity\b', r'\bprimary succession\b', r'\bsecondary succession\b',
+            r'\bphotosynthesis\b', r'\becological niche\b', r'\bhydrosphere\b', r'\blithosphere\b', r'\bbiosphere\b'
         ],
         'GEAS-9.2': [  # Natural Systems and Resources
-            r'\brenewable resource\b', r'\bnon-renewable resource\b', r'\bwater resource\b'
+            r'\brenewable resource\b', r'\bnon-renewable resource\b', r'\bwater resource\b',
+            r'\benergy resource\b', r'\bmineral resource\b', r'\bforest resource\b'
         ],
         'GEAS-9.3': [  # Environmental Concerns and Crises
             r'\bair pollution\b', r'\bwater pollution\b', r'\bsolid waste (?:management)?\b',
-            r'\bclimate change\b', r'\bglobal warming\b', r'\bozone layer\b'
+            r'\bclimate change\b', r'\bglobal warming\b', r'\bozone layer\b', r'\bozone depletion\b',
+            r'\beutrophication\b', r'\bgreenhouse effect\b', r'\bgreenhouse gas(?:es)?\b',
+            r'\bsalinity\b', r'\bhalinity\b', r'\bhaloginity\b', r'\bacid rain\b',
+            r'\bphotochemical smog\b', r'\bchlorofluorocarbons?\b', r'\bcfcs?\b'
         ],
         'GEAS-9.4': [  # Environmental Impact Assessment
-            r'\benvironmental impact assessment\b', r'\beia\b', r'\benvironmental compliance certificate\b', r'\becc\b'
+            r'\benvironmental studies\b', r'\benvironmental impact(?:s)?\b',
+            r'\benvironmental impact assessment\b', r'\beia\b',
+            r'\benvironmental compliance certificate\b', r'\becc\b',
+            r'\bdirect impact(?:s)?\b', r'\bindirect impact(?:s)?\b',
+            r'\bsocial impact(?:s)?\b', r'\bcumulative impact(?:s)?\b',
+            r'\bresidual impact(?:s)?\b',
+            r'\ban effect that occurs immediately as a result of an activity\b',
+            r'\benvironmental management plan\b', r'\beia process\b', r'\bproject description\b'
         ],
         'GEAS-9.5': [  # Sustainable Development
-            r'\bsustainability\b', r'\bsustainable development\b', r'\bcarbon footprint\b'
+            r'\bsustainability\b', r'\bsustainable development\b', r'\bcarbon footprint\b',
+            r'\brenewable energy\b', r'\bclean energy\b', r'\bcircular economy\b'
         ],
 
         # 10.0 ECE Laws, Contracts, Ethics, Standards and Safety
         'GEAS-10.1': [  # Laws, Obligations and Contracts
-            r'\bcontract law\b', r'\bobligations?\b', r'\bbreach of contract\b', r'\btorts?\b', r'\bcivil code\b'
+            r'\bcontract law\b', r'\bobligations?\b', r'\bbreach of contract\b', r'\btorts?\b', r'\bcivil code\b',
+            r'\bquasi-delict\b', r'\bvoid and voidable\b', r'\bvalid contract\b'
         ],
         'GEAS-10.2': [  # Pledge of ECE and CSC Guidelines
-            r'\bcode of ethics\b', r'\bece pledge\b', r'\bethical conduct\b', r'\bcsc guidelines\b'
+            r'\bcode of ethics\b', r'\bece pledge\b', r'\bethical conduct\b', r'\bcsc guidelines\b',
+            r'\bengineer\'?s code of ethics\b', r'\bprofessional conduct\b'
         ],
         'GEAS-10.3': [  # Board Examination Rules
-            r'\bboard exam(?:ination)? rules?\b', r'\bpassing score\b', r'\bprc exam(?:ination)?\b'
+            r'\bboard exam(?:ination)? rules?\b', r'\bpassing score\b', r'\bprc exam(?:ination)?\b',
+            r'\bgeneral rating of 70\b', r'\bremoval examination\b', r'\b70 percent\b'
         ],
         'GEAS-10.4': [  # Regulating the ECE Profession (PRC)
-            r'\bra ?9292\b', r'\bece law\b', r'\bpece\b', r'\bregistered electronics (?:engineer|technician)\b',
-            r'\bprc board of electronics\b', r'\bboard of electronics engineering\b'
+            r'\bra ?9292\b', r'\bece law\b', r'\bpece\b', r'\bprofessional electronics engineer\b',
+            r'\bregistered electronics (?:engineer|technician)\b', r'\belectronics engineer\b',
+            r'\belectronics technician\b', r'\bprc board of electronics\b', r'\bboard of electronics engineering\b',
+            r'\biecep\b', r'\bseal of (?:a )?pece\b', r'\bscope of practice of ece\b',
+            r'\broster of registered electronics\b', r'\bprc modernization act\b', r'\bra ?8981\b'
         ],
         'GEAS-10.5': [  # Other ECE Related Statutes
-            r'\bra ?7925\b', r'\bra ?8792\b', r'\be-commerce act\b', r'\bpublic telecommunications policy act\b'
+            r'\bra ?7925\b', r'\bra ?8792\b', r'\be-commerce act\b', r'\bpublic telecommunications policy act\b',
+            r'\bra ?10515\b', r'\banti-cable tv\b', r'\bcable internet tapping\b', r'\banti-cable tv and cable internet tapping act\b',
+            r'\bra ?10844\b', r'\bdict act\b', r'\bdepartment of information and communications technology\b',
+            r'\bra ?10175\b', r'\bcybercrime prevention act\b',
+            r'\bra ?10912\b', r'\bcpd act\b', r'\bcontinuing professional development\b',
+            r'\bra ?10055\b', r'\btechnology transfer act\b',
+            r'\bra ?10889\b', r'\bra ?10982\b', r'\bra ?3846\b', r'\bact (?:no\.?\s*)?3846\b', r'\bradio control law\b',
+            r'\bra ?8293\b', r'\bintellectual property code\b',
+            r'\bntc\b', r'\bnational telecommunications commission\b',
+            r'\bkbp\b', r'\bkbp broadcast code\b', r'\bfranchise\b', r'\btelecommunications? law\b',
+            r'\brepublic act (?:no\.?\s*)?\d+\b', r'\bra\s*\d{3,5}\b'
         ],
         'GEAS-10.6': [  # Safety Standards and PEC Codes
             r'\bphilippine electrical code\b', r'\bpec\b', r'\bosha standard\b', r'\bsafety standard\b'
@@ -890,7 +969,11 @@ PARENT_RULES = {
         'ELECS-1.0': [r'\bdc circuit\b', r'\bdirect current circuit\b', r'\bohm\'?s law\b'],
         'ELECS-2.0': [r'\bac circuit\b', r'\balternating current circuit\b', r'\bphasors?\b'],
         'ELECS-3.0': [r'\belectromagnetics? field\b', r'\bmagnetic field\b'],
-        'ELECS-4.0': [r'\bdiode circuit\b', r'\btransistor circuit\b', r'\bbjt\b', r'\bfets?\b', r'\bsemiconductor device\b'],
+        'ELECS-4.0': [
+            r'\bdiode circuit\b', r'\btransistor circuit\b', r'\btransistor(?:s)?\b',
+            r'\bbjt\b', r'\bfets?\b', r'\bsemiconductor(?: device)?\b', r'\bcommon emitter\b',
+            r'\bemitter follower\b', r'\bce configuration\b', r'\bdiodes?\b'
+        ],
         'ELECS-5.0': [r'\bop-amp circuit\b', r'\bamplifier circuit\b', r'\boscillator circuit\b', r'\bactive filter\b'],
         'ELECS-6.0': [r'\bthyristors?\b', r'\btransducers?\b', r'\bplc\b', r'\bbuilding management\b'],
         'ELECS-7.0': [r'\blogic circuit\b', r'\blogic gate\b', r'\bboolean algebra\b', r'\bflip-flops?\b'],
@@ -906,8 +989,14 @@ PARENT_RULES = {
         'GEAS-6.0': [r'\bthermodynamics\b', r'\bphysics 2\b', r'\bnuclear physics\b'],
         'GEAS-7.0': [r'\bmaterials? science\b', r'\bcrystal structure\b', r'\bmetallurg(?:y|ies)\b', r'\bstress-strains?\b'],
         'GEAS-8.0': [r'\bcomputer programming\b', r'\bobject-oriented programming\b'],
-        'GEAS-9.0': [r'\benvironmental (?:science|engineering)\b', r'\becolog(?:y|ies)\b', r'\bpollutions?\b'],
-        'GEAS-10.0': [r'\bece law\b', r'\bengineering ethics\b', r'\bra ?9292\b', r'\bcontract law\b'],
+        'GEAS-9.0': [
+            r'\benvironmental (?:science|engineering)\b', r'\becolog(?:y|ies)\b', r'\bpollutions?\b',
+            r'\bnutrient cycles?\b', r'\becosystems?\b', r'\bhydrologic cycle\b'
+        ],
+        'GEAS-10.0': [
+            r'\bece laws?\b', r'\bengineering ethics\b', r'\bra ?9292\b', r'\bcontract law\b',
+            r'\brepublic acts?\b', r'\bra\s*\d{3,5}\b', r'\banti-cable\b', r'\bcode of ethics\b'
+        ],
         'GEAS-11.0': [r'\bcad software\b', r'\bautocad\b', r'\bdrafting\b'],
     },
     'EST': {
@@ -921,18 +1010,9 @@ PARENT_RULES = {
 }
 
 # ─────────────────────────────────────────────────────────────────────────────
-# 3. DECK-NAME SCORING HINTS
-# Explicit allowlist only — built from the actual 289 deck names in the DB.
-# Generic pool decks (RC Exam */Review Exam */Refresher */Coaching */
-# Pre-Boards */Pre^2-Board Exam *) intentionally carry NO hint: their titles
-# mix all subtopics for a subject and a wrong hint would actively hurt
-# accuracy. Match is a case-insensitive substring test against the deck name.
-# Each hint adds HINT_WEIGHT to every subtopic under the listed topic ids
-# when scoring that card, as a tie-breaker/boost — it never overrides an
-# actual keyword match in the opposite topic family, since the raw regex
-# score is added first.
+# 3. DECK-NAME AND DESCRIPTION SCORING HINTS
 # ─────────────────────────────────────────────────────────────────────────────
-HINT_WEIGHT = 1
+HINT_WEIGHT = 2
 
 DECK_TOPIC_HINTS = {
     # EST
@@ -954,6 +1034,8 @@ DECK_TOPIC_HINTS = {
     # ELECS
     'dc circuits': ['ELECS-1.0'],
     'microps lecture': ['ELECS-8.0'],
+    'bjt lecture': ['ELECS-4.0'],
+    'bjt': ['ELECS-4.0'],
     # GEAS
     'cad': ['GEAS-11.0'],
     'cprog': ['GEAS-8.0'],
@@ -962,6 +1044,51 @@ DECK_TOPIC_HINTS = {
     'engmgmt': ['GEAS-4.0'],
     'safety & pec codes': ['GEAS-10.0'],
     'techno': ['GEAS-5.0'],
+}
+
+DECK_KEYWORD_PATTERNS = {
+    'ELECS': [
+        (re.compile(r'\b(?:bjt|transistor(?:s)?|solid state|diodes?|rectifier|fets?|mosfet|jfet)\b', re.I), 'ELECS-4.0'),
+        (re.compile(r'\b(?:dc circuits?|resistive|thevenin|norton|mesh|node)\b', re.I), 'ELECS-1.0'),
+        (re.compile(r'\b(?:ac circuits?|alternating current|impedance|resonance|phasor|3-phase|three-phase)\b', re.I), 'ELECS-2.0'),
+        (re.compile(r'\b(?:electromagnetics?|maxwell|magnetic circuit)\b', re.I), 'ELECS-3.0'),
+        (re.compile(r'\b(?:op-amp|operational amplifier|differential amplifier|multistage|cascade|cascode|feedback amplifier|oscillator|filter)\b', re.I), 'ELECS-5.0'),
+        (re.compile(r'\b(?:power electronics|thyristor|scr|triac|diac|ujt|transducer|plc|sensors?)\b', re.I), 'ELECS-6.0'),
+        (re.compile(r'\b(?:digital electronics|logic circuits?|boolean|k-map|flip-flop|counter|sequential logic|combinational logic)\b', re.I), 'ELECS-7.0'),
+        (re.compile(r'\b(?:microprocessor|microcontroller|assembly|8085|8086|pic|avr|8051|embedded)\b', re.I), 'ELECS-8.0'),
+        (re.compile(r'\b(?:control systems?|feedback and control|root locus|bode|nyquist|state space)\b', re.I), 'ELECS-9.0'),
+    ],
+    'GEAS': [
+        (re.compile(r'\b(?:laws?|ethics|pece|ece law|ra ?9292|ra ?10515|pec|safety|contracts?|code of ethics)\b', re.I), 'GEAS-10.0'),
+        (re.compile(r'\b(?:environment\w*|ecology|nutrient cycle|ecosystem|pollution|waste management|eia|green|water cycle|hydrolog\w*)\b', re.I), 'GEAS-9.0'),
+        (re.compile(r'\b(?:economics?|interest|annuit\w*|cash flow|present worth|future worth|depreciation|break-even|break even|variable cost|fixed cost)\b', re.I), 'GEAS-3.0'),
+        (re.compile(r'\b(?:management|pert|cpm|organization\w*|fayol|taylor|six sigma|tqm)\b', re.I), 'GEAS-4.0'),
+        (re.compile(r'\b(?:technopreneur\w*|startup|business plan|business model|venture capital|mvp|b2b|b2c|c2c)\b', re.I), 'GEAS-5.0'),
+        (re.compile(r'\b(?:thermodynamics?|carnot|entropy|heat engine|heat pump)\b', re.I), 'GEAS-6.0'),
+        (re.compile(r'\b(?:materials? science|crystal|bcc|fcc|hcp|miller indices|metallurg\w*|defect)\b', re.I), 'GEAS-7.0'),
+        (re.compile(r'\b(?:programming|c\+\+|java|python|cprog|oop|flowchart|algorithm)\b', re.I), 'GEAS-8.0'),
+        (re.compile(r'\b(?:chemistry|chemical|stoichiometry|periodic table|molarity|reaction)\b', re.I), 'GEAS-1.0'),
+        (re.compile(r'\b(?:physics|mechanics|kinematics|dynamics|newton|projectile|work|energy|momentum|fluids?|rotation)\b', re.I), 'GEAS-2.0'),
+        (re.compile(r'\b(?:cad|autocad|drafting|osnap|plotting)\b', re.I), 'GEAS-11.0'),
+    ],
+    'EST': [
+        (re.compile(r'\b(?:fiber optics?|transmission lines?|antenna|antennas?|wave propagation|microwaves?|waveguide|transma)\b', re.I), 'EST-4.0'),
+        (re.compile(r'\b(?:principles? of comms?|modulation|am|fm|radio|receiver|transmitter|noise|noise figure)\b', re.I), 'EST-2.0'),
+        (re.compile(r'\b(?:digital comms?|digi comms?|pcm|pam|pwm|fsk|psk|qam|multiplexing|tdm|fdm)\b', re.I), 'EST-3.0'),
+        (re.compile(r'\b(?:data comms?|data communications?|computer networks?|osi model|tcp/ip|ethernet|routing|lan|wan)\b', re.I), 'EST-6.0'),
+        (re.compile(r'\b(?:signals?|dsp|sampling|nyquist|fourier|spectral|digital signal processing)\b', re.I), 'EST-1.0'),
+        (re.compile(r'\b(?:audio|acoustics?|video|television|tv|satellite|radar|telephony|cellular|gsm|5g|lte)\b', re.I), 'EST-5.0'),
+    ],
+    'MATH': [
+        (re.compile(r'\b(?:differential calculus|derivatives?|maxima|minima|limits?)\b', re.I), 'MATH-1.0'),
+        (re.compile(r'\b(?:integral calculus|integration|integrals?|area bounded|volume of revolution)\b', re.I), 'MATH-2.0'),
+        (re.compile(r'\b(?:differential equations?|de|ode|laplace transforms?)\b', re.I), 'MATH-3.0'),
+        (re.compile(r'\b(?:advanced math|complex numbers?|matrices|matrix|vectors?|power series)\b', re.I), 'MATH-4.0'),
+        (re.compile(r'\b(?:probability|statistics|data analysis|permutation|combination|hypothesis)\b', re.I), 'MATH-5.0'),
+        (re.compile(r'\b(?:electromagnetics?|maxwell|vector field|divergence|curl)\b', re.I), 'MATH-6.0'),
+        (re.compile(r'\b(?:signals?|spectra|fourier transform|z-transform)\b', re.I), 'MATH-7.0'),
+        (re.compile(r'\b(?:control systems?|feedback|transfer function|root locus)\b', re.I), 'MATH-8.0'),
+    ]
 }
 
 # Precompile all regex rules and build subtopic-to-parent mapping
@@ -1001,78 +1128,141 @@ def normalize_subject(subj_str):
     return 'ALL'
 
 
-def deck_hint_bonus(deck_name, subject_code):
-    """Return {subtopic_id: bonus} for subtopics under a topic the deck name
-    unambiguously hints at, restricted to the given subject. Empty dict for
-    generic/unlisted deck names — this is intentionally conservative."""
-    if not deck_name:
-        return {}
-    name_lower = deck_name.strip().lower()
-    hinted_topics = DECK_TOPIC_HINTS.get(name_lower)
-    if not hinted_topics:
-        return {}
-    bonus = {}
-    for sub_id in SUBTOPIC_RULES.get(subject_code, {}):
-        parent = SUBTOPIC_TO_PARENT.get(sub_id)
-        if parent in hinted_topics:
-            bonus[sub_id] = HINT_WEIGHT
-    return bonus
+def detect_deck_topic(deck_name, deck_desc, subject_code):
+    """Detect a primary parent topic from deck title and deck description."""
+    combined = f"{deck_name or ''} {deck_desc or ''}".strip().lower()
+    if not combined:
+        return None
+
+    name_clean = (deck_name or '').strip().lower()
+    if name_clean in DECK_TOPIC_HINTS:
+        return DECK_TOPIC_HINTS[name_clean][0]
+
+    patterns = DECK_KEYWORD_PATTERNS.get(subject_code, [])
+    for pat, target_topic in patterns:
+        if pat.search(combined):
+            return target_topic
+    return None
 
 
-def classify_text(text, subject_code, deck_name=None):
+def classify_text(text, subject_code, deck_name=None, deck_desc=None, default_tos=None):
     """
     Score text against all decimal subtopics for the given subject.
-    Returns (topic_id, is_confident) where is_confident is False when the
-    top score doesn't clear MIN_CONFIDENCE_SCORE or the margin over the
-    second-best candidate is too thin to trust an automatic pick.
+    Incorporates:
+    - Expanded subtopic regex rules
+    - Deck Default TOS Category bias and fallback
+    - Deck Name & Description topic hints
+    Returns (topic_id, is_confident)
     """
     if subject_code not in COMPILED_SUBTOPIC_RULES:
         return None, False
 
-    subtopic_scores = Counter()
+    # 1. Determine deck primary context
+    primary_parent = None
+    target_subtopic = None
+    if default_tos:
+        if '.' in default_tos and not default_tos.endswith('.0'):
+            target_subtopic = default_tos
+            primary_parent = SUBTOPIC_TO_PARENT.get(default_tos, f"{default_tos.split('.')[0]}.0")
+        else:
+            primary_parent = default_tos
+    else:
+        primary_parent = detect_deck_topic(deck_name, deck_desc, subject_code)
+
+    # 2. Score subtopics with raw keyword matches
+    raw_subtopic_scores = Counter()
     for sub_id, patterns in COMPILED_SUBTOPIC_RULES[subject_code].items():
         for pat in patterns:
             cnt = len(pat.findall(text))
             if cnt > 0:
-                subtopic_scores[sub_id] += cnt
+                words_in_pat = len(re.findall(r'[a-zA-Z0-9]+', pat.pattern))
+                if words_in_pat >= 2 or any(k in pat.pattern.lower() for k in ['b2b', 'b2c', 'c2c', 'b2g', 'eia', 'ecc']):
+                    weight = 3
+                else:
+                    weight = 1
+                raw_subtopic_scores[sub_id] += cnt * weight
 
-    hints = deck_hint_bonus(deck_name, subject_code)
-    for sub_id, bonus in hints.items():
-        if sub_id in subtopic_scores:
-            subtopic_scores[sub_id] += bonus
+    # Apply deck bias if available
+    subtopic_scores = Counter(raw_subtopic_scores)
+    if primary_parent:
+        for sub_id in COMPILED_SUBTOPIC_RULES[subject_code]:
+            if SUBTOPIC_TO_PARENT.get(sub_id) == primary_parent:
+                if sub_id in raw_subtopic_scores:
+                    # Give bonus to matches in the deck's primary topic
+                    subtopic_scores[sub_id] += 3
+        if target_subtopic and target_subtopic in raw_subtopic_scores:
+            subtopic_scores[target_subtopic] += 2
 
     if subtopic_scores:
         ranked = subtopic_scores.most_common(2)
         top_id, top_score = ranked[0]
         second_score = ranked[1][1] if len(ranked) > 1 else 0
-        confident = (top_score >= MIN_CONFIDENCE_SCORE) and (top_score - second_score >= MIN_CONFIDENCE_MARGIN)
-        return top_id, confident
 
-    # If no specific subtopic pattern matched, test parent-level rules
+        # If deck has a primary topic
+        if primary_parent:
+            top_parent = SUBTOPIC_TO_PARENT.get(top_id, top_id)
+            if top_parent == primary_parent:
+                confident = (top_score >= MIN_CONFIDENCE_SCORE)
+                if confident:
+                    return top_id, True
+                elif default_tos:
+                    return default_tos, False
+                else:
+                    return None, False
+            else:
+                # Top match is from a different topic family
+                raw_top = raw_subtopic_scores.get(top_id, 0)
+                # Allow cross-topic classification ONLY if strong confident keyword match (>= 3 raw points)
+                if raw_top >= 3:
+                    return top_id, True
+
+                # If weak/coincidental match from another topic, check if primary parent had any subtopic matches
+                best_primary_sub = None
+                best_primary_score = 0
+                for s_id, s_cnt in raw_subtopic_scores.items():
+                    if SUBTOPIC_TO_PARENT.get(s_id) == primary_parent and s_cnt > best_primary_score:
+                        best_primary_score = s_cnt
+                        best_primary_sub = s_id
+
+                if best_primary_sub and best_primary_score >= MIN_CONFIDENCE_SCORE:
+                    return best_primary_sub, True
+                # Otherwise fallback to the deck's default or None
+                if default_tos:
+                    return default_tos, False
+                return None, False
+
+        confident = (top_score >= MIN_CONFIDENCE_SCORE) and (top_score - second_score >= MIN_CONFIDENCE_MARGIN)
+        if confident:
+            return top_id, True
+        elif default_tos:
+            return default_tos, False
+        else:
+            return None, False
+
+    # 3. Parent-level rules
     parent_scores = Counter()
     if subject_code in COMPILED_PARENT_RULES:
         for p_id, patterns in COMPILED_PARENT_RULES[subject_code].items():
             for pat in patterns:
                 cnt = len(pat.findall(text))
                 if cnt > 0:
-                    parent_scores[p_id] += cnt
+                    words_in_pat = len(re.findall(r'[a-zA-Z0-9]+', pat.pattern))
+                    weight = 3 if words_in_pat >= 2 else 1
+                    parent_scores[p_id] += cnt * weight
 
     if parent_scores:
-        ranked = parent_scores.most_common(2)
-        top_id, top_score = ranked[0]
-        second_score = ranked[1][1] if len(ranked) > 1 else 0
-        # Parent-only matches are inherently less specific than a subtopic
-        # match, so we never call these "confident" — always route to review.
-        return top_id, False
+        top_pid, top_pscore = parent_scores.most_common(1)[0]
+        if top_pscore >= 3:
+            return top_pid, True
+        if default_tos:
+            return default_tos, False
+        return None, False
 
-    # Subject-level fallback to topic 1.0 — never confident.
-    fallback_map = {
-        'MATH': 'MATH-1.0',
-        'ELECS': 'ELECS-1.0',
-        'GEAS': 'GEAS-2.0',
-        'EST': 'EST-2.0',
-    }
-    return fallback_map.get(subject_code, None), False
+    # 4. Fallback hierarchy: default_tos -> Untagged (None)
+    if default_tos:
+        return default_tos, False
+
+    return None, False
 
 
 def extract_card_text(data_str, card_type):
@@ -1121,7 +1311,7 @@ def run_classification(db_path=DEFAULT_DB_PATH, deck_id=None, apply_changes=Fals
     cursor = conn.cursor()
 
     query = """
-        SELECT c.id, t.subject, t.name, c.type, c.data, c.tos_topic_id, t.id
+        SELECT c.id, t.subject, t.name, c.type, c.data, c.tos_topic_id, t.id, t.description
         FROM cards c
         JOIN topics t ON c.topic_id = t.id
     """
@@ -1149,11 +1339,11 @@ def run_classification(db_path=DEFAULT_DB_PATH, deck_id=None, apply_changes=Fals
     review_count = 0
 
     for r in rows:
-        card_id, subject_raw, deck_name, card_type_val, data_raw, existing_tos, d_id = r
+        card_id, subject_raw, deck_name, card_type_val, data_raw, existing_tos, d_id, deck_desc = r
         subject_code = normalize_subject(subject_raw)
 
         card_text = extract_card_text(data_raw, card_type_val)
-        assigned_topic, confident = classify_text(card_text, subject_code, deck_name)
+        assigned_topic, confident = classify_text(card_text, subject_code, deck_name=deck_name, deck_desc=deck_desc)
 
         if not assigned_topic:
             continue
@@ -1243,7 +1433,7 @@ def run_validation(db_path=DEFAULT_DB_PATH, output_json=False):
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT c.id, t.subject, t.name, c.type, c.data, t.id
+        SELECT c.id, t.subject, t.name, c.type, c.data, t.id, t.description
         FROM cards c JOIN topics t ON c.topic_id = t.id
         WHERE c.type = 'mcq'
     """)
@@ -1252,14 +1442,14 @@ def run_validation(db_path=DEFAULT_DB_PATH, output_json=False):
 
     per_deck = Counter()
     per_deck_match = Counter()
-    for card_id, subject_raw, deck_name, card_type_val, data_raw, d_id in rows:
+    for card_id, subject_raw, deck_name, card_type_val, data_raw, d_id, deck_desc in rows:
         name_lower = (deck_name or '').strip().lower()
         hinted_topics = DECK_TOPIC_HINTS.get(name_lower)
         if not hinted_topics:
             continue
         subject_code = normalize_subject(subject_raw)
         text = extract_card_text(data_raw, card_type_val)
-        assigned, confident = classify_text(text, subject_code, deck_name)
+        assigned, confident = classify_text(text, subject_code, deck_name=deck_name, deck_desc=deck_desc)
         if not assigned or not confident:
             continue
         parent = SUBTOPIC_TO_PARENT.get(assigned, assigned)
@@ -1293,7 +1483,7 @@ def run_validation(db_path=DEFAULT_DB_PATH, output_json=False):
 def run_stdin_classification():
     """
     Read an array of card objects from stdin and output an array of classifications.
-    Each input object: { "id": "...", "subject": "...", "text"?: "...", "data"?: "...", "type"?: "...", "deckName"?: "..." }
+    Each input object: { "id": "...", "subject": "...", "text"?: "...", "data"?: "...", "type"?: "...", "deckName"?: "...", "deckDescription"?: "...", "defaultTosTopicId"?: "..." }
     Output JSON array: [ { "id": "...", "tosTopicId": "...", "confident": bool }, ... ]
     """
     try:
@@ -1311,11 +1501,13 @@ def run_stdin_classification():
             cid = c.get("id")
             subject_raw = c.get("subject", "")
             deck_name = c.get("deckName") or c.get("deck_name")
+            deck_desc = c.get("deckDescription") or c.get("deck_description")
+            default_tos = c.get("defaultTosTopicId") or c.get("default_tos_topic_id")
             text = c.get("text")
             if not text:
                 text = extract_card_text(c.get("data", ""), c.get("type", "mcq"))
             subject_code = normalize_subject(subject_raw)
-            assigned, confident = classify_text(text, subject_code, deck_name)
+            assigned, confident = classify_text(text, subject_code, deck_name=deck_name, deck_desc=deck_desc, default_tos=default_tos)
             results.append({
                 "id": cid,
                 "tosTopicId": assigned,

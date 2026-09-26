@@ -568,7 +568,7 @@ export const dbService = {
     classifyDatabaseTos: async (payload?: { deckId?: string; cardType?: string }) => {
       return window.electron.decks.classifyDatabaseTos(payload)
     },
-    classifyCardsBatch: async (cards: Array<{ id: string; subject?: string; deckName?: string; text?: string; data?: string; type?: string }>) => {
+    classifyCardsBatch: async (cards: Array<{ id: string; subject?: string; deckName?: string; deckDescription?: string; defaultTosTopicId?: string | null; text?: string; data?: string; type?: string }>) => {
       return window.electron.decks.classifyCardsBatch(cards)
     },
   },

@@ -25,7 +25,7 @@ contextBridge.exposeInMainWorld('electron', {
     getUntaggedCards: () => ipcRenderer.invoke('decks:getUntaggedCards'),
     classifyDatabaseTos: (payload?: { deckId?: string; cardType?: string }) =>
       ipcRenderer.invoke('decks:classifyDatabaseTos', payload),
-    classifyCardsBatch: (cards: Array<{ id: string; subject?: string; deckName?: string; text?: string; data?: string; type?: string }>) =>
+    classifyCardsBatch: (cards: Array<{ id: string; subject?: string; deckName?: string; deckDescription?: string; defaultTosTopicId?: string | null; text?: string; data?: string; type?: string }>) =>
       ipcRenderer.invoke('decks:classifyCardsBatch', cards),
   },
   folders: {

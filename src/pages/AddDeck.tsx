@@ -2,6 +2,7 @@ import { MCQForm, FlashcardForm, FormulaForm, MCQEdit, FlashcardEdit, FormulaEdi
 import DeckMetadataForm, { DeckMetadata } from '../components/deck/DeckMetadataForm'
 import { Tooltip } from '../components/ui/Tooltip'
 import { PREDEFINED_TAGS } from '../lib/constants'
+import { AutoTagConfirmModal } from '../components/deck/AutoTagConfirmModal'
 
 import { ImportModal, ImportFlashcardsModal } from '../components/deck/ImportModals'
 import { useDataVersionStore } from '../store/useDataVersionStore'
@@ -183,28 +184,56 @@ export default function AddDeck() {
   }, [])
 
   const [isClassifyingTos, setIsClassifyingTos] = useState(false)
+  const [showAutoTagModal, setShowAutoTagModal] = useState(false)
 
-  const handleAutoClassifyTos = async () => {
+  const onAutoTagClick = () => {
+    if (cards.length === 0 || isClassifyingTos) return
+    const currentlyTagged = cards.filter(c => !!c.tosTopicId).length
+    if (currentlyTagged > 0) {
+      setShowAutoTagModal(true)
+    } else {
+      executeAutoClassifyTos('overwrite')
+    }
+  }
+
+  const executeAutoClassifyTos = async (mode: 'overwrite' | 'untagged-only') => {
+    setShowAutoTagModal(false)
     if (cards.length === 0 || isClassifyingTos) return
     setIsClassifyingTos(true)
     try {
       saveSnapshot(cardsRef.current)
-      const payload = cards.map(c => ({
+      const targetCards = mode === 'untagged-only'
+        ? cards.filter(c => !c.tosTopicId)
+        : cards
+
+      if (targetCards.length === 0) {
+        setToast({ type: 'success', msg: 'All cards already have a TOS category assigned.' })
+        return
+      }
+
+      const payload = targetCards.map(c => ({
         id: c.id,
         type: c.type,
         data: typeof c.data === 'string' ? c.data : JSON.stringify(c.data),
         subject: metadata.subject,
         deckName: metadata.title,
+        deckDescription: metadata.description,
+        defaultTosTopicId: metadata.defaultTosTopicId || null,
       }))
       const res = await window.electron.decks.classifyCardsBatch(payload)
       if (res?.success && res.data) {
         const resultMap = new Map(res.data.map(item => [item.id, item.tosTopicId]))
         let changed = 0
         setCards(prev => prev.map(c => {
-          const newTos = resultMap.get(c.id)
-          if (newTos !== undefined && newTos !== c.tosTopicId) {
-            changed++
-            return { ...c, tosTopicId: newTos }
+          if (mode === 'untagged-only' && c.tosTopicId) {
+            return c
+          }
+          if (resultMap.has(c.id)) {
+            const newTos = resultMap.get(c.id) || null
+            if (newTos !== c.tosTopicId) {
+              changed++
+              return { ...c, tosTopicId: newTos }
+            }
           }
           return c
         }))
@@ -498,7 +527,7 @@ export default function AddDeck() {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className={`fixed top-4 right-4 z-[200] flex items-center gap-3 px-5 py-3 rounded-lg border shadow-2xl font-['Rajdhani'] tracking-wider text-sm ${toast.type === 'success'
+            className={`fixed top-14 right-6 z-[200] flex items-center gap-3 px-5 py-3 rounded-lg border shadow-2xl font-['Rajdhani'] tracking-wider text-sm ${toast.type === 'success'
               ? 'bg-[#0a1a0a] border-accent/40 text-accent'
               : 'bg-[#1a0a0a] border-[#FF4444]/40 text-[#FF4444]'
               }`}
@@ -610,11 +639,11 @@ export default function AddDeck() {
             <div className="flex flex-wrap items-center gap-3 justify-end">
               <Tooltip
                 content="Automatically classify and tag all cards in this deck using the offline PRC TOS classifier"
-                position="top"
+                position="bottom"
               >
                 <button
                   type="button"
-                  onClick={handleAutoClassifyTos}
+                  onClick={onAutoTagClick}
                   disabled={isClassifyingTos || cards.length === 0}
                   className="flex items-center gap-2 px-4 py-2 rounded border border-accent/40 bg-surface-2 text-accent hover:bg-accent/10 hover:border-accent font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
@@ -750,6 +779,15 @@ export default function AddDeck() {
       {showFormattingGuide && (
         <FormattingGuideModal onClose={() => setShowFormattingGuide(false)} />
       )}
+
+      <AutoTagConfirmModal
+        isOpen={showAutoTagModal}
+        taggedCount={cards.filter(c => !!c.tosTopicId).length}
+        totalCount={cards.length}
+        onOverwriteAll={() => executeAutoClassifyTos('overwrite')}
+        onTagUntaggedOnly={() => executeAutoClassifyTos('untagged-only')}
+        onClose={() => setShowAutoTagModal(false)}
+      />
     </div>
   )
 }
