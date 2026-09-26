@@ -7,6 +7,7 @@ import { useGauntletStore } from '../store/useGauntletStore'
 import { getCustomWrongSoundEnabled, setCustomWrongSoundEnabled } from '../hooks/useSound'
 import { SUBJECT_MAP, getSubjectBadgeClasses } from '../lib/subjectColors'
 import { Tooltip } from '../components/ui/Tooltip'
+import { OperationProgressModal } from '../components/ui/OperationProgressModal'
 
 function topicHasType(topic: { types?: string }, filter: 'ALL' | 'FC' | 'MCQ'): boolean {
   if (filter === 'ALL') return true
@@ -423,17 +424,17 @@ export default function Settings() {
           advanced: true,
           disabled: isExportingData,
         },
+        { label: 'Import Decks', type: 'action', buttonText: 'IMPORT JSON', actionId: 'import', advanced: true },
+        { label: 'Export Decks', type: 'action', buttonText: 'EXPORT JSON', actionId: 'export', advanced: true },
         {
           label: 'Auto-Classify Database (TOS)',
-          description: 'Run offline PRC Table of Specifications classifier to tag all cards in the database with their decimal subtopics.',
+          description: 'Classify all cards across the database into PRC board exam topics.',
           type: 'action',
-          buttonText: isClassifyingTos ? 'CLASSIFYING...' : 'CLASSIFY DATABASE (TOS)',
+          buttonText: isClassifyingTos ? 'CLASSIFYING...' : 'CLASSIFY',
           actionId: 'classify-database-tos',
           advanced: true,
           disabled: isClassifyingTos,
         },
-        { label: 'Import Decks', type: 'action', buttonText: 'IMPORT JSON', actionId: 'import', advanced: true },
-        { label: 'Export Decks', type: 'action', buttonText: 'EXPORT JSON', actionId: 'export', advanced: true },
         { label: 'Reset Mastery Progress', type: 'action', buttonText: 'Reset Progress', actionId: 'reset-progress', advanced: true },
         {
           label: 'Reset Gauntlet ELO',
@@ -1508,6 +1509,20 @@ export default function Settings() {
             </motion.div>
           </div>
         )}
+
+        {/* Progress Loading Graphic Modal for Export Database & Images */}
+        <OperationProgressModal
+          isOpen={isExportingData}
+          title="Exporting Data & Images"
+          description="Compressing database snapshot and media storage into backup zip archive..."
+        />
+
+        {/* Progress Loading Graphic Modal for TOS Classification */}
+        <OperationProgressModal
+          isOpen={isClassifyingTos}
+          title="Classifying Database"
+          description="Analyzing cards against Table of Specifications and updating topics..."
+        />
       </AnimatePresence>
     </div>
   )

@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS topics (
   folder_name TEXT DEFAULT 'Uncategorized',
   folder_id   TEXT REFERENCES folders(id),
   is_favorite BOOLEAN DEFAULT 0,
+  default_tos_topic_id TEXT,
   FOREIGN KEY(parent_id) REFERENCES topics(id)
 );
 

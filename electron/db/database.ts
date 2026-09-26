@@ -171,6 +171,14 @@ const MIGRATIONS: Array<{ version: number; sql: string | string[] }> = [
       'CREATE INDEX IF NOT EXISTS idx_cards_tos_topic ON cards(tos_topic_id)',
     ],
   },
+  {
+    // v15: Table of Specifications (TOS) default topic id for decks/topics
+    version: 15,
+    sql: [
+      'ALTER TABLE topics ADD COLUMN default_tos_topic_id TEXT',
+      'CREATE INDEX IF NOT EXISTS idx_topics_default_tos ON topics(default_tos_topic_id)',
+    ],
+  },
 ]
 
 /**

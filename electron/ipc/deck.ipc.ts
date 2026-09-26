@@ -26,6 +26,7 @@ const AddDeckPayloadSchema = z.object({
   folderName: z.string(),
   folderId: z.string().nullable().optional(),
   scope: z.string().optional(),
+  defaultTosTopicId: z.string().nullable().optional(),
   cards: z.array(CardInputSchema),
 })
 
@@ -38,6 +39,7 @@ const UpdateDeckPayloadSchema = z.object({
   folderName: z.string(),
   folderId: z.string().nullable().optional(),
   scope: z.string().optional(),
+  defaultTosTopicId: z.string().nullable().optional(),
   cards: z.array(CardInputSchema),
   deletedCardIds: z.array(z.string().min(1)),
 })
@@ -162,6 +164,7 @@ export function registerDeckHandlers(): void {
     folderName: string,
     folderId?: string | null,       // ← add
     scope?: string,
+    defaultTosTopicId?: string | null,
     cards: Array<{id: string, type: string, data: string, is_custom: number, tos_topic_id?: string | null}>
   }) => {
     try {
@@ -170,8 +173,8 @@ export function registerDeckHandlers(): void {
       db.transaction(() => {
         const finalFolderId = resolveOrCreateFolderId(db, payload.folderName, payload.folderId, payload.scope || 'study')
         execute(
-          `INSERT INTO topics (id, name, subject, description, tags, folder_name, folder_id) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-          [payload.topicId, payload.name, payload.subject, payload.description, payload.tags, payload.folderName, finalFolderId]
+          `INSERT INTO topics (id, name, subject, description, tags, folder_name, folder_id, default_tos_topic_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [payload.topicId, payload.name, payload.subject, payload.description, payload.tags, payload.folderName, finalFolderId, payload.defaultTosTopicId ?? null]
         )
 
         for (const card of payload.cards) {
@@ -407,6 +410,7 @@ export function registerDeckHandlers(): void {
     folderName: string,
     folderId?: string | null,
     scope?: string,
+    defaultTosTopicId?: string | null,
     cards: Array<{ id: string, type: string, data: string, isNew: boolean, tos_topic_id?: string | null }>,
     deletedCardIds: string[]
   }) => {
@@ -423,8 +427,8 @@ export function registerDeckHandlers(): void {
       db.transaction(() => {
         const finalFolderId = resolveOrCreateFolderId(db, payload.folderName, payload.folderId, payload.scope || 'study')
         execute(
-          `UPDATE topics SET name = ?, subject = ?, description = ?, tags = ?, folder_name = ?, folder_id = ? WHERE id = ?`,
-          [payload.title, payload.subject, payload.description, payload.tags, payload.folderName, finalFolderId, payload.deckId]
+          `UPDATE topics SET name = ?, subject = ?, description = ?, tags = ?, folder_name = ?, folder_id = ?, default_tos_topic_id = ? WHERE id = ?`,
+          [payload.title, payload.subject, payload.description, payload.tags, payload.folderName, finalFolderId, payload.defaultTosTopicId ?? null, payload.deckId]
         )
         for (let i = 0; i < payload.cards.length; i++) {
           const card = payload.cards[i]

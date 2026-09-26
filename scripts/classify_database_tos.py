@@ -1310,8 +1310,13 @@ def run_classification(db_path=DEFAULT_DB_PATH, deck_id=None, apply_changes=Fals
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-    query = """
-        SELECT c.id, t.subject, t.name, c.type, c.data, c.tos_topic_id, t.id, t.description
+    cursor.execute("PRAGMA table_info(topics)")
+    topic_cols = [col[1] for col in cursor.fetchall()]
+    has_default_tos_col = 'default_tos_topic_id' in topic_cols
+    select_default = "t.default_tos_topic_id" if has_default_tos_col else "NULL"
+
+    query = f"""
+        SELECT c.id, t.subject, t.name, c.type, c.data, c.tos_topic_id, t.id, t.description, {select_default}
         FROM cards c
         JOIN topics t ON c.topic_id = t.id
     """
@@ -1339,11 +1344,11 @@ def run_classification(db_path=DEFAULT_DB_PATH, deck_id=None, apply_changes=Fals
     review_count = 0
 
     for r in rows:
-        card_id, subject_raw, deck_name, card_type_val, data_raw, existing_tos, d_id, deck_desc = r
+        card_id, subject_raw, deck_name, card_type_val, data_raw, existing_tos, d_id, deck_desc, default_tos = r
         subject_code = normalize_subject(subject_raw)
 
         card_text = extract_card_text(data_raw, card_type_val)
-        assigned_topic, confident = classify_text(card_text, subject_code, deck_name=deck_name, deck_desc=deck_desc)
+        assigned_topic, confident = classify_text(card_text, subject_code, deck_name=deck_name, deck_desc=deck_desc, default_tos=default_tos)
 
         if not assigned_topic:
             continue

@@ -494,6 +494,7 @@ export default function AddDeck() {
         folderName: folderName.trim(),
         folderId: metadata.folderId,
         scope: deckType === 'formula' ? 'formula' : 'study',
+        defaultTosTopicId: metadata.defaultTosTopicId || null,
         cards: validCards.map(card => {
           const cardId = 'card_' + Math.random().toString(36).substr(2, 9)
           const cleanedData = stripPlaceholders(card.data)

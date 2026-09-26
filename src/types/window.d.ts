@@ -27,6 +27,7 @@ declare global {
           folderName: string
           folderId: string | null
           scope: string
+          defaultTosTopicId?: string | null
           cards: Array<{ id: string; type: string; data: string; is_custom: number; tos_topic_id?: string | null }>
         }) => Promise<{ success: boolean; error?: string }>
         deleteTopic: (topicId: string) => Promise<{ success: boolean; error?: string }>
@@ -38,6 +39,7 @@ declare global {
         updateDeckWithCards: (payload: {
           deckId: string, title: string, subject: string, description: string,
           tags: string, folderName: string, folderId: string | null, scope: string,
+          defaultTosTopicId?: string | null,
           cards: Array<{ id: string, type: string, data: string, isNew: boolean, tos_topic_id?: string | null }>,
           deletedCardIds: string[]
         }) => Promise<{ success: boolean; error?: string }>

@@ -19,7 +19,7 @@ import { AIDescriptionButton } from '../components/deck/AIDescriptionButton'
 import { Tooltip } from '../components/ui/Tooltip'
 import { generateDeckSummary } from '../services/aiSummary.service'
 import { useDataVersionStore } from '../store/useDataVersionStore'
-import { getTosTopicGroupsBySubject, formatTosBadge } from '../lib/tosClassification'
+import { getTosTopicGroupsBySubject, getTosParentTopicsBySubject, formatTosBadge } from '../lib/tosClassification'
 import {
   DndContext,
   closestCenter,
@@ -1461,7 +1461,8 @@ export default function EditDeck() {
               subject: t.subject as Subject || 'Electronics Engineering',
               tags: parsedTags,
               folderName: (!t.folder_name || t.folder_name === 'Uncategorized') ? '' : t.folder_name,
-              folderId: t.folder_id || null
+              folderId: t.folder_id || null,
+              defaultTosTopicId: t.default_tos_topic_id || null
             })
           }
 
@@ -1540,26 +1541,6 @@ export default function EditDeck() {
         })
         setCards(loaded)
         setOriginalCardIds(new Set(loaded.map(c => c.id)))
-
-        // Infer defaultTosTopicId from loaded cards if available
-        const tosCounts: Record<string, number> = {}
-        for (const c of loaded) {
-          if (c.tosTopicId) {
-            tosCounts[c.tosTopicId] = (tosCounts[c.tosTopicId] || 0) + 1
-          }
-        }
-        let topTos: string | null = null
-        let maxCount = 0
-        for (const [tid, cnt] of Object.entries(tosCounts)) {
-          if (cnt > maxCount) {
-            maxCount = cnt
-            topTos = tid
-          }
-        }
-        setDeckMeta(m => ({
-          ...m,
-          defaultTosTopicId: m.defaultTosTopicId || topTos || null
-        }))
 
         // Preserve expanded cards by position/id across background reloads
         if (!isInitial) {
@@ -1725,6 +1706,7 @@ export default function EditDeck() {
         folderName: deckMeta.folderName.trim(),
         folderId: deckMeta.folderId,
         scope,
+        defaultTosTopicId: deckMeta.defaultTosTopicId || null,
         cards: cards.map(card => ({
           id: card.id,
           type: card.type,
@@ -2014,17 +1996,10 @@ export default function EditDeck() {
                 className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-text-primary text-xs font-['JetBrains_Mono'] focus:border-accent focus:bg-[#111] outline-none transition-colors"
               >
                 <option value="">None / Mixed Topics</option>
-                {getTosTopicGroupsBySubject(deckMeta.subject).map(group => (
-                  <optgroup key={group.parent.id} label={`${group.parent.code} ${group.parent.title}`}>
-                    <option value={group.parent.id}>
-                      {group.parent.code} {group.parent.title} (All / General)
-                    </option>
-                    {group.subtopics.map(sub => (
-                      <option key={sub.id} value={sub.id}>
-                        {sub.code} {sub.title}
-                      </option>
-                    ))}
-                  </optgroup>
+                {getTosParentTopicsBySubject(deckMeta.subject).map(parent => (
+                  <option key={parent.id} value={parent.id}>
+                    {parent.code} {parent.title}
+                  </option>
                 ))}
               </select>
             </div>
