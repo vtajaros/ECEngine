@@ -1001,6 +1001,7 @@ export default function LooksFamStudy() {
         <LearnMode
           cards={currentDeck}
           title={activeSessionTitle}
+          subject={activeSubject !== 'ALL' ? activeSubject : allSets.find(s => s.id === activeSessionSetId)?.subject}
           ttsEnabled={learnSettings.ttsEnabled}
           shuffleChoices={learnSettings.shuffleChoices}
           onComplete={(stats) => {

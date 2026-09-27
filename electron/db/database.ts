@@ -179,6 +179,20 @@ const MIGRATIONS: Array<{ version: number; sql: string | string[] }> = [
       'CREATE INDEX IF NOT EXISTS idx_topics_default_tos ON topics(default_tos_topic_id)',
     ],
   },
+  {
+    // v16: Recalibrate existing ratings to base 500 (subtract 500, floor at 500)
+    // and create gauntlet_daily_review_elo table for tracking daily review elo bonus.
+    version: 16,
+    sql: [
+      `UPDATE gauntlet_ratings SET rating = MAX(500, rating - 500), peak = CASE WHEN peak IS NOT NULL THEN MAX(500, peak - 500) ELSE NULL END`,
+      `CREATE TABLE IF NOT EXISTS gauntlet_daily_review_elo (
+         subject TEXT NOT NULL,
+         date TEXT NOT NULL,
+         gained REAL NOT NULL DEFAULT 0,
+         PRIMARY KEY (subject, date)
+       )`,
+    ],
+  },
 ]
 
 /**

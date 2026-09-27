@@ -59,6 +59,12 @@ export const GAUNTLET_DDL: string[] = [
      reason TEXT,
      flagged_at INTEGER NOT NULL
    )`,
+  `CREATE TABLE IF NOT EXISTS gauntlet_daily_review_elo (
+     subject TEXT NOT NULL,
+     date TEXT NOT NULL,
+     gained REAL NOT NULL DEFAULT 0,
+     PRIMARY KEY (subject, date)
+   )`,
   'CREATE INDEX IF NOT EXISTS idx_gauntlet_runs_started ON gauntlet_runs(started_at)',
   'CREATE INDEX IF NOT EXISTS idx_gauntlet_answers_run ON gauntlet_answers(run_id, seq)',
   'CREATE INDEX IF NOT EXISTS idx_gauntlet_answers_card ON gauntlet_answers(card_id)',
@@ -502,4 +508,81 @@ export function getFlaggedQuestions(
   }
   return result
 }
+
+export function rewardReviewElo(
+  db: Database.Database,
+  subjectCode: string,
+): { gained: number; newRating: number } {
+  let code = subjectCode as GauntletSubjectCode
+  if (!['MATH', 'GEAS', 'ELECS', 'EST'].includes(code)) {
+    const entry = Object.entries(SUBJECT_DB_NAME).find(([_, name]) => name.toLowerCase() === subjectCode.toLowerCase())
+    if (entry) code = entry[0] as GauntletSubjectCode
+  }
+  if (!['MATH', 'GEAS', 'ELECS', 'EST'].includes(code)) {
+    return { gained: 0, newRating: 500 }
+  }
+
+  const localToday = new Date().toISOString().slice(0, 10)
+
+  // Ensure table exists just in case
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS gauntlet_daily_review_elo (
+      subject TEXT NOT NULL,
+      date TEXT NOT NULL,
+      gained REAL NOT NULL DEFAULT 0,
+      PRIMARY KEY (subject, date)
+    )
+  `)
+
+  const row = db.prepare('SELECT rating, answers, peak FROM gauntlet_ratings WHERE subject = ?').get(code) as { rating: number; answers: number; peak: number | null } | undefined
+  const currentRating = row?.rating ?? 500
+  const answers = row?.answers ?? 0
+  const currentPeak = row?.peak ?? currentRating
+
+  // Only Insulator (< 800) and Semiconductor (< 1000) receive review bonuses
+  let reward = 0
+  if (currentRating < 800) {
+    reward = 0.5 // Insulator
+  } else if (currentRating < 1000) {
+    reward = 0.2 // Semiconductor
+  } else {
+    return { gained: 0, newRating: currentRating }
+  }
+
+  const dailyRow = db.prepare('SELECT gained FROM gauntlet_daily_review_elo WHERE subject = ? AND date = ?').get(code, localToday) as { gained: number } | undefined
+  const dailyGained = dailyRow?.gained ?? 0
+  if (dailyGained >= 25.0) {
+    return { gained: 0, newRating: currentRating }
+  }
+
+  const allowable = Math.min(reward, 25.0 - dailyGained)
+  if (allowable <= 0) {
+    return { gained: 0, newRating: currentRating }
+  }
+
+  const nextRating = Math.round((currentRating + allowable) * 10) / 10
+  const nextPeak = Math.max(currentPeak, nextRating)
+  const now = Date.now()
+
+  db.transaction(() => {
+    db.prepare(`
+      INSERT INTO gauntlet_ratings (subject, rating, answers, peak, updated_at)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(subject) DO UPDATE SET
+        rating = excluded.rating,
+        peak = MAX(COALESCE(gauntlet_ratings.peak, excluded.rating), excluded.rating),
+        updated_at = excluded.updated_at
+    `).run(code, nextRating, answers, nextPeak, now)
+
+    db.prepare(`
+      INSERT INTO gauntlet_daily_review_elo (subject, date, gained)
+      VALUES (?, ?, ?)
+      ON CONFLICT(subject, date) DO UPDATE SET
+        gained = gauntlet_daily_review_elo.gained + excluded.gained
+    `).run(code, localToday, allowable)
+  })()
+
+  return { gained: allowable, newRating: nextRating }
+}
+
 

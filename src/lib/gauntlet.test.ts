@@ -34,7 +34,8 @@ describe('par / weight', () => {
     expect(difficultyWeight(4000)).toBe(TUNING.weightMin)
     expect(difficultyWeight(45000)).toBe(TUNING.weightMax)
     expect(cardRating(1)).toBe(TUNING.startRating)
-    expect(cardRating(1.3)).toBeCloseTo(1120, 5)
+    expect(cardRating(1.3)).toBeCloseTo(620, 5)
+    expect(cardRating(1000, 1.3)).toBeCloseTo(1120, 5)
   })
 })
 
@@ -237,10 +238,10 @@ describe('rating', () => {
     expect(performanceScore('timeout', 1)).toBe(0)
   })
   it('moves rating up on a fast correct and down on a wrong', () => {
-    const up = applyAnswerToRating({ rating: 1000, answers: 0 }, 1000, 'correct', 1)
-    const down = applyAnswerToRating({ rating: 1000, answers: 0 }, 1000, 'wrong', 0)
-    expect(up.rating).toBeCloseTo(1020, 5)
-    expect(down.rating).toBeCloseTo(980, 5)
+    const up = applyAnswerToRating({ rating: 500, answers: 0 }, 500, 'correct', 1)
+    const down = applyAnswerToRating({ rating: 500, answers: 0 }, 500, 'wrong', 0)
+    expect(up.rating).toBeCloseTo(525, 5)
+    expect(down.rating).toBe(500) // Hard floor at 500
     expect(up.answers).toBe(1)
   })
   it('computes the TOS-weighted overall and flags provisional subjects', () => {
@@ -254,7 +255,7 @@ describe('rating', () => {
     expect(o.rating).toBeCloseTo(1160, 5)
     expect(o.provisional).toBe(false)
     expect(overallRating({}).provisional).toBe(true)
-    expect(overallRating({}).rating).toBe(1000)
+    expect(overallRating({}).rating).toBe(500)
   })
 })
 
@@ -290,15 +291,18 @@ describe('allocation and ramp', () => {
 
 describe('rating tiers', () => {
   it('maps rating to proper tier and boundaries', () => {
-    expect(ratingTier(950)).toEqual({ name: 'ROOKIE', floor: 0, next: 1000 })
-    expect(ratingTier(1000)).toEqual({ name: 'CONTENDER', floor: 1000, next: 1150 })
-    expect(ratingTier(1149)).toEqual({ name: 'CONTENDER', floor: 1000, next: 1150 })
-    expect(ratingTier(1150)).toEqual({ name: 'CHALLENGER', floor: 1150, next: 1300 })
-    expect(ratingTier(1299)).toEqual({ name: 'CHALLENGER', floor: 1150, next: 1300 })
-    expect(ratingTier(1300)).toEqual({ name: 'EXPERT', floor: 1300, next: 1450 })
-    expect(ratingTier(1450)).toEqual({ name: 'MASTER', floor: 1450, next: 1600 })
-    expect(ratingTier(1600)).toEqual({ name: 'LEGEND', floor: 1600, next: null })
-    expect(ratingTier(2000)).toEqual({ name: 'LEGEND', floor: 1600, next: null })
+    expect(ratingTier(500)).toEqual({ name: 'INSULATOR', floor: 500, next: 800 })
+    expect(ratingTier(799)).toEqual({ name: 'INSULATOR', floor: 500, next: 800 })
+    expect(ratingTier(800)).toEqual({ name: 'SEMICONDUCTOR', floor: 800, next: 1000 })
+    expect(ratingTier(999)).toEqual({ name: 'SEMICONDUCTOR', floor: 800, next: 1000 })
+    expect(ratingTier(1000)).toEqual({ name: 'CONDUCTOR', floor: 1000, next: 1100 })
+    expect(ratingTier(1099)).toEqual({ name: 'CONDUCTOR', floor: 1000, next: 1100 })
+    expect(ratingTier(1100)).toEqual({ name: 'COPPER', floor: 1100, next: 1300 })
+    expect(ratingTier(1299)).toEqual({ name: 'COPPER', floor: 1100, next: 1300 })
+    expect(ratingTier(1300)).toEqual({ name: 'SILVER', floor: 1300, next: 1500 })
+    expect(ratingTier(1499)).toEqual({ name: 'SILVER', floor: 1300, next: 1500 })
+    expect(ratingTier(1500)).toEqual({ name: 'SUPERCONDUCTOR', floor: 1500, next: null })
+    expect(ratingTier(2000)).toEqual({ name: 'SUPERCONDUCTOR', floor: 1500, next: null })
   })
 })
 
@@ -457,18 +461,12 @@ describe('pace model and warnings', () => {
       expect(res).toEqual({ subject: 'GEAS', rating: 920 })
     })
 
-    it('treats unplayed subjects as defaultRating (1000)', () => {
-      // MATH has dropped below 1000, others unplayed (1000) -> MATH is weakest
-      const res1 = getWeakestSubject({
-        MATH: { rating: 950, answers: 5 },
-      })
-      expect(res1).toEqual({ subject: 'MATH', rating: 950 })
-
-      // MATH has risen above 1000, others unplayed (1000) -> lowest is 1000 (first unplayed subject)
+    it('treats unplayed subjects as defaultRating (500)', () => {
+      // MATH has risen above 500, others unplayed (500) -> lowest is 500 (first unplayed subject)
       const res2 = getWeakestSubject({
-        MATH: { rating: 1150, answers: 5 },
+        MATH: { rating: 650, answers: 5 },
       })
-      expect(res2?.rating).toBe(1000)
+      expect(res2?.rating).toBe(500)
       expect(['GEAS', 'ELECS', 'EST']).toContain(res2?.subject)
     })
   })

@@ -795,7 +795,10 @@ SUBTOPIC_RULES = {
         'EST-1.1': [  # Classification and Characteristics of Signals
             r'\bperiodic signal\b', r'\baperiodic signal\b', r'\banalog signal\b', r'\bdigital signal\b',
             r'\benergy signal\b', r'\bpower signal\b', r'\bdeterministic signal\b', r'\brandom signal\b',
-            r'\bcontinuous-time signal\b', r'\bdiscrete-time signal\b'
+            r'\bcontinuous-time signal\b', r'\bdiscrete-time signal\b',
+            r'\bconjugate\s+symmetr\w*\b', r'\beven\s+function\s+of\s+time\b', r'\bodd\s+function\s+of\s+time\b',
+            r'\b(?:even|odd)\s+signal\b', r'\beven\s+and\s+odd\s+components?\b', r'\btime\s+reversal\b',
+            r'\bcausal\s+signal\b', r'\bnon-causal\s+signal\b'
         ],
         'EST-1.2': [  # Sampling Theorem and Aliasing
             r'\bnyquist (?:rate|theorem|criterion)\b', r'\bsampling theorem\b', r'\baliasing\b',
@@ -809,7 +812,12 @@ SUBTOPIC_RULES = {
             r'\bauto-correlation\b', r'\bconvolve\b'
         ],
         'EST-1.5': [  # Z-Transforms and Pole-Zero-Gain Filters
-            r'\bz-transforms?\b', r'\bpole-zero plot\b', r'\bpole-zero-gains?\b', r'\broc of\b', r'\bregion of convergence\b'
+            r'\bz-transforms?\b', r'\bpole-zero plot\b', r'\bpole-zero-gains?\b', r'\broc of\b', r'\bregion of convergence\b',
+            r'\bpoles?\s+located\s+at\b', r'\bpoles?\s+and\s+zeros?\b', r'\bzeros?\s+and\s+poles?\b',
+            r'\btransfer\s+function\s+(?:has\s+)?poles?\b', r'\b(?:stability|stable|unstable)\s+of\s+a\s+digital\s+system\b',
+            r'\bdigital\s+system\s+(?:whose\s+)?transfer\s+function\b', r'\b(?:inside|outside|on)\s+the\s+unit\s+circle\b',
+            r'\b(?:magnitude|radius)\s+of\s+(?:all\s+)?poles?\s+is\s+(?:strictly\s+)?less\s+than\s+unity\b',
+            r'\bless\s+than\s+unity\b', r'\bz-plane\b', r'\bh\(z\)\b'
         ],
         'EST-1.6': [  # Fourier Transforms and Filtering
             r'\bdft\b', r'\bfft\b', r'\bfast fourier transform\b', r'\bdiscrete fourier transform\b',
@@ -819,11 +827,11 @@ SUBTOPIC_RULES = {
 
         # 2.0 Principles of Communications
         'EST-2.1': [  # Introduction to Communications Systems
-            r'\bcommunication(?:s)? (?:systems?|process|medium)\b', r'\btransmitters?\b',
+            r'(?<!digital\s)(?<!data\s)(?<!optical\s)\bcommunication(?:s)?\s+(?:systems?|process|medium)\b',
+            r'\btransmitters?\b',
             r'\breceiver block diagram\b', r'\belectronic(?:s)? communications?\b',
             r'\bvoice frequency range\b', r'\belectromagnetic spectrum\b',
-            r'\bmodulating (?:the )?carrier\b', r'\bchannel capacity\b',
-            r'\bshannon(?:-hartley)? (?:theorem|capacity)\b'
+            r'\bmodulating (?:the )?carrier\b'
         ],
         'EST-2.2': [  # Noise and Amplitude Modulation
             r'\bamplitude modulation\b', r'\bam signal\b', r'\bmodulation index\b', r'\bthermal noise\b',
@@ -834,7 +842,7 @@ SUBTOPIC_RULES = {
             r'\bssbs?\b', r'\bssb-scs?\b', r'\bbalanced modulator\b', r'\bvestigial sideband\b', r'\bvsbs?\b'
         ],
         'EST-2.4': [  # Frequency Modulation
-            r'\bfrequency modulation\b', r'\bfm signal\b', r'\bcarson\'?s rule\b', r'\bfrequency deviation\b',
+            r'\bfrequency modulation\b', r'\bfm signal\b', r'\bfrequency deviation\b',
             r'\bpre-emphasis\b', r'\bde-emphasis\b', r'\bphase modulation\b'
         ],
         'EST-2.5': [  # Radio Receivers
@@ -851,7 +859,10 @@ SUBTOPIC_RULES = {
         ],
         'EST-2.8': [  # Broadband Communication Systems
             r'\bbroadband (?:communication|network)\b', r'\bcellular system\b', r'\bgsm\b', r'\blte\b',
-            r'\b5g\b', r'\bsatellite communication\b'
+            r'\b5g\b', r'\bsatellite communication\b',
+            r'\bpulsed\s+radar\b', r'\bradar\s+systems?\b', r'\btarget\s+echo\b', r'\bdistance\s+to\s+the\s+target\b',
+            r'\bradar\s+range\b', r'\bradar\s+mile\b', r'\bdoppler\s+radar\b', r'\bradar\s+cross[- ]section\b',
+            r'\bcontinuous[- ]wave\s+radar\b', r'\bcw\s+radar\b', r'\bradar\s+equation\b'
         ],
 
         # 3.0 Digital Communications
@@ -871,12 +882,27 @@ SUBTOPIC_RULES = {
         'EST-3.4': [  # ASK, FSK, PSK, QAM
             r'\bask\b', r'\bamplitude shift keying\b', r'\bfsk\b', r'\bfrequency shift keying\b',
             r'\bpsk\b', r'\bphase shift keying\b', r'\bbpsk\b', r'\bqpsk\b', r'\bqam\b',
+            r'\b(?:binary\s+psk|8-?psk|16-?psk|dbpsk|dqpsk|oqpsk|pi/4-?dqpsk)\b',
+            r'\b(?:m-ary\s+psk|m-psk|m-ary\s+qam|16-?qam|64-?qam|256-?qam|m-ary\s+fsk|4-?fsk|8-?fsk|bfsk)\b',
+            r'\b(?:symbol\s+rate|baud\s+rate|symbols?\s+per\s+second|bits?\s+per\s+symbol)\b',
             r'\b16-qam\b', r'\b64-qam\b', r'\bconstellation diagram\b', r'\bbit error rate\b', r'\bber\b'
         ],
         'EST-3.5': [  # Basics of Information Theory and Error Detection
             r'\binformation theory\b', r'\bentropy of (?:a )?source\b', r'\bshannon limit\b', r'\bparity bit\b',
             r'\bchecksums?\b', r'\bcrc\b', r'\bcyclic redundancy check\b', r'\bhamming code\b', r'\bforward error correction\b',
-            r'\berror detection\b'
+            r'\berror detection\b',
+            # Carson's rule & channel bandwidth / capacity
+            r'\bcarson\'?s\s+rule\b', r'\btransmission\s+bandwidth\b', r'\bbandwidth\s+required\s+for\b',
+            r'\bchannel\s+capacity\b', r'\bshannon(?:-hartley)?\s+(?:theorem|capacity|limit|law)\b',
+            r'\bmaximum\s+channel\s+capacity\b', r'\bbandwidth\s+efficiency\b',
+            r'\bnyquist\s+(?:capacity|formula|bit\s+rate)\b', r'\bnoiseless\s+channel\b',
+            r'\b\d+[- ]level\s+signaling\b', r'\bmultilevel\s+signaling\b',
+            r'\bmaximum\s+theoretical\s+data\s+rate\b', r'\bchannel\s+bandwidth\b',
+            # Error-correcting block codes & Hamming distance
+            r'\bhamming\s+distance\b', r'\bminimum\s+hamming\s+distance\b', r'\bd_?min\b',
+            r'\berror-correcting\s+(?:block\s+)?code\w*\b', r'\bblock\s+codes?\b', r'\bcodewords?\b',
+            r'\bsimultaneous\s+bit\s+errors?\b', r'\bcorrect\s+(?:up\s+to\s+)?\d+\s+errors?\b',
+            r'\berror\s+syndrome\b', r'\blinear\s+block\s+codes?\b'
         ],
         'EST-3.6': [  # FDM, TDM, WDM, FDMA, CDMA, TDMA
             r'\bfdms?\b', r'\bfrequency division multiplex\w*', r'\btdms?\b', r'\btime division multiplex\w*',
@@ -898,7 +924,10 @@ SUBTOPIC_RULES = {
         ],
         'EST-4.4': [  # Radio Wave Propagation
             r'\bradio wave propagation\b', r'\bfree space path loss\b', r'\bfspl\b', r'\bfriis (?:equation|transmission)\b',
-            r'\bfresnel zone\b'
+            r'\bfresnel zone\b',
+            r'\bradio\s+horizon\b', r'\bvisual\s+horizon\b', r'\bk-factor\b', r'\bstandard\s+(?:k-factor|refraction)\b',
+            r'\b4/3\s+earth\s+radius\b', r'\b(?:sub|super)[- ]refraction\b', r'\bstandard\s+atmospheric\s+refraction\b',
+            r'\bducting\b', r'\btropospheric\s+(?:propagation|ducting|refraction|scatter)\b'
         ],
         'EST-4.5': [  # Power Density and Field Strength Calculations
             r'\bpower density\b', r'\bfield strength\b', r'\beirp\b', r'\berp\b', r'\beffective radiated power\b',
@@ -938,10 +967,18 @@ SUBTOPIC_RULES = {
         'EST-6.1': [  # Introduction and Categories of Data Communications
             r'\bdata communications?\b', r'\bsimplexs?\b', r'\bhalf-duplexs?\b', r'\bfull-duplexs?\b',
             r'\bdte\b', r'\bdce\b', r'\bdata terminal equipment\b', r'\bdata circuit-terminating equipment\b',
-            r'\binteroperabilit(?:y|ies)\b', r'\bpeer-to-peer\b', r'\bclient-server\b', r'\bpoint-to-multipoint\b'
+            r'\binteroperabilit(?:y|ies)\b', r'\bpeer-to-peer\b', r'\bclient-server\b', r'\bpoint-to-multipoint\b',
+            r'\blocal\s+area\s+networks?\b', r'\blans?\b', r'\bwide\s+area\s+networks?\b', r'\bwans?\b',
+            r'\bmetropolitan\s+area\s+networks?\b', r'\bmans?\b',
+            r'\bcsma/cd\b', r'\bcsma/ca\b', r'\bdata\s+collision\b', r'\bcollision\s+detection\b',
+            r'\bjam\s+signal\b', r'\brandom\s+backoff\b', r'\bcarrier\s+sense\s+multiple\s+access\b'
         ],
         'EST-6.2': [  # Configurations and Network Topology
-            r'\btopology\b', r'\btopologies\b', r'\bpoint-to-point\b', r'\bmultipoint\b', r'\bconfigurations? of a network\b'
+            r'\btopology\b', r'\btopologies\b', r'\bpoint-to-point\b', r'\bmultipoint\b', r'\bconfigurations? of a network\b',
+            r'\bmesh\s+(?:network|topology)\b', r'\bphysical\s+mesh\b',
+            r'\b(?:star|bus|ring|tree|hybrid)\s+topology\b',
+            r'\bfully[- ]connected\s+(?:mesh|network)\b',
+            r'\bphysical\s+cables\s+required\b', r'\bdedicated\s+physical\s+cables\b'
         ],
         'EST-6.3': [  # Transmission Modes and Synchronization
             r'\basynchronous transmission\b', r'\bsynchronous transmission\b', r'\bbaud rate\b',
@@ -1272,11 +1309,17 @@ def classify_text(text, subject_code, deck_name=None, deck_desc=None, default_to
         for pat in patterns:
             cnt = len(pat.findall(text))
             if cnt > 0:
-                words_in_pat = len(re.findall(r'[a-zA-Z0-9]+', pat.pattern))
-                if words_in_pat >= 2 or any(k in pat.pattern.lower() for k in ['b2b', 'b2c', 'c2c', 'b2g', 'eia', 'ecc']):
-                    weight = 3
+                # Carson's rule / transmission bandwidth override to EST-3.5
+                if sub_id == 'EST-3.5' and any(k in pat.pattern for k in ["carson", r"transmission\s+bandwidth"]):
+                    weight = 10
                 else:
-                    weight = 1
+                    words_in_pat = len(re.findall(r'[a-zA-Z0-9]+', pat.pattern))
+                    if words_in_pat >= 3:
+                        weight = 5
+                    elif words_in_pat == 2 or any(k in pat.pattern.lower() for k in ['b2b', 'b2c', 'c2c', 'b2g', 'eia', 'ecc', '8-psk', '16-psk', 'qpsk', 'd_min', 'k-factor']):
+                        weight = 3
+                    else:
+                        weight = 1
                 raw_subtopic_scores[sub_id] += cnt * weight
 
     # Apply deck bias if available
@@ -1290,13 +1333,24 @@ def classify_text(text, subject_code, deck_name=None, deck_desc=None, default_to
         if target_subtopic and target_subtopic in raw_subtopic_scores:
             subtopic_scores[target_subtopic] += 2
 
+    # Parent family aggregate scores
+    parent_family_scores = Counter()
+    for sub_id, score in subtopic_scores.items():
+        p_id = SUBTOPIC_TO_PARENT.get(sub_id, sub_id)
+        parent_family_scores[p_id] += score
+
     if subtopic_scores:
-        ranked = subtopic_scores.most_common(2)
-        top_id, top_score = ranked[0]
-        second_score = ranked[1][1] if len(ranked) > 1 else 0
+        top_parent_id, top_parent_score = parent_family_scores.most_common(1)[0]
+        top_family_subs = [
+            (s_id, s_score)
+            for s_id, s_score in subtopic_scores.items()
+            if SUBTOPIC_TO_PARENT.get(s_id) == top_parent_id
+        ]
+        top_family_subs.sort(key=lambda x: x[1], reverse=True)
 
         # If deck has a verified primary topic
         if primary_parent:
+            top_id, top_score = subtopic_scores.most_common(1)[0]
             top_parent = SUBTOPIC_TO_PARENT.get(top_id, top_id)
             if top_parent == primary_parent:
                 confident = (top_score >= MIN_CONFIDENCE_SCORE)
@@ -1329,18 +1383,18 @@ def classify_text(text, subject_code, deck_name=None, deck_desc=None, default_to
                     return default_tos, False
                 return None, False
 
-        # No primary parent or pool deck:
-        if len(ranked) == 1 or (top_score - second_score >= MIN_CONFIDENCE_MARGIN):
-            return top_id, True
-        else:
-            # Tied or close top candidates: check if they share the same parent topic
-            p1 = SUBTOPIC_TO_PARENT.get(top_id)
-            p2 = SUBTOPIC_TO_PARENT.get(ranked[1][0])
-            if p1 and p1 == p2:
-                # Common parent topic is unambiguous
-                return p1, True
-            # Best-effort subtopic assignment within the subject
-            return top_id, True
+        # No primary parent or pool deck (e.g. Pre-Board, Coaching, Review Exam):
+        if top_family_subs:
+            best_sub_id, best_sub_score = top_family_subs[0]
+            second_sub_score = top_family_subs[1][1] if len(top_family_subs) > 1 else 0
+
+            # If there's a single subtopic match or a clear margin over other subtopics in this parent
+            if len(top_family_subs) == 1 or (best_sub_score - second_sub_score >= MIN_CONFIDENCE_MARGIN):
+                return best_sub_id, True
+            else:
+                # Multiple close subtopics within the same parent family:
+                # Assign parent topic (e.g. EST-3.0) to avoid arbitrary ties
+                return top_parent_id, True
 
     # 3. Parent-level rules for this subject
     parent_scores = Counter()

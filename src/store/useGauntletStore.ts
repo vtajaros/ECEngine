@@ -7,6 +7,7 @@ import { dbService } from '../services/db.service'
 import { shuffle, shuffleChoices, isSafeToShuffleChoices } from '../lib/scrambler'
 import {
   GAUNTLET_SUBJECTS,
+  TUNING,
   allocateCounts,
   applyAnswerToRating,
   cardRating,
@@ -395,9 +396,11 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
     })
     const ratings = { ...s.ratings }
     if (s.rated) {
+      const playerRating = ratings[item.subject]?.rating ?? TUNING.startRating
+      const dynamicOpponentRating = cardRating(playerRating, item.weight)
       ratings[item.subject] = applyAnswerToRating(
         ratings[item.subject],
-        item.cardRating,
+        dynamicOpponentRating,
         outcome,
         res.speedNorm,
         eloMult,

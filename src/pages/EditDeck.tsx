@@ -533,7 +533,7 @@ interface CardRowProps {
   index: number
   isExpanded: boolean
   subject?: string
-  onToggleExpand: (id: string) => void
+  onToggleExpand: (id: string, index?: number) => void
   onUpdate: (id: string, data: Partial<EditCard>) => void
   onDelete: (id: string) => void
   onError?: (msg: string) => void
@@ -935,6 +935,27 @@ const FlashcardForm: React.FC<{ data: FlashcardEdit; onChange: (d: FlashcardEdit
 }
 
 const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<HTMLElement> }> = ({ card, index, isExpanded, subject, onToggleExpand, onUpdate, onDelete, onError, dragHandleProps }) => {
+  const rowRef = useRef<HTMLDivElement>(null)
+  const prevExpandedRef = useRef(isExpanded)
+
+  useEffect(() => {
+    if (isExpanded && !prevExpandedRef.current) {
+      const timer = setTimeout(() => {
+        if (rowRef.current) {
+          rowRef.current.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' })
+          const input = rowRef.current.querySelector<HTMLTextAreaElement | HTMLInputElement | HTMLElement>(
+            'textarea, input[type="text"], math-field'
+          )
+          if (input) {
+            input.focus?.({ preventScroll: true })
+          }
+        }
+      }, 120)
+      return () => clearTimeout(timer)
+    }
+    prevExpandedRef.current = isExpanded
+  }, [isExpanded])
+
   const preview = card.type === 'mcq'
     ? (card.data as MCQEdit).question || '(empty question)'
     : card.type === 'formula'
@@ -945,12 +966,14 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
 
   return (
     <div
+      ref={rowRef}
+      data-card-id={card.id}
       className={`rounded-lg border transition-colors ${isExpanded ? 'border-accent/30 bg-[#0f1a0f]' : 'border-border-base bg-[#111] hover:border-[#333]'}`}
     >
       {/* Collapsed row */}
       <div
         className="flex items-center gap-3 px-4 py-3 cursor-pointer select-none"
-        onClick={() => onToggleExpand(card.id)}
+        onClick={() => onToggleExpand(card.id, index)}
       >
         <Tooltip content="Drag to reorder" position="top">
           <span
@@ -1567,17 +1590,33 @@ export default function EditDeck() {
     loadCards(true)
   }, [loadCards])
 
-  const toggleExpand = useCallback((id: string) => {
+  const toggleExpand = useCallback((id: string, index?: number) => {
+    const isOpening = !expandedIds.has(id)
     setExpandedIds(prev => {
       const next = new Set(prev)
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
+      if (isOpening) {
         next.add(id)
+      } else {
+        next.delete(id)
       }
       return next
     })
-  }, [])
+
+    if (isOpening && index !== undefined) {
+      // Instantly scroll smoothly to the card at the top of the scroll container
+      virtualizer.scrollToIndex?.(index, { align: 'start', behavior: 'smooth' })
+
+      // Once the animated form expands, re-affirm top alignment and focus question input
+      setTimeout(() => {
+        virtualizer.scrollToIndex?.(index, { align: 'start', behavior: 'smooth' })
+        const cardEl = document.querySelector(`[data-card-id="${id}"]`)
+        const input = cardEl?.querySelector<HTMLTextAreaElement | HTMLInputElement | HTMLElement>(
+          'textarea, input[type="text"], math-field'
+        )
+        input?.focus?.({ preventScroll: true })
+      }, 150)
+    }
+  }, [expandedIds, virtualizer])
 
   // ── Card mutations ────────────────────────────────────────────────────────
   const updateCard = useCallback((id: string, patch: Partial<EditCard>) => {

@@ -143,6 +143,7 @@ declare global {
         getRunAnswers: (runId: string) => Promise<{ success: boolean; data?: any[]; error?: string }>
         getBests: () => Promise<{ success: boolean; data?: any[]; error?: string }>
         getPaceStats: () => Promise<{ success: boolean; data?: Array<{ subject: string; n: number; avgMs: number }>; error?: string }>
+        rewardReviewElo: (subject: string) => Promise<{ success: boolean; data?: { gained: number; newRating: number }; error?: string }>
         flagQuestion: (payload: { cardId: string; reason?: string }) => Promise<{ success: boolean; error?: string }>
         unflagQuestion: (payload: { cardId: string }) => Promise<{ success: boolean; error?: string }>
         getFlaggedQuestions: (payload?: { cardIds?: string[] }) => Promise<{ success: boolean; data?: Record<string, { reason: string | null; flaggedAt: number }>; error?: string }>

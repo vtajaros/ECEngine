@@ -268,7 +268,7 @@ describe('rating', () => {
     vi.advanceTimersByTime(1500)
     store().answer(0)
     expect(store().ratings.MATH.answers).toBe(1)
-    expect(store().ratings.MATH.rating).toBeGreaterThan(1000)
+    expect(store().ratings.MATH.rating).toBeGreaterThan(500)
   })
 
   it('leaves ratings untouched and omits them from the payload on unrated runs', async () => {
@@ -278,7 +278,7 @@ describe('rating', () => {
     vi.advanceTimersByTime(2000); store().answer(0)
     vi.advanceTimersByTime(2000); store().answer(0)
     await flush()
-    expect(store().ratings.MATH.rating).toBe(1000)
+    expect(store().ratings.MATH.rating).toBe(500)
     const payload = svc.saveRun.mock.calls[0][0] as any
     expect(payload.rated).toBe(false)
     expect(payload.ratingsAfter).toBeUndefined()

@@ -95,6 +95,16 @@ export const gauntletService = {
     if (!res.success) throw new Error(res.error || 'Failed to reset ratings')
   },
 
+  async rewardReviewElo(subject: string): Promise<{ gained: number; newRating: number } | null> {
+    try {
+      const res = await window.electron.gauntlet.rewardReviewElo(subject)
+      if (res?.success) return res.data ?? null
+      return null
+    } catch {
+      return null
+    }
+  },
+
   async getWeakTosTopics(opts?: { subject?: GauntletSubjectCode; limit?: number }) {
     const res = await window.electron.gauntlet.getWeakTosTopics(opts)
     if (!res.success) throw new Error(res.error || 'Failed to get weak TOS topics')

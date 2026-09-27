@@ -438,7 +438,7 @@ export default function Settings() {
         { label: 'Reset Mastery Progress', type: 'action', buttonText: 'Reset Progress', actionId: 'reset-progress', advanced: true },
         {
           label: 'Reset Gauntlet ELO',
-          description: 'Reset all subject Elo ratings and rank tiers back to 1000 (provisional).',
+          description: 'Reset all subject Elo ratings and rank tiers back to 500 (provisional).',
           type: 'action',
           buttonText: 'RESET ELO',
           danger: true,

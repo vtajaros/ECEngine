@@ -44,11 +44,11 @@ export const TUNING = {
   speedMin: 0.5,
   speedMax: 1.5,
   // rating
-  startRating: 1000,
+  startRating: 500,
   cardRatingSpan: 400,
-  kProvisional: 40,
-  kSettled: 20,
-  provisionalAnswers: 30,
+  kProvisional: 50,
+  kSettled: 40,
+  provisionalAnswers: 25,
   correctScoreFloor: 0.7, // S for a correct answer at the slowest speed; fastest = 1.0
   // pace & planning
   defaultPaceMs: 8000,
@@ -98,9 +98,12 @@ export function difficultyWeight(parMs: number): number {
   return clamp(parMs / TUNING.parRefMs, TUNING.weightMin, TUNING.weightMax)
 }
 
-/** Opponent rating of a card for the Elo update (mild spread around startRating). */
-export function cardRating(weight: number): number {
-  return TUNING.startRating + (weight - 1) * TUNING.cardRatingSpan
+/** Opponent rating of a card for the Elo update (anchored to player rating or startRating). */
+export function cardRating(playerRatingOrWeight: number, maybeWeight?: number): number {
+  if (maybeWeight !== undefined) {
+    return Math.round(playerRatingOrWeight + (maybeWeight - 1) * TUNING.cardRatingSpan)
+  }
+  return Math.round(TUNING.startRating + (playerRatingOrWeight - 1) * TUNING.cardRatingSpan)
 }
 
 // ── Scoring ──────────────────────────────────────────────────────────────────
@@ -304,8 +307,24 @@ export function expectedScore(playerRating: number, opponentRating: number): num
   return 1 / (1 + Math.pow(10, (opponentRating - playerRating) / 400))
 }
 
-export function kFactor(answersSoFar: number): number {
-  return answersSoFar < TUNING.provisionalAnswers ? TUNING.kProvisional : TUNING.kSettled
+export function kFactor(answersSoFar: number, currentRating: number = 500): number {
+  let baseK: number
+  if (currentRating < 800) {
+    baseK = 40 // Insulator
+  } else if (currentRating < 1000) {
+    baseK = 32 // Semiconductor
+  } else if (currentRating < 1100) {
+    baseK = 26 // Conductor
+  } else if (currentRating < 1300) {
+    baseK = 22 // Copper
+  } else if (currentRating < 1500) {
+    baseK = 18 // Silver
+  } else {
+    baseK = 14 // Superconductor
+  }
+
+  // 1.25x provisional multiplier during the first 25 answers
+  return answersSoFar < TUNING.provisionalAnswers ? Math.round(baseK * 1.25) : baseK
 }
 
 /** Actual score S: 0 for anything but correct; 0.7..1.0 for correct, faster = higher. */
@@ -323,7 +342,8 @@ export function applyAnswerToRating(
 ): SubjectRating {
   const e = expectedScore(current.rating, opponentRating)
   const s = performanceScore(outcome, sn)
-  const rawDelta = kFactor(current.answers) * (s - e)
+  const k = kFactor(current.answers, current.rating)
+  const rawDelta = k * (s - e)
 
   let delta: number
   if (eloMult <= 0.1) {
@@ -340,7 +360,7 @@ export function applyAnswerToRating(
   }
 
   return {
-    rating: current.rating + delta,
+    rating: Math.max(500, Math.round((current.rating + delta) * 10) / 10),
     answers: current.answers + 1,
   }
 }
@@ -417,19 +437,21 @@ export function isRatedRun(opts: { sourceFilter?: string[] | null; subjects: Sub
 
 // ── Rating Tiers ─────────────────────────────────────────────────────────────
 
+export type TierName = 'INSULATOR' | 'SEMICONDUCTOR' | 'CONDUCTOR' | 'COPPER' | 'SILVER' | 'SUPERCONDUCTOR'
+
 export interface RatingTierInfo {
-  name: 'ROOKIE' | 'CONTENDER' | 'CHALLENGER' | 'EXPERT' | 'MASTER' | 'LEGEND'
+  name: TierName
   floor: number
   next: number | null
 }
 
 export function ratingTier(rating: number): RatingTierInfo {
-  if (rating < 1000) return { name: 'ROOKIE', floor: 0, next: 1000 }
-  if (rating < 1150) return { name: 'CONTENDER', floor: 1000, next: 1150 }
-  if (rating < 1300) return { name: 'CHALLENGER', floor: 1150, next: 1300 }
-  if (rating < 1450) return { name: 'EXPERT', floor: 1300, next: 1450 }
-  if (rating < 1600) return { name: 'MASTER', floor: 1450, next: 1600 }
-  return { name: 'LEGEND', floor: 1600, next: null }
+  if (rating < 800) return { name: 'INSULATOR', floor: 500, next: 800 }
+  if (rating < 1000) return { name: 'SEMICONDUCTOR', floor: 800, next: 1000 }
+  if (rating < 1100) return { name: 'CONDUCTOR', floor: 1000, next: 1100 }
+  if (rating < 1300) return { name: 'COPPER', floor: 1100, next: 1300 }
+  if (rating < 1500) return { name: 'SILVER', floor: 1300, next: 1500 }
+  return { name: 'SUPERCONDUCTOR', floor: 1500, next: null }
 }
 
 // ── Pace Model & Session Planning ────────────────────────────────────────────

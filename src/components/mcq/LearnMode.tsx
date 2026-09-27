@@ -11,6 +11,7 @@ import { GetContextDropdown } from '../ui/GetContextDropdown'
 import { LeaveConfirmModal } from '../ui/LeaveConfirmModal'
 import { useBlocker } from 'react-router-dom'
 import { dbService } from '../../services/db.service'
+import { gauntletService } from '../../services/gauntlet.service'
 import { useSound, useSoundVolume } from '../../hooks/useSound'
 import { VolumeControl } from '../ui/VolumeControl'
 import { useTTS } from '../../hooks/useTTS'
@@ -20,6 +21,7 @@ import { useTTS } from '../../hooks/useTTS'
 interface LearnModeProps {
   cards: Card[]
   title?: string
+  subject?: string
   // ── TTS ──────────────────────────────────────────────────────────────────────
   // Passed down from LooksFamStudy via LearnSettings. LearnMode does NOT own
   // the preference — it only consumes it. This keeps TTS state out of the
@@ -76,7 +78,7 @@ export function partitionCards(cards: Card[], partitionSize = 5, minTrailingSize
 type QuestionStatus = 'unanswered' | 'correct' | 'wrong'
 type ViewState = 'question' | 'feedback' | 'partition-complete' | 'summary'
 
-export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, ttsEnabled = false, shuffleChoices = false, recordProgress = true, onComplete, onExit }) => {
+export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, subject, ttsEnabled = false, shuffleChoices = false, recordProgress = true, onComplete, onExit }) => {
   // Partitioning logic
   const PARTITION_SIZE = 5
 
@@ -381,6 +383,9 @@ interface LearnCardStat {
           for (const [id, stats] of Object.entries(allCardStats)) {
             const card = cards.find(c => c.id === id)
             if (card && card.type === 'mcq' && !card.isGenerated) {
+              if (stats.wasCorrectFirstTry && subject) {
+                gauntletService.rewardReviewElo(subject).catch(() => {})
+              }
               progressWrites.push(
                 dbService.recordCardResult(id, stats.wasCorrectFirstTry, {
                   mode: 'learn',

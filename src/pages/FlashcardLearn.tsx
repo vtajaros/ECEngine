@@ -22,6 +22,7 @@ import { FlashcardSession } from '../components/flashcard/FlashcardSession'
 import { FlashcardDeckBrowser } from '../components/flashcard/FlashcardDeckBrowser'
 import { useSessionStore } from '../store/useSessionStore'
 import { useDataVersionStore } from '../store/useDataVersionStore'
+import { gauntletService } from '../services/gauntlet.service'
 import { PREDEFINED_TAGS } from '../lib/constants'
 
 type Subject = 'MATH' | 'GEAS' | 'ELECS' | 'EST'
@@ -125,7 +126,7 @@ export default function FlashcardLearn() {
   })
 
   // ── Active session state ──
-  const [activeDeck, setActiveDeck] = useState<{ id: string; title: string; cards: Card[] } | null>(null)
+  const [activeDeck, setActiveDeck] = useState<{ id: string; title: string; subject?: Subject; cards: Card[] } | null>(null)
   const [sessionCards, setSessionCards] = useState<Card[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isFlipped, setIsFlipped] = useState(false)
@@ -311,7 +312,7 @@ export default function FlashcardLearn() {
     try {
       const cards = await dbService.getAllCardsByTopic(deck.id)
       if (cards.length === 0) return
-      setActiveDeck({ id: deck.id, title: deck.title, cards })
+      setActiveDeck({ id: deck.id, title: deck.title, subject: deck.subject, cards })
       applySettings(cards, settings)
     } catch (e) { console.error('Failed to load cards', e) }
   }
@@ -547,7 +548,7 @@ Provide a thorough explanation covering ALL of the following:
     setCurrentIndex(0)
     setIsFlipped(false)
     setSessionCards(cards)
-    setActiveDeck({ id: deck.id, title: deck.title, cards: rawCards })
+    setActiveDeck({ id: deck.id, title: deck.title, subject: deck.subject, cards: rawCards })
 
     // Initialize SM-2 session so rateCard() writes to DB
     setSessionMode('study')
@@ -573,7 +574,7 @@ Provide a thorough explanation covering ALL of the following:
     setCurrentIndex(0)
     setIsFlipped(false)
     setSessionCards(cards)
-    setActiveDeck({ id: deck.id, title: deck.title, cards })
+    setActiveDeck({ id: deck.id, title: deck.title, subject: deck.subject, cards })
     // Deliberately no startSession() call — preview never touches SM-2/progress table
   }
 
@@ -837,6 +838,9 @@ Provide a thorough explanation covering ALL of the following:
         onRateCard={sessionMode === 'preview' ? async () => {} : async (rating) => {
           stop()
           await rateCard(rating)
+          if (rating >= 3 && activeDeck?.subject) {
+            gauntletService.rewardReviewElo(activeDeck.subject).catch(() => {})
+          }
           if (useSessionStore.getState().isFinished) { exitSession() }
         }}
         onGetContext={handleGetContext}

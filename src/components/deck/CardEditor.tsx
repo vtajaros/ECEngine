@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { CSS } from '@dnd-kit/utilities'
 import { useSortable } from '@dnd-kit/sortable'
 import { GripVertical, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
@@ -27,6 +27,26 @@ interface CardRowProps {
 
 export const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<HTMLElement> }> = ({ card, index, subject, onUpdate, onDelete, onError, dragHandleProps }) => {
   const [expanded, setExpanded] = useState(card.isNew ?? false)
+  const rowRef = useRef<HTMLDivElement>(null)
+  const prevExpandedRef = useRef(expanded)
+
+  useEffect(() => {
+    if (expanded && !prevExpandedRef.current) {
+      const timer = setTimeout(() => {
+        if (rowRef.current) {
+          rowRef.current.scrollIntoView?.({ behavior: 'smooth', block: 'start' })
+          const input = rowRef.current.querySelector<HTMLTextAreaElement | HTMLInputElement | HTMLElement>(
+            'textarea, input[type="text"], math-field'
+          )
+          if (input) {
+            input.focus?.({ preventScroll: true })
+          }
+        }
+      }, 120)
+      return () => clearTimeout(timer)
+    }
+    prevExpandedRef.current = expanded
+  }, [expanded])
 
   const preview = card.type === 'mcq'
     ? (card.data as MCQEdit).question || '(empty question)'
@@ -38,6 +58,7 @@ export const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttr
 
   return (
     <div
+      ref={rowRef}
       className={`rounded-lg border transition-colors ${expanded ? 'border-accent/30 bg-[#0f1a0f]' : 'border-border-base bg-[#111] hover:border-[#333]'}`}
     >
       {/* Collapsed row */}
