@@ -816,6 +816,26 @@ describe('Gauntlet Summary Review List', () => {
     expect(container!.querySelector('[data-testid="learn-missed-button"]')).toBeTruthy()
   })
 
+  it('renders LEARN ALL button below LEARN MISSED and starts LearnMode for all session items', async () => {
+    setupSummaryState()
+
+    await act(async () => {
+      root!.render(renderWithRouter(<Gauntlet />))
+    })
+
+    const learnAllBtn = container!.querySelector('[data-testid="learn-all-button"]') as HTMLButtonElement
+    expect(learnAllBtn).toBeTruthy()
+    expect(learnAllBtn.textContent).toContain('LEARN ALL (4)')
+
+    await act(async () => {
+      learnAllBtn.click()
+    })
+
+    // Confirm LearnMode is mounted
+    expect(container!.textContent).toContain('Exit Learn Mode')
+    expect(container!.textContent).toContain('to retry')
+  })
+
   it('renders Flag Question button and opens modal to flag question', async () => {
     setupSummaryState()
 

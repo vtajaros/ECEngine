@@ -347,3 +347,29 @@ export const scanForDoubleEscapes = (text: string): boolean => {
   if (!text || typeof text !== 'string') return false
   return /\\\\\w/.test(text)
 }
+
+/**
+ * Sanitizes and flattens question text for single-line table and list previews.
+ * - Collapses HTML line breaks (<br>, <p>, <div>, etc.) into spaces
+ * - Converts display math ($$...$$ or \[...\]) into inline math ($...$) so KaTeX renders inline
+ * - Collapses consecutive linebreaks and whitespace into single spaces
+ */
+export function formatQuestionPreview(text: string): string {
+  if (!text || typeof text !== 'string') return ''
+  return text
+    .replace(/<br\s*\/?>/gi, ' ')
+    .replace(/<\/?(p|div|li|ul|ol|h[1-6])[^>]*>/gi, ' ')
+    .replace(/\$\$([\s\S]*?)\$\$/g, '$$$1$$')
+    .replace(/\\\[([\s\S]*?)\\\]/g, '$$$1$$')
+    .replace(/[\r\n]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+/**
+ * Renders a question preview as a single-line inline string with LaTeX math support.
+ * Guaranteed not to contain block elements or line breaks.
+ */
+export function renderQuestionPreview(text: string): string {
+  return renderMath(formatQuestionPreview(text))
+}

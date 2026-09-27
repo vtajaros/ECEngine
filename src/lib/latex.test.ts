@@ -2,8 +2,13 @@
 // Tests for pure LaTeX detection and scanning utilities.
 // Expected values map to the pure functions in latex.ts.
 
-import { describe, it, expect } from 'vitest'
-import { isRawLatex, isPureMath, scanForDoubleEscapes } from './latex'
+import {
+  isRawLatex,
+  isPureMath,
+  scanForDoubleEscapes,
+  formatQuestionPreview,
+  renderQuestionPreview,
+} from './latex'
 
 // ─── isRawLatex ─────────────────────────────────────────────────────────────
 
@@ -210,6 +215,34 @@ describe('renderMath', () => {
     const html = renderMath(broken)
     expect(html).not.toContain('katex-error')
     expect(html).not.toContain('color:#cc0000')
+  })
+})
+
+describe('formatQuestionPreview & renderQuestionPreview', () => {
+  it('collapses multi-line questions with linebreaks into a clean single line', () => {
+    const raw = 'Assertion (A): A VMOSFET does not...\n\nReason (R): In a VMOSFET...'
+    const formatted = formatQuestionPreview(raw)
+    expect(formatted).toBe('Assertion (A): A VMOSFET does not... Reason (R): In a VMOSFET...')
+
+    const html = renderQuestionPreview(raw)
+    expect(html).not.toContain('<br>')
+    expect(html).not.toContain('\n')
+  })
+
+  it('renders inline math and preserves KaTeX symbols without block breaks', () => {
+    const raw = 'Consider the following statement S1 and S2.\n\nS1: The \\beta of a transistor.\nS2: The \\alpha of a transistor.'
+    const formatted = formatQuestionPreview(raw)
+    expect(formatted).toBe('Consider the following statement S1 and S2. S1: The \\beta of a transistor. S2: The \\alpha of a transistor.')
+
+    const html = renderQuestionPreview(raw)
+    expect(html).not.toContain('<br>')
+    expect(html).toContain('katex')
+  })
+
+  it('flattens HTML tags and display math delimiters', () => {
+    const raw = '<p>Intro paragraph</p><br><div>$$\\sum_{i=1}^n x_i$$</div>'
+    const formatted = formatQuestionPreview(raw)
+    expect(formatted).toBe('Intro paragraph $\\sum_{i=1}^n x_i$')
   })
 })
 

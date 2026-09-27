@@ -12,7 +12,7 @@ import { Tooltip } from '../components/ui/Tooltip'
 import { LearnMode } from '../components/mcq/LearnMode'
 import { gauntletService } from '../services/gauntlet.service'
 import { dbService } from '../services/db.service'
-import { renderMath, renderPlainText } from '../lib/latex'
+import { renderMath, renderPlainText, renderQuestionPreview } from '../lib/latex'
 import { SUBJECT_LINE_COLOR } from '../lib/dashboardUtils'
 import { formatTosBadge } from '../lib/tosClassification'
 import type { Card, MCQData, Subject } from '../types'
@@ -41,6 +41,7 @@ import {
   Home,
   X,
   Brain,
+  BookOpen,
   Flag,
   Folder,
 } from 'lucide-react'
@@ -53,8 +54,10 @@ export const LINGER_SKIP_MS = 1800
 interface RunPlaceholderProps {
   onOpenPause: () => void
   isModalOpen: boolean
-  isLearningMissed: boolean
-  setIsLearningMissed: (val: boolean) => void
+  learnModeScope?: 'missed' | 'all' | null
+  setLearnModeScope?: (val: 'missed' | 'all' | null) => void
+  isLearningMissed?: boolean
+  setIsLearningMissed?: (val: boolean) => void
 }
 
 interface RevealState {
@@ -68,7 +71,9 @@ interface RevealState {
 const RunPlaceholder: React.FC<RunPlaceholderProps> = ({
   onOpenPause,
   isModalOpen,
-  isLearningMissed,
+  learnModeScope = null,
+  setLearnModeScope,
+  isLearningMissed = false,
   setIsLearningMissed,
 }) => {
   const phase = useGauntletStore(s => s.phase)
@@ -129,6 +134,18 @@ const RunPlaceholder: React.FC<RunPlaceholderProps> = ({
     const map = new Map<string, Card>()
     for (const a of answers) {
       if (a.outcome !== 'correct' && a.item?.card) {
+        if (!flaggedMap[a.item.card.id]) {
+          map.set(a.item.card.id, a.item.card)
+        }
+      }
+    }
+    return Array.from(map.values())
+  }, [answers, flaggedMap])
+
+  const allSessionCards = useMemo(() => {
+    const map = new Map<string, Card>()
+    for (const a of answers) {
+      if (a.item?.card) {
         if (!flaggedMap[a.item.card.id]) {
           map.set(a.item.card.id, a.item.card)
         }
@@ -277,9 +294,10 @@ Please explain:
   }, [phase, endReason, play])
 
   // Adaptive background music regions based on run mode, progress, and summary
+  const activeScope = learnModeScope ?? (isLearningMissed ? 'missed' : null)
   useEffect(() => {
     if (phase === 'summary') {
-      if (isLearningMissed) {
+      if (activeScope) {
         music.stop()
         return
       }
@@ -464,19 +482,35 @@ Please explain:
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [phase, isModalOpen, revealState, handleAnswer])
 
+  const activeCards = activeScope === 'all' ? allSessionCards : missedCards
+  const modeLabel = config.mode === 'survival' ? 'Survival' : 'Timed'
+  const learnTitle =
+    activeScope === 'all'
+      ? `Gauntlet ${modeLabel} — All Session Items`
+      : `Gauntlet ${modeLabel} — Missed Items`
+
+  const handleStartLearn = (scope: 'missed' | 'all') => {
+    setLearnModeScope?.(scope)
+    setIsLearningMissed?.(true)
+  }
+
+  const handleExitLearn = () => {
+    setLearnModeScope?.(null)
+    setIsLearningMissed?.(false)
+  }
+
   if (phase === 'summary') {
-    if (isLearningMissed && missedCards.length > 0) {
-      const modeLabel = config.mode === 'survival' ? 'Survival' : 'Timed'
+    if (activeScope && activeCards.length > 0) {
       return (
         <div className="w-full h-full flex flex-col">
           <LearnMode
-            cards={missedCards}
-            title={`Gauntlet ${modeLabel} — Missed Items`}
+            cards={activeCards}
+            title={learnTitle}
             ttsEnabled={false}
             shuffleChoices={true}
             recordProgress={false}
             onComplete={() => {}}
-            onExit={() => setIsLearningMissed(false)}
+            onExit={handleExitLearn}
           />
         </div>
       )
@@ -696,21 +730,32 @@ Please explain:
               <button
                 type="button"
                 data-testid="learn-missed-button"
-                onClick={() => setIsLearningMissed(true)}
+                onClick={() => handleStartLearn('missed')}
                 className="w-full py-2.5 px-4 rounded-xl bg-accent text-black font-bold font-['Orbitron'] tracking-wider text-xs sm:text-sm hover:bg-[#00e63a] transition-all flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(0,255,65,0.25)]"
               >
                 <Brain size={14} />
                 LEARN MISSED ({missedCards.length})
               </button>
             )}
+            {allSessionCards.length > 0 && (
+              <button
+                type="button"
+                data-testid="learn-all-button"
+                onClick={() => handleStartLearn('all')}
+                className={`w-full py-2.5 px-4 rounded-xl font-bold font-['Orbitron'] tracking-wider text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 ${
+                  missedCards.length === 0
+                    ? 'bg-accent text-black hover:bg-[#00e63a] shadow-[0_0_15px_rgba(0,255,65,0.25)]'
+                    : 'bg-surface-2 border border-border-base hover:border-accent text-text-primary hover:text-accent'
+                }`}
+              >
+                <BookOpen size={14} />
+                LEARN ALL ({allSessionCards.length})
+              </button>
+            )}
             <button
               type="button"
               onClick={() => void startRun(config)}
-              className={`w-full py-2.5 px-4 rounded-xl font-bold font-['Orbitron'] tracking-wider text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 ${
-                missedCards.length === 0
-                  ? 'bg-accent text-black hover:bg-[#00e63a] shadow-[0_0_15px_rgba(0,255,65,0.25)]'
-                  : 'bg-surface-2 border border-border-base hover:border-accent text-text-primary'
-              }`}
+              className="w-full py-2.5 px-4 rounded-xl font-bold font-['Orbitron'] tracking-wider text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 bg-surface-2 border border-border-base hover:border-accent text-text-primary"
             >
               <RotateCcw size={14} />
               RUN AGAIN
@@ -746,11 +791,22 @@ Please explain:
                 <button
                   type="button"
                   data-testid="learn-missed-header-button"
-                  onClick={() => setIsLearningMissed(true)}
+                  onClick={() => handleStartLearn('missed')}
                   className="px-2 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold bg-accent/15 border border-accent/40 text-accent hover:bg-accent/25 transition-colors flex items-center gap-1"
                 >
                   <Brain size={11} />
                   Learn {missedCards.length} Missed
+                </button>
+              )}
+              {allSessionCards.length > 0 && (
+                <button
+                  type="button"
+                  data-testid="learn-all-header-button"
+                  onClick={() => handleStartLearn('all')}
+                  className="px-2 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold bg-surface-2 border border-border-base hover:border-accent text-text-muted hover:text-accent transition-colors flex items-center gap-1"
+                >
+                  <BookOpen size={11} />
+                  Learn All ({allSessionCards.length})
                 </button>
               )}
             </div>
@@ -936,8 +992,8 @@ Please explain:
 
                         {/* Truncated Question Text */}
                         <span
-                          className="font-['Rajdhani'] font-semibold text-xs sm:text-sm text-text-primary truncate flex-1 min-w-0"
-                          dangerouslySetInnerHTML={{ __html: renderMath(mcq.question ?? '') }}
+                          className="font-['Rajdhani'] font-semibold text-xs sm:text-sm text-text-primary truncate flex-1 min-w-0 [&_*]:inline"
+                          dangerouslySetInnerHTML={{ __html: renderQuestionPreview(mcq.question ?? '') }}
                         />
                       </div>
 
@@ -1666,7 +1722,9 @@ export default function Gauntlet() {
   const quit = useGauntletStore(s => s.quit)
 
   const [isPauseModalOpen, setIsPauseModalOpen] = useState(false)
+  const [learnModeScope, setLearnModeScope] = useState<'missed' | 'all' | null>(null)
   const [isLearningMissed, setIsLearningMissed] = useState(false)
+  const isLearningActive = learnModeScope !== null || isLearningMissed
   const setForceCollapsed = useLayoutStore(s => s.setForceCollapsed)
   const music = useGauntletMusic()
 
@@ -1689,17 +1747,18 @@ export default function Gauntlet() {
   }, [music])
 
   // Force sidebar collapse during countdown and playing without modifying saved preference,
-  // but explicitly false whenever isLearningMissed is true so the sidebar reappears during Learn Mode.
+  // but explicitly false whenever Learn Mode is active so the sidebar reappears.
   useEffect(() => {
     const shouldForceCollapse =
-      !isLearningMissed && (phase === 'countdown' || (phase === 'playing' && !isLearningMissed))
+      !isLearningActive && (phase === 'countdown' || (phase === 'playing' && !isLearningActive))
     setForceCollapsed(shouldForceCollapse)
-  }, [phase, isLearningMissed, setForceCollapsed])
+  }, [phase, isLearningActive, setForceCollapsed])
 
-  // Reset isLearningMissed when phase changes away from playing/summary
+  // Reset learn mode when phase changes away from playing/summary
   useEffect(() => {
     if (phase !== 'playing' && phase !== 'summary') {
       setIsLearningMissed(false)
+      setLearnModeScope(null)
     }
   }, [phase])
 
@@ -1808,12 +1867,14 @@ export default function Gauntlet() {
 
       {(phase === 'playing' || phase === 'summary') && (
         <div className={`absolute inset-0 z-10 h-full flex flex-col ${
-          isLearningMissed ? 'p-0 overflow-hidden' : 'px-8 pb-4 pt-4 lg:px-12 lg:pb-6 lg:pt-4 gap-4 overflow-y-auto overflow-x-hidden'
+          isLearningActive ? 'p-0 overflow-hidden' : 'px-8 pb-4 pt-4 lg:px-12 lg:pb-6 lg:pt-4 gap-4 overflow-y-auto overflow-x-hidden'
         }`}>
           <RunPlaceholder
             onOpenPause={handleOpenPause}
             isModalOpen={isPauseModalOpen || blocker.state === 'blocked'}
-            isLearningMissed={isLearningMissed}
+            learnModeScope={learnModeScope}
+            setLearnModeScope={setLearnModeScope}
+            isLearningMissed={isLearningActive}
             setIsLearningMissed={setIsLearningMissed}
           />
         </div>
