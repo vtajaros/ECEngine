@@ -42,6 +42,9 @@ export interface GauntletConfig {
   // survival
   lives: number
   perQuestionSec: number
+  allowSolutions?: boolean
+  unlimitedItems?: boolean
+  tosTopicId?: string | null
 }
 
 export const DEFAULT_CONFIG: GauntletConfig = {
@@ -131,6 +134,9 @@ export function normalizeConfig(c: GauntletConfig): GauntletConfig {
     totalItems: clampInt(c.totalItems, 1, 500),
     lives: clampInt(c.lives, 1, 10),
     perQuestionSec: c.perQuestionSec === 0 ? 0 : clampInt(c.perQuestionSec, 5, 300),
+    allowSolutions: c.allowSolutions,
+    unlimitedItems: c.unlimitedItems,
+    tosTopicId: c.tosTopicId ?? null,
   }
 }
 
@@ -165,7 +171,7 @@ function rampNext(queue: QueueItem[], from: number, streak: number): QueueItem[]
 }
 
 function buildRequests(config: GauntletConfig): Array<{ subject: Subject; count: number }> {
-  if (config.mode === 'timed') {
+  if (config.mode === 'timed' && !config.unlimitedItems) {
     const counts =
       config.allocation === 'custom'
         ? config.customCounts
@@ -313,14 +319,19 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
 
   const refill = async (): Promise<void> => {
     const s = get()
-    if (s.phase !== 'playing' || s.pausedAt !== null || s.config.mode !== 'survival' || s.isRefilling || s.refillExhausted) return
+    const isStreamMode = s.config.mode === 'survival' || (s.config.mode === 'timed' && !!s.config.unlimitedItems)
+    if (s.phase !== 'playing' || s.pausedAt !== null || !isStreamMode || s.isRefilling || s.refillExhausted) return
     set({ isRefilling: true })
     let items: QueueItem[] = []
     try {
-      const cards = await gauntletService.getQuestions(
-        buildRequests(s.config),
-        s.queue.map(q => q.card.id),
-      )
+      const reqArgs: [any, any, any?, any?] = [buildRequests(s.config), s.queue.map(q => q.card.id)]
+      if (s.config.allowSolutions !== undefined || s.config.tosTopicId) {
+        reqArgs.push(s.config.allowSolutions)
+      }
+      if (s.config.tosTopicId) {
+        reqArgs.push(s.config.tosTopicId)
+      }
+      const cards = await (gauntletService.getQuestions as any)(...reqArgs)
       items = shuffle(cards.map(toQueueItem))
     } catch {
       items = []
@@ -366,9 +377,13 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
     )
 
     const survival = s.config.mode === 'survival'
-    const { scoreMult, eloMult } = survival
+    let { scoreMult, eloMult } = survival
       ? getSurvivalDifficultyMultiplier(s.config.perQuestionSec, s.config.lives)
       : { scoreMult: 1, eloMult: 1 }
+
+    if (s.config.tosTopicId) {
+      eloMult = eloMult * 0.4
+    }
 
     const res = scoreAnswer({
       outcome,
@@ -461,15 +476,16 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
       void finish('lives')
       return
     }
+    const isStreamMode = survival || (s.config.mode === 'timed' && !!s.config.unlimitedItems)
     if (nextIndex >= queue.length) {
-      if (!survival || s.refillExhausted) {
+      if (!isStreamMode || s.refillExhausted) {
         void finish('queue')
       } else {
         void refill() // waits for more questions; refill() ends the run if none are left
       }
       return
     }
-    if (survival && queue.length - nextIndex <= REFILL_THRESHOLD) void refill()
+    if (isStreamMode && queue.length - nextIndex <= REFILL_THRESHOLD) void refill()
   }
 
   return {
@@ -510,7 +526,14 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
         const ratings = ratingsToMap(await gauntletService.getRatings())
         const requests = buildRequests(config)
         if (requests.length === 0) throw new Error('No items requested.')
-        const cards = await gauntletService.getQuestions(requests, [])
+        const reqArgs: [any, any, any?, any?] = [requests, []]
+        if (config.allowSolutions !== undefined || config.tosTopicId) {
+          reqArgs.push(config.allowSolutions)
+        }
+        if (config.tosTopicId) {
+          reqArgs.push(config.tosTopicId)
+        }
+        const cards: GauntletCard[] = await (gauntletService.getQuestions as any)(...reqArgs)
         let queue = shuffle(cards.map(toQueueItem))
         if (queue.length === 0) throw new Error('No questions available for the selected subjects.')
         if (config.mode === 'survival') queue = rampNext(queue, 0, 0)

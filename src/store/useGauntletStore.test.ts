@@ -550,5 +550,42 @@ describe('life-bonus streak in survival mode', () => {
     expect(store().livesLeft).toBe(2)
     expect(store().feedback?.lifeBonus).toBe(true)
   })
+
+  describe('Time Trial Continuous Sprint & Topic-Specific Elo Scaling', () => {
+    it('requests 24 streaming items when unlimitedItems is true in timed mode', async () => {
+      svc.getQuestions.mockResolvedValue(cards(24, 'MATH'))
+      await store().startRun(timedCfg({ subjects: ['MATH'], unlimitedItems: true }))
+      expect(svc.getQuestions).toHaveBeenCalledWith(
+        [{ subject: 'MATH', count: 24 }],
+        [],
+      )
+      expect(store().queue).toHaveLength(24)
+    })
+
+    it('applies 0.4x fractional scaling to Elo rating when tosTopicId is set', async () => {
+      svc.getRatings.mockResolvedValue([{ subject: 'GEAS', rating: 1200, answers: 50, peak: 1200 }])
+      svc.getQuestions.mockResolvedValue(cards(10, 'GEAS'))
+
+      // Standard full-subject run
+      await store().startRun(timedCfg({ subjects: ['GEAS'], rated: true, tosTopicId: null }))
+      store().beginRun()
+      vi.advanceTimersByTime(2000)
+      store().answer(0)
+      const fullDelta = store().ratings.GEAS.rating - 1200
+
+      // Reset and run with tosTopicId set
+      resetGauntletStore()
+      svc.getRatings.mockResolvedValue([{ subject: 'GEAS', rating: 1200, answers: 50, peak: 1200 }])
+      await store().startRun(timedCfg({ subjects: ['GEAS'], rated: true, tosTopicId: 'GEAS-4.0' }))
+      store().beginRun()
+      vi.advanceTimersByTime(2000)
+      store().answer(0)
+      const scaledDelta = store().ratings.GEAS.rating - 1200
+
+      // Scaled delta should be approximately 40% of full delta
+      expect(scaledDelta).toBeCloseTo(fullDelta * 0.4, 1)
+      expect(scaledDelta).toBeGreaterThan(0)
+    })
+  })
 })
 

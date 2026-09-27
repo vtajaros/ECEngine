@@ -509,6 +509,13 @@ Please explain:
             >
               {endReason ? reasonLabels[endReason] : 'Run Complete'}
             </h2>
+            {config.tosTopicId && (
+              <div className="mt-1 flex items-center justify-center gap-1.5">
+                <span className="px-2.5 py-0.5 rounded-full bg-accent/15 border border-accent/30 text-accent text-[11px] font-['JetBrains_Mono']">
+                  🎯 Topic Focus: {config.tosTopicId} · 0.4x Elo
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Score & Main Stats + Breakdown */}
@@ -1392,7 +1399,12 @@ Please explain:
               {config.mode}
             </span>
             <span className="text-text-muted text-xs font-['JetBrains_Mono']">
-              #{index + 1}{config.mode === 'timed' ? `/${queue.length}` : ''}
+              #{index + 1}
+              {config.mode === 'timed'
+                ? config.unlimitedItems
+                  ? ' (Sprint)'
+                  : `/${config.totalItems || queue.length}`
+                : ''}
             </span>
           </div>
 

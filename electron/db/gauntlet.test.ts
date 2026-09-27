@@ -39,6 +39,18 @@ const SCHEMA = `
     order_index INTEGER DEFAULT 0,
     created_at INTEGER DEFAULT 0
   );
+
+  CREATE TABLE IF NOT EXISTS progress (
+    card_id TEXT PRIMARY KEY,
+    ease_factor REAL DEFAULT 2.5,
+    interval INTEGER DEFAULT 1,
+    repetitions INTEGER DEFAULT 0,
+    next_review TEXT,
+    last_reviewed TEXT,
+    correct_count INTEGER DEFAULT 0,
+    total_count INTEGER DEFAULT 0,
+    last_result TEXT
+  );
 `
 
 function createFreshDB(): Database.Database {
@@ -630,6 +642,144 @@ describe('Gauntlet DB persistence', () => {
       const sampled = sampleQuestions(db, 'ELECS', 2)
       expect(sampled.length).toBe(2)
       expect(sampled.every(s => s.tos_topic_id === 'ELECS-1.0')).toBe(true)
+    })
+  })
+
+  describe('Question Solution Inclusion (allowSolutions)', () => {
+    it('includes cards with solutionImagePath when allowSolutions is true', () => {
+      insertCard(db, 'sol-elecs', 'top-elecs', 'mcq', {
+        question: 'What is Ohm\'s Law?',
+        choices: ['V=IR', 'P=IV', 'E=mc2', 'F=ma'],
+        answerIndex: 0,
+        solutionImagePath: 'ohm_explanation.png',
+      })
+
+      // Default (allowSolutions=false) excludes it
+      const poolDefault = getPoolSizes(db)
+      expect(poolDefault.ELECS).toBe(0)
+
+      // allowSolutions=true includes it
+      const poolWithSol = getPoolSizes(db, { allowSolutions: true })
+      expect(poolWithSol.ELECS).toBe(1)
+
+      // sampleQuestions respects allowSolutions
+      const sampledDefault = sampleQuestions(db, 'ELECS', 5, [], { allowSolutions: false })
+      expect(sampledDefault.length).toBe(0)
+
+      const sampledWithSol = sampleQuestions(db, 'ELECS', 5, [], { allowSolutions: true })
+      expect(sampledWithSol.length).toBe(1)
+      expect(sampledWithSol[0].id).toBe('sol-elecs')
+    })
+  })
+
+  describe('Deck Mastery & Progress Updates in saveRun', () => {
+    it('records correct Gauntlet answers into progress table', () => {
+      insertCard(db, 'c-mastery-1', 'top-elecs')
+
+      saveRun(db, {
+        id: 'run-mastery-1',
+        startedAt: 1000,
+        endedAt: 2000,
+        mode: 'timed',
+        config: {},
+        rated: false,
+        score: 100,
+        answered: 1,
+        correct: 1,
+        wrong: 0,
+        skipped: 0,
+        bestStreak: 1,
+        durationMs: 1000,
+        endReason: 'time',
+        answers: [
+          { seq: 0, cardId: 'c-mastery-1', subject: 'ELECS', chosen: 0, answerIndex: 0, outcome: 'correct', timeMs: 1000, parMs: 5000, points: 100, streakAfter: 1, choices: ['A', 'B'], answeredAt: 1500 },
+        ],
+      })
+
+      const row = db.prepare('SELECT * FROM progress WHERE card_id = ?').get('c-mastery-1') as any
+      expect(row).toBeDefined()
+      expect(row.correct_count).toBe(1)
+      expect(row.total_count).toBe(1)
+      expect(row.last_result).toBe('correct')
+    })
+
+    it('does not overwrite last_result=correct when card is answered wrong in Gauntlet', () => {
+      insertCard(db, 'c-mastery-2', 'top-elecs')
+
+      // First answer correctly
+      saveRun(db, {
+        id: 'run-mastery-2a',
+        startedAt: 1000,
+        endedAt: 2000,
+        mode: 'timed',
+        config: {},
+        rated: false,
+        score: 100,
+        answered: 1,
+        correct: 1,
+        wrong: 0,
+        skipped: 0,
+        bestStreak: 1,
+        durationMs: 1000,
+        endReason: 'time',
+        answers: [
+          { seq: 0, cardId: 'c-mastery-2', subject: 'ELECS', chosen: 0, answerIndex: 0, outcome: 'correct', timeMs: 1000, parMs: 5000, points: 100, streakAfter: 1, choices: ['A', 'B'], answeredAt: 1500 },
+        ],
+      })
+
+      // Later answered wrong in a subsequent fast Gauntlet run
+      saveRun(db, {
+        id: 'run-mastery-2b',
+        startedAt: 3000,
+        endedAt: 4000,
+        mode: 'survival',
+        config: {},
+        rated: false,
+        score: 0,
+        answered: 1,
+        correct: 0,
+        wrong: 1,
+        skipped: 0,
+        bestStreak: 0,
+        durationMs: 1000,
+        endReason: 'lives',
+        answers: [
+          { seq: 0, cardId: 'c-mastery-2', subject: 'ELECS', chosen: 1, answerIndex: 0, outcome: 'wrong', timeMs: 800, parMs: 5000, points: 0, streakAfter: 0, choices: ['A', 'B'], answeredAt: 3500 },
+        ],
+      })
+
+      const row = db.prepare('SELECT * FROM progress WHERE card_id = ?').get('c-mastery-2') as any
+      expect(row).toBeDefined()
+      expect(row.correct_count).toBe(1)
+      expect(row.total_count).toBe(2)
+      // Must preserve 'correct' so mastery earned is not wiped by a speed error in Gauntlet!
+      expect(row.last_result).toBe('correct')
+    })
+  })
+
+  describe('TOS Topic-Specific Filtering (tosTopicId)', () => {
+    it('filters getPoolSizes and sampleQuestions to specified parent topic and subtopics', () => {
+      // GEAS-4.0 (parent) and GEAS-4.1 (subtopic)
+      insertCard(db, 'geas-4-0', 'top-geas', 'mcq', { question: 'Q1', choices: ['A', 'B'], answerIndex: 0 }, 'GEAS-4.0')
+      insertCard(db, 'geas-4-1', 'top-geas', 'mcq', { question: 'Q2', choices: ['A', 'B'], answerIndex: 0 }, 'GEAS-4.1')
+      // GEAS-1.0 (unrelated topic)
+      insertCard(db, 'geas-1-0', 'top-geas', 'mcq', { question: 'Q3', choices: ['A', 'B'], answerIndex: 0 }, 'GEAS-1.0')
+
+      // Without topic filter: GEAS has 3 cards
+      const allPool = getPoolSizes(db)
+      expect(allPool.GEAS).toBe(3)
+
+      // With tosTopicId = 'GEAS-4.0': counts only GEAS-4.0 and GEAS-4.1
+      const filteredPool = getPoolSizes(db, { tosTopicId: 'GEAS-4.0' })
+      expect(filteredPool.GEAS).toBe(2)
+
+      // sampleQuestions with tosTopicId = 'GEAS-4.0' returns only the 2 items
+      const sampled = sampleQuestions(db, 'GEAS', 10, [], { tosTopicId: 'GEAS-4.0' })
+      expect(sampled.length).toBe(2)
+      const ids = sampled.map(s => s.id)
+      expect(ids).toContain('geas-4-0')
+      expect(ids).toContain('geas-4-1')
+      expect(ids).not.toContain('geas-1-0')
     })
   })
 })

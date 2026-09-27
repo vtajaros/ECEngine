@@ -75,15 +75,30 @@ const safeParse = (s: unknown): unknown => {
   try { return JSON.parse(s) } catch { return null }
 }
 
-export function getPoolSizes(db: Database.Database): Record<GauntletSubjectCode, number> {
+export function getPoolSizes(
+  db: Database.Database,
+  options?: { allowSolutions?: boolean; tosTopicId?: string } | boolean,
+): Record<GauntletSubjectCode, number> {
+  const allowSolutions = typeof options === 'boolean' ? options : options?.allowSolutions ?? false
+  const tosTopicId = typeof options === 'object' ? options?.tosTopicId : undefined
   const out: Record<GauntletSubjectCode, number> = { MATH: 0, GEAS: 0, ELECS: 0, EST: 0 }
+  const solutionClause = allowSolutions ? '1=1' : NOT_PROBLEM_SOLVING
+
+  let topicClause = '1=1'
+  const topicParams: string[] = []
+  if (tosTopicId) {
+    topicClause = '(c.tos_topic_id = ? OR c.tos_topic_id LIKE ?)'
+    const prefix = tosTopicId.replace(/\.0$/, '')
+    topicParams.push(tosTopicId, `${prefix}.%`)
+  }
+
   const stmt = db.prepare(`
     SELECT COUNT(*) AS n
     FROM cards c JOIN topics t ON t.id = c.topic_id
-    WHERE c.type = 'mcq' AND t.subject = ? AND ${NOT_PROBLEM_SOLVING} AND ${VALID_MCQ} AND ${NOT_FLAGGED}
+    WHERE c.type = 'mcq' AND t.subject = ? AND ${solutionClause} AND ${VALID_MCQ} AND ${NOT_FLAGGED} AND ${topicClause}
   `)
   ;(Object.keys(SUBJECT_DB_NAME) as GauntletSubjectCode[]).forEach(code => {
-    out[code] = (stmt.get(SUBJECT_DB_NAME[code]) as { n: number }).n
+    out[code] = (stmt.get(SUBJECT_DB_NAME[code], ...topicParams) as { n: number }).n
   })
   return out
 }
@@ -169,17 +184,29 @@ export function sampleQuestions(
   subject: GauntletSubjectCode,
   count: number,
   excludeIds: string[] = [],
+  options?: { allowSolutions?: boolean; tosTopicId?: string } | boolean,
 ): Array<Record<string, unknown>> {
   if (count <= 0) return []
 
+  const allowSolutions = typeof options === 'boolean' ? options : options?.allowSolutions ?? false
+  const tosTopicId = typeof options === 'object' ? options?.tosTopicId : undefined
+  const solutionClause = allowSolutions ? '1=1' : NOT_PROBLEM_SOLVING
   const weakTopics = getWeakTosTopics(db, subject, 5).map(w => w.tosTopicId)
+
+  let topicClause = '1=1'
+  const extraParams: string[] = []
+  if (tosTopicId) {
+    topicClause = '(c.tos_topic_id = ? OR c.tos_topic_id LIKE ?)'
+    const prefix = tosTopicId.replace(/\.0$/, '')
+    extraParams.push(tosTopicId, `${prefix}.%`)
+  }
 
   const sampled = db.prepare(`
     SELECT c.id, c.topic_id, c.type, c.data, c.difficulty, c.tags, c.is_custom, c.created_at, c.tos_topic_id, t.subject, t.name AS deck_name
     FROM cards c
     JOIN topics t ON t.id = c.topic_id
     LEFT JOIN (SELECT DISTINCT card_id FROM gauntlet_answers) g ON g.card_id = c.id
-    WHERE c.type = 'mcq' AND t.subject = ? AND ${NOT_PROBLEM_SOLVING} AND ${VALID_MCQ} AND ${NOT_FLAGGED}
+    WHERE c.type = 'mcq' AND t.subject = ? AND ${solutionClause} AND ${VALID_MCQ} AND ${NOT_FLAGGED} AND ${topicClause}
       AND c.id NOT IN (SELECT value FROM json_each(?))
     ORDER BY
       CASE WHEN c.tos_topic_id IN (SELECT value FROM json_each(?)) THEN 0 ELSE 1 END,
@@ -188,6 +215,7 @@ export function sampleQuestions(
     LIMIT ?
   `).all(
     SUBJECT_DB_NAME[subject],
+    ...extraParams,
     JSON.stringify(excludeIds),
     JSON.stringify(weakTopics),
     count,
@@ -308,6 +336,34 @@ export function saveRun(db: Database.Database, run: GauntletRunInput): void {
       updated_at = excluded.updated_at
   `)
 
+  const hasProgress = !!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='progress'").get()
+  const upsertProgressOnCorrect = hasProgress
+    ? db.prepare(`
+        INSERT INTO progress
+          (card_id, ease_factor, interval, repetitions,
+           correct_count, total_count, last_result, last_reviewed)
+        VALUES (?, 2.5, 1, 0, 1, 1, 'correct', ?)
+        ON CONFLICT(card_id) DO UPDATE SET
+          total_count   = total_count + 1,
+          correct_count = correct_count + 1,
+          last_result   = 'correct',
+          last_reviewed = excluded.last_reviewed
+      `)
+    : null
+
+  const touchProgressOnWrong = hasProgress
+    ? db.prepare(`
+        INSERT INTO progress
+          (card_id, ease_factor, interval, repetitions,
+           correct_count, total_count, last_result, last_reviewed)
+        VALUES (?, 2.5, 1, 0, 0, 1, 'wrong', ?)
+        ON CONFLICT(card_id) DO UPDATE SET
+          total_count   = total_count + 1,
+          last_result   = CASE WHEN progress.last_result = 'correct' THEN 'correct' ELSE 'wrong' END,
+          last_reviewed = excluded.last_reviewed
+      `)
+    : null
+
   db.transaction(() => {
     insertRun.run(
       run.id, run.startedAt, run.endedAt, run.mode, JSON.stringify(run.config ?? {}), run.rated ? 1 : 0,
@@ -316,11 +372,19 @@ export function saveRun(db: Database.Database, run: GauntletRunInput): void {
       run.ratingsAfter ? JSON.stringify(run.ratingsAfter) : null,
       run.subjectBreakdown ? JSON.stringify(run.subjectBreakdown) : null,
     )
+    const localToday = new Date().toISOString().slice(0, 10)
     for (const a of run.answers) {
       insertAnswer.run(
         run.id, a.seq, a.cardId, a.subject, a.chosen, a.answerIndex, a.outcome, a.timeMs, a.parMs,
         a.points, a.streakAfter, JSON.stringify(a.choices ?? []), a.answeredAt,
       )
+      if (hasProgress) {
+        if (a.outcome === 'correct') {
+          upsertProgressOnCorrect!.run(a.cardId, localToday)
+        } else if (a.outcome === 'wrong' || a.outcome === 'timeout') {
+          touchProgressOnWrong!.run(a.cardId, localToday)
+        }
+      }
     }
     if (run.rated && run.ratingsAfter) {
       for (const [subject, r] of Object.entries(run.ratingsAfter)) {

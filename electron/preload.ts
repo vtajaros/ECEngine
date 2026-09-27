@@ -75,8 +75,9 @@ contextBridge.exposeInMainWorld('electron', {
     getResponseTimeDistribution: () => ipcRenderer.invoke('data:getResponseTimeDistribution'),
   },
   gauntlet: {
-    getPoolSizes: () => ipcRenderer.invoke('gauntlet:getPoolSizes'),
-    getQuestions: (payload: { counts: Array<{ subject: string; count: number }>; excludeIds?: string[] }) =>
+    getPoolSizes: (payload?: { allowSolutions?: boolean; tosTopicId?: string }) =>
+      ipcRenderer.invoke('gauntlet:getPoolSizes', payload),
+    getQuestions: (payload: { counts: Array<{ subject: string; count: number }>; excludeIds?: string[]; allowSolutions?: boolean; tosTopicId?: string }) =>
       ipcRenderer.invoke('gauntlet:getQuestions', payload),
     getRatings: () => ipcRenderer.invoke('gauntlet:getRatings'),
     saveRun: (payload: unknown) => ipcRenderer.invoke('gauntlet:saveRun', payload),

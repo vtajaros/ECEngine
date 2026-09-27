@@ -1,5 +1,19 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { ArrowLeft, Timer, Flame, AlertTriangle, Info, Play, Check } from 'lucide-react'
+import {
+  ArrowLeft,
+  Timer,
+  Flame,
+  AlertTriangle,
+  Info,
+  Play,
+  Check,
+  Sparkles,
+  Target,
+  Zap,
+  Layers,
+  ChevronDown,
+  X,
+} from 'lucide-react'
 import type { Subject } from '../../types'
 import {
   GAUNTLET_SUBJECTS,
@@ -14,6 +28,8 @@ import {
   type GauntletMode,
 } from '../../lib/gauntlet'
 import { SUBJECT_LINE_COLOR } from '../../lib/dashboardUtils'
+import { ALL_PARENT_TOS_TOPICS } from '../../lib/tosClassification'
+import { gauntletService } from '../../services/gauntlet.service'
 import {
   DEFAULT_CONFIG,
   useGauntletStore,
@@ -34,10 +50,12 @@ const loadConfigForMode = (mode: GauntletMode): GauntletConfig => {
         mode,
         subjects: Array.isArray(parsed.subjects) ? parsed.subjects : DEFAULT_CONFIG.subjects,
         customCounts: parsed.customCounts ?? DEFAULT_CONFIG.customCounts,
+        unlimitedItems: parsed.unlimitedItems ?? (mode === 'timed' ? true : false),
+        tosTopicId: parsed.tosTopicId ?? null,
       }
     }
   } catch {}
-  return { ...DEFAULT_CONFIG, mode }
+  return { ...DEFAULT_CONFIG, mode, unlimitedItems: mode === 'timed' ? true : false, tosTopicId: null }
 }
 
 const DURATION_PRESETS = [
@@ -57,6 +75,7 @@ export const GauntletSetup: React.FC = () => {
   const startRun = useGauntletStore(s => s.startRun)
 
   const [config, setConfig] = useState<GauntletConfig>(() => loadConfigForMode(setupMode))
+  const [dynamicPoolSizes, setDynamicPoolSizes] = useState<Record<Subject, number> | null>(null)
 
   // Persist config per mode
   useEffect(() => {
@@ -65,28 +84,80 @@ export const GauntletSetup: React.FC = () => {
     } catch {}
   }, [config, setupMode])
 
-  const poolSizes = hub?.poolSizes ?? { MATH: 0, GEAS: 0, ELECS: 0, EST: 0 }
+  // Fetch dynamic pool sizes when solutions or tosTopicId filter changes
+  useEffect(() => {
+    let isMounted = true
+    gauntletService
+      .getPoolSizes({
+        allowSolutions: config.allowSolutions ?? true,
+        tosTopicId: config.tosTopicId || undefined,
+      })
+      .then(sizes => {
+        if (isMounted) {
+          setDynamicPoolSizes(sizes)
+        }
+      })
+      .catch(() => {
+        // Fallback gracefully to store hub data
+      })
+    return () => {
+      isMounted = false
+    }
+  }, [config.allowSolutions, config.tosTopicId])
+
+  const poolSizes = dynamicPoolSizes ?? hub?.poolSizes ?? { MATH: 0, GEAS: 0, ELECS: 0, EST: 0 }
   const paceStats = hub?.pace ?? {}
+
+  const selectedTopic = useMemo(() => {
+    if (!config.tosTopicId) return null
+    return ALL_PARENT_TOS_TOPICS.find(t => t.id === config.tosTopicId) ?? null
+  }, [config.tosTopicId])
+
+  const filteredTopics = useMemo(() => {
+    if (config.subjects.length === 0) return ALL_PARENT_TOS_TOPICS
+    return ALL_PARENT_TOS_TOPICS.filter(t => config.subjects.includes(t.subject))
+  }, [config.subjects])
 
   const toggleSubject = (sub: Subject) => {
     setConfig(prev => {
       const exists = prev.subjects.includes(sub)
       const nextSubs = exists ? prev.subjects.filter(s => s !== sub) : [...prev.subjects, sub]
-      return { ...prev, subjects: nextSubs }
+      // If a topic focus was active and its subject is no longer in nextSubs, or if multiple subjects are now chosen, clear it
+      const currentTopic = prev.tosTopicId ? ALL_PARENT_TOS_TOPICS.find(t => t.id === prev.tosTopicId) : null
+      const keepTopic = currentTopic && nextSubs.includes(currentTopic.subject) && nextSubs.length === 1
+      return {
+        ...prev,
+        subjects: nextSubs,
+        tosTopicId: keepTopic ? prev.tosTopicId : null,
+      }
     })
   }
 
-  // Derived counts for timed mode
+  const handleTopicSelect = (topicId: string) => {
+    if (!topicId) {
+      setConfig(prev => ({ ...prev, tosTopicId: null }))
+      return
+    }
+    const topic = ALL_PARENT_TOS_TOPICS.find(t => t.id === topicId)
+    if (!topic) return
+    setConfig(prev => ({
+      ...prev,
+      tosTopicId: topic.id,
+      subjects: [topic.subject], // restrict to topic's subject
+    }))
+  }
+
+  // Derived counts for timed mode (used in fixed target mode)
   const previewCounts = useMemo(() => {
-    if (setupMode !== 'timed') return {}
+    if (setupMode !== 'timed' || config.unlimitedItems) return {}
     if (config.allocation === 'custom') return config.customCounts
     return allocateCounts(config.totalItems, config.subjects, config.allocation as AllocationStrategy)
-  }, [setupMode, config.totalItems, config.subjects, config.allocation, config.customCounts])
+  }, [setupMode, config.unlimitedItems, config.totalItems, config.subjects, config.allocation, config.customCounts])
 
   // Warnings (i) Pool exhaustion
   const poolWarnings = useMemo(() => {
     const warnings: string[] = []
-    if (setupMode === 'timed') {
+    if (setupMode === 'timed' && !config.unlimitedItems) {
       for (const s of config.subjects) {
         const req = previewCounts[s] ?? 0
         const avail = poolSizes[s] ?? 0
@@ -95,12 +166,18 @@ export const GauntletSetup: React.FC = () => {
         }
       }
     }
+    for (const s of config.subjects) {
+      const avail = poolSizes[s] ?? 0
+      if (avail === 0) {
+        warnings.push(`${s}: 0 cards available${config.tosTopicId ? ' in selected topic' : ''}`)
+      }
+    }
     return warnings
-  }, [setupMode, config.subjects, previewCounts, poolSizes])
+  }, [setupMode, config.unlimitedItems, config.subjects, config.tosTopicId, previewCounts, poolSizes])
 
   // Warnings (ii) Items plan warning for timed mode
   const planWarning = useMemo(() => {
-    if (setupMode !== 'timed' || config.subjects.length === 0) return null
+    if (setupMode !== 'timed' || config.unlimitedItems || config.subjects.length === 0) return null
     const paceMs = blendedPaceMs(previewCounts, paceStats)
     const source = paceSource(config.subjects, paceStats)
     return itemsPlanWarning({
@@ -109,7 +186,7 @@ export const GauntletSetup: React.FC = () => {
       paceMs,
       source,
     })
-  }, [setupMode, config.durationSec, config.totalItems, config.subjects, previewCounts, paceStats])
+  }, [setupMode, config.unlimitedItems, config.durationSec, config.totalItems, config.subjects, previewCounts, paceStats])
 
   // Warnings (iii) Tight timer warning for survival mode
   const survivalTightWarning = useMemo(() => {
@@ -128,13 +205,21 @@ export const GauntletSetup: React.FC = () => {
     return config.subjects.reduce((sum, s) => sum + (config.customCounts[s] ?? 0), 0)
   }, [config.allocation, config.subjects, config.customCounts])
 
-  const isCustomEmpty = setupMode === 'timed' && config.allocation === 'custom' && customTotal === 0
+  const isCustomEmpty = setupMode === 'timed' && !config.unlimitedItems && config.allocation === 'custom' && customTotal === 0
   const noSubjects = config.subjects.length === 0
-  const isStartDisabled = phase === 'loading' || noSubjects || isCustomEmpty
+  const totalAvailable = config.subjects.reduce((sum, s) => sum + (poolSizes[s] ?? 0), 0)
+  const isStartDisabled = phase === 'loading' || noSubjects || isCustomEmpty || totalAvailable === 0
 
   const handleStart = useCallback(() => {
     if (isStartDisabled) return
-    const finalTotal = setupMode === 'timed' && config.allocation === 'custom' ? customTotal : config.totalItems
+    const finalTotal =
+      setupMode === 'timed'
+        ? config.unlimitedItems
+          ? 500
+          : config.allocation === 'custom'
+            ? customTotal
+            : config.totalItems
+        : config.totalItems
     void startRun({ ...config, mode: setupMode, totalItems: finalTotal })
   }, [isStartDisabled, setupMode, config, customTotal, startRun])
 
@@ -146,8 +231,8 @@ export const GauntletSetup: React.FC = () => {
         closeSetup()
       } else if (e.key === 'Enter' && !e.shiftKey) {
         const target = e.target as HTMLElement | null
-        if (target && (target.tagName === 'INPUT' || target.tagName === 'BUTTON')) {
-          // let normal button activation or input work
+        if (target && (target.tagName === 'INPUT' || target.tagName === 'BUTTON' || target.tagName === 'SELECT')) {
+          return
         }
         handleStart()
       }
@@ -196,14 +281,14 @@ export const GauntletSetup: React.FC = () => {
           </div>
         )}
 
-        {/* Common: Subjects selection with pool sizes & problem-solving note */}
+        {/* Common: Subjects selection with pool sizes & solutions indicator */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <span className="font-['Rajdhani'] font-bold text-xs uppercase tracking-wider text-text-primary">
               Select Subjects
             </span>
             <span className="text-[10px] font-['JetBrains_Mono'] text-text-muted">
-              (Problem-solving items excluded)
+              {config.allowSolutions ?? true ? '(Cards with solutions included)' : '(Cards with solutions excluded)'}
             </span>
           </div>
 
@@ -251,6 +336,59 @@ export const GauntletSetup: React.FC = () => {
           </div>
         </div>
 
+        {/* Topic Focus (Optional Category Drill-down) */}
+        <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-surface/60 border border-border-base/70">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Layers size={13} className={config.tosTopicId ? 'text-accent' : 'text-text-muted'} />
+              <span className="font-['Rajdhani'] font-bold text-xs uppercase tracking-wider text-text-primary">
+                Topic Focus (Optional)
+              </span>
+            </div>
+            {config.tosTopicId && (
+              <button
+                type="button"
+                onClick={() => setConfig(c => ({ ...c, tosTopicId: null }))}
+                className="text-[10px] font-['JetBrains_Mono'] text-accent hover:underline flex items-center gap-1 transition-colors"
+              >
+                <X size={10} /> Clear Filter (All Topics)
+              </button>
+            )}
+          </div>
+
+          <div className="relative">
+            <select
+              value={config.tosTopicId ?? ''}
+              onChange={e => handleTopicSelect(e.target.value)}
+              className="w-full bg-surface-2 border border-border-base rounded-lg px-3 py-2 text-xs font-['Rajdhani'] font-semibold text-text-primary focus:border-accent focus:outline-none appearance-none cursor-pointer pr-8 transition-colors"
+            >
+              <option value="">All Topics (Comprehensive Pool)</option>
+              {filteredTopics.map(topic => (
+                <option key={topic.id} value={topic.id}>
+                  {topic.subject} · {topic.name}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-text-muted">
+              <ChevronDown size={14} />
+            </div>
+          </div>
+
+          {selectedTopic && (
+            <div className="px-2.5 py-1.5 rounded-lg bg-surface border border-accent/30 flex items-center justify-between text-xs font-['JetBrains_Mono'] mt-0.5">
+              <div className="flex items-center gap-2 truncate">
+                <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse shrink-0" />
+                <span className="text-text-primary truncate">
+                  {selectedTopic.shortBadge}
+                </span>
+              </div>
+              <span className="text-accent shrink-0 font-bold ml-2">
+                {poolSizes[selectedTopic.subject] ?? 0} available
+              </span>
+            </div>
+          )}
+        </div>
+
         {/* Mode-Specific Settings */}
         {setupMode === 'timed' ? (
           <div className="flex flex-col gap-4">
@@ -280,130 +418,193 @@ export const GauntletSetup: React.FC = () => {
               </div>
             </div>
 
-            {/* Total Items & Quick buttons */}
-            <div className="flex flex-col gap-1.5">
+            {/* Question Mode: Unlimited Sprint vs Fixed Target */}
+            <div className="flex flex-col gap-2">
               <div className="flex items-center justify-between">
                 <span className="font-['Rajdhani'] font-bold text-xs uppercase tracking-wider text-text-primary">
-                  Total Questions
+                  Question Mode
                 </span>
-                <div className="flex items-center gap-1.5">
-                  {[50, 100, 150].map(cnt => (
-                    <button
-                      key={cnt}
-                      type="button"
-                      onClick={() => setConfig(c => ({ ...c, totalItems: cnt }))}
-                      className={`px-2 py-0.5 rounded text-[11px] font-['JetBrains_Mono'] border transition-colors ${
-                        config.totalItems === cnt && config.allocation !== 'custom'
-                          ? 'bg-accent/20 border-accent text-accent'
-                          : 'bg-surface border-border-base text-text-muted hover:text-white'
-                      }`}
-                    >
-                      {cnt}
-                    </button>
-                  ))}
-                </div>
+                <span className="text-[10px] font-['JetBrains_Mono'] text-text-muted">
+                  {config.unlimitedItems ? 'Continuous streaming' : 'Custom question cap'}
+                </span>
               </div>
 
-              {config.allocation !== 'custom' && (
-                <input
-                  type="range"
-                  min={10}
-                  max={250}
-                  step={5}
-                  value={config.totalItems}
-                  onChange={e => setConfig(c => ({ ...c, totalItems: Number(e.target.value) }))}
-                  className="w-full accent-accent h-1.5 bg-surface-2 rounded-lg cursor-pointer"
-                />
-              )}
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setConfig(c => ({ ...c, unlimitedItems: true }))}
+                  className={`py-2 px-3 rounded-xl border flex items-center justify-center gap-2 transition-all ${
+                    config.unlimitedItems
+                      ? 'bg-accent/15 border-accent text-accent shadow-[0_0_15px_rgba(0,255,65,0.2)]'
+                      : 'bg-surface-2 border-border-base text-text-muted hover:text-white'
+                  }`}
+                >
+                  <Sparkles size={14} className={config.unlimitedItems ? 'text-accent' : 'text-text-muted'} />
+                  <span className="font-['Orbitron'] font-bold text-xs">UNLIMITED SPRINT</span>
+                </button>
 
-              {/* Warnings (ii): Items Plan Warning */}
-              {planWarning && (
-                <div className="mt-1 p-2.5 rounded-lg bg-[#FFB800]/10 border border-[#FFB800]/30 text-[#FFB800] text-xs font-['JetBrains_Mono'] flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle size={14} className="shrink-0" />
-                    <span>
-                      {planWarning.kind === 'too-many'
-                        ? `At ~${planWarning.paceSec}s per item (${
-                            planWarning.source === 'observed' ? 'your pace' : 'estimated pace'
-                          }) about ${planWarning.capacity} items fit in ${Math.round(
-                            config.durationSec / 60,
-                          )} min. ${config.totalItems} is likely more than you can finish.`
-                        : `${config.totalItems} items may run out with ~${planWarning.leftMin} min left.`}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setConfig(c => ({ ...c, totalItems: planWarning.suggested }))}
-                    className="px-2 py-1 rounded bg-[#FFB800] text-black font-['Rajdhani'] font-bold text-xs uppercase tracking-wider shrink-0 hover:bg-[#e6a600] transition-colors"
-                  >
-                    Set to {planWarning.suggested}
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Allocation Strategy: EVEN | TOS-WEIGHTED | CUSTOM with inline preview */}
-            <div className="flex flex-col gap-1.5">
-              <span className="font-['Rajdhani'] font-bold text-xs uppercase tracking-wider text-text-primary">
-                Item Allocation
-              </span>
-              <div className="grid grid-cols-3 gap-2">
-                {(['even', 'tos', 'custom'] as const).map(strat => {
-                  const active = config.allocation === strat
-                  const labels = { even: 'EVEN', tos: 'TOS-WEIGHTED', custom: 'CUSTOM' }
-                  return (
-                    <button
-                      key={strat}
-                      type="button"
-                      onClick={() => setConfig(c => ({ ...c, allocation: strat }))}
-                      className={`py-1.5 rounded-lg font-['Orbitron'] font-bold text-xs tracking-wider transition-colors ${
-                        active
-                          ? 'bg-accent text-black shadow'
-                          : 'bg-surface-2 border border-border-base text-text-muted hover:text-white'
-                      }`}
-                    >
-                      {labels[strat]}
-                    </button>
-                  )
-                })}
+                <button
+                  type="button"
+                  onClick={() => setConfig(c => ({ ...c, unlimitedItems: false }))}
+                  className={`py-2 px-3 rounded-xl border flex items-center justify-center gap-2 transition-all ${
+                    !config.unlimitedItems
+                      ? 'bg-accent/15 border-accent text-accent shadow-[0_0_15px_rgba(0,255,65,0.2)]'
+                      : 'bg-surface-2 border-border-base text-text-muted hover:text-white'
+                  }`}
+                >
+                  <Target size={14} className={!config.unlimitedItems ? 'text-accent' : 'text-text-muted'} />
+                  <span className="font-['Orbitron'] font-bold text-xs">FIXED TARGET</span>
+                </button>
               </div>
 
-              {/* Inline Allocation Preview or Custom Steppers */}
-              <div className="grid grid-cols-4 gap-2 mt-1">
-                {config.subjects.map(s => {
-                  const count = previewCounts[s] ?? 0
-                  return (
-                    <div
-                      key={s}
-                      className="p-2 rounded-lg bg-surface border border-border-base flex items-center justify-between text-xs"
-                    >
-                      <span className="font-['Orbitron'] font-bold text-[11px] text-text-muted">
-                        {s}
-                      </span>
-                      {config.allocation === 'custom' ? (
-                        <input
-                          type="number"
-                          min={0}
-                          max={200}
-                          value={config.customCounts[s] ?? 0}
-                          onChange={e => {
-                            const val = Math.max(0, parseInt(e.target.value) || 0)
-                            setConfig(c => ({
-                              ...c,
-                              customCounts: { ...c.customCounts, [s]: val },
-                            }))
-                          }}
-                          className="w-12 text-right bg-surface-2 border border-border-base rounded px-1.5 py-0.5 text-text-primary font-['JetBrains_Mono'] text-xs focus:border-accent outline-none"
-                        />
-                      ) : (
-                        <span className="font-['JetBrains_Mono'] font-bold text-text-primary">
-                          {count}
-                        </span>
-                      )}
+              {config.unlimitedItems ? (
+                <div className="p-3 rounded-xl bg-surface border border-accent/30 flex items-center justify-between gap-3 text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-accent shrink-0">
+                      <Zap size={14} />
                     </div>
-                  )
-                })}
-              </div>
+                    <div className="flex flex-col">
+                      <span className="font-['Rajdhani'] font-bold text-xs text-text-primary uppercase tracking-wider">
+                        Continuous Question Flow
+                      </span>
+                      <span className="text-[11px] font-['JetBrains_Mono'] text-text-muted">
+                        Answer as fast as you can until the {Math.round(config.durationSec / 60)}m clock expires. Questions refill dynamically.
+                      </span>
+                    </div>
+                  </div>
+                  <span className="px-2 py-1 rounded bg-accent/10 border border-accent/30 text-accent font-['Orbitron'] font-bold text-[10px] uppercase tracking-wider shrink-0">
+                    CONTINUOUS
+                  </span>
+                </div>
+              ) : (
+                /* Fixed Target mode: Total Items & Quick buttons */
+                <div className="flex flex-col gap-3 p-3 rounded-xl bg-surface-2/40 border border-border-base/70">
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-['Rajdhani'] font-bold text-xs uppercase tracking-wider text-text-primary">
+                        Total Questions
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {[50, 100, 150].map(cnt => (
+                          <button
+                            key={cnt}
+                            type="button"
+                            onClick={() => setConfig(c => ({ ...c, totalItems: cnt }))}
+                            className={`px-2 py-0.5 rounded text-[11px] font-['JetBrains_Mono'] border transition-colors ${
+                              config.totalItems === cnt && config.allocation !== 'custom'
+                                ? 'bg-accent/20 border-accent text-accent'
+                                : 'bg-surface border-border-base text-text-muted hover:text-white'
+                            }`}
+                          >
+                            {cnt}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {config.allocation !== 'custom' && (
+                      <input
+                        type="range"
+                        min={10}
+                        max={250}
+                        step={5}
+                        value={config.totalItems}
+                        onChange={e => setConfig(c => ({ ...c, totalItems: Number(e.target.value) }))}
+                        className="w-full accent-accent h-1.5 bg-surface-2 rounded-lg cursor-pointer"
+                      />
+                    )}
+
+                    {/* Warnings (ii): Items Plan Warning */}
+                    {planWarning && (
+                      <div className="mt-1 p-2.5 rounded-lg bg-[#FFB800]/10 border border-[#FFB800]/30 text-[#FFB800] text-xs font-['JetBrains_Mono'] flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle size={14} className="shrink-0" />
+                          <span>
+                            {planWarning.kind === 'too-many'
+                              ? `At ~${planWarning.paceSec}s per item (${
+                                  planWarning.source === 'observed' ? 'your pace' : 'estimated pace'
+                                }) about ${planWarning.capacity} items fit in ${Math.round(
+                                  config.durationSec / 60,
+                                )} min. ${config.totalItems} is likely more than you can finish.`
+                              : `${config.totalItems} items may run out with ~${planWarning.leftMin} min left.`}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setConfig(c => ({ ...c, totalItems: planWarning.suggested }))}
+                          className="px-2 py-1 rounded bg-[#FFB800] text-black font-['Rajdhani'] font-bold text-xs uppercase tracking-wider shrink-0 hover:bg-[#e6a600] transition-colors"
+                        >
+                          Set to {planWarning.suggested}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Allocation Strategy: EVEN | TOS-WEIGHTED | CUSTOM with inline preview */}
+                  <div className="flex flex-col gap-1.5">
+                    <span className="font-['Rajdhani'] font-bold text-xs uppercase tracking-wider text-text-primary">
+                      Item Allocation
+                    </span>
+                    <div className="grid grid-cols-3 gap-2">
+                      {(['even', 'tos', 'custom'] as const).map(strat => {
+                        const active = config.allocation === strat
+                        const labels = { even: 'EVEN', tos: 'TOS-WEIGHTED', custom: 'CUSTOM' }
+                        return (
+                          <button
+                            key={strat}
+                            type="button"
+                            onClick={() => setConfig(c => ({ ...c, allocation: strat }))}
+                            className={`py-1.5 rounded-lg font-['Orbitron'] font-bold text-xs tracking-wider transition-colors ${
+                              active
+                                ? 'bg-accent text-black shadow'
+                                : 'bg-surface-2 border border-border-base text-text-muted hover:text-white'
+                            }`}
+                          >
+                            {labels[strat]}
+                          </button>
+                        )
+                      })}
+                    </div>
+
+                    {/* Inline Allocation Preview or Custom Steppers */}
+                    <div className="grid grid-cols-4 gap-2 mt-1">
+                      {config.subjects.map(s => {
+                        const count = previewCounts[s] ?? 0
+                        return (
+                          <div
+                            key={s}
+                            className="p-2 rounded-lg bg-surface border border-border-base flex items-center justify-between text-xs"
+                          >
+                            <span className="font-['Orbitron'] font-bold text-[11px] text-text-muted">
+                              {s}
+                            </span>
+                            {config.allocation === 'custom' ? (
+                              <input
+                                type="number"
+                                min={0}
+                                max={200}
+                                value={config.customCounts[s] ?? 0}
+                                onChange={e => {
+                                  const val = Math.max(0, parseInt(e.target.value) || 0)
+                                  setConfig(c => ({
+                                    ...c,
+                                    customCounts: { ...c.customCounts, [s]: val },
+                                  }))
+                                }}
+                                className="w-12 text-right bg-surface-2 border border-border-base rounded px-1.5 py-0.5 text-text-primary font-['JetBrains_Mono'] text-xs focus:border-accent outline-none"
+                              />
+                            ) : (
+                              <span className="font-['JetBrains_Mono'] font-bold text-text-primary">
+                                {count}
+                              </span>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ) : (
@@ -512,34 +713,65 @@ export const GauntletSetup: React.FC = () => {
           </div>
         )}
 
-        {/* Bottom Row: RATED toggle + START button */}
-        <div className="flex items-center justify-between pt-3 border-t border-border-base/70 mt-1">
-          {/* RATED toggle with one-line helper */}
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setConfig(c => ({ ...c, rated: !c.rated }))}
-              className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${
-                config.rated ? 'bg-accent' : 'bg-surface-2 border border-border-base'
-              }`}
-            >
-              <div
-                className={`w-5 h-5 rounded-full transition-transform ${
-                  config.rated ? 'translate-x-5 bg-black' : 'translate-x-0 bg-text-muted'
+        {/* Bottom Row: Toggles (RATED & SOLUTIONS) + START button */}
+        <div className="flex flex-wrap items-center justify-between gap-4 pt-3 border-t border-border-base/70 mt-1">
+          <div className="flex items-center gap-6">
+            {/* RATED toggle with one-line helper */}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setConfig(c => ({ ...c, rated: !c.rated }))}
+                className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${
+                  config.rated ? 'bg-accent' : 'bg-surface-2 border border-border-base'
                 }`}
-              />
-            </button>
-            <div className="flex flex-col">
-              <span className="font-['Rajdhani'] font-bold text-xs uppercase tracking-wider text-text-primary">
-                Ranked
-              </span>
-              <span className="text-[10px] font-['JetBrains_Mono'] text-text-muted">
-                {config.rated
-                  ? isRatedRun({ subjects: config.subjects })
-                    ? 'Counts toward subject Elo ratings'
-                    : 'Unranked: select all subjects without filters'
-                  : 'Unranked: ratings unchanged'}
-              </span>
+              >
+                <div
+                  className={`w-5 h-5 rounded-full transition-transform ${
+                    config.rated ? 'translate-x-5 bg-black' : 'translate-x-0 bg-text-muted'
+                  }`}
+                />
+              </button>
+              <div className="flex flex-col">
+                <span className="font-['Rajdhani'] font-bold text-xs uppercase tracking-wider text-text-primary">
+                  {config.tosTopicId ? 'Ranked (0.4x Scale)' : 'Ranked'}
+                </span>
+                <span className="text-[10px] font-['JetBrains_Mono'] text-text-muted">
+                  {config.rated
+                    ? config.tosTopicId
+                      ? 'Topic focused: 0.4x Elo rating adjustment'
+                      : isRatedRun({ subjects: config.subjects })
+                        ? 'Counts toward subject Elo ratings'
+                        : 'Unranked: select all subjects'
+                    : 'Unranked: ratings unchanged'}
+                </span>
+              </div>
+            </div>
+
+            {/* SOLUTIONS toggle */}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setConfig(c => ({ ...c, allowSolutions: !(c.allowSolutions ?? true) }))}
+                className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${
+                  (config.allowSolutions ?? true) ? 'bg-accent' : 'bg-surface-2 border border-border-base'
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 rounded-full transition-transform ${
+                    (config.allowSolutions ?? true) ? 'translate-x-5 bg-black' : 'translate-x-0 bg-text-muted'
+                  }`}
+                />
+              </button>
+              <div className="flex flex-col">
+                <span className="font-['Rajdhani'] font-bold text-xs uppercase tracking-wider text-text-primary">
+                  Solutions
+                </span>
+                <span className="text-[10px] font-['JetBrains_Mono'] text-text-muted">
+                  {(config.allowSolutions ?? true)
+                    ? 'Include cards with solutions'
+                    : 'Exclude cards with solutions'}
+                </span>
+              </div>
             </div>
           </div>
 

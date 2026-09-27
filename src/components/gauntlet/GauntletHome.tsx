@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Flame, HelpCircle, History, Award } from 'lucide-react'
+import { Flame, HelpCircle, History, Award, Target } from 'lucide-react'
 import { GAUNTLET_SUBJECTS, TUNING, overallRating, ratingTier } from '../../lib/gauntlet'
 import { SUBJECT_LINE_COLOR } from '../../lib/dashboardUtils'
 import { useGauntletStore } from '../../store/useGauntletStore'
 import { GauntletFaqModal } from './GauntletFaqModal'
 import { GauntletRecordsModal } from './GauntletRecordsModal'
 import { GauntletRanksModal } from './GauntletRanksModal'
+import { GauntletWeakAreasModal } from './GauntletWeakAreasModal'
 import { Tooltip } from '../ui/Tooltip'
 
 // Number count-up hook (~600ms cubic ease-out)
@@ -42,6 +43,7 @@ export const GauntletHome: React.FC = () => {
   const [isFaqOpen, setIsFaqOpen] = useState(false)
   const [isRecordsOpen, setIsRecordsOpen] = useState(false)
   const [isRanksOpen, setIsRanksOpen] = useState(false)
+  const [isWeakAreasOpen, setIsWeakAreasOpen] = useState(false)
 
   // 3D tilt state for each card
   const [timedTilt, setTimedTilt] = useState({ rx: 0, ry: 0 })
@@ -332,6 +334,15 @@ export const GauntletHome: React.FC = () => {
             <History size={14} className="text-accent" />
             Records
           </button>
+
+          <button
+            type="button"
+            onClick={() => setIsWeakAreasOpen(true)}
+            className="text-text-muted hover:text-text-primary text-xs font-['Rajdhani'] font-bold uppercase tracking-widest flex items-center gap-1.5 transition-colors py-1.5 px-3 rounded hover:bg-surface-2 cursor-pointer"
+          >
+            <Target size={14} className="text-warn" />
+            Weak Areas
+          </button>
         </div>
       </div>
 
@@ -344,6 +355,7 @@ export const GauntletHome: React.FC = () => {
       />
       <GauntletFaqModal isOpen={isFaqOpen} onClose={() => setIsFaqOpen(false)} />
       <GauntletRecordsModal isOpen={isRecordsOpen} onClose={() => setIsRecordsOpen(false)} />
+      <GauntletWeakAreasModal isOpen={isWeakAreasOpen} onClose={() => setIsWeakAreasOpen(false)} />
     </div>
   )
 }

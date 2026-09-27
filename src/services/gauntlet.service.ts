@@ -9,9 +9,21 @@ export interface GauntletCard extends Card {
   subjectCode: GauntletSubjectCode
 }
 
+export type WeakTopicStat = {
+  tosTopicId: string
+  subject: GauntletSubjectCode
+  totalAnswers: number
+  correctAnswers: number
+  wrongAnswers: number
+  accuracy: number
+}
+
 export const gauntletService = {
-  async getPoolSizes(): Promise<Record<GauntletSubjectCode, number>> {
-    const res = await window.electron.gauntlet.getPoolSizes()
+  async getPoolSizes(opts?: { allowSolutions?: boolean; tosTopicId?: string } | boolean): Promise<Record<GauntletSubjectCode, number>> {
+    const payload = typeof opts === 'boolean'
+      ? { allowSolutions: opts }
+      : opts
+    const res = await window.electron.gauntlet.getPoolSizes(payload)
     if (!res.success) throw new Error(res.error || 'Failed to get pool sizes')
     return res.data
   },
@@ -19,8 +31,10 @@ export const gauntletService = {
   async getQuestions(
     counts: Array<{ subject: GauntletSubjectCode; count: number }>,
     excludeIds?: string[],
+    allowSolutions?: boolean,
+    tosTopicId?: string,
   ): Promise<GauntletCard[]> {
-    const res = await window.electron.gauntlet.getQuestions({ counts, excludeIds })
+    const res = await window.electron.gauntlet.getQuestions({ counts, excludeIds, allowSolutions, tosTopicId })
     if (!res.success) throw new Error(res.error || 'Failed to get questions')
     const rows = res.data || []
     return rows.map((r: any) => ({

@@ -462,303 +462,331 @@ SUBTOPIC_RULES = {
 
     'GEAS': {
         # 1.0 Chemistry for Engineers
-        'GEAS-1.1': [  # Energy
-            r'\bthermochemistry\b', r'\bheat of reaction\b', r'\bcalorimetry\b', r'\bexothermic\b', r'\bendothermic\b',
-            r'\benthalp(?:y|ies)\b'
-        ],
-        'GEAS-1.2': [  # Chemistry of Engineering Materials
-            r'\bionic bond\b', r'\bcovalent bond\b', r'\bmetallic bond\b', r'\bcorrosion\b',
-            r'\boxidation\b', r'\breduction reaction\b', r'\bredoxs?\b', r'\belectrochemistry\b', r'\bgalvanic cell\b'
-        ],
-        'GEAS-1.3': [  # Chemistry of Nanomaterials
-            r'\bnanomaterials?\b', r'\bnanotechnolog(?:y|ies)\b', r'\bgraphenes?\b', r'\bcarbon nanotube\b', r'\bfullerenes?\b'
-        ],
-        'GEAS-1.4': [  # Chemistry of the Environment
-            r'\bgreen chemistry\b', r'\bacid rain\b', r'\bgreenhouse gas\b', r'\bwater chemistry\b'
-        ],
+        'GEAS-1.1': [ r'\bthermochemistry\b', r'\bheat of reaction\b',
+            r'\bcalorimetry\b', r'\bexothermic\b', r'\bendothermic\b', r'\benthalp(?:y|ies)\b', r'\bhess\'?s law\b',
+            r'\bheat capacity\b', r'\bbomb calorimeter\b', r'\bstandard enthalpy\b', r'\bheat of formation\b',
+            r'\bheat of combustion\b' ],
+
+        'GEAS-1.2': [ r'\bionic bond\b', r'\bcovalent bond\b', r'\bmetallic bond\b', r'\bcorrosion\b', r'\boxidation\b',
+            r'\breduction reaction\b', r'\bredoxs?\b', r'\belectrochemistry\b', r'\bgalvanic cell\b',
+            r'\bvoltaic cell\b', r'\belectrolytic cell\b', r'\bcathode\b', r'\banode\b', r'\belectrolysis\b',
+            r'\bacids? and bases?\b', r'\bph (?:value|level|of)\b', r'\bph between\b', r'\barrhenius\b',
+            r'\bbr[oö]nsted[- ]lowry\b', r'\blewis acid\b', r'\blewis base\b', r'\bbuffer solution\b', r'\bmolarity\b',
+            r'\bmolality\b', r'\bnormality\b', r'\bstoichiometry\b', r'\bavogadro\b', r'\bchemical equation\b',
+            r'\brust(?:ing)?\b', r'\bpassivation\b', r'\belectrode potential\b' ],
+
+        'GEAS-1.3': [ r'\bnanomaterials?\b', r'\bnanotechnolog(?:y|ies)\b', r'\bgraphenes?\b', r'\bcarbon nanotube\b',
+            r'\bfullerenes?\b', r'\bbuckyball\b', r'\bquantum dots?\b', r'\bnanoparticles?\b', r'\bnanowires?\b',
+            r'\bnanoscale\b', r'\bsurface-to-volume ratio\b' ],
+
+        'GEAS-1.4': [ r'\bgreen chemistry\b', r'\bacid rain\b', r'\bgreenhouse gas\b', r'\bwater chemistry\b',
+            r'\bocean acidification\b', r'\bchemical pollutants?\b', r'\bcfcs?\b', r'\bchlorofluorocarbons?\b',
+            r'\bvolatile organic\b', r'\bvocs?\b', r'\bheavy metal contamination\b' ],
 
         # 2.0 Physics for Engineers
-        'GEAS-2.1': [  # Work, Energy and Power
-            r'\bwork-energy theorem\b', r'\bkinetic energy\b', r'\bpotential energy\b', r'\bmechanical power\b',
-            r'\bconservation of (?:mechanical )?energy\b'
-        ],
-        'GEAS-2.2': [  # Impulse and Momentum
-            r'\bimpulse-momentums?\b', r'\bconservation of momentum\b', r'\belastic collision\b',
-            r'\binelastic collision\b', r'\bcoefficient of restitution\b'
-        ],
-        'GEAS-2.3': [  # Kinematics
-            r'\bkinematics\b', r'\bprojectile motion\b', r'\brectilinear motion\b', r'\bfree[- ]fall\b',
-            r'\buniformly accelerated motion\b'
-        ],
-        'GEAS-2.4': [  # Dynamics
-            r'\bnewton\'?s (?:first|second|third)? ?laws? of motion\b', r'\bcoefficient of friction\b',
-            r'\bnormal force\b', r'\bcentripetal force\b', r'\bfree body diagram\b'
-        ],
-        'GEAS-2.5': [  # Rotation and Dynamic of Rotation
-            r'\btorques?\b', r'\bmoment of inertia\b', r'\bangular momentum\b', r'\brotational motion\b',
-            r'\bangular velocity\b', r'\bangular acceleration\b'
-        ],
-        'GEAS-2.6': [  # Elasticity
-            r'\bhooke\'?s law\b', r'\byoung\'?s modulus\b', r'\bshear modulus\b', r'\bbulk modulus\b',
-            r'\belastic (?:limit|deformation)\b'
-        ],
-        'GEAS-2.7': [  # Oscillations and Waves
-            r'\bsimple harmonic motion\b', r'\bpendulums?\b', r'\bwave speed\b', r'\bsound wave\b', r'\bdoppler effect\b'
-        ],
-        'GEAS-2.8': [  # Fluids
-            r'\bbuoyancy\b', r'\barchimedes\'? principle\b', r'\bpascal\'?s principle\b',
-            r'\bbernoulli\'?s (?:principle|equation)\b', r'\bfluid statics\b', r'\bfluid pressure\b'
-        ],
-        'GEAS-2.9': [  # Heat Transfer
-            r'\bheat transfer\b', r'\bconduction\b', r'\bconvection\b', r'\bradiation heat transfer\b',
-            r'\bspecific heat\b', r'\blatent heat\b'
-        ],
-        'GEAS-2.10': [  # Electrostatics, Electricity, Magnetism, Optics
-            r'\bsnell\'?s law\b', r'\blaw of refraction\b', r'\blaw of reflection\b', r'\bconverging lens\b',
+        'GEAS-2.1': [ r'\bwork-energy theorem\b', r'\bkinetic energy\b',
+            r'\bpotential energy\b', r'\bmechanical power\b', r'\bconservation of (?:mechanical )?energy\b',
+            r'\bconservative force\b', r'\bnon[- ]conservative force\b', r'\bpath[- ]independent\b',
+            r'\bindependent of the path\b', r'\bwork done on (?:a )?particle\b', r'\bwork done by (?:a |the )?force\b',
+            r'\bgravitational potential energy\b', r'\bmechanical energy\b', r'\bpower developed by\b',
+            r'\bpower delivered by\b' ],
+
+        'GEAS-2.2': [ r'\bimpulse-momentums?\b', r'\bconservation of momentum\b', r'\belastic collision\b',
+            r'\binelastic collision\b', r'\bcoefficient of restitution\b', r'\blinear momentum\b',
+            r'\bmomentum of (?:a |the )?\w+\b', r'\bchange in momentum\b', r'\bunit (?:for|of) (?:linear )?momentum\b',
+            r'\bkilogram-meter per second\b', r'\bkg[·\.]m/s\b', r'\bimpulse on\b', r'\bcenter of mass\b' ],
+
+        'GEAS-2.3': [ r'\bkinematics\b', r'\bprojectile motion\b', r'\brectilinear motion\b', r'\bfree[- ]fall\b',
+            r'\buniformly accelerated (?:motion|rectilinear)\b', r'\btrajectory of (?:a )?projectile\b',
+            r'\bmaximum height reached\b', r'\brange of (?:a |the )?projectile\b', r'\btime of flight\b',
+            r'\bhorizontal range\b', r'\bdisplacement of (?:a |the )?particle\b', r'\bconstant acceleration\b' ],
+
+        'GEAS-2.4': [ r'\bnewton\'?s (?:first|second|third)? ?laws? of motion\b', r'\bcoefficient of friction\b',
+            r'\bnormal force\b', r'\bcentripetal force\b', r'\bfree body diagram\b',
+            r'\bcoefficient of static friction\b', r'\bcoefficient of kinetic friction\b',
+            r'\bbanked (?:circular )?curve\b', r'\bbanking angle\b', r'\bideal banking\b',
+            r'\bcentripetal acceleration\b', r'\bterminal velocity\b', r'\bdrag force\b', r'\bair resistance\b',
+            r'\bwithout relying on friction\b', r'\btension in (?:the )?cable\b', r'\btension in (?:the )?rope\b',
+            r'\bnet force acting\b' ],
+
+        'GEAS-2.5': [ r'\btorques?\b', r'\bmoment of inertia\b', r'\bangular momentum\b', r'\brotational motion\b',
+            r'\bangular velocity\b', r'\bangular acceleration\b', r'\brotational kinetic energy\b',
+            r'\bparallel axis theorem\b', r'\bradius of gyration\b', r'\brolling without slipping\b' ],
+
+        'GEAS-2.6': [ r'\bhooke\'?s law\b', r'\byoung\'?s modulus\b', r'\bshear modulus\b', r'\bbulk modulus\b',
+            r'\belastic (?:limit|deformation)\b', r'\bmodulus of elasticity\b', r'\bproportional limit\b',
+            r'\btensile stress\b', r'\bcompressive stress\b', r'\belongation of (?:the )?wire\b' ],
+
+        'GEAS-2.7': [ r'\bsimple harmonic motion\b', r'\bshm\b', r'\bpendulums?\b', r'\bwave speed\b', r'\bsound wave\b',
+            r'\bdoppler effect\b', r'\bmass-spring system\b', r'\bspring constant\b', r'\bstiffness of the spring\b',
+            r'\bperiod of oscillation\b', r'\bfrequency of oscillation\b', r'\bstanding waves?\b',
+            r'\btraveling waves?\b', r'\blongitudinal waves?\b', r'\btransverse waves?\b', r'\bwave superposition\b',
+            r'\bnodes? and antinodes?\b', r'\bantinodes?\b', r'\bwave interference\b' ],
+
+        'GEAS-2.8': [ r'\bbuoyancy\b', r'\barchimedes\'? principle\b', r'\bpascal\'?s principle\b',
+            r'\bbernoulli\'?s (?:principle|equation)\b', r'\bfluid statics\b', r'\bfluid pressure\b',
+            r'\bcontinuity equation\b', r'\bhydraulic press\b', r'\bheight of mercury\b', r'\bmercury column\b',
+            r'\bgauge pressure\b', r'\babsolute pressure\b', r'\bspecific gravity\b', r'\bdensity of (?:the )?fluid\b',
+            r'\bviscosit(?:y|ies)\b', r'\blaminar flow\b', r'\bturbulent flow\b' ],
+
+        'GEAS-2.9': [ r'\bheat transfer\b', r'\bconduction\b', r'\bconvection\b', r'\bradiation heat transfer\b',
+            r'\bspecific heat\b', r'\blatent heat\b', r'\bthermal conductivity\b', r'\bthermal expansion\b',
+            r'\blinear expansion\b', r'\bstefan-boltzmann\b', r'\bheat flow rate\b' ],
+
+        'GEAS-2.10': [ r'\bsnell\'?s law\b', r'\blaw of refraction\b', r'\blaw of reflection\b', r'\bconverging lens\b',
             r'\bconcave mirror\b', r'\bconvex mirror\b', r'\bcoulomb\'?s law\b', r'\belectrostatic force\b',
-            r'\belectric field intensity\b', r'\bmagnetic field intensity\b', r'\bapparent depth\b'
-        ],
+            r'\belectric field intensity\b', r'\bmagnetic field intensity\b', r'\bapparent depth\b',
+            r'\bindex of refraction\b', r'\brefractive index\b', r'\bcritical angle\b', r'\btotal internal reflection\b',
+            r'\bglass prism\b', r'\btriangular prism\b', r'\bdispersion of light\b', r'\bwhite light\b',
+            r'\bcomponent colors\b', r'\bfocal length\b', r'\bmirror equation\b', r'\blens equation\b',
+            r'\belectric potential\b', r'\bpotential difference\b', r'\belectric charges?\b', r'\bpoint charges?\b',
+            r'\bequivalent resistance\b', r'\bresistors? in series\b', r'\bresistors? in parallel\b',
+            r'\bequivalent capacitance\b', r'\bcapacitors? in series\b', r'\bcapacitors? in parallel\b',
+            r'\bdielectric constant\b', r'\bohm\'?s law\b', r'\bbar magnet\b', r'\bmagnetic poles?\b', r'\bnorth pole\b',
+            r'\bsouth pole\b', r'\bmagnetic field lines?\b' ],
 
         # 3.0 Engineering Economics
-        'GEAS-3.1': [  # Engineering Economics Terms
-            r'\bsimple interest\b', r'\bnominal (?:interest )?rate\b', r'\beffective (?:interest )?rate\b',
-            r'\btime value of money\b', r'\binterest rate\b'
-        ],
-        'GEAS-3.2': [  # Money-Time Relationship and Equivalence
-            r'\bannuit(?:y|ies)\b', r'\bdeferred annuity\b', r'\bperpetuit(?:y|ies)\b', r'\bcash flow diagram\b',
-            r'\bgradient series\b', r'\bcompound interest\b', r'\beconomic equivalence\b'
-        ],
-        'GEAS-3.3': [  # Basic Economy Study Methods
-            r'\bpresent worth\b', r'\bfuture worth\b', r'\bannual worth\b', r'\brate of return\b',
-            r'\binternal rate of return\b', r'\birr\b', r'\bbenefit-cost ratio\b'
-        ],
-        'GEAS-3.4': [  # Decisions Under Certainty
-            r'\bbreak-even\b', r'\bbreak even\b', r'\bto break even\b',
-            r'\bbreak-even (?:point|analysis|quantity|volume)\b',
-            r'\bvariable costs?\b', r'\bfixed costs?\b',
-            r'\baverage selling price\b', r'\bselling price (?:per|of)\b',
-            r'\bproduction capacity\b',
-            r'\bdepreciation\b', r'\bstraight[- ]line depreciation\b',
-            r'\bdeclining balance\b', r'\bsum-of-the-years\b',
-            r'\bsalvage value\b', r'\bcapitalized cost\b', r'\bbook value\b'
-        ],
-        'GEAS-3.5': [  # Decisions Recognizing Risk
-            r'\bdecision tree\b', r'\bexpected monetary value\b', r'\brisk analysis\b', r'\bprobabilistic risk\b'
-        ],
-        'GEAS-3.6': [  # Decision Admitting Uncertainty
-            r'\bmaximin criterion\b', r'\bmaximax criterion\b', r'\bminimax regret\b', r'\blaplace criterion\b'
-        ],
+        'GEAS-3.1': [ r'\bsimple interest\b', r'\bnominal (?:interest )?rate\b',
+            r'\beffective (?:interest )?rate\b', r'\btime value of money\b', r'\binterest rate\b', r'\binflation rate\b',
+            r'\brate of return\b' ],
+
+        'GEAS-3.2': [ r'\bannuit(?:y|ies)\b', r'\bdeferred annuity\b', r'\bperpetuit(?:y|ies)\b',
+            r'\bcash flow diagram\b', r'\bgradient series\b', r'\bcompound interest\b', r'\beconomic equivalence\b',
+            r'\bsinking fund\b', r'\bcapital recovery\b', r'\buniform series\b' ],
+
+        'GEAS-3.3': [ r'\bpresent worth\b', r'\bfuture worth\b', r'\bannual worth\b', r'\brate of return\b',
+            r'\binternal rate of return\b', r'\birr\b', r'\bbenefit-cost ratio\b', r'\bb/c ratio\b',
+            r'\bpayback period\b' ],
+
+        'GEAS-3.4': [ r'\bbreak-even\b', r'\bbreak even\b', r'\bto break even\b',
+            r'\bbreak-even (?:point|analysis|quantity|volume)\b', r'\bvariable costs?\b', r'\bfixed costs?\b',
+            r'\baverage selling price\b', r'\bselling price (?:per|of)\b', r'\bproduction capacity\b',
+            r'\bdepreciation\b', r'\bstraight[- ]line depreciation\b', r'\bdeclining balance\b', r'\bsum-of-the-years\b',
+            r'\bsalvage value\b', r'\bcapitalized cost\b', r'\bbook value\b' ],
+
+        'GEAS-3.5': [ r'\bdecision tree\b', r'\bexpected monetary value\b', r'\brisk analysis\b',
+            r'\bprobabilistic risk\b', r'\brisk-averse\b', r'\brisk-seeking\b', r'\brisk-neutral\b',
+            r'\brisk preference\b', r'\bexpected payoff\b', r'\bpayoff matrix\b' ],
+
+        'GEAS-3.6': [ r'\bmaximin criterion\b', r'\bmaximax criterion\b', r'\bminimax regret\b',
+            r'\blaplace criterion\b', r'\bhurwicz criterion\b', r'\bdecisions? under uncertainty\b' ],
 
         # 4.0 Engineering Management
-        'GEAS-4.1': [  # Evolution of Management Theory
-            r'\btaylor\'?s scientific management\b', r'\bfayol\'?s principles\b', r'\bhawthorne (?:effect|studies)\b',
-            r'\bscientific management theory\b'
-        ],
-        'GEAS-4.2': [  # Management and Its Functions
-            r'\bmanagerial role\b', r'\bconceptual skill\b', r'\btechnical skill\b', r'\bfunctions? of management\b',
-            r'\bfunctions? of (?:an? )?engineer\b', r'\bdecision[- ]making\b',
-            r'\bmaslow\'?s hierarchy\b', r'\bherzberg\'?s theory\b', r'\bmotivation theory\b'
-        ],
-        'GEAS-4.3': [  # Planning, Leading, Organizing, Controlling
-            r'\bstrategic planning\b', r'\borganization(?:al)? structure\b', r'\bleadership style\b',
+        'GEAS-4.1': [ r'\btaylor\'?s scientific management\b',
+            r'\bfayol\'?s principles\b', r'\bhawthorne (?:effect|studies)\b', r'\bscientific management theory\b',
+            r'\bmax weber\b', r'\bbureaucracy\b' ],
+
+        'GEAS-4.2': [ r'\bmanagerial role\b', r'\bconceptual skill\b', r'\btechnical skill\b',
+            r'\bfunctions? of management\b', r'\bfunctions? of (?:an? )?engineer\b', r'\bdecision[- ]making\b',
+            r'\bmaslow\'?s hierarchy\b', r'\bherzberg\'?s (?:two[- ]factor )?theory\b', r'\btwo[- ]factor theory\b',
+            r'\bhygiene factors?\b', r'\bmotivator factors?\b', r'\bmotivation theory\b',
+            r'\btheory x and (?:theory )?y\b', r'\bsmart criteria\b', r'\bgoal setting\b' ],
+
+        'GEAS-4.3': [ r'\bstrategic planning\b', r'\borganization(?:al)? structure\b', r'\bleadership style\b',
             r'\bcontrolling function\b', r'\borganizing function\b', r'\bplanning and organizing\b',
-            r'\bleading and controlling\b', r'\bdelegation of authority\b', r'\bspan of control\b'
-        ],
-        'GEAS-4.4': [  # Managing Product and Service Operations
-            r'\bpert\b', r'\bcpm\b', r'\bcritical path method\b', r'\bgantt chart\b', r'\beoq\b',
-            r'\btqm\b', r'\bsix sigma\b', r'\bquality control\b', r'\beconomic order quantity\b'
-        ],
-        'GEAS-4.5': [  # Managing Marketing and Finance Functions
-            r'\bmarketing mix\b', r'\b4 ps of marketing\b', r'\bbalance sheet\b', r'\bincome statement\b'
-        ],
+            r'\bleading and controlling\b', r'\bdelegation of authority\b', r'\bspan of control\b' ],
+
+        'GEAS-4.4': [ r'\bpert\b', r'\bcpm\b', r'\bcritical path method\b', r'\bgantt chart\b', r'\beoq\b', r'\btqm\b',
+            r'\bsix sigma\b', r'\bquality control\b', r'\beconomic order quantity\b', r'\binventory management\b',
+            r'\biso 9000\b' ],
+
+        'GEAS-4.5': [ r'\bmarketing mix\b', r'\b4 ps of marketing\b', r'\bbalance sheet\b', r'\bincome statement\b',
+            r'\bcash flow statement\b', r'\bworking capital\b' ],
 
         # 5.0 Technopreneurship 101
-        'GEAS-5.1': [  # Introduction, Ethics, Social Responsibility
-            r'\btechnopreneurships?\b', r'\bstartup ethics\b', r'\bcorporate social responsibility\b', r'\bglobalization\b'
-        ],
-        'GEAS-5.2': [  # Customers and Value Proposition
-            r'\bvalue proposition\b', r'\bcustomer segment\b', r'\bpain point\b'
-        ],
-        'GEAS-5.3': [  # Market Identification and Analysis
-            r'\btam[- ]?sam[- ]?som\b', r'\bmarket sizing\b', r'\bmarket research\b', r'\btarget market\b'
-        ],
-        'GEAS-5.4': [  # Creating Competitive Advantage
-            r'\bporter\'?s five forces\b', r'\bswot analysis\b', r'\bcompetitive advantage\b'
-        ],
-        'GEAS-5.5': [  # Business Models and Intellectual Property
-            r'\bbusiness models?\b', r'\bbusiness model canvas\b',
-            r'\bb2b\b', r'\bbusiness-to-business\b',
-            r'\bb2c\b', r'\bbusiness-to-consumer\b',
-            r'\bc2c\b', r'\bconsumer-to-consumer\b',
-            r'\bb2g\b', r'\bbusiness-to-government\b',
-            r'\bonline marketplace\b', r'\be-commerce (?:business )?model\b',
-            r'\bfreemium\b', r'\bsubscription model\b', r'\bmarketplace model\b',
-            r'\bpatents?\b', r'\bintellectual property\b', r'\btrademarks?\b', r'\bcopyrights?\b'
-        ],
-        'GEAS-5.6': [  # Execution and Business Plan
-            r'\bmvp\b', r'\bminimum viable product\b', r'\bpitch deck\b', r'\bbusiness plan\b'
-        ],
-        'GEAS-5.7': [  # Financial Analysis and Accounting Basics
-            r'\brunways?\b', r'\bburn rate\b', r'\bunit economics\b', r'\bgross margin\b', r'\bfinancial statement\b'
-        ],
-        'GEAS-5.8': [  # Raising Capital
-            r'\bventure capital\b', r'\bangel investor\b', r'\bseed funding\b', r'\bcrowdfunding\b'
-        ],
+        'GEAS-5.1': [ r'\btechnopreneurships?\b', r'\bstartup ethics\b',
+            r'\bcorporate social responsibility\b', r'\bglobalization\b', r'\bentrepreneurial mindset\b' ],
+
+        'GEAS-5.2': [ r'\bvalue proposition\b', r'\bcustomer segment\b', r'\bpain point\b', r'\bcustomer discovery\b' ],
+
+        'GEAS-5.3': [ r'\btam[- ]?sam[- ]?som\b', r'\bmarket sizing\b', r'\bmarket research\b', r'\btarget market\b' ],
+
+        'GEAS-5.4': [ r'\bporter\'?s five forces\b', r'\bswot analysis\b', r'\bcompetitive advantage\b',
+            r'\bblue ocean strategy\b', r'\bdifferentiation strategy\b', r'\bbarriers? to entry\b' ],
+
+        'GEAS-5.5': [ r'\bbusiness models?\b', r'\bbusiness model canvas\b', r'\bb2b\b', r'\bbusiness-to-business\b',
+            r'\bb2c\b', r'\bbusiness-to-consumer\b', r'\bc2c\b', r'\bconsumer-to-consumer\b', r'\bb2g\b',
+            r'\bbusiness-to-government\b', r'\bonline marketplace\b', r'\be-commerce (?:business )?model\b',
+            r'\bfreemium\b', r'\bsubscription model\b', r'\bmarketplace model\b', r'\bpatents?\b',
+            r'\bintellectual property\b', r'\btrademarks?\b', r'\bcopyrights?\b' ],
+
+        'GEAS-5.6': [ r'\bmvp\b', r'\bminimum viable product\b', r'\bpitch deck\b', r'\bbusiness plan\b',
+            r'\blean startup\b', r'\bgo-to-market\b' ],
+
+        'GEAS-5.7': [ r'\brunways?\b', r'\bburn rate\b', r'\bunit economics\b', r'\bgross margin\b',
+            r'\bfinancial statement\b' ],
+
+        'GEAS-5.8': [ r'\bventure capital\b', r'\bangel investor\b', r'\bseed funding\b', r'\bcrowdfunding\b',
+            r'\bbootstrapping\b', r'\bequity financing\b' ],
 
         # 6.0 Physics 2
-        'GEAS-6.1': [  # Thermodynamics
-            r'\bthermodynamics\b', r'\bcarnot (?:cycle|engine)\b', r'\bentropy\b',
+        'GEAS-6.1': [ r'\bthermodynamics\b', r'\bcarnot (?:cycle|engine)\b', r'\bentropy\b',
             r'\bfirst law of thermodynamics\b', r'\bsecond law of thermodynamics\b', r'\bideal gas law\b',
-            r'\bcoefficient of performance\b', r'\brefrigeration cycle\b', r'\bheat engine\b', r'\bheat pump\b'
-        ],
-        'GEAS-6.2': [  # Electricity and Magnetism
-            r'\belectric flux\b', r'\bgauss\'?s law\b', r'\bmagnetic force on a\b', r'\belectric charge density\b'
-        ],
-        'GEAS-6.3': [  # EM Induction and Inductance
-            r'\binductances?\b', r'\bself[- ]inductance\b', r'\bmutual induction\b', r'\belectromagnetic induction\b'
-        ],
-        'GEAS-6.4': [  # AC Circuits
-            r'\brlc series circuit\b', r'\brlc parallel circuit\b'
-        ],
-        'GEAS-6.5': [  # Optics and Atomic/Nuclear Physics
-            r'\bphotoelectric effect\b', r'\bnuclear reaction\b', r'\bnuclear reactor\b', r'\bradioactivity\b',
-            r'\bhalf-lifes?\b', r'\bwave optics\b', r'\bmoderators?\b', r'\bcontrol rods?\b'
-        ],
+            r'\bcoefficient of performance\b', r'\brefrigeration cycle\b', r'\bheat engine\b', r'\bheat pump\b',
+            r'\bisothermal process\b', r'\badiabatic process\b', r'\bisobaric process\b', r'\bisochoric process\b' ],
+
+        'GEAS-6.2': [ r'\belectric flux\b', r'\bgauss\'?s law\b', r'\bmagnetic force\b', r'\bmagnetic force on\b',
+            r'\bmagnetic force experienced\b', r'\belectric charge density\b', r'\bmagnetic field lines?\b',
+            r'\bbar magnet\b', r'\bpermanent magnet\b', r'\bnorth pole\b', r'\bsouth pole\b',
+            r'\buniform magnetic field\b', r'\blorentz force\b', r'\bbiot-savart\b', r'\bampere\'?s circuital law\b',
+            r'\bmagnetic dipole\b', r'\bforce on a (?:current[- ]carrying )?wire\b' ],
+
+        'GEAS-6.3': [ r'\binductances?\b', r'\bself[- ]inductance\b', r'\bmutual induction\b',
+            r'\belectromagnetic induction\b', r'\binduced electromotive force\b', r'\binduced emf\b',
+            r'\bfaraday\'?s law\b', r'\blenz\'?s law\b', r'\btransformers?\b', r'\bturns ratio\b', r'\bprimary coil\b',
+            r'\bsecondary coil\b', r'\bstep-up transformer\b', r'\bstep-down transformer\b', r'\bideal transformer\b',
+            r'\binductors?\b', r'\brl circuit\b', r'\brate of (?:change of )?magnetic flux\b',
+            r'\benergy stored in (?:an? )?inductor\b', r'\bvoltage across the inductor\b' ],
+
+        'GEAS-6.4': [ r'\brlc series circuit\b', r'\brlc parallel circuit\b', r'\bac circuits?\b',
+            r'\balternating voltage\b', r'\balternating current\b', r'\bseries rlc\b', r'\bparallel rlc\b',
+            r'\bcapacitive reactance\b', r'\binductive reactance\b', r'\bcomplex impedance\b',
+            r'\bequivalent total capacitance\b', r'\btotal capacitance\b', r'\bcapacitors? (?:strictly )?in series\b',
+            r'\bcapacitors? in parallel\b', r'\bseries capacitors?\b', r'\bparallel capacitors?\b',
+            r'\btuning circuit\b', r'\btune an? rf circuit\b', r'\brf circuit\b', r'\bresonant frequency\b',
+            r'\bpower factor\b', r'\bresistor network\b' ],
+
+        'GEAS-6.5': [ r'\bphotoelectric effect\b', r'\bnuclear reaction\b', r'\bnuclear reactor\b', r'\bradioactivity\b',
+            r'\bhalf-lifes?\b', r'\bwave optics\b', r'\bmoderators?\b', r'\bcontrol rods?\b', r'\bphotons?\b',
+            r'\bplanck\'?s constant\b', r'\bwork function\b', r'\bbohr radius\b', r'\bbohr model\b',
+            r'\brydberg constant\b', r'\bhydrogen spectral lines\b', r'\balpha[- ]particles?\b',
+            r'\bbeta[- ]particles?\b', r'\bgamma rays?\b', r'\bnuclear fission\b', r'\bnuclear fusion\b',
+            r'\bmass defect\b', r'\bbinding energy\b', r'\bmagic numbers? of protons\b', r'\bpositrons?\b',
+            r'\bantiparticle\b' ],
 
         # 7.0 Materials Science and Engineering
-        'GEAS-7.1': [  # Atomic Structure and Interatomic Bonding
-            r'\batomic bonding\b', r'\bprimary bonding\b', r'\belectronegativit(?:y|ies)\b', r'\binteratomic bond\w*'
-        ],
-        'GEAS-7.2': [  # Structure of Crystalline Materials
-            r'\bunit cell\b', r'\bbcc structure\b', r'\bfcc structure\b', r'\bhcp structure\b',
-            r'\bmiller indices\b', r'\bcrystal structure\b', r'\bcrystalline material\b'
-        ],
-        'GEAS-7.3': [  # Imperfections in Solids
-            r'\bpoint defect\b', r'\blattice vacancy\b', r'\bdislocations?\b', r'\bgrain boundary\b',
-            r'\bsolid solution\b', r'\bsubstitutional (?:solid )?solution\b', r'\binterstitial (?:solid )?solution\b'
-        ],
-        'GEAS-7.4': [  # Diffusion in Solids
-            r'\bfick\'?s (?:first|second) law\b', r'\bdiffusion in solids?\b', r'\bcarburizing\b'
-        ],
-        'GEAS-7.5': [  # Mechanical Properties of Metals
-            r'\btensile test\b', r'\bstress-strain (?:curve|diagram)\b', r'\byield point\b', r'\bductility\b',
-            r'\bbrinell hardness\b', r'\brockwell hardness\b', r'\bcharpy (?:impact )?test\b', r'\bfatigue (?:limit|strength)\b',
-            r'\bcreep (?:test|failure)\b'
-        ],
-        'GEAS-7.6': [  # Metal Alloys, Ceramics, Polymers, Composites
-            r'\bphase diagram\b', r'\biron-carbon (?:diagram|system)\b', r'\bsteel alloy\b',
-            r'\bpolymer material\b', r'\bceramic material\b', r'\bcomposite material\b'
-        ],
-        'GEAS-7.7': [  # Electrical, Dielectric, Magnetic, Optical Properties
-            r'\bband theory\b', r'\bdielectric strength\b', r'\bferromagnetism\b', r'\bdiamagnetic\b', r'\bparamagnetic\b'
-        ],
+        'GEAS-7.1': [ r'\batomic bonding\b', r'\bprimary bonding\b',
+            r'\belectronegativit(?:y|ies)\b', r'\binteratomic bond\w*', r'\bisotopes?\b', r'\batomic mass(?:es)?\b',
+            r'\batomic numbers?\b', r'\bnumber of neutrons\b', r'\bnumber of protons\b', r'\bnumber of electrons\b',
+            r'\bcarbon-1[24]\b', r'\bvalence electrons?\b', r'\belectron configuration\b' ],
+
+        'GEAS-7.2': [ r'\bunit cell\b', r'\bbcc structure\b', r'\bfcc structure\b', r'\bhcp structure\b',
+            r'\bmiller indices\b', r'\bcrystal structure\b', r'\bcrystalline material\b', r'\bcoordination number\b',
+            r'\batomic packing factor\b', r'\bapf\b' ],
+
+        'GEAS-7.3': [ r'\bpoint defect\b', r'\blattice vacancy\b', r'\bdislocations?\b', r'\bgrain boundary\b',
+            r'\bsolid solution\b', r'\bsubstitutional (?:solid )?solution\b', r'\binterstitial (?:solid )?solution\b',
+            r'\bedge dislocation\b', r'\bscrew dislocation\b' ],
+
+        'GEAS-7.4': [ r'\bfick\'?s (?:first|second) law\b', r'\bdiffusion in solids?\b', r'\bcarburizing\b',
+            r'\bdiffusion coefficient\b' ],
+
+        'GEAS-7.5': [ r'\btensile test\b', r'\bstress-strain (?:curve|diagram)\b', r'\byield point\b', r'\bductility\b',
+            r'\bbrinell hardness\b', r'\brockwell hardness\b', r'\bcharpy (?:impact )?test\b',
+            r'\bfatigue (?:limit|strength)\b', r'\bcreep (?:test|failure)\b', r'\byield strength\b',
+            r'\btensile strength\b', r'\btoughness\b' ],
+
+        'GEAS-7.6': [ r'\bphase diagram\b', r'\biron-carbon (?:diagram|system)\b', r'\bsteel alloy\b',
+            r'\bpolymer material\b', r'\bceramic material\b', r'\bcomposite material\b', r'\bcast iron\b',
+            r'\beutectic\b', r'\beutectoid\b' ],
+
+        'GEAS-7.7': [ r'\bband theory\b', r'\bdielectric strength\b', r'\bferromagnetism\b', r'\bdiamagnetic\b',
+            r'\bparamagnetic\b', r'\bcoercivit(?:y|ies)\b', r'\bretentivit(?:y|ies)\b', r'\bhysteresis loop\b',
+            r'\bhysteresis\b', r'\bdemagnetiz\w*\b', r'\bpermanent magnets?\b', r'\bmagnetic material\b',
+            r'\bmagnetic permeabilit(?:y|ies)\b', r'\benergy band gap\b', r'\bband gap of\b',
+            r'\bintrinsic semiconductor\b', r'\bextrinsic semiconductor\b', r'\bsemiconductor is made of\b',
+            r'\bconduction band\b', r'\bvalence band\b' ],
 
         # 8.0 Computer Programming
-        'GEAS-8.1': [  # Object Oriented Programming and UML
-            r'\bobject[- ]oriented programming\b', r'\binheritance\b', r'\bpolymorphism\b', r'\bencapsulation\b', r'\buml diagram\b'
-        ],
-        'GEAS-8.2': [  # Object Oriented Analysis and Design
-            r'\bdesign pattern\b', r'\bsolid principle\w*\b', r'\bsoftware architecture\b', r'\bobject-oriented design\b'
-        ],
-        'GEAS-8.3': [  # Programming Language Fundamentals
-            r'\bprogramming language\b', r'\bdata type\b', r'\bfor loop\b', r'\bwhile loop\b',
-            r'\barrays?\b', r'\bpointer variable\b', r'\balgorithms?\b'
-        ],
-        'GEAS-8.4': [  # Exception Handling
-            r'\bexception handling\b', r'\btry catch\b', r'\berror handling\b'
-        ],
-        'GEAS-8.5': [  # Graphical User Interface Programming
-            r'\bgraphical user interface\b', r'\bgui programming\b', r'\bevent-driven programming\b', r'\bcallback function\b', r'\bwidgets?\b'
-        ],
+        'GEAS-8.1': [ r'\bobject[- ]oriented programming\b', r'\binheritance\b',
+            r'\bpolymorphism\b', r'\bencapsulation\b', r'\buml (?:use case )?diagrams?\b', r'\buse case diagrams?\b',
+            r'\buse cases?\b', r'\bstick figure\b', r'\bactors?\b', r'\bclass diagrams?\b', r'\bsequence diagrams?\b',
+            r'\bactivity diagrams?\b', r'\bstate diagrams?\b', r'\buml\b', r'\bclasses and objects\b',
+            r'\bobject-oriented concepts\b' ],
+
+        'GEAS-8.2': [ r'\bdesign pattern\b', r'\bsolid principle\w*\b', r'\bsoftware architecture\b',
+            r'\bobject-oriented design\b', r'\bobject-oriented analysis\b', r'\booad\b', r'\booa\b',
+            r'\bproblem domain\b', r'\bsoftware complexity\b', r'\bdomain model\b', r'\bsoftware system is designed\b',
+            r'\bsoftware requirements?\b' ],
+
+        'GEAS-8.3': [ r'\bprogramming language\b', r'\bdata type\b', r'\bfor loop\b', r'\bwhile loop\b', r'\barrays?\b',
+            r'\bpointer variable\b', r'\balgorithms?\b', r'\bpseudocode\b', r'\bstructured programming\b',
+            r'\bloop that will iterate\b', r'\bprogram segment\b', r'\bcontrol structures?\b', r'\bif-else\b',
+            r'\bswitch-case\b', r'\bvariables?\b', r'\bcompiler\b', r'\binterpreter\b' ],
+
+        'GEAS-8.4': [ r'\bexception handling\b', r'\btry catch\b', r'\berror handling\b', r'\bruntime error\b',
+            r'\bthrow exception\b', r'\bcatch block\b' ],
+
+        'GEAS-8.5': [ r'\bgraphical user interface\b', r'\bgui programming\b', r'\bevent-driven programming\b',
+            r'\bcallback function\b', r'\bwidgets?\b', r'\bwindows api\b', r'\bcreatewindow\b', r'\bgui window\b',
+            r'\bwin32\b', r'\bgraphical application window\b', r'\bevent handler\b' ],
 
         # 9.0 Environment Science and Engineering
-        'GEAS-9.1': [  # Nature and Ecology
-            r'\becosystems?\b', r'\bfood chain\b', r'\bfood web\b', r'\btrophic levels?\b',
-            r'\bbiodiversit(?:y|ies)\b', r'\becolog(?:y|ies)\b',
-            r'\bnutrient cycles?\b', r'\bbiogeochemical cycles?\b',
-            r'\bhydrologic(?:al)? (?:cycle|process)\b', r'\bwater cycle\b',
-            r'\bpart of the water cycle\b', r'\bevaporation\b', r'\bcondensation\b',
-            r'\bprecipitation (?:and|or) collection\b', r'\bprecipitation\b',
-            r'\btranspiration\b', r'\bevapotranspiration\b', r'\brunoff\b',
-            r'\bpercolation\b', r'\bgroundwater\b', r'\baquifers?\b',
+        'GEAS-9.1': [ r'\becosystems?\b', r'\bfood chain\b',
+            r'\bfood web\b', r'\btrophic levels?\b', r'\bbiodiversit(?:y|ies)\b', r'\becolog(?:y|ies)\b',
+            r'\bnutrient cycles?\b', r'\bbiogeochemical cycles?\b', r'\bhydrologic(?:al)? (?:cycle|process)\b',
+            r'\bwater cycle\b', r'\bpart of the water cycle\b', r'\bevaporation\b', r'\bcondensation\b',
+            r'\bprecipitation (?:and|or) collection\b', r'\bprecipitation\b', r'\btranspiration\b',
+            r'\bevapotranspiration\b', r'\brunoff\b', r'\bpercolation\b', r'\bgroundwater\b', r'\baquifers?\b',
             r'\bnitrogen cycle\b', r'\bcarbon cycle\b', r'\bphosphorus cycle\b', r'\bsulfur cycle\b',
             r'\bproducers? and consumers?\b', r'\bdecomposers?\b', r'\bbiomes?\b', r'\bhabitat\b',
-            r'\bcarrying capacity\b', r'\bprimary succession\b', r'\bsecondary succession\b',
-            r'\bphotosynthesis\b', r'\becological niche\b', r'\bhydrosphere\b', r'\blithosphere\b', r'\bbiosphere\b'
-        ],
-        'GEAS-9.2': [  # Natural Systems and Resources
-            r'\brenewable resource\b', r'\bnon-renewable resource\b', r'\bwater resource\b',
-            r'\benergy resource\b', r'\bmineral resource\b', r'\bforest resource\b'
-        ],
-        'GEAS-9.3': [  # Environmental Concerns and Crises
-            r'\bair pollution\b', r'\bwater pollution\b', r'\bsolid waste (?:management)?\b',
+            r'\bcarrying capacity\b', r'\bprimary succession\b', r'\bsecondary succession\b', r'\bphotosynthesis\b',
+            r'\becological niche\b', r'\bhydrosphere\b', r'\blithosphere\b', r'\bbiosphere\b' ],
+
+        'GEAS-9.2': [ r'\brenewable resource\b', r'\bnon-renewable resource\b', r'\bwater resource\b',
+            r'\benergy resource\b', r'\bmineral resource\b', r'\bforest resource\b' ],
+
+        'GEAS-9.3': [ r'\bair pollution\b', r'\bwater pollution\b', r'\bsolid waste (?:management)?\b',
             r'\bclimate change\b', r'\bglobal warming\b', r'\bozone layer\b', r'\bozone depletion\b',
-            r'\beutrophication\b', r'\bgreenhouse effect\b', r'\bgreenhouse gas(?:es)?\b',
-            r'\bsalinity\b', r'\bhalinity\b', r'\bhaloginity\b', r'\bacid rain\b',
-            r'\bphotochemical smog\b', r'\bchlorofluorocarbons?\b', r'\bcfcs?\b'
-        ],
-        'GEAS-9.4': [  # Environmental Impact Assessment
-            r'\benvironmental studies\b', r'\benvironmental impact(?:s)?\b',
-            r'\benvironmental impact assessment\b', r'\beia\b',
-            r'\benvironmental compliance certificate\b', r'\becc\b',
-            r'\bdirect impact(?:s)?\b', r'\bindirect impact(?:s)?\b',
-            r'\bsocial impact(?:s)?\b', r'\bcumulative impact(?:s)?\b',
-            r'\bresidual impact(?:s)?\b',
-            r'\ban effect that occurs immediately as a result of an activity\b',
-            r'\benvironmental management plan\b', r'\beia process\b', r'\bproject description\b'
-        ],
-        'GEAS-9.5': [  # Sustainable Development
-            r'\bsustainability\b', r'\bsustainable development\b', r'\bcarbon footprint\b',
-            r'\brenewable energy\b', r'\bclean energy\b', r'\bcircular economy\b'
-        ],
+            r'\beutrophication\b', r'\bgreenhouse effect\b', r'\bgreenhouse gas(?:es)?\b', r'\bsalinity\b',
+            r'\bhalinity\b', r'\bhaloginity\b', r'\bacid rain\b', r'\bphotochemical smog\b', r'\bchlorofluorocarbons?\b',
+            r'\bcfcs?\b' ],
+
+        'GEAS-9.4': [ r'\benvironmental studies\b', r'\benvironmental impact(?:s)?\b',
+            r'\benvironmental impact assessment\b', r'\beia\b', r'\benvironmental compliance certificate\b', r'\becc\b',
+            r'\bdirect impact(?:s)?\b', r'\bindirect impact(?:s)?\b', r'\bsocial impact(?:s)?\b',
+            r'\bcumulative impact(?:s)?\b', r'\bresidual impact(?:s)?\b',
+            r'\ban effect that occurs immediately as a result of an activity\b', r'\benvironmental management plan\b',
+            r'\beia process\b', r'\bproject description\b', r'\bmitigation hierarchy\b', r'\benvironmental management\b',
+            r'\bmitigation measures?\b' ],
+
+        'GEAS-9.5': [ r'\bsustainability\b', r'\bsustainable development\b', r'\bcarbon footprint\b',
+            r'\brenewable energy\b', r'\bclean energy\b', r'\bcircular economy\b' ],
 
         # 10.0 ECE Laws, Contracts, Ethics, Standards and Safety
-        'GEAS-10.1': [  # Laws, Obligations and Contracts
-            r'\bcontract law\b', r'\bobligations?\b', r'\bbreach of contract\b', r'\btorts?\b', r'\bcivil code\b',
-            r'\bquasi-delict\b', r'\bvoid and voidable\b', r'\bvalid contract\b'
-        ],
-        'GEAS-10.2': [  # Pledge of ECE and CSC Guidelines
-            r'\bcode of ethics\b', r'\bece pledge\b', r'\bethical conduct\b', r'\bcsc guidelines\b',
-            r'\bengineer\'?s code of ethics\b', r'\bprofessional conduct\b'
-        ],
-        'GEAS-10.3': [  # Board Examination Rules
-            r'\bboard exam(?:ination)? rules?\b', r'\bpassing score\b', r'\bprc exam(?:ination)?\b',
-            r'\bgeneral rating of 70\b', r'\bremoval examination\b', r'\b70 percent\b'
-        ],
-        'GEAS-10.4': [  # Regulating the ECE Profession (PRC)
-            r'\bra ?9292\b', r'\bece law\b', r'\bpece\b', r'\bprofessional electronics engineer\b',
+        'GEAS-10.1': [ r'\bcontract law\b',
+            r'\bobligations?\b', r'\bbreach of contract\b', r'\btorts?\b', r'\bcivil code\b', r'\bquasi-delict\b',
+            r'\bvoid and voidable\b', r'\bvalid contract\b' ],
+
+        'GEAS-10.2': [ r'\bcode of ethics\b', r'\bece pledge\b', r'\bethical conduct\b', r'\bcsc guidelines\b',
+            r'\bengineer\'?s code of ethics\b', r'\bprofessional conduct\b', r'\bprofessional ethical standards?\b',
+            r'\bhealth, safety and public\b', r'\bconflict of interest\b' ],
+
+        'GEAS-10.3': [ r'\bboard exam(?:ination)? rules?\b', r'\bpassing score\b', r'\bprc exam(?:ination)?\b',
+            r'\bgeneral rating of 70\b', r'\bremoval examination\b', r'\b70 percent\b' ],
+
+        'GEAS-10.4': [ r'\bra ?9292\b', r'\bece law\b', r'\bpece\b', r'\bprofessional electronics engineer\b',
             r'\bregistered electronics (?:engineer|technician)\b', r'\belectronics engineer\b',
             r'\belectronics technician\b', r'\bprc board of electronics\b', r'\bboard of electronics engineering\b',
             r'\biecep\b', r'\bseal of (?:a )?pece\b', r'\bscope of practice of ece\b',
-            r'\broster of registered electronics\b', r'\bprc modernization act\b', r'\bra ?8981\b'
-        ],
-        'GEAS-10.5': [  # Other ECE Related Statutes
-            r'\bra ?7925\b', r'\bra ?8792\b', r'\be-commerce act\b', r'\bpublic telecommunications policy act\b',
-            r'\bra ?10515\b', r'\banti-cable tv\b', r'\bcable internet tapping\b', r'\banti-cable tv and cable internet tapping act\b',
-            r'\bra ?10844\b', r'\bdict act\b', r'\bdepartment of information and communications technology\b',
-            r'\bra ?10175\b', r'\bcybercrime prevention act\b',
-            r'\bra ?10912\b', r'\bcpd act\b', r'\bcontinuing professional development\b',
-            r'\bra ?10055\b', r'\btechnology transfer act\b',
+            r'\broster of registered electronics\b', r'\bprc modernization act\b', r'\bra ?8981\b',
+            r'\bunauthorized practice\b', r'\bwithout a valid prc license\b', r'\bunlicensed practice\b',
+            r'\bpracticing (?:the )?(?:electronics engineering )?profession\b', r'\bprc license\b' ],
+
+        'GEAS-10.5': [ r'\bra ?7925\b', r'\bra ?8792\b', r'\be-commerce act\b',
+            r'\bpublic telecommunications policy act\b', r'\bra ?10515\b', r'\banti-cable tv\b',
+            r'\bcable internet tapping\b', r'\banti-cable tv and cable internet tapping act\b', r'\bra ?10844\b',
+            r'\bdict act\b', r'\bdepartment of information and communications technology\b', r'\bra ?10175\b',
+            r'\bcybercrime prevention act\b', r'\bra ?10912\b', r'\bcpd act\b',
+            r'\bcontinuing professional development\b', r'\bra ?10055\b', r'\btechnology transfer act\b',
             r'\bra ?10889\b', r'\bra ?10982\b', r'\bra ?3846\b', r'\bact (?:no\.?\s*)?3846\b', r'\bradio control law\b',
-            r'\bra ?8293\b', r'\bintellectual property code\b',
-            r'\bntc\b', r'\bnational telecommunications commission\b',
-            r'\bkbp\b', r'\bkbp broadcast code\b', r'\bfranchise\b', r'\btelecommunications? law\b',
-            r'\brepublic act (?:no\.?\s*)?\d+\b', r'\bra\s*\d{3,5}\b'
-        ],
-        'GEAS-10.6': [  # Safety Standards and PEC Codes
-            r'\bphilippine electrical code\b', r'\bpec\b', r'\bosha standard\b', r'\bsafety standard\b'
-        ],
+            r'\bra ?8293\b', r'\bintellectual property code\b', r'\bntc\b',
+            r'\bnational telecommunications commission\b', r'\bkbp\b', r'\bkbp broadcast code\b', r'\bfranchise\b',
+            r'\btelecommunications? law\b', r'\brepublic act (?:no\.?\s*)?\d+\b', r'\bra\s*\d{3,5}\b' ],
+
+        'GEAS-10.6': [ r'\bphilippine electrical code\b', r'\bpec\b', r'\bosha standard\b', r'\bsafety standard\b',
+            r'\bphilippine electronics code\b' ],
 
         # 11.0 CAD
-        'GEAS-11.1': [  # Introduction to CAD Software
-            r'\bcad software\b', r'\bautocad\b', r'\bcad coordinate system\b', r'\bviewports?\b'
-        ],
-        'GEAS-11.2': [  # Snapping and Construction Elements
-            r'\bosnap\b', r'\bobject snap\b', r'\bortho mode\b', r'\bpolar tracking\b'
-        ],
-        'GEAS-11.3': [  # Dimensioning, Plotting and Image Input
-            r'\bdimensioning\b', r'\bplotting (?:scale|a drawing)\b', r'\bdrawing scale\b', r'\bimage input\b', r'\braster image\b'
-        ]
+        'GEAS-11.1': [ r'\bcad software\b', r'\bautocad\b', r'\bcad coordinate system\b',
+            r'\bviewports?\b', r'\bcad drawing\b', r'\bzoom extents\b', r'\bzoom scale\b', r'\bpan command\b',
+            r'\bpan\b', r'\borbit command\b', r'\bregen command\b', r'\bviewing command\b', r'\bautocad command\b' ],
+
+        'GEAS-11.2': [ r'\bosnap\b', r'\bobject snap\b', r'\bortho mode\b', r'\bpolar tracking\b',
+            r'\bconstruction elements?\b' ],
+
+        'GEAS-11.3': [ r'\bdimensioning\b', r'\bplotting (?:scale|a drawing)\b', r'\bdrawing scale\b',
+            r'\bimage input\b', r'\braster image\b' ],
     },
 
     'EST': {
@@ -981,23 +1009,25 @@ PARENT_RULES = {
         'ELECS-9.0': [r'\bfeedback control\b', r'\broot locus\b', r'\bpid controller\b'],
     },
     'GEAS': {
-        'GEAS-1.0': [r'\bchemistry for engineers?\b', r'\bchemical reaction\b', r'\bchemical bond\b'],
-        'GEAS-2.0': [r'\bphysics for engineers?\b', r'\bnewton\'?s laws?\b', r'\bkinetic energy\b'],
-        'GEAS-3.0': [r'\bengineering economics?\b', r'\bcompound interest\b', r'\bannuit(?:y|ies)\b', r'\bpresent worth\b'],
-        'GEAS-4.0': [r'\bengineering management\b', r'\bmanagement function\b', r'\borganization(?:al)?\b', r'\bmanager(?:s|ial)?\b', r'\bfunctions? of (?:an? )?engineer\b'],
-        'GEAS-5.0': [r'\btechnopreneurships?\b', r'\bstartups?\b', r'\bbusiness plan\b'],
-        'GEAS-6.0': [r'\bthermodynamics\b', r'\bphysics 2\b', r'\bnuclear physics\b'],
-        'GEAS-7.0': [r'\bmaterials? science\b', r'\bcrystal structure\b', r'\bmetallurg(?:y|ies)\b', r'\bstress-strains?\b'],
-        'GEAS-8.0': [r'\bcomputer programming\b', r'\bobject-oriented programming\b'],
+        'GEAS-1.0': [r'\bchemistry for engineers?\b', r'\bchemical reactions?\b', r'\bchemical bonds?\b', r'\bchemical compounds?\b', r'\bmolar mass\b', r'\bperiodic table\b', r'\bchemical equations?\b', r'\bacid(?:ic)? or base\b'],
+        'GEAS-2.0': [r'\bphysics for engineers?\b', r'\bnewton\'?s laws?\b', r'\bkinetic energy\b', r'\bclassical mechanics\b', r'\bacceleration of gravity\b', r'\bcoefficient of friction\b', r'\bconservation of energy\b', r'\blinear momentum\b'],
+        'GEAS-3.0': [r'\bengineering economics?\b', r'\bcompound interest\b', r'\bannuit(?:y|ies)\b', r'\bpresent worth\b', r'\binterest rate\b', r'\btime value of money\b', r'\brate of return\b', r'\bcash flow\b'],
+        'GEAS-4.0': [r'\bengineering management\b', r'\bmanagement functions?\b', r'\borganization(?:al)?\b', r'\bmanager(?:s|ial)?\b', r'\bfunctions? of (?:an? )?engineer\b', r'\bproject management\b', r'\bleadership styles?\b', r'\bdecision[- ]making\b'],
+        'GEAS-5.0': [r'\btechnopreneurships?\b', r'\bstartups?\b', r'\bbusiness plans?\b', r'\bentrepreneur(?:ship)?\b', r'\bventure capital\b', r'\bbusiness models?\b'],
+        'GEAS-6.0': [r'\bthermodynamics\b', r'\bphysics 2\b', r'\bnuclear physics\b', r'\bmodern physics\b', r'\bheat engines?\b', r'\belectromagnetic induction\b', r'\balternating current\b'],
+        'GEAS-7.0': [r'\bmaterials? science\b', r'\bcrystal structures?\b', r'\bmetallurg(?:y|ies)\b', r'\bstress-strains?\b', r'\bmaterial properties\b', r'\bsemiconductor materials?\b'],
+        'GEAS-8.0': [r'\bcomputer programming\b', r'\bobject[- ]oriented programming\b', r'\bsoftware engineering\b', r'\bprogramming languages?\b', r'\bobject-oriented\b', r'\balgorithms?\b'],
         'GEAS-9.0': [
             r'\benvironmental (?:science|engineering)\b', r'\becolog(?:y|ies)\b', r'\bpollutions?\b',
-            r'\bnutrient cycles?\b', r'\becosystems?\b', r'\bhydrologic cycle\b'
+            r'\bnutrient cycles?\b', r'\becosystems?\b', r'\bhydrologic cycle\b',
+            r'\benvironmental impact\b', r'\bsustainable development\b'
         ],
         'GEAS-10.0': [
             r'\bece laws?\b', r'\bengineering ethics\b', r'\bra ?9292\b', r'\bcontract law\b',
-            r'\brepublic acts?\b', r'\bra\s*\d{3,5}\b', r'\banti-cable\b', r'\bcode of ethics\b'
+            r'\brepublic acts?\b', r'\bra\s*\d{3,5}\b', r'\banti-cable\b', r'\bcode of ethics\b',
+            r'\bboard of electronics\b', r'\blicensure examination\b'
         ],
-        'GEAS-11.0': [r'\bcad software\b', r'\bautocad\b', r'\bdrafting\b'],
+        'GEAS-11.0': [r'\bcad software\b', r'\bautocad\b', r'\bdrafting\b', r'\bcomputer[- ]aided (?:design|drafting)\b', r'\bcad drawing\b'],
     },
     'EST': {
         'EST-1.0': [r'\bsignal processing\b', r'\bsampling theorem\b', r'\bdigital filter\b', r'\bfourier transform\b'],
@@ -1128,8 +1158,73 @@ def normalize_subject(subj_str):
     return 'ALL'
 
 
+# Cross-subject mapping: when a question is in GEAS, physics and engineering science
+# questions that match ELECS circuit/EM/device rules map directly to official GEAS topics.
+ELECS_TO_GEAS_MAP = {
+    'ELECS-1.1': 'GEAS-6.4',  # Resistive Network -> AC/DC circuits
+    'ELECS-1.2': 'GEAS-6.4',  # Mesh and Node Equations
+    'ELECS-1.3': 'GEAS-6.4',  # Network Theorems
+    'ELECS-1.4': 'GEAS-6.3',  # Transient Analysis (charging capacitor, inductor)
+    'ELECS-1.5': 'GEAS-6.4',  # DC Network Problems
+    'ELECS-1.0': 'GEAS-6.4',
+    'ELECS-2.1': 'GEAS-6.4',  # AC Network Problems
+    'ELECS-2.2': 'GEAS-6.4',  # Impedance and Admittance
+    'ELECS-2.3': 'GEAS-6.4',  # Resonance
+    'ELECS-2.4': 'GEAS-6.4',  # Power in AC Circuits
+    'ELECS-2.5': 'GEAS-6.4',  # Two-Port Network
+    'ELECS-2.0': 'GEAS-6.4',
+    'ELECS-3.1': 'GEAS-6.2',  # Steady Electric and Magnetic Fields
+    'ELECS-3.2': 'GEAS-7.7',  # Dielectric and Magnetic Materials -> Materials Science
+    'ELECS-3.3': 'GEAS-6.3',  # Coupled and Magnetic Circuits -> EM Induction
+    'ELECS-3.4': 'GEAS-6.3',  # Time-Varying Fields and Maxwell -> EM Induction
+    'ELECS-3.0': 'GEAS-6.2',
+    'ELECS-4.1': 'GEAS-7.7',  # Diodes & Semiconductor devices -> Materials Science
+    'ELECS-4.2': 'GEAS-7.7',
+    'ELECS-4.3': 'GEAS-7.7',
+    'ELECS-4.4': 'GEAS-6.4',
+    'ELECS-4.5': 'GEAS-7.7',  # Transistors & semiconductors -> Materials Science
+    'ELECS-4.0': 'GEAS-7.7',
+    'ELECS-5.5': 'GEAS-6.4',  # Oscillators and filters -> AC circuits
+    'ELECS-6.1': 'GEAS-7.7',  # Power semiconductors (SCRs, TRIACs) -> Materials Science
+    'ELECS-7.1': 'GEAS-8.3',  # Logic -> Programming fundamentals
+    'ELECS-7.2': 'GEAS-8.3',
+    'ELECS-8.1': 'GEAS-8.3',  # Microprocessors -> Programming fundamentals
+    'ELECS-8.4': 'GEAS-8.3',
+    'ELECS-8.0': 'GEAS-8.3',
+}
+
+POOL_DECK_INDICATORS = [
+    re.compile(r'\bpre[- ]?boards?\b', re.I),
+    re.compile(r'\bexams?\b', re.I),
+    re.compile(r'\breviews?\b', re.I),
+    re.compile(r'\brefreshers?\b', re.I),
+    re.compile(r'\bcoachings?\b', re.I),
+    re.compile(r'\bmocks?\b', re.I),
+    re.compile(r'\bdiagnostics?\b', re.I),
+    re.compile(r'\bmixed\b', re.I),
+    re.compile(r'\bcompilations?\b', re.I),
+    re.compile(r'\bcomprehensives?\b', re.I),
+    re.compile(r'\bquizz?ers?\b', re.I),
+    re.compile(r'\btests?\b', re.I),
+    re.compile(r'\ball topics?\b', re.I),
+    re.compile(r'\bpools?\b', re.I),
+]
+
+def is_mixed_pool_deck(deck_name, deck_desc=None):
+    """Check if deck is a generic mixed/exam pool deck that should not be biased to a single topic."""
+    combined = f"{deck_name or ''} {deck_desc or ''}".strip().lower()
+    for pat in POOL_DECK_INDICATORS:
+        if pat.search(combined):
+            return True
+    return False
+
+
 def detect_deck_topic(deck_name, deck_desc, subject_code):
     """Detect a primary parent topic from deck title and deck description."""
+    if is_mixed_pool_deck(deck_name, deck_desc):
+        # Generic pool decks (Pre-Boards, Reviews, Exams) carry no single-topic signal
+        return None
+
     combined = f"{deck_name or ''} {deck_desc or ''}".strip().lower()
     if not combined:
         return None
@@ -1151,7 +1246,9 @@ def classify_text(text, subject_code, deck_name=None, deck_desc=None, default_to
     Incorporates:
     - Expanded subtopic regex rules
     - Deck Default TOS Category bias and fallback
-    - Deck Name & Description topic hints
+    - Deck Name & Description topic hints (with generic pool deck immunity)
+    - Cross-subject physics/circuits mapping for GEAS
+    - Best-effort within-subject classification
     Returns (topic_id, is_confident)
     """
     if subject_code not in COMPILED_SUBTOPIC_RULES:
@@ -1198,7 +1295,7 @@ def classify_text(text, subject_code, deck_name=None, deck_desc=None, default_to
         top_id, top_score = ranked[0]
         second_score = ranked[1][1] if len(ranked) > 1 else 0
 
-        # If deck has a primary topic
+        # If deck has a verified primary topic
         if primary_parent:
             top_parent = SUBTOPIC_TO_PARENT.get(top_id, top_id)
             if top_parent == primary_parent:
@@ -1208,15 +1305,15 @@ def classify_text(text, subject_code, deck_name=None, deck_desc=None, default_to
                 elif default_tos:
                     return default_tos, False
                 else:
-                    return None, False
+                    return top_id, True
             else:
                 # Top match is from a different topic family
                 raw_top = raw_subtopic_scores.get(top_id, 0)
-                # Allow cross-topic classification ONLY if strong confident keyword match (>= 3 raw points)
+                # Allow cross-topic classification if confident keyword match
                 if raw_top >= 3:
                     return top_id, True
 
-                # If weak/coincidental match from another topic, check if primary parent had any subtopic matches
+                # Check if primary parent had any subtopic matches
                 best_primary_sub = None
                 best_primary_score = 0
                 for s_id, s_cnt in raw_subtopic_scores.items():
@@ -1226,20 +1323,26 @@ def classify_text(text, subject_code, deck_name=None, deck_desc=None, default_to
 
                 if best_primary_sub and best_primary_score >= MIN_CONFIDENCE_SCORE:
                     return best_primary_sub, True
-                # Otherwise fallback to the deck's default or None
+                if raw_top >= 1:
+                    return top_id, True
                 if default_tos:
                     return default_tos, False
                 return None, False
 
-        confident = (top_score >= MIN_CONFIDENCE_SCORE) and (top_score - second_score >= MIN_CONFIDENCE_MARGIN)
-        if confident:
+        # No primary parent or pool deck:
+        if len(ranked) == 1 or (top_score - second_score >= MIN_CONFIDENCE_MARGIN):
             return top_id, True
-        elif default_tos:
-            return default_tos, False
         else:
-            return None, False
+            # Tied or close top candidates: check if they share the same parent topic
+            p1 = SUBTOPIC_TO_PARENT.get(top_id)
+            p2 = SUBTOPIC_TO_PARENT.get(ranked[1][0])
+            if p1 and p1 == p2:
+                # Common parent topic is unambiguous
+                return p1, True
+            # Best-effort subtopic assignment within the subject
+            return top_id, True
 
-    # 3. Parent-level rules
+    # 3. Parent-level rules for this subject
     parent_scores = Counter()
     if subject_code in COMPILED_PARENT_RULES:
         for p_id, patterns in COMPILED_PARENT_RULES[subject_code].items():
@@ -1252,13 +1355,43 @@ def classify_text(text, subject_code, deck_name=None, deck_desc=None, default_to
 
     if parent_scores:
         top_pid, top_pscore = parent_scores.most_common(1)[0]
-        if top_pscore >= 3:
+        if top_pscore >= 1:
             return top_pid, True
-        if default_tos:
-            return default_tos, False
-        return None, False
 
-    # 4. Fallback hierarchy: default_tos -> Untagged (None)
+    # 4. Cross-subject bridge: physics/circuits overlap between ELECS and GEAS
+    if subject_code == 'GEAS' and 'ELECS' in COMPILED_SUBTOPIC_RULES:
+        elecs_scores = Counter()
+        for e_sub_id, patterns in COMPILED_SUBTOPIC_RULES['ELECS'].items():
+            for pat in patterns:
+                cnt = len(pat.findall(text))
+                if cnt > 0:
+                    words_in_pat = len(re.findall(r'[a-zA-Z0-9]+', pat.pattern))
+                    weight = 3 if words_in_pat >= 2 else 1
+                    elecs_scores[e_sub_id] += cnt * weight
+
+        if elecs_scores:
+            top_eid, _ = elecs_scores.most_common(1)[0]
+            mapped_geas = ELECS_TO_GEAS_MAP.get(top_eid) or ELECS_TO_GEAS_MAP.get(SUBTOPIC_TO_PARENT.get(top_eid, ''))
+            if mapped_geas:
+                return mapped_geas, True
+
+        # Check ELECS parent rules
+        if 'ELECS' in COMPILED_PARENT_RULES:
+            elecs_p_scores = Counter()
+            for ep_id, patterns in COMPILED_PARENT_RULES['ELECS'].items():
+                for pat in patterns:
+                    cnt = len(pat.findall(text))
+                    if cnt > 0:
+                        words_in_pat = len(re.findall(r'[a-zA-Z0-9]+', pat.pattern))
+                        weight = 3 if words_in_pat >= 2 else 1
+                        elecs_p_scores[ep_id] += cnt * weight
+            if elecs_p_scores:
+                top_epid, _ = elecs_p_scores.most_common(1)[0]
+                mapped_geas = ELECS_TO_GEAS_MAP.get(top_epid)
+                if mapped_geas:
+                    return mapped_geas, True
+
+    # 5. Fallback hierarchy: default_tos -> Untagged (None)
     if default_tos:
         return default_tos, False
 
