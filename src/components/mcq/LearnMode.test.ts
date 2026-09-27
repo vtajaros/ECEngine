@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { partitionCards } from './LearnMode'
+import { partitionCards, reshuffleCardChoices } from './LearnMode'
 import { Card } from '../../types'
 
 function makeMockCards(count: number): Card[] {
@@ -113,5 +113,50 @@ describe('partitionCards', () => {
     const p2 = partitionCards(cards2, 5, 3)
     expect(p2).toHaveLength(1)
     expect(p2[0]).toHaveLength(2)
+  })
+})
+
+describe('reshuffleCardChoices', () => {
+  it('scrambles choices and remaps the correct answer index', () => {
+    const card: Card = {
+      id: 'test-card-1',
+      type: 'mcq',
+      topicId: 'test',
+      difficulty: 'medium',
+      tags: [],
+      isCustom: false,
+      createdAt: new Date().toISOString(),
+      data: {
+        question: "What is Ohm's Law?",
+        choices: ['V = IR', 'P = IV', 'F = ma', 'E = mc^2'],
+        answer: 0,
+      },
+    }
+    const reshuffled = reshuffleCardChoices(card)
+    const mcq = reshuffled.data as any
+    expect(mcq.choices).toHaveLength(4)
+    expect(mcq.choices[mcq.answer]).toBe('V = IR')
+    expect(mcq.choices).not.toEqual(['V = IR', 'P = IV', 'F = ma', 'E = mc^2'])
+  })
+
+  it('does not scramble choices when isSafeToShuffleChoices is false', () => {
+    const card: Card = {
+      id: 'test-card-2',
+      type: 'mcq',
+      topicId: 'test',
+      difficulty: 'medium',
+      tags: [],
+      isCustom: false,
+      createdAt: new Date().toISOString(),
+      data: {
+        question: 'Which of the following?',
+        choices: ['Option 1', 'Option 2', 'Both A and B', 'None of these'],
+        answer: 2,
+      },
+    }
+    const reshuffled = reshuffleCardChoices(card)
+    const mcq = reshuffled.data as any
+    expect(mcq.choices).toEqual(['Option 1', 'Option 2', 'Both A and B', 'None of these'])
+    expect(mcq.answer).toBe(2)
   })
 })

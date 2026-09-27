@@ -900,6 +900,22 @@ describe('Gauntlet Summary Review List', () => {
     expect(container!.querySelector('[data-testid="flag-badge-0"]')).toBeNull()
   })
 
+  it('excludes flagged cards from missedCards and learn missed items session', async () => {
+    ;(gauntletService.getFlaggedQuestions as any).mockResolvedValueOnce({
+      c2: { reason: 'Hard problem solving question', flaggedAt: Date.now() },
+    })
+    setupSummaryState()
+
+    await act(async () => {
+      root!.render(renderWithRouter(<Gauntlet />))
+    })
+
+    // Standard missed items = c2, c3, c4 (3 items). With c2 flagged, count is 2.
+    const learnMissedBtn = container!.querySelector('[data-testid="learn-missed-button"]') as HTMLButtonElement
+    expect(learnMissedBtn).toBeTruthy()
+    expect(learnMissedBtn.textContent).toContain('LEARN MISSED (2)')
+  })
+
   it('manages forceCollapsed: true during playing, false when isLearningMissed is true', async () => {
     useGauntletStore.setState({
       phase: 'playing',

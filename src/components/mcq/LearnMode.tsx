@@ -33,7 +33,7 @@ interface LearnModeProps {
   onExit: () => void
 }
 
-function reshuffleCardChoices(card: Card): Card {
+export function reshuffleCardChoices(card: Card): Card {
   if (
     card.type === 'mcq' &&
     card.data &&
@@ -225,7 +225,8 @@ interface LearnCardStat {
   // Initialize
   useEffect(() => {
     if (!cards || cards.length === 0) return
-    const newPartitions = partitionCards(cards, PARTITION_SIZE, 3)
+    const initialCards = shuffleChoices ? cards.map(c => reshuffleCardChoices(c)) : cards
+    const newPartitions = partitionCards(initialCards, PARTITION_SIZE, 3)
     setPartitions(newPartitions)
     setActiveQueue([...newPartitions[0]])
     setCurrentPartitionIndex(0)
@@ -236,7 +237,7 @@ interface LearnCardStat {
     cardStatsRef.current = {}
     setCardStats({})
     setGlobalStats({ correctFirstTry: 0, wrongFirstTry: 0 })
-  }, [cards])
+  }, [cards, shuffleChoices])
 
   const currentCard = activeQueue[currentCardIndex]
   const isMcq = currentCard?.type === 'mcq'

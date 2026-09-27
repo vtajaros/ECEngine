@@ -71,8 +71,41 @@ export const GAUNTLET_DDL: string[] = [
   'CREATE INDEX IF NOT EXISTS idx_gauntlet_flagged_card ON gauntlet_flagged_cards(card_id)',
 ]
 
-// Problem-solving MCQs carry a solution image; Gauntlet v1 excludes them.
-const NOT_PROBLEM_SOLVING = `(json_extract(c.data, '$.solutionImagePath') IS NULL OR json_extract(c.data, '$.solutionImagePath') = '')`
+// Exclude calculation/problem-solving questions:
+// 1. Cards with a solution image containing numbers/math.
+// 2. Questions where choices are predominantly numerical / measurements (e.g. "859 Hz", "38.1 dBW", "1.6 bps", "400 Mbits/s").
+// 3. Calculation stems ("Calculate...", "Determine...", "Compute...", "Find the...") with numeric choices.
+// Concept questions (definitions, principles, and pure concept diagrams) remain playable.
+const NOT_PROBLEM_SOLVING = `(
+  NOT (
+    (json_extract(c.data, '$.solutionImagePath') IS NOT NULL AND json_extract(c.data, '$.solutionImagePath') != '' AND json_extract(c.data, '$.choices') GLOB '*[0-9]*')
+    OR
+    (
+      (
+        json_extract(c.data, '$.choices[0]') GLOB '[0-9]*'
+        OR json_extract(c.data, '$.choices[0]') GLOB '[-+.]*'
+        OR json_extract(c.data, '$.choices[0]') GLOB '([0-9]*'
+        OR json_extract(c.data, '$.choices[0]') GLOB '$*'
+      )
+      AND (
+        json_extract(c.data, '$.choices[1]') GLOB '[0-9]*'
+        OR json_extract(c.data, '$.choices[1]') GLOB '[-+.]*'
+        OR json_extract(c.data, '$.choices[1]') GLOB '([0-9]*'
+        OR json_extract(c.data, '$.choices[1]') GLOB '$*'
+      )
+    )
+    OR
+    (
+      json_extract(c.data, '$.choices') GLOB '*[0-9]*'
+      AND (
+        json_extract(c.data, '$.question') LIKE 'Calculate %'
+        OR json_extract(c.data, '$.question') LIKE 'Determine %'
+        OR json_extract(c.data, '$.question') LIKE 'Compute %'
+        OR json_extract(c.data, '$.question') LIKE 'Find the %'
+      )
+    )
+  )
+)`
 const VALID_MCQ = `(json_type(c.data, '$.choices') = 'array' AND json_array_length(c.data, '$.choices') >= 2)`
 const NOT_FLAGGED = `(c.id NOT IN (SELECT card_id FROM gauntlet_flagged_cards))`
 
@@ -126,6 +159,8 @@ export function getWeakTosTopics(
   db: Database.Database,
   subject?: GauntletSubjectCode,
   limit = 5,
+  mode?: 'all' | 'survival' | 'timed',
+  sortBy: 'misses' | 'accuracy' = 'accuracy',
 ): WeakTopicStat[] {
   let sql = `
     SELECT c.tos_topic_id,
@@ -137,6 +172,7 @@ export function getWeakTosTopics(
     FROM gauntlet_answers a
     JOIN cards c ON c.id = a.card_id
     JOIN topics t ON t.id = c.topic_id
+    LEFT JOIN gauntlet_runs r ON r.id = a.run_id
     WHERE c.tos_topic_id IS NOT NULL AND c.tos_topic_id != ''
   `
   const params: unknown[] = []
@@ -144,10 +180,20 @@ export function getWeakTosTopics(
     sql += ` AND t.subject = ?`
     params.push(SUBJECT_DB_NAME[subject])
   }
+  if (mode && mode !== 'all') {
+    sql += ` AND r.mode = ?`
+    params.push(mode)
+  }
   sql += `
     GROUP BY c.tos_topic_id
     HAVING total_answers >= 3 AND accuracy < 0.70
-    ORDER BY accuracy ASC, wrong_answers DESC
+  `
+  if (sortBy === 'misses') {
+    sql += ` ORDER BY wrong_answers DESC, accuracy ASC`
+  } else {
+    sql += ` ORDER BY accuracy ASC, wrong_answers DESC`
+  }
+  sql += `
     LIMIT ?
   `
   params.push(limit)

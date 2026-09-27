@@ -93,8 +93,12 @@ contextBridge.exposeInMainWorld('electron', {
       ipcRenderer.invoke('gauntlet:unflagQuestion', payload),
     getFlaggedQuestions: (payload?: { cardIds?: string[] }) =>
       ipcRenderer.invoke('gauntlet:getFlaggedQuestions', payload),
-    getWeakTosTopics: (payload?: { subject?: string; limit?: number }) =>
-      ipcRenderer.invoke('gauntlet:getWeakTosTopics', payload),
+    getWeakTosTopics: (payload?: {
+      subject?: string
+      limit?: number
+      mode?: string
+      sortBy?: string
+    }) => ipcRenderer.invoke('gauntlet:getWeakTosTopics', payload),
   },
   file: {
     import: (filePath?: string) => ipcRenderer.invoke('file:import', filePath),

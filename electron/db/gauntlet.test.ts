@@ -103,8 +103,8 @@ describe('Gauntlet DB persistence', () => {
     // 4 excluded cards under ELECS:
     // 1. problem solving with solutionImagePath
     insertCard(db, 'c-sol-img', 'top-elecs', 'mcq', {
-      question: 'Q',
-      choices: ['A', 'B', 'C', 'D'],
+      question: 'Calculate the voltage drop across R1',
+      choices: ['10 V', '20 V', '30 V', '40 V'],
       answerIndex: 0,
       solutionImagePath: 'sol.png',
     })
@@ -780,6 +780,155 @@ describe('Gauntlet DB persistence', () => {
       expect(ids).toContain('geas-4-0')
       expect(ids).toContain('geas-4-1')
       expect(ids).not.toContain('geas-1-0')
+    })
+  })
+
+  describe('Smart Problem-Solving Exclusion Filter', () => {
+    it('allows concept questions with solution images, but excludes calculation problems when allowSolutions is false', () => {
+      // Concept MCQ with solution image and non-numeric word choices -> should be allowed
+      insertCard(db, 'concept-img', 'top-elecs', 'mcq', {
+        question: 'Which device behaves as an open circuit to DC?',
+        choices: ['Capacitor', 'Inductor'],
+        answerIndex: 0,
+        solutionImagePath: 'sol_cap.png',
+      }, 'ELECS-1.0')
+
+      // Calculation MCQ with solution image and numeric choices -> excluded when solutions off
+      insertCard(db, 'calc-img', 'top-elecs', 'mcq', {
+        question: 'Calculate the voltage drop across the resistor',
+        choices: ['5 V', '10 V'],
+        answerIndex: 0,
+        solutionImagePath: 'sol_v.png',
+      }, 'ELECS-1.0')
+
+      // Calculation MCQ without image but with Calculate stem and numeric choices -> excluded when solutions off
+      insertCard(db, 'calc-no-img', 'top-elecs', 'mcq', {
+        question: 'Calculate the total equivalent capacitance',
+        choices: ['10 uF', '20 uF'],
+        answerIndex: 0,
+      }, 'ELECS-1.0')
+
+      // Pure concept MCQ without solution image -> always allowed
+      insertCard(db, 'concept-pure', 'top-elecs', 'mcq', {
+        question: 'What is Ohm\'s Law relationship?',
+        choices: ['V = IR', 'P = IV'],
+        answerIndex: 0,
+      }, 'ELECS-1.0')
+
+      // When allowSolutions is false (default):
+      const poolOff = getPoolSizes(db, { allowSolutions: false })
+      expect(poolOff.ELECS).toBe(2) // concept-img and concept-pure
+
+      const sampledOff = sampleQuestions(db, 'ELECS', 10, [], { allowSolutions: false })
+      const idsOff = sampledOff.map(s => s.id)
+      expect(idsOff).toContain('concept-img')
+      expect(idsOff).toContain('concept-pure')
+      expect(idsOff).not.toContain('calc-img')
+      expect(idsOff).not.toContain('calc-no-img')
+
+      // When allowSolutions is true:
+      const poolOn = getPoolSizes(db, { allowSolutions: true })
+      expect(poolOn.ELECS).toBe(4)
+
+      const sampledOn = sampleQuestions(db, 'ELECS', 10, [], { allowSolutions: true })
+      const idsOn = sampledOn.map(s => s.id)
+      expect(idsOn).toContain('calc-img')
+      expect(idsOn).toContain('calc-no-img')
+    })
+  })
+
+  describe('getWeakTosTopics with mode and sortBy', () => {
+    it('filters weak topics by run mode (timed vs survival) and sorts by misses or accuracy', () => {
+      insertCard(db, 't1', 'top-elecs', 'mcq', { question: 'Q1', choices: ['A', 'B'], answerIndex: 0 }, 'ELECS-4.0')
+      insertCard(db, 't2', 'top-elecs', 'mcq', { question: 'Q2', choices: ['A', 'B'], answerIndex: 0 }, 'ELECS-5.0')
+
+      // Timed run with 10 misses on ELECS-4.0 (50% acc)
+      saveRun(db, {
+        id: 'run-timed',
+        startedAt: 1000,
+        endedAt: 2000,
+        mode: 'timed',
+        config: {},
+        rated: false,
+        score: 0,
+        answered: 20,
+        correct: 10,
+        wrong: 10,
+        skipped: 0,
+        bestStreak: 1,
+        durationMs: 1000,
+        endReason: 'time',
+        answers: Array.from({ length: 20 }, (_, i) => ({
+          seq: i,
+          cardId: 't1',
+          subject: 'ELECS',
+          chosen: i < 10 ? 0 : 1,
+          answerIndex: 0,
+          outcome: i < 10 ? ('correct' as const) : ('wrong' as const),
+          timeMs: 1000,
+          parMs: 5000,
+          points: 10,
+          streakAfter: 1,
+          choices: ['A', 'B'],
+          answeredAt: 1000 + i * 10,
+        })),
+      })
+
+      // Survival run with 3 misses on ELECS-5.0 (0% acc)
+      saveRun(db, {
+        id: 'run-survival',
+        startedAt: 3000,
+        endedAt: 4000,
+        mode: 'survival',
+        config: {},
+        rated: false,
+        score: 0,
+        answered: 3,
+        correct: 0,
+        wrong: 3,
+        skipped: 0,
+        bestStreak: 0,
+        durationMs: 1000,
+        endReason: 'lives',
+        answers: Array.from({ length: 3 }, (_, i) => ({
+          seq: i,
+          cardId: 't2',
+          subject: 'ELECS',
+          chosen: 1,
+          answerIndex: 0,
+          outcome: 'wrong' as const,
+          timeMs: 1000,
+          parMs: 5000,
+          points: 0,
+          streakAfter: 0,
+          choices: ['A', 'B'],
+          answeredAt: 3000 + i * 10,
+        })),
+      })
+
+      // Filter by mode 'timed' -> only ELECS-4.0
+      const timedWeak = getWeakTosTopics(db, 'ELECS', 5, 'timed')
+      expect(timedWeak.length).toBe(1)
+      expect(timedWeak[0].tosTopicId).toBe('ELECS-4.0')
+      expect(timedWeak[0].wrongAnswers).toBe(10)
+
+      // Filter by mode 'survival' -> only ELECS-5.0
+      const survivalWeak = getWeakTosTopics(db, 'ELECS', 5, 'survival')
+      expect(survivalWeak.length).toBe(1)
+      expect(survivalWeak[0].tosTopicId).toBe('ELECS-5.0')
+      expect(survivalWeak[0].wrongAnswers).toBe(3)
+
+      // All modes sorted by misses -> ELECS-4.0 (10 misses) comes before ELECS-5.0 (3 misses)
+      const allMisses = getWeakTosTopics(db, 'ELECS', 5, 'all', 'misses')
+      expect(allMisses.length).toBe(2)
+      expect(allMisses[0].tosTopicId).toBe('ELECS-4.0')
+      expect(allMisses[1].tosTopicId).toBe('ELECS-5.0')
+
+      // All modes sorted by accuracy -> ELECS-5.0 (0% acc) comes before ELECS-4.0 (50% acc)
+      const allAcc = getWeakTosTopics(db, 'ELECS', 5, 'all', 'accuracy')
+      expect(allAcc.length).toBe(2)
+      expect(allAcc[0].tosTopicId).toBe('ELECS-5.0')
+      expect(allAcc[1].tosTopicId).toBe('ELECS-4.0')
     })
   })
 })

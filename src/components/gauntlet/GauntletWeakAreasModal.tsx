@@ -18,6 +18,8 @@ type SubjectFilter = 'ALL' | Subject
 
 export const GauntletWeakAreasModal: React.FC<GauntletWeakAreasModalProps> = ({ isOpen, onClose }) => {
   const [activeSubject, setActiveSubject] = useState<SubjectFilter>('ALL')
+  const [activeMode, setActiveMode] = useState<'all' | 'timed' | 'survival'>('all')
+  const [sortBy, setSortBy] = useState<'misses' | 'accuracy'>('misses')
   const [loading, setLoading] = useState(false)
   const [weakTopics, setWeakTopics] = useState<WeakTopicStat[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -30,6 +32,8 @@ export const GauntletWeakAreasModal: React.FC<GauntletWeakAreasModalProps> = ({ 
     try {
       const data = await gauntletService.getWeakTosTopics({
         subject: activeSubject === 'ALL' ? undefined : activeSubject,
+        mode: activeMode,
+        sortBy,
         limit: 50,
       })
       setWeakTopics(data)
@@ -44,7 +48,7 @@ export const GauntletWeakAreasModal: React.FC<GauntletWeakAreasModalProps> = ({ 
     if (isOpen) {
       void loadWeakAreas()
     }
-  }, [isOpen, activeSubject])
+  }, [isOpen, activeSubject, activeMode, sortBy])
 
   useEffect(() => {
     if (!isOpen) return
@@ -73,9 +77,12 @@ export const GauntletWeakAreasModal: React.FC<GauntletWeakAreasModalProps> = ({ 
     }
   }, [filteredTopics])
 
-  const handleLaunchDrill = (subject: Subject) => {
+  const handleLaunchDrill = (subject: Subject, tosTopicId?: string) => {
     onClose()
-    openSetup('timed')
+    openSetup('timed', {
+      subjects: [subject],
+      tosTopicId: tosTopicId ?? null,
+    })
   }
 
   const getSeverityInfo = (acc: number) => {
@@ -143,7 +150,7 @@ export const GauntletWeakAreasModal: React.FC<GauntletWeakAreasModalProps> = ({ 
                     Diagnostic Radar: Weak Areas
                   </h3>
                   <p className="text-[11px] sm:text-xs font-['Rajdhani'] text-text-muted uppercase tracking-wider">
-                    Syllabus competencies where Gauntlet accuracy is below 70%
+                    Syllabus competencies where {activeMode === 'timed' ? 'Time Trial' : activeMode === 'survival' ? 'Survival' : 'Gauntlet'} accuracy is below 70%
                   </p>
                 </div>
               </div>
@@ -173,45 +180,103 @@ export const GauntletWeakAreasModal: React.FC<GauntletWeakAreasModalProps> = ({ 
             </div>
 
             {/* Subject Tabs */}
-            <div className="px-4 sm:px-6 pt-3 pb-2 border-b border-border-base/60 bg-[#0d0d0d] flex items-center gap-2 overflow-x-auto shrink-0">
-              <button
-                type="button"
-                onClick={() => setActiveSubject('ALL')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-['Rajdhani'] font-bold uppercase tracking-wider transition-all cursor-pointer ${
-                  activeSubject === 'ALL'
-                    ? 'bg-warn text-black shadow-[0_0_12px_rgba(255,184,0,0.3)]'
-                    : 'text-text-muted hover:text-text-primary hover:bg-surface'
-                }`}
-              >
-                All Subjects
-              </button>
-              {GAUNTLET_SUBJECTS.map(subj => {
-                const isSelected = activeSubject === subj
-                const subjColor = SUBJECT_LINE_COLOR[subj]
-                return (
+            <div className="px-4 sm:px-6 pt-3 pb-2 border-b border-border-base/60 bg-[#0d0d0d] flex items-center justify-between gap-2 overflow-x-auto shrink-0 flex-wrap">
+              <div className="flex items-center gap-1.5 overflow-x-auto">
+                <button
+                  type="button"
+                  onClick={() => setActiveSubject('ALL')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-['Rajdhani'] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                    activeSubject === 'ALL'
+                      ? 'bg-warn text-black shadow-[0_0_12px_rgba(255,184,0,0.3)]'
+                      : 'text-text-muted hover:text-text-primary hover:bg-surface'
+                  }`}
+                >
+                  All Subjects
+                </button>
+                {GAUNTLET_SUBJECTS.map(subj => {
+                  const isSelected = activeSubject === subj
+                  const subjColor = SUBJECT_LINE_COLOR[subj]
+                  return (
+                    <button
+                      key={subj}
+                      type="button"
+                      onClick={() => setActiveSubject(subj)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-['Rajdhani'] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
+                        isSelected
+                          ? 'text-black font-extrabold shadow-sm'
+                          : 'text-text-muted hover:text-text-primary hover:bg-surface border border-border-base/40'
+                      }`}
+                      style={
+                        isSelected
+                          ? { backgroundColor: subjColor, color: '#000' }
+                          : {}
+                      }
+                    >
+                      <span
+                        className="w-2 h-2 rounded-full inline-block"
+                        style={{ backgroundColor: subjColor }}
+                      />
+                      {subj}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Mode & Sort Sub-bar */}
+            <div className="px-4 sm:px-6 py-2 border-b border-border-base/40 bg-[#0a0a0a] flex items-center justify-between gap-3 text-xs shrink-0 flex-wrap">
+              {/* Mode filter pills */}
+              <div className="flex items-center gap-1 bg-surface-2 p-0.5 rounded-lg border border-border-base/60">
+                {(['all', 'timed', 'survival'] as const).map(m => {
+                  const label = m === 'all' ? 'All Modes' : m === 'timed' ? 'Time Trial' : 'Survival'
+                  const active = activeMode === m
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setActiveMode(m)}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-['Rajdhani'] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                        active
+                          ? 'bg-warn/20 text-warn border border-warn/40 shadow-sm'
+                          : 'text-text-muted hover:text-text-primary'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Sort by toggle */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-['Rajdhani'] font-bold text-text-muted uppercase tracking-wider">
+                  Sort:
+                </span>
+                <div className="flex items-center gap-1 bg-surface-2 p-0.5 rounded-lg border border-border-base/60">
                   <button
-                    key={subj}
                     type="button"
-                    onClick={() => setActiveSubject(subj)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-['Rajdhani'] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${
-                      isSelected
-                        ? 'text-black font-extrabold shadow-sm'
-                        : 'text-text-muted hover:text-text-primary hover:bg-surface border border-border-base/40'
+                    onClick={() => setSortBy('misses')}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-['Rajdhani'] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                      sortBy === 'misses'
+                        ? 'bg-accent/20 text-accent border border-accent/40 shadow-sm'
+                        : 'text-text-muted hover:text-text-primary'
                     }`}
-                    style={
-                      isSelected
-                        ? { backgroundColor: subjColor, color: '#000' }
-                        : {}
-                    }
                   >
-                    <span
-                      className="w-2 h-2 rounded-full inline-block"
-                      style={{ backgroundColor: subjColor }}
-                    />
-                    {subj}
+                    Most Misses
                   </button>
-                )
-              })}
+                  <button
+                    type="button"
+                    onClick={() => setSortBy('accuracy')}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-['Rajdhani'] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                      sortBy === 'accuracy'
+                        ? 'bg-accent/20 text-accent border border-accent/40 shadow-sm'
+                        : 'text-text-muted hover:text-text-primary'
+                    }`}
+                  >
+                    Lowest Acc
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Body */}
@@ -284,17 +349,29 @@ export const GauntletWeakAreasModal: React.FC<GauntletWeakAreasModalProps> = ({ 
                       ? 'No struggling topics detected! You have maintained at least 70% accuracy across tested areas, or haven\'t reached the 3-question threshold yet.'
                       : `No struggling topics detected under ${activeSubject}! Accuracy is high or more attempts are needed to establish baseline trends.`}
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onClose()
-                      openSetup('survival')
-                    }}
-                    className="mt-5 px-5 py-2 rounded-xl bg-accent text-black font-['Rajdhani'] font-bold text-xs uppercase tracking-wider hover:bg-[#00e63a] transition-all flex items-center gap-1.5 cursor-pointer shadow-[0_0_15px_rgba(0,255,65,0.2)]"
-                  >
-                    <Flame size={14} />
-                    Start Survival Challenge
-                  </button>
+                  <div className="flex items-center gap-2.5 mt-5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose()
+                        openSetup('timed')
+                      }}
+                      className="px-4 py-2 rounded-xl bg-accent text-black font-['Rajdhani'] font-bold text-xs uppercase tracking-wider hover:bg-[#00e63a] transition-all flex items-center gap-1.5 cursor-pointer shadow-[0_0_15px_rgba(0,255,65,0.2)]"
+                    >
+                      Start Time Trial
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onClose()
+                        openSetup('survival')
+                      }}
+                      className="px-4 py-2 rounded-xl bg-surface border border-border-base text-text-primary font-['Rajdhani'] font-bold text-xs uppercase tracking-wider hover:border-warn hover:text-warn transition-all flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Flame size={14} />
+                      Start Survival
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -356,7 +433,7 @@ export const GauntletWeakAreasModal: React.FC<GauntletWeakAreasModalProps> = ({ 
                         <div className="sm:self-center shrink-0 flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => handleLaunchDrill(item.subject)}
+                            onClick={() => handleLaunchDrill(item.subject as Subject, item.tosTopicId)}
                             className="px-3.5 py-1.5 rounded-lg bg-surface border border-border-base hover:border-warn text-text-muted hover:text-warn text-xs font-['Rajdhani'] font-bold uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer"
                           >
                             <span>Drill {item.subject}</span>

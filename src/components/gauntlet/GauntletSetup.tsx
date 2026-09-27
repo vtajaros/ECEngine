@@ -44,6 +44,7 @@ const loadConfigForMode = (mode: GauntletMode): GauntletConfig => {
       localStorage.getItem('ecengine:gauntlet:config')
     if (raw) {
       const parsed = JSON.parse(raw)
+      delete parsed.allowSolutions
       return {
         ...DEFAULT_CONFIG,
         ...parsed,
@@ -68,28 +69,42 @@ const DURATION_PRESETS = [
 
 export const GauntletSetup: React.FC = () => {
   const setupMode = useGauntletStore(s => s.setupMode) ?? 'timed'
+  const setupPrefill = useGauntletStore(s => s.setupPrefill)
   const hub = useGauntletStore(s => s.hub)
   const phase = useGauntletStore(s => s.phase)
   const loadError = useGauntletStore(s => s.loadError)
   const closeSetup = useGauntletStore(s => s.closeSetup)
   const startRun = useGauntletStore(s => s.startRun)
 
-  const [config, setConfig] = useState<GauntletConfig>(() => loadConfigForMode(setupMode))
+  const [config, setConfig] = useState<GauntletConfig>(() => ({
+    ...loadConfigForMode(setupMode),
+    ...(setupPrefill ?? {}),
+  }))
   const [dynamicPoolSizes, setDynamicPoolSizes] = useState<Record<Subject, number> | null>(null)
+
+  // Apply prefill if updated from an external trigger (like Drill button)
+  useEffect(() => {
+    if (setupPrefill) {
+      setConfig(prev => ({
+        ...prev,
+        ...setupPrefill,
+      }))
+    }
+  }, [setupPrefill])
 
   // Persist config per mode
   useEffect(() => {
     try {
-      localStorage.setItem(`ecengine:gauntlet:config:${setupMode}`, JSON.stringify(config))
+      const { allowSolutions: _, ...toSave } = config as any
+      localStorage.setItem(`ecengine:gauntlet:config:${setupMode}`, JSON.stringify(toSave))
     } catch {}
   }, [config, setupMode])
 
-  // Fetch dynamic pool sizes when solutions or tosTopicId filter changes
+  // Fetch dynamic pool sizes when tosTopicId filter changes
   useEffect(() => {
     let isMounted = true
     gauntletService
       .getPoolSizes({
-        allowSolutions: config.allowSolutions ?? true,
         tosTopicId: config.tosTopicId || undefined,
       })
       .then(sizes => {
@@ -103,7 +118,7 @@ export const GauntletSetup: React.FC = () => {
     return () => {
       isMounted = false
     }
-  }, [config.allowSolutions, config.tosTopicId])
+  }, [config.tosTopicId])
 
   const poolSizes = dynamicPoolSizes ?? hub?.poolSizes ?? { MATH: 0, GEAS: 0, ELECS: 0, EST: 0 }
   const paceStats = hub?.pace ?? {}
@@ -281,14 +296,11 @@ export const GauntletSetup: React.FC = () => {
           </div>
         )}
 
-        {/* Common: Subjects selection with pool sizes & solutions indicator */}
+        {/* Common: Subjects selection with pool sizes */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <span className="font-['Rajdhani'] font-bold text-xs uppercase tracking-wider text-text-primary">
               Select Subjects
-            </span>
-            <span className="text-[10px] font-['JetBrains_Mono'] text-text-muted">
-              {config.allowSolutions ?? true ? '(Cards with solutions included)' : '(Cards with solutions excluded)'}
             </span>
           </div>
 
@@ -743,33 +755,6 @@ export const GauntletSetup: React.FC = () => {
                         ? 'Counts toward subject Elo ratings'
                         : 'Unranked: select all subjects'
                     : 'Unranked: ratings unchanged'}
-                </span>
-              </div>
-            </div>
-
-            {/* SOLUTIONS toggle */}
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setConfig(c => ({ ...c, allowSolutions: !(c.allowSolutions ?? true) }))}
-                className={`w-11 h-6 rounded-full transition-colors relative p-0.5 ${
-                  (config.allowSolutions ?? true) ? 'bg-accent' : 'bg-surface-2 border border-border-base'
-                }`}
-              >
-                <div
-                  className={`w-5 h-5 rounded-full transition-transform ${
-                    (config.allowSolutions ?? true) ? 'translate-x-5 bg-black' : 'translate-x-0 bg-text-muted'
-                  }`}
-                />
-              </button>
-              <div className="flex flex-col">
-                <span className="font-['Rajdhani'] font-bold text-xs uppercase tracking-wider text-text-primary">
-                  Solutions
-                </span>
-                <span className="text-[10px] font-['JetBrains_Mono'] text-text-muted">
-                  {(config.allowSolutions ?? true)
-                    ? 'Include cards with solutions'
-                    : 'Exclude cards with solutions'}
                 </span>
               </div>
             </div>

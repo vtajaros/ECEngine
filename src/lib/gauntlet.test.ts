@@ -59,6 +59,26 @@ describe('speed and scoring', () => {
     expect(capped.streakMult).toBe(TUNING.streakCap)
     expect(capped.points).toBe(150)
   })
+  it('awards a bonus score for every 5 streak of correct questions', () => {
+    // 4 streak before -> 5 streak after (milestone reached)
+    // base points: 100 * 1 (weight) * 1 (speed) * (1 + 0.1 * 4 = 1.4 streakMult) = 140
+    // streak bonus: +50
+    // total points: 190
+    const hit5 = scoreAnswer({ outcome: 'correct', timeMs: 6000, parMs: 6000, weight: 1, streakBefore: 4 })
+    expect(hit5.streakAfter).toBe(5)
+    expect(hit5.streakBonus).toBe(50)
+    expect(hit5.points).toBe(190)
+
+    // 9 streak before -> 10 streak after (milestone reached)
+    const hit10 = scoreAnswer({ outcome: 'correct', timeMs: 6000, parMs: 6000, weight: 1, streakBefore: 9 })
+    expect(hit10.streakAfter).toBe(10)
+    expect(hit10.streakBonus).toBe(50)
+
+    // Non-milestone (e.g. 5 before -> 6 after)
+    const noMilestone = scoreAnswer({ outcome: 'correct', timeMs: 6000, parMs: 6000, weight: 1, streakBefore: 5 })
+    expect(noMilestone.streakAfter).toBe(6)
+    expect(noMilestone.streakBonus).toBe(0)
+  })
   it('penalizes wrong answers more on light questions than heavy ones', () => {
     const easy = scoreAnswer({ outcome: 'wrong', timeMs: 6000, parMs: 6000, weight: 0.8, streakBefore: 3 })
     const hard = scoreAnswer({ outcome: 'wrong', timeMs: 6000, parMs: 6000, weight: 1.3, streakBefore: 3 })
@@ -71,6 +91,12 @@ describe('speed and scoring', () => {
     expect(normal.points).toBe(-50)
     expect(fast.points).toBe(-75)
     expect(fast.fastWrong).toBe(true)
+
+    // Insulator rank: penalties halved
+    const insulatorNormal = scoreAnswer({ outcome: 'wrong', timeMs: 6000, parMs: 6000, weight: 1, streakBefore: 0, isInsulator: true })
+    const insulatorFast = scoreAnswer({ outcome: 'wrong', timeMs: 500, parMs: 6000, weight: 1, streakBefore: 0, isInsulator: true })
+    expect(insulatorNormal.points).toBe(-25)
+    expect(insulatorFast.points).toBe(-38)
   })
   it('earned skips award 0 points and preserve streak; timeouts are never fast-wrong', () => {
     const skip = scoreAnswer({ outcome: 'skipped', timeMs: 1000, parMs: 6000, weight: 1, streakBefore: 4 })
@@ -243,6 +269,15 @@ describe('rating', () => {
     expect(up.rating).toBeCloseTo(525, 5)
     expect(down.rating).toBe(500) // Hard floor at 500
     expect(up.answers).toBe(1)
+  })
+  it('softens Elo loss by 50% in Insulator rank (under 800) on wrong answers', () => {
+    // Insulator rating 700: K=40*1.25=50, expected=0.5, rawDelta=-25 -> halved to -12.5 -> rating 687.5
+    const insulatorDown = applyAnswerToRating({ rating: 700, answers: 0 }, 700, 'wrong', 0)
+    expect(insulatorDown.rating).toBe(687.5)
+
+    // Semiconductor rating 900: K=32*1.25=40, expected=0.5, rawDelta=-20 (standard, not halved) -> rating 880
+    const semicondDown = applyAnswerToRating({ rating: 900, answers: 0 }, 900, 'wrong', 0)
+    expect(semicondDown.rating).toBe(880)
   })
   it('computes the TOS-weighted overall and flags provisional subjects', () => {
     const settled = { rating: 0, answers: 50 }

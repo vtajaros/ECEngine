@@ -147,7 +147,12 @@ declare global {
         flagQuestion: (payload: { cardId: string; reason?: string }) => Promise<{ success: boolean; error?: string }>
         unflagQuestion: (payload: { cardId: string }) => Promise<{ success: boolean; error?: string }>
         getFlaggedQuestions: (payload?: { cardIds?: string[] }) => Promise<{ success: boolean; data?: Record<string, { reason: string | null; flaggedAt: number }>; error?: string }>
-        getWeakTosTopics: (payload?: { subject?: string; limit?: number }) => Promise<{
+        getWeakTosTopics: (payload?: {
+          subject?: string
+          limit?: number
+          mode?: 'all' | 'survival' | 'timed'
+          sortBy?: 'misses' | 'accuracy'
+        }) => Promise<{
           success: boolean
           data?: Array<{
             tosTopicId: string

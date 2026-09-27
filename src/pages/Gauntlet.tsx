@@ -129,11 +129,13 @@ const RunPlaceholder: React.FC<RunPlaceholderProps> = ({
     const map = new Map<string, Card>()
     for (const a of answers) {
       if (a.outcome !== 'correct' && a.item?.card) {
-        map.set(a.item.card.id, a.item.card)
+        if (!flaggedMap[a.item.card.id]) {
+          map.set(a.item.card.id, a.item.card)
+        }
       }
     }
     return Array.from(map.values())
-  }, [answers])
+  }, [answers, flaggedMap])
 
   useEffect(() => {
     if (phase !== 'summary' || answers.length === 0) return
@@ -243,6 +245,18 @@ Please explain:
       if (lastLifeBonusSoundRef.current === key) return
       lastLifeBonusSoundRef.current = key
       play('plusOne')
+    }
+  }, [feedback, play])
+
+  // Play sound when 5-streak bonus is triggered
+  const lastStreakBonusSoundRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (!feedback) return
+    if (feedback.streakBonus && feedback.streakBonus > 0 && !feedback.lifeBonus) {
+      const key = `streakBonus-${feedback.id}`
+      if (lastStreakBonusSoundRef.current === key) return
+      lastStreakBonusSoundRef.current = key
+      play('roundComplete')
     }
   }, [feedback, play])
 
@@ -973,17 +987,24 @@ Please explain:
                         )}
 
                         {/* Points */}
-                        <span
-                          className={`font-bold w-12 text-right ${
-                            a.points > 0
-                              ? 'text-[#00FF41]'
-                              : a.points < 0
-                              ? 'text-[#ef4444]'
-                              : 'text-text-muted'
-                          }`}
-                        >
-                          {a.points > 0 ? `+${a.points}` : a.points}
-                        </span>
+                        <div className="flex items-center gap-1.5 justify-end">
+                          {a.streakBonus && a.streakBonus > 0 && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-['Orbitron'] font-bold text-[#f59e0b] bg-[#f59e0b]/15 border border-[#f59e0b]/30">
+                              +{a.streakBonus} STREAK
+                            </span>
+                          )}
+                          <span
+                            className={`font-bold w-12 text-right ${
+                              a.points > 0
+                                ? 'text-[#00FF41]'
+                                : a.points < 0
+                                ? 'text-[#ef4444]'
+                                : 'text-text-muted'
+                            }`}
+                          >
+                            {a.points > 0 ? `+${a.points}` : a.points}
+                          </span>
+                        </div>
 
                         {/* Expand Chevron */}
                         <ChevronDown
@@ -1412,8 +1433,22 @@ Please explain:
             Score: <strong className="text-accent">{score}</strong>
           </div>
 
-          <div className="flex items-center gap-1 text-xs font-['JetBrains_Mono'] text-text-primary">
-            Streak: <strong className="text-[#f59e0b]">{streak}</strong>
+          <div className="flex items-center gap-1.5 text-xs font-['JetBrains_Mono'] text-text-primary">
+            <span>Streak:</span>
+            <strong
+              className={`transition-all ${
+                streak > 0 && streak % 5 === 0
+                  ? 'text-[#f59e0b] drop-shadow-[0_0_8px_rgba(245,158,11,0.7)]'
+                  : 'text-[#f59e0b]'
+              }`}
+            >
+              {streak}
+            </strong>
+            {streak > 0 && streak % 5 === 0 && (
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold text-[#f59e0b] bg-[#f59e0b]/20 border border-[#f59e0b]/40 animate-pulse">
+                +{feedback?.streakBonus || 50} BONUS
+              </span>
+            )}
           </div>
 
           {config.mode === 'survival' && (

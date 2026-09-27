@@ -77,6 +77,7 @@ export interface AnswerRecord {
   points: number
   streakAfter: number
   answeredAt: number
+  streakBonus?: number
 }
 
 /** Transient result of the last answer, for instant-check effects (does NOT reveal the correct choice). */
@@ -88,6 +89,7 @@ export interface Feedback {
   streakMult: number
   fastWrong: boolean
   lifeBonus?: boolean
+  streakBonus?: number
 }
 
 export interface HubData {
@@ -218,7 +220,8 @@ interface GauntletStore extends RunState {
   loadError: string | null
   hub: HubData | null
   setupMode: GauntletMode | null
-  openSetup: (mode: GauntletMode) => void
+  setupPrefill: Partial<GauntletConfig> | null
+  openSetup: (mode: GauntletMode, prefill?: Partial<GauntletConfig>) => void
   closeSetup: () => void
   loadHub: () => Promise<void>
   startRun: (config: GauntletConfig) => Promise<void>
@@ -326,8 +329,8 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
     let items: QueueItem[] = []
     try {
       const reqArgs: [any, any, any?, any?] = [buildRequests(s.config), s.queue.map(q => q.card.id)]
-      if (s.config.allowSolutions !== undefined || s.config.tosTopicId) {
-        reqArgs.push(s.config.allowSolutions)
+      if (s.config.allowSolutions || s.config.tosTopicId) {
+        reqArgs.push(s.config.allowSolutions ?? false)
       }
       if (s.config.tosTopicId) {
         reqArgs.push(s.config.tosTopicId)
@@ -386,6 +389,9 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
       eloMult = eloMult * 0.4
     }
 
+    const playerRating = s.ratings[item.subject]?.rating ?? TUNING.startRating
+    const isInsulator = playerRating < 800
+
     const res = scoreAnswer({
       outcome,
       timeMs,
@@ -393,10 +399,10 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
       weight: item.weight,
       streakBefore: s.streak,
       scoreMult,
+      isInsulator,
     })
     const ratings = { ...s.ratings }
     if (s.rated) {
-      const playerRating = ratings[item.subject]?.rating ?? TUNING.startRating
       const dynamicOpponentRating = cardRating(playerRating, item.weight)
       ratings[item.subject] = applyAnswerToRating(
         ratings[item.subject],
@@ -416,6 +422,7 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
       points: res.points,
       streakAfter: res.streakAfter,
       answeredAt: now,
+      streakBonus: res.streakBonus,
     }
     let nextLifeBonusStreak = s.lifeBonusStreak
     let livesLeft = s.livesLeft
@@ -472,6 +479,7 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
         streakMult: res.streakMult,
         fastWrong: res.fastWrong,
         lifeBonus: lifeBonusAwarded,
+        streakBonus: res.streakBonus,
       },
     })
 
@@ -496,10 +504,11 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
     loadError: null,
     hub: null,
     setupMode: null,
+    setupPrefill: null,
     ...freshRun(),
 
-    openSetup: mode => set({ phase: 'setup', setupMode: mode }),
-    closeSetup: () => set({ phase: 'home', setupMode: null }),
+    openSetup: (mode, prefill) => set({ phase: 'setup', setupMode: mode, setupPrefill: prefill ?? null }),
+    closeSetup: () => set({ phase: 'home', setupMode: null, setupPrefill: null }),
 
     loadHub: async () => {
       try {
@@ -530,8 +539,8 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
         const requests = buildRequests(config)
         if (requests.length === 0) throw new Error('No items requested.')
         const reqArgs: [any, any, any?, any?] = [requests, []]
-        if (config.allowSolutions !== undefined || config.tosTopicId) {
-          reqArgs.push(config.allowSolutions)
+        if (config.allowSolutions || config.tosTopicId) {
+          reqArgs.push(config.allowSolutions ?? false)
         }
         if (config.tosTopicId) {
           reqArgs.push(config.tosTopicId)
@@ -643,6 +652,7 @@ export function resetGauntletStore(): void {
     loadError: null,
     hub: null,
     setupMode: null,
+    setupPrefill: null,
     ...freshRun(),
   })
 }

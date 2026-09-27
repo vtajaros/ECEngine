@@ -37,6 +37,8 @@ export const TUNING = {
   skipEarnInterval: 20,
   lifeBonusInterval: 10,
   lifeBonusScoreInterval: 20,
+  streakBonusInterval: 5,
+  streakBonusPoints: 50,
   fastWrongRatio: 0.25,
   fastWrongMult: 1.5,
   streakStep: 0.1,
@@ -126,6 +128,7 @@ export interface ScoreInput {
   weight: number
   streakBefore: number
   scoreMult?: number
+  isInsulator?: boolean
 }
 
 export interface ScoreResult {
@@ -135,6 +138,7 @@ export interface ScoreResult {
   streakMult: number
   streakAfter: number
   fastWrong: boolean
+  streakBonus?: number
 }
 
 /**
@@ -193,13 +197,18 @@ export function scoreAnswer(i: ScoreInput): ScoreResult {
 
   if (i.outcome === 'correct') {
     const streakMult = Math.min(T.streakCap, 1 + T.streakStep * i.streakBefore)
+    const streakAfter = i.streakBefore + 1
+    const isMilestone = streakAfter > 0 && streakAfter % T.streakBonusInterval === 0
+    const streakBonus = isMilestone ? Math.max(1, Math.round(T.streakBonusPoints * mult)) : 0
+    const basePoints = Math.round(T.basePoints * i.weight * speed * streakMult * mult)
     return {
-      points: Math.max(1, Math.round(T.basePoints * i.weight * speed * streakMult * mult)),
+      points: Math.max(1, basePoints + streakBonus),
       speed,
       speedNorm: sn,
       streakMult,
-      streakAfter: i.streakBefore + 1,
+      streakAfter,
       fastWrong: false,
+      streakBonus,
     }
   }
 
@@ -209,8 +218,10 @@ export function scoreAnswer(i: ScoreInput): ScoreResult {
   }
 
   // wrong or timeout: easy (light) questions cost more, hard (heavy) ones cost less
+  // Insulator rank: 50% reduced penalty to soften mistakes while grinding up from foundational rank
   const fastWrong = i.outcome === 'wrong' && i.timeMs < i.parMs * T.fastWrongRatio
-  const penalty = Math.round((T.wrongBase / i.weight) * (fastWrong ? T.fastWrongMult : 1) * mult)
+  const insulatorMult = i.isInsulator ? 0.5 : 1
+  const penalty = Math.round((T.wrongBase / i.weight) * (fastWrong ? T.fastWrongMult : 1) * mult * insulatorMult)
   return { points: -Math.max(1, penalty), speed, speedNorm: sn, streakMult: 1, streakAfter: 0, fastWrong }
 }
 
@@ -343,7 +354,12 @@ export function applyAnswerToRating(
   const e = expectedScore(current.rating, opponentRating)
   const s = performanceScore(outcome, sn)
   const k = kFactor(current.answers, current.rating)
-  const rawDelta = k * (s - e)
+  let rawDelta = k * (s - e)
+
+  // Insulator rank (500–799): soften Elo loss on mistakes by 50% to incentivize grinding
+  if (current.rating < 800 && rawDelta < 0) {
+    rawDelta = rawDelta * 0.5
+  }
 
   let delta: number
   if (eloMult <= 0.1) {

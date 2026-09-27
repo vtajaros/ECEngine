@@ -105,7 +105,12 @@ export const gauntletService = {
     }
   },
 
-  async getWeakTosTopics(opts?: { subject?: GauntletSubjectCode; limit?: number }) {
+  async getWeakTosTopics(opts?: {
+    subject?: GauntletSubjectCode
+    limit?: number
+    mode?: 'all' | 'survival' | 'timed'
+    sortBy?: 'misses' | 'accuracy'
+  }) {
     const res = await window.electron.gauntlet.getWeakTosTopics(opts)
     if (!res.success) throw new Error(res.error || 'Failed to get weak TOS topics')
     return res.data ?? []

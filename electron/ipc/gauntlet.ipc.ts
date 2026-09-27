@@ -14,7 +14,7 @@ const RatingsMapSchema = z.object({
 const GetQuestionsSchema = z.object({
   counts: z.array(z.object({ subject: SubjectSchema, count: z.number().int().min(0).max(500) })).min(1),
   excludeIds: z.array(z.string()).max(5000).optional().default([]),
-  allowSolutions: z.boolean().optional().default(true),
+  allowSolutions: z.boolean().optional().default(false),
   tosTopicId: z.string().optional(),
 })
 
@@ -80,7 +80,7 @@ export function registerGauntletHandlers(): void {
       return {
         success: true,
         data: G.getPoolSizes(getDB(), {
-          allowSolutions: payload?.allowSolutions ?? true,
+          allowSolutions: payload?.allowSolutions ?? false,
           tosTopicId: payload?.tosTopicId,
         }),
       }
@@ -124,9 +124,33 @@ export function registerGauntletHandlers(): void {
     try { return { success: true, data: G.getBests(getDB()) } } catch (e) { return fail(e) }
   })
 
-  ipcMain.handle('gauntlet:getWeakTosTopics', async (_, payload: { subject?: G.GauntletSubjectCode; limit?: number } = {}) => {
-    try { return { success: true, data: G.getWeakTosTopics(getDB(), payload?.subject, payload?.limit) } } catch (e) { return fail(e) }
-  })
+  ipcMain.handle(
+    'gauntlet:getWeakTosTopics',
+    async (
+      _,
+      payload: {
+        subject?: G.GauntletSubjectCode
+        limit?: number
+        mode?: 'all' | 'survival' | 'timed'
+        sortBy?: 'misses' | 'accuracy'
+      } = {},
+    ) => {
+      try {
+        return {
+          success: true,
+          data: G.getWeakTosTopics(
+            getDB(),
+            payload?.subject,
+            payload?.limit,
+            payload?.mode,
+            payload?.sortBy,
+          ),
+        }
+      } catch (e) {
+        return fail(e)
+      }
+    },
+  )
 
   ipcMain.handle('gauntlet:rewardReviewElo', async (_, subject: unknown) => {
     try {
