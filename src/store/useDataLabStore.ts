@@ -12,9 +12,25 @@ export interface ResponseTimeDistributionData {
   [key: string]: Array<{ subject: string; responseMs: number }>
 }
 
+export interface TosCoverageMatrixState {
+  totalCards: number
+  totalClassified: number
+  totalUnclassified: number
+  bySubject: Record<
+    string,
+    {
+      totalCards: number
+      classifiedCards: number
+      unclassifiedCards: number
+      countsByTosId: Record<string, number>
+    }
+  >
+}
+
 export interface DataLabState {
   // Cached datasets
   contentCoverage: ContentCoverageData | null
+  tosCoverageMatrix: TosCoverageMatrixState | null
   questionLengthDistribution: QuestionLengthItem[] | null
   answerPositionCounts: AnswerPositionCountItem[] | null
   answerPositionBySubject: AnswerPositionBySubjectItem[] | null
@@ -23,6 +39,7 @@ export interface DataLabState {
   // Loading flags (true if initial load pending and no data cached)
   loading: {
     contentCoverage: boolean
+    tosCoverageMatrix: boolean
     questionLengthDistribution: boolean
     answerPositionCounts: boolean
     answerPositionBySubject: boolean
@@ -32,6 +49,7 @@ export interface DataLabState {
   // Error messages
   errors: {
     contentCoverage: string | null
+    tosCoverageMatrix: string | null
     questionLengthDistribution: string | null
     answerPositionCounts: string | null
     answerPositionBySubject: string | null
@@ -42,6 +60,7 @@ export interface DataLabState {
 
   // Actions
   fetchContentCoverage: (force?: boolean) => Promise<void>
+  fetchTosCoverageMatrix: (force?: boolean) => Promise<void>
   fetchQuestionLengthDistribution: (force?: boolean) => Promise<void>
   fetchAnswerPositionCounts: (force?: boolean) => Promise<void>
   fetchAnswerPositionBySubject: (force?: boolean) => Promise<void>
@@ -52,6 +71,7 @@ export interface DataLabState {
 
 const initialLoading = {
   contentCoverage: true,
+  tosCoverageMatrix: true,
   questionLengthDistribution: true,
   answerPositionCounts: true,
   answerPositionBySubject: true,
@@ -60,6 +80,7 @@ const initialLoading = {
 
 const initialErrors = {
   contentCoverage: null,
+  tosCoverageMatrix: null,
   questionLengthDistribution: null,
   answerPositionCounts: null,
   answerPositionBySubject: null,
@@ -68,6 +89,7 @@ const initialErrors = {
 
 export const useDataLabStore = create<DataLabState>((set, get) => ({
   contentCoverage: null,
+  tosCoverageMatrix: null,
   questionLengthDistribution: null,
   answerPositionCounts: null,
   answerPositionBySubject: null,
@@ -97,6 +119,30 @@ export const useDataLabStore = create<DataLabState>((set, get) => ({
       set((state) => ({
         loading: { ...state.loading, contentCoverage: false },
         errors: { ...state.errors, contentCoverage: err?.message || 'Failed to load content coverage' },
+      }))
+    }
+  },
+
+  fetchTosCoverageMatrix: async (force = false) => {
+    const { tosCoverageMatrix } = get()
+    if (tosCoverageMatrix !== null && !force) return
+
+    set((state) => ({
+      loading: { ...state.loading, tosCoverageMatrix: state.tosCoverageMatrix === null },
+      errors: { ...state.errors, tosCoverageMatrix: null },
+    }))
+
+    try {
+      const res = await dbService.getTosCoverageMatrix()
+      set((state) => ({
+        tosCoverageMatrix: res,
+        loading: { ...state.loading, tosCoverageMatrix: false },
+        errors: { ...state.errors, tosCoverageMatrix: null },
+      }))
+    } catch (err: any) {
+      set((state) => ({
+        loading: { ...state.loading, tosCoverageMatrix: false },
+        errors: { ...state.errors, tosCoverageMatrix: err?.message || 'Failed to load ToS coverage matrix' },
       }))
     }
   },
@@ -201,6 +247,7 @@ export const useDataLabStore = create<DataLabState>((set, get) => ({
     const currentVersion = useDataVersionStore.getState().version
     await Promise.allSettled([
       get().fetchContentCoverage(true),
+      get().fetchTosCoverageMatrix(true),
       get().fetchQuestionLengthDistribution(true),
       get().fetchAnswerPositionCounts(true),
       get().fetchAnswerPositionBySubject(true),
@@ -212,6 +259,7 @@ export const useDataLabStore = create<DataLabState>((set, get) => ({
   reset: () => {
     set({
       contentCoverage: null,
+      tosCoverageMatrix: null,
       questionLengthDistribution: null,
       answerPositionCounts: null,
       answerPositionBySubject: null,

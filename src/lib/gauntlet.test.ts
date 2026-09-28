@@ -14,6 +14,9 @@ import {
   formatRunDuration,
   getWeakestSubject,
   reshapeRunsToEloHistory,
+  getSharedTopicPartnerSubject,
+  computeAnswerEloDelta,
+  SHARED_TOPICS,
 } from './gauntlet'
 
 describe('par / weight', () => {
@@ -578,5 +581,74 @@ describe('pace model and warnings', () => {
       expect(points[0].EST).toBeNull()
     })
   })
+
+  describe('shared topics and computeAnswerEloDelta', () => {
+    describe('getSharedTopicPartnerSubject', () => {
+      it('identifies Electromagnetics between MATH and ELECS', () => {
+        expect(getSharedTopicPartnerSubject('MATH', 'MATH-6.1')).toBe('ELECS')
+        expect(getSharedTopicPartnerSubject('MATH', '6.2')).toBe('ELECS')
+        expect(getSharedTopicPartnerSubject('ELECS', 'ELECS-3.1')).toBe('MATH')
+        expect(getSharedTopicPartnerSubject('ELECS', '3.0')).toBe('MATH')
+      })
+
+      it('identifies Feedback and Control Systems between MATH and ELECS', () => {
+        expect(getSharedTopicPartnerSubject('MATH', 'MATH-8.1')).toBe('ELECS')
+        expect(getSharedTopicPartnerSubject('MATH', '8.0')).toBe('ELECS')
+        expect(getSharedTopicPartnerSubject('ELECS', 'ELECS-9.2')).toBe('MATH')
+        expect(getSharedTopicPartnerSubject('ELECS', '9.0')).toBe('MATH')
+      })
+
+      it('identifies Signals, Spectra and Signal Processing between MATH and EST', () => {
+        expect(getSharedTopicPartnerSubject('MATH', 'MATH-7.1')).toBe('EST')
+        expect(getSharedTopicPartnerSubject('MATH', '7.0')).toBe('EST')
+        expect(getSharedTopicPartnerSubject('EST', 'EST-1.1')).toBe('MATH')
+        expect(getSharedTopicPartnerSubject('EST', '1.0')).toBe('MATH')
+      })
+
+      it('identifies Electronics System and Design between ELECS and EST', () => {
+        expect(getSharedTopicPartnerSubject('ELECS', 'ELECS-6.1')).toBe('EST')
+        expect(getSharedTopicPartnerSubject('ELECS', '6.0')).toBe('EST')
+        expect(getSharedTopicPartnerSubject('EST', 'EST-5.1')).toBe('ELECS')
+        expect(getSharedTopicPartnerSubject('EST', '5.0')).toBe('ELECS')
+      })
+
+      it('matches by tags fallback when tosTopicId is missing', () => {
+        expect(getSharedTopicPartnerSubject('MATH', null, ['Electromagnetics'])).toBe('ELECS')
+        expect(getSharedTopicPartnerSubject('ELECS', null, ['Feedback and Control Systems'])).toBe('MATH')
+        expect(getSharedTopicPartnerSubject('EST', null, ['Signals and Spectra'])).toBe('MATH')
+        expect(getSharedTopicPartnerSubject('EST', null, ['Electronics System and Design'])).toBe('ELECS')
+      })
+
+      it('returns null for non-shared topics or unrelated subjects', () => {
+        expect(getSharedTopicPartnerSubject('MATH', 'MATH-1.1')).toBeNull()
+        expect(getSharedTopicPartnerSubject('GEAS', 'GEAS-2.1')).toBeNull()
+        expect(getSharedTopicPartnerSubject('GEAS', 'MATH-6.1')).toBeNull()
+        expect(getSharedTopicPartnerSubject('GEAS', null, ['Electromagnetics'])).toBeNull()
+      })
+    })
+
+    describe('computeAnswerEloDelta', () => {
+      it('computes positive delta for correct answer and negative delta for wrong answer', () => {
+        const correctDelta = computeAnswerEloDelta(1000, 1000, 30, 'correct', 0.5)
+        expect(correctDelta).toBeGreaterThan(0)
+
+        const wrongDelta = computeAnswerEloDelta(1000, 1000, 30, 'wrong', 0.5)
+        expect(wrongDelta).toBeLessThan(0)
+      })
+
+      it('softens wrong delta by 50% for Insulator rank (< 800)', () => {
+        const normalDelta = computeAnswerEloDelta(900, 900, 30, 'wrong', 0)
+        const insulatorDelta = computeAnswerEloDelta(750, 750, 30, 'wrong', 0)
+        expect(Math.abs(insulatorDelta)).toBeLessThan(Math.abs(normalDelta))
+      })
+
+      it('handles low eloMult mode (unlimited time)', () => {
+        expect(computeAnswerEloDelta(1000, 1000, 30, 'correct', 0.5, 0.08)).toBe(1)
+        expect(computeAnswerEloDelta(1000, 1000, 30, 'wrong', 0.5, 0.08)).toBe(-1)
+        expect(computeAnswerEloDelta(1000, 1000, 30, 'skipped', 0.5, 0.08)).toBe(0)
+      })
+    })
+  })
 })
+
 

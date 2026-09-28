@@ -10,6 +10,8 @@ import {
   TUNING,
   allocateCounts,
   applyAnswerToRating,
+  computeAnswerEloDelta,
+  getSharedTopicPartnerSubject,
   cardRating,
   defaultRating,
   difficultyWeight,
@@ -257,8 +259,11 @@ export function buildRunPayload(s: RunState, reason: EndReason, endedAt: number)
     else if (a.outcome === 'skipped') { b.skipped++; skipped++ }
     else { b.wrong++; wrong++ } // wrong + timeout
   }
+  const activeSubs = GAUNTLET_SUBJECTS.filter(
+    sub => s.config.subjects.includes(sub) || (s.ratings[sub]?.rating !== s.ratingsBefore[sub]?.rating)
+  )
   const pick = (r: Record<Subject, SubjectRating>) =>
-    Object.fromEntries(s.config.subjects.map(sub => [sub, { rating: r[sub].rating, answers: r[sub].answers }]))
+    Object.fromEntries(activeSubs.map(sub => [sub, { rating: r[sub].rating, answers: r[sub].answers }]))
   const rawDuration = endedAt - s.startedAt
   const durationMs = Math.max(
     0,
@@ -412,13 +417,46 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
     const ratings = { ...s.ratings }
     if (s.rated) {
       const dynamicOpponentRating = cardRating(playerRating, item.weight)
-      ratings[item.subject] = applyAnswerToRating(
-        ratings[item.subject],
-        dynamicOpponentRating,
-        outcome,
-        res.speedNorm,
-        eloMult,
+      const partnerSubject = getSharedTopicPartnerSubject(
+        item.subject,
+        item.card.tosTopicId,
+        item.card.tags,
       )
+
+      if (partnerSubject) {
+        // Shared topic: Calculate standard card delta once, then apply 50% (+Δ/2 or -Δ/2) to both subjects
+        const fullDelta = computeAnswerEloDelta(
+          playerRating,
+          dynamicOpponentRating,
+          s.ratings[item.subject]?.answers ?? 0,
+          outcome,
+          res.speedNorm,
+          eloMult,
+        )
+        const halfDelta = fullDelta * 0.5
+
+        // Primary subject receives half delta + incremented answer count
+        const primaryCur = s.ratings[item.subject] ?? defaultRating()
+        ratings[item.subject] = {
+          rating: Math.max(500, Math.round((primaryCur.rating + halfDelta) * 10) / 10),
+          answers: primaryCur.answers + 1,
+        }
+
+        // Partner subject receives half delta, answer count preserved
+        const partnerCur = s.ratings[partnerSubject] ?? defaultRating()
+        ratings[partnerSubject] = {
+          rating: Math.max(500, Math.round((partnerCur.rating + halfDelta) * 10) / 10),
+          answers: partnerCur.answers,
+        }
+      } else {
+        ratings[item.subject] = applyAnswerToRating(
+          ratings[item.subject],
+          dynamicOpponentRating,
+          outcome,
+          res.speedNorm,
+          eloMult,
+        )
+      }
     }
 
     const record: AnswerRecord = {

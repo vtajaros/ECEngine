@@ -2,6 +2,7 @@
 // Tests for pure LaTeX detection and scanning utilities.
 // Expected values map to the pure functions in latex.ts.
 
+import { describe, it, expect } from 'vitest'
 import {
   isRawLatex,
   isPureMath,

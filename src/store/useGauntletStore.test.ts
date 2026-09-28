@@ -587,5 +587,83 @@ describe('life-bonus streak in survival mode', () => {
       expect(scaledDelta).toBeGreaterThan(0)
     })
   })
+
+  describe('Shared Topics 50/50 Elo Split', () => {
+    it('splits Elo delta 50/50 between primary and partner subject on correct answer, only incrementing primary answers', async () => {
+      svc.getRatings.mockResolvedValue([
+        { subject: 'MATH', rating: 1000, answers: 25, peak: 1000 },
+        { subject: 'ELECS', rating: 1000, answers: 25, peak: 1000 },
+      ])
+      const sharedCard: GauntletCard = {
+        ...makeCard('sc1', 'MATH', 0),
+        tosTopicId: 'MATH-6.1', // Electromagnetics (MATH & ELECS)
+      } as unknown as GauntletCard
+
+      svc.getQuestions.mockResolvedValue([sharedCard])
+      await store().startRun(timedCfg({ subjects: ['MATH'], totalItems: 1, rated: true }))
+      store().beginRun()
+      vi.advanceTimersByTime(2000)
+      store().answer(0) // correct
+
+      const mathAfter = store().ratings.MATH
+      const elecsAfter = store().ratings.ELECS
+
+      // Both should increase above 1000
+      expect(mathAfter.rating).toBeGreaterThan(1000)
+      expect(elecsAfter.rating).toBeGreaterThan(1000)
+      // Both should gain the exact same half-delta
+      expect(mathAfter.rating - 1000).toBeCloseTo(elecsAfter.rating - 1000, 5)
+
+      // Only primary subject answers count increments
+      expect(mathAfter.answers).toBe(26)
+      expect(elecsAfter.answers).toBe(25)
+
+      // Check decimal precision (at most 1 decimal place)
+      expect(mathAfter.rating.toString()).toMatch(/^\d+(\.\d)?$/)
+      expect(elecsAfter.rating.toString()).toMatch(/^\d+(\.\d)?$/)
+
+      // Verify saveRun payload includes both subjects in ratingsBefore & ratingsAfter
+      await flush()
+
+      expect(svc.saveRun).toHaveBeenCalled()
+      const payload = svc.saveRun.mock.calls[0][0] as any
+      expect(payload.ratingsBefore.MATH).toBeDefined()
+      expect(payload.ratingsBefore.ELECS).toBeDefined()
+      expect(payload.ratingsAfter.MATH).toBeDefined()
+      expect(payload.ratingsAfter.ELECS).toBeDefined()
+      expect(payload.ratingsAfter.MATH.rating).toBe(mathAfter.rating)
+      expect(payload.ratingsAfter.ELECS.rating).toBe(elecsAfter.rating)
+    })
+
+    it('splits Elo penalty 50/50 between primary and partner subject on wrong answer', async () => {
+      svc.getRatings.mockResolvedValue([
+        { subject: 'MATH', rating: 1000, answers: 25, peak: 1000 },
+        { subject: 'ELECS', rating: 1000, answers: 25, peak: 1000 },
+      ])
+      const sharedCard: GauntletCard = {
+        ...makeCard('sc2', 'MATH', 0),
+        tosTopicId: 'MATH-8.1', // Feedback and Control Systems (MATH & ELECS)
+      } as unknown as GauntletCard
+
+      svc.getQuestions.mockResolvedValue([sharedCard])
+      await store().startRun(timedCfg({ subjects: ['MATH'], totalItems: 1, rated: true }))
+      store().beginRun()
+      vi.advanceTimersByTime(2000)
+      store().answer(1) // wrong
+
+      const mathAfter = store().ratings.MATH
+      const elecsAfter = store().ratings.ELECS
+
+      // Both should decrease below 1000
+      expect(mathAfter.rating).toBeLessThan(1000)
+      expect(elecsAfter.rating).toBeLessThan(1000)
+      // Both should lose the exact same half-delta
+      expect(1000 - mathAfter.rating).toBeCloseTo(1000 - elecsAfter.rating, 5)
+
+      // Only primary subject answers count increments
+      expect(mathAfter.answers).toBe(26)
+      expect(elecsAfter.answers).toBe(25)
+    })
+  })
 })
 

@@ -75,6 +75,7 @@ SUBTOPIC_RULES = {
         'MATH-1.2': [  # Derivatives and Its Applications
             r'\bderivatives?\b', r'\bdy/dx\b', r'\btangent line\b', r'\bnormal line\b', r'\brate of change\b',
             r'\brelated rate\w*', r'\bmaximas?\b', r'\bminimas?\b', r'\b(?:maximum|minimum) value\b',
+            r'\b(?:minimize|maximize|minimizing|maximizing)\b', r'\boptimized (?:radius|dimensions?|value|shape)\b',
             r'\bcritical point\w*', r'\boptimization problem\b', r'\bmean value theorem\b', r'\brolle\'?s\b',
             r'\bconcavity\b', r'\binflection point\b', r'\bchain rule\b', r'\bproduct rule\b', r'\bquotient rule\b',
             r'\bimplicit differentiation\b'
@@ -85,11 +86,12 @@ SUBTOPIC_RULES = {
             r'\bacceleration from velocity\b'
         ],
         'MATH-1.4': [  # Parametric Equations
-            r'\bparametric equation\b', r'\bparametrize\w*', r'\bcycloids?\b', r'\bastroids?\b',
+            r'\bparametric equation\b', r'\bparametrize\w*', r'\bparametrically\b', r'\bconic sections?\b',
+            r'\bvelocity vector at t\b', r'\bcycloids?\b', r'\bastroids?\b',
             r'\bdy/dt\b', r'\bdx/dt\b'
         ],
         'MATH-1.5': [  # Partial Differentiation
-            r'\bpartial derivative\b', r'\bpartial differentiation\b', r'\btotal differential\b',
+            r'\bpartial derivative\b', r'\bpartial differentiation\b', r'\btotal differentials?\b',
             r'\beuler\'?s theorem on homogeneous\b', r'\bjacobians?\b', r'\bdel z ?/ ?del x\b'
         ],
 
@@ -107,7 +109,8 @@ SUBTOPIC_RULES = {
             r'\bdivergent integral\b', r'\bdiscontinuity in (?:the )?integrand\b'
         ],
         'MATH-2.4': [  # Application of Integral
-            r'\barea under\b', r'\barea bounded\b', r'\bvolume of revolution\b', r'\bdisk method\b',
+            r'\barea under\b', r'\barea bounded\b', r'\barea (?:.*?)bounded by\b', r'\bbounded by y\s*=\b',
+            r'\bvolume of revolution\b', r'\bdisk method\b',
             r'\bwasher method\b', r'\bcylindrical shell\b', r'\blength of (?:the )?arc\b', r'\barc length\b',
             r'\bsurface of revolution\b', r'\bcentroids?\b', r'\bcenter of mass\b', r'\bpappus\'?s theorem\b',
             r'\bwork done by\b'
@@ -123,7 +126,9 @@ SUBTOPIC_RULES = {
             r'\bseparable (?:differential )?equation\b', r'\bhomogeneous differential equation\b',
             r'\bexact differential equation\b', r'\bintegrating factor\b', r'\bbernoulli(?:\'?s)? equation\b',
             r'\blinear first[- ]order\b', r'\border and degree\b', r'\borthogonal trajector\w*',
-            r'\bgrowth and decay\b', r'\bnewton\'?s law of cooling\b', r'\bfirst[- ]order ode\b'
+            r'\bgrowth and decay\b', r'\bnewton\'?s law of cooling\b', r'\bfirst[- ]order ode\b',
+            r'\bseries rc circuit\b', r'\brc transient\b', r'\bmixture problems?\b',
+            r'\btank (?:initially )?holds\b', r'\bsolute enters\b'
         ],
         'MATH-3.2': [  # Higher-Order ODE and its Application
             r'\bhigher[- ]order (?:ode|differential equation)\b', r'\bauxiliary equation\b',
@@ -141,16 +146,20 @@ SUBTOPIC_RULES = {
         'MATH-4.1': [  # Complex Numbers and its Applications
             r'\bcomplex numbers?\b', r'\bimaginary number\b', r'\bargand (?:plane|diagram)\b',
             r'\bde moivre\'?s theorem\b', r'\beuler\'?s formula\b', r'\bcauchy-riemann\b',
-            r'\banalytic function\b', r'\bharmonic function\b', r'\bpolar form of a complex\b'
+            r'\banalytic function\b', r'\bharmonic function\b', r'\bpolar form of a complex\b',
+            r'\bcomplex roots?\b', r'\broots of unity\b', r'\bprincipal roots?\b',
+            r'\bcomplex exponential\b', r'\bprincipal value of (?:a )?complex\b'
         ],
         'MATH-4.2': [  # Series and Transforms (Power Series, Bessel, Legendre, Fourier)
             r'\bpower series\b', r'\btaylor series\b', r'\bmaclaurin series\b', r'\bbessel function\b',
             r'\blegendre (?:polynomial|equation)\b', r'\bfourier series\b', r'\bfourier transform\b',
-            r'\bdirichlet condition\w*'
+            r'\bdirichlet condition\w*', r'\binfinite series\b', r'\bconverges? absolutely\b',
+            r'\bratio test\b', r'\broot test\b'
         ],
         'MATH-4.3': [  # Partial Differential Equations
             r'\bpartial differential equation\b', r'\bpdes?\b', r'\bheat equation\b',
-            r'\bwave equation\b', r'\blaplace\'?s equation\b', r'\bseparation of variables\b'
+            r'\bwave equation\b', r'\blaplace\'?s equation\b', r'\bseparation of variables\b',
+            r'\bu_xx\b', r'\bboundary conditions?\b'
         ],
         'MATH-4.4': [  # Simultaneous Linear and Non-Linear Equations
             r'\bsimultaneous (?:linear|non-?linear) equations?\b', r'\bmatrixs?\b', r'\bmatrices\b',
@@ -159,9 +168,9 @@ SUBTOPIC_RULES = {
             r'\bsystem of (?:linear )?equations\b'
         ],
         'MATH-4.5': [  # Numerical Differentiation, Integration and Optimization
-            r'\bnewton-raphsons?\b', r'\brunge-kuttas?\b', r'\bsimpson\'?s rule\b', r'\btrapezoidal rule\b',
+            r'\bnewton-raphsons?\b', r'\brunge-kuttas?\b', r'\bsimpson\'?s (?:1/3|3/8)? ?rule\b', r'\btrapezoidal rule\b',
             r'\bnumerical (?:method|integration|differentiation)\b', r'\bbisection method\b',
-            r'\bsecant method\b', r'\beuler\'?s method\b', r'\bnumerical optimization\b'
+            r'\bsecant method\b', r'\b(?:forward |backward )?euler(?:\'?s)? method\b', r'\bnumerical optimization\b'
         ],
 
         # 5.0 Engineering Data Analysis
@@ -174,6 +183,7 @@ SUBTOPIC_RULES = {
             r'\bmeans?\b', r'\bmedians?\b', r'\bmodes?\b', r'\bstandard deviation\b', r'\bvariances?\b',
             r'\bnormal distribution\b', r'\bz-scores?\b', r'\bbinomial distribution\b', r'\bpoisson distribution\b',
             r'\bconfidence interval\b', r'\bcentral limit theorem\b', r'\bprobability distribution\b',
+            r'\buniformly distributed\b', r'\buniform distribution\b',
             r'\bquartiles?\b', r'\bsampling distribution\b'
         ],
         'MATH-5.3': [  # Test of Hypothesis
@@ -187,6 +197,8 @@ SUBTOPIC_RULES = {
         ],
         'MATH-5.5': [  # Design of Experiments
             r'\bdesign of experiments?\b', r'\banovas?\b', r'\banalysis of variance\b', r'\bfactorial design\b',
+            r'\bfactorial experiments?\b', r'\binteraction plots?\b', r'\bmain effects?\b',
+            r'\b2\^?2 (?:factorial|design)\b', r'\bfractional replication\b', r'\bconfounding\b', r'\baliasing\b',
             r'\bf-tests?\b', r'\brandomized block design\b', r'\bone-factor-at-a-times?\b', r'\bofats?\b',
             r'\bcontrol(?:led)? experiment\b', r'\bexperimental design\b'
         ],
@@ -194,7 +206,9 @@ SUBTOPIC_RULES = {
         # 6.0 Electromagnetics (also shared with ELECS-3.0)
         'MATH-6.1': [  # Vector Analysis
             r'\bdot product\b', r'\bcross product\b', r'\bunit vector\b', r'\bscalar product\b',
-            r'\bvector product\b', r'\bdirection cosines\b', r'\bvector analysis\b', r'\bmagnitude of a vector\b'
+            r'\bvector product\b', r'\bdirection cosines\b', r'\bvector analysis\b', r'\bmagnitude of a vector\b',
+            r'\bspherical polar\b', r'\bcoordinate transformations?\b', r'\bscalar triple product\b',
+            r'\bvector triple product\b'
         ],
         'MATH-6.2': [  # Directional Derivative, Gradient, Divergence, Curl
             r'\bgradient of\b', r'\bdivergence of\b', r'\bcurl of\b', r'\bdel operator\b',
@@ -210,7 +224,8 @@ SUBTOPIC_RULES = {
             r'\bz-transforms?\b', r'\binverse z-transform\b', r'\bregion of convergence\b', r'\broc of\b'
         ],
         'MATH-7.2': [  # Convolution
-            r'\bconvolution (?:sum|integral)\b', r'\bconvolve\b', r'\bimpulse response\b'
+            r'\bconvolution (?:sum|integral)\b', r'\bconvolve\b', r'\bimpulse response\b',
+            r'\b(?:circular|linear) convolution\b', r'\bconvolution with\b'
         ],
         'MATH-7.3': [  # Correlation
             r'\bcross-correlation\b', r'\bauto-correlation\b', r'\bcorrelation function\b'
@@ -227,7 +242,7 @@ SUBTOPIC_RULES = {
         ],
         'MATH-8.3': [  # Block Diagram and Signal Flow
             r'\bblock diagram reduction\b', r'\bsignal flow graph\b', r'\bmason\'?s (?:gain )?rule\b',
-            r'\bsumming point\b', r'\btakeoff point\b'
+            r'\bsumming point\b', r'\bsumming junctions?\b', r'\bblock diagrams?\b', r'\btakeoff point\b'
         ]
     },
 
@@ -843,11 +858,13 @@ SUBTOPIC_RULES = {
         ],
         'EST-2.4': [  # Frequency Modulation
             r'\bfrequency modulation\b', r'\bfm signal\b', r'\bfrequency deviation\b',
-            r'\bpre-emphasis\b', r'\bde-emphasis\b', r'\bphase modulation\b'
+            r'\bpre-emphasis\b', r'\bde-emphasis\b', r'\bphase modulation\b',
+            r'\bphase-locked loops?\b', r'\bplls?\b', r'\bcapture range\b', r'\block range\b'
         ],
         'EST-2.5': [  # Radio Receivers
             r'\bsuperheterodynes?\b', r'\bintermediate frequency\b', r'\bif stage\b', r'\bimage frequency\b',
-            r'\bagc\b', r'\bautomatic gain control\b', r'\bselectivit(?:y|ies)\b', r'\breceiver sensitivity\b'
+            r'\bagc\b', r'\bautomatic gain control\b', r'\bselectivit(?:y|ies)\b', r'\breceiver sensitivity\b',
+            r'\bmixer circuits?\b', r'\blocal oscillators?\b'
         ],
         'EST-2.6': [  # Radiation and Propagation of Waves
             r'\bground wave\b', r'\bsky wave\b', r'\bspace wave\b', r'\bionospheric (?:wave|propagation)\b',
@@ -888,7 +905,10 @@ SUBTOPIC_RULES = {
             r'\b16-qam\b', r'\b64-qam\b', r'\bconstellation diagram\b', r'\bbit error rate\b', r'\bber\b'
         ],
         'EST-3.5': [  # Basics of Information Theory and Error Detection
-            r'\binformation theory\b', r'\bentropy of (?:a )?source\b', r'\bshannon limit\b', r'\bparity bit\b',
+            r'\binformation theory\b', r'\bentropy of (?:a )?source\b',
+            r'\bdiscrete memoryless source\b', r'\bsource entropy\b',
+            r'\bentropy of (?:a )?(?:discrete )?memoryless source\b',
+            r'\bshannon limit\b', r'\bparity bit\b',
             r'\bchecksums?\b', r'\bcrc\b', r'\bcyclic redundancy check\b', r'\bhamming code\b', r'\bforward error correction\b',
             r'\berror detection\b',
             # Carson's rule & channel bandwidth / capacity
@@ -959,6 +979,7 @@ SUBTOPIC_RULES = {
         ],
         'EST-5.5': [  # Building Management Systems (HVAC, Security, Audio-Video, Fire and Life Safety, SCADA)
             r'\bbuilding management system\b', r'\bbms\b', r'\bhvac control\b', r'\bpublic address system\b',
+            r'\bhvac systems?\b', r'\bchilled water\b',
             r'\bfire (?:and life safety|alarm) system\b', r'\bsecurity system\b', r'\bscada\b',
             r'\baudio-video system\b', r'\baccess control system\b'
         ],
@@ -1006,6 +1027,7 @@ SUBTOPIC_RULES = {
             r'\blocal area network\b', r'\blan\b', r'\bwide area network\b', r'\bwan\b',
             r'\bmetropolitan area network\b', r'\bman\b', r'\bglobal area network\b', r'\bgan\b',
             r'\bisdn\b', r'\bb-isdn\b', r'\bintegrated services digital network\b',
+            r'\basynchronous transfer mode\b', r'\batm cells?\b',
             r'\bethernets?\b', r'\bieee 802\b', r'\bwi-fis?\b', r'\bbluetooths?\b', r'\bvlan\b'
         ]
     }

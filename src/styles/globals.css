@@ -153,23 +153,25 @@ input[type='number'] {
 }
 
 
-/* Visible scrollbar — thin green, webkit only (Chromium/Electron) */
+/* Visible scrollbar — cyberpunk green thumb, webkit only (Chromium/Electron) */
 .show-scrollbar::-webkit-scrollbar,
 .custom-scrollbar::-webkit-scrollbar {
-  width: 3px;
+  width: 6px;
+  height: 6px;
 }
 .show-scrollbar::-webkit-scrollbar-track,
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 999px;
 }
 .show-scrollbar::-webkit-scrollbar-thumb,
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #00FF41;
+  background: rgba(0, 255, 65, 0.4);
   border-radius: 999px;
 }
 .show-scrollbar::-webkit-scrollbar-thumb:hover,
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #00cc33;
+  background: #00FF41;
 }
 
 /* PrintView — wider scrollbar for clickability */

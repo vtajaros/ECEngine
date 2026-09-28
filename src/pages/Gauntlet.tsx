@@ -23,7 +23,7 @@ import { GetContextDropdown } from '../components/ui/GetContextDropdown'
 import { useSound } from '../hooks/useSound'
 import { useGauntletMusic, getTimedMusicRegion, getSurvivalMusicRegion } from '../hooks/useGauntletMusic'
 import { VolumeControl } from '../components/ui/VolumeControl'
-import { formatRunDuration } from '../lib/gauntlet'
+import { formatRunDuration, getSharedTopicPartnerSubject, GAUNTLET_SUBJECTS } from '../lib/gauntlet'
 import {
   Timer,
   Clock,
@@ -669,14 +669,24 @@ Please explain:
                 Rating Changes
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-1.5">
-                {config.subjects.map(s => {
+                {GAUNTLET_SUBJECTS.filter(
+                  s => config.subjects.includes(s) || (ratings[s]?.rating !== ratingsBefore[s]?.rating)
+                ).map(s => {
                   const before = Math.round(ratingsBefore[s]?.rating ?? 1000)
                   const after = Math.round(ratings[s]?.rating ?? 1000)
                   const delta = after - before
                   const color = SUBJECT_LINE_COLOR[s]
+                  const isSharedGain = !config.subjects.includes(s)
                   return (
                     <div key={s} className="flex items-center justify-between p-1.5 sm:p-2 rounded bg-surface border border-border-base text-xs">
-                      <span className="font-['Orbitron'] font-bold" style={{ color }}>{s}</span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-['Orbitron'] font-bold" style={{ color }}>{s}</span>
+                        {isSharedGain && (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-['Rajdhani'] font-bold text-accent bg-accent/10 border border-accent/30 uppercase">
+                            Shared Topic
+                          </span>
+                        )}
+                      </div>
                       <span className="font-['JetBrains_Mono'] text-text-primary">
                         {before} → {after}{' '}
                         <strong className={delta >= 0 ? 'text-[#00FF41]' : 'text-[#ef4444]'}>
@@ -966,6 +976,22 @@ Please explain:
                         >
                           {a.item.subject}
                         </span>
+
+                        {(() => {
+                          const partner = getSharedTopicPartnerSubject(
+                            a.item.subject,
+                            a.item.card.tosTopicId,
+                            a.item.card.tags
+                          )
+                          if (!partner) return null
+                          return (
+                            <Tooltip content={`Shared topic with ${partner}: Elo split 50/50`} position="top">
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-['Orbitron'] font-bold border border-brand-cyan/40 bg-brand-cyan/10 text-brand-cyan shrink-0 cursor-default">
+                                +{partner}
+                              </span>
+                            </Tooltip>
+                          )
+                        })()}
 
                         {a.item.card.tosTopicId && (
                           <Tooltip content={formatTosBadge(a.item.card.tosTopicId) || a.item.card.tosTopicId} position="top">
@@ -1611,15 +1637,34 @@ Please explain:
 
           {/* Question Meta */}
           <div className="flex items-center justify-between">
-            <span
-              className="px-2 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold tracking-wider"
-              style={{
-                color: SUBJECT_LINE_COLOR[currentItem.subject],
-                border: `1px solid ${SUBJECT_LINE_COLOR[currentItem.subject]}`,
-              }}
-            >
-              {currentItem.subject}
-            </span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span
+                className="px-2 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold tracking-wider"
+                style={{
+                  color: SUBJECT_LINE_COLOR[currentItem.subject],
+                  border: `1px solid ${SUBJECT_LINE_COLOR[currentItem.subject]}`,
+                }}
+              >
+                {currentItem.subject}
+              </span>
+              {(() => {
+                const partner = getSharedTopicPartnerSubject(
+                  currentItem.subject,
+                  currentItem.card.tosTopicId,
+                  currentItem.card.tags
+                )
+                if (!partner) return null
+                return (
+                  <span
+                    className="px-2 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold tracking-wider flex items-center gap-1 bg-surface-3/60 border border-brand-cyan/40 text-brand-cyan"
+                    title={`Shared topic with ${partner}: Elo changes are split 50/50 between ${currentItem.subject} and ${partner}`}
+                  >
+                    <span>+ {partner}</span>
+                    <span className="text-[9px] text-text-muted font-['Rajdhani'] uppercase tracking-normal font-semibold">Shared</span>
+                  </span>
+                )
+              })()}
+            </div>
           </div>
 
           {/* Question Text */}

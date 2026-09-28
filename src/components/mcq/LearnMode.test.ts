@@ -130,6 +130,7 @@ describe('reshuffleCardChoices', () => {
         question: "What is Ohm's Law?",
         choices: ['V = IR', 'P = IV', 'F = ma', 'E = mc^2'],
         answer: 0,
+        explanation: '',
       },
     }
     const reshuffled = reshuffleCardChoices(card)
@@ -152,6 +153,7 @@ describe('reshuffleCardChoices', () => {
         question: 'Which of the following?',
         choices: ['Option 1', 'Option 2', 'Both A and B', 'None of these'],
         answer: 2,
+        explanation: '',
       },
     }
     const reshuffled = reshuffleCardChoices(card)

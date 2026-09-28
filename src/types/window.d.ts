@@ -128,6 +128,49 @@ declare global {
         clearExamSessions: () => Promise<{ success: boolean; error?: string }>
         exportDatabaseAndImages: () => Promise<{ success: boolean; canceled?: boolean; folderPath?: string; error?: string }>
         getContentCoverage: () => Promise<{ success: boolean; data?: any; error?: string }>
+        getTosCoverageMatrix: () => Promise<{
+          success: boolean
+          data?: {
+            totalCards: number
+            totalClassified: number
+            totalUnclassified: number
+            bySubject: Record<
+              string,
+              {
+                totalCards: number
+                classifiedCards: number
+                unclassifiedCards: number
+                countsByTosId: Record<string, number>
+              }
+            >
+          }
+          error?: string
+        }>
+        getCardsByTosTopic: (payload?: {
+          tosTopicId?: string | null
+          subject?: string
+          isUnclassified?: boolean
+          search?: string
+          limit?: number
+          offset?: number
+        }) => Promise<{
+          success: boolean
+          data?: {
+            cards: Array<{
+              id: string
+              topicId: string
+              deckName: string
+              subject: string
+              type: string
+              difficulty: string | null
+              tosTopicId: string | null
+              preview: string
+              tags: string[]
+            }>
+            total: number
+          }
+          error?: string
+        }>
         getQuestionLengthDistribution: () => Promise<{ success: boolean; data?: any; error?: string }>
         getAnswerPositionCounts: () => Promise<{ success: boolean; data?: any; error?: string }>
         getAnswerPositionBySubject: () => Promise<{ success: boolean; data?: any; error?: string }>

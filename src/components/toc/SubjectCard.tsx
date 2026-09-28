@@ -218,10 +218,10 @@ function TopicRow({ topic, searchQuery }: { topic: Topic, searchQuery: string })
                       key={row.subtopicIds.join(',')}
                       className="border-l-2 border-border-base pl-3 my-1 flex flex-col"
                     >
-                      <div className="flex items-center justify-between gap-3 py-1">
-                        <Tooltip content={row.label} position="top">
+                      <div className="flex items-center justify-between gap-3 py-1 min-w-0">
+                        <Tooltip content={row.label} position="top" className="min-w-0 flex-1 justify-start">
                           <span
-                            className="text-[11px] font-['JetBrains_Mono'] text-text-muted truncate min-w-0"
+                            className="text-[11px] font-['JetBrains_Mono'] text-text-muted truncate block w-full text-left"
                           >
                             {row.label}
                           </span>

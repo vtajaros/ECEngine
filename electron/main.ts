@@ -76,9 +76,6 @@ function createWindow() {
 
   // Show window smoothly once React/Vite has loaded the UI initially
   mainWindow.once('ready-to-show', () => {
-    if (mainWindowState.isMaximized) {
-      mainWindow!.maximize()
-    }
     mainWindow!.show()
   })
 

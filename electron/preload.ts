@@ -69,6 +69,8 @@ contextBridge.exposeInMainWorld('electron', {
     exportDatabaseAndImages: (): Promise<{ success: boolean; canceled?: boolean; folderPath?: string; error?: string }> =>
       ipcRenderer.invoke('data:exportDatabaseAndImages'),
     getContentCoverage: () => ipcRenderer.invoke('data:getContentCoverage'),
+    getTosCoverageMatrix: () => ipcRenderer.invoke('data:getTosCoverageMatrix'),
+    getCardsByTosTopic: (payload: any) => ipcRenderer.invoke('data:getCardsByTosTopic', payload),
     getQuestionLengthDistribution: () => ipcRenderer.invoke('data:getQuestionLengthDistribution'),
     getAnswerPositionCounts: () => ipcRenderer.invoke('data:getAnswerPositionCounts'),
     getAnswerPositionBySubject: () => ipcRenderer.invoke('data:getAnswerPositionBySubject'),

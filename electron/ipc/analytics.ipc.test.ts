@@ -3,6 +3,8 @@ import Database from 'better-sqlite3'
 import {
   normalizeSubject,
   getContentCoverage,
+  getTosCoverageMatrix,
+  getCardsByTosTopic,
   getQuestionLengthDistribution,
   getAnswerPositionCounts,
   getAnswerPositionBySubject,
@@ -40,7 +42,11 @@ const SCHEMA = `
     id TEXT PRIMARY KEY,
     topic_id TEXT,
     type TEXT,
-    data TEXT DEFAULT '{}'
+    data TEXT DEFAULT '{}',
+    difficulty TEXT,
+    tags TEXT,
+    tos_topic_id TEXT,
+    created_at INTEGER DEFAULT (strftime('%s', 'now'))
   );
 
   CREATE TABLE IF NOT EXISTS attempt_log (
@@ -366,6 +372,79 @@ describe('analytics.ipc', () => {
         learn: [{ subject: 'MATH', responseMs: 5378 }],
         flashcard: [{ subject: 'EST', responseMs: 7752 }],
       })
+    })
+  })
+
+  describe('getTosCoverageMatrix and getCardsByTosTopic', () => {
+    beforeEach(() => {
+      // Seed specific cards with tos_topic_id
+      const insertCard = db.prepare(`
+        INSERT INTO cards (id, topic_id, type, data, difficulty, tos_topic_id, tags)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `)
+      insertCard.run(
+        'c-tos-1',
+        't-math-1',
+        'mcq',
+        JSON.stringify({ question: 'What is derivative of sin(x)?' }),
+        'easy',
+        'MATH-1.1',
+        JSON.stringify(['calculus', 'derivatives'])
+      )
+      insertCard.run(
+        'c-tos-2',
+        't-math-1',
+        'mcq',
+        JSON.stringify({ question: 'Evaluate integral of x dx.' }),
+        'moderate',
+        'MATH-2.1',
+        JSON.stringify(['integral'])
+      )
+      insertCard.run(
+        'c-tos-3',
+        't-math-2',
+        'flashcard',
+        JSON.stringify({ front: 'Quadratic formula' }),
+        'easy',
+        null,
+        JSON.stringify(['algebra'])
+      )
+    })
+
+    it('computes correct topic counts and unclassified counts across subjects', () => {
+      const matrix = getTosCoverageMatrix((sql, params) =>
+        params && params.length ? db.prepare(sql).all(...params) : db.prepare(sql).all()
+      )
+      expect(matrix.totalCards).toBe(11) // 8 from seedTestData + 3 from beforeEach
+      expect(matrix.totalClassified).toBe(2)
+      expect(matrix.totalUnclassified).toBe(9)
+      expect(matrix.bySubject['MATH'].totalCards).toBe(5)
+      expect(matrix.bySubject['MATH'].classifiedCards).toBe(2)
+      expect(matrix.bySubject['MATH'].countsByTosId['MATH-1.1']).toBe(1)
+      expect(matrix.bySubject['MATH'].countsByTosId['MATH-2.1']).toBe(1)
+      expect(matrix.bySubject['MATH'].unclassifiedCards).toBe(3)
+    })
+
+    it('fetches cards filtered by tosTopicId', () => {
+      const res = getCardsByTosTopic(
+        { tosTopicId: 'MATH-1.1' },
+        (sql, params) =>
+          params && params.length ? db.prepare(sql).all(...params) : db.prepare(sql).all()
+      )
+      expect(res.total).toBe(1)
+      expect(res.cards[0].id).toBe('c-tos-1')
+      expect(res.cards[0].preview).toBe('What is derivative of sin(x)?')
+      expect(res.cards[0].tosTopicId).toBe('MATH-1.1')
+    })
+
+    it('fetches unclassified cards when isUnclassified is true', () => {
+      const res = getCardsByTosTopic(
+        { isUnclassified: true, subject: 'MATH' },
+        (sql, params) =>
+          params && params.length ? db.prepare(sql).all(...params) : db.prepare(sql).all()
+      )
+      expect(res.total).toBeGreaterThanOrEqual(1)
+      expect(res.cards.every((c) => c.tosTopicId === null || c.tosTopicId === '')).toBe(true)
     })
   })
 

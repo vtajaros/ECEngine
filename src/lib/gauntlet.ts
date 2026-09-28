@@ -345,6 +345,116 @@ export function performanceScore(outcome: AnswerOutcome, sn: number): number {
   return TUNING.correctScoreFloor + (1 - TUNING.correctScoreFloor) * clamp(sn, 0, 1)
 }
 
+// ── Shared Topics Map (50/50 Elo Split) ──────────────────────────────────────
+export interface SharedTopicConfig {
+  name: string
+  subjects: [Subject, Subject]
+  prefixes: Partial<Record<Subject, string[]>>
+  tagRegex: RegExp
+}
+
+export const SHARED_TOPICS: SharedTopicConfig[] = [
+  {
+    name: 'Electromagnetics',
+    subjects: ['MATH', 'ELECS'],
+    prefixes: {
+      MATH: ['MATH-6.', 'MATH-6.0', '6.'],
+      ELECS: ['ELECS-3.', 'ELECS-3.0', '3.'],
+    },
+    tagRegex: /electromagnetics/i,
+  },
+  {
+    name: 'Feedback and Control Systems',
+    subjects: ['MATH', 'ELECS'],
+    prefixes: {
+      MATH: ['MATH-8.', 'MATH-8.0', '8.'],
+      ELECS: ['ELECS-9.', 'ELECS-9.0', '9.'],
+    },
+    tagRegex: /feedback.*control/i,
+  },
+  {
+    name: 'Signals, Spectra and Signal Processing',
+    subjects: ['MATH', 'EST'],
+    prefixes: {
+      MATH: ['MATH-7.', 'MATH-7.0', '7.'],
+      EST: ['EST-1.', 'EST-1.0', '1.'],
+    },
+    tagRegex: /signals?.*spectra|signal.*processing/i,
+  },
+  {
+    name: 'Electronics System and Design',
+    subjects: ['ELECS', 'EST'],
+    prefixes: {
+      ELECS: ['ELECS-6.', 'ELECS-6.0', '6.'],
+      EST: ['EST-5.', 'EST-5.0', '5.'],
+    },
+    tagRegex: /electronic.*systems?.*design|electronics\s*3/i,
+  },
+]
+
+/**
+ * Returns the partner subject if the question belongs to a shared topic, or null if single-subject.
+ */
+export function getSharedTopicPartnerSubject(
+  subject: Subject,
+  tosTopicId?: string | null,
+  tags?: string[],
+): Subject | null {
+  for (const st of SHARED_TOPICS) {
+    if (!st.subjects.includes(subject)) continue
+
+    const partner = st.subjects[0] === subject ? st.subjects[1] : st.subjects[0]
+
+    // 1. Check ToS topic ID
+    if (tosTopicId) {
+      const subjectPrefixes = st.prefixes[subject] || []
+      const matchesPrefix = subjectPrefixes.some(
+        p => tosTopicId === p || tosTopicId.startsWith(p),
+      )
+      if (matchesPrefix) return partner
+    }
+
+    // 2. Check tags as fallback
+    if (tags && tags.length > 0) {
+      const matchesTag = tags.some(t => st.tagRegex.test(t))
+      if (matchesTag) return partner
+    }
+  }
+
+  return null
+}
+
+/**
+ * Computes the raw Elo delta for an answer without updating the rating object.
+ */
+export function computeAnswerEloDelta(
+  playerRating: number,
+  opponentRating: number,
+  answersSoFar: number,
+  outcome: AnswerOutcome,
+  sn: number,
+  eloMult: number = 1,
+): number {
+  const e = expectedScore(playerRating, opponentRating)
+  const s = performanceScore(outcome, sn)
+  const k = kFactor(answersSoFar, playerRating)
+  let rawDelta = k * (s - e)
+
+  // Insulator rank (500–799): soften Elo loss on mistakes by 50% to incentivize grinding
+  if (playerRating < 800 && rawDelta < 0) {
+    rawDelta = rawDelta * 0.5
+  }
+
+  if (eloMult <= 0.1) {
+    // Unlimited time limit mode: gives +-1 (testing accuracy without farmable rating)
+    if (outcome === 'correct') return 1
+    if (outcome === 'wrong' || outcome === 'timeout') return -1
+    return 0
+  }
+
+  return rawDelta * eloMult
+}
+
 export function applyAnswerToRating(
   current: SubjectRating,
   opponentRating: number,
@@ -352,29 +462,14 @@ export function applyAnswerToRating(
   sn: number,
   eloMult: number = 1,
 ): SubjectRating {
-  const e = expectedScore(current.rating, opponentRating)
-  const s = performanceScore(outcome, sn)
-  const k = kFactor(current.answers, current.rating)
-  let rawDelta = k * (s - e)
-
-  // Insulator rank (500–799): soften Elo loss on mistakes by 50% to incentivize grinding
-  if (current.rating < 800 && rawDelta < 0) {
-    rawDelta = rawDelta * 0.5
-  }
-
-  let delta: number
-  if (eloMult <= 0.1) {
-    // Unlimited time limit mode: gives +-1 (testing accuracy without farmable rating)
-    if (outcome === 'correct') {
-      delta = 1
-    } else if (outcome === 'wrong' || outcome === 'timeout') {
-      delta = -1
-    } else {
-      delta = 0
-    }
-  } else {
-    delta = rawDelta * eloMult
-  }
+  const delta = computeAnswerEloDelta(
+    current.rating,
+    opponentRating,
+    current.answers,
+    outcome,
+    sn,
+    eloMult,
+  )
 
   return {
     rating: Math.max(500, Math.round((current.rating + delta) * 10) / 10),

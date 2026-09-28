@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron'
 import { queryAll } from '../db/database'
-import { FULL_TO_CODE_SUBJECT } from '../../src/lib/subjectClassifier'
+import { FULL_TO_CODE_SUBJECT, CODE_TO_FULL_SUBJECT, SubjectCode } from '../../src/lib/subjectClassifier'
 
 /**
  * Normalizes a raw subject string into standard subject codes (MATH, GEAS, ELECS, EST).
@@ -215,10 +215,226 @@ export function getAnswerPositionBySubject(
   return result
 }
 
+export interface TosCoverageMatrixData {
+  totalCards: number
+  totalClassified: number
+  totalUnclassified: number
+  bySubject: Record<
+    string,
+    {
+      totalCards: number
+      classifiedCards: number
+      unclassifiedCards: number
+      countsByTosId: Record<string, number>
+    }
+  >
+}
+
+export function getTosCoverageMatrix(
+  queryFn: (sql: string, params?: any[]) => any[] = queryAll
+): TosCoverageMatrixData {
+  const sql = `
+    SELECT 
+      t.subject AS rawSubject,
+      c.tos_topic_id AS tosTopicId,
+      COUNT(c.id) AS cardCount
+    FROM cards c
+    JOIN topics t ON c.topic_id = t.id
+    GROUP BY rawSubject, tosTopicId
+  `
+  const rows = queryFn(sql)
+  const standardSubjects = ['MATH', 'GEAS', 'ELECS', 'EST']
+  const result: TosCoverageMatrixData = {
+    totalCards: 0,
+    totalClassified: 0,
+    totalUnclassified: 0,
+    bySubject: {},
+  }
+
+  for (const s of standardSubjects) {
+    result.bySubject[s] = {
+      totalCards: 0,
+      classifiedCards: 0,
+      unclassifiedCards: 0,
+      countsByTosId: {},
+    }
+  }
+
+  for (const row of rows) {
+    const sub = normalizeSubject(row.rawSubject)
+    const count = Number(row.cardCount) || 0
+    const rawTos = row.tosTopicId ? String(row.tosTopicId).trim() : null
+
+    if (!result.bySubject[sub]) {
+      result.bySubject[sub] = {
+        totalCards: 0,
+        classifiedCards: 0,
+        unclassifiedCards: 0,
+        countsByTosId: {},
+      }
+    }
+
+    result.totalCards += count
+    result.bySubject[sub].totalCards += count
+
+    if (rawTos) {
+      result.totalClassified += count
+      result.bySubject[sub].classifiedCards += count
+      result.bySubject[sub].countsByTosId[rawTos] =
+        (result.bySubject[sub].countsByTosId[rawTos] || 0) + count
+    } else {
+      result.totalUnclassified += count
+      result.bySubject[sub].unclassifiedCards += count
+    }
+  }
+
+  return result
+}
+
+export interface CardByTosTopicItem {
+  id: string
+  topicId: string
+  deckName: string
+  subject: string
+  type: string
+  difficulty: string | null
+  tosTopicId: string | null
+  preview: string
+  tags: string[]
+}
+
+export function getCardsByTosTopic(
+  payload: {
+    tosTopicId?: string | null
+    subject?: string
+    isUnclassified?: boolean
+    search?: string
+    limit?: number
+    offset?: number
+  },
+  queryFn: (sql: string, params?: any[]) => any[] = queryAll
+): { cards: CardByTosTopicItem[]; total: number } {
+  const { tosTopicId, subject, isUnclassified, search, limit = 50, offset = 0 } = payload
+  const whereClauses: string[] = ['1=1']
+  const params: any[] = []
+
+  if (subject && subject !== 'ALL') {
+    const full = CODE_TO_FULL_SUBJECT[subject as SubjectCode]
+    const candidates = [subject]
+    if (full) {
+      candidates.push(full)
+      candidates.push(full.replace('&', 'and'))
+    }
+    const placeholders = candidates.map(() => '?').join(', ')
+    whereClauses.push(`(t.subject IN (${placeholders}) OR UPPER(t.subject) LIKE ?)`)
+    params.push(...candidates, `%${subject}%`)
+  }
+
+  if (isUnclassified) {
+    whereClauses.push(`(c.tos_topic_id IS NULL OR c.tos_topic_id = '')`)
+  } else if (tosTopicId) {
+    if (tosTopicId.endsWith('.0')) {
+      const prefix = tosTopicId.slice(0, -1)
+      whereClauses.push(`(c.tos_topic_id = ? OR c.tos_topic_id LIKE ?)`)
+      params.push(tosTopicId, `${prefix}%`)
+    } else {
+      whereClauses.push(`c.tos_topic_id = ?`)
+      params.push(tosTopicId)
+    }
+  }
+
+  if (search && search.trim()) {
+    whereClauses.push(`(c.data LIKE ? OR t.name LIKE ?)`)
+    params.push(`%${search.trim()}%`, `%${search.trim()}%`)
+  }
+
+  const whereSql = whereClauses.join(' AND ')
+
+  const countSql = `
+    SELECT COUNT(*) AS total
+    FROM cards c
+    JOIN topics t ON c.topic_id = t.id
+    WHERE ${whereSql}
+  `
+  const countRow = queryFn(countSql, params)[0]
+  const total = Number(countRow?.total) || 0
+
+  const dataSql = `
+    SELECT 
+      c.id,
+      c.topic_id,
+      c.type,
+      c.data,
+      c.difficulty,
+      c.tags,
+      c.tos_topic_id,
+      t.name AS topic_name,
+      t.subject AS raw_subject
+    FROM cards c
+    JOIN topics t ON c.topic_id = t.id
+    WHERE ${whereSql}
+    ORDER BY c.created_at DESC
+    LIMIT ? OFFSET ?
+  `
+  const rows = queryFn(dataSql, [...params, limit, offset])
+
+  const cards: CardByTosTopicItem[] = rows.map((r: any) => {
+    let preview = ''
+    try {
+      const parsed = typeof r.data === 'string' ? JSON.parse(r.data) : r.data
+      preview = parsed.question || parsed.front || parsed.formula || parsed.name || parsed.term || ''
+    } catch {
+      preview = String(r.data || '').slice(0, 100)
+    }
+
+    let parsedTags: string[] = []
+    try {
+      if (r.tags) {
+        parsedTags = typeof r.tags === 'string' ? JSON.parse(r.tags) : r.tags
+        if (!Array.isArray(parsedTags)) parsedTags = [String(r.tags)]
+      }
+    } catch {
+      if (r.tags) parsedTags = [String(r.tags)]
+    }
+
+    return {
+      id: r.id,
+      topicId: r.topic_id,
+      deckName: r.topic_name || 'Untitled Deck',
+      subject: normalizeSubject(r.raw_subject),
+      type: r.type || 'mcq',
+      difficulty: r.difficulty || null,
+      tosTopicId: r.tos_topic_id || null,
+      preview: preview.trim(),
+      tags: parsedTags,
+    }
+  })
+
+  return { cards, total }
+}
+
 export function registerAnalyticsHandlers(): void {
   ipcMain.handle('data:getContentCoverage', async () => {
     try {
       const data = getContentCoverage()
+      return { success: true, data }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('data:getTosCoverageMatrix', async () => {
+    try {
+      const data = getTosCoverageMatrix()
+      return { success: true, data }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
+  ipcMain.handle('data:getCardsByTosTopic', async (_, payload: any) => {
+    try {
+      const data = getCardsByTosTopic(payload || {})
       return { success: true, data }
     } catch (error) {
       return { success: false, error: (error as Error).message }

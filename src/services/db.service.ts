@@ -543,6 +543,25 @@ export const dbService = {
     return result.data
   },
 
+  getTosCoverageMatrix: async () => {
+    const result = await window.electron.data.getTosCoverageMatrix()
+    if (!result.success) throw new Error(result.error ?? 'Failed to get ToS coverage matrix')
+    return result.data
+  },
+
+  getCardsByTosTopic: async (payload?: {
+    tosTopicId?: string | null
+    subject?: string
+    isUnclassified?: boolean
+    search?: string
+    limit?: number
+    offset?: number
+  }) => {
+    const result = await window.electron.data.getCardsByTosTopic(payload)
+    if (!result.success) throw new Error(result.error ?? 'Failed to get cards by ToS topic')
+    return result.data
+  },
+
   updateFolderOrder: async (
     folderOrders: Array<{ folderName: string; orderIndex: number }>
   ): Promise<{ success: boolean; error?: string }> => {

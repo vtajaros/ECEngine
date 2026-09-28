@@ -13,6 +13,7 @@ import { QuestionLengthAnovaDemo } from './QuestionLengthAnovaDemo'
 import { AnswerPositionContingencyDemo } from './AnswerPositionContingencyDemo'
 import { ResponseTimeDemo } from './ResponseTimeDemo'
 import { QuestionLengthZScoreDemo } from './QuestionLengthZScoreDemo'
+import { TosCoverageMatrixDemo } from './TosCoverageMatrixDemo'
 import { useDataLabStore } from '../../../store/useDataLabStore'
 
 // Mock Recharts ResponsiveContainer so children render synchronously in jsdom
@@ -520,6 +521,80 @@ describe('Data Lab Demo Components', () => {
       expect(container?.querySelector('[data-testid="zscore-interpretation"]')).not.toBeNull()
     })
   })
+
+  describe('TosCoverageMatrixDemo', () => {
+    const mockMatrix = {
+      totalCards: 100,
+      totalClassified: 95,
+      totalUnclassified: 5,
+      bySubject: {
+        MATH: {
+          totalCards: 25,
+          classifiedCards: 25,
+          unclassifiedCards: 0,
+          countsByTosId: {
+            'MATH-1.0': 15,
+            'MATH-1.1': 5,
+            'MATH-1.2': 10,
+          },
+        },
+        ELECS: {
+          totalCards: 25,
+          classifiedCards: 25,
+          unclassifiedCards: 0,
+          countsByTosId: {},
+        },
+        GEAS: {
+          totalCards: 25,
+          classifiedCards: 25,
+          unclassifiedCards: 0,
+          countsByTosId: {},
+        },
+        EST: {
+          totalCards: 25,
+          classifiedCards: 20,
+          unclassifiedCards: 5,
+          countsByTosId: {},
+        },
+      },
+    }
+
+    it('renders LooksFam subject pills, single-line ribbon, and master-detail panes', async () => {
+      vi.spyOn(dbService, 'getTosCoverageMatrix').mockResolvedValue(mockMatrix)
+      useDataLabStore.setState({
+        tosCoverageMatrix: mockMatrix as any,
+        loading: { ...useDataLabStore.getState().loading, tosCoverageMatrix: false },
+      })
+
+      await act(async () => {
+        root!.render(<TosCoverageMatrixDemo />)
+      })
+
+      // Header & Container
+      expect(container?.querySelector('[data-testid="tos-coverage-matrix-demo"]')).not.toBeNull()
+      expect(container?.textContent).toContain('ToS Classification & Coverage Matrix')
+
+      // Single-line summary ribbon
+      expect(container?.textContent).toContain('Total Cards:')
+      expect(container?.textContent).toContain('100')
+      expect(container?.textContent).toContain('Classified:')
+      expect(container?.textContent).toContain('95')
+      expect(container?.textContent).toContain('5 cards')
+
+      // LooksFam subject pills
+      expect(container?.textContent).toContain('ALL')
+      expect(container?.textContent).toContain('MATH')
+      expect(container?.textContent).toContain('GEAS')
+      expect(container?.textContent).toContain('ELECS')
+      expect(container?.textContent).toContain('EST')
+
+      // Master column (Topics) and Detail column
+      expect(container?.textContent).toContain('PRC Topics')
+      expect(container?.textContent).toContain('1.0 Differential Calculus')
+      expect(container?.textContent).toContain('1.1 Functions, Continuity, Limits')
+    })
+  })
 })
+
 
 
