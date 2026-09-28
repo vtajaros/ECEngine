@@ -46,6 +46,7 @@ const SCHEMA = `
     difficulty TEXT,
     tags TEXT,
     tos_topic_id TEXT,
+    order_index INTEGER DEFAULT 0,
     created_at INTEGER DEFAULT (strftime('%s', 'now'))
   );
 

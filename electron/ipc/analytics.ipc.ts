@@ -301,6 +301,10 @@ export interface CardByTosTopicItem {
   tosTopicId: string | null
   preview: string
   tags: string[]
+  orderIndex?: number
+  cardNumber?: number
+  hasImage?: boolean
+  imagePath?: string | null
 }
 
 export function getCardsByTosTopic(
@@ -333,14 +337,8 @@ export function getCardsByTosTopic(
   if (isUnclassified) {
     whereClauses.push(`(c.tos_topic_id IS NULL OR c.tos_topic_id = '')`)
   } else if (tosTopicId) {
-    if (tosTopicId.endsWith('.0')) {
-      const prefix = tosTopicId.slice(0, -1)
-      whereClauses.push(`(c.tos_topic_id = ? OR c.tos_topic_id LIKE ?)`)
-      params.push(tosTopicId, `${prefix}%`)
-    } else {
-      whereClauses.push(`c.tos_topic_id = ?`)
-      params.push(tosTopicId)
-    }
+    whereClauses.push(`c.tos_topic_id = ?`)
+    params.push(tosTopicId)
   }
 
   if (search && search.trim()) {
@@ -368,6 +366,7 @@ export function getCardsByTosTopic(
       c.difficulty,
       c.tags,
       c.tos_topic_id,
+      c.order_index,
       t.name AS topic_name,
       t.subject AS raw_subject
     FROM cards c
@@ -380,9 +379,20 @@ export function getCardsByTosTopic(
 
   const cards: CardByTosTopicItem[] = rows.map((r: any) => {
     let preview = ''
+    let imagePath: string | null = null
+    let hasImage = false
     try {
       const parsed = typeof r.data === 'string' ? JSON.parse(r.data) : r.data
       preview = parsed.question || parsed.front || parsed.formula || parsed.name || parsed.term || ''
+      imagePath = parsed.imagePath || parsed.imagePathFront || null
+      hasImage = Boolean(
+        imagePath ||
+        parsed.imageUrl ||
+        parsed.image ||
+        (typeof r.data === 'string' && (r.data.includes('.webp') || r.data.includes('.png') || r.data.includes('.jpg'))) ||
+        preview.toLowerCase().includes('circuit shown') ||
+        preview.toLowerCase().includes('shown in figure')
+      )
     } catch {
       preview = String(r.data || '').slice(0, 100)
     }
@@ -397,6 +407,8 @@ export function getCardsByTosTopic(
       if (r.tags) parsedTags = [String(r.tags)]
     }
 
+    const orderIndex = typeof r.order_index === 'number' ? r.order_index : 0
+
     return {
       id: r.id,
       topicId: r.topic_id,
@@ -405,8 +417,12 @@ export function getCardsByTosTopic(
       type: r.type || 'mcq',
       difficulty: r.difficulty || null,
       tosTopicId: r.tos_topic_id || null,
+      orderIndex,
+      cardNumber: orderIndex + 1,
       preview: preview.trim(),
       tags: parsedTags,
+      hasImage,
+      imagePath,
     }
   })
 

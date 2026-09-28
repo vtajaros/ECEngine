@@ -133,7 +133,7 @@ export function registerDeckHandlers(): void {
   ipcMain.handle('decks:getTopics', async () => {
     try {
       const rows = queryAll(
-        'SELECT id, name, subject, description, parent_id, order_index, tags, created_at, folder_name, folder_id, is_favorite FROM topics'
+        'SELECT id, name, subject, description, parent_id, order_index, tags, created_at, folder_name, folder_id, is_favorite, default_tos_topic_id FROM topics'
       )
       return { success: true, data: rows }
     } catch (error) {

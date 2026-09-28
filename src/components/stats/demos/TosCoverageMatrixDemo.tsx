@@ -450,14 +450,12 @@ export function TosCoverageMatrixDemo() {
               filteredTopics.map((item) => {
                 const isSelected = item.topic.id === activeTopicItem?.topic.id
                 const color = TOS_SUBJECT_COLORS[item.subject.id]?.accent || '#00FF41'
-                const subtopicPct =
-                  (item.coveredSubCount / Math.max(item.topic.subtopics.length, 1)) * 100
 
                 return (
                   <div
                     key={item.topic.id}
                     onClick={() => setSelectedTopicId(item.topic.id)}
-                    className={`p-3 transition-colors cursor-pointer flex flex-col gap-1.5 border-l-2 ${
+                    className={`p-3 transition-colors cursor-pointer flex items-center justify-between gap-3 border-l-2 ${
                       isSelected
                         ? 'bg-surface-2/90 text-text-primary'
                         : 'bg-transparent hover:bg-surface-2/30 text-text-muted border-l-transparent'
@@ -466,7 +464,7 @@ export function TosCoverageMatrixDemo() {
                       borderLeftColor: isSelected ? color : 'transparent',
                     }}
                   >
-                    <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
                       <span
                         className="px-1.5 py-0.2 rounded text-[9px] font-['Rajdhani'] font-bold uppercase tracking-wider shrink-0"
                         style={{
@@ -478,7 +476,7 @@ export function TosCoverageMatrixDemo() {
                         {item.subject.id}
                       </span>
                       <span
-                        className={`font-['Orbitron'] text-xs font-bold truncate flex-1 ${
+                        className={`font-['Orbitron'] text-xs font-bold truncate ${
                           isSelected ? 'text-text-primary' : 'text-text-muted'
                         }`}
                       >
@@ -486,33 +484,13 @@ export function TosCoverageMatrixDemo() {
                       </span>
                     </div>
 
-                    {/* Progress & Card Count — full width responsive track */}
-                    <div className="flex items-center gap-2 text-[11px] font-['JetBrains_Mono'] mt-0.5">
-                      <span className="text-text-muted text-[10px] shrink-0 font-medium">
-                        {item.coveredSubCount}/{item.topic.subtopics.length}
-                      </span>
-                      <div className="flex-1 h-1.5 rounded-full bg-[#181818] overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-300"
-                          style={{
-                            width: `${subtopicPct}%`,
-                            backgroundColor:
-                              subtopicPct === 100
-                                ? '#00FF41'
-                                : subtopicPct > 0
-                                ? '#eab308'
-                                : '#ef4444',
-                          }}
-                        />
-                      </div>
-                      <span
-                        className={`font-bold shrink-0 text-[10px] ${
-                          item.totalCards > 0 ? 'text-accent' : 'text-[#555]'
-                        }`}
-                      >
-                        {item.totalCards} cards
-                      </span>
-                    </div>
+                    <span
+                      className={`font-['JetBrains_Mono'] font-bold shrink-0 text-[11px] ${
+                        item.totalCards > 0 ? 'text-accent' : 'text-[#555]'
+                      }`}
+                    >
+                      {item.totalCards} cards
+                    </span>
                   </div>
                 )
               })
@@ -525,80 +503,45 @@ export function TosCoverageMatrixDemo() {
           {activeTopicItem ? (
             <>
               {/* Detail Header */}
-              <div className="shrink-0 p-3.5 sm:p-4 bg-[#111] border-b border-border-base flex flex-col gap-2.5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex flex-col gap-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="px-2 py-0.5 rounded text-[10px] font-['Rajdhani'] font-bold uppercase tracking-wider"
-                        style={{
-                          color: TOS_SUBJECT_COLORS[activeTopicItem.subject.id]?.accent || '#00FF41',
-                          backgroundColor: `${TOS_SUBJECT_COLORS[activeTopicItem.subject.id]?.accent || '#00FF41'}15`,
-                          border: `1px solid ${TOS_SUBJECT_COLORS[activeTopicItem.subject.id]?.accent || '#00FF41'}30`,
-                        }}
-                      >
-                        {activeTopicItem.subject.id} • {activeTopicItem.subject.name}
-                      </span>
-                    </div>
-                    <h3 className="font-['Orbitron'] text-xs sm:text-sm font-bold text-text-primary tracking-wide">
-                      {activeTopicItem.topic.name}
-                    </h3>
-                  </div>
-
-                  {activeTopicItem.totalCards > 0 && (
-                    <button
-                      onClick={() =>
-                        openInspector(
-                          activeTopicItem.subject.id,
-                          `All Cards in ${activeTopicItem.topic.name}`,
-                          activeTopicItem.topic.id,
-                          false
-                        )
-                      }
-                      className="px-3 py-1.5 rounded-lg bg-surface-2 hover:bg-surface-2/80 text-text-primary border border-border-base text-xs font-['Rajdhani'] uppercase tracking-wider font-bold flex items-center gap-1.5 shrink-0 transition-colors"
-                      title="Inspect all cards under this parent topic"
-                    >
-                      <span>Inspect All</span>
-                      <ExternalLink size={12} className="text-accent" />
-                    </button>
-                  )}
-                </div>
-
-                {/* Full-Width Dedicated Coverage Progress Meter */}
-                <div className="flex flex-col gap-1.5 pt-1 border-t border-border-base/40">
-                  <div className="flex items-center justify-between text-xs font-['JetBrains_Mono'] text-text-muted">
-                    <span className="text-[11px] flex items-center gap-1.5">
-                      <span className="font-bold text-text-primary">
-                        {activeTopicItem.coveredSubCount} of {activeTopicItem.topic.subtopics.length}
-                      </span>
-                      <span>subtopics covered</span>
-                      <span className="text-accent font-bold">
-                        ({Math.round((activeTopicItem.coveredSubCount / Math.max(activeTopicItem.topic.subtopics.length, 1)) * 100)}%)
-                      </span>
-                    </span>
-                    <span className="font-bold text-text-primary text-[11px]">
-                      {activeTopicItem.totalCards.toLocaleString()} cards
-                    </span>
-                  </div>
-                  <div className="w-full h-2 rounded-full bg-[#181818] overflow-hidden border border-white/[0.04]">
-                    <div
-                      className="h-full rounded-full transition-all duration-300"
+              <div className="shrink-0 p-3.5 sm:p-4 bg-[#111] border-b border-border-base flex items-center justify-between gap-3">
+                <div className="flex flex-col gap-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="px-2 py-0.5 rounded text-[10px] font-['Rajdhani'] font-bold uppercase tracking-wider"
                       style={{
-                        width: `${(activeTopicItem.coveredSubCount / Math.max(activeTopicItem.topic.subtopics.length, 1)) * 100}%`,
-                        backgroundColor:
-                          activeTopicItem.coveredSubCount === activeTopicItem.topic.subtopics.length
-                            ? '#00FF41'
-                            : activeTopicItem.coveredSubCount > 0
-                            ? '#eab308'
-                            : '#ef4444',
-                        boxShadow:
-                          activeTopicItem.coveredSubCount === activeTopicItem.topic.subtopics.length
-                            ? '0 0 10px rgba(0, 255, 65, 0.4)'
-                            : undefined,
+                        color: TOS_SUBJECT_COLORS[activeTopicItem.subject.id]?.accent || '#00FF41',
+                        backgroundColor: `${TOS_SUBJECT_COLORS[activeTopicItem.subject.id]?.accent || '#00FF41'}15`,
+                        border: `1px solid ${TOS_SUBJECT_COLORS[activeTopicItem.subject.id]?.accent || '#00FF41'}30`,
                       }}
-                    />
+                    >
+                      {activeTopicItem.subject.id} • {activeTopicItem.subject.name}
+                    </span>
+                    <span className="font-['JetBrains_Mono'] text-xs text-accent font-bold">
+                      • {activeTopicItem.totalCards.toLocaleString()} cards
+                    </span>
                   </div>
+                  <h3 className="font-['Orbitron'] text-sm sm:text-base font-bold text-text-primary tracking-wide">
+                    {activeTopicItem.topic.name}
+                  </h3>
                 </div>
+
+                {activeTopicItem.totalCards > 0 && (
+                  <button
+                    onClick={() =>
+                      openInspector(
+                        activeTopicItem.subject.id,
+                        `All Cards in ${activeTopicItem.topic.name}`,
+                        activeTopicItem.topic.id,
+                        false
+                      )
+                    }
+                    className="px-3 py-1.5 rounded-lg bg-surface-2 hover:bg-surface-2/80 text-text-primary border border-border-base text-xs font-['Rajdhani'] uppercase tracking-wider font-bold flex items-center gap-1.5 shrink-0 transition-colors"
+                    title="Inspect all cards under this parent topic"
+                  >
+                    <span>Inspect All</span>
+                    <ExternalLink size={12} className="text-accent" />
+                  </button>
+                )}
               </div>
 
               {/* Direct Parent Tag Notice (if cards exist directly on parent topic code) */}
@@ -702,6 +645,7 @@ export function TosCoverageMatrixDemo() {
         tosTopicId={inspectParams.tosTopicId}
         topicTitle={inspectParams.topicTitle}
         isUnclassified={inspectParams.isUnclassified}
+        onTagUpdated={fetchTosCoverageMatrix}
       />
     </div>
   )

@@ -69,6 +69,7 @@ SUBTOPIC_RULES = {
         # 1.0 Differential Calculus
         'MATH-1.1': [  # Functions, Continuity, Limits
             r'\blimits?\b', r'\bcontinuity\b', r'\bcontinuous function\b', r'\bdiscontinuous\b',
+            r'\bcontinuous\b', r'\bdiscontinuity\b', r'\buniformly continuous\b', r'\bremovable discontinuity\b',
             r'\basymptotes?\b', r'\bl\'?hopital\b', r'\bindeterminate form\b', r'\bdelta-epsilons?\b',
             r'\bdomain and range\b', r'\bone-sided limit\b'
         ],
@@ -78,7 +79,13 @@ SUBTOPIC_RULES = {
             r'\b(?:minimize|maximize|minimizing|maximizing)\b', r'\boptimized (?:radius|dimensions?|value|shape)\b',
             r'\bcritical point\w*', r'\boptimization problem\b', r'\bmean value theorem\b', r'\brolle\'?s\b',
             r'\bconcavity\b', r'\binflection point\b', r'\bchain rule\b', r'\bproduct rule\b', r'\bquotient rule\b',
-            r'\bimplicit differentiation\b'
+            r'\bimplicit differentiation\b', r'\bdifferentiab\w*\b', r'\bderivative of a function\b',
+            r'\bincreasing on an interval\b', r'\bdecreasing on an interval\b', r'\bf\'\(x\)\b',
+            # Common calculus exam patterns
+            r"\bf'\(x\)\s*=\s*0\b", r"\bf''\(x\)\b", r'\bsecond derivative test\b', r'\bfirst derivative test\b',
+            r'\brelative (?:maximum|minimum)\b', r'\blocal (?:maximum|minimum)\b', r'\bglobal (?:maximum|minimum)\b',
+            r'\bstationary point\b', r'\bdifferentiate\b', r'\bdifferentiation\b', r'\bvelocity from position\b',
+            r'\bacceleration from velocity\b', r"\bs'\(t\)\b", r"\bv'\(t\)\b"
         ],
         'MATH-1.3': [  # Higher-Order Derivatives
             r'\bhigher[- ]order derivative\b', r'\bsecond derivative\b', r'\bd2y/dx2\b', r'\bnth derivative\b',
@@ -88,21 +95,36 @@ SUBTOPIC_RULES = {
         'MATH-1.4': [  # Parametric Equations
             r'\bparametric equation\b', r'\bparametrize\w*', r'\bparametrically\b', r'\bconic sections?\b',
             r'\bvelocity vector at t\b', r'\bcycloids?\b', r'\bastroids?\b',
-            r'\bdy/dt\b', r'\bdx/dt\b'
+            r'\bdy/dt\b', r'\bdx/dt\b',
+            # Conic sections — ellipse, parabola, hyperbola, circle properties
+            r'\bellips\w+\b', r'\bparabol\w+\b', r'\bhyperbol\w+\b',
+            r'\bsemi-?major axis\b', r'\bsemi-?minor axis\b', r'\bfocal (?:point|length|chord)\b',
+            r'\bdirectrix\b', r'\bfoci\b', r'\beccentricity\b', r'\blatus rectum\b',
+            r'\bcenter of (?:the )?(?:ellipse|circle|hyperbola)\b',
+            r'\bequation of (?:the )?(?:ellipse|parabola|hyperbola|circle)\b'
         ],
         'MATH-1.5': [  # Partial Differentiation
             r'\bpartial derivative\b', r'\bpartial differentiation\b', r'\btotal differentials?\b',
-            r'\beuler\'?s theorem on homogeneous\b', r'\bjacobians?\b', r'\bdel z ?/ ?del x\b'
+            r'\beuler\'?s theorem on homogeneous\b', r'\bjacobians?\b', r'\bdel z ?/ ?del x\b',
+            # Partial derivative symbol patterns (∂ character and LaTeX \partial)
+            r'∂[a-zA-Z]/∂[a-zA-Z]', r'\\partial', r'∂f/∂', r'∂y/∂x', r'∂z/∂',
+            r'\bfind ∂\b', r'\bcompute ∂\b', r'\bpartial (?:of|with respect)\b',
+            r'\bmarginal cost\b', r'\bmarginal revenue\b',  # economics applications of partials
+            r'\bgradient at (?:a )?point\b', r'\bscalar field\b'
         ],
 
         # 2.0 Integral Calculus
         'MATH-2.1': [  # Integration Concepts/Formulas
             r'\bantiderivatives?\b', r'\bindefinite integral\b', r'\bfundamental theorem of calculus\b',
-            r'\bconstant of integration\b', r'\bstandard integral\b', r'\bintegral of\b'
+            r'\bconstant of integration\b', r'\bstandard integral\b', r'\bintegral of\b',
+            # Broad integration catch-all patterns
+            r'\bintegrals?\b', r'∫', r'\bprimitive function\b', r'\bpower rule of integration\b',
+            r'\bintegrating\b', r'\bevaluate the integral\b', r'\bcompute the integral\b'
         ],
         'MATH-2.2': [  # Integration Techniques
             r'\bintegration by parts\b', r'\bu-substitutions?\b', r'\btrigonometric substitution\b',
-            r'\bpartial fraction\b', r'\btabular integration\b', r'\brational fraction\b'
+            r'\bpartial fraction\b', r'\btabular integration\b', r'\brational fraction\b',
+            r'\bwhich (?:integration )?technique\b', r'\bwhich pair of integrals\b'
         ],
         'MATH-2.3': [  # Improper Integrals
             r'\bimproper integral\b', r'\binfinite limit of integration\b', r'\bconvergent integral\b',
@@ -113,27 +135,34 @@ SUBTOPIC_RULES = {
             r'\bvolume of revolution\b', r'\bdisk method\b',
             r'\bwasher method\b', r'\bcylindrical shell\b', r'\blength of (?:the )?arc\b', r'\barc length\b',
             r'\bsurface of revolution\b', r'\bcentroids?\b', r'\bcenter of mass\b', r'\bpappus\'?s theorem\b',
-            r'\bwork done by\b'
+            r'\bwork done by\b', r'\brevolving\s+.*?\s+about\b', r'\babout the (?:x|y)[- ]axis\b',
+            r'\baverage (?:value|area) of (?:a )?function\b', r'\brotated around\b'
         ],
         'MATH-2.5': [  # Multiple Integration and its Application
             r'\bdouble integral\b', r'\btriple integral\b', r'\bmultiple integral\b',
             r'\biterated integral\b', r'\bpolar coordinate\w* integral\b', r'\bcylindrical coordinate\b',
-            r'\bspherical coordinate\b', r'\bmoment of inertia by integration\b'
+            r'\bspherical coordinate\b', r'\bmoment of inertia by integration\b', r'\bmultiple integrals?\b',
+            r'∬', r'∭', r'\bregion bounded by\b'
         ],
 
         # 3.0 Differential Equation
         'MATH-3.1': [  # First-Order, First-Degree ODE and its Application
+            r'\bode\b', r'\bdifferential equation\b', r'\bde\b(?= solution| solv|s are)',
+            r'\bdy/dx\b', r'\bdy\s*/\s*dx\b', r'\bdifferential equations?\b',
             r'\bseparable (?:differential )?equation\b', r'\bhomogeneous differential equation\b',
             r'\bexact differential equation\b', r'\bintegrating factor\b', r'\bbernoulli(?:\'?s)? equation\b',
             r'\blinear first[- ]order\b', r'\border and degree\b', r'\borthogonal trajector\w*',
             r'\bgrowth and decay\b', r'\bnewton\'?s law of cooling\b', r'\bfirst[- ]order ode\b',
-            r'\bseries rc circuit\b', r'\brc transient\b', r'\bmixture problems?\b',
+            r'\bfirst[- ]order de\b', r'\bseries rl circuit\b', r'\bcharging capacitor in an? rc\b',
+            r'\bspread of a disease\b', r'\bseries rc circuit\b', r'\brc transient\b', r'\bmixture problems?\b',
             r'\btank (?:initially )?holds\b', r'\bsolute enters\b'
         ],
         'MATH-3.2': [  # Higher-Order ODE and its Application
             r'\bhigher[- ]order (?:ode|differential equation)\b', r'\bauxiliary equation\b',
             r'\bcomplementary function\b', r'\bparticular integral\b', r'\bmethod of undetermined coefficients\b',
             r'\bvariation of parameters\b', r'\bwronskians?\b', r'\bcauchy-euler\b',
+            r'\bsecond[- ]order (?:linear )?(?:homogeneous )?(?:differential equations?|ode)\b',
+            r'\bseries rlc circuit\b', r'\bseries lc circuit\b', r'\brlc circuit\b',
             r'\bcharacteristic equation\b', r'\bmechanical vibration\w*\b', r'\bspring[- ]mass system\b'
         ],
         'MATH-3.3': [  # Laplace Transforms, Inverses, and its Applications
@@ -152,7 +181,8 @@ SUBTOPIC_RULES = {
         ],
         'MATH-4.2': [  # Series and Transforms (Power Series, Bessel, Legendre, Fourier)
             r'\bpower series\b', r'\btaylor series\b', r'\bmaclaurin series\b', r'\bbessel function\b',
-            r'\blegendre (?:polynomial|equation)\b', r'\bfourier series\b', r'\bfourier transform\b',
+            r'\blegendre (?:polynomial|equation)\b', r'\blegendre(?:\'s)? differential equation\b',
+            r'\bbessel(?:\'s)? differential equation\b', r'\bfourier series\b', r'\bfourier transform\b',
             r'\bdirichlet condition\w*', r'\binfinite series\b', r'\bconverges? absolutely\b',
             r'\bratio test\b', r'\broot test\b'
         ],
@@ -169,7 +199,8 @@ SUBTOPIC_RULES = {
         ],
         'MATH-4.5': [  # Numerical Differentiation, Integration and Optimization
             r'\bnewton-raphsons?\b', r'\brunge-kuttas?\b', r'\bsimpson\'?s (?:1/3|3/8)? ?rule\b', r'\btrapezoidal rule\b',
-            r'\bnumerical (?:method|integration|differentiation)\b', r'\bbisection method\b',
+            r'\bnumerical (?:method|methods?|integration|differentiation)\b', r'\bbisection method\b',
+            r'\busing computers in solving differential\b',
             r'\bsecant method\b', r'\b(?:forward |backward )?euler(?:\'?s)? method\b', r'\bnumerical optimization\b'
         ],
 
@@ -177,14 +208,25 @@ SUBTOPIC_RULES = {
         'MATH-5.1': [  # Obtaining Data
             r'\bdata collection\b', r'\bsurvey method\b', r'\bcensus\b', r'\brandom sampling\b',
             r'\bqualitative data\b', r'\bquantitative data\b', r'\bdiscrete data\b', r'\bcontinuous data\b',
-            r'\bsampling technique\b', r'\bstratified sampling\b', r'\bcluster sampling\b'
+            r'\bsampling technique\b', r'\bstratified sampling\b', r'\bcluster sampling\b',
+            r'\bsimple random sample\b', r'\bsystematic sampling\b', r'\bprimary data\b', r'\bsecondary data\b',
+            r'\bsampling error\b', r'\bsampling bias\b', r'\bpopulation (?:of|vs|sample)\b'
         ],
         'MATH-5.2': [  # Statistical Sampling, Distribution, and Intervals
             r'\bmeans?\b', r'\bmedians?\b', r'\bmodes?\b', r'\bstandard deviation\b', r'\bvariances?\b',
-            r'\bnormal distribution\b', r'\bz-scores?\b', r'\bbinomial distribution\b', r'\bpoisson distribution\b',
+            r'\bnormal distribution\b', r'\bz-scores?\b', r'\bbinomial distribution\b', r'\bbinomial experiment\b',
+            r'\bpoisson distribution\b',
             r'\bconfidence interval\b', r'\bcentral limit theorem\b', r'\bprobability distribution\b',
             r'\buniformly distributed\b', r'\buniform distribution\b',
-            r'\bquartiles?\b', r'\bsampling distribution\b'
+            r'\bquartiles?\b', r'\bsampling distribution\b',
+            # Broad probability / statistics patterns
+            r'\bprobabilit\w+\b', r'\bstatistic\w+\b', r'\bp\(a\)\b', r'\bp\(b\)\b', r'\bp\(a|b\)\b',
+            r'\bbayes\b', r'\bconditional probability\b', r'\bindependence of events\b',
+            r'\bcombinations?\b', r'\bpermutations?\b', r'\bfair coin\b', r'\bfair die\b', r'\bdice\b',
+            r'\bdraw (?:a |one )?card\b', r'\bdeck of cards\b', r'\btosses?\b', r'\bheads? or tails?\b',
+            r'\bexpected value\b', r'\bexpected (?:number|frequency)\b', r'\bpdf\b', r'\bcdf\b',
+            r'\brandom variable\b', r'\bcontinuous random variable\b', r'\bdiscrete random variable\b',
+            r'\bprobability density function\b', r'\bcumulative distribution\b'
         ],
         'MATH-5.3': [  # Test of Hypothesis
             r'\bhypothesis test\w*', r'\bnull hypothesis\b', r'\balternative hypothesis\b',
@@ -193,14 +235,16 @@ SUBTOPIC_RULES = {
         ],
         'MATH-5.4': [  # Regression and Correlation
             r'\bregression (?:line|analysis|equation)\b', r'\bcorrelation coefficient\b', r'\br-squareds?\b',
-            r'\bpearson correlation\b', r'\bscatter plot\b', r'\bleast squares\b', r'\bcovariances?\b'
+            r'\bpearson correlation\b', r'\bscatter plot\b', r'\bleast squares\b', r'\bcovariances?\b',
+            r'\bcorrelation analysis\b', r'\blinear regression\b', r'\bregression coefficient\b',
+            r'\brelative shift between signals\b'
         ],
         'MATH-5.5': [  # Design of Experiments
             r'\bdesign of experiments?\b', r'\banovas?\b', r'\banalysis of variance\b', r'\bfactorial design\b',
             r'\bfactorial experiments?\b', r'\binteraction plots?\b', r'\bmain effects?\b',
             r'\b2\^?2 (?:factorial|design)\b', r'\bfractional replication\b', r'\bconfounding\b', r'\baliasing\b',
             r'\bf-tests?\b', r'\brandomized block design\b', r'\bone-factor-at-a-times?\b', r'\bofats?\b',
-            r'\bcontrol(?:led)? experiment\b', r'\bexperimental design\b'
+            r'\bcontrol(?:led)? experiment\b', r'\bexperimental design\b', r'\btesting machines?\b'
         ],
 
         # 6.0 Electromagnetics (also shared with ELECS-3.0)
@@ -208,11 +252,22 @@ SUBTOPIC_RULES = {
             r'\bdot product\b', r'\bcross product\b', r'\bunit vector\b', r'\bscalar product\b',
             r'\bvector product\b', r'\bdirection cosines\b', r'\bvector analysis\b', r'\bmagnitude of a vector\b',
             r'\bspherical polar\b', r'\bcoordinate transformations?\b', r'\bscalar triple product\b',
-            r'\bvector triple product\b'
+            r'\bvector triple product\b',
+            # Broad vector patterns
+            r'\bvectors?\b', r'\blinearly independent\b', r'\blinearly dependent\b',
+            r'\bvector addition\b', r'\bvector subtraction\b', r'\bresultant vector\b',
+            r'\bcomponent of (?:a |the )?vector\b', r'\bunit vectors? [ijk]\b', r'\bi\s*\+\s*j\b', r'\bi\s*-\s*j\b'
         ],
         'MATH-6.2': [  # Directional Derivative, Gradient, Divergence, Curl
             r'\bgradient of\b', r'\bdivergence of\b', r'\bcurl of\b', r'\bdel operator\b',
-            r'\bdirectional derivative\b', r'\bsolenoidals?\b', r'\birrotationals?\b', r'\blaplacians?\b'
+            r'\bdirectional derivative\b', r'\bsolenoidals?\b', r'\birrotationals?\b', r'\blaplacians?\b',
+            # Symbol-based patterns and common question forms
+            r'∇', r'\bnabla\b', r'\bdiv[\s\(]', r'\bcurl[\s\(]', r'\bgrad[\s\(]',
+            r'\bgradient at (?:the )?point\b', r'\bcompute (?:the )?divergence\b', r'\bcompute (?:the )?curl\b',
+            r'\bcompute (?:the )?gradient\b', r'\belectric field e\s*=\s*-\s*∇\b',
+            r'\bzero divergence\b', r'\boutward flux\b', r'\btotal outward\b',
+            r'\bvector field\b', r'\bscalar potential\b', r'\belectric field e = -\b',
+            r'\bf\s*=\s*[a-z]+i\s*[+-]\s*[a-z]+j\b'  # F = yi + xj style vector field
         ],
         'MATH-6.3': [  # Integral Theorems (Green's, Divergence, Stokes')
             r'\bgreen\'?s theorem\b', r'\bdivergence theorem\b', r'\bstokes\'? theorem\b',
@@ -224,17 +279,19 @@ SUBTOPIC_RULES = {
             r'\bz-transforms?\b', r'\binverse z-transform\b', r'\bregion of convergence\b', r'\broc of\b'
         ],
         'MATH-7.2': [  # Convolution
-            r'\bconvolution (?:sum|integral)\b', r'\bconvolve\b', r'\bimpulse response\b',
+            r'\bconvolutions?\b', r'\bconvolution (?:sum|integral)\b', r'\bconvolve\b', r'\bimpulse response\b',
             r'\b(?:circular|linear) convolution\b', r'\bconvolution with\b'
         ],
         'MATH-7.3': [  # Correlation
-            r'\bcross-correlation\b', r'\bauto-correlation\b', r'\bcorrelation function\b'
+            r'\bauto[- ]?correlations?\b', r'\bcross[- ]?correlations?\b', r'\bcorrelation function\b'
         ],
 
         # 8.0 Feedback and Control Systems (also shared with ELECS-9.0)
         'MATH-8.1': [  # Pole and Zero Determination
             r'\bpoles? and zeros?\b', r'\broot locus\b', r'\brouth-hurwitzs?\b', r'\brouth array\b',
-            r'\bstability criterion\b'
+            r'\bstability criterion\b', r'\bunity[- ]feedback\b', r'\bsystem type\b', r'\btype of (?:a )?system\b',
+            r'\bopen[- ]loop transfer function\b', r'\bclosed[- ]loop transfer function\b',
+            r'\bfeedback and control systems?\b'
         ],
         'MATH-8.2': [  # Transient Response
             r'\btransient response\b', r'\bdamping ratio\b', r'\bnatural frequency\b',
@@ -251,64 +308,142 @@ SUBTOPIC_RULES = {
         'ELECS-1.1': [  # Resistive Network
             r'\bohm\'?s law\b', r'\bresistor network\b', r'\bequivalent resistance\b', r'\bseries circuit\b',
             r'\bparallel circuit\b', r'\bvoltage divider\b', r'\bcurrent divider\b',
-            r'\bresistor color code\b', r'\bconductances?\b', r'\bdelta-wye\b', r'\bstar-deltas?\b'
+            r'\bresistor color code\b', r'\bconductances?\b', r'\bdelta-wye\b', r'\bstar-deltas?\b',
+            r'\bdc resistance\b', r'\bdirect current resistance\b', r'\bresistance of a (?:standard )?(?:metallic )?conductor\b',
+            r'\baxial[- ]lead resistor\b', r'\bresistor types?\b', r'\bresistance\b',
+            # Expansions
+            r'\bconnected in series\b', r'\bconnected in parallel\b', r'\bseries combination\b',
+            r'\bparallel combination\b', r'\bparallel branches\b', r'\bmore parallel branches\b',
+            r'\br_?eq\b', r'\btotal resistance\b', r'\blight bulbs?\b', r'\bbulbs? connected\b',
+            r'\bfuses?\b', r'\bblown fuse\b', r'\bcircuit breakers?\b', r'\bthermal breaker\b',
+            r'\bbattery is connected\b', r'\bampere-hour\b', r'\bvoltage drop across\b',
+            r'\bthree resistors\b', r'\btwo resistors\b', r'\bresistors dissipates?\b',
+            r'\br1\s*>\s*r2\b', r'\br1\s*and\s*r2\s*are connected\b', r'\bcarbon[- ]composition\b',
+            r'\bwire-wound resistor\b', r'\bpotentiometer\b', r'\bvoltage drop of the (?:third|second|first) resistor\b',
+            r'\bhouse wiring\b', r'\bhot wire\b', r'\bneutral wire\b', r'\bcolor-coded.*black or red\b'
         ],
         'ELECS-1.2': [  # Mesh and Node Equations
             r'\bmesh analysis\b', r'\bnode(?:al)? analysis\b', r'\bmesh current\b',
             r'\bnode voltage\b', r'\bkcls?\b', r'\bkvls?\b', r'\bkirchhoff\'?s (?:current|voltage) law\b',
-            r'\bsupermeshs?\b', r'\bsupernodes?\b'
+            r'\bsupermeshs?\b', r'\bsupernodes?\b', r'\bmesh equations?\b', r'\bnode equations?\b',
+            r'\bindependent mesh\b', r'\bplanar circuit\b',
+            # Expansions
+            r'\bloop and junction\b', r'\bjunction rules?\b', r'\bloop rules?\b',
+            r'\bjunction in the network\b', r'\bthree or more wires are joined\b',
+            r'\bcurrent leaving the junction\b', r'\bvoltage at point [a-z]\b',
+            r'\bvoltage at node\b', r'\bnode equation\b', r'\bmesh equation\b'
         ],
         'ELECS-1.3': [  # Network Theorems
-            r'\bthevenin\'?s theorem\b', r'\bnorton\'?s theorem\b', r'\bsuperposition theorem\b',
-            r'\bmaximum power transfer\b', r'\bsource transformation\b', r'\bmillman\'?s theorem\b',
-            r'\breciprocity theorem\b'
+            r'\bthevenin(?:\'?s)? (?:theorem|circuit|equivalent|voltage|resistance)?\b',
+            r'\bnorton(?:\'?s)? (?:theorem|circuit|equivalent|current|resistance)?\b',
+            r'\bsuperposition (?:theorem)?\b', r'\bmaximum power transfer\b',
+            r'\bsource transformation\b', r'\bmillman\'?s theorem\b', r'\breciprocity theorem\b',
+            r'\blinear resistors and ideal voltage sources\b', r'\bsuperposition theorem\b',
+            # Expansions
+            r'\bmaximum power delivered\b', r'\btellegen\'?s theorem\b', r'\bport a produces a current at port b\b',
+            r'\breciprocity\b', r'\bthevenin equivalent\b', r'\bnorton equivalent\b'
         ],
         'ELECS-1.4': [  # Transient Analysis
             r'\brc transient\b', r'\brl transient\b', r'\btime constant\b', r'\bcharging (?:a )?capacitor\b',
             r'\bdischarging (?:an )?inductor\b', r'\btransient (?:analysis|response) of (?:an? )?(?:rc|rl) circuit\b',
-            r'\bstep response of\b'
+            r'\bstep response of\b', r'\bseries rl circuit\b', r'\bseries rc circuit\b', r'\brl circuit\b', r'\brc circuit\b',
+            # Expansions
+            r'\btransient analysis\b', r'\btransient response\b', r'\bsteady-state response of a system\b',
+            r'\brc integrator\b', r'\brc differentiator\b', r'\blaplace transform is used in transient\b',
+            r'\bdischarging a capacitor\b', r'\binitial conditions? in (?:an? )?(?:rc|rl|transient)\b',
+            r'\bswitched at t\s*=\s*0\b', r'\btransient current\b', r'\btransient behavior\b'
         ],
         'ELECS-1.5': [  # Solution to DC Network Problems
             r'\bwheatstone bridge\b', r'\bdc bridge\b', r'\bpotentiometer circuit\b', r'\bdc network problem\b',
-            r'\bbattery bank\b', r'\bslide wire bridge\b'
+            r'\bbattery bank\b', r'\bslide wire bridge\b',
+            # Expansions
+            r'\bdmm\b', r'\bdigital multimeter\b', r'\bpotentiometer method of dc\b',
+            r'\bslide potentiometer\b', r'\bvoltmeter and ammeter\b', r'\bloading effect of (?:a )?voltmeter\b',
+            r'\bsensitivity of (?:a |the )?voltmeter\b', r'\bgalvanometer\b', r'\bkelvin bridge\b',
+            r'\bhay bridge\b', r'\bmaxwell bridge\b', r'\bschering bridge\b', r'\bposition of voltmeter\b'
         ],
 
         # 2.0 AC Electrical Circuits
         'ELECS-2.1': [  # Solution to AC Network Problems
             r'\bac circuit\b', r'\balternating current circuit\b', r'\bsinusoidal (?:voltage|current|waveform)\b',
             r'\brms value\b', r'\beffective value\b', r'\bpeak value\b', r'\baverage value\b',
-            r'\bform factor\b', r'\bcrest factor\b'
+            r'\bform factor\b', r'\bcrest factor\b',
+            # Expansions
+            r'\bcurrent through the capacitor\b', r'\bcurrent through the inductor\b',
+            r'\brms current\b', r'\brms voltage\b', r'\bpeak-to-peak\b', r'\bphase angle\b',
+            r'\bphasor diagram\b', r'\blags (?:the )?voltage\b', r'\bleads (?:the )?voltage\b',
+            r'\blags by \d+°\b', r'\bleads by \d+°\b', r'\bcurrent wave shape.*applied to a circuit element\b',
+            r'\bvoltage across the element\b', r'\bseries rlc circuit\b', r'\bcurrent lags the applied emf\b',
+            r'\balternation\b', r'\bconnected to a.*mains and takes.*a\b'
         ],
         'ELECS-2.2': [  # Impedance and Admittance
             r'\bcomplex impedance\b', r'\breactances?\b', r'\binductive reactance\b',
-            r'\bcapacitive reactance\b', r'\badmittances?\b', r'\bsusceptances?\b', r'\bphasor diagram\b'
+            r'\bcapacitive reactance\b', r'\badmittances?\b', r'\bsusceptances?\b', r'\bphasor diagram\b',
+            # Expansions
+            r'\binput impedance\b', r'\boutput impedance\b', r'\bzin\b', r'\bzout\b',
+            r'\bimpedance of the network\b', r'\bz_total\b', r'\bconductance and susceptance\b',
+            r'\bseries rc is increased, the impedance\b'
         ],
         'ELECS-2.3': [  # Resonance
             r'\bresonances?\b', r'\bresonant frequency\b', r'\bseries resonance\b',
-            r'\bparallel resonance\b', r'\bquality factor\b', r'\bq-factors?\b', r'\btank circuit\b', r'\bbandwidth of a resonant\b'
+            r'\bparallel resonance\b', r'\bquality factor\b', r'\bq-factors?\b', r'\btank circuit\b', r'\bbandwidth of a resonant\b',
+            r'\bparallel resonant circuit\b', r'\bantiresonance\b',
+            # Expansions
+            r'\bhalf-power frequencies\b', r'\bbw\s*=\s*f0/q\b', r'\bselectivity of a resonant\b',
+            r'\blc tank\b'
         ],
         'ELECS-2.4': [  # Power in AC Circuits
             r'\breal power\b', r'\breactive power\b', r'\bapparent power\b', r'\bpower factor\b',
             r'\bthree-phases?\b', r'\b3-phase\b', r'\bdelta connection\b', r'\bwye connection\b',
-            r'\bvolt-ampere reactive\b'
+            r'\bvolt-ampere reactive\b',
+            # Expansions
+            r'\btrue power\b', r'\bpower triangle\b', r'\bvolt-amperes?\b', r'\bvars?\b',
+            r'\bdelta-connected\b', r'\bwye-connected\b', r'\bbalanced 3-phase\b',
+            r'\bline voltage\b', r'\bphase voltage\b', r'\bline current\b',
+            r'\bpower loss in an induction coil\b', r'\bthree loads are connected in parallel\b',
+            r'\bcapacitive load.*kw\b'
         ],
         'ELECS-2.5': [  # Two-Port Network Parameters and Transfer Function
             r'\btwo-port network\b', r'\bz-parameters?\b', r'\by-parameters?\b', r'\bh-parameters?\b',
-            r'\babcd parameter\b', r'\btransmission parameter\b'
+            r'\babcd parameter\b', r'\btransmission parameter\b',
+            # Expansions
+            r'\btwo-port\b', r'\bt-parameters?\b', r'\bsymmetrical network\b', r'\breciprocal network\b',
+            r'\bt22 in the t parameters\b', r'\bfilter network must behave identically\b',
+            r'\bcascade parameters\b', r'\bopen-circuit impedance parameters\b',
+            r'\bshort-circuit admittance parameters\b', r'\bv1\s*=\s*av2\b'
         ],
 
         # 3.0 Electromagnetics (also shared with MATH-6.0)
         'ELECS-3.1': [  # Steady Electric and Magnetic Fields
             r'\bcoulomb\'?s law\b', r'\belectric field intensity\b', r'\bmagnetic flux density\b',
-            r'\bbiot-savart\b', r'\bampere\'?s circuital law\b', r'\belectric potential\b'
+            r'\bbiot-savart\b', r'\bampere\'?s circuital law\b', r'\belectric potential\b',
+            # Expansions
+            r'\bmagnetic field\b', r'\belectric field\b', r'\bpoint charge\b', r'\belectric field lines?\b',
+            r'\bmagnetic force\b', r'\blorentz force\b', r'\bforce acting on a test charge\b',
+            r'\bmotion of electrons in a wire.*pole of a magnet\b', r'\belectron is moving.*magnetic field\b',
+            r'\bmagnetic field b inside a long ideal solenoid\b', r'\brectangular coil.*magnetic field\b',
+            r'\bdirection of the magnetic field\b', r'\bhall effect\b', r'\bsmall voltage is generated across the width of a conductor\b',
+            r'\blines of the magnetic field produced by a long straight wire\b', r'\bmagnetic dipole moment\b',
+            r'\bcurrent-carrying loop.*magnetic field\b', r'\belectromagnet.*coil\b',
+            r'\bstraight wires carrying\b', r'\btwo long straight wires\b', r'\bcoulomb is\b'
         ],
         'ELECS-3.2': [  # Dielectric and Magnetic Materials
-            r'\bpermittivit(?:y|ies)\b', r'\bpermeabilit(?:y|ies)\b', r'\bdielectric material\b', r'\bferromagnetics?\b',
-            r'\bhysteresis loop\b', r'\bb-h curve\b', r'\bmagnetic susceptibility\b'
+            r'\bpermittivit(?:y|ies)\b', r'\bpermeabilit(?:y|ies)\b', r'\bdielectric materials?\b', r'\bdielectrics?\b',
+            r'\bpolarization mechanism\b', r'\belectric polarization\b', r'\bferromagnetics?\b',
+            r'\bhysteresis loop\b', r'\bb-h curve\b', r'\bmagnetic susceptibility\b',
+            r'\bparamagnetic\b', r'\bferromagnetic\b', r'\bdiamagnetic\b',
+            # Expansions
+            r'\bcoercivity\b', r'\bremanence\b', r'\bretentivity\b', r'\brelative permeability\b',
+            r'\bcoordination number of 12\b', r'\bface-centered cubic\b', r'\bbody-centered cubic\b', r'\bsimple cubic crystal\b'
         ],
         'ELECS-3.3': [  # Coupled and Magnetic Circuits
             r'\bmutual inductance\b', r'\bdot convention\b', r'\breluctances?\b',
-            r'\bmagnetic circuit\b', r'\bmagnetomotive force\b', r'\bmmf\b', r'\bcoupling coefficient\b'
+            r'\bmagnetic circuit\b', r'\bmagnetomotive force\b', r'\bmmf\b', r'\bcoupling coefficient\b',
+            # Expansions
+            r'\bcoefficient of coupling\b', r'\bcoupled coils?\b', r'\bself-inductance\b',
+            r'\binductors? in series\b', r'\binductors? in parallel\b', r'\btransformer turns ratio\b',
+            r'\brelays?\b', r'\bsolenoids?\b', r'\bspdt relay\b', r'\bplunger movement\b',
+            r'\brelay allows a small control current\b', r'\bpin 87a is connected to pin 30\b'
         ],
         'ELECS-3.4': [  # Time-Varying Fields and Maxwell's Equations
             r'\bmaxwell\'?s equations?\b', r'\bfaraday\'?s law\b', r'\blenz\'?s law\b',
@@ -319,28 +454,49 @@ SUBTOPIC_RULES = {
         'ELECS-4.1': [  # Diode Wave Shaping and Special Diode Applications
             r'\bclipper circuit\b', r'\bclamper circuit\b', r'\bclipping circuit\b', r'\bclamping circuit\b',
             r'\bzener diode\b', r'\bzener breakdown\b', r'\bvaractor diode\b',
-            r'\btunnel diode\b', r'\bschottky diode\b', r'\bwave shaping circuit\b', r'\bled\b', r'\bphotodiodes?\b',
-            r'\blight-emitting diode\b', r'\bavalanche diode\b', r'\bpin diode\b', r'\bstep recovery diode\b'
+            r'\btunnel diode\b', r'\bschottky diode\b', r'\bwave shaping circuit\b', r'\bleds?\b', r'\bphotodiodes?\b',
+            r'\blight-emitting diode\b', r'\bavalanche diode\b', r'\bpin diode\b', r'\bstep recovery diode\b',
+            r'\bgallium arsenide\b', r'\bgaasp\b', r'\bvisible red light\b',
+            r'\btransient protection\b', r'\bsnubber\b',
+            # Expansions
+            r'\bclippers?\b', r'\bclampers?\b', r'\bwave shaping\b', r'\bpractical wave shaping\b',
+            r'\bclippers used before\b', r'\bvaristors?\b', r'\btvs diode\b'
         ],
         'ELECS-4.2': [  # BJT and FET Small Signal Analysis
             r'\bre model\b', r'\bhybrid[- .]pi model\b', r'\bhybrid parameters?\b', r'\bh-parameters?\b',
             r'\bsmall[- ]signal model\b', r'\bsmall[- ]signal analysis\b', r'\btransconductances?\b',
             r'\bsmall[- ]signal (?:input|output) impedance\b', r'\bsmall[- ]signal voltage gain\b',
             r'\bac equivalent circuit\b', r'\bmidband gain\b', r'\bac resistance of (?:the )?emitter\b',
-            r'\bvoltage gain provided by\b', r'\bcurrent gain provided by\b', r'\binput impedance of\b'
+            r'\bvoltage gain provided by\b', r'\bcurrent gain provided by\b', r'\binput impedance of\b',
+            r'\bpush[- ]pull amplifier\b', r'\bclass b push[- ]pull\b',
+            # Expansions
+            r'\bsmall[- ]signal\b', r'\bac emitter resistance\b', r'\br_e\b', r'\bpush[- ]pull\b',
+            r'\bac compliance\b', r'\bcompliance of (?:the |an )?amplifier\b', r'\bdetermine the compliance\b',
+            r'\btransistor compliance\b', r'\boutput compliance\b', r'\bmaximum unclipped peak-to-peak\b'
         ],
         'ELECS-4.3': [  # Diode Equivalent Circuits
             r'\bdiode equivalent circuit\b', r'\bideal diode model\b', r'\bbarrier potential\b',
             r'\bforward resistance\b', r'\breverse saturation current\b', r'\bshockley (?:diode )?equation\b',
             r'\bpn junction\b', r'\bp-n junction\b', r'\bdepletion region\b', r'\bbuilt-in potential\b',
-            r'\bforward bias\b', r'\breverse bias\b', r'\bdiode characteristics\b', r'\bdiodes?\b'
+            r'\bforward bias\b', r'\breverse bias\b', r'\bdiode characteristics\b', r'\bdiodes?\b',
+            # Expansions
+            r'\bpn[- ]junction\b', r'\bdepletion layer\b', r'\bjunction barrier\b',
+            r'\bsemi-conductor behaves as\b', r'\bat absolute zero.*semi-conductor\b',
+            r'\bconduction band\b', r'\bvalence band\b', r'\be_?g for silicon\b',
+            r'\benergy gap\b', r'\bmajority carriers?\b', r'\bminority carriers?\b',
+            r'\bn-type semiconductor\b', r'\bp-type semiconductor\b'
         ],
         'ELECS-4.4': [  # Voltage Multipliers, Power Supply, Voltage Regulation
             r'\brectifiers?\b', r'\bhalf-wave rectif\w*', r'\bfull-wave rectif\w*', r'\bbridge rectifier\b',
             r'\bvoltage multiplier\b', r'\bvoltage doubler\b', r'\bvoltage tripler\b', r'\bvoltage quadrupler\b',
             r'\bripple factor\b', r'\bripple voltage\b', r'\bvoltage regulat\w*',
             r'\bpower supply circuit\b', r'\bline regulation\b', r'\bload regulation\b',
-            r'\bfilter capacitor\b', r'\bchoke input filter\b', r'\bpi filter\b', r'\b78xx\b', r'\b79xx\b', r'\blm317\b'
+            r'\bfilter capacitor\b', r'\bchoke input filter\b', r'\bpi filter\b', r'\b78xx\b', r'\b79xx\b', r'\blm317\b',
+            # Expansions
+            r'\bswitching regulators?\b', r'\blinear regulators?\b', r'\bswitch-mode power supply\b',
+            r'\bsmps\b', r'\bbuck converter\b', r'\bboost converter\b', r'\bbuck-boost\b',
+            r'\bstep[- ]up to \d+.*v at \d+.*a\b', r'\bswitching frequency\b', r'\bduty cycle of a boost\b',
+            r'\bduty cycle of a buck\b', r'\blinear vs switching\b', r'\blinear regulator differs?\b'
         ],
         'ELECS-4.5': [  # Bipolar Junction Transistor and FET
             r'\bbjt\b', r'\bbipolar junction transistors?\b', r'\btransistor(?:s)?\b',
@@ -363,16 +519,30 @@ SUBTOPIC_RULES = {
             r'\bcollector current\b', r'\bbase current\b', r'\bemitter current\b',
             r'\bvoltage divider bias\b', r'\bfixed bias\b', r'\bemitter bias\b', r'\bcollector feedback bias\b',
             r'\btransistor acts as (?:a )?switch\b', r'\bswitch and an? amplifier\b',
-            r'\bhighest gain provided by\b', r'\bhigher gain provided by\b'
+            r'\bhighest gain provided by\b', r'\bhigher gain provided by\b',
+            r'\bmagnetron\b', r'\bklystron\b', r'\btwt\b',
+            # Expansions
+            r'\bquiescent\b', r'\bvalence shell\b', r'\border of the thickness\b', r'\bdrain-source\b',
+            r'\bI_?\{?DSS\}?\b', r'\bV_?\{?DS\}?\b', r'\bV_?\{?GS(?:\(off\))?\}?\b', r'\bI_?\{?D\}?\b',
+            r'\bV_?\{?GS\}?\b', r'\bv_\{gs\}\b', r'\bi_\{dss\}\b', r'\bv_\{ds\}\b',
+            r'\bpinch[- ]off voltage\b', r'\btransconductance curve\b', r'\bshockley equation for fet\b'
         ],
 
         # 5.0 Electronic Circuit Analysis and Design
         'ELECS-5.1': [  # BJT and FET Frequency Response
             r'\bfrequency response of (?:a |an )?(?:bjt|fet|amplifier)\b', r'\bcutoff frequency of (?:a |an )?amplifier\b',
-            r'\bmiller effect\b', r'\bhigh[- ]frequency response\b', r'\blow[- ]frequency response\b', r'\bbode plot\b'
+            r'\bmiller effect\b', r'\bhigh[- ]frequency response\b', r'\blow[- ]frequency response\b', r'\bbode plot\b',
+            # Expansions
+            r'\bbode diagram\b', r'\bmagnitude plot of a bode\b', r'\bmiller capacitance\b',
+            r'\boctaves? and decades?\b', r'\b-20 db/decade\b', r'\b-3 db frequency\b',
+            r'\bgain-bandwidth product\b', r'\bdecade in a direct frequency\b',
+            r'\battenuators?\b', r'\battenuation\b', r'\breduces signal power by a factor\b',
+            r'\bloss expressed in db\b', r'\bdbw\b', r'\bdbm\b', r'\boutput power in dbw\b',
+            r'\bpower in dbw, and in dbm\b', r'\binsertion loss\b'
         ],
         'ELECS-5.2': [  # Cascade and Cascode Connections
-            r'\bcascode amplifier\b', r'\bcascaded amplifier\b', r'\bdarlington pair\b', r'\bmultistage amplifier\b'
+            r'\bcascode amplifier\b', r'\bcascaded amplifier\b', r'\bdarlington pair\b', r'\bmultistage amplifier\b',
+            r'\bgain of the circuit\b', r'\bvoltage gain of the circuit\b', r'\bpower gain of the circuit\b'
         ],
         'ELECS-5.3': [  # Current Mirrors and Current Sources
             r'\bcurrent mirror\b', r'\bwidlar current source\b', r'\bwilson current mirror\b',
@@ -386,13 +556,24 @@ SUBTOPIC_RULES = {
         'ELECS-5.5': [  # Feedback Systems, Oscillators, and Filters
             r'\boscillator circuit\b', r'\bbarkhausen criterion\b', r'\bwien bridge oscillator\b',
             r'\brc phase shift oscillator\b', r'\bcolpitts oscillator\b', r'\bhartley oscillator\b',
-            r'\bactive filter\b', r'\bbutterworth filter\b', r'\bchebyshev filter\b', r'\bnegative feedback amplifier\b'
+            r'\bactive filter\b', r'\bbutterworth filter\b', r'\bchebyshev filter\b', r'\bnegative feedback amplifier\b',
+            r'\bnegative feedback\b', r'\bfeedback factor\b', r'\bopen[- ]loop gain\b',
+            # Expansions
+            r'\bpositive feedback.*oscillator\b', r'\bpositive feedback is essential\b',
+            r'\blc oscillator\b', r'\bcrystal oscillator\b', r'\bpass filter\b',
+            r'\blow-pass filter\b', r'\bhigh-pass filter\b', r'\bband-pass filter\b',
+            r'\bnarrow channel centered at\b', r'\bfilter for a comms system\b',
+            r'\bvoltage-series feedback\b', r'\bcurrent-series feedback\b',
+            r'\bvoltage-shunt feedback\b', r'\bcurrent-shunt feedback\b',
+            r'\bfeedback amplifier\b', r'\bseries-shunt feedback\b', r'\bshunt-series feedback\b'
         ],
 
         # 6.0 Electronic Systems and Design (also shared with EST-5.0)
         'ELECS-6.1': [  # SCRs, UJT, PUT, TRIAC, DIAC, and Thyristors
             r'\bthyristors?\b', r'\bscr\b', r'\btriac\b', r'\bdiac\b', r'\bujt\b',
-            r'\bput\b', r'\bfiring angle\b', r'\brelaxation oscillator\b'
+            r'\bput\b', r'\bfiring angle\b', r'\brelaxation oscillator\b',
+            # Expansions
+            r'\bscs\b', r'\bsilicon controlled switch\b', r'\bturn scs off\b'
         ],
         'ELECS-6.2': [  # Optoelectronic Devices and Sensors
             r'\boptoelectronics?\b', r'\boptocouplers?\b', r'\bphototransistors?\b', r'\bldrs?\b',
@@ -400,78 +581,148 @@ SUBTOPIC_RULES = {
         ],
         'ELECS-6.3': [  # Transducers, Data Acquisition, and Interfacing
             r'\btransducers?\b', r'\bdata acquisition\b', r'\bdaq\b', r'\blvdts?\b',
-            r'\bthermocouples?\b', r'\brtds?\b', r'\bstrain gauge\b', r'\bpiezoelectrics?\b'
+            r'\bthermocouples?\b', r'\brtds?\b', r'\bstrain gauge\b', r'\bpiezoelectrics?\b',
+            # Expansions
+            r'\bflash adc\b', r'\bcomparators? required.*flash adc\b', r'\banalog-to-digital converter\b',
+            r'\bdigital-to-analog converter\b', r'\bsample and hold\b', r'\bsensors?\b'
         ],
         'ELECS-6.4': [  # Programmable Logic Controllers
             r'\bplc\b', r'\bprogrammable logic controller\b', r'\bladder logic\b', r'\bladder diagram\b', r'\brungs?\b'
         ],
         'ELECS-6.5': [  # Building Management Systems and HVAC Controls
-            r'\bbms\b', r'\bhvac\b', r'\bbuilding management system\b', r'\bbuilding automation\b'
+            r'\bbms\b', r'\bhvac\b', r'\bbuilding management system\b', r'\bbuilding automation\b',
+            # Expansions
+            r'\bcentralized control of av and lighting\b', r'\blighting systems?\b',
+            r'\blighting control\b', r'\bdmx\b', r'\bdmx512\b', r'\bknx\b',
+            r'\bav integration\b', r'\btheater lighting\b',
+            r'\bbuilding with solar panels\b', r'\benergy management systems?\b', r'\bbems\b',
+            r'\blocal grid.*solar panels\b', r'\bsmart contract.*blockchain\b'
         ],
         'ELECS-6.6': [  # Security, Safety, and Surveillance Systems
             r'\bcctv\b', r'\bfire alarm\b', r'\bfire and life safety\b', r'\bsurveillance system\b',
-            r'\bburglar alarm\b', r'\baccess control system\b'
+            r'\bburglar alarm\b', r'\baccess control system\b',
+            # Expansions
+            r'\bdata centers?\b', r'\bserver rooms?\b', r'\bbiometric logging\b', r'\bdual authentication\b',
+            r'\bserver room entry\b', r'\baccess control\b', r'\bsmart contract.*blockchain\b'
         ],
 
         # 7.0 Logic Circuits and Switching Theory
         'ELECS-7.1': [  # Boolean Algebra and Logic Gates
-            r'\bboolean algebra\b', r'\blogic gate\b', r'\band gate\b', r'\bor gate\b',
-            r'\bxor gate\b', r'\bxnor gate\b', r'\bnand gate\b', r'\bnor gate\b', r'\btruth table\b', r'\bde morgan\'?s\b'
+            r'\bboolean algebra\b', r'\bboolean expression\b', r'\bboolean function\b',
+            r'\blogic gate\b', r'\band gate\b', r'\bor gate\b',
+            r'\bxor gate\b', r'\bxnor gate\b', r'\bnand gate\b', r'\bnor gate\b', r'\btruth table\b', r'\bde morgan\'?s\b',
+            r'\bfull adder\b', r'\bhalf adder\b', r'\bcombinational logic\b',
+            r'\bsum[- ]of[- ]products\b', r'\bproduct[- ]of[- ]sums\b', r'\bsop\b', r'\bpos\b',
+            # Expansions
+            r'\bcombinational circuit\b', r'\bdistinct boolean expressions\b',
+            r'\bmajority gate\b', r'\bconsensus theorem\b', r'\babsorption theorem\b',
+            r'\bsimplify f\s*=\s*\b', r'\bf\s*=\s*ab\b', r'\bminterms? grouped\b',
+            r'\bpropagation delay of \d+\s*ns\b'
         ],
         'ELECS-7.2': [  # Minimization of Combinational Logic Circuits
             r'\bk-maps?\b', r'\bkarnaugh map\b', r'\blogic minimization\b', r'\bdon\'?t care condition\b',
-            r'\bquine-mccluskeys?\b'
+            r'\bquine-mccluskeys?\b', r'\bdecoders?\b', r'\bencoders?\b', r'\bmultiplexers?\b', r'\bdemultiplexers?\b',
+            r'\bmux\b', r'\bdemux\b', r'\bline decoders?\b', r'\b3-to-8\b', r'\b4-to-16\b', r'\bcascading decoders?\b',
+            r'\bsequential logic system\b', r'\bsequential circuits?\b',
+            # Expansions
+            r'\boverlapping groups in karnaugh\b', r'\bminimized form\b', r'\bminimized expression\b',
+            r'\b4-variable function\b', r'\bgrouping in k-map\b'
         ],
         'ELECS-7.3': [  # Sequential Logic Circuits
             r'\bflip-flops?\b', r'\blatch circuit\b', r'\bsr flip-flop\b', r'\bjk flip-flop\b',
             r'\bd flip-flop\b', r'\bt flip-flop\b', r'\bshift register\b', r'\bripple counter\b', r'\bsynchronous counter\b',
-            r'\basynchronous counter\b'
+            r'\basynchronous counter\b', r'\bshift registers?\b', r'\bshift a complete binary number\b'
         ],
         'ELECS-7.4': [  # Algorithmic State Machine (ASM)
             r'\basm chart\b', r'\balgorithmic state machine\b', r'\bstate diagram\b', r'\bmealy machine\b', r'\bmoore machine\b'
         ],
         'ELECS-7.5': [  # Asynchronous Sequential Logic
-            r'\basynchronous sequential (?:logic|circuit)\b', r'\btiming hazard\b', r'\brace condition\b', r'\bflow table\b'
+            r'\basynchronous sequential (?:logic|circuit)\b', r'\btiming hazard\b', r'\brace condition\b', r'\bflow table\b',
+            r'\bvhdl\b', r'\bverilog\b',
+            # Expansions
+            r'\bstatic hazard\b', r'\bstatic-1 hazard\b', r'\bstatic-0 hazard\b', r'\bdynamic hazard\b',
+            r'\beliminate the static\b'
         ],
 
         # 8.0 Microprocessor and Microcontroller Systems
         'ELECS-8.1': [  # Microprocessor Unit
             r'\bmicroprocessors?\b', r'\bcentral processing unit\b', r'\bcpu\b', r'\balu\b', r'\bprogram counter\b',
-            r'\bstack pointer\b', r'\b8086\b', r'\bfetch-decode-executes?\b', r'\bregister array\b'
+            r'\bstack pointer\b', r'\bstack data structure\b', r'\b8086\b', r'\bfetch-decode-executes?\b', r'\bregister array\b',
+            r'\bpush.*the stack\b', r'\bpop.*the stack\b', r'\bmachine level programming\b',
+            # Expansions
+            r'\bcondition flags?\b', r'\bflag register\b', r'\btrap flag\b', r'\bparity flag\b',
+            r'\bauxiliary carry flag\b', r'\bzero flag\b', r'\bsign flag\b', r'\baddress bus\b',
+            r'\bdata bus\b', r'\bcontrol bus\b', r'\b8085\b', r'\baccumulator\b'
         ],
         'ELECS-8.2': [  # Memory Subsystem
             r'\bram\b', r'\brom\b', r'\bsram\b', r'\bdram\b', r'\beeprom\b',
-            r'\bflash memory\b', r'\bmemory subsystem\b', r'\bcache memory\b'
+            r'\bflash memory\b', r'\bmemory subsystem\b', r'\bcache memory\b',
+            # Expansions
+            r'\bmemory hierarchy\b', r'\blowest access time\b', r'\bmemory module\b',
+            r'\baccess time\b', r'\bmemory bandwidth\b'
         ],
         'ELECS-8.3': [  # I/O Subsystem
-            r'\bi/o subsystem\b', r'\binterrupt handling\b', r'\bdma\b', r'\bmemory-mapped i/o\b', r'\bserial i/o interface\b'
+            r'\bi/o subsystem\b', r'\binterrupt handling\b', r'\bdma\b', r'\bmemory-mapped i/o\b', r'\bserial i/o interface\b',
+            r'\bspi protocol\b', r'\bi2c protocol\b', r'\bspi\b', r'\bi2c\b', r'\bi²c\b',
+            # Expansions
+            r'\bnon-vectored input\b', r'\bvectored interrupts?\b', r'\brst 7\.5\b', r'\brst 6\.5\b',
+            r'\brst 5\.5\b', r'\btrap interrupt\b', r'\bintr\b', r'\binterrupt signal\b'
         ],
-        'ELECS-8.4': [  # Instruction Set Architecture and Assembly Programming
+        'ELECS-8.4': [  # Instruction Set Architecture, Assembly Programming and Programming Concepts
             r'\bassembly language\b', r'\binstruction set\b', r'\baddressing mode\b',
-            r'\bopcodes?\b', r'\bmnemonics?\b', r'\bsubroutines?\b'
+            r'\bopcodes?\b', r'\bmnemonics?\b', r'\bsubroutines?\b',
+            r'\bdata copy\b', r'\bdata transfer instruction\b', r'\bassembler to begin memory allocation\b',
+            # Programming concepts (C/Python/general) — map to microprocessors under ELECS
+            r'\bprogramming concept\b', r'\bc language\b', r'\bc programming\b', r'\bpython programming\b',
+            r'\bpseudocode\b', r'\bflowchart\b', r'\bflowcharting\b', r'\balgorithm\b',
+            r'\bsource code\b', r'\bobject code\b', r'\bcompiler\b', r'\binterpreter\b',
+            r'\bhigh[- ]level language\b', r'\blow[- ]level language\b', r'\bmachine language\b',
+            r'\bif[- ]else\b', r'\bwhile loop\b', r'\bfor loop\b', r'\bdo[- ]while\b',
+            r'\bfunction call\b', r'\brecursion\b', r'\bstack frame\b', r'\bprogram flow\b',
+            r'\bvariable declaration\b', r'\bdata type\b', r'\barray indexing\b', r'\bpointers?\b'
         ],
         'ELECS-8.5': [  # Microcontrollers
-            r'\bmicrocontrollers?\b', r'\b8051\b', r'\bpic microcontroller\b', r'\bavr\b', r'\barduino\b', r'\bon-chip peripheral\b'
+            r'\bmicrocontrollers?\b', r'\b8051\b', r'\bpic microcontroller\b', r'\bavr\b', r'\barduino\b', r'\bon-chip peripheral\b',
+            r'\bwatchdog timer\b'
         ],
 
         # 9.0 Feedback and Control Systems (also shared with MATH-8.0)
         'ELECS-9.1': [  # Block Diagram and Signal Flow Graphs
-            r'\bblock diagram reduction\b', r'\bsignal flow graph\b', r'\bmason\'?s (?:gain )?rule\b', r'\bforward path\b'
+            r'\bblock diagram reduction\b', r'\bsignal flow graphs?\b', r'\bmason\'?s (?:gain )?(?:rule|formula)\b', r'\bforward path\b',
+            r'\bopen[- ]loop system\b', r'\bclosed[- ]loop system\b', r'\bfeedback control system\b',
+            # Expansions
+            r'\bnon touching loops\b', r'\btouching loops\b', r'\boutgoing branches\b',
+            r'\binput node\b', r'\boutput node\b', r'\bforward paths?\b', r'\bsfg\b',
+            r'\bnon-touching loops?\b', r'\bloop gain in a signal flow\b'
         ],
         'ELECS-9.2': [  # LTI Systems and Transient Analysis
             r'\bltis?\b', r'\blinear time-invariant\b', r'\btransient analysis of (?:a )?control system\b',
-            r'\bstep response\b', r'\bimpulse response of a system\b'
+            r'\bstep response\b', r'\bimpulse response of a system\b',
+            r'\bdamping ratio\b', r'damping ratio ζ', r'\bzeta\b', r'\bsecond[- ]order system\b',
+            r'\bunderdamped\b', r'\boverdamped\b', r'\bcritically damped\b', r'\bundamped\b',
+            r'\btransient response\b', r'\bnatural frequency\b', r'\bsettling time\b', r'\brise time\b',
+            r'\bpercent overshoot\b', r'\bmaximum overshoot\b'
         ],
         'ELECS-9.3': [  # System Modeling and Transfer Function
-            r'\bsystem modeling\b', r'\btransfer function\b', r'\bopen[- ]loop transfer\b', r'\bclosed[- ]loop transfer\b'
+            r'\bsystem modeling\b', r'\btransfer function\b', r'\bopen[- ]loop transfer\b', r'\bclosed[- ]loop transfer\b',
+            # Expansions
+            r'\bcontrol systems?\b', r'\bopen[- ]loop control\b', r'\bclosed[- ]loop control\b',
+            r'\bfeature of a good control system\b', r'\bfeature of a modern control system\b',
+            r'\bwhat is control system\b', r'\bsensitivity of (?:the )?gain\b',
+            r'\bfinal control element\b', r'\bautomatic control system\b',
+            r'\bdeterministic control system\b', r'\bstochastic control system\b'
         ],
         'ELECS-9.4': [  # Poles, Zeros, Root Locus, and Stability Analysis
             r'\broot locus\b', r'\brouth stability\b', r'\bgain margin\b', r'\bphase margin\b', r'\bnyquist criterion\b',
-            r'\bpoles? and zeros? of\b'
+            r'\bpoles? and zeros?\b', r'\bcharacteristic equation\b', r'\bs-plane\b', r'\bstrictly stable\b',
+            r'\brouth[- ]hurwitz\b'
         ],
         'ELECS-9.5': [  # Steady State Analysis and Frequency Response
-            r'\bsteady state error\b', r'\berror constant\b', r'\bpid controller\b', r'\blead-lag compensator\b',
-            r'\bfrequency response of a (?:control )?system\b'
+            r'\bsteady state error\b', r'\bsteady-state error\b', r'\berror constant\b', r'\bpid controller\b', r'\blead-lag compensator\b',
+            r'\bfrequency response of a (?:control )?system\b', r'\btype 0\b', r'\btype 1\b', r'\btype 2\b',
+            r'\bnyquist plot of the loop transfer function\b', r'\bencloses\b',
+            # Expansions
+            r'\bpd controller\b', r'\bpi controller\b', r'\bcompensator\b', r'\bcompensated system\b'
         ]
     },
 
@@ -480,7 +731,7 @@ SUBTOPIC_RULES = {
         'GEAS-1.1': [ r'\bthermochemistry\b', r'\bheat of reaction\b',
             r'\bcalorimetry\b', r'\bexothermic\b', r'\bendothermic\b', r'\benthalp(?:y|ies)\b', r'\bhess\'?s law\b',
             r'\bheat capacity\b', r'\bbomb calorimeter\b', r'\bstandard enthalpy\b', r'\bheat of formation\b',
-            r'\bheat of combustion\b' ],
+            r'\bheat of combustion\b', r'\blaughing gas\b', r'\bnitrous oxide\b', r'\bn2o\b', r'\banesthetics?\b' ],
 
         'GEAS-1.2': [ r'\bionic bond\b', r'\bcovalent bond\b', r'\bmetallic bond\b', r'\bcorrosion\b', r'\boxidation\b',
             r'\breduction reaction\b', r'\bredoxs?\b', r'\belectrochemistry\b', r'\bgalvanic cell\b',
@@ -492,7 +743,13 @@ SUBTOPIC_RULES = {
 
         'GEAS-1.3': [ r'\bnanomaterials?\b', r'\bnanotechnolog(?:y|ies)\b', r'\bgraphenes?\b', r'\bcarbon nanotube\b',
             r'\bfullerenes?\b', r'\bbuckyball\b', r'\bquantum dots?\b', r'\bnanoparticles?\b', r'\bnanowires?\b',
-            r'\bnanoscale\b', r'\bsurface-to-volume ratio\b' ],
+            r'\bnanoscale\b', r'\bsurface-to-volume ratio\b',
+            # Gas laws — often misplaced into GEAS-1 family
+            r'\bgas sample\b', r'\bcharles\'?s? law\b', r'\bboyle\'?s? law\b',
+            r'\bideal gas\b', r'\bpv\s*=\s*nrt\b', r'\bideal gas law\b', r'\bgas law\b',
+            r'\bgay-lussac\'?s? law\b', r'\bavogadro\'?s? law\b', r'\batmosphere pressure\b',
+            r'\bmoles? of gas\b', r'\bmolar mass\b', r'\bmol\b', r'\bunknown gas\b', r'\bgas occupies\b',
+            r'\bgas confined\b', r'\batm\b' ],
 
         'GEAS-1.4': [ r'\bgreen chemistry\b', r'\bacid rain\b', r'\bgreenhouse gas\b', r'\bwater chemistry\b',
             r'\bocean acidification\b', r'\bchemical pollutants?\b', r'\bcfcs?\b', r'\bchlorofluorocarbons?\b',
@@ -504,12 +761,17 @@ SUBTOPIC_RULES = {
             r'\bconservative force\b', r'\bnon[- ]conservative force\b', r'\bpath[- ]independent\b',
             r'\bindependent of the path\b', r'\bwork done on (?:a )?particle\b', r'\bwork done by (?:a |the )?force\b',
             r'\bgravitational potential energy\b', r'\bmechanical energy\b', r'\bpower developed by\b',
-            r'\bpower delivered by\b' ],
+            r'\bpower delivered by\b',
+            # Collision / momentum — frequently untagged
+            r'\bcollides?\b', r'\bcollision\b', r'\bsticks? to\b', r'\bcommon velocity\b',
+            r'\bsticks? together\b', r'\bperfectly inelastic\b',
+            r'\bsame unit as work\b', r'\bunit as work\b', r'\bunit of work\b', r'\bwork is measured in\b' ],
 
         'GEAS-2.2': [ r'\bimpulse-momentums?\b', r'\bconservation of momentum\b', r'\belastic collision\b',
             r'\binelastic collision\b', r'\bcoefficient of restitution\b', r'\blinear momentum\b',
             r'\bmomentum of (?:a |the )?\w+\b', r'\bchange in momentum\b', r'\bunit (?:for|of) (?:linear )?momentum\b',
-            r'\bkilogram-meter per second\b', r'\bkg[·\.]m/s\b', r'\bimpulse on\b', r'\bcenter of mass\b' ],
+            r'\bkilogram-meter per second\b', r'\bkg[·\.]m/s\b', r'\bimpulse on\b', r'\bcenter of mass\b',
+            r'\bstraight line under a (?:time[- ]varying )?force\b', r'\brolls down an? incline\b', r'\bkinematics\b' ],
 
         'GEAS-2.3': [ r'\bkinematics\b', r'\bprojectile motion\b', r'\brectilinear motion\b', r'\bfree[- ]fall\b',
             r'\buniformly accelerated (?:motion|rectilinear)\b', r'\btrajectory of (?:a )?projectile\b',
@@ -526,7 +788,8 @@ SUBTOPIC_RULES = {
 
         'GEAS-2.5': [ r'\btorques?\b', r'\bmoment of inertia\b', r'\bangular momentum\b', r'\brotational motion\b',
             r'\bangular velocity\b', r'\bangular acceleration\b', r'\brotational kinetic energy\b',
-            r'\bparallel axis theorem\b', r'\bradius of gyration\b', r'\brolling without slipping\b' ],
+            r'\bparallel axis theorem\b', r'\bradius of gyration\b', r'\brolling without slipping\b',
+            r'\brotates at \d+.*rad/s\b', r'\blinear speed of a point on its rim\b' ],
 
         'GEAS-2.6': [ r'\bhooke\'?s law\b', r'\byoung\'?s modulus\b', r'\bshear modulus\b', r'\bbulk modulus\b',
             r'\belastic (?:limit|deformation)\b', r'\bmodulus of elasticity\b', r'\bproportional limit\b',
@@ -546,7 +809,11 @@ SUBTOPIC_RULES = {
 
         'GEAS-2.9': [ r'\bheat transfer\b', r'\bconduction\b', r'\bconvection\b', r'\bradiation heat transfer\b',
             r'\bspecific heat\b', r'\blatent heat\b', r'\bthermal conductivity\b', r'\bthermal expansion\b',
-            r'\blinear expansion\b', r'\bstefan-boltzmann\b', r'\bheat flow rate\b' ],
+            r'\blinear expansion\b', r'\bstefan-boltzmann\b', r'\bheat flow rate\b',
+            # Calorimetry / thermal equilibrium problems
+            r'\bthermal equilibrium\b', r'\bq\s*=\s*mc\b', r'\bspecific heat capacity\b',
+            r'\bheat gained\b', r'\bheat lost\b', r'\binitial temperature\b', r'\bfinal temperature\b',
+            r'\bdisk at \d+°c\b', r'\baluminum disk\b', r'\bplaced in.*alcohol\b', r'\bthermal energy\b' ],
 
         'GEAS-2.10': [ r'\bsnell\'?s law\b', r'\blaw of refraction\b', r'\blaw of reflection\b', r'\bconverging lens\b',
             r'\bconcave mirror\b', r'\bconvex mirror\b', r'\bcoulomb\'?s law\b', r'\belectrostatic force\b',
@@ -558,12 +825,24 @@ SUBTOPIC_RULES = {
             r'\bequivalent resistance\b', r'\bresistors? in series\b', r'\bresistors? in parallel\b',
             r'\bequivalent capacitance\b', r'\bcapacitors? in series\b', r'\bcapacitors? in parallel\b',
             r'\bdielectric constant\b', r'\bohm\'?s law\b', r'\bbar magnet\b', r'\bmagnetic poles?\b', r'\bnorth pole\b',
-            r'\bsouth pole\b', r'\bmagnetic field lines?\b' ],
+            r'\bsouth pole\b', r'\bmagnetic field lines?\b',
+            # Optics/light keywords frequently untagged
+            r'\bmagnification\b', r'\bimage height\b', r'\bobject height\b', r'\blinear magnification\b',
+            r'\boptical system\b', r'\boptic\w+ magnif\w+\b', r'\blens combination\b',
+            r'\bimage of (?:the )?first lens\b', r'\bspectrum\b', r'\bwavelength\b',
+            r'\bvisible light\b', r'\belectromagnetic spectrum\b', r'\bmonochromatic\b' ],
 
         # 3.0 Engineering Economics
         'GEAS-3.1': [ r'\bsimple interest\b', r'\bnominal (?:interest )?rate\b',
             r'\beffective (?:interest )?rate\b', r'\btime value of money\b', r'\binterest rate\b', r'\binflation rate\b',
-            r'\brate of return\b' ],
+            r'\brate of return\b', r'\bcompounded quarterly\b', r'\beffective annual\b', r'\binvests?\s+.*?\s+annually\b',
+            # Compound interest / deposits — very common in exam questions
+            r'\bcompounds?\b', r'\bcompound interest\b', r'\bdeposits?\b', r'\bpays?\s+.*?%\b',
+            r'\bmonthly deposit\b', r'\bends? of (?:each|every) month\b', r'\bbank pays\b',
+            r'\bcompounded monthly\b', r'\bcompounded annually\b', r'\bcompounded semi-?annually\b',
+            r'\binterest\b', r'\bper annum\b', r'\bp\s*\d+ (?:is|was) invested\b',
+            r'\bcurrent ratio\b', r'\bquick ratio\b', r'\bacid[- ]test ratio\b',
+            r'\bliquidity ratios?\b', r'\bbalance sheet\b', r'\bworking capital\b' ],
 
         'GEAS-3.2': [ r'\bannuit(?:y|ies)\b', r'\bdeferred annuity\b', r'\bperpetuit(?:y|ies)\b',
             r'\bcash flow diagram\b', r'\bgradient series\b', r'\bcompound interest\b', r'\beconomic equivalence\b',
@@ -571,7 +850,8 @@ SUBTOPIC_RULES = {
 
         'GEAS-3.3': [ r'\bpresent worth\b', r'\bfuture worth\b', r'\bannual worth\b', r'\brate of return\b',
             r'\binternal rate of return\b', r'\birr\b', r'\bbenefit-cost ratio\b', r'\bb/c ratio\b',
-            r'\bpayback period\b' ],
+            r'\bpayback period\b', r'\bmutually exclusive projects?\b', r'\bmarr\b',
+            r'\bminimum attractive rate of return\b', r'\bsensitivity analysis\b' ],
 
         'GEAS-3.4': [ r'\bbreak-even\b', r'\bbreak even\b', r'\bto break even\b',
             r'\bbreak-even (?:point|analysis|quantity|volume)\b', r'\bvariable costs?\b', r'\bfixed costs?\b',
@@ -581,7 +861,8 @@ SUBTOPIC_RULES = {
 
         'GEAS-3.5': [ r'\bdecision tree\b', r'\bexpected monetary value\b', r'\brisk analysis\b',
             r'\bprobabilistic risk\b', r'\brisk-averse\b', r'\brisk-seeking\b', r'\brisk-neutral\b',
-            r'\brisk preference\b', r'\bexpected payoff\b', r'\bpayoff matrix\b' ],
+            r'\brisk preference\b', r'\bexpected payoff\b', r'\bpayoff matrix\b',
+            r'\bmacroeconomic\b', r'\breserve requirement\b', r'\bcommercial banks\b' ],
 
         'GEAS-3.6': [ r'\bmaximin criterion\b', r'\bmaximax criterion\b', r'\bminimax regret\b',
             r'\blaplace criterion\b', r'\bhurwicz criterion\b', r'\bdecisions? under uncertainty\b' ],
@@ -589,30 +870,55 @@ SUBTOPIC_RULES = {
         # 4.0 Engineering Management
         'GEAS-4.1': [ r'\btaylor\'?s scientific management\b',
             r'\bfayol\'?s principles\b', r'\bhawthorne (?:effect|studies)\b', r'\bscientific management theory\b',
-            r'\bmax weber\b', r'\bbureaucracy\b' ],
+            r'\bmax weber\b', r'\bbureaucracy\b',
+            r'\bengineering management\b', r'\bmanagement functions?\b', r'\bplanning\b', r'\borganizing\b', r'\bleading\b', r'\bcontrolling\b',
+            r'\bcontingency theory\b', r'\bmanagement theory\b', r'\bmanagement principle\w*\b',
+            r'\btheory x\b', r'\btheory y\b',
+            r'\bmanaging the marketing function\b', r'\bmarketing function\b',
+            r'\bstandardized work procedures\b', r'\bstrategic decisions?\b',
+            r'\bengineer.*wanting to become a manager\b', r'\bengineer enters management\b',
+            r'\btype of leadership\b', r'\bleadership is characterized\b',
+            r'\bleadership styles?\b', r'\bautocratic leader\b', r'\bdemocratic leader\b',
+            r'\bboard of directors\b', r'\bdirector on a board\b' ],
 
         'GEAS-4.2': [ r'\bmanagerial role\b', r'\bconceptual skill\b', r'\btechnical skill\b',
             r'\bfunctions? of management\b', r'\bfunctions? of (?:an? )?engineer\b', r'\bdecision[- ]making\b',
             r'\bmaslow\'?s hierarchy\b', r'\bherzberg\'?s (?:two[- ]factor )?theory\b', r'\btwo[- ]factor theory\b',
             r'\bhygiene factors?\b', r'\bmotivator factors?\b', r'\bmotivation theory\b',
-            r'\btheory x and (?:theory )?y\b', r'\bsmart criteria\b', r'\bgoal setting\b' ],
+            r'\btheory x and (?:theory )?y\b', r'\bsmart criteria\b', r'\bgoal setting\b',
+            r'\btop management directs\b', r'\bcorporate level\b', r'\bmanagement level\b' ],
 
         'GEAS-4.3': [ r'\bstrategic planning\b', r'\borganization(?:al)? structure\b', r'\bleadership style\b',
             r'\bcontrolling function\b', r'\borganizing function\b', r'\bplanning and organizing\b',
-            r'\bleading and controlling\b', r'\bdelegation of authority\b', r'\bspan of control\b' ],
+            r'\bleading and controlling\b', r'\bdelegation of authority\b', r'\bspan of control\b',
+            r'\bmission statement\b', r'\bwhy (?:an? )?organization exists\b', r'\borganization\'?s? purpose\b',
+            r'\bbusiness ethics\b', r'\bethical dilemma\b', r'\bstakeholders?\b',
+            r'\borganizational control\b', r'\bfeedforward control\b', r'\bconcurrent control\b',
+            r'\bprc modernization\b', r'\br\.?a\.?\s*\d{4,5}\b', r'\bra \d{4,5}\b', r'\bpenal provision\b',
+            r'\bclean air act\b', r'\benvironmental law\b' ],
 
         'GEAS-4.4': [ r'\bpert\b', r'\bcpm\b', r'\bcritical path method\b', r'\bgantt chart\b', r'\beoq\b', r'\btqm\b',
             r'\bsix sigma\b', r'\bquality control\b', r'\beconomic order quantity\b', r'\binventory management\b',
-            r'\biso 9000\b' ],
+            r'\biso 9000\b', r'\bearned value management\b', r'\bevm\b', r'\bproject life cycle\b',
+            r'\brepetitions of some standard activities\b', r'\bline of balance\b',
+            r'\bwork breakdown structure\b', r'\bwbs\b' ],
 
         'GEAS-4.5': [ r'\bmarketing mix\b', r'\b4 ps of marketing\b', r'\bbalance sheet\b', r'\bincome statement\b',
             r'\bcash flow statement\b', r'\bworking capital\b' ],
 
         # 5.0 Technopreneurship 101
         'GEAS-5.1': [ r'\btechnopreneurships?\b', r'\bstartup ethics\b',
-            r'\bcorporate social responsibility\b', r'\bglobalization\b', r'\bentrepreneurial mindset\b' ],
+            r'\bcorporate social responsibility\b', r'\bglobalization\b', r'\bentrepreneurial mindset\b',
+            r'\banalyzes competitors\b', r'\bmarket share\b',
+            r'\bstartups? need funding\b', r'\bvalue-based pricing\b',
+            r'\bpartnership and a c corporation\b', r'\bforms? of business organization\b',
+            r'\bgeneral partnership\b', r'\blimited liability\b', r'\bllc\b',
+            r'\bsole proprietorship\b', r'\bpercent-of-sales method\b',
+            r'\bfinancial objectives of any firm\b' ],
 
-        'GEAS-5.2': [ r'\bvalue proposition\b', r'\bcustomer segment\b', r'\bpain point\b', r'\bcustomer discovery\b' ],
+        'GEAS-5.2': [ r'\bvalue proposition\b', r'\bcustomer segment\b', r'\bpain point\b', r'\bcustomer discovery\b',
+            r'\blean canvas\b', r'\blean canvas model\b', r'\bunfair advantage\b', r'\bearly adopters?\b',
+            r'\btechnology adoption\b', r'\bchasm\b', r'\bproduct-market fit\b' ],
 
         'GEAS-5.3': [ r'\btam[- ]?sam[- ]?som\b', r'\bmarket sizing\b', r'\bmarket research\b', r'\btarget market\b' ],
 
@@ -659,7 +965,10 @@ SUBTOPIC_RULES = {
             r'\bequivalent total capacitance\b', r'\btotal capacitance\b', r'\bcapacitors? (?:strictly )?in series\b',
             r'\bcapacitors? in parallel\b', r'\bseries capacitors?\b', r'\bparallel capacitors?\b',
             r'\btuning circuit\b', r'\btune an? rf circuit\b', r'\brf circuit\b', r'\bresonant frequency\b',
-            r'\bpower factor\b', r'\bresistor network\b' ],
+            r'\bpower factor\b', r'\bresistor network\b',
+            r'\bcool down fastest via radiation\b', r'\bcool down.*radiation\b',
+            r'\bblackbody radiation\b', r'\bstefan-boltzmann\b', r'\bemissivity\b',
+            r'\bheat transfer by radiation\b', r'\bthermal radiation\b' ],
 
         'GEAS-6.5': [ r'\bphotoelectric effect\b', r'\bnuclear reaction\b', r'\bnuclear reactor\b', r'\bradioactivity\b',
             r'\bhalf-lifes?\b', r'\bwave optics\b', r'\bmoderators?\b', r'\bcontrol rods?\b', r'\bphotons?\b',
@@ -667,21 +976,32 @@ SUBTOPIC_RULES = {
             r'\brydberg constant\b', r'\bhydrogen spectral lines\b', r'\balpha[- ]particles?\b',
             r'\bbeta[- ]particles?\b', r'\bgamma rays?\b', r'\bnuclear fission\b', r'\bnuclear fusion\b',
             r'\bmass defect\b', r'\bbinding energy\b', r'\bmagic numbers? of protons\b', r'\bpositrons?\b',
-            r'\bantiparticle\b' ],
+            r'\bantiparticle\b', r'\benergy per unit mass\b', r'\bfission\b', r'\bfusion\b',
+            r'\belectron in hydrogen jumps\b', r'\bpolarizing filters?\b', r'\btransmission axes\b',
+            r'\bmalus\'?s law\b', r'\bpolarization of light\b' ],
 
         # 7.0 Materials Science and Engineering
         'GEAS-7.1': [ r'\batomic bonding\b', r'\bprimary bonding\b',
             r'\belectronegativit(?:y|ies)\b', r'\binteratomic bond\w*', r'\bisotopes?\b', r'\batomic mass(?:es)?\b',
             r'\batomic numbers?\b', r'\bnumber of neutrons\b', r'\bnumber of protons\b', r'\bnumber of electrons\b',
-            r'\bcarbon-1[24]\b', r'\bvalence electrons?\b', r'\belectron configuration\b' ],
+            r'\bcarbon-1[24]\b', r'\bvalence electrons?\b', r'\belectron configuration\b',
+            r'\bgraphite conducts electricity\b', r'\bcovalent bonding\b', r'\bmetallic bonding\b', r'\bionic bonding\b',
+            r'\bnonlocalized electrons\b', r'\bgood conductors? of electricity and heat\b',
+            r'\bstrong yet deformable\b', r'\bferrous metals?\b', r'\bnonferrous metals?\b',
+            r'\balloys?\b', r'\bsteel alloys?\b', r'\bbrass and bronze\b' ],
 
         'GEAS-7.2': [ r'\bunit cell\b', r'\bbcc structure\b', r'\bfcc structure\b', r'\bhcp structure\b',
             r'\bmiller indices\b', r'\bcrystal structure\b', r'\bcrystalline material\b', r'\bcoordination number\b',
-            r'\batomic packing factor\b', r'\bapf\b' ],
+            r'\batomic packing factor\b', r'\bapf\b',
+            # Amorphous/crystalline distinction — very common exam question pattern
+            r'\bcrystalline\b', r'\bamorphous\b', r'\bnon[- ]crystalline\b', r'\bdistinguishes crystalline\b',
+            r'\bshort[- ]range order\b', r'\blong[- ]range order\b',
+            r'\bcoordination number of \d+\b' ],
 
         'GEAS-7.3': [ r'\bpoint defect\b', r'\blattice vacancy\b', r'\bdislocations?\b', r'\bgrain boundary\b',
             r'\bsolid solution\b', r'\bsubstitutional (?:solid )?solution\b', r'\binterstitial (?:solid )?solution\b',
-            r'\bedge dislocation\b', r'\bscrew dislocation\b' ],
+            r'\bedge dislocation\b', r'\bscrew dislocation\b',
+            r'\bcrystal imperfection\b', r'\binterstitial site\b', r'\bfrenkel defect\b', r'\bschottky defect\b' ],
 
         'GEAS-7.4': [ r'\bfick\'?s (?:first|second) law\b', r'\bdiffusion in solids?\b', r'\bcarburizing\b',
             r'\bdiffusion coefficient\b' ],
@@ -693,21 +1013,49 @@ SUBTOPIC_RULES = {
 
         'GEAS-7.6': [ r'\bphase diagram\b', r'\biron-carbon (?:diagram|system)\b', r'\bsteel alloy\b',
             r'\bpolymer material\b', r'\bceramic material\b', r'\bcomposite material\b', r'\bcast iron\b',
-            r'\beutectic\b', r'\beutectoid\b' ],
+            r'\beutectic\b', r'\beutectoid\b',
+            # Polymer / material classification — common pre-board patterns
+            r'\bpolymers?\b', r'\bhigh molecular weight\b', r'\borganic polymer\b', r'\bthermoset\b',
+            r'\bthermoplastic\b', r'\belastomer\b', r'\bcopolymer\b', r'\bpolymerization\b',
+            r'\bbrittle (?:material|fracture)\b', r'\bthermal shock\b', r'\brapid temperature change\b',
+            r'\bnatural resource\b', r'\bnon[- ]renewable\b', r'\brenewable material\b',
+            r'\bfiberglass\b', r'\bcomposite materials?\b',
+            r'\bmatrix and (?:what serves as the )?reinforcement\b',
+            r'\breinforcement and (?:what serves as the )?matrix\b',
+            r'\bcarbon fiber\b', r'\bplastics?\b', r'\belastomers?\b',
+            r'\bthermosetting\b', r'\bthermosets?\b', r'\bcross-link(?:ed|ing)?\b',
+            r'\bmonomers?\b', r'\bvulcaniz(?:ed|ation)\b', r'\brubber\b',
+            r'\bsynthetic rubber\b', r'\bepoxy resin\b', r'\bceramics?\b',
+            r'\brefractor(?:y|ies)\b', r'\bwithstand extremely high temperatures\b',
+            r'\bhigh-temperature ceramic\b', r'\balumina\b', r'\bsilicon carbide\b' ],
 
         'GEAS-7.7': [ r'\bband theory\b', r'\bdielectric strength\b', r'\bferromagnetism\b', r'\bdiamagnetic\b',
             r'\bparamagnetic\b', r'\bcoercivit(?:y|ies)\b', r'\bretentivit(?:y|ies)\b', r'\bhysteresis loop\b',
             r'\bhysteresis\b', r'\bdemagnetiz\w*\b', r'\bpermanent magnets?\b', r'\bmagnetic material\b',
             r'\bmagnetic permeabilit(?:y|ies)\b', r'\benergy band gap\b', r'\bband gap of\b',
             r'\bintrinsic semiconductor\b', r'\bextrinsic semiconductor\b', r'\bsemiconductor is made of\b',
-            r'\bconduction band\b', r'\bvalence band\b' ],
+            r'\bconduction band\b', r'\bvalence band\b', r'\bsemiconductor materials?\b',
+            r'\bsilicon and germanium\b', r'\bgallium arsenide\b' ],
 
         # 8.0 Computer Programming
         'GEAS-8.1': [ r'\bobject[- ]oriented programming\b', r'\binheritance\b',
             r'\bpolymorphism\b', r'\bencapsulation\b', r'\buml (?:use case )?diagrams?\b', r'\buse case diagrams?\b',
             r'\buse cases?\b', r'\bstick figure\b', r'\bactors?\b', r'\bclass diagrams?\b', r'\bsequence diagrams?\b',
             r'\bactivity diagrams?\b', r'\bstate diagrams?\b', r'\buml\b', r'\bclasses and objects\b',
-            r'\bobject-oriented concepts\b' ],
+            r'\bobject-oriented concepts\b', r'\boop focuses on\b', r'\binstances? of a class\b', r'\bobject oriented analysis\b',
+            r'\bcpi\b', r'\bcycles per instruction\b', r'\bclock cycles?\b',
+            r'\baverage cpi of\b', r'\bexecution time of a program\b',
+            r'\bharvard architecture\b', r'\bvon neumann architecture\b',
+            r'\bseparate memories for program instructions and data\b',
+            r'\bdma\b', r'\bdirect memory access\b', r'\binterrupts?\b',
+            r'\bcomputer signal that stops the execution\b',
+            r'\bascii\b', r'\bcharacter encoding\b', r'\bbytes?\b',
+            r'\bword is (?:best )?defined as\b', r'\bwords? in computer architecture\b',
+            r'\bwhich of the following best defines a word\b',
+            r'\bwhich of the following best defines a byte\b',
+            r'\bwhich of the following best defines a bit\b',
+            r'\bspreadsheet\b', r'\bformula .* is entered into cell\b',
+            r'\bbuffers?\b', r'\bcontroller board has .* 8-bit memory\b' ],
 
         'GEAS-8.2': [ r'\bdesign pattern\b', r'\bsolid principle\w*\b', r'\bsoftware architecture\b',
             r'\bobject-oriented design\b', r'\bobject-oriented analysis\b', r'\booad\b', r'\booa\b',
@@ -717,14 +1065,29 @@ SUBTOPIC_RULES = {
         'GEAS-8.3': [ r'\bprogramming language\b', r'\bdata type\b', r'\bfor loop\b', r'\bwhile loop\b', r'\barrays?\b',
             r'\bpointer variable\b', r'\balgorithms?\b', r'\bpseudocode\b', r'\bstructured programming\b',
             r'\bloop that will iterate\b', r'\bprogram segment\b', r'\bcontrol structures?\b', r'\bif-else\b',
-            r'\bswitch-case\b', r'\bvariables?\b', r'\bcompiler\b', r'\binterpreter\b' ],
+            r'\bswitch-case\b', r'\bvariables?\b', r'\bcompiler\b', r'\binterpreter\b',
+            r'\bdynamic typing\b', r'\bweak typing\b', r'\bstrong typing\b', r'\bcomputer programming is also called\b', r'\bfunctional programming\b',
+            r'\bjava\b', r'\bpython\b', r'\bc\+\+\b', r'\brust\b', r'\bruby\b',
+            r'\bfortran\b', r'\bpascal\b', r'\bbasic\b', r'\bswift\b', r'\bkotlin\b',
+            r'\bgolang\b', r'\bjavascript\b', r'\btypescript\b',
+            r'\bprogramming languages?\b', r'\bprogramming paradigms?\b',
+            r'\bimperative programming\b', r'\bdeclarative programming\b',
+            r'\bside[- ]effect free\b', r'\bconcurrent(?:ly)?\b', r'\bconcurrency\b',
+            r'\bmultithreading\b', r'\bstatic typing\b', r'\bstrongly typed\b', r'\btype checking\b',
+            r'\bgui framework\b', r'\bdesktop applications in python\b',
+            # CAD / computer tools keywords frequently in GEAS pre-board exams
+            r'\bcad\b', r'\bcomputer[- ]aided design\b', r'\bgui event\b', r'\bcommon gui event\b',
+            r'\bsymmetrical copy\b', r'\bwireframe model\b', r'\bsolid modeli\w+\b',
+            r'\bblock (?:command|definition)\b', r'\breusable (?:component|entity)\b', r'\bmirror function\b' ],
 
         'GEAS-8.4': [ r'\bexception handling\b', r'\btry catch\b', r'\berror handling\b', r'\bruntime error\b',
             r'\bthrow exception\b', r'\bcatch block\b' ],
 
         'GEAS-8.5': [ r'\bgraphical user interface\b', r'\bgui programming\b', r'\bevent-driven programming\b',
             r'\bcallback function\b', r'\bwidgets?\b', r'\bwindows api\b', r'\bcreatewindow\b', r'\bgui window\b',
-            r'\bwin32\b', r'\bgraphical application window\b', r'\bevent handler\b' ],
+            r'\bwin32\b', r'\bgraphical application window\b', r'\bevent handler\b',
+            r'\bawt\b', r'\bswing\b', r'\bjframe\b', r'\bjpanel\b', r'\bjbutton\b',
+            r'\bkey difference between awt and swing\b', r'\bjava swing\b' ],
 
         # 9.0 Environment Science and Engineering
         'GEAS-9.1': [ r'\becosystems?\b', r'\bfood chain\b',
@@ -736,7 +1099,8 @@ SUBTOPIC_RULES = {
             r'\bnitrogen cycle\b', r'\bcarbon cycle\b', r'\bphosphorus cycle\b', r'\bsulfur cycle\b',
             r'\bproducers? and consumers?\b', r'\bdecomposers?\b', r'\bbiomes?\b', r'\bhabitat\b',
             r'\bcarrying capacity\b', r'\bprimary succession\b', r'\bsecondary succession\b', r'\bphotosynthesis\b',
-            r'\becological niche\b', r'\bhydrosphere\b', r'\blithosphere\b', r'\bbiosphere\b' ],
+            r'\becological niche\b', r'\bhydrosphere\b', r'\blithosphere\b', r'\bbiosphere\b',
+            r'\becolog(?:y|ical)\b' ],
 
         'GEAS-9.2': [ r'\brenewable resource\b', r'\bnon-renewable resource\b', r'\bwater resource\b',
             r'\benergy resource\b', r'\bmineral resource\b', r'\bforest resource\b' ],
@@ -745,7 +1109,12 @@ SUBTOPIC_RULES = {
             r'\bclimate change\b', r'\bglobal warming\b', r'\bozone layer\b', r'\bozone depletion\b',
             r'\beutrophication\b', r'\bgreenhouse effect\b', r'\bgreenhouse gas(?:es)?\b', r'\bsalinity\b',
             r'\bhalinity\b', r'\bhaloginity\b', r'\bacid rain\b', r'\bphotochemical smog\b', r'\bchlorofluorocarbons?\b',
-            r'\bcfcs?\b' ],
+            r'\bcfcs?\b', r'\bhazardous (?:waste|materials?|chemicals?)\b', r'\bhazardous\b',
+            r'\bchemical hazard diamond\b', r'\bparticulate matter\b', r'\bairborne particulate\b',
+            r'\bcontrolled combustion process\b', r'\bincinerat(?:ion|or)\b',
+            r'\bconcentration in environmental systems\b',
+            r'\bvelocity at which the energy of motion of an airborne\b',
+            r'\bcapture velocity\b', r'\bindustrial ventilation\b' ],
 
         'GEAS-9.4': [ r'\benvironmental studies\b', r'\benvironmental impact(?:s)?\b',
             r'\benvironmental impact assessment\b', r'\beia\b', r'\benvironmental compliance certificate\b', r'\becc\b',
@@ -753,15 +1122,17 @@ SUBTOPIC_RULES = {
             r'\bcumulative impact(?:s)?\b', r'\bresidual impact(?:s)?\b',
             r'\ban effect that occurs immediately as a result of an activity\b', r'\benvironmental management plan\b',
             r'\beia process\b', r'\bproject description\b', r'\bmitigation hierarchy\b', r'\benvironmental management\b',
-            r'\bmitigation measures?\b' ],
+            r'\bmitigation measures?\b', r'\blarge[- ]scale industrial project\b' ],
 
         'GEAS-9.5': [ r'\bsustainability\b', r'\bsustainable development\b', r'\bcarbon footprint\b',
-            r'\brenewable energy\b', r'\bclean energy\b', r'\bcircular economy\b' ],
+            r'\brenewable energy\b', r'\bclean energy\b', r'\bcircular economy\b',
+            r'\bbiofuels?\b', r'\bsustainable energy\b' ],
 
         # 10.0 ECE Laws, Contracts, Ethics, Standards and Safety
         'GEAS-10.1': [ r'\bcontract law\b',
             r'\bobligations?\b', r'\bbreach of contract\b', r'\btorts?\b', r'\bcivil code\b', r'\bquasi-delict\b',
-            r'\bvoid and voidable\b', r'\bvalid contract\b' ],
+            r'\bvoid and voidable\b', r'\bvalid contract\b',
+            r'\bfoundation of ethics\b', r'\bethical foundations?\b', r'\bmoral standards?\b' ],
 
         'GEAS-10.2': [ r'\bcode of ethics\b', r'\bece pledge\b', r'\bethical conduct\b', r'\bcsc guidelines\b',
             r'\bengineer\'?s code of ethics\b', r'\bprofessional conduct\b', r'\bprofessional ethical standards?\b',
@@ -776,7 +1147,9 @@ SUBTOPIC_RULES = {
             r'\biecep\b', r'\bseal of (?:a )?pece\b', r'\bscope of practice of ece\b',
             r'\broster of registered electronics\b', r'\bprc modernization act\b', r'\bra ?8981\b',
             r'\bunauthorized practice\b', r'\bwithout a valid prc license\b', r'\bunlicensed practice\b',
-            r'\bpracticing (?:the )?(?:electronics engineering )?profession\b', r'\bprc license\b' ],
+            r'\bpracticing (?:the )?(?:electronics engineering )?profession\b', r'\bprc license\b',
+            r'\bmotu propr?io\b', r'\bminimum punishment.*(?:shall give any )?false\b',
+            r'\bfalse or fraudulent statement to the board\b' ],
 
         'GEAS-10.5': [ r'\bra ?7925\b', r'\bra ?8792\b', r'\be-commerce act\b',
             r'\bpublic telecommunications policy act\b', r'\bra ?10515\b', r'\banti-cable tv\b',
@@ -790,12 +1163,15 @@ SUBTOPIC_RULES = {
             r'\btelecommunications? law\b', r'\brepublic act (?:no\.?\s*)?\d+\b', r'\bra\s*\d{3,5}\b' ],
 
         'GEAS-10.6': [ r'\bphilippine electrical code\b', r'\bpec\b', r'\bosha standard\b', r'\bsafety standard\b',
-            r'\bphilippine electronics code\b' ],
+            r'\bphilippine electronics code\b',
+            r'\bppe\b', r'\bpersonal protective equipment\b', r'\bworkplace safety regulations?\b',
+            r'\bnfpa\b', r'\bnfpa 704\b', r'\bhazard diamond\b', r'\bhealth hazard under nfpa\b' ],
 
         # 11.0 CAD
         'GEAS-11.1': [ r'\bcad software\b', r'\bautocad\b', r'\bcad coordinate system\b',
             r'\bviewports?\b', r'\bcad drawing\b', r'\bzoom extents\b', r'\bzoom scale\b', r'\bpan command\b',
-            r'\bpan\b', r'\borbit command\b', r'\bregen command\b', r'\bviewing command\b', r'\bautocad command\b' ],
+            r'\bpan\b', r'\borbit command\b', r'\bregen command\b', r'\bviewing command\b', r'\bautocad command\b',
+            r'\badvanced cad technique\b' ],
 
         'GEAS-11.2': [ r'\bosnap\b', r'\bobject snap\b', r'\bortho mode\b', r'\bpolar tracking\b',
             r'\bconstruction elements?\b' ],
@@ -805,26 +1181,37 @@ SUBTOPIC_RULES = {
     },
 
     'EST': {
-        # 1.0 Signals, Spectra, Signal Processing — REBUILT to match the real
-        # 6-subtopic structure (old version had only 3, wrongly numbered).
+        # 1.0 Signals, Spectra, Signal Processing
         'EST-1.1': [  # Classification and Characteristics of Signals
             r'\bperiodic signal\b', r'\baperiodic signal\b', r'\banalog signal\b', r'\bdigital signal\b',
             r'\benergy signal\b', r'\bpower signal\b', r'\bdeterministic signal\b', r'\brandom signal\b',
             r'\bcontinuous-time signal\b', r'\bdiscrete-time signal\b',
             r'\bconjugate\s+symmetr\w*\b', r'\beven\s+function\s+of\s+time\b', r'\bodd\s+function\s+of\s+time\b',
             r'\b(?:even|odd)\s+signal\b', r'\beven\s+and\s+odd\s+components?\b', r'\btime\s+reversal\b',
-            r'\bcausal\s+signal\b', r'\bnon-causal\s+signal\b'
+            r'\bcausal\s+signal\b', r'\bnon-causal\s+signal\b',
+            # Expansions
+            r'\bcausal\s+system\b', r'\bnon-causal\s+system\b', r'\banti-causal\s+system\b',
+            r'\banti-casual\b', r'\bcasual\s+system\b', r'\bnon-casual\b',
+            r'\boutput of the system is dependent of future values\b',
+            r'\boutput of the system is independent of the future values\b',
+            r'\bdepends on the input.*at the same value\b',
+            r'\bdiscrete exponential signal\b', r'\bdeterministic discrete aperiodic\b',
+            r'\bup[- ]sampling\b', r'\bdown[- ]sampling\b', r'\bdecimation\b', r'\binterpolation\b',
+            r'\bx\(n\)\s*=\s*x\(n/2\)\b', r'\blinear non-linear unstable time-invar\b',
+            r'\by\(n\)\s*=\s*x\(n\)\b', r'\bsignals is even\b'
         ],
         'EST-1.2': [  # Sampling Theorem and Aliasing
             r'\bnyquist (?:rate|theorem|criterion)\b', r'\bsampling theorem\b', r'\baliasing\b',
-            r'\banti-aliasing\b', r'\bsampling frequency\b', r'\bnyquist frequency\b'
+            r'\banti-aliasing\b', r'\bsampling frequency\b', r'\bnyquist frequency\b',
+            # Expansions
+            r'\bfoldover distortion\b', r'\baliased frequency\b', r'\bsampled at\b'
         ],
         'EST-1.3': [  # Difference Equations for FIR and IIR Filters
             r'\bfir filter\b', r'\biir filter\b', r'\bdifference equation\b', r'\bdigital filter design\b'
         ],
         'EST-1.4': [  # Convolution and Correlation
             r'\bconvolution (?:sum|integral)\b', r'\bcircular convolution\b', r'\bcross-correlation\b',
-            r'\bauto-correlation\b', r'\bconvolve\b'
+            r'\bauto-correlation\b', r'\bconvolve\b', r'\bconvolutions?\b', r'\bauto[- ]?correlations?\b'
         ],
         'EST-1.5': [  # Z-Transforms and Pole-Zero-Gain Filters
             r'\bz-transforms?\b', r'\bpole-zero plot\b', r'\bpole-zero-gains?\b', r'\broc of\b', r'\bregion of convergence\b',
@@ -832,12 +1219,19 @@ SUBTOPIC_RULES = {
             r'\btransfer\s+function\s+(?:has\s+)?poles?\b', r'\b(?:stability|stable|unstable)\s+of\s+a\s+digital\s+system\b',
             r'\bdigital\s+system\s+(?:whose\s+)?transfer\s+function\b', r'\b(?:inside|outside|on)\s+the\s+unit\s+circle\b',
             r'\b(?:magnitude|radius)\s+of\s+(?:all\s+)?poles?\s+is\s+(?:strictly\s+)?less\s+than\s+unity\b',
-            r'\bless\s+than\s+unity\b', r'\bz-plane\b', r'\bh\(z\)\b'
+            r'\bless\s+than\s+unity\b', r'\bz-plane\b', r'\bh\(z\)\b',
+            # Expansions
+            r'\bdt system stability\b', r'\bunstable based on dt system\b',
+            r'\bh\(z\)\s*=\s*\b', r'\bzeros? at z\b', r'\bpoles? at z\b'
         ],
         'EST-1.6': [  # Fourier Transforms and Filtering
             r'\bdft\b', r'\bfft\b', r'\bfast fourier transform\b', r'\bdiscrete fourier transform\b',
             r'\bfourier series\b', r'\bspectral analysis\b', r'\blow-pass filter\b', r'\bhigh-pass filter\b',
-            r'\bband-pass filter\b', r'\bband-stop filter\b'
+            r'\bband-pass filter\b', r'\bband-stop filter\b',
+            # Expansions
+            r'\bfourier transform\b', r'\bparseval\'?s theorem\b',
+            r'\bx\(Ω\)\b', r'\bx\(ω\)\b', r'\bδ\(t\)\b', r'\bdirac delta\b',
+            r'\bx\(t\)\s*=\s*[δd]\(t\)\b', r'\bevaluate the x\([Ωω]\)\b'
         ],
 
         # 2.0 Principles of Communications
@@ -846,30 +1240,65 @@ SUBTOPIC_RULES = {
             r'\btransmitters?\b',
             r'\breceiver block diagram\b', r'\belectronic(?:s)? communications?\b',
             r'\bvoice frequency range\b', r'\belectromagnetic spectrum\b',
-            r'\bmodulating (?:the )?carrier\b'
+            r'\bmodulating (?:the )?carrier\b',
+            r'\bimpressing intelligence\b', r'\bcarrier signal\b', r'\bmodulation\b',
+            # Expansions
+            r'\bstages of amplification\b', r'\bdecibel gain\b', r'\bwavelength for a frequency of\b',
+            r'\belectromagnetic wave consists of\b', r'\bvoice frequency\b', r'\brf spectrum\b'
         ],
         'EST-2.2': [  # Noise and Amplitude Modulation
             r'\bamplitude modulation\b', r'\bam signal\b', r'\bmodulation index\b', r'\bthermal noise\b',
             r'\bjohnson noise\b', r'\bsignal-to-noise ratio\b', r'\bsnr\b', r'\bnoise figure\b',
-            r'\bnoise temperature\b', r'\bdsb-fc\b', r'\bdsb-sc\b', r'\bsideband power\b'
+            r'\bnoise temperature\b', r'\bdsb-fc\b', r'\bdsb-sc\b', r'\bsideband power\b',
+            r'\bdouble[- ]sideband\b', r'\bdsb\b', r'\bam modulation\b', r'\bam receiver\b', r'\bam transmitter\b',
+            # Expansions
+            r'\bam wave\b', r'\bsingle-tone amplitude modulated\b', r'\bmodulating tone\b',
+            r'\bthermal agitation noise\b', r'\bshot noise\b', r'\btransit-time noise\b',
+            r'\bflicker noise\b', r'\bpink noise\b', r'\bnoise factor\b', r'\bnoise generator\b',
+            r'\batmospheric noise\b', r'\bcosmic noise\b', r'\bsolar noise\b',
+            r'\bnoise spectral density\b', r'\btotal noise power\b',
+            r'\bresistor.*connected in series at.*k\b', r'\bnoise becomes of great importance at high frequencies\b'
         ],
         'EST-2.3': [  # Single-Sideband Techniques
-            r'\bssbs?\b', r'\bssb-scs?\b', r'\bbalanced modulator\b', r'\bvestigial sideband\b', r'\bvsbs?\b'
+            r'\bssbs?\b', r'\bssb-scs?\b', r'\bbalanced modulator\b', r'\bvestigial sideband\b', r'\bvsbs?\b',
+            r'\bsingle[- ]sideband\b', r'\bsuppressed carrier\b',
+            # Expansions
+            r'\bonly one sideband is transmitted\b', r'\ba3e\b', r'\bh3e\b', r'\bj3e\b',
+            r'\bemission designat\w*\b'
         ],
         'EST-2.4': [  # Frequency Modulation
             r'\bfrequency modulation\b', r'\bfm signal\b', r'\bfrequency deviation\b',
             r'\bpre-emphasis\b', r'\bde-emphasis\b', r'\bphase modulation\b',
-            r'\bphase-locked loops?\b', r'\bplls?\b', r'\bcapture range\b', r'\block range\b'
+            r'\bphase-locked loops?\b', r'\bplls?\b', r'\bcapture range\b', r'\block range\b',
+            r'\bcarson(?:\'s)? rule\b', r'\bsidebands on fm\b', r'\bfm receiver\b', r'\bfm transmitter\b',
+            # Expansions
+            r'\bindirect fm\b', r'\bindirect pm\b', r'\barmstrong modulator\b',
+            r'\bphase discriminator\b', r'\bslope detector\b', r'\bratio detector\b',
+            r'\bfm stereo\b', r'\bcapture effect in fm\b', r'\bfrequency-deviation constant\b',
+            r'\bderive fm from pm\b', r'\bfm from pm\b', r'\bvaractor-tuned oscillator\b',
+            r'\bfrequency synthesizer\b', r'\bfm stations?\b', r'\beducational fm\b'
         ],
         'EST-2.5': [  # Radio Receivers
             r'\bsuperheterodynes?\b', r'\bintermediate frequency\b', r'\bif stage\b', r'\bimage frequency\b',
             r'\bagc\b', r'\bautomatic gain control\b', r'\bselectivit(?:y|ies)\b', r'\breceiver sensitivity\b',
-            r'\bmixer circuits?\b', r'\blocal oscillators?\b'
+            r'\bmixer circuits?\b', r'\blocal oscillators?\b',
+            r'\bmixers?\b', r'\bradio receivers?\b',
+            # Expansions
+            r'\bdouble-tuned if amplifier\b', r'\bif amplifier\b', r'\bimage rejection\b'
         ],
         'EST-2.6': [  # Radiation and Propagation of Waves
             r'\bground wave\b', r'\bsky wave\b', r'\bspace wave\b', r'\bionospheric (?:wave|propagation)\b',
             r'\bmuf\b', r'\bmaximum usable frequency\b', r'\bcritical frequency\b', r'\bskip distance\b',
-            r'\bfading\b', r'\bknife-edge diffraction\b'
+            r'\bfading\b', r'\bknife-edge diffraction\b',
+            # Expansions
+            r'\bionosphere\b', r'\bionospheric\b', r'\bionized\b', r'\bionization\b',
+            r'\bleast ionized\b', r'\bd region\b', r'\be region\b', r'\bf1 region\b', r'\bf2 region\b',
+            r'\blongest distance radio-wave propagation\b', r'\babsorb radio waves.*d region\b',
+            r'\bauroral activity\b', r'\bmeteor scatter\b', r'\btropospheric scatter\b',
+            r'\bpropagation cycles\b', r'\bsunspot cycle\b', r'\bscatter mode\b',
+            r'\bforward scatter\b', r'\bback scatter\b', r'\bspace waves are\b',
+            r'\bground waves are most effective\b', r'\brange of sky-wave propagation\b',
+            r'\bshort-distance communications during daylight\b'
         ],
         'EST-2.7': [  # Pulse Modulation and Digital Modulation
             r'\bpulse modulation\b', r'\bdigital modulation\b', r'\banalog-to-digital modulation\b'
@@ -879,12 +1308,19 @@ SUBTOPIC_RULES = {
             r'\b5g\b', r'\bsatellite communication\b',
             r'\bpulsed\s+radar\b', r'\bradar\s+systems?\b', r'\btarget\s+echo\b', r'\bdistance\s+to\s+the\s+target\b',
             r'\bradar\s+range\b', r'\bradar\s+mile\b', r'\bdoppler\s+radar\b', r'\bradar\s+cross[- ]section\b',
-            r'\bcontinuous[- ]wave\s+radar\b', r'\bcw\s+radar\b', r'\bradar\s+equation\b'
+            r'\bcontinuous[- ]wave\s+radar\b', r'\bcw\s+radar\b', r'\bradar\s+equation\b',
+            # Expansions
+            r'\bsatellites?\b', r'\bearth orbit\b', r'\bgeostationary\b', r'\bgeo satellites?\b',
+            r'\bleo satellites?\b', r'\bmeo satellites?\b', r'\bapogee\b', r'\bperigee\b',
+            r'\bstarlink\b', r'\bhandoff\b', r'\bhandover\b',
+            r'\bk-band\b', r'\bku-band\b', r'\bka-band\b', r'\bc-band\b', r'\bx-band\b', r'\bs-band\b'
         ],
 
         # 3.0 Digital Communications
         'EST-3.1': [  # Introduction to Digital Communications
-            r'\bdigital communication system\b', r'\badvantages of digital (?:communication|transmission)\b'
+            r'\bdigital communication system\b', r'\badvantages of digital (?:communication|transmission)\b',
+            # Expansions
+            r'\bdigital communication\b', r'\bbaseband transmission\b'
         ],
         'EST-3.2': [  # Digital Transmission
             r'\bdigital transmission\b', r'\bline coding\b', r'\bnrz\b', r'\brz\b', r'\bmanchester (?:code|encoding)\b',
@@ -894,7 +1330,10 @@ SUBTOPIC_RULES = {
             r'\bpulse amplitude modulation\b', r'\bpam\b', r'\bpulse width modulation\b', r'\bpwm\b',
             r'\bpulse position modulation\b', r'\bppm\b', r'\bpulse code modulation\b', r'\bpcm\b',
             r'\bquantization\b', r'\bcompanding\b', r'\ba-law\b', r'\bmu-law\b', r'\bdelta modulation\b',
-            r'\bdpcm\b', r'\bsqnr\b'
+            r'\bdpcm\b', r'\bsqnr\b',
+            # Expansions
+            r'\bu-law compressor\b', r'\bcompressed code\b', r'\bdynamic range of the digitizer\b',
+            r'\badding one bit to the word length\b', r'\b6 db rule\b', r'\bword length\b'
         ],
         'EST-3.4': [  # ASK, FSK, PSK, QAM
             r'\bask\b', r'\bamplitude shift keying\b', r'\bfsk\b', r'\bfrequency shift keying\b',
@@ -922,7 +1361,10 @@ SUBTOPIC_RULES = {
             r'\bhamming\s+distance\b', r'\bminimum\s+hamming\s+distance\b', r'\bd_?min\b',
             r'\berror-correcting\s+(?:block\s+)?code\w*\b', r'\bblock\s+codes?\b', r'\bcodewords?\b',
             r'\bsimultaneous\s+bit\s+errors?\b', r'\bcorrect\s+(?:up\s+to\s+)?\d+\s+errors?\b',
-            r'\berror\s+syndrome\b', r'\blinear\s+block\s+codes?\b'
+            r'\berror\s+syndrome\b', r'\blinear\s+block\s+codes?\b',
+            # Expansions
+            r'\bentropy of the source\b', r'\bjoint entropy\b', r'\bchannel capacity\b',
+            r'\bfec\b'
         ],
         'EST-3.6': [  # FDM, TDM, WDM, FDMA, CDMA, TDMA
             r'\bfdms?\b', r'\bfrequency division multiplex\w*', r'\btdms?\b', r'\btime division multiplex\w*',
@@ -933,11 +1375,20 @@ SUBTOPIC_RULES = {
         # 4.0 Transmission and Antenna Systems
         'EST-4.1': [  # Transmission Line Circuits
             r'\btransmission line\b', r'\bcoaxial (?:cable|line)\b', r'\bcharacteristic impedance\b',
-            r'\bpropagation velocity\b', r'\btwo-wire line\b'
+            r'\bpropagation velocity\b', r'\btwo-wire line\b',
+            # Expansions
+            r'\bvelocity of propagation\b', r'\bvelocity factor\b', r'\bunbalanced line\b',
+            r'\bbalanced line\b', r'\bparallel-conductor feed line\b', r'\bfeed line with\b',
+            r'\bskin effect\b', r'\brf current flow in a conductor\b', r'\blongitudinal balance\b',
+            r'\btwo wires side-by-side\b', r'\btwo-wire and four-wire circuits\b',
+            r'\btwo-wire circuits\b'
         ],
         'EST-4.2': [  # Losses, Parameters, and Matching
             r'\bstanding wave\b', r'\bswr\b', r'\bvswr\b', r'\breflection coefficient\b',
-            r'\bquarter-wave (?:matching|transformer)\b', r'\bstub matching\b', r'\battenuation constant\b', r'\breturn loss\b'
+            r'\bquarter-wave (?:matching|transformer)\b', r'\bstub matching\b', r'\battenuation constant\b', r'\breturn loss\b',
+            # Expansions
+            r'\bquarter wave line\b', r'\bimpedance inversion\b', r'\bpl-259 connector\b',
+            r'\bconnector.*loss at uhf\b'
         ],
         'EST-4.3': [  # Smith Chart
             r'\bsmith chart\b', r'\bstub tuning\b'
@@ -947,7 +1398,14 @@ SUBTOPIC_RULES = {
             r'\bfresnel zone\b',
             r'\bradio\s+horizon\b', r'\bvisual\s+horizon\b', r'\bk-factor\b', r'\bstandard\s+(?:k-factor|refraction)\b',
             r'\b4/3\s+earth\s+radius\b', r'\b(?:sub|super)[- ]refraction\b', r'\bstandard\s+atmospheric\s+refraction\b',
-            r'\bducting\b', r'\btropospheric\s+(?:propagation|ducting|refraction|scatter)\b'
+            r'\bducting\b', r'\btropospheric\s+(?:propagation|ducting|refraction|scatter)\b',
+            # Expansions
+            r'\buniform plane wave\b', r'\bplane wave is propagating\b', r'\bfade margin\b',
+            r'\bmicrowave hop\b', r'\bmicrowave link\b', r'\bpath loss for a.*microwave link\b',
+            r'\batmospheric attenuation\b', r'\bobstacle clearance\b', r'\brequired clearance for an obstacle\b',
+            r'\bradio waves would most strongly reflect\b', r'\bpolarization change.*propagated over long\b',
+            r'\bgroup velocity if the phase velocity\b', r'\bpoynting vector.*linearly polarized\b',
+            r'\brelative permittivity of\b', r'\bvhf transceiver\b', r'\bpoynting vector.*electric field\b'
         ],
         'EST-4.5': [  # Power Density and Field Strength Calculations
             r'\bpower density\b', r'\bfield strength\b', r'\beirp\b', r'\berp\b', r'\beffective radiated power\b',
@@ -955,13 +1413,23 @@ SUBTOPIC_RULES = {
         ],
         'EST-4.6': [  # Antenna Systems
             r'\bantennas?\b', r'\bdipole antenna\b', r'\byagi antenna\b', r'\bparabolic antenna\b', r'\bhorn antenna\b',
-            r'\bantenna gain\b', r'\bdirectivity\b', r'\bradiation pattern\b', r'\bbeamwidth\b', r'\bpolarization of (?:an? )?wave\b'
+            r'\bantenna gain\b', r'\bdirectivity\b', r'\bradiation pattern\b', r'\bbeamwidth\b', r'\bpolarization of (?:an? )?wave\b',
+            # Expansions
+            r'\bhalf-wave dipole\b', r'\bhalf-[\s]*wave dipole\b', r'\bphysical length of (?:a )?half-[\s]*wave dipole\b',
+            r'\bgain does a half-wave dipole have over an isotropic radiator\b',
+            r'\blpda\b', r'\blog-periodic\b', r'\byagi-uda\b', r'\bcassegrain feed\b',
+            r'\bparabolic reflector\b', r'\bwave polarization\b', r'\bhorizontal wave polarization\b',
+            r'\bvertical wave polarization\b'
         ],
         'EST-4.7': [  # Waveguides and Fiber Optics
             r'\bwaveguides?\b', r'\bte mode\b', r'\btm mode\b', r'\bwaveguide cutoff frequency\b',
             r'\boptical fiber\b', r'\bfiber optic\b', r'\bfiber core\b', r'\bcladdings?\b',
             r'\bnumerical aperture\b', r'\btotal internal reflection\b', r'\bsingle[- ]mode fiber\b', r'\bmultimode fiber\b',
-            r'\bfiber attenuation\b', r'\bdecibel loss\b'
+            r'\bfiber attenuation\b', r'\bdecibel loss\b',
+            r'\blaser\b', r'\blight waves?\b', r'\bwavelength of light\b', r'\blens\b', r'\bconverging lens\b',
+            r'\brefraction\b', r'\bdispersion\b', r'\bwave theory of light\b', r'\bluminance efficiency\b', r'\bfocal point\b',
+            # Expansions
+            r'\bcavity resonator\b', r'\bcubical cavity resonator\b'
         ],
 
         # 5.0 Electronics 3: Electronic Systems and Design (also shared with ELECS-6.0)
@@ -981,7 +1449,9 @@ SUBTOPIC_RULES = {
             r'\bbuilding management system\b', r'\bbms\b', r'\bhvac control\b', r'\bpublic address system\b',
             r'\bhvac systems?\b', r'\bchilled water\b',
             r'\bfire (?:and life safety|alarm) system\b', r'\bsecurity system\b', r'\bscada\b',
-            r'\baudio-video system\b', r'\baccess control system\b'
+            r'\baudio-video system\b', r'\baccess control system\b',
+            # Expansions
+            r'\bsmoke detector\b', r'\bobscuration per meter\b'
         ],
 
         # 6.0 Data Communications
@@ -992,7 +1462,14 @@ SUBTOPIC_RULES = {
             r'\blocal\s+area\s+networks?\b', r'\blans?\b', r'\bwide\s+area\s+networks?\b', r'\bwans?\b',
             r'\bmetropolitan\s+area\s+networks?\b', r'\bmans?\b',
             r'\bcsma/cd\b', r'\bcsma/ca\b', r'\bdata\s+collision\b', r'\bcollision\s+detection\b',
-            r'\bjam\s+signal\b', r'\brandom\s+backoff\b', r'\bcarrier\s+sense\s+multiple\s+access\b'
+            r'\bjam\s+signal\b', r'\brandom\s+backoff\b', r'\bcarrier\s+sense\s+multiple\s+access\b',
+            r'\bpackets?\b', r'\bjitter\b', r'\bascii\b', r'\bbinary data code\b',
+            # Expansions
+            r'\breliability of the equipment.*downtime\b', r'\blatency is made of four components\b',
+            r'\btwisting pairs of wires in utp\b', r'\butp cables?\b',
+            r'\bredundant paths between switches\b', r'\bdata center\b',
+            r'\bweb server.*simultaneous clients\b', r'\bupstream data band\b',
+            r'\bbinary data may be organized\b'
         ],
         'EST-6.2': [  # Configurations and Network Topology
             r'\btopology\b', r'\btopologies\b', r'\bpoint-to-point\b', r'\bmultipoint\b', r'\bconfigurations? of a network\b',
@@ -1003,20 +1480,37 @@ SUBTOPIC_RULES = {
         ],
         'EST-6.3': [  # Transmission Modes and Synchronization
             r'\basynchronous transmission\b', r'\bsynchronous transmission\b', r'\bbaud rate\b',
-            r'\bbit rate\b', r'\bdata framing\b'
+            r'\bbit rate\b', r'\bdata framing\b',
+            # Expansions
+            r'\bserial transmission\b', r'\bparallel transmission\b', r'\bserial vs parallel\b'
         ],
         'EST-6.4': [  # Network Components (Terminals, Multiplexers, Concentrators, FEP, Serial Interface)
             r'\bmultiplexers?\b', r'\bconcentrators?\b', r'\bfront-end processor\b', r'\bfep\b',
             r'\bserial interface\b', r'\brs-232\b', r'\bmodems?\b', r'\bcircuit switch\w*', r'\bpacket switch\w*',
-            r'\bmessage switch\w*', r'\bnetwork switch(?:es)?\b', r'\brouters?\b'
+            r'\bmessage switch\w*', r'\bnetwork switch(?:es)?\b', r'\brouters?\b',
+            r'\bnetwork components?\b',
+            # Expansions
+            r'\bline control unit\b', r'\blcu\b'
         ],
         'EST-6.5': [  # Security and Cryptography
             r'\bcryptography\b', r'\bencryption\b', r'\b\bdes encryption\b', r'\baes encryption\b',
-            r'\brsa algorithm\b', r'\bnetwork firewall\b', r'\bssl\b', r'\btls\b'
+            r'\brsa algorithm\b', r'\bnetwork firewall\b', r'\bssl\b', r'\btls\b',
+            # Expansions
+            r'\bunauthorized user\b', r'\bnetwork security\b', r'\bunique password\b',
+            r'\bauthentication\b', r'\bcookies?\b'
         ],
         'EST-6.6': [  # OSI Model and TCP/IP Architecture
             r'\bosi model\b', r'\btcp/ip\b', r'\bip address\b', r'\bipv4\b', r'\bipv6\b',
-            r'\bsubnet(?:ting)?\b', r'\bapplication layer\b', r'\btransport layer\b', r'\bnetwork layer\b'
+            r'\bsubnet(?:ting)?\b', r'\bapplication layer\b', r'\btransport layer\b', r'\bnetwork layer\b',
+            r'\bseven layers?\b', r'\b7 layers?\b', r'\bpresentation layer\b', r'\bsession layer\b',
+            r'\bdata link layer\b', r'\bphysical layer\b', r'\bprotocol data unit\b', r'\bpdu\b',
+            r'\bframes?\b', r'\bnetwork support layer\b', r'\buser support layer\b', r'\bsynchronization points?\b',
+            # Expansions
+            r'\bosi layer\b', r'\bblock of addresses is granted\b', r'\b205\.16\.\b',
+            r'\binteractions between communicating devices\b', r'\budp and tcp\b', r'\btcp and udp\b',
+            r'\bconnection-oriented transport-layer\b', r'\bwell-known.*tcp.*udp\b',
+            r'\bseparates a message.*adding a sender address\b', r'\biso standard covers all aspects of network\b',
+            r'\ballows any two different systems to communicate\b'
         ],
         'EST-6.7': [  # SNA, Character and Bit-Oriented Protocols
             r'\bhdlc\b', r'\bsna\b', r'\bsystems network architecture\b', r'\barq\b',
@@ -1028,7 +1522,9 @@ SUBTOPIC_RULES = {
             r'\bmetropolitan area network\b', r'\bman\b', r'\bglobal area network\b', r'\bgan\b',
             r'\bisdn\b', r'\bb-isdn\b', r'\bintegrated services digital network\b',
             r'\basynchronous transfer mode\b', r'\batm cells?\b',
-            r'\bethernets?\b', r'\bieee 802\b', r'\bwi-fis?\b', r'\bbluetooths?\b', r'\bvlan\b'
+            r'\bethernets?\b', r'\bieee 802\b', r'\bwi-fis?\b', r'\bbluetooths?\b', r'\bvlan\b',
+            # Expansions
+            r'\bbri lines?\b', r'\bpri lines?\b', r'\bisdn bri\b'
         ]
     }
 }
@@ -1053,19 +1549,19 @@ PARENT_RULES = {
         'MATH-8.0': [r'\bcontrol system\b', r'\bfeedback system\b', r'\btransfer function\b'],
     },
     'ELECS': {
-        'ELECS-1.0': [r'\bdc circuit\b', r'\bdirect current circuit\b', r'\bohm\'?s law\b'],
-        'ELECS-2.0': [r'\bac circuit\b', r'\balternating current circuit\b', r'\bphasors?\b'],
-        'ELECS-3.0': [r'\belectromagnetics? field\b', r'\bmagnetic field\b'],
+        'ELECS-1.0': [r'\bdc circuits?\b', r'\bdirect current circuits?\b', r'\bohm\'?s law\b', r'\bresistors?\b', r'\bthevenin\b', r'\bnorton\b'],
+        'ELECS-2.0': [r'\bac circuits?\b', r'\balternating current circuits?\b', r'\bphasors?\b', r'\brlc circuit\b', r'\b3-phase\b', r'\bthree-phase\b'],
+        'ELECS-3.0': [r'\belectromagnetics? field\b', r'\bmagnetic fields?\b', r'\bmagnetic circuit\b', r'\bpermeabilit\w*\b', r'\bpermittivit\w*\b'],
         'ELECS-4.0': [
-            r'\bdiode circuit\b', r'\btransistor circuit\b', r'\btransistor(?:s)?\b',
+            r'\bdiode circuits?\b', r'\btransistor circuits?\b', r'\btransistor(?:s)?\b',
             r'\bbjt\b', r'\bfets?\b', r'\bsemiconductor(?: device)?\b', r'\bcommon emitter\b',
             r'\bemitter follower\b', r'\bce configuration\b', r'\bdiodes?\b'
         ],
-        'ELECS-5.0': [r'\bop-amp circuit\b', r'\bamplifier circuit\b', r'\boscillator circuit\b', r'\bactive filter\b'],
-        'ELECS-6.0': [r'\bthyristors?\b', r'\btransducers?\b', r'\bplc\b', r'\bbuilding management\b'],
-        'ELECS-7.0': [r'\blogic circuit\b', r'\blogic gate\b', r'\bboolean algebra\b', r'\bflip-flops?\b'],
-        'ELECS-8.0': [r'\bmicroprocessors?\b', r'\bmicrocontrollers?\b', r'\bassembly language\b'],
-        'ELECS-9.0': [r'\bfeedback control\b', r'\broot locus\b', r'\bpid controller\b'],
+        'ELECS-5.0': [r'\bop-amp circuits?\b', r'\bamplifier circuits?\b', r'\boscillator circuits?\b', r'\bactive filters?\b', r'\bbode\b'],
+        'ELECS-6.0': [r'\bthyristors?\b', r'\btransducers?\b', r'\bplc\b', r'\bbuilding management\b', r'\bscr\b', r'\btriac\b'],
+        'ELECS-7.0': [r'\blogic circuits?\b', r'\blogic gates?\b', r'\bboolean algebra\b', r'\bflip-flops?\b', r'\bk-maps?\b'],
+        'ELECS-8.0': [r'\bmicroprocessors?\b', r'\bmicrocontrollers?\b', r'\bassembly language\b', r'\b8085\b', r'\b8086\b'],
+        'ELECS-9.0': [r'\bfeedback control\b', r'\broot locus\b', r'\bpid controllers?\b', r'\bcontrol systems?\b', r'\btransfer functions?\b'],
     },
     'GEAS': {
         'GEAS-1.0': [r'\bchemistry for engineers?\b', r'\bchemical reactions?\b', r'\bchemical bonds?\b', r'\bchemical compounds?\b', r'\bmolar mass\b', r'\bperiodic table\b', r'\bchemical equations?\b', r'\bacid(?:ic)? or base\b'],
@@ -1089,12 +1585,12 @@ PARENT_RULES = {
         'GEAS-11.0': [r'\bcad software\b', r'\bautocad\b', r'\bdrafting\b', r'\bcomputer[- ]aided (?:design|drafting)\b', r'\bcad drawing\b'],
     },
     'EST': {
-        'EST-1.0': [r'\bsignal processing\b', r'\bsampling theorem\b', r'\bdigital filter\b', r'\bfourier transform\b'],
-        'EST-2.0': [r'\bcommunication system\b', r'\bmodulation technique\b', r'\bradio receiver\b'],
-        'EST-3.0': [r'\bdigital communication\b', r'\bpulse code modulation\b', r'\berror detection\b'],
-        'EST-4.0': [r'\btransmission line\b', r'\bantenna system\b', r'\bwave propagation\b', r'\bfiber optic\b'],
-        'EST-5.0': [r'\belectronic systems? and design\b', r'\btransducers?\b', r'\bplc\b'],
-        'EST-6.0': [r'\bdata communication\b', r'\bcomputer network\b', r'\bosi model\b', r'\btcp/ip\b'],
+        'EST-1.0': [r'\bsignal processing\b', r'\bsampling theorem\b', r'\bdigital filters?\b', r'\bfourier transform\b', r'\bdsp\b'],
+        'EST-2.0': [r'\bcommunication systems?\b', r'\bmodulation techniques?\b', r'\bradio receivers?\b', r'\bam transmitter\b', r'\bfm transmitter\b', r'\bsatellite comms?\b', r'\bradar systems?\b'],
+        'EST-3.0': [r'\bdigital communications?\b', r'\bpulse code modulation\b', r'\berror detections?\b', r'\bpcm\b', r'\bpsk\b', r'\bfsk\b', r'\bqam\b'],
+        'EST-4.0': [r'\btransmission lines?\b', r'\bantenna systems?\b', r'\bwave propagations?\b', r'\bfiber optics?\b', r'\bwaveguides?\b'],
+        'EST-5.0': [r'\belectronic systems? and design\b', r'\btransducers?\b', r'\bplc\b', r'\bbuilding management\b', r'\bcctv\b', r'\bfire alarm\b'],
+        'EST-6.0': [r'\bdata communications?\b', r'\bcomputer networks?\b', r'\bosi models?\b', r'\btcp/ip\b', r'\bethernet\b', r'\brouters?\b'],
     }
 }
 
@@ -1105,34 +1601,44 @@ HINT_WEIGHT = 2
 
 DECK_TOPIC_HINTS = {
     # EST
-    'fiber optics': ['EST-4.0'],
-    'transmission lines': ['EST-4.0'],
-    'am and fm': ['EST-2.0'],
-    'signals-noise-am-fm': ['EST-1.0', 'EST-2.0'],
-    'antenna': ['EST-4.0'],
-    'digi comms': ['EST-3.0', 'EST-6.0'],
-    'digi-data comms': ['EST-3.0', 'EST-6.0'],
-    'data comms': ['EST-6.0'],
-    'data communications': ['EST-6.0'],
-    'radio wave prop': ['EST-2.0', 'EST-4.0'],
-    'wave prop-microwave': ['EST-2.0', 'EST-4.0'],
-    'noise': ['EST-2.0'],
-    'signals': ['EST-1.0'],
-    'principle of comms': ['EST-2.0'],
-    'transma': ['EST-4.0'],
+    'fiber optics': ['EST-4.7', 'EST-4.0'],
+    'transmission lines': ['EST-4.1', 'EST-4.0'],
+    'transma': ['EST-4.1', 'EST-4.0'],
+    'am and fm': ['EST-2.2', 'EST-2.4', 'EST-2.0'],
+    'signals-noise-am-fm': ['EST-2.1', 'EST-1.0', 'EST-2.0'],
+    'antenna': ['EST-4.6', 'EST-4.0'],
+    'digi comms': ['EST-3.1', 'EST-3.0', 'EST-6.0'],
+    'digi-data comms': ['EST-3.1', 'EST-3.0', 'EST-6.0'],
+    'data comms': ['EST-6.1', 'EST-6.0'],
+    'data communications': ['EST-6.1', 'EST-6.0'],
+    'radio wave prop': ['EST-4.4', 'EST-2.0', 'EST-4.0'],
+    'wave prop-microwave': ['EST-4.4', 'EST-2.0', 'EST-4.0'],
+    'noise': ['EST-2.2', 'EST-2.0'],
+    'signals': ['EST-1.1', 'EST-1.0'],
+    'principle of comms': ['EST-2.1', 'EST-2.0'],
+    'review exam est 4': ['EST-2.6', 'EST-4.4'],
+    'review exam est 2': ['EST-2.4', 'EST-2.5'],
+    'review exam est 5': ['EST-4.1', 'EST-4.2'],
+    'review exam est 10': ['EST-6.6', 'EST-6.1'],
+    'review exam est - antenna': ['EST-4.6', 'EST-4.0'],
     # ELECS
-    'dc circuits': ['ELECS-1.0'],
-    'microps lecture': ['ELECS-8.0'],
-    'bjt lecture': ['ELECS-4.0'],
-    'bjt': ['ELECS-4.0'],
+    'dc circuits': ['ELECS-1.1', 'ELECS-1.0'],
+    'microps lecture': ['ELECS-8.1', 'ELECS-8.0'],
+    'bjt lecture': ['ELECS-4.2', 'ELECS-4.0'],
+    'bjt': ['ELECS-4.2', 'ELECS-4.0'],
+    'review exam elecs 12': ['ELECS-9.3', 'ELECS-9.0'],
+    'review exam elecs 3': ['ELECS-3.1', 'ELECS-3.0'],
+    'review exam elecs 11': ['ELECS-8.1', 'ELECS-8.0'],
     # GEAS
-    'cad': ['GEAS-11.0'],
-    'cprog': ['GEAS-8.0'],
-    'ece laws': ['GEAS-10.0'],
-    'eng management': ['GEAS-4.0'],
-    'engmgmt': ['GEAS-4.0'],
-    'safety & pec codes': ['GEAS-10.0'],
-    'techno': ['GEAS-5.0'],
+    'cad': ['GEAS-11.1', 'GEAS-11.0'],
+    'cprog': ['GEAS-8.3', 'GEAS-8.0'],
+    'ece laws': ['GEAS-10.4', 'GEAS-10.0'],
+    'eng management': ['GEAS-4.1', 'GEAS-4.0'],
+    'engmgmt': ['GEAS-4.1', 'GEAS-4.0'],
+    'safety & pec codes': ['GEAS-10.6', 'GEAS-10.0'],
+    'techno': ['GEAS-5.1', 'GEAS-5.0'],
+    'rc exam geas 26': ['GEAS-8.3', 'GEAS-8.0'],
+    'review exam geas 10': ['GEAS-8.1', 'GEAS-8.0'],
 }
 
 DECK_KEYWORD_PATTERNS = {
@@ -1166,7 +1672,8 @@ DECK_KEYWORD_PATTERNS = {
         (re.compile(r'\b(?:digital comms?|digi comms?|pcm|pam|pwm|fsk|psk|qam|multiplexing|tdm|fdm)\b', re.I), 'EST-3.0'),
         (re.compile(r'\b(?:data comms?|data communications?|computer networks?|osi model|tcp/ip|ethernet|routing|lan|wan)\b', re.I), 'EST-6.0'),
         (re.compile(r'\b(?:signals?|dsp|sampling|nyquist|fourier|spectral|digital signal processing)\b', re.I), 'EST-1.0'),
-        (re.compile(r'\b(?:audio|acoustics?|video|television|tv|satellite|radar|telephony|cellular|gsm|5g|lte)\b', re.I), 'EST-5.0'),
+        (re.compile(r'\b(?:satellite|radar|cellular|gsm|5g|lte|microwave comms?|wireless comms?)\b', re.I), 'EST-2.0'),
+        (re.compile(r'\b(?:audio|acoustics?|video|television|tv|bms|building management|cctv|fire alarm)\b', re.I), 'EST-5.0'),
     ],
     'MATH': [
         (re.compile(r'\b(?:differential calculus|derivatives?|maxima|minima|limits?)\b', re.I), 'MATH-1.0'),
@@ -1252,6 +1759,38 @@ ELECS_TO_GEAS_MAP = {
     'ELECS-8.0': 'GEAS-8.3',
 }
 
+SHARED_TOPIC_PARTNERS = {
+    'MATH': [
+        ('ELECS', {
+            'ELECS-3.1': 'MATH-6.1', 'ELECS-3.2': 'MATH-6.1', 'ELECS-3.3': 'MATH-6.2', 'ELECS-3.4': 'MATH-6.2',
+            'ELECS-9.1': 'MATH-8.3', 'ELECS-9.2': 'MATH-8.2', 'ELECS-9.3': 'MATH-8.1', 'ELECS-9.4': 'MATH-8.1', 'ELECS-9.5': 'MATH-8.1',
+        }),
+        ('EST', {
+            'EST-1.1': 'MATH-7.1', 'EST-1.2': 'MATH-7.1', 'EST-1.3': 'MATH-7.1',
+            'EST-1.4': 'MATH-7.2', 'EST-1.5': 'MATH-7.1', 'EST-1.6': 'MATH-7.2',
+        }),
+    ],
+    'ELECS': [
+        ('MATH', {
+            'MATH-6.1': 'ELECS-3.1', 'MATH-6.2': 'ELECS-3.4', 'MATH-6.3': 'ELECS-3.4',
+            'MATH-8.1': 'ELECS-9.3', 'MATH-8.2': 'ELECS-9.2', 'MATH-8.3': 'ELECS-9.1',
+        }),
+        ('EST', {
+            'EST-5.1': 'ELECS-6.1', 'EST-5.2': 'ELECS-6.2', 'EST-5.3': 'ELECS-6.3',
+            'EST-5.4': 'ELECS-6.4', 'EST-5.5': 'ELECS-6.6',
+        }),
+    ],
+    'EST': [
+        ('MATH', {
+            'MATH-7.1': 'EST-1.5', 'MATH-7.2': 'EST-1.4', 'MATH-7.3': 'EST-1.4',
+        }),
+        ('ELECS', {
+            'ELECS-6.1': 'EST-5.1', 'ELECS-6.2': 'EST-5.2', 'ELECS-6.3': 'EST-5.3',
+            'ELECS-6.4': 'EST-5.4', 'ELECS-6.5': 'EST-5.3', 'ELECS-6.6': 'EST-5.5',
+        }),
+    ],
+}
+
 POOL_DECK_INDICATORS = [
     re.compile(r'\bpre[- ]?boards?\b', re.I),
     re.compile(r'\bexams?\b', re.I),
@@ -1304,6 +1843,7 @@ def classify_text(text, subject_code, deck_name=None, deck_desc=None, default_to
     Score text against all decimal subtopics for the given subject.
     Incorporates:
     - Expanded subtopic regex rules
+    - Bidirectional shared topic keywords mapping
     - Deck Default TOS Category bias and fallback
     - Deck Name & Description topic hints (with generic pool deck immunity)
     - Cross-subject physics/circuits mapping for GEAS
@@ -1323,7 +1863,13 @@ def classify_text(text, subject_code, deck_name=None, deck_desc=None, default_to
         else:
             primary_parent = default_tos
     else:
-        primary_parent = detect_deck_topic(deck_name, deck_desc, subject_code)
+        detected = detect_deck_topic(deck_name, deck_desc, subject_code)
+        if detected:
+            if '.' in detected and not detected.endswith('.0'):
+                target_subtopic = detected
+                primary_parent = SUBTOPIC_TO_PARENT.get(detected, f"{detected.split('.')[0]}.0")
+            else:
+                primary_parent = detected
 
     # 2. Score subtopics with raw keyword matches
     raw_subtopic_scores = Counter()
@@ -1343,6 +1889,18 @@ def classify_text(text, subject_code, deck_name=None, deck_desc=None, default_to
                     else:
                         weight = 1
                 raw_subtopic_scores[sub_id] += cnt * weight
+
+    # Cross-subject shared topic partner evaluation
+    for partner_subj, mapping in SHARED_TOPIC_PARTNERS.get(subject_code, []):
+        if partner_subj in COMPILED_SUBTOPIC_RULES:
+            for p_sub_id, native_sub_id in mapping.items():
+                p_patterns = COMPILED_SUBTOPIC_RULES[partner_subj].get(p_sub_id, [])
+                for pat in p_patterns:
+                    cnt = len(pat.findall(text))
+                    if cnt > 0:
+                        words_in_pat = len(re.findall(r'[a-zA-Z0-9]+', pat.pattern))
+                        weight = 3 if words_in_pat >= 2 else 1
+                        raw_subtopic_scores[native_sub_id] += cnt * weight
 
     # Apply deck bias if available
     subtopic_scores = Counter(raw_subtopic_scores)
@@ -1376,12 +1934,7 @@ def classify_text(text, subject_code, deck_name=None, deck_desc=None, default_to
             top_parent = SUBTOPIC_TO_PARENT.get(top_id, top_id)
             if top_parent == primary_parent:
                 confident = (top_score >= MIN_CONFIDENCE_SCORE)
-                if confident:
-                    return top_id, True
-                elif default_tos:
-                    return default_tos, False
-                else:
-                    return top_id, True
+                return top_id, True if confident else (default_tos if default_tos else top_id)
             else:
                 # Top match is from a different topic family
                 raw_top = raw_subtopic_scores.get(top_id, 0)
@@ -1401,7 +1954,9 @@ def classify_text(text, subject_code, deck_name=None, deck_desc=None, default_to
                     return best_primary_sub, True
                 if raw_top >= 1:
                     return top_id, True
-                if default_tos:
+                if target_subtopic:
+                    return target_subtopic, True
+                if default_tos and not default_tos.endswith('.0'):
                     return default_tos, False
                 return None, False
 
@@ -1415,24 +1970,12 @@ def classify_text(text, subject_code, deck_name=None, deck_desc=None, default_to
                 return best_sub_id, True
             else:
                 # Multiple close subtopics within the same parent family:
-                # Assign parent topic (e.g. EST-3.0) to avoid arbitrary ties
-                return top_parent_id, True
+                # Never assign parent x.0 topic. Return the top subtopic if confident
+                if best_sub_score >= MIN_CONFIDENCE_SCORE:
+                    return best_sub_id, True
+                return None, False
 
-    # 3. Parent-level rules for this subject
-    parent_scores = Counter()
-    if subject_code in COMPILED_PARENT_RULES:
-        for p_id, patterns in COMPILED_PARENT_RULES[subject_code].items():
-            for pat in patterns:
-                cnt = len(pat.findall(text))
-                if cnt > 0:
-                    words_in_pat = len(re.findall(r'[a-zA-Z0-9]+', pat.pattern))
-                    weight = 3 if words_in_pat >= 2 else 1
-                    parent_scores[p_id] += cnt * weight
-
-    if parent_scores:
-        top_pid, top_pscore = parent_scores.most_common(1)[0]
-        if top_pscore >= 1:
-            return top_pid, True
+    # 3. Parent-level rules for this subject (only used for cross-bridge mapping, never assigned as direct tag)
 
     # 4. Cross-subject bridge: physics/circuits overlap between ELECS and GEAS
     if subject_code == 'GEAS' and 'ELECS' in COMPILED_SUBTOPIC_RULES:
@@ -1448,28 +1991,24 @@ def classify_text(text, subject_code, deck_name=None, deck_desc=None, default_to
         if elecs_scores:
             top_eid, _ = elecs_scores.most_common(1)[0]
             mapped_geas = ELECS_TO_GEAS_MAP.get(top_eid) or ELECS_TO_GEAS_MAP.get(SUBTOPIC_TO_PARENT.get(top_eid, ''))
-            if mapped_geas:
+            if mapped_geas and not mapped_geas.endswith('.0'):
                 return mapped_geas, True
 
-        # Check ELECS parent rules
-        if 'ELECS' in COMPILED_PARENT_RULES:
-            elecs_p_scores = Counter()
-            for ep_id, patterns in COMPILED_PARENT_RULES['ELECS'].items():
-                for pat in patterns:
-                    cnt = len(pat.findall(text))
-                    if cnt > 0:
-                        words_in_pat = len(re.findall(r'[a-zA-Z0-9]+', pat.pattern))
-                        weight = 3 if words_in_pat >= 2 else 1
-                        elecs_p_scores[ep_id] += cnt * weight
-            if elecs_p_scores:
-                top_epid, _ = elecs_p_scores.most_common(1)[0]
-                mapped_geas = ELECS_TO_GEAS_MAP.get(top_epid)
-                if mapped_geas:
-                    return mapped_geas, True
-
-    # 5. Fallback hierarchy: default_tos -> Untagged (None)
+    # 5. Fallback hierarchy: target_subtopic -> default_tos -> first subtopic of default parent -> Untagged (None)
+    if target_subtopic:
+        return target_subtopic, True
     if default_tos:
-        return default_tos, False
+        if not default_tos.endswith('.0'):
+            return default_tos, False
+        else:
+            # default_tos is a parent (.0) topic — assign first available subtopic under it
+            parent_id = default_tos
+            subs_under_parent = [
+                s_id for s_id in COMPILED_SUBTOPIC_RULES.get(subject_code, {})
+                if SUBTOPIC_TO_PARENT.get(s_id) == parent_id
+            ]
+            if subs_under_parent:
+                return subs_under_parent[0], False
 
     return None, False
 
@@ -1497,7 +2036,10 @@ def extract_card_text(data_str, card_type):
                 parts.append(str(data['name']))
             if data.get('description'):
                 parts.append(str(data['description']))
-            return ' '.join(parts)
+            raw_text = ' '.join(parts)
+            # Expand KaTeX / LaTeX subscripts: e.g. I_{DSS} -> I_DSS IDSS, V_{GS(off)} -> V_GS(off) VGS(off)
+            expanded = re.sub(r'([A-Za-z]+)_\{([A-Za-z0-9\(\)]+)\}', r'\1_\2 \1\2', raw_text)
+            return (raw_text + ' ' + expanded) if expanded != raw_text else raw_text
         return str(data_str)
     except Exception:
         return str(data_str)
@@ -1525,7 +2067,7 @@ def run_classification(db_path=DEFAULT_DB_PATH, deck_id=None, apply_changes=Fals
     select_default = "t.default_tos_topic_id" if has_default_tos_col else "NULL"
 
     query = f"""
-        SELECT c.id, t.subject, t.name, c.type, c.data, c.tos_topic_id, t.id, t.description, {select_default}
+        SELECT c.id, t.subject, t.name, c.type, c.data, c.tos_topic_id, t.id, t.description, {select_default}, c.tags
         FROM cards c
         JOIN topics t ON c.topic_id = t.id
     """
@@ -1545,49 +2087,84 @@ def run_classification(db_path=DEFAULT_DB_PATH, deck_id=None, apply_changes=Fals
     total = len(rows)
 
     updates = []
+    tag_updates = []
     review_rows = []
     distribution = Counter()
     subject_distribution = Counter()
     subtopic_count = 0
     parent_count = 0
     review_count = 0
+    needs_image_review_count = 0
 
     for r in rows:
-        card_id, subject_raw, deck_name, card_type_val, data_raw, existing_tos, d_id, deck_desc, default_tos = r
+        card_id, subject_raw, deck_name, card_type_val, data_raw, existing_tos, d_id, deck_desc, default_tos, tags_raw = r
         subject_code = normalize_subject(subject_raw)
 
         card_text = extract_card_text(data_raw, card_type_val)
         assigned_topic, confident = classify_text(card_text, subject_code, deck_name=deck_name, deck_desc=deck_desc, default_tos=default_tos)
 
-        if not assigned_topic:
-            continue
+        # Check if card has an image or figure/circuit reference
+        has_image = False
+        try:
+            d = json.loads(data_raw) if data_raw else {}
+            if isinstance(d, dict):
+                has_image = bool(d.get('imagePath') or d.get('imageUrl') or d.get('image') or d.get('imagePathFront') or d.get('imagePathBack'))
+                if not has_image:
+                    q = (d.get('question') or d.get('front') or '').lower()
+                    has_image = bool('circuit shown' in q or 'shown in figure' in q or 'in figure shown' in q or 'figure shown' in q or '.webp' in data_raw or '.png' in data_raw)
+        except Exception:
+            pass
 
-        if confident:
+        # Parse existing tags
+        curr_tags = []
+        if tags_raw:
+            try:
+                parsed = json.loads(tags_raw) if isinstance(tags_raw, str) else list(tags_raw)
+                if isinstance(parsed, list):
+                    curr_tags = [str(x) for x in parsed]
+                else:
+                    curr_tags = [str(tags_raw)]
+            except Exception:
+                curr_tags = [str(tags_raw)]
+
+        orig_tags = list(curr_tags)
+
+        if assigned_topic and not assigned_topic.endswith('.0') and confident:
             updates.append((assigned_topic, card_id))
             distribution[assigned_topic] += 1
             subject_distribution[subject_code] += 1
-            if '.' in assigned_topic and not assigned_topic.endswith('.0'):
-                subtopic_count += 1
-            else:
-                parent_count += 1
+            subtopic_count += 1
+            # Clean up 'needs-image-review' tag if card is now classified
+            if 'needs-image-review' in curr_tags:
+                curr_tags.remove('needs-image-review')
         else:
-            review_count += 1
-            if not existing_tos:
-                # Assign parent fallback to previously untagged cards
-                updates.append((assigned_topic, card_id))
-                distribution[assigned_topic] += 1
-                subject_distribution[subject_code] += 1
-                parent_count += 1
-            if review_csv:
-                review_rows.append({
-                    'card_id': card_id, 'deck_id': d_id, 'deck_name': deck_name,
-                    'subject': subject_raw, 'existing_tos_topic_id': existing_tos,
-                    'proposed_topic_id': assigned_topic,
-                    'card_text_preview': card_text[:200],
-                })
+            if assigned_topic and not assigned_topic.endswith('.0'):
+                review_count += 1
+                if review_csv:
+                    review_rows.append({
+                        'card_id': card_id, 'deck_id': d_id, 'deck_name': deck_name,
+                        'subject': subject_raw, 'existing_tos_topic_id': existing_tos,
+                        'proposed_topic_id': assigned_topic,
+                        'card_text_preview': card_text[:200],
+                    })
 
-    if apply_changes and updates:
-        cursor.executemany("UPDATE cards SET tos_topic_id = ? WHERE id = ?", updates)
+            # For unclassified / untagged cards with images, tag with 'needs-image-review'
+            if has_image:
+                needs_image_review_count += 1
+                if 'needs-image-review' not in curr_tags:
+                    curr_tags.append('needs-image-review')
+            else:
+                if 'needs-image-review' in curr_tags:
+                    curr_tags.remove('needs-image-review')
+
+        if curr_tags != orig_tags:
+            tag_updates.append((json.dumps(curr_tags), card_id))
+
+    if apply_changes:
+        if updates:
+            cursor.executemany("UPDATE cards SET tos_topic_id = ? WHERE id = ?", updates)
+        if tag_updates:
+            cursor.executemany("UPDATE cards SET tags = ? WHERE id = ?", tag_updates)
         conn.commit()
 
     if review_csv and review_rows:
@@ -1605,6 +2182,8 @@ def run_classification(db_path=DEFAULT_DB_PATH, deck_id=None, apply_changes=Fals
         "total_cards": total,
         "auto_classified_cards": len(updates),
         "flagged_for_review": review_count,
+        "cards_tagged_needs_image_review": needs_image_review_count,
+        "tag_updates_count": len(tag_updates),
         "subtopic_count": subtopic_count,
         "parent_count": parent_count,
         "subject_distribution": dict(subject_distribution),
@@ -1622,6 +2201,8 @@ def run_classification(db_path=DEFAULT_DB_PATH, deck_id=None, apply_changes=Fals
         print(f"  - into decimal subtopics: {subtopic_count} ({subtopic_count/max(total,1)*100:.1f}%)")
         print(f"  - into parent topics:     {parent_count} ({parent_count/max(total,1)*100:.1f}%)")
         print(f"Flagged for manual review (low confidence / ambiguous): {review_count} ({review_count/max(total,1)*100:.1f}%)")
+        print(f"Unclassified cards with images flagged with 'needs-image-review': {needs_image_review_count}")
+        print(f"Card tag updates queued/applied: {len(tag_updates)}")
         if review_csv:
             print(f"  -> written to {review_csv}" if review_rows else "  -> (nothing to write)")
         print("\n--- By Subject (confident only) ---")
@@ -1668,7 +2249,7 @@ def run_validation(db_path=DEFAULT_DB_PATH, output_json=False):
             continue
         parent = SUBTOPIC_TO_PARENT.get(assigned, assigned)
         per_deck[deck_name] += 1
-        if parent in hinted_topics:
+        if assigned in hinted_topics or parent in hinted_topics:
             per_deck_match[deck_name] += 1
 
     result = {}
@@ -1741,8 +2322,8 @@ def main():
     parser.add_argument('--json', action='store_true', help="Output results in JSON format")
     parser.add_argument('--db', default=DEFAULT_DB_PATH, help=f"Path to SQLite database (default: {DEFAULT_DB_PATH})")
     parser.add_argument('--deck-id', default=None, help="Target a specific deck/topic ID")
-    parser.add_argument('--card-type', default='mcq', choices=['mcq', 'flashcard', 'formula', 'all'],
-                         help="Which card type(s) to classify (default: mcq)")
+    parser.add_argument('--card-type', default='all', choices=['mcq', 'flashcard', 'formula', 'all'],
+                         help="Which card type(s) to classify (default: all)")
     parser.add_argument('--review-csv', default=None, help="Write low-confidence/ambiguous cards to this CSV instead of silently applying them")
     parser.add_argument('--validate', action='store_true', help="Run deck-name proxy accuracy check instead of classifying")
     parser.add_argument('--stdin', action='store_true', help="Read cards JSON array from stdin and output classifications JSON")

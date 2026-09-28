@@ -193,6 +193,13 @@ const MIGRATIONS: Array<{ version: number; sql: string | string[] }> = [
        )`,
     ],
   },
+  {
+    // v17: Clean up direct parent tags (x.0) on cards so cards only have granular decimal subtopic tags or NULL
+    version: 17,
+    sql: [
+      `UPDATE cards SET tos_topic_id = NULL WHERE tos_topic_id LIKE '%.0'`,
+    ],
+  },
 ]
 
 /**
