@@ -271,6 +271,7 @@ SUBTOPIC_RULES = {
         ],
         'MATH-6.3': [  # Integral Theorems (Green's, Divergence, Stokes')
             r'\bgreen\'?s theorem\b', r'\bdivergence theorem\b', r'\bstokes\'? theorem\b',
+            r'\bgreen\'?s lemma\b', r'\bstrokes\'? theorem\b',
             r'\bline integral\b', r'\bsurface integral\b', r'\bconservative (?:vector )?field\b'
         ],
 
@@ -603,7 +604,8 @@ SUBTOPIC_RULES = {
             r'\bburglar alarm\b', r'\baccess control system\b',
             # Expansions
             r'\bdata centers?\b', r'\bserver rooms?\b', r'\bbiometric logging\b', r'\bdual authentication\b',
-            r'\bserver room entry\b', r'\baccess control\b', r'\bsmart contract.*blockchain\b'
+            r'\bserver room entry\b', r'\baccess control\b', r'\bsmart contract.*blockchain\b',
+            r'\bmagnetic locks?\b', r'\bmaglocks?\b', r'\bhigh-security doors?\b', r'\belectric strikes?\b'
         ],
 
         # 7.0 Logic Circuits and Switching Theory
@@ -1183,12 +1185,15 @@ SUBTOPIC_RULES = {
     'EST': {
         # 1.0 Signals, Spectra, Signal Processing
         'EST-1.1': [  # Classification and Characteristics of Signals
-            r'\bperiodic signal\b', r'\baperiodic signal\b', r'\banalog signal\b', r'\bdigital signal\b',
-            r'\benergy signal\b', r'\bpower signal\b', r'\bdeterministic signal\b', r'\brandom signal\b',
-            r'\bcontinuous-time signal\b', r'\bdiscrete-time signal\b',
+            r'\bperiodic signals?\b', r'\baperiodic signals?\b', r'\banalog signals?\b', r'\bdigital signals?\b',
+            r'\benergy signals?\b', r'\bpower signals?\b', r'\bdeterministic signals?\b', r'\brandom signals?\b',
+            r'\bcontinuous-time signals?\b', r'\bdiscrete-time signals?\b',
+            r'\bstationary random signals?\b', r'\bperiodic deterministic signals?\b',
+            r'\bergodic signals?\b', r'\bcharacteristics of signals\b',
+            r'\bwhich signal is (?:even|odd)\b', r'\bsignal is (?:even|odd)\b',
             r'\bconjugate\s+symmetr\w*\b', r'\beven\s+function\s+of\s+time\b', r'\bodd\s+function\s+of\s+time\b',
-            r'\b(?:even|odd)\s+signal\b', r'\beven\s+and\s+odd\s+components?\b', r'\btime\s+reversal\b',
-            r'\bcausal\s+signal\b', r'\bnon-causal\s+signal\b',
+            r'\b(?:even|odd)\s+signals?\b', r'\beven\s+and\s+odd\s+components?\b', r'\btime\s+reversal\b',
+            r'\bcausal\s+signals?\b', r'\bnon-causal\s+signals?\b',
             # Expansions
             r'\bcausal\s+system\b', r'\bnon-causal\s+system\b', r'\banti-causal\s+system\b',
             r'\banti-casual\b', r'\bcasual\s+system\b', r'\bnon-casual\b',
@@ -1197,21 +1202,39 @@ SUBTOPIC_RULES = {
             r'\bdepends on the input.*at the same value\b',
             r'\bdiscrete exponential signal\b', r'\bdeterministic discrete aperiodic\b',
             r'\bup[- ]sampling\b', r'\bdown[- ]sampling\b', r'\bdecimation\b', r'\binterpolation\b',
-            r'\bx\(n\)\s*=\s*x\(n/2\)\b', r'\blinear non-linear unstable time-invar\b',
-            r'\by\(n\)\s*=\s*x\(n\)\b', r'\bsignals is even\b'
+            r'x\(n\)\s*=\s*x\(n/2\)', r'\blinear non-linear unstable time-invar\b',
+            r'y\(n\)\s*=\s*x\(n\)', r'\bsignals is even\b',
+            r'y\(n\)\s*=\s*x\(n\)\s*\*\s*cos\(n\)', r'\btime[- ]variant\b',
+            r'\blti system (?:receives|if the input)\b', r'x1\(t\)\s*\+\s*x2\(t\)',
+            r'\bcondition of periodicity\b', r'\benergy of the signal f\(2t\)\b',
+            r'\bpower in the signal s\(t\)\b'
         ],
         'EST-1.2': [  # Sampling Theorem and Aliasing
             r'\bnyquist (?:rate|theorem|criterion)\b', r'\bsampling theorem\b', r'\baliasing\b',
             r'\banti-aliasing\b', r'\bsampling frequency\b', r'\bnyquist frequency\b',
             # Expansions
-            r'\bfoldover distortion\b', r'\baliased frequency\b', r'\bsampled at\b'
+            r'\bfoldover distortion\b', r'\baliased frequency\b', r'\bsampled at\b',
+            r'\breconstruct a sampled signal\b', r'\bideal reconstruction filter\b',
+            r'\bsampling is the process of converting a signal\b',
+            r'\bnatural vs\.? flat-top sampling\b', r'\bflat-top sampling\b'
         ],
         'EST-1.3': [  # Difference Equations for FIR and IIR Filters
-            r'\bfir filter\b', r'\biir filter\b', r'\bdifference equation\b', r'\bdigital filter design\b'
+            r'\bfir filters?\b', r'\biir filters?\b', r'\bdifference equation\b', r'\bdigital filter design\b',
+            r'\braised cosine filter\b', r'\broll-off factor\b', r'\bnyquist pulse shaping\b',
+            r'\bpulse-shaping filter\b', r'\binter-symbol interference\b', r'\bisi\b',
+            r'\bfir filters? (?:are|is) (?:generally )?preferred\b',
+            r'\blinear phase response\b', r'\bwhich configuration yields linear phase\b',
+            r'\bcharacteristics of matched filter\b', r'\bmatched filter\b',
+            r'\bband reject filter\b', r'\bnotch filter\b',
+            r'\brecursive systems?\b', r'\brecursive systems? (?:are|is) basically characterized\b'
         ],
         'EST-1.4': [  # Convolution and Correlation
             r'\bconvolution (?:sum|integral)\b', r'\bcircular convolution\b', r'\bcross-correlation\b',
-            r'\bauto-correlation\b', r'\bconvolve\b', r'\bconvolutions?\b', r'\bauto[- ]?correlations?\b'
+            r'\bauto-correlation\b', r'\bconvolve\b', r'\bconvolutions?\b', r'\bauto[- ]?correlations?\b',
+            r'\btwo discrete signals.*convolved\b', r'\blength of the result.*convolved\b',
+            r'\boutput can be greater than input amplitude because\b',
+            r'\bconvolving\b', r'\bdiscrete convolution\b',
+            r'\bcorrelogram\b'
         ],
         'EST-1.5': [  # Z-Transforms and Pole-Zero-Gain Filters
             r'\bz-transforms?\b', r'\bpole-zero plot\b', r'\bpole-zero-gains?\b', r'\broc of\b', r'\bregion of convergence\b',
@@ -1219,10 +1242,12 @@ SUBTOPIC_RULES = {
             r'\btransfer\s+function\s+(?:has\s+)?poles?\b', r'\b(?:stability|stable|unstable)\s+of\s+a\s+digital\s+system\b',
             r'\bdigital\s+system\s+(?:whose\s+)?transfer\s+function\b', r'\b(?:inside|outside|on)\s+the\s+unit\s+circle\b',
             r'\b(?:magnitude|radius)\s+of\s+(?:all\s+)?poles?\s+is\s+(?:strictly\s+)?less\s+than\s+unity\b',
-            r'\bless\s+than\s+unity\b', r'\bz-plane\b', r'\bh\(z\)\b',
+            r'\bless\s+than\s+unity\b', r'\bz-plane\b', r'\bh\(z\)',
             # Expansions
             r'\bdt system stability\b', r'\bunstable based on dt system\b',
-            r'\bh\(z\)\s*=\s*\b', r'\bzeros? at z\b', r'\bpoles? at z\b'
+            r'\bh\(z\)\s*=\s*\b', r'\bzeros? at z\b', r'\bpoles? at z\b',
+            r'\ball-pass filter\b', r'\bmagnitude response of an all-pass\b',
+            r'\bpole is very close to a zero\b', r'\bpole on the jw-axis\b'
         ],
         'EST-1.6': [  # Fourier Transforms and Filtering
             r'\bdft\b', r'\bfft\b', r'\bfast fourier transform\b', r'\bdiscrete fourier transform\b',
@@ -1230,8 +1255,9 @@ SUBTOPIC_RULES = {
             r'\bband-pass filter\b', r'\bband-stop filter\b',
             # Expansions
             r'\bfourier transform\b', r'\bparseval\'?s theorem\b',
-            r'\bx\(Ω\)\b', r'\bx\(ω\)\b', r'\bδ\(t\)\b', r'\bdirac delta\b',
-            r'\bx\(t\)\s*=\s*[δd]\(t\)\b', r'\bevaluate the x\([Ωω]\)\b'
+            r'x\([Ωω]\)', r'[δd]\(t\)', r'\bdirac delta\b',
+            r'x\(t\)\s*=\s*[δd]\(t\)', r'evaluate the x\([Ωω]\)',
+            r'\bfourier analysis shows that the sawtooth\b'
         ],
 
         # 2.0 Principles of Communications
@@ -1244,7 +1270,31 @@ SUBTOPIC_RULES = {
             r'\bimpressing intelligence\b', r'\bcarrier signal\b', r'\bmodulation\b',
             # Expansions
             r'\bstages of amplification\b', r'\bdecibel gain\b', r'\bwavelength for a frequency of\b',
-            r'\belectromagnetic wave consists of\b', r'\bvoice frequency\b', r'\brf spectrum\b'
+            r'\belectromagnetic wave consists of\b', r'\bvoice frequency\b', r'\brf spectrum\b',
+            r'\bdigital signals are preferred over analog\b', r'\bdigital vs analog signals?\b',
+            r'\badvantages? of digital (?:signals?|communication)\b',
+            r'\bconvert a power level of \d+.*into dbm\b',
+            r'\breference impedance used for calculating dbm\b', r'\b600-ohm reference\b',
+            r'\bmorse code\b', r'\bhf station\b', r'\btransceivers?\b',
+            r'\bdummy load\b', r'\bvoice operation\b', r'\bdynamic microphone\b',
+            r'\bswitching from receive to transmit\b', r'\bspeed of a radio wave\b',
+            r'\bkey-clicks?\b', r'\bharmonic radiation\b',
+            r'\baudio-frequency interference\b', r'\baudio rectification\b',
+            r'\btelevision interference\b',
+            r'\belectrical current flowing through the human body\b',
+            r'\baffected by a very small amount of electrical current\b',
+            r'\bminimum voltage which is usually dangerous to humans\b',
+            r'\bburned by high voltage\b', r'\bremove an unconscious person from contact\b',
+            r'\bmains operated power supply\b', r'\belectrical shock\b',
+            r'\bground rod driven into the earth\b', r'\bground rod\b',
+            r'\bgreen wire in a three wire\b', r'\bthree-wire power cord\b',
+            r'\bstation grounding\b', r'\bstray rf energy\b',
+            r'\brf energy affect body tissue\b', r'\bheating effects of rf energy\b',
+            r'\bunauthorized persons from using (?:your|a mobile) amateur station\b',
+            r'\bkey-operated on/off switch\b', r'\bamateur station\b',
+            r'\brf oscillator should be electrically and mechanically stable\b',
+            r'\bpower source deliver maximum output to the load\b',
+            r'\bwavelength corresponding to a frequency of\b'
         ],
         'EST-2.2': [  # Noise and Amplitude Modulation
             r'\bamplitude modulation\b', r'\bam signal\b', r'\bmodulation index\b', r'\bthermal noise\b',
@@ -1257,8 +1307,16 @@ SUBTOPIC_RULES = {
             r'\bflicker noise\b', r'\bpink noise\b', r'\bnoise factor\b', r'\bnoise generator\b',
             r'\batmospheric noise\b', r'\bcosmic noise\b', r'\bsolar noise\b',
             r'\bnoise spectral density\b', r'\btotal noise power\b',
-            r'\bresistor.*connected in series at.*k\b', r'\bnoise becomes of great importance at high frequencies\b'
+            r'\bresistor.*connected in series at.*k\b', r'\bnoise becomes of great importance at high frequencies\b',
+            r'\bnoise bandwidth\b', r'\bdynamic resistance\b', r'\bthermal noise voltage\b',
+            r'\binput noise power\b', r'\bequivalent noise resistance\b',
+            r'\bwhite noise\b', r'\bthermal \(johnson-nyquist\) noise\b',
+            r'\bimpulse noise is best described\b', r'\bimpulse noise\b',
+            r'\bportion of the power is wasted in transmitting the carrier\b',
+            r'\bcarrier power in am\b', r'\bnoise factor ≤ \d+\b',
+            r'\bnoise current for a diode\b'
         ],
+
         'EST-2.3': [  # Single-Sideband Techniques
             r'\bssbs?\b', r'\bssb-scs?\b', r'\bbalanced modulator\b', r'\bvestigial sideband\b', r'\bvsbs?\b',
             r'\bsingle[- ]sideband\b', r'\bsuppressed carrier\b',
@@ -1276,7 +1334,14 @@ SUBTOPIC_RULES = {
             r'\bphase discriminator\b', r'\bslope detector\b', r'\bratio detector\b',
             r'\bfm stereo\b', r'\bcapture effect in fm\b', r'\bfrequency-deviation constant\b',
             r'\bderive fm from pm\b', r'\bfm from pm\b', r'\bvaractor-tuned oscillator\b',
-            r'\bfrequency synthesizer\b', r'\bfm stations?\b', r'\beducational fm\b'
+            r'\bfrequency synthesizer\b', r'\bfm stations?\b', r'\beducational fm\b',
+            r'\bfm hand-held\b', r'\bshout into (?:its )?microphone\b',
+            r'\bfm voice best for local\b', r'\bbandwidth of a frequency-modulated amateur\b',
+            r'\bfm receivers? perform in an unusual manner\b',
+            r'\bcapture effect\b', r'\bover[- ]deviation\b',
+            r'\bfrequency modulated \(fm\) phone\b', r'\bfm phone\b',
+            r'\bamount of frequency shift from the carrier\b',
+            r'\bmaximum frequency deviation\b', r'\bconsider an fm wave\b'
         ],
         'EST-2.5': [  # Radio Receivers
             r'\bsuperheterodynes?\b', r'\bintermediate frequency\b', r'\bif stage\b', r'\bimage frequency\b',
@@ -1284,7 +1349,12 @@ SUBTOPIC_RULES = {
             r'\bmixer circuits?\b', r'\blocal oscillators?\b',
             r'\bmixers?\b', r'\bradio receivers?\b',
             # Expansions
-            r'\bdouble-tuned if amplifier\b', r'\bif amplifier\b', r'\bimage rejection\b'
+            r'\bdouble-tuned if amplifier\b', r'\bif amplifier\b', r'\bimage rejection\b',
+            r'\breceiver\'?s? specifications? which indicates its sensitivity\b',
+            r'\breceivers? of different sensitivity\b',
+            r'\bcommunications? receiver has.*filters?\b',
+            r'\breceiver sensitivity\b', r'\breceiver selectivity\b',
+            r'\bsquelch function\b', r'\bsquelch\b'
         ],
         'EST-2.6': [  # Radiation and Propagation of Waves
             r'\bground wave\b', r'\bsky wave\b', r'\bspace wave\b', r'\bionospheric (?:wave|propagation)\b',
@@ -1298,7 +1368,11 @@ SUBTOPIC_RULES = {
             r'\bpropagation cycles\b', r'\bsunspot cycle\b', r'\bscatter mode\b',
             r'\bforward scatter\b', r'\bback scatter\b', r'\bspace waves are\b',
             r'\bground waves are most effective\b', r'\brange of sky-wave propagation\b',
-            r'\bshort-distance communications during daylight\b'
+            r'\bshort-distance communications during daylight\b',
+            r'\bvhf signals (?:are )?propagated\b',
+            r'\bradiation from the sun influence propagation\b',
+            r'\b80 metr(?:e|er) band\b',
+            r'\bportion of the radiation kept close to the earth\b'
         ],
         'EST-2.7': [  # Pulse Modulation and Digital Modulation
             r'\bpulse modulation\b', r'\bdigital modulation\b', r'\banalog-to-digital modulation\b'
@@ -1313,18 +1387,26 @@ SUBTOPIC_RULES = {
             r'\bsatellites?\b', r'\bearth orbit\b', r'\bgeostationary\b', r'\bgeo satellites?\b',
             r'\bleo satellites?\b', r'\bmeo satellites?\b', r'\bapogee\b', r'\bperigee\b',
             r'\bstarlink\b', r'\bhandoff\b', r'\bhandover\b',
-            r'\bk-band\b', r'\bku-band\b', r'\bka-band\b', r'\bc-band\b', r'\bx-band\b', r'\bs-band\b'
+            r'\bk-band\b', r'\bku-band\b', r'\bka-band\b', r'\bc-band\b', r'\bx-band\b', r'\bs-band\b',
+            r'\bbroadband transmission\b', r'\bwhen is broadband transmission most suitable\b',
+            r'\bbroadband system can transmit more data\b',
+            r'\bbaseband vs broadband\b'
         ],
 
         # 3.0 Digital Communications
         'EST-3.1': [  # Introduction to Digital Communications
             r'\bdigital communication system\b', r'\badvantages of digital (?:communication|transmission)\b',
             # Expansions
-            r'\bdigital communication\b', r'\bbaseband transmission\b'
+            r'\bdigital communication\b', r'\bbaseband transmission\b',
+            r'\bdigital transmissions use signals called\b',
+            r'\bselect(?:ing)? a rtty transmitting frequency\b', r'\brtty\b'
         ],
         'EST-3.2': [  # Digital Transmission
             r'\bdigital transmission\b', r'\bline coding\b', r'\bnrz\b', r'\brz\b', r'\bmanchester (?:code|encoding)\b',
-            r'\bami\b', r'\bintersymbol interference\b', r'\bisi\b', r'\beye pattern\b', r'\beye diagram\b'
+            r'\bami\b', r'\bintersymbol interference\b', r'\bisi\b', r'\beye pattern\b', r'\beye diagram\b',
+            r'\bdivisor in a cyclic code\b', r'\bgenerator polynomial\b',
+            r'\boutput voltage of a [μu]-law compander\b', r'\bcompander with a maximum voltage\b',
+            r'\bscrambling of data\b', r'\bdata scrambl\w*\b'
         ],
         'EST-3.3': [  # PAM, PWM, PPM, Pulse Code Modulation
             r'\bpulse amplitude modulation\b', r'\bpam\b', r'\bpulse width modulation\b', r'\bpwm\b',
@@ -1348,7 +1430,7 @@ SUBTOPIC_RULES = {
             r'\bdiscrete memoryless source\b', r'\bsource entropy\b',
             r'\bentropy of (?:a )?(?:discrete )?memoryless source\b',
             r'\bshannon limit\b', r'\bparity bit\b',
-            r'\bchecksums?\b', r'\bcrc\b', r'\bcyclic redundancy check\b', r'\bhamming code\b', r'\bforward error correction\b',
+            r'\bchecksums?\b', r'\bcrc\b', r'\bcyclic redundancy check\b', r'\bhamming codes?\b', r'\bforward error correction\b',
             r'\berror detection\b',
             # Carson's rule & channel bandwidth / capacity
             r'\bcarson\'?s\s+rule\b', r'\btransmission\s+bandwidth\b', r'\bbandwidth\s+required\s+for\b',
@@ -1364,7 +1446,12 @@ SUBTOPIC_RULES = {
             r'\berror\s+syndrome\b', r'\blinear\s+block\s+codes?\b',
             # Expansions
             r'\bentropy of the source\b', r'\bjoint entropy\b', r'\bchannel capacity\b',
-            r'\bfec\b'
+            r'\bfec\b', r'\bcentral concept in detecting or correcting errors\b',
+            r'\bparity-check code can detect\b', r'\bdetecting or correcting errors is\b',
+            r'\bmemoryless source refers to\b',
+            r'\bshannon(?:\'s)? theorem\b', r'\bpolar coding\b',
+            r'\bsource that generates .* symbols with probabilities\b',
+            r'\bsource emits symbols\b', r'\brate of information r\s*>\s*c\b'
         ],
         'EST-3.6': [  # FDM, TDM, WDM, FDMA, CDMA, TDMA
             r'\bfdms?\b', r'\bfrequency division multiplex\w*', r'\btdms?\b', r'\btime division multiplex\w*',
@@ -1374,21 +1461,26 @@ SUBTOPIC_RULES = {
 
         # 4.0 Transmission and Antenna Systems
         'EST-4.1': [  # Transmission Line Circuits
-            r'\btransmission line\b', r'\bcoaxial (?:cable|line)\b', r'\bcharacteristic impedance\b',
+            r'\btransmission lines?\b', r'\bcoaxial (?:cable|line)\b', r'\bcharacteristic impedance\b',
             r'\bpropagation velocity\b', r'\btwo-wire line\b',
             # Expansions
             r'\bvelocity of propagation\b', r'\bvelocity factor\b', r'\bunbalanced line\b',
             r'\bbalanced line\b', r'\bparallel-conductor feed line\b', r'\bfeed line with\b',
             r'\bskin effect\b', r'\brf current flow in a conductor\b', r'\blongitudinal balance\b',
             r'\btwo wires side-by-side\b', r'\btwo-wire and four-wire circuits\b',
-            r'\btwo-wire circuits\b'
+            r'\btwo-wire circuits\b',
+            r'\bbaluns?\b', r'\bfeed lines?\b', r'\btwin[- ]lead\b', r'\bcoaxial feed line\b',
+            r'\brf feed line\b', r'\bfeed line losses?\b',
+            r'\bline is mismatched and very long\b', r'\breflected signals?\b'
         ],
         'EST-4.2': [  # Losses, Parameters, and Matching
             r'\bstanding wave\b', r'\bswr\b', r'\bvswr\b', r'\breflection coefficient\b',
             r'\bquarter-wave (?:matching|transformer)\b', r'\bstub matching\b', r'\battenuation constant\b', r'\breturn loss\b',
             # Expansions
             r'\bquarter wave line\b', r'\bimpedance inversion\b', r'\bpl-259 connector\b',
-            r'\bconnector.*loss at uhf\b'
+            r'\bconnector.*loss at uhf\b',
+            r'\bstanding-wave ratio\b', r'\bwhy is impedance matching important\b',
+            r'\bimpedance of an electrical load is equal to the internal\b'
         ],
         'EST-4.3': [  # Smith Chart
             r'\bsmith chart\b', r'\bstub tuning\b'
@@ -1405,7 +1497,20 @@ SUBTOPIC_RULES = {
             r'\batmospheric attenuation\b', r'\bobstacle clearance\b', r'\brequired clearance for an obstacle\b',
             r'\bradio waves would most strongly reflect\b', r'\bpolarization change.*propagated over long\b',
             r'\bgroup velocity if the phase velocity\b', r'\bpoynting vector.*linearly polarized\b',
-            r'\brelative permittivity of\b', r'\bvhf transceiver\b', r'\bpoynting vector.*electric field\b'
+            r'\brelative permittivity of\b', r'\bvhf transceiver\b', r'\bpoynting vector.*electric field\b',
+            r'\bintrinsic impedance.*free space\b', r'\bintrinsic impedance η\b',
+            r'\bfree-space propagation.*increases the path loss\b',
+            r'\bfree-space propagation.*frequency is doubled\b',
+            r'\bhigh humidity affect attenuation\b', r'\battenuation in a microwave communication link\b',
+            r'\breliability is equivalent to how many hours per year\b',
+            r'\bmicrowave link availability\b', r'\bhours per year.*microwave\b',
+            r'\bskip zone\b', r'\bsolar flux\b', r'\bsolar[- ]flux index\b',
+            r'\bsolar cycle\b', r'\btropospheric bending\b',
+            r'\bground[- ]wave or line-of-sight\b', r'\btravelled by ground waves\b',
+            r'\benergy density of the rf field\b',
+            r'\bhf scatter signals\b', r'\bextended-distance propagation\b',
+            r'\bradiation kept close to the earth\'?s surface due to bend\b',
+            r'\bdistance to europe.*5000\s*km\b', r'\b5000\s*km\b'
         ],
         'EST-4.5': [  # Power Density and Field Strength Calculations
             r'\bpower density\b', r'\bfield strength\b', r'\beirp\b', r'\berp\b', r'\beffective radiated power\b',
@@ -1419,25 +1524,54 @@ SUBTOPIC_RULES = {
             r'\bgain does a half-wave dipole have over an isotropic radiator\b',
             r'\blpda\b', r'\blog-periodic\b', r'\byagi-uda\b', r'\bcassegrain feed\b',
             r'\bparabolic reflector\b', r'\bwave polarization\b', r'\bhorizontal wave polarization\b',
-            r'\bvertical wave polarization\b'
+            r'\bvertical wave polarization\b',
+            r'\btheoretical gain of an isotropic radiator\b', r'\bisotropic radiator\b',
+            r'\bdoubling both the operating frequency and antenna\b',
+            r'\bfolded dipole\b', r'\btrap dipole\b', r'\byagi with wide element spacing\b',
+            r'\bfeed point of the dipole\b', r'\bshortened radiator\b'
         ],
         'EST-4.7': [  # Waveguides and Fiber Optics
             r'\bwaveguides?\b', r'\bte mode\b', r'\btm mode\b', r'\bwaveguide cutoff frequency\b',
-            r'\boptical fiber\b', r'\bfiber optic\b', r'\bfiber core\b', r'\bcladdings?\b',
+            r'\boptical fiber\b', r'\bfiber[- ]optics?\b', r'\bfiber core\b', r'\bcladdings?\b',
             r'\bnumerical aperture\b', r'\btotal internal reflection\b', r'\bsingle[- ]mode fiber\b', r'\bmultimode fiber\b',
             r'\bfiber attenuation\b', r'\bdecibel loss\b',
             r'\blaser\b', r'\blight waves?\b', r'\bwavelength of light\b', r'\blens\b', r'\bconverging lens\b',
             r'\brefraction\b', r'\bdispersion\b', r'\bwave theory of light\b', r'\bluminance efficiency\b', r'\bfocal point\b',
             # Expansions
-            r'\bcavity resonator\b', r'\bcubical cavity resonator\b'
+            r'\bcavity resonator\b', r'\bcubical cavity resonator\b',
+            r'\bfiber[- ]optic systems?\b', r'\bdigital modulator in fiber\b',
+            r'\boptical transmitter\b', r'\boptical receiver\b', r'\bwave guides?\b',
+            r'\bmultimode step-index fiber\b', r'\bnumber of supported modes\b',
+            r'\bloss mechanism is dominant in long-haul\b', r'\bdominant in long-haul fiber\b',
+            r'\brayleigh scattering\b', r'\bhigher cutoff frequency than te10\b',
+            r'\bte10 mode\b', r'\bdominant mode in rectangular waveguide\b',
+            r'\bmagnetrons?\b', r'\bklystrons?\b', r'\btravell?ing[- ]wave tubes?\b', r'\btwt\b',
+            r'\binteraction between electrons and (?:the )?rf\b', r'\bcavity magnetron\b',
+            r'\bcrossed[- ]field\b', r'\bimpatt diodes?\b', r'\bgunn diodes?\b',
+            r'\belectron bunching to generate\b', r'\bvelocity modulation\b',
+            r'\bbolometer for attenuation measurement\b', r'\bschottky diode (?:as a )?microwave detector\b',
+            r'\bmeridional rays?\b', r'\b850\s*nm\s+window\b',
+            r'\bsilica fiber\b', r'\bwhite fiber with a black tracer\b',
+            r'\bfiber number\b', r'\bpolishing of a silica fiber\b',
+            r'\bcatcher cavity\b', r'\bbuncher[- ]grid\b',
+            r'\bparametric amplifiers?\b', r'\bpump frequency\b',
+            r'\bat cutoff frequency\b', r'\bproduct of (?:phase|group) velocit\w*\b'
         ],
 
         # 5.0 Electronics 3: Electronic Systems and Design (also shared with ELECS-6.0)
         'EST-5.1': [  # SCRs, UJT, PUT, TRIAC, DIAC, and Thyristors
-            r'\bpower semiconductor\b', r'\bscr\b', r'\btriac\b', r'\bdiac\b', r'\bujt\b', r'\bput\b', r'\bthyristors?\b'
+            r'\bpower semiconductor\b', r'\bscr\b', r'\btriac\b', r'\bdiac\b', r'\bujt\b', r'\bput\b', r'\bthyristors?\b',
+            r'\bphotodiode is operated in the reverse-biased\b', r'\bphotoconductive mode\b',
+            r'\bphotovoltaic mode\b', r'\bavalanche photodiode \(apd\)\b',
+            r'\bapd preferred over a pin\b',
+            r'\bregulated power supply\b', r'\boutput of the rectifier\b',
+            r'\boutput of the filter connects to\b', r'\bbetween the transformer and the\b',
+            r'\bconnected to the regulator\b'
         ],
         'EST-5.2': [  # Optoelectronic Devices and Sensors
-            r'\boptoelectronics?\b', r'\boptical encoder\b', r'\blaser sensor\b', r'\bphotodetectors?\b'
+            r'\boptoelectronics?\b', r'\boptical encoder\b', r'\blaser sensor\b', r'\bphotodetectors?\b',
+            r'\bavalanche photodiode\b', r'\bapd\b', r'\bpin photodiode\b',
+            r'\bapd preferred over a pin photodiode\b'
         ],
         'EST-5.3': [  # Transducers and Interfacing Techniques
             r'\btransducers?\b', r'\b4-20 ?ma\b', r'\bcurrent loop\b', r'\bsignal conditioning\b'
@@ -1451,7 +1585,19 @@ SUBTOPIC_RULES = {
             r'\bfire (?:and life safety|alarm) system\b', r'\bsecurity system\b', r'\bscada\b',
             r'\baudio-video system\b', r'\baccess control system\b',
             # Expansions
-            r'\bsmoke detector\b', r'\bobscuration per meter\b'
+            r'\bsmoke detector\b', r'\bobscuration per meter\b',
+            r'\bmagnetic locks?\b', r'\bmaglocks?\b', r'\bhigh-security doors?\b',
+            r'\belectric strikes?\b', r'\baccess control systems?\b',
+            r'\bnormally closed \(nc\) magnetic door switch\b', r'\bmagnetic door switch\b',
+            r'\bconference room av setup\b', r'\bswitching between multiple hdmi\b',
+            r'\bhdmi switcher\b', r'\bvideo matrix switcher\b',
+            r'\bedge computing.*smart lighting\b', r'\bedge computing.*hvac\b',
+            r'\bedge computing.*security\b', r'\bedge computing.*building\b',
+            r'\btypes of cable are used when installing video surveillance\b',
+            r'\bvideo surveillance components\b',
+            r'\bdigital twin.*chiller\b', r'\bdigital twin\b',
+            r'\bsupervisory controls? and data acquisition\b', r'\bscada\b',
+            r'\bfire and life safety\b'
         ],
 
         # 6.0 Data Communications
@@ -1476,13 +1622,22 @@ SUBTOPIC_RULES = {
             r'\bmesh\s+(?:network|topology)\b', r'\bphysical\s+mesh\b',
             r'\b(?:star|bus|ring|tree|hybrid)\s+topology\b',
             r'\bfully[- ]connected\s+(?:mesh|network)\b',
-            r'\bphysical\s+cables\s+required\b', r'\bdedicated\s+physical\s+cables\b'
+            r'\bphysical\s+cables\s+required\b', r'\bdedicated\s+physical\s+cables\b',
+            r'\btwo-wire telephone system\b', r'\btwo-wire circuit.*signal direction\b',
+            r'\blegacy two-wire\b', r'\btwo-wire vs 4-wire\b',
+            r'\bfully redundant, fully meshed network\b'
         ],
         'EST-6.3': [  # Transmission Modes and Synchronization
             r'\basynchronous transmission\b', r'\bsynchronous transmission\b', r'\bbaud rate\b',
             r'\bbit rate\b', r'\bdata framing\b',
             # Expansions
-            r'\bserial transmission\b', r'\bparallel transmission\b', r'\bserial vs parallel\b'
+            r'\bserial transmission\b', r'\bparallel transmission\b', r'\bserial vs parallel\b',
+            r'\basynchronous framing\b', r'\bstart bits?\b', r'\bstop bits?\b',
+            r'\btransmission efficiency\b', r'\bframing bits?\b', r'\bcharacter framing\b',
+            r'\bisochronous transmission\b',
+            r'\bcryptographic technique\b', r'\bunique fixed-size code\b', r'\bmessage digest\b',
+            r'\bhash function\b', r'\bdata integrity\b', r'\bhmac\b', r'\bdigital signature\b',
+            r'\boverhead bits\b'
         ],
         'EST-6.4': [  # Network Components (Terminals, Multiplexers, Concentrators, FEP, Serial Interface)
             r'\bmultiplexers?\b', r'\bconcentrators?\b', r'\bfront-end processor\b', r'\bfep\b',
@@ -1490,14 +1645,25 @@ SUBTOPIC_RULES = {
             r'\bmessage switch\w*', r'\bnetwork switch(?:es)?\b', r'\brouters?\b',
             r'\bnetwork components?\b',
             # Expansions
-            r'\bline control unit\b', r'\blcu\b'
+            r'\bline control unit\b', r'\blcu\b',
+            r'\bunix environment\b', r'\bcat file\.txt\b', r'\btrue system call\b',
+            r'\bsystem call rather than a user-level\b', r'\buser-level command or shell\b',
+            r'\bunix component\b', r'\binterprets user commands\b', r'\borganizes files into a hierarchical\b',
+            r'\bunix process\b', r'\bconsuming 100% cpu\b', r'\bprofiler\b', r'\bstrace\b',
+            r'\bterminal-to-host\b', r'\blu \(logical unit\)', r'\blogical unit\b', r'\blu type\b',
+            r'\bfork\(\) system call\b',
+            r'\bprovides the interface between user programs and the kernel\b',
+            r'\binterface between user programs and the kernel\b'
         ],
         'EST-6.5': [  # Security and Cryptography
             r'\bcryptography\b', r'\bencryption\b', r'\b\bdes encryption\b', r'\baes encryption\b',
             r'\brsa algorithm\b', r'\bnetwork firewall\b', r'\bssl\b', r'\btls\b',
             # Expansions
             r'\bunauthorized user\b', r'\bnetwork security\b', r'\bunique password\b',
-            r'\bauthentication\b', r'\bcookies?\b'
+            r'\bauthentication\b', r'\bcookies?\b',
+            r'\bsecure vpn\b', r'\bvpn.*encapsulated, encrypted\b',
+            r'\bsplit tunneling in a vpn\b', r'\bcorporate vpn system\b',
+            r'\btunneling protocol.*vpn\b', r'\bipsec\b', r'\bl2tp\b', r'\bpptp\b'
         ],
         'EST-6.6': [  # OSI Model and TCP/IP Architecture
             r'\bosi model\b', r'\btcp/ip\b', r'\bip address\b', r'\bipv4\b', r'\bipv6\b',
@@ -1510,12 +1676,26 @@ SUBTOPIC_RULES = {
             r'\binteractions between communicating devices\b', r'\budp and tcp\b', r'\btcp and udp\b',
             r'\bconnection-oriented transport-layer\b', r'\bwell-known.*tcp.*udp\b',
             r'\bseparates a message.*adding a sender address\b', r'\biso standard covers all aspects of network\b',
-            r'\ballows any two different systems to communicate\b'
+            r'\ballows any two different systems to communicate\b',
+            r'\bwaiting for data from a socket\b', r'\bsockets?\b', r'\bnon[- ]blocking socket\b',
+            r'\bblocking while waiting for data\b', r'\btcp client programming\b',
+            r'\brole of the connect\(\) system call\b', r'\bconnect\(\) system call\b',
+            r'\baccept\(\) on a socket\b', r'\bcalls recv\(\) before accept\(\)\b',
+            r'\bosi reference model was developed by which\b',
+            r'\bosi layers are responsible for hardware addressing\b',
+            r'\bprotocol is commonly used to test connectivity\b', r'\bicmp\b',
+            r'\binternet engineering steering group\b', r'\bietf\b',
+            r'\bconnectionless transport-layer protocol that transmits user datagrams\b',
+            r'\buser datagram protocol\b',
+            r'\bserver to block until a client\b',
+            r'\bmulticast ip address\b', r'\baddress classes identifies multicast\b'
         ],
         'EST-6.7': [  # SNA, Character and Bit-Oriented Protocols
             r'\bhdlc\b', r'\bsna\b', r'\bsystems network architecture\b', r'\barq\b',
             r'\bsliding window protocol\b', r'\bstop-and-waits?\b', r'\bselective repeat\b',
-            r'\bcharacter-oriented protocol\b', r'\bbit-oriented protocol\b'
+            r'\bcharacter-oriented protocol\b', r'\bbit-oriented protocol\b',
+            r'\bbit-oriented framing over character-oriented\b',
+            r'\bcharacter-oriented framing\b', r'\bbit-oriented framing\b'
         ],
         'EST-6.8': [  # LAN, MAN, WAN, GAN, ISDN, B-ISDN
             r'\blocal area network\b', r'\blan\b', r'\bwide area network\b', r'\bwan\b',
@@ -1524,7 +1704,10 @@ SUBTOPIC_RULES = {
             r'\basynchronous transfer mode\b', r'\batm cells?\b',
             r'\bethernets?\b', r'\bieee 802\b', r'\bwi-fis?\b', r'\bbluetooths?\b', r'\bvlan\b',
             # Expansions
-            r'\bbri lines?\b', r'\bpri lines?\b', r'\bisdn bri\b'
+            r'\bbri lines?\b', r'\bpri lines?\b', r'\bisdn bri\b',
+            r'\bbri interface\b', r'\btotal bandwidth of a bri\b', r'\b2b\+d\b',
+            r'\bbasic rate interface\b',
+            r'\btoken ring network\b', r'\btoken ring\b', r'\bbroken link can disrupt the network\b'
         ]
     }
 }
@@ -2103,15 +2286,13 @@ def run_classification(db_path=DEFAULT_DB_PATH, deck_id=None, apply_changes=Fals
         card_text = extract_card_text(data_raw, card_type_val)
         assigned_topic, confident = classify_text(card_text, subject_code, deck_name=deck_name, deck_desc=deck_desc, default_tos=default_tos)
 
-        # Check if card has an image or figure/circuit reference
+        # Check if card has an image attached to the QUESTION itself
+        # (do NOT tag cards that only have solution/explanation images like solutionImagePath)
         has_image = False
         try:
             d = json.loads(data_raw) if data_raw else {}
             if isinstance(d, dict):
-                has_image = bool(d.get('imagePath') or d.get('imageUrl') or d.get('image') or d.get('imagePathFront') or d.get('imagePathBack'))
-                if not has_image:
-                    q = (d.get('question') or d.get('front') or '').lower()
-                    has_image = bool('circuit shown' in q or 'shown in figure' in q or 'in figure shown' in q or 'figure shown' in q or '.webp' in data_raw or '.png' in data_raw)
+                has_image = bool(d.get('imagePath'))
         except Exception:
             pass
 

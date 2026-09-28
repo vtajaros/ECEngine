@@ -385,14 +385,7 @@ export function getCardsByTosTopic(
       const parsed = typeof r.data === 'string' ? JSON.parse(r.data) : r.data
       preview = parsed.question || parsed.front || parsed.formula || parsed.name || parsed.term || ''
       imagePath = parsed.imagePath || parsed.imagePathFront || null
-      hasImage = Boolean(
-        imagePath ||
-        parsed.imageUrl ||
-        parsed.image ||
-        (typeof r.data === 'string' && (r.data.includes('.webp') || r.data.includes('.png') || r.data.includes('.jpg'))) ||
-        preview.toLowerCase().includes('circuit shown') ||
-        preview.toLowerCase().includes('shown in figure')
-      )
+      hasImage = Boolean(imagePath || parsed.imageUrl || parsed.image)
     } catch {
       preview = String(r.data || '').slice(0, 100)
     }
