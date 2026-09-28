@@ -65,36 +65,43 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 ---
 
 ### ⚔️ Gauntlet Mode: Speed, Survival & Elo Ratings
-* **High-Octane Arcade Challenge**: Designed for rapid-fire recall and reflex conditioning under pressure, fully isolated from SM-2 spaced repetition, study decks, and attempt logs so you can push your speed without risking your core study intervals.
-* **Adaptive TOS-Prioritized Sampling**: Intelligently identifies your weakest Table of Specifications (TOS) topics (subtopics with $\ge 3$ attempts and $< 70\%$ accuracy) and prioritizes them in question generation, automatically targeting problem areas without sacrificing variety.
-* **Game Modes**:
-  * **Timed Mode ("Beat the Clock")**:
-    * Session presets: `1 min`, `2 min`, `3 min`, `5 min`, and `10 min`.
+* **High-Octane Arcade Challenge**: Designed for rapid-fire recall and reflex conditioning under pressure. Correct answers actively contribute to card mastery scores and review statistics while fully protecting your core SM-2 spaced repetition intervals and ease factors from fast-paced error penalties.
+* **Interactive Subject Selection & Real-Time Rank Telemetry**:
+  * **Single-Click to Solo · Double-Click to Combine**: Instant single-click subject isolation or double-click combination across **MATH**, **GEAS**, **ELECS**, and **EST** with snappy debounce.
+  * **Current Rank Pill & XP Meter**: Live header telemetry widget displaying your current rank tier, Elo rating, provisional status (`PROV`), and an animated **XP Meter** progress bar showing points needed until your next rank tier.
+  * **2-Column Elo Ranking Tiers Modal (`GauntletRanksModal`)**: 1-click access to view all 6 progression brackets (**Insulator**, **Semiconductor**, **Conductor**, **Copper**, **Silver**, **Superconductor**) and PRC Table of Specifications weighting without vertical scrolling.
+* **Multi-Chapter Topic Focus Selection (`GauntletTopicModal`)**:
+  * Dedicated pop-up modal replacing legacy dropdowns to customize session pools across multiple TOS syllabus topics simultaneously.
+  * **Context-Aware Tabs**: Automatically defaults to the selected subject's tab when drilling a single subject.
+  * **Granular Subtopic Switching**: Toggle between 34 Parent Topics ($x.0$) and 181 Granular Subtopics ($x.x$) with live search, *Select All Visible*, and *Clear Filter* controls.
+  * **Topic-Focused Ranked Runs**: Topic-filtered ranked runs apply a balanced $0.4\times$ Elo rating scaling factor.
+* **Game Modes & Dynamic Presets**:
+  * **Timed Mode ("Race the Clock")**:
+    * Session duration presets: **5m**, **10m**, **25m**, and **1 hr**.
     * Question distribution strategies: **PRC TOS Allocation** (20% MATH, 20% GEAS, 30% ELECS, 30% EST), **Equal Split**, or **Custom Counts**.
     * Dynamic scoring: Combines question weight, answer speed multiplier (up to $1.5\times$ for answering under half par time), and active streak multiplier.
     * **Skip Bank**: Earn $+1$ skip credit for every 20 consecutive correct answers.
-  * **Survival Mode ("Sudden Death")**:
-    * Starting lives presets: `3 Lives` (high stakes), `5 Lives` (standard), or `10 Lives` (forgiving practice).
-    * Per-question time limits: `20s` ($1.25\times$), `30s` ($1.00\times$), `45s` ($0.85\times$), `60s` ($0.70\times$), `2 min` ($0.50\times$), and `Unlimited` (Accuracy Mode).
-    * Dynamic difficulty multipliers: Scores and Elo deltas scale automatically based on selected timer and lives.
-    * **Life Bonus**: Earn $+1$ life for every 10 consecutive correct answers (capped at starting life count).
-    * **Accuracy Mode**: Unlimited per-question timer with minimal score multiplier ($0.08\times$) and strictly capped $\pm 1$ Elo rating adjustments, allowing deep calculation and accuracy validation without rating inflation.
-* **Clean In-Game Focus**: In-run question cards keep topic classifications hidden during Survival and Time Trial play, preventing syllabus topic spoilers while answering.
+  * **Survival Mode ("Beat the Timer")**:
+    * Starting lives presets: **3 Lives** ($1.10\times$ multiplier), **5 Lives** ($1.00\times$ standard), or **Unlimited** ($\infty$ casual practice mode with $0.50\times$ multiplier).
+    * Per-question time limits: **30 Seconds** ($1.00\times$), **1 Minute** ($0.70\times$), **2 Minutes** ($0.50\times$), and **Unlimited** (Accuracy Mode, $0.08\times$).
+    * **Uncapped Extra Lives**: Earn $+1$ life for every 10-consecutive correct answer streak with **no upper cap**, allowing skilled runs to build deep life reserves.
+    * **Accuracy Mode**: Unlimited per-question timer with minimal score multiplier ($0.08\times$) and strictly capped $\pm 1$ Elo rating adjustments, allowing deep calculation without artificial rating inflation.
+* **HUD & Dynamic Feedback**:
+  * **Streak Bonus Milestones**: Temporary $+50$ point popup badges with 2-second neon-green (`#00FF41`) linger animations upon reaching streak thresholds.
+  * **Adaptive Cyberpunk Audio & Visuals**: Crossfading dynamic Web Audio background music across intensity regions (**Stealth**, **Low**, **Med**, **High**, **Boss**), glowing low-health HUD pulse, and calibrated sound effects.
+  * **Clean In-Game Focus**: Question cards keep syllabus topic classifications hidden during active play to prevent spoilers.
 * **Ranked vs. Unranked Runs**:
   * **Ranked**: Tracks per-subject Elo-style ratings across all 4 subjects with provisional rating indicators ($<30$ answers) and official PRC TOS-weighted overall rating score.
   * **Unranked**: Casual practice runs leaving Elo ratings unchanged.
-* **Adaptive Cyberpunk Audio & Visuals**:
-  * Crossfading dynamic Web Audio background music that scales in intensity across regions (**Stealth**, **Low**, **Med**, **High**, **Boss**).
-  * Looping low-health audio overlay and glowing HUD pulse when down to your final life.
-  * Calibrated audio feedback with balanced sound effects and game over volume.
-* **Comprehensive Post-Run Review**:
+* **Comprehensive Post-Run Review & FAQ**:
   * **Two-Column Tactical Breakdown**: Stats sidebar with accuracy, speed, rating deltas, and score metrics.
   * **Struggling Topics Focus Area**: Highlights top problem TOS topics from the run with miss ratios to immediately focus review.
-  * **Question Origin & Deck Tracking**: Every reviewed question displays its source deck name and 1-based card position in that deck (e.g. `📁 [Deck Name] #[number]` badge and `📁 [Deck Name] • Card #[number] of [total]`), enabling instant cross-referencing with your original study decks.
-  * **Question Flagging & Exclusion**: Directly flag broken or ambiguous questions from the review screen with custom reason tags; flagged questions are automatically excluded from subsequent Gauntlet pools.
+  * **Question Origin & Deck Tracking**: Every reviewed question displays its source deck name and 1-based card position in that deck (e.g. `📁 [Deck Name] #[number]`), enabling instant cross-referencing.
+  * **Question Flagging & Exclusion**: Directly flag broken or ambiguous questions with custom reason tags; flagged questions are automatically excluded from subsequent Gauntlet pools.
   * **Learn Missed Items**: Launch an on-demand Learn Mode session targeting only the questions missed in that run, cleanly isolated from core session history and statistics.
   * **Centered Tactical Action Bar**: Quick controls for **Get Context** (formatted clipboard export for AI), **AI Explain** (inline step-by-step breakdown), and **Flag Question**.
   * **Filterable Review List**: Filter by All, Mistakes, Skipped/Timeout, or Correct with inline choices and full mathematical solutions.
+  * **Gauntlet FAQ Modal**: Complete in-game guide covering scoring mechanics, time limits, multipliers, progression tiers, and SM-2 protection.
 
 ---
 
@@ -465,7 +472,7 @@ ecengine/
 │   ├── assets/                  # Brand assets, icons, bundled fonts (Rajdhani, JetBrains Mono, Orbitron)
 │   ├── components/              # Modular UI Components
 │   │   ├── ui/                  # Tooltip (auto-flipping), GetContextDropdown (split-button), VolumeControl, FolderPanel, Toast, TOSTracker
-│   │   ├── gauntlet/            # GauntletHome, GauntletSetup, GauntletBackdrop, RatingsPanel, RunHistory, GauntletFaqModal, GauntletRecordsModal
+│   │   ├── gauntlet/            # GauntletHome, GauntletSetup, GauntletTopicModal, GauntletRanksModal, GauntletFaqModal, GauntletRecordsModal, GauntletWeakAreasModal, GauntletBackdrop
 │   │   ├── mcq/                 # MCQCard, LearnMode, TestMode, BookmarkedCardsModal
 │   │   ├── flashcard/           # FlashcardSession, FlashcardDeckBrowser, StudyCard
 │   │   ├── deck/                # CardForms, DeckCard, AIDescriptionButton, AdvancedFiltersPopover
