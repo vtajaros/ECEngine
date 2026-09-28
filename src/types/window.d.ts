@@ -134,8 +134,8 @@ declare global {
         getResponseTimeDistribution: () => Promise<{ success: boolean; data?: any; error?: string }>
       }
       gauntlet: {
-        getPoolSizes: (payload?: { allowSolutions?: boolean; tosTopicId?: string }) => Promise<{ success: boolean; data?: any; error?: string }>
-        getQuestions: (payload: { counts: Array<{ subject: string; count: number }>; excludeIds?: string[]; allowSolutions?: boolean; tosTopicId?: string }) => Promise<{ success: boolean; data?: any[]; error?: string }>
+        getPoolSizes: (payload?: { allowSolutions?: boolean; tosTopicId?: string; tosTopicIds?: string[] }) => Promise<{ success: boolean; data?: any; error?: string }>
+        getQuestions: (payload: { counts: Array<{ subject: string; count: number }>; excludeIds?: string[]; allowSolutions?: boolean; tosTopicId?: string; tosTopicIds?: string[] }) => Promise<{ success: boolean; data?: any[]; error?: string }>
         getRatings: () => Promise<{ success: boolean; data?: any; error?: string }>
         resetRatings: () => Promise<{ success: boolean; error?: string }>
         saveRun: (payload: unknown) => Promise<{ success: boolean; data?: any; error?: string }>

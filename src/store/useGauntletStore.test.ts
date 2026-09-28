@@ -420,7 +420,7 @@ describe('credit-gated skips', () => {
 })
 
 describe('life-bonus streak in survival mode', () => {
-  it('10-correct streak at 3/3 lives stays capped at 3', async () => {
+  it('10-correct streak at 3/3 lives exceeds starting lives with uncapped 1-up', async () => {
     svc.getQuestions.mockResolvedValue(cards(40))
     await store().startRun(survivalCfg({ lives: 3 }))
     store().beginRun()
@@ -434,8 +434,8 @@ describe('life-bonus streak in survival mode', () => {
     }
 
     expect(store().lifeBonusStreak).toBe(10)
-    // Starting lives cap is 3, so livesLeft must not exceed 3
-    expect(store().livesLeft).toBe(3)
+    // Starting lives was 3, 10-streak awards +1 so livesLeft reaches 4 (uncapped)
+    expect(store().livesLeft).toBe(4)
   })
 
   it('at 2/3 lives after losing one, a 10-streak brings it back to 3/3', async () => {

@@ -167,6 +167,7 @@ export function getTimeMultiplier(perQuestionSec: number): number {
  * 10 lives: 0.75 (forgiving practice)
  */
 export function getLivesMultiplier(lives: number): number {
+  if (lives === 0) return 0.5
   if (lives <= 3) return 1.1
   if (lives <= 5) return 1.0
   return 0.75
@@ -177,7 +178,7 @@ export function getSurvivalDifficultyMultiplier(perQuestionSec: number, lives: n
   eloMult: number
   isUnlimited: boolean
 } {
-  const isUnlimited = perQuestionSec === 0
+  const isUnlimited = perQuestionSec === 0 || lives === 0
   const timeMult = getTimeMultiplier(perQuestionSec)
   const livesMult = getLivesMultiplier(lives)
   const combined = Math.round(timeMult * livesMult * 100) / 100
@@ -459,6 +460,15 @@ export interface RatingTierInfo {
   name: TierName
   floor: number
   next: number | null
+}
+
+export const TIER_COLORS: Record<TierName, string> = {
+  INSULATOR: '#94A3B8',
+  SEMICONDUCTOR: '#38BDF8',
+  CONDUCTOR: '#00FF41',
+  COPPER: '#F97316',
+  SILVER: '#E2E8F0',
+  SUPERCONDUCTOR: '#C084FC',
 }
 
 export function ratingTier(rating: number): RatingTierInfo {

@@ -121,13 +121,31 @@ describe('GauntletSetup Component', () => {
       root.render(<GauntletSetup />)
     })
 
-    const select = container.querySelector('select') as HTMLSelectElement
-    expect(select).not.toBeNull()
+    const filterBtn = Array.from(container.querySelectorAll('button')).find(
+      b => b.textContent?.includes('Filter Topics'),
+    )
+    expect(filterBtn).toBeDefined()
 
-    // Select GEAS 4.0 Engineering Management
     await act(async () => {
-      select.value = 'GEAS-4.0'
-      select.dispatchEvent(new Event('change', { bubbles: true }))
+      filterBtn?.click()
+    })
+
+    const topicBtn = Array.from(document.querySelectorAll('button')).find(
+      b => b.textContent?.includes('Engineering Management'),
+    )
+    expect(topicBtn).toBeDefined()
+
+    await act(async () => {
+      topicBtn?.click()
+    })
+
+    const applyBtn = Array.from(document.querySelectorAll('button')).find(
+      b => b.textContent?.includes('Apply Topics'),
+    )
+    expect(applyBtn).toBeDefined()
+
+    await act(async () => {
+      applyBtn?.click()
     })
 
     expect(container.textContent).toContain('Ranked (0.4x Scale)')
@@ -140,10 +158,25 @@ describe('GauntletSetup Component', () => {
       root.render(<GauntletSetup />)
     })
 
-    const select = container.querySelector('select') as HTMLSelectElement
+    const filterBtn = Array.from(container.querySelectorAll('button')).find(
+      b => b.textContent?.includes('Filter Topics'),
+    )
     await act(async () => {
-      select.value = 'GEAS-4.0'
-      select.dispatchEvent(new Event('change', { bubbles: true }))
+      filterBtn?.click()
+    })
+
+    const topicBtn = Array.from(document.querySelectorAll('button')).find(
+      b => b.textContent?.includes('Engineering Management'),
+    )
+    await act(async () => {
+      topicBtn?.click()
+    })
+
+    const applyBtn = Array.from(document.querySelectorAll('button')).find(
+      b => b.textContent?.includes('Apply Topics'),
+    )
+    await act(async () => {
+      applyBtn?.click()
     })
 
     const clearBtn = Array.from(container.querySelectorAll('button')).find(
@@ -157,5 +190,44 @@ describe('GauntletSetup Component', () => {
 
     expect(container.textContent).not.toContain('Ranked (0.4x Scale)')
     expect(container.textContent).toContain('Counts toward subject Elo ratings')
+  })
+
+  it('renders current rank pill with rating, tier badge, and XP meter in the header', async () => {
+    await act(async () => {
+      root.render(<GauntletSetup />)
+    })
+
+    // Ratings in hub are 1200 across all subjects -> Overall 1200 is COPPER tier
+    expect(container.textContent).toContain('COPPER')
+    expect(container.textContent).toContain('1200')
+    expect(container.textContent).toContain('XP')
+    expect(container.textContent).toContain('+100 pts') // 1300 - 1200 = 100 to Silver
+  })
+
+  it('defaults topic modal tab to solo subject when filter topics is clicked', async () => {
+    // Set config to solo ELECS
+    localStorage.setItem(
+      'ecengine:gauntlet:config:timed',
+      JSON.stringify({ subjects: ['ELECS'] }),
+    )
+
+    await act(async () => {
+      root.render(<GauntletSetup />)
+    })
+
+    const filterBtn = Array.from(container.querySelectorAll('button')).find(
+      b => b.textContent?.includes('Filter Topics'),
+    )
+    await act(async () => {
+      filterBtn?.click()
+    })
+
+    // The ELECS tab should be highlighted/selected in the modal
+    const elecsTab = Array.from(document.querySelectorAll('button')).find(
+      b => b.textContent?.trim() === 'ELECS',
+    )
+    expect(elecsTab).toBeDefined()
+    expect(elecsTab?.className).toContain('bg-surface-2')
+    expect(elecsTab?.style.borderColor).toBeTruthy()
   })
 })

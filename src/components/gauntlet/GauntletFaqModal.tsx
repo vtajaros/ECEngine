@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { HelpCircle, X, ChevronDown, ShieldCheck, Zap, Award, Target, Flame, type LucideIcon } from 'lucide-react'
+import { HelpCircle, X, ChevronDown, ShieldCheck, Zap, Award, Target, Flame, Layers, type LucideIcon } from 'lucide-react'
 import { Tooltip } from '../ui/Tooltip'
 
 interface GauntletFaqModalProps {
@@ -42,7 +42,7 @@ const FAQ_ITEMS: AccordionItem[] = [
             Time Trial
           </span>
           <p className="text-text-muted">
-            Race against the session clock (5 to 30 minutes). You select the total question count and subject allocation (Even, PRC TOS-weighted, or Custom). Speed and accuracy both drive your final score.
+            Race against the session clock (<strong>5m</strong>, <strong>10m</strong>, <strong>25m</strong>, or <strong>1 hr</strong>). Choose between an <em>Unlimited Sprint</em> (continuous refill until time expires) or a <em>Fixed Question Target</em> (50, 100, 150 items with Even, TOS-weighted, or Custom allocation).
           </p>
         </div>
         <div className="p-2.5 rounded-lg bg-surface-2 border border-border-base">
@@ -50,9 +50,27 @@ const FAQ_ITEMS: AccordionItem[] = [
             Survival
           </span>
           <p className="text-text-muted">
-            Test your endurance with 3 or 5 lives. Each question has an uncompromising timer (15s, 30s, or 60s). Wrong answers or timeouts cost 1 life. The run ends when your lives hit zero or the question queue is exhausted.
+            Test your endurance with <strong>3 Lives</strong>, <strong>5 Lives</strong>, or <strong>Unlimited Lives</strong> (casual practice). Each question has a per-question limit (<strong>30s</strong>, <strong>1 min</strong>, <strong>2 mins</strong>, or <strong>Unlimited</strong>).
+          </p>
+          <p className="text-[#00FF41] mt-1.5 font-semibold">
+            ✦ Uncapped 1-Ups: Every 10 consecutive correct answers awards +1 bonus life with no ceiling!
           </p>
         </div>
+      </div>
+    ),
+  },
+  {
+    id: 'topics',
+    title: 'Topic Focus & Multi-Chapter Drilling',
+    icon: Layers,
+    content: (
+      <div className="space-y-2 text-text-primary text-xs font-['JetBrains_Mono'] leading-relaxed">
+        <p>
+          Target specific areas of weakness by clicking <strong className="text-accent">Filter Topics</strong> in the setup screen.
+        </p>
+        <p className="text-text-muted">
+          You can select multiple parent topics (e.g., DC Circuits, Electromagnetics) across any subjects, or enable the <em>Granular Subtopics</em> toggle for surgical subtopic drills. Focused runs scale Elo adjustments to <strong>0.4x</strong> to balance rating integrity.
+        </p>
       </div>
     ),
   },
@@ -85,13 +103,13 @@ const FAQ_ITEMS: AccordionItem[] = [
             <strong className="text-accent">Speed Multiplier:</strong> Answers in &le; 0.5x par yield a max <strong>1.5x</strong> bonus; at par = <strong>1.0x</strong>; &ge; 1.5x par = <strong>0.5x</strong>.
           </li>
           <li>
-            <strong className="text-[#f59e0b]">Streak Multiplier:</strong> +10% per consecutive correct answer, capping at <strong>1.5x</strong> (reached at streak 5).
+            <strong className="text-[#00FF41]">Streak Milestones:</strong> +10% per consecutive correct answer, capping at <strong>1.5x</strong> (at streak 5). Milestone streak bonuses award <strong>+50 points</strong> upon reaching streak milestones.
           </li>
           <li>
-            <strong className="text-[#ef4444]">Wrong Penalties:</strong> Base -50 / weight. Spam-clicking (answering wrong in &lt; 0.25x par) applies an extra <strong>1.5x penalty</strong>.
+            <strong className="text-[#ef4444]">Wrong Penalties:</strong> Base -50 / weight. Spam-clicking (answering wrong in &lt; 0.25x par) applies an extra <strong>1.5x penalty</strong>. Insulator tier enjoys a 50% softer penalty.
           </li>
           <li>
-            <strong className="text-text-muted">Skips & Timeouts:</strong> Skipping costs a flat <strong>-20 points</strong> and resets your streak. In Survival, a timeout counts as wrong and costs 1 life.
+            <strong className="text-text-muted">Skips & Credits:</strong> Skipping consumes earned skip credits (earned every 20-streak).
           </li>
         </ul>
       </div>
@@ -99,25 +117,25 @@ const FAQ_ITEMS: AccordionItem[] = [
   },
   {
     id: 'ratings',
-    title: 'Elo Ratings & Subject Mastery',
+    title: 'Elo Ratings & Progression Tiers',
     icon: Award,
     content: (
       <div className="space-y-2.5 text-text-primary text-xs font-['JetBrains_Mono'] leading-relaxed">
         <p>
-          Each subject begins at an initial rating of <strong className="text-accent">1000</strong>.
+          Each subject begins at an initial rating of <strong className="text-accent">500</strong>.
         </p>
         <p className="text-text-muted">
           Ratings update after every answer on ranked runs using standard Elo curves adjusted for answer speed. Ratings remain <span className="text-[#FFB800] font-bold">PROVISIONAL</span> until 30 questions are answered in that subject.
         </p>
-        <div className="p-2 rounded bg-surface-2 border border-border-base space-y-1 text-[11px]">
-          <span className="font-bold text-accent block uppercase font-['Orbitron'] text-[10px]">Rank Tiers:</span>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-text-muted">
-            <div><strong className="text-slate-400">ROOKIE:</strong> &lt; 1000</div>
-            <div><strong className="text-sky-400">CONTENDER:</strong> 1000–1149</div>
-            <div><strong className="text-accent">CHALLENGER:</strong> 1150–1299</div>
-            <div><strong className="text-[#FFB800]">EXPERT:</strong> 1300–1449</div>
-            <div><strong className="text-purple-400">MASTER:</strong> 1450–1599</div>
-            <div><strong className="text-[#FF3333]">LEGEND:</strong> 1600+</div>
+        <div className="p-2.5 rounded-lg bg-surface-2 border border-border-base space-y-1.5 text-[11px]">
+          <span className="font-bold text-accent block uppercase font-['Orbitron'] text-[10px]">6 Progression Tiers:</span>
+          <div className="grid grid-cols-2 gap-2 text-text-muted">
+            <div><strong className="text-[#94A3B8]">INSULATOR:</strong> 500 – 799</div>
+            <div><strong className="text-[#F97316]">COPPER:</strong> 1100 – 1299</div>
+            <div><strong className="text-[#38BDF8]">SEMICONDUCTOR:</strong> 800 – 999</div>
+            <div><strong className="text-[#E2E8F0]">SILVER:</strong> 1300 – 1499</div>
+            <div><strong className="text-[#00FF41]">CONDUCTOR:</strong> 1000 – 1099</div>
+            <div><strong className="text-[#C084FC]">SUPERCONDUCTOR:</strong> 1500+</div>
           </div>
         </div>
         <p className="text-text-muted">
@@ -128,15 +146,18 @@ const FAQ_ITEMS: AccordionItem[] = [
   },
   {
     id: 'separation',
-    title: 'Complete Isolation from Mastery & SM-2',
+    title: 'Mastery Scores & SM-2 Protection',
     icon: ShieldCheck,
     content: (
       <div className="space-y-2 text-text-primary text-xs font-['JetBrains_Mono'] leading-relaxed">
         <p className="text-[#00FF41]">
-          Gauntlet is 100% separate from your LooksFam study progress, SM-2 flashcard intervals, and exam attempt logs.
+          Gauntlet answers actively contribute to your question mastery and practice statistics!
         </p>
         <p className="text-text-muted">
-          Feel free to take high risks and push your speed limits in Gauntlet without worrying about degrading your spaced repetition schedules or mastery history.
+          Correct answers log review counts and increase your overall card mastery scores.
+        </p>
+        <p className="text-text-muted">
+          Crucially, your <strong className="text-text-primary">SM-2 spaced repetition intervals and ease factors are protected</strong>—mistakes made during high-speed Gauntlet rounds will never reset your study review intervals or disrupt your active SRS flashcard schedules.
         </p>
       </div>
     ),
@@ -190,7 +211,7 @@ export const GauntletFaqModal: React.FC<GauntletFaqModalProps> = ({ isOpen, onCl
                 </div>
                 <div>
                   <h3 className="font-['Orbitron'] font-bold text-base text-text-primary tracking-wider uppercase">
-                    How Gauntlet Works
+                    Gauntlet FAQ
                   </h3>
                   <p className="text-[11px] font-['Rajdhani'] text-text-muted uppercase tracking-wider">
                     Rules, Scoring, and Rating Standards

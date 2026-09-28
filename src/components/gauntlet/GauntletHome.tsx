@@ -323,7 +323,7 @@ export const GauntletHome: React.FC = () => {
             className="text-text-muted hover:text-text-primary text-xs font-['Rajdhani'] font-bold uppercase tracking-widest flex items-center gap-1.5 transition-colors py-1.5 px-3 rounded hover:bg-surface-2 cursor-pointer"
           >
             <HelpCircle size={14} className="text-accent" />
-            How It Works
+            FAQ
           </button>
 
           <button

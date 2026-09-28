@@ -8,6 +8,7 @@ interface GauntletRanksModalProps {
   onClose: () => void
   overallRating: number
   isProvisional: boolean
+  subjectName?: string
 }
 
 interface TierDefinition {
@@ -96,6 +97,7 @@ export const GauntletRanksModal: React.FC<GauntletRanksModalProps> = ({
   onClose,
   overallRating,
   isProvisional,
+  subjectName,
 }) => {
   useEffect(() => {
     if (!isOpen) return
@@ -129,10 +131,10 @@ export const GauntletRanksModal: React.FC<GauntletRanksModalProps> = ({
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
           transition={{ duration: 0.15 }}
-          className="relative w-full max-w-xl max-h-[90vh] bg-[#0e0e0e] border border-border-base rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+          className="relative w-full max-w-4xl bg-[#0e0e0e] border border-border-base rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[95vh]"
         >
           {/* Header */}
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border-base bg-[#141414]">
+          <div className="flex items-center justify-between px-5 py-3.5 border-b border-border-base bg-[#141414] shrink-0">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-accent/15 border border-accent/30 flex items-center justify-center text-accent">
                 <Award size={18} />
@@ -142,7 +144,7 @@ export const GauntletRanksModal: React.FC<GauntletRanksModalProps> = ({
                   ELO RANKING TIERS
                 </h2>
                 <p className="text-[11px] font-['Rajdhani'] font-semibold text-text-muted uppercase tracking-wider">
-                  Arcade Skill Progression & Ratings
+                  {subjectName ? `${subjectName} Skill Progression & Ratings` : 'Arcade Skill Progression & Ratings'}
                 </p>
               </div>
             </div>
@@ -155,67 +157,60 @@ export const GauntletRanksModal: React.FC<GauntletRanksModalProps> = ({
             </button>
           </div>
 
-          {/* Body */}
-          <div className="p-4 sm:p-5 overflow-y-auto space-y-4 show-scrollbar">
-            {/* Player's Current Rank Card */}
+          {/* Body: Compact single-window presentation */}
+          <div className="p-4 sm:p-5 overflow-y-auto space-y-3.5 show-scrollbar">
+            {/* Player's Current Rank Card - Horizontal compact banner */}
             <div
-              className="p-4 rounded-xl border flex flex-col gap-2.5"
+              className="px-4 py-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0"
               style={{
                 backgroundColor: currentTierDef.bg,
                 borderColor: currentTierDef.border,
-                boxShadow: `0 0 20px ${currentTierDef.glow}`,
+                boxShadow: `0 0 16px ${currentTierDef.glow}`,
               }}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-['Rajdhani'] font-bold text-text-muted uppercase tracking-wider">
-                    Your Current Rank
-                  </span>
-                  {isProvisional && (
-                    <span className="text-[9px] font-['Rajdhani'] font-bold text-[#FFB800] bg-[#FFB800]/10 px-1.5 py-0.5 rounded border border-[#FFB800]/30 uppercase tracking-widest">
-                      Provisional
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-3 h-3 rounded-full shrink-0 animate-pulse"
+                  style={{ backgroundColor: currentTierDef.color, boxShadow: `0 0 8px ${currentTierDef.color}` }}
+                />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-['Rajdhani'] font-bold text-text-muted uppercase tracking-wider">
+                      {subjectName ? `${subjectName} Current Rank` : 'Current Rank'}
                     </span>
-                  )}
-                </div>
-                <span className="text-xs font-['JetBrains_Mono'] font-bold text-text-muted">
-                  Overall Rating: <span className="text-white">{Math.round(overallRating)}</span>
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <span
-                    className="font-['Orbitron'] text-xl sm:text-2xl font-black tracking-wider"
-                    style={{ color: currentTierDef.color }}
-                  >
-                    {currentTierDef.name}
-                  </span>
-                  <span
-                    className="text-[11px] font-['JetBrains_Mono'] px-2 py-0.5 rounded font-bold"
-                    style={{
-                      backgroundColor: `${currentTierDef.color}22`,
-                      color: currentTierDef.color,
-                    }}
-                  >
-                    {currentTierDef.range} ELO
-                  </span>
-                </div>
-
-                {pointsToNext !== null && currentTierInfo.next !== null && (
-                  <div className="text-right">
-                    <span className="text-[11px] font-['Rajdhani'] font-semibold text-text-muted block">
-                      Next Tier in
+                    {isProvisional && (
+                      <span className="text-[9px] font-['Rajdhani'] font-bold text-[#FFB800] bg-[#FFB800]/10 px-1.5 py-0.2 rounded border border-[#FFB800]/30 uppercase tracking-widest">
+                        Provisional
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span
+                      className="font-['Orbitron'] text-xl font-black tracking-wider"
+                      style={{ color: currentTierDef.color }}
+                    >
+                      {currentTierDef.name}
                     </span>
-                    <span className="text-xs font-['JetBrains_Mono'] font-bold text-white">
-                      +{pointsToNext} pts
+                    <span
+                      className="text-[10px] font-['JetBrains_Mono'] px-1.5 py-0.2 rounded font-bold"
+                      style={{
+                        backgroundColor: `${currentTierDef.color}22`,
+                        color: currentTierDef.color,
+                      }}
+                    >
+                      {currentTierDef.range} ELO
                     </span>
                   </div>
-                )}
+                </div>
               </div>
 
               {/* Progress bar to next tier */}
               {currentTierInfo.next !== null && (
-                <div className="space-y-1 mt-1">
+                <div className="flex-1 max-w-sm px-2">
+                  <div className="flex justify-between items-center text-[10px] font-['JetBrains_Mono'] text-text-muted mb-1">
+                    <span>Progress to {TIERS.find(t => t.floor === currentTierInfo.next)?.name ?? 'Next'}</span>
+                    <span className="font-bold text-white">{progressPercent}%</span>
+                  </div>
                   <div className="w-full h-1.5 bg-black/60 rounded-full overflow-hidden border border-white/5">
                     <div
                       className="h-full rounded-full transition-all duration-500"
@@ -226,88 +221,96 @@ export const GauntletRanksModal: React.FC<GauntletRanksModalProps> = ({
                       }}
                     />
                   </div>
-                  <div className="flex justify-between text-[9px] font-['JetBrains_Mono'] text-text-muted">
-                    <span>{currentTierInfo.floor}</span>
-                    <span>{progressPercent}%</span>
-                    <span>{currentTierInfo.next}</span>
+                  <div className="flex justify-between text-[9px] font-['JetBrains_Mono'] text-text-muted mt-0.5">
+                    <span>{currentTierInfo.floor} pts</span>
+                    <span>{currentTierInfo.next} pts</span>
                   </div>
                 </div>
               )}
+
+              {/* Overall Rating & Points to Next */}
+              <div className="text-right sm:border-l sm:border-white/10 sm:pl-4 shrink-0">
+                <div className="text-xs font-['JetBrains_Mono'] text-text-muted">
+                  {subjectName ? `${subjectName} Rating:` : 'Rating:'}{' '}
+                  <strong className="text-white text-sm font-['Orbitron']">{Math.round(overallRating)}</strong>
+                </div>
+                {pointsToNext !== null && currentTierInfo.next !== null && (
+                  <div className="text-[10px] font-['Rajdhani'] font-bold text-accent">
+                    +{pointsToNext} pts to rank up
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Ranking Tiers Grid */}
-            <div className="space-y-2">
-              <span className="text-[11px] font-['Rajdhani'] font-bold text-text-muted uppercase tracking-wider block">
+            {/* Ranking Tiers Grid - 2 Columns (3 cards each) */}
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-['Rajdhani'] font-bold text-text-muted uppercase tracking-wider block">
                 All Rating Brackets
               </span>
-              <div className="space-y-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                 {TIERS.map(tier => {
                   const isCurrent = tier.name === currentTierInfo.name
                   return (
                     <div
                       key={tier.name}
-                      className={`p-3 rounded-xl border transition-all flex items-center justify-between gap-3 ${
+                      className={`p-2.5 rounded-xl border transition-all flex flex-col justify-between gap-1.5 ${
                         isCurrent
                           ? 'bg-[#181818] border-accent/40 shadow-[0_0_15px_rgba(0,255,65,0.08)]'
                           : 'bg-[#121212] border-[#222] hover:border-[#333]'
                       }`}
                     >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div
-                          className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{
-                            backgroundColor: tier.color,
-                            boxShadow: isCurrent ? `0 0 8px ${tier.color}` : 'none',
-                          }}
-                        />
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="font-['Orbitron'] font-bold text-xs sm:text-sm tracking-wider"
-                              style={{ color: tier.color }}
-                            >
-                              {tier.name}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div
+                            className="w-2.5 h-2.5 rounded-full shrink-0"
+                            style={{
+                              backgroundColor: tier.color,
+                              boxShadow: isCurrent ? `0 0 8px ${tier.color}` : 'none',
+                            }}
+                          />
+                          <span
+                            className="font-['Orbitron'] font-bold text-xs tracking-wider"
+                            style={{ color: tier.color }}
+                          >
+                            {tier.name}
+                          </span>
+                          {isCurrent && (
+                            <span className="text-[9px] font-['Rajdhani'] font-bold text-accent bg-accent/15 px-1.5 py-0.2 rounded uppercase tracking-wider">
+                              YOU
                             </span>
-                            {isCurrent && (
-                              <span className="text-[9px] font-['Rajdhani'] font-bold text-accent bg-accent/15 px-1.5 py-0.2 rounded uppercase tracking-wider">
-                                YOU
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[11px] text-text-muted truncate mt-0.5 font-['JetBrains_Mono']">
-                            {tier.description}
-                          </p>
+                          )}
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <span className="font-['JetBrains_Mono'] font-bold text-xs text-white">
+                            {tier.range}
+                          </span>
+                          <span className="text-[9px] font-['Rajdhani'] text-text-muted uppercase tracking-wider ml-1">
+                            ELO
+                          </span>
                         </div>
                       </div>
 
-                      <div className="shrink-0 text-right">
-                        <span className="font-['JetBrains_Mono'] font-bold text-xs sm:text-sm text-white block">
-                          {tier.range}
-                        </span>
-                        <span className="text-[9px] font-['Rajdhani'] text-text-muted uppercase tracking-wider">
-                          Rating
-                        </span>
-                      </div>
+                      <p className="text-[10px] text-text-muted font-['JetBrains_Mono'] leading-tight line-clamp-1">
+                        {tier.description}
+                      </p>
                     </div>
                   )
                 })}
               </div>
             </div>
 
-            {/* PRC TOS Calculation Note */}
-            <div className="p-3 rounded-xl bg-[#141414] border border-[#222] text-[11px] font-['JetBrains_Mono'] text-text-muted leading-relaxed space-y-1">
-              <div className="flex items-center gap-1.5 text-text-primary font-bold">
-                <Shield size={13} className="text-accent" />
-                <span>PRC Board Exam TOS Weighting</span>
+            {/* PRC TOS Calculation Note - Horizontal strip */}
+            <div className="p-2.5 rounded-xl bg-[#141414] border border-[#222] text-[11px] font-['JetBrains_Mono'] text-text-muted flex flex-col sm:flex-row sm:items-center justify-between gap-2 shrink-0">
+              <div className="flex items-center gap-1.5 text-text-primary font-bold shrink-0">
+                <Shield size={13} className="text-accent shrink-0" />
+                <span className="text-[11px]">PRC Board Exam TOS Weighting:</span>
               </div>
-              <p>
-                Overall Elo is calculated as a weighted average across all 4 subjects according to the official PRC ECE Table of Specifications:
-              </p>
-              <div className="flex flex-wrap gap-2 pt-1 font-semibold">
-                <span className="px-1.5 py-0.5 rounded bg-[#1e1e1e] text-white">MATH: 20%</span>
-                <span className="px-1.5 py-0.5 rounded bg-[#1e1e1e] text-white">GEAS: 20%</span>
-                <span className="px-1.5 py-0.5 rounded bg-[#1e1e1e] text-white">ELECS: 30%</span>
-                <span className="px-1.5 py-0.5 rounded bg-[#1e1e1e] text-white">EST: 30%</span>
+              <div className="flex flex-wrap items-center gap-2 font-semibold text-[10px]">
+                <span className="px-2 py-0.5 rounded bg-[#1e1e1e] text-white">MATH: 20%</span>
+                <span className="px-2 py-0.5 rounded bg-[#1e1e1e] text-white">GEAS: 20%</span>
+                <span className="px-2 py-0.5 rounded bg-[#1e1e1e] text-white">ELECS: 30%</span>
+                <span className="px-2 py-0.5 rounded bg-[#1e1e1e] text-white">EST: 30%</span>
               </div>
             </div>
           </div>

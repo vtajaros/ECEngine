@@ -16,6 +16,7 @@ const GetQuestionsSchema = z.object({
   excludeIds: z.array(z.string()).max(5000).optional().default([]),
   allowSolutions: z.boolean().optional().default(false),
   tosTopicId: z.string().optional(),
+  tosTopicIds: z.array(z.string()).optional(),
 })
 
 const AnswerSchema = z.object({
@@ -75,13 +76,14 @@ const GetFlaggedQuestionsSchema = z.object({
 const fail = (e: unknown) => ({ success: false, error: (e as Error).message })
 
 export function registerGauntletHandlers(): void {
-  ipcMain.handle('gauntlet:getPoolSizes', async (_, payload?: { allowSolutions?: boolean; tosTopicId?: string }) => {
+  ipcMain.handle('gauntlet:getPoolSizes', async (_, payload?: { allowSolutions?: boolean; tosTopicId?: string; tosTopicIds?: string[] }) => {
     try {
       return {
         success: true,
         data: G.getPoolSizes(getDB(), {
           allowSolutions: payload?.allowSolutions ?? false,
           tosTopicId: payload?.tosTopicId,
+          tosTopicIds: payload?.tosTopicIds,
         }),
       }
     } catch (e) { return fail(e) }
@@ -89,10 +91,10 @@ export function registerGauntletHandlers(): void {
 
   ipcMain.handle('gauntlet:getQuestions', async (_, payload: unknown) => {
     try {
-      const { counts, excludeIds, allowSolutions, tosTopicId } = GetQuestionsSchema.parse(payload)
+      const { counts, excludeIds, allowSolutions, tosTopicId, tosTopicIds } = GetQuestionsSchema.parse(payload)
       const db = getDB()
       const rows = counts.flatMap(({ subject, count }) =>
-        G.sampleQuestions(db, subject, count, excludeIds, { allowSolutions, tosTopicId }),
+        G.sampleQuestions(db, subject, count, excludeIds, { allowSolutions, tosTopicId, tosTopicIds }),
       )
       return { success: true, data: rows }
     } catch (e) { return fail(e) }

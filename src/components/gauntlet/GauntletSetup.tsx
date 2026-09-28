@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import {
   ArrowLeft,
   Timer,
@@ -11,7 +11,6 @@ import {
   Target,
   Zap,
   Layers,
-  ChevronDown,
   X,
 } from 'lucide-react'
 import type { Subject } from '../../types'
@@ -24,11 +23,15 @@ import {
   itemsPlanWarning,
   tightTimerWarning,
   getSurvivalDifficultyMultiplier,
+  TUNING,
+  overallRating,
+  ratingTier,
+  TIER_COLORS,
   type AllocationStrategy,
   type GauntletMode,
 } from '../../lib/gauntlet'
 import { SUBJECT_LINE_COLOR } from '../../lib/dashboardUtils'
-import { ALL_PARENT_TOS_TOPICS } from '../../lib/tosClassification'
+import { ALL_TOS_TOPICS } from '../../lib/tosClassification'
 import { gauntletService } from '../../services/gauntlet.service'
 import {
   DEFAULT_CONFIG,
@@ -36,6 +39,8 @@ import {
   type GauntletConfig,
 } from '../../store/useGauntletStore'
 import { Tooltip } from '../ui/Tooltip'
+import { GauntletTopicModal } from './GauntletTopicModal'
+import { GauntletRanksModal } from './GauntletRanksModal'
 
 const loadConfigForMode = (mode: GauntletMode): GauntletConfig => {
   try {
@@ -45,6 +50,11 @@ const loadConfigForMode = (mode: GauntletMode): GauntletConfig => {
     if (raw) {
       const parsed = JSON.parse(raw)
       delete parsed.allowSolutions
+      const tosTopicIds = Array.isArray(parsed.tosTopicIds)
+        ? parsed.tosTopicIds
+        : parsed.tosTopicId
+          ? [parsed.tosTopicId]
+          : []
       return {
         ...DEFAULT_CONFIG,
         ...parsed,
@@ -53,18 +63,30 @@ const loadConfigForMode = (mode: GauntletMode): GauntletConfig => {
         customCounts: parsed.customCounts ?? DEFAULT_CONFIG.customCounts,
         unlimitedItems: parsed.unlimitedItems ?? (mode === 'timed' ? true : false),
         tosTopicId: parsed.tosTopicId ?? null,
+        tosTopicIds,
+        durationSec: [300, 600, 1500, 3600].includes(parsed.durationSec) ? parsed.durationSec : 600,
+        perQuestionSec: [30, 60, 120, 0].includes(parsed.perQuestionSec) ? parsed.perQuestionSec : 30,
+        lives: [3, 5, 0].includes(parsed.lives) ? parsed.lives : 3,
       }
     }
   } catch {}
-  return { ...DEFAULT_CONFIG, mode, unlimitedItems: mode === 'timed' ? true : false, tosTopicId: null }
+  return {
+    ...DEFAULT_CONFIG,
+    mode,
+    unlimitedItems: mode === 'timed' ? true : false,
+    tosTopicId: null,
+    tosTopicIds: [],
+    durationSec: 600,
+    perQuestionSec: 30,
+    lives: 3,
+  }
 }
 
 const DURATION_PRESETS = [
   { label: '5m', sec: 5 * 60 },
   { label: '10m', sec: 10 * 60 },
-  { label: '15m', sec: 15 * 60 },
-  { label: '20m', sec: 20 * 60 },
-  { label: '30m', sec: 30 * 60 },
+  { label: '25m', sec: 25 * 60 },
+  { label: '1 hr', sec: 60 * 60 },
 ]
 
 export const GauntletSetup: React.FC = () => {
@@ -81,6 +103,16 @@ export const GauntletSetup: React.FC = () => {
     ...(setupPrefill ?? {}),
   }))
   const [dynamicPoolSizes, setDynamicPoolSizes] = useState<Record<Subject, number> | null>(null)
+  const [isTopicModalOpen, setIsTopicModalOpen] = useState(false)
+  const [isRanksOpen, setIsRanksOpen] = useState(false)
+  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Clean up click timer on unmount
+  useEffect(() => {
+    return () => {
+      if (clickTimeoutRef.current) clearTimeout(clickTimeoutRef.current)
+    }
+  }, [])
 
   // Apply prefill if updated from an external trigger (like Drill button)
   useEffect(() => {
@@ -100,12 +132,19 @@ export const GauntletSetup: React.FC = () => {
     } catch {}
   }, [config, setupMode])
 
-  // Fetch dynamic pool sizes when tosTopicId filter changes
+  // Fetch dynamic pool sizes when topic filters change
   useEffect(() => {
     let isMounted = true
+    const topicIds = config.tosTopicIds?.length
+      ? config.tosTopicIds
+      : config.tosTopicId
+        ? [config.tosTopicId]
+        : undefined
+
     gauntletService
       .getPoolSizes({
         tosTopicId: config.tosTopicId || undefined,
+        tosTopicIds: topicIds,
       })
       .then(sizes => {
         if (isMounted) {
@@ -118,48 +157,125 @@ export const GauntletSetup: React.FC = () => {
     return () => {
       isMounted = false
     }
-  }, [config.tosTopicId])
+  }, [config.tosTopicId, config.tosTopicIds])
 
   const poolSizes = dynamicPoolSizes ?? hub?.poolSizes ?? { MATH: 0, GEAS: 0, ELECS: 0, EST: 0 }
   const paceStats = hub?.pace ?? {}
 
-  const selectedTopic = useMemo(() => {
-    if (!config.tosTopicId) return null
-    return ALL_PARENT_TOS_TOPICS.find(t => t.id === config.tosTopicId) ?? null
-  }, [config.tosTopicId])
+  const ratings = hub?.ratings ?? {
+    MATH: { rating: TUNING.startRating, answers: 0 },
+    GEAS: { rating: TUNING.startRating, answers: 0 },
+    ELECS: { rating: TUNING.startRating, answers: 0 },
+    EST: { rating: TUNING.startRating, answers: 0 },
+  }
+  const overall = overallRating(ratings)
 
-  const filteredTopics = useMemo(() => {
-    if (config.subjects.length === 0) return ALL_PARENT_TOS_TOPICS
-    return ALL_PARENT_TOS_TOPICS.filter(t => config.subjects.includes(t.subject))
-  }, [config.subjects])
+  const isSolo = config.subjects.length === 1
+  const activeSubject = isSolo ? config.subjects[0] : null
+  const activeRating = activeSubject
+    ? (ratings[activeSubject]?.rating ?? TUNING.startRating)
+    : overall.rating
+  const isProvisional = activeSubject
+    ? (ratings[activeSubject]?.answers ?? 0) < TUNING.provisionalAnswers
+    : overall.provisional
 
-  const toggleSubject = (sub: Subject) => {
+  const currentTierInfo = ratingTier(activeRating)
+  const tierColor = TIER_COLORS[currentTierInfo.name] ?? '#00FF41'
+
+  let progressPercent = 100
+  let pointsToNext: number | null = null
+  if (currentTierInfo.next !== null) {
+    const rangeSpan = currentTierInfo.next - currentTierInfo.floor
+    const pointsGained = Math.max(0, activeRating - currentTierInfo.floor)
+    progressPercent = Math.min(100, Math.max(0, Math.round((pointsGained / rangeSpan) * 100)))
+    pointsToNext = Math.max(0, Math.ceil(currentTierInfo.next - activeRating))
+  }
+
+  const hasActiveTopics = (config.tosTopicIds && config.tosTopicIds.length > 0) || !!config.tosTopicId
+  const selectedCount = (config.tosTopicIds && config.tosTopicIds.length > 0)
+    ? config.tosTopicIds.length
+    : config.tosTopicId ? 1 : 0
+
+  // Single-click: solo that subject
+  const soloSubject = (sub: Subject) => {
     setConfig(prev => {
-      const exists = prev.subjects.includes(sub)
-      const nextSubs = exists ? prev.subjects.filter(s => s !== sub) : [...prev.subjects, sub]
-      // If a topic focus was active and its subject is no longer in nextSubs, or if multiple subjects are now chosen, clear it
-      const currentTopic = prev.tosTopicId ? ALL_PARENT_TOS_TOPICS.find(t => t.id === prev.tosTopicId) : null
-      const keepTopic = currentTopic && nextSubs.includes(currentTopic.subject) && nextSubs.length === 1
+      const nextTopicIds = (prev.tosTopicIds || []).filter(tid => {
+        const found = ALL_TOS_TOPICS.find(t => t.id === tid)
+        return found ? found.subject === sub : false
+      })
       return {
         ...prev,
-        subjects: nextSubs,
-        tosTopicId: keepTopic ? prev.tosTopicId : null,
+        subjects: [sub],
+        tosTopicIds: nextTopicIds,
+        tosTopicId: nextTopicIds[0] ?? null,
       }
     })
   }
 
-  const handleTopicSelect = (topicId: string) => {
-    if (!topicId) {
-      setConfig(prev => ({ ...prev, tosTopicId: null }))
+  // Double-click: toggle/add subject to the pool
+  const toggleSubject = (sub: Subject) => {
+    setConfig(prev => {
+      const exists = prev.subjects.includes(sub)
+      let nextSubs: Subject[]
+      if (exists) {
+        if (prev.subjects.length <= 1) return prev // keep at least 1 subject
+        nextSubs = prev.subjects.filter(s => s !== sub)
+      } else {
+        nextSubs = [...prev.subjects, sub]
+      }
+      const nextTopicIds = (prev.tosTopicIds || []).filter(tid => {
+        const found = ALL_TOS_TOPICS.find(t => t.id === tid)
+        return found ? nextSubs.includes(found.subject) : false
+      })
+      return {
+        ...prev,
+        subjects: nextSubs,
+        tosTopicIds: nextTopicIds,
+        tosTopicId: nextTopicIds[0] ?? null,
+      }
+    })
+  }
+
+  // Handle subject click with snappy 160ms debounce
+  const handleSubjectClick = (sub: Subject) => {
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current)
+      clickTimeoutRef.current = null
+      toggleSubject(sub)
+    } else {
+      clickTimeoutRef.current = setTimeout(() => {
+        clickTimeoutRef.current = null
+        soloSubject(sub)
+      }, 160)
+    }
+  }
+
+  const handleApplyTopics = (topicIds: string[]) => {
+    if (topicIds.length === 0) {
+      setConfig(prev => ({
+        ...prev,
+        tosTopicIds: [],
+        tosTopicId: null,
+      }))
       return
     }
-    const topic = ALL_PARENT_TOS_TOPICS.find(t => t.id === topicId)
-    if (!topic) return
-    setConfig(prev => ({
-      ...prev,
-      tosTopicId: topic.id,
-      subjects: [topic.subject], // restrict to topic's subject
-    }))
+
+    const topicSubjects = new Set<Subject>()
+    for (const tid of topicIds) {
+      const found = ALL_TOS_TOPICS.find(t => t.id === tid)
+      if (found) topicSubjects.add(found.subject)
+    }
+    const requiredSubjects = Array.from(topicSubjects)
+
+    setConfig(prev => {
+      const mergedSubs = Array.from(new Set([...prev.subjects, ...requiredSubjects]))
+      return {
+        ...prev,
+        tosTopicIds: topicIds,
+        tosTopicId: topicIds[0] ?? null,
+        subjects: mergedSubs.length > 0 ? mergedSubs : prev.subjects,
+      }
+    })
   }
 
   // Derived counts for timed mode (used in fixed target mode)
@@ -184,11 +300,11 @@ export const GauntletSetup: React.FC = () => {
     for (const s of config.subjects) {
       const avail = poolSizes[s] ?? 0
       if (avail === 0) {
-        warnings.push(`${s}: 0 cards available${config.tosTopicId ? ' in selected topic' : ''}`)
+        warnings.push(`${s}: 0 cards available${hasActiveTopics ? ' in selected topics' : ''}`)
       }
     }
     return warnings
-  }, [setupMode, config.unlimitedItems, config.subjects, config.tosTopicId, previewCounts, poolSizes])
+  }, [setupMode, config.unlimitedItems, config.subjects, hasActiveTopics, previewCounts, poolSizes])
 
   // Warnings (ii) Items plan warning for timed mode
   const planWarning = useMemo(() => {
@@ -260,32 +376,93 @@ export const GauntletSetup: React.FC = () => {
     <div className="absolute inset-0 z-20 min-h-0 w-full flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
       {/* Centered Setup Card (max-w ~720px) */}
       <div className="relative z-10 w-full max-w-[720px] bg-[#141414] border border-[#262626] rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.8)] p-5 sm:p-6 flex flex-col gap-4">
-        {/* Header: Back arrow + Mode Icon & Title */}
-        <div className="flex items-center justify-between border-b border-border-base/70 pb-3">
-          <div className="flex items-center gap-3">
+        {/* Header: Back arrow + Mode Icon & Title + Current Rank Pill with XP Meter */}
+        <div className="flex flex-wrap sm:flex-nowrap items-center justify-between border-b border-border-base/70 pb-3 gap-2">
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <Tooltip content="Back to Mode Selection (Esc)" position="right">
               <button
                 type="button"
                 onClick={closeSetup}
-                className="w-8 h-8 rounded-lg bg-surface border border-border-base hover:border-text-primary text-text-muted hover:text-white flex items-center justify-center transition-colors"
+                className="w-8 h-8 rounded-lg bg-surface border border-border-base hover:border-text-primary text-text-muted hover:text-white flex items-center justify-center transition-colors shrink-0"
               >
                 <ArrowLeft size={16} />
               </button>
             </Tooltip>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
               {setupMode === 'timed' ? (
-                <Timer size={22} className="text-accent" />
+                <Timer size={22} className="text-accent shrink-0" />
               ) : (
-                <Flame size={22} className="text-[#ef4444]" />
+                <Flame size={22} className="text-[#ef4444] shrink-0" />
               )}
-              <h2 className="font-['Orbitron'] font-bold text-lg text-text-primary uppercase tracking-wider">
+              <h2 className="font-['Orbitron'] font-bold text-base sm:text-lg text-text-primary uppercase tracking-wider truncate">
                 {setupMode === 'timed' ? 'Time Trial Setup' : 'Survival Setup'}
               </h2>
             </div>
           </div>
-          <span className="text-[11px] font-['Rajdhani'] font-bold text-text-muted uppercase tracking-wider hidden sm:block">
-            {setupMode === 'timed' ? 'Race the Clock' : 'Beat the Timer'}
-          </span>
+
+          {/* Current Rank Pill with XP Meter (matches Gauntlet Home rankings button design) */}
+          <Tooltip content="Click to view Elo Ranking Tiers" position="bottom">
+            <button
+              type="button"
+              onClick={() => setIsRanksOpen(true)}
+              className="bg-[#141414] border hover:border-accent rounded-xl px-2.5 sm:px-3 py-1.5 flex items-center gap-2 sm:gap-2.5 text-xs shrink-0 transition-all cursor-pointer group shadow-[0_0_12px_rgba(0,0,0,0.5)]"
+              style={{
+                borderColor: `${tierColor}55`,
+                boxShadow: `0 0 12px ${tierColor}18`,
+              }}
+            >
+              <div className="flex items-center gap-1.5">
+                <span
+                  className="font-['Orbitron'] font-bold text-[10px] sm:text-[11px] group-hover:underline"
+                  style={{ color: tierColor }}
+                >
+                  {activeSubject ?? 'OVERALL'}
+                </span>
+                <span className="font-['JetBrains_Mono'] font-bold text-white text-xs sm:text-sm">
+                  {Math.round(activeRating)}
+                </span>
+                <span
+                  className="font-['Rajdhani'] font-bold text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded uppercase tracking-wider"
+                  style={{
+                    backgroundColor: `${tierColor}20`,
+                    color: tierColor,
+                    border: `1px solid ${tierColor}40`,
+                  }}
+                >
+                  {currentTierInfo.name}
+                </span>
+                {isProvisional && (
+                  <span className="text-[9px] font-['Rajdhani'] font-bold text-[#FFB800] uppercase tracking-wider">
+                    PROV
+                  </span>
+                )}
+              </div>
+
+              {/* XP Meter to Next Rank */}
+              {currentTierInfo.next !== null ? (
+                <div className="flex flex-col gap-0.5 pl-2 border-l border-white/10 min-w-[70px] sm:min-w-[85px] text-left">
+                  <div className="flex items-center justify-between text-[9px] font-['JetBrains_Mono'] text-text-muted leading-none">
+                    <span className="text-[8px] uppercase tracking-wider">XP</span>
+                    <span className="font-bold text-white">+{pointsToNext} pts</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-black/70 rounded-full overflow-hidden border border-white/10">
+                    <div
+                      className="h-full rounded-full transition-all duration-300"
+                      style={{
+                        width: `${progressPercent}%`,
+                        backgroundColor: tierColor,
+                        boxShadow: `0 0 6px ${tierColor}`,
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="pl-2 border-l border-white/10 text-[9px] font-['Rajdhani'] font-bold text-[#C084FC] uppercase tracking-wider">
+                  MAX RANK
+                </div>
+              )}
+            </button>
+          </Tooltip>
         </div>
 
         {/* Load Error alert */}
@@ -302,6 +479,9 @@ export const GauntletSetup: React.FC = () => {
             <span className="font-['Rajdhani'] font-bold text-xs uppercase tracking-wider text-text-primary">
               Select Subjects
             </span>
+            <span className="text-[10px] font-['JetBrains_Mono'] text-text-muted hidden sm:inline">
+              Single-click to solo · Double-click to combine
+            </span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -313,8 +493,8 @@ export const GauntletSetup: React.FC = () => {
                 <button
                   key={subject}
                   type="button"
-                  onClick={() => toggleSubject(subject)}
-                  className={`p-2 rounded-xl border-2 flex flex-col items-center justify-center text-center transition-all ${
+                  onClick={() => handleSubjectClick(subject)}
+                  className={`p-2 rounded-xl border-2 flex flex-col items-center justify-center text-center transition-all cursor-pointer ${
                     selected
                       ? 'bg-surface-2'
                       : 'bg-surface/50 border-border-base opacity-60 hover:opacity-100'
@@ -349,54 +529,74 @@ export const GauntletSetup: React.FC = () => {
         </div>
 
         {/* Topic Focus (Optional Category Drill-down) */}
-        <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-surface/60 border border-border-base/70">
+        <div className="flex flex-col gap-2 p-3 rounded-xl bg-surface/60 border border-border-base/70">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <Layers size={13} className={config.tosTopicId ? 'text-accent' : 'text-text-muted'} />
+              <Layers size={13} className={hasActiveTopics ? 'text-accent' : 'text-text-muted'} />
               <span className="font-['Rajdhani'] font-bold text-xs uppercase tracking-wider text-text-primary">
                 Topic Focus (Optional)
               </span>
             </div>
-            {config.tosTopicId && (
+            {hasActiveTopics && (
               <button
                 type="button"
-                onClick={() => setConfig(c => ({ ...c, tosTopicId: null }))}
-                className="text-[10px] font-['JetBrains_Mono'] text-accent hover:underline flex items-center gap-1 transition-colors"
+                onClick={() => setConfig(c => ({ ...c, tosTopicId: null, tosTopicIds: [] }))}
+                className="text-[10px] font-['JetBrains_Mono'] text-accent hover:underline flex items-center gap-1 transition-colors cursor-pointer"
               >
                 <X size={10} /> Clear Filter (All Topics)
               </button>
             )}
           </div>
 
-          <div className="relative">
-            <select
-              value={config.tosTopicId ?? ''}
-              onChange={e => handleTopicSelect(e.target.value)}
-              className="w-full bg-surface-2 border border-border-base rounded-lg px-3 py-2 text-xs font-['Rajdhani'] font-semibold text-text-primary focus:border-accent focus:outline-none appearance-none cursor-pointer pr-8 transition-colors"
-            >
-              <option value="">All Topics (Comprehensive Pool)</option>
-              {filteredTopics.map(topic => (
-                <option key={topic.id} value={topic.id}>
-                  {topic.subject} · {topic.name}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-text-muted">
-              <ChevronDown size={14} />
-            </div>
-          </div>
-
-          {selectedTopic && (
-            <div className="px-2.5 py-1.5 rounded-lg bg-surface border border-accent/30 flex items-center justify-between text-xs font-['JetBrains_Mono'] mt-0.5">
-              <div className="flex items-center gap-2 truncate">
-                <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse shrink-0" />
-                <span className="text-text-primary truncate">
-                  {selectedTopic.shortBadge}
+          <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-surface-2 border border-border-base">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div
+                className={`w-2 h-2 rounded-full shrink-0 ${
+                  hasActiveTopics
+                    ? 'bg-accent animate-pulse shadow-[0_0_8px_#00FF41]'
+                    : 'bg-[#555]'
+                }`}
+              />
+              <div className="flex flex-col min-w-0">
+                <span className="font-['Orbitron'] font-bold text-xs text-text-primary truncate">
+                  {hasActiveTopics
+                    ? `${selectedCount} ${selectedCount === 1 ? 'Topic Selected' : 'Topics Selected'}`
+                    : 'All Topics (Comprehensive Pool)'}
+                </span>
+                <span className="text-[10px] font-['JetBrains_Mono'] text-text-muted truncate">
+                  {hasActiveTopics
+                    ? 'Questions will be sampled exclusively from chosen topics'
+                    : 'Random pool across all syllabus chapters'}
                 </span>
               </div>
-              <span className="text-accent shrink-0 font-bold ml-2">
-                {poolSizes[selectedTopic.subject] ?? 0} available
-              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsTopicModalOpen(true)}
+              className="px-3.5 py-1.5 rounded-lg bg-surface border border-border-base hover:border-accent hover:text-white text-text-muted font-['Rajdhani'] font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all shrink-0 cursor-pointer"
+            >
+              <Layers size={13} />
+              {hasActiveTopics ? 'Edit Topics' : 'Filter Topics'}
+            </button>
+          </div>
+
+          {/* Selected Topic Badges Preview */}
+          {hasActiveTopics && (
+            <div className="flex flex-wrap gap-1.5 mt-0.5 max-h-16 overflow-y-auto">
+              {(config.tosTopicIds || []).map(tid => {
+                const topic = ALL_TOS_TOPICS.find(t => t.id === tid)
+                if (!topic) return null
+                return (
+                  <span
+                    key={tid}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-['JetBrains_Mono'] bg-surface border border-accent/30 text-text-primary"
+                  >
+                    <span className="text-accent font-bold">{topic.code}</span>
+                    <span className="truncate max-w-[140px]">{topic.title}</span>
+                  </span>
+                )
+              })}
             </div>
           )}
         </div>
@@ -409,7 +609,7 @@ export const GauntletSetup: React.FC = () => {
               <span className="font-['Rajdhani'] font-bold text-xs uppercase tracking-wider text-text-primary">
                 Session Duration
               </span>
-              <div className="grid grid-cols-5 gap-2">
+              <div className="grid grid-cols-4 gap-2">
                 {DURATION_PRESETS.map(preset => {
                   const active = config.durationSec === preset.sec
                   return (
@@ -417,7 +617,7 @@ export const GauntletSetup: React.FC = () => {
                       key={preset.sec}
                       type="button"
                       onClick={() => setConfig(c => ({ ...c, durationSec: preset.sec }))}
-                      className={`py-2 rounded-lg font-['Orbitron'] font-bold text-xs transition-colors ${
+                      className={`py-2 rounded-lg font-['Orbitron'] font-bold text-xs transition-colors cursor-pointer ${
                         active
                           ? 'bg-accent text-black shadow'
                           : 'bg-surface-2 border border-border-base text-text-muted hover:text-white'
@@ -622,44 +822,46 @@ export const GauntletSetup: React.FC = () => {
         ) : (
           /* Survival Mode Settings */
           <div className="flex flex-col gap-4">
-            {/* Lives: 3 / 5 / 10 */}
+            {/* Lives: 3 / 5 / Unlimited */}
             <div className="flex flex-col gap-1.5">
               <span className="font-['Rajdhani'] font-bold text-xs uppercase tracking-wider text-text-primary">
                 Starting Lives
               </span>
               <div className="grid grid-cols-3 gap-2">
-                {[3, 5, 10].map(lives => {
+                {[
+                  { lives: 3, label: '3 LIVES' },
+                  { lives: 5, label: '5 LIVES' },
+                  { lives: 0, label: 'UNLIMITED' },
+                ].map(({ lives, label }) => {
                   const active = config.lives === lives
                   return (
                     <button
-                      key={lives}
+                      key={label}
                       type="button"
                       onClick={() => setConfig(c => ({ ...c, lives }))}
-                      className={`py-3 rounded-xl font-['Orbitron'] font-bold text-xs sm:text-sm tracking-wider flex items-center justify-center gap-1.5 sm:gap-2 transition-all ${
+                      className={`py-3 rounded-xl font-['Orbitron'] font-bold text-xs sm:text-sm tracking-wider flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${
                         active
                           ? 'bg-[#ef4444] text-white shadow-[0_0_20px_rgba(239,68,68,0.4)]'
                           : 'bg-surface-2 border border-border-base text-text-muted hover:text-white'
                       }`}
                     >
                       <Flame size={15} fill="currentColor" />
-                      {lives} LIVES
+                      {label}
                     </button>
                   )
                 })}
               </div>
             </div>
 
-            {/* Per-Question Limit: 20s, 30s, 45s, 60s, 2min, Unlimited */}
+            {/* Per-Question Limit: 30s, 1m, 2m, Unlimited */}
             <div className="flex flex-col gap-1.5">
               <span className="font-['Rajdhani'] font-bold text-xs uppercase tracking-wider text-text-primary">
                 Per-Question Time Limit
               </span>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[
-                  { sec: 20, label: '20 SECONDS' },
                   { sec: 30, label: '30 SECONDS' },
-                  { sec: 45, label: '45 SECONDS' },
-                  { sec: 60, label: '60 SECONDS' },
+                  { sec: 60, label: '1 MINUTE' },
                   { sec: 120, label: '2 MINUTES' },
                   { sec: 0, label: 'UNLIMITED' },
                 ].map(({ sec, label }) => {
@@ -669,7 +871,7 @@ export const GauntletSetup: React.FC = () => {
                       key={sec}
                       type="button"
                       onClick={() => setConfig(c => ({ ...c, perQuestionSec: sec }))}
-                      className={`py-2 rounded-lg font-['Orbitron'] font-bold text-xs transition-colors ${
+                      className={`py-2 rounded-lg font-['Orbitron'] font-bold text-xs transition-colors cursor-pointer ${
                         active
                           ? 'bg-accent text-black shadow'
                           : 'bg-surface-2 border border-border-base text-text-muted hover:text-white'
@@ -745,11 +947,11 @@ export const GauntletSetup: React.FC = () => {
               </button>
               <div className="flex flex-col">
                 <span className="font-['Rajdhani'] font-bold text-xs uppercase tracking-wider text-text-primary">
-                  {config.tosTopicId ? 'Ranked (0.4x Scale)' : 'Ranked'}
+                  {hasActiveTopics ? 'Ranked (0.4x Scale)' : 'Ranked'}
                 </span>
                 <span className="text-[10px] font-['JetBrains_Mono'] text-text-muted">
                   {config.rated
-                    ? config.tosTopicId
+                    ? hasActiveTopics
                       ? 'Topic focused: 0.4x Elo rating adjustment'
                       : isRatedRun({ subjects: config.subjects })
                         ? 'Counts toward subject Elo ratings'
@@ -776,6 +978,22 @@ export const GauntletSetup: React.FC = () => {
           </button>
         </div>
       </div>
+
+      <GauntletTopicModal
+        isOpen={isTopicModalOpen}
+        onClose={() => setIsTopicModalOpen(false)}
+        selectedTopicIds={config.tosTopicIds || []}
+        onApply={handleApplyTopics}
+        activeSubjects={config.subjects}
+      />
+
+      <GauntletRanksModal
+        isOpen={isRanksOpen}
+        onClose={() => setIsRanksOpen(false)}
+        overallRating={activeRating}
+        isProvisional={isProvisional}
+        subjectName={activeSubject ?? undefined}
+      />
     </div>
   )
 }

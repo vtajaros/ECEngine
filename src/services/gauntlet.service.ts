@@ -19,7 +19,7 @@ export type WeakTopicStat = {
 }
 
 export const gauntletService = {
-  async getPoolSizes(opts?: { allowSolutions?: boolean; tosTopicId?: string } | boolean): Promise<Record<GauntletSubjectCode, number>> {
+  async getPoolSizes(opts?: { allowSolutions?: boolean; tosTopicId?: string; tosTopicIds?: string[] } | boolean): Promise<Record<GauntletSubjectCode, number>> {
     const payload = typeof opts === 'boolean'
       ? { allowSolutions: opts }
       : opts
@@ -33,8 +33,9 @@ export const gauntletService = {
     excludeIds?: string[],
     allowSolutions?: boolean,
     tosTopicId?: string,
+    tosTopicIds?: string[],
   ): Promise<GauntletCard[]> {
-    const res = await window.electron.gauntlet.getQuestions({ counts, excludeIds, allowSolutions, tosTopicId })
+    const res = await window.electron.gauntlet.getQuestions({ counts, excludeIds, allowSolutions, tosTopicId, tosTopicIds })
     if (!res.success) throw new Error(res.error || 'Failed to get questions')
     const rows = res.data || []
     return rows.map((r: any) => ({

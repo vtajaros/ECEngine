@@ -116,19 +116,34 @@ const safeParse = (s: unknown): unknown => {
 
 export function getPoolSizes(
   db: Database.Database,
-  options?: { allowSolutions?: boolean; tosTopicId?: string } | boolean,
+  options?: { allowSolutions?: boolean; tosTopicId?: string; tosTopicIds?: string[] } | boolean,
 ): Record<GauntletSubjectCode, number> {
   const allowSolutions = typeof options === 'boolean' ? options : options?.allowSolutions ?? false
-  const tosTopicId = typeof options === 'object' ? options?.tosTopicId : undefined
+  const topicIds = typeof options === 'object'
+    ? options?.tosTopicIds?.length
+      ? options.tosTopicIds
+      : options?.tosTopicId
+        ? [options.tosTopicId]
+        : []
+    : []
   const out: Record<GauntletSubjectCode, number> = { MATH: 0, GEAS: 0, ELECS: 0, EST: 0 }
   const solutionClause = allowSolutions ? '1=1' : NOT_PROBLEM_SOLVING
 
   let topicClause = '1=1'
   const topicParams: string[] = []
-  if (tosTopicId) {
-    topicClause = '(c.tos_topic_id = ? OR c.tos_topic_id LIKE ?)'
-    const prefix = tosTopicId.replace(/\.0$/, '')
-    topicParams.push(tosTopicId, `${prefix}.%`)
+  if (topicIds.length > 0) {
+    const clauses: string[] = []
+    for (const tid of topicIds) {
+      if (tid.endsWith('.0')) {
+        const prefix = tid.replace(/\.0$/, '')
+        clauses.push('(c.tos_topic_id = ? OR c.tos_topic_id LIKE ?)')
+        topicParams.push(tid, `${prefix}.%`)
+      } else {
+        clauses.push('c.tos_topic_id = ?')
+        topicParams.push(tid)
+      }
+    }
+    topicClause = `(${clauses.join(' OR ')})`
   }
 
   const stmt = db.prepare(`
@@ -236,21 +251,36 @@ export function sampleQuestions(
   subject: GauntletSubjectCode,
   count: number,
   excludeIds: string[] = [],
-  options?: { allowSolutions?: boolean; tosTopicId?: string } | boolean,
+  options?: { allowSolutions?: boolean; tosTopicId?: string; tosTopicIds?: string[] } | boolean,
 ): Array<Record<string, unknown>> {
   if (count <= 0) return []
 
   const allowSolutions = typeof options === 'boolean' ? options : options?.allowSolutions ?? false
-  const tosTopicId = typeof options === 'object' ? options?.tosTopicId : undefined
+  const filterTopicIds = typeof options === 'object'
+    ? options?.tosTopicIds?.length
+      ? options.tosTopicIds
+      : options?.tosTopicId
+        ? [options.tosTopicId]
+        : []
+    : []
   const solutionClause = allowSolutions ? '1=1' : NOT_PROBLEM_SOLVING
   const weakTopics = getWeakTosTopics(db, subject, 5).map(w => w.tosTopicId)
 
   let topicClause = '1=1'
   const extraParams: string[] = []
-  if (tosTopicId) {
-    topicClause = '(c.tos_topic_id = ? OR c.tos_topic_id LIKE ?)'
-    const prefix = tosTopicId.replace(/\.0$/, '')
-    extraParams.push(tosTopicId, `${prefix}.%`)
+  if (filterTopicIds.length > 0) {
+    const clauses: string[] = []
+    for (const tid of filterTopicIds) {
+      if (tid.endsWith('.0')) {
+        const prefix = tid.replace(/\.0$/, '')
+        clauses.push('(c.tos_topic_id = ? OR c.tos_topic_id LIKE ?)')
+        extraParams.push(tid, `${prefix}.%`)
+      } else {
+        clauses.push('c.tos_topic_id = ?')
+        extraParams.push(tid)
+      }
+    }
+    topicClause = `(${clauses.join(' OR ')})`
   }
 
   const sampled = db.prepare(`

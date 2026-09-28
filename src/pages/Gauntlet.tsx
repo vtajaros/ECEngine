@@ -199,6 +199,25 @@ Please explain:
 
   const lastSoundRef = useRef<string | null>(null)
   const lastTickSecRef = useRef<number | null>(null)
+  const [activeStreakBonus, setActiveStreakBonus] = useState<number | null>(null)
+  const streakBonusTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  useEffect(() => {
+    if (!feedback) return
+    if (feedback.streakBonus && feedback.streakBonus > 0) {
+      setActiveStreakBonus(feedback.streakBonus)
+      if (streakBonusTimerRef.current) clearTimeout(streakBonusTimerRef.current)
+      streakBonusTimerRef.current = setTimeout(() => {
+        setActiveStreakBonus(null)
+      }, 2000)
+    }
+  }, [feedback])
+
+  useEffect(() => {
+    return () => {
+      if (streakBonusTimerRef.current) clearTimeout(streakBonusTimerRef.current)
+    }
+  }, [])
 
   // Reset tick ref when question index changes
   useEffect(() => {
@@ -1493,16 +1512,16 @@ Please explain:
             <span>Streak:</span>
             <strong
               className={`transition-all ${
-                streak > 0 && streak % 5 === 0
-                  ? 'text-[#f59e0b] drop-shadow-[0_0_8px_rgba(245,158,11,0.7)]'
+                activeStreakBonus
+                  ? 'text-[#00FF41] drop-shadow-[0_0_8px_rgba(0,255,65,0.7)]'
                   : 'text-[#f59e0b]'
               }`}
             >
               {streak}
             </strong>
-            {streak > 0 && streak % 5 === 0 && (
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold text-[#f59e0b] bg-[#f59e0b]/20 border border-[#f59e0b]/40 animate-pulse">
-                +{feedback?.streakBonus || 50} BONUS
+            {activeStreakBonus && (
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold text-[#00FF41] bg-[#00FF41]/20 border border-[#00FF41]/40 animate-pulse shadow-[0_0_10px_rgba(0,255,65,0.3)]">
+                +{activeStreakBonus} BONUS
               </span>
             )}
           </div>
@@ -1514,7 +1533,7 @@ Please explain:
               }`}
             >
               <Heart size={14} fill="currentColor" />
-              <strong>{livesLeft}</strong>
+              <strong>{config.lives === 0 ? '∞' : livesLeft}</strong>
             </div>
           )}
         </div>
