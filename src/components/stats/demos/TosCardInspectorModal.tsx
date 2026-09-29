@@ -33,6 +33,7 @@ export function TosCardInspectorModal({
   const [editingCardId, setEditingCardId] = useState<string | null>(null)
   const [tagSearch, setTagSearch] = useState('')
   const [savingTagId, setSavingTagId] = useState<string | null>(null)
+  const [popoverDirection, setPopoverDirection] = useState<'down' | 'up'>('down')
   const popoverRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -289,11 +290,14 @@ export function TosCardInspectorModal({
                     <div className="relative">
                       <button
                         type="button"
-                        onClick={() => {
+                        onClick={(e) => {
                           if (editingCardId === card.id) {
                             setEditingCardId(null)
                             setTagSearch('')
                           } else {
+                            const rect = e.currentTarget.getBoundingClientRect()
+                            const spaceBelow = window.innerHeight - rect.bottom
+                            setPopoverDirection(spaceBelow < 320 ? 'up' : 'down')
                             setEditingCardId(card.id)
                             setTagSearch('')
                           }
@@ -318,7 +322,9 @@ export function TosCardInspectorModal({
                       {editingCardId === card.id && (
                         <div
                           ref={popoverRef}
-                          className="absolute right-0 top-full mt-1.5 w-72 sm:w-80 max-h-72 bg-[#161616] border border-border-base rounded-xl shadow-[0_10px_35px_rgba(0,0,0,0.9)] z-30 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+                          className={`absolute right-0 ${
+                            popoverDirection === 'up' ? 'bottom-full mb-1.5 origin-bottom-right' : 'top-full mt-1.5 origin-top-right'
+                          } w-72 sm:w-80 max-h-72 bg-[#161616] border border-border-base rounded-xl shadow-[0_10px_35px_rgba(0,0,0,0.9)] z-30 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150`}
                           onClick={(e) => e.stopPropagation()}
                         >
                           {/* Popover Search Header */}

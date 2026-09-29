@@ -47,7 +47,7 @@ export function TosCoverageMatrixDemo() {
 
   useEffect(() => {
     const handleFocus = () => {
-      fetchTosCoverageMatrix()
+      fetchTosCoverageMatrix(true)
     }
     window.addEventListener('focus', handleFocus)
     return () => window.removeEventListener('focus', handleFocus)
@@ -91,7 +91,7 @@ export function TosCoverageMatrixDemo() {
     return TOC_DATA.filter((s) => s.id === selectedSubject)
   }, [selectedSubject])
 
-  // Aggregate statistics for ribbon
+  // Aggregate statistics for ribbon — filtered by selectedSubject when not ALL
   const stats = useMemo(() => {
     if (!matrix) {
       return {
@@ -106,7 +106,9 @@ export function TosCoverageMatrixDemo() {
     let coveredSubtopics = 0
     let totalSubtopics = 0
 
-    TOC_DATA.forEach((subject) => {
+    const subjectsForCoverage = selectedSubject === 'ALL' ? TOC_DATA : TOC_DATA.filter((s) => s.id === selectedSubject)
+
+    subjectsForCoverage.forEach((subject) => {
       const subCounts = matrix.bySubject[subject.id]?.countsByTosId || {}
       subject.topics.forEach((t) => {
         t.subtopics.forEach((st) => {
@@ -118,14 +120,28 @@ export function TosCoverageMatrixDemo() {
       })
     })
 
+    if (selectedSubject === 'ALL') {
+      return {
+        totalCards: matrix.totalCards,
+        classified: matrix.totalClassified,
+        unclassified: matrix.totalUnclassified,
+        coveredSubtopics,
+        totalSubtopics,
+      }
+    }
+
+    // Subject-specific stats
+    const subjectData = matrix.bySubject[selectedSubject]
+    const subjectTotal = subjectData?.totalCards || 0
+    const subjectUnclassified = subjectData?.unclassifiedCards || 0
     return {
-      totalCards: matrix.totalCards,
-      classified: matrix.totalClassified,
-      unclassified: matrix.totalUnclassified,
+      totalCards: subjectTotal,
+      classified: subjectTotal - subjectUnclassified,
+      unclassified: subjectUnclassified,
       coveredSubtopics,
       totalSubtopics,
     }
-  }, [matrix])
+  }, [matrix, selectedSubject])
 
   // Flat list of topics based on subject, status filter, and search
   const filteredTopics = useMemo(() => {
@@ -380,56 +396,6 @@ export function TosCoverageMatrixDemo() {
         </div>
       </div>
 
-      {/* Status Filter Badges */}
-      <div className="flex items-center gap-2 flex-wrap text-xs">
-        <span className="text-text-muted font-['Rajdhani'] uppercase tracking-wider font-bold text-[11px] flex items-center gap-1">
-          <Filter size={11} />
-          <span>Filter:</span>
-        </span>
-        <button
-          onClick={() => setStatusFilter('all')}
-          className={`px-2.5 py-1 rounded text-[11px] font-['JetBrains_Mono'] transition-colors ${
-            statusFilter === 'all'
-              ? 'bg-accent/20 text-accent border border-accent/40 font-bold'
-              : 'bg-[#0c0c0c] text-text-muted hover:text-text-primary border border-border-base'
-          }`}
-        >
-          All Topics
-        </button>
-        <button
-          onClick={() => setStatusFilter('covered')}
-          className={`px-2.5 py-1 rounded text-[11px] font-['JetBrains_Mono'] transition-colors ${
-            statusFilter === 'covered'
-              ? 'bg-green-500/20 text-green-400 border border-green-500/40 font-bold'
-              : 'bg-[#0c0c0c] text-text-muted hover:text-text-primary border border-border-base'
-          }`}
-        >
-          Covered Only (&gt; 0)
-        </button>
-        <button
-          onClick={() => setStatusFilter('missing')}
-          className={`px-2.5 py-1 rounded text-[11px] font-['JetBrains_Mono'] transition-colors ${
-            statusFilter === 'missing'
-              ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40 font-bold'
-              : 'bg-[#0c0c0c] text-text-muted hover:text-text-primary border border-border-base'
-          }`}
-        >
-          Missing Only (0)
-        </button>
-        {stats.unclassified > 0 && (
-          <button
-            onClick={() => setStatusFilter('unclassified')}
-            className={`px-2.5 py-1 rounded text-[11px] font-['JetBrains_Mono'] transition-colors ${
-              statusFilter === 'unclassified'
-                ? 'bg-red-500/20 text-red-400 border border-red-500/40 font-bold'
-                : 'bg-[#0c0c0c] text-text-muted hover:text-text-primary border border-border-base'
-            }`}
-          >
-            Untagged Bucket ({stats.unclassified})
-          </button>
-        )}
-      </div>
-
       {/* Master-Detail Two-Column Layout */}
       <div className="grid grid-cols-1 md:grid-cols-12 rounded-xl border border-border-base bg-[#0A0A0A] overflow-hidden h-[580px] lg:h-[640px]">
         {/* Left Column: Master Topics List */}
@@ -645,7 +611,7 @@ export function TosCoverageMatrixDemo() {
         tosTopicId={inspectParams.tosTopicId}
         topicTitle={inspectParams.topicTitle}
         isUnclassified={inspectParams.isUnclassified}
-        onTagUpdated={fetchTosCoverageMatrix}
+        onTagUpdated={() => fetchTosCoverageMatrix(true)}
       />
     </div>
   )
