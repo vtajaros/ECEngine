@@ -1647,23 +1647,6 @@ Please explain:
               >
                 {currentItem.subject}
               </span>
-              {(() => {
-                const partner = getSharedTopicPartnerSubject(
-                  currentItem.subject,
-                  currentItem.card.tosTopicId,
-                  currentItem.card.tags
-                )
-                if (!partner) return null
-                return (
-                  <span
-                    className="px-2 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold tracking-wider flex items-center gap-1 bg-surface-3/60 border border-brand-cyan/40 text-brand-cyan"
-                    title={`Shared topic with ${partner}: Elo changes are split 50/50 between ${currentItem.subject} and ${partner}`}
-                  >
-                    <span>+ {partner}</span>
-                    <span className="text-[9px] text-text-muted font-['Rajdhani'] uppercase tracking-normal font-semibold">Shared</span>
-                  </span>
-                )
-              })()}
             </div>
           </div>
 
