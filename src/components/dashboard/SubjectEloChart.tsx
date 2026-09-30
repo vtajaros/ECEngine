@@ -11,11 +11,75 @@ interface SubjectEloChartProps {
 
 const SUBJECTS: Array<'MATH' | 'GEAS' | 'ELECS' | 'EST'> = ['MATH', 'GEAS', 'ELECS', 'EST']
 
+// Custom tooltip that shows the actual ELO at the hovered point, not null-interpolated values
+const CustomTooltip = ({
+  active,
+  payload,
+  label,
+  visibleSubjects,
+}: {
+  active?: boolean
+  payload?: any[]
+  label?: string | number
+  visibleSubjects: Array<'MATH' | 'GEAS' | 'ELECS' | 'EST'>
+}) => {
+  if (!active || !payload || payload.length === 0) return null
+
+  // Get the data point's date from the first payload entry
+  const dateLabel = payload[0]?.payload?.date ?? label
+
+  // Only show subjects that have a real (non-null) value at this exact point
+  const validItems = payload.filter(
+    (p) => p.dataKey && visibleSubjects.includes(p.dataKey) && p.value !== null && p.value !== undefined,
+  )
+
+  if (validItems.length === 0) return null
+
+  return (
+    <div
+      style={{
+        backgroundColor: '#0D0D0D',
+        border: '1px solid #2A2A2A',
+        borderRadius: 8,
+        fontSize: 11,
+        fontFamily: 'JetBrains Mono',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
+        padding: '8px 12px',
+        minWidth: 120,
+      }}
+    >
+      <div style={{ color: '#666', marginBottom: 4, fontSize: 10 }}>{dateLabel}</div>
+      {validItems.map((item) => (
+        <div key={item.dataKey} style={{ color: item.color ?? GAUNTLET_SUBJECT_COLORS[item.dataKey as keyof typeof GAUNTLET_SUBJECT_COLORS], fontWeight: 700, marginTop: 2 }}>
+          {item.dataKey} : {Math.round(item.value)} Elo
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function SubjectEloChart({ data, subject = 'ALL', isLoading = false }: SubjectEloChartProps) {
   const visibleSubjects = subject === 'ALL' ? SUBJECTS : [subject]
   const hasData =
     data.length > 0 &&
     data.some(d => visibleSubjects.some(s => d[s] !== null && d[s] !== undefined))
+
+  // Enrich data with an index so each point has a unique x position
+  const indexedData = data.map((d, i) => ({ ...d, _idx: i }))
+
+  // Build tick positions spaced evenly across the data range to avoid crowding
+  const maxTicks = 8
+  const tickIndices: number[] = []
+  if (data.length > 0) {
+    if (data.length <= maxTicks) {
+      for (let i = 0; i < data.length; i++) tickIndices.push(i)
+    } else {
+      tickIndices.push(0)
+      const step = (data.length - 1) / (maxTicks - 1)
+      for (let i = 1; i < maxTicks - 1; i++) tickIndices.push(Math.round(i * step))
+      tickIndices.push(data.length - 1)
+    }
+  }
 
   return (
     <div className="flex-1 w-full relative" style={{ minHeight: 200 }}>
@@ -34,7 +98,7 @@ function SubjectEloChart({ data, subject = 'ALL', isLoading = false }: SubjectEl
       ) : (
         <div className="absolute inset-0">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
+            <LineChart data={indexedData} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
               <defs>
                 <filter id="elo-lineglow" x="-20%" y="-20%" width="140%" height="140%">
                   <feGaussianBlur stdDeviation="2.5" result="blur" />
@@ -46,12 +110,18 @@ function SubjectEloChart({ data, subject = 'ALL', isLoading = false }: SubjectEl
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1E1E1E" />
               <XAxis
-                dataKey="date"
+                dataKey="_idx"
+                type="number"
+                domain={[0, Math.max(0, indexedData.length - 1)]}
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: '#555', fontSize: 10, fontFamily: 'JetBrains Mono' }}
                 dy={10}
-                interval="preserveStartEnd"
+                ticks={tickIndices}
+                tickFormatter={(idx: number) => {
+                  const point = indexedData[idx]
+                  return point?.date ?? ''
+                }}
               />
               <YAxis
                 domain={['auto', 'auto']}
@@ -68,19 +138,7 @@ function SubjectEloChart({ data, subject = 'ALL', isLoading = false }: SubjectEl
                 label={{ value: '1000 Base', fill: '#3A3A3A', fontSize: 9, fontFamily: 'JetBrains Mono', position: 'insideTopRight' }}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: '#0D0D0D',
-                  border: '1px solid #2A2A2A',
-                  borderRadius: '8px',
-                  fontSize: '11px',
-                  fontFamily: 'JetBrains Mono',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
-                  padding: '8px 12px',
-                }}
-                labelStyle={{ color: '#666', marginBottom: 4 }}
-                formatter={(value: any, name: any) =>
-                  value !== null && value !== undefined ? [`${value} Elo`, name] : ['—', name]
-                }
+                content={<CustomTooltip visibleSubjects={visibleSubjects} />}
                 cursor={{ stroke: '#2A2A2A', strokeWidth: 1 }}
               />
               {visibleSubjects.map(subj => (

@@ -167,6 +167,32 @@ function renderSegment(segment: string): string {
 }
 
 /**
+ * Auto-braces unbraced multi-character subscripts and superscripts in LaTeX / math text
+ * so that long word/multi-digit subscripts (like H_products, V_gs, x_10, r^3a) render correctly.
+ *
+ * Examples:
+ *   H_products   -> H_{products}
+ *   H_reactants  -> H_{reactants}
+ *   V_gs         -> V_{gs}
+ *   x^10         -> x^{10}
+ *
+ * Ignores escaped characters (\_), already-braced subscripts (_{...}), and LaTeX commands (_\frac).
+ */
+export const normalizeLatexSubscriptsAndSuperscripts = (text: string): string => {
+  if (!text || typeof text !== 'string') return ''
+
+  // Replace unbraced multi-character word subscripts (e.g. _products, _reactants, _gs)
+  // or multi-digit subscripts (e.g. _10, _123) with length >= 2.
+  // Requires word identifier starting with letter, or 2+ digits (does not group digit-then-letter like 2y).
+  let result = text.replace(/(?<!\\)_([a-zA-Z][a-zA-Z0-9_]+|[0-9]{2,})/g, '_{$1}')
+
+  // Replace unbraced multi-character superscripts (e.g. ^max, ^10) with length >= 2
+  result = result.replace(/(?<!\\)\^([a-zA-Z][a-zA-Z0-9_]+|[0-9]{2,})/g, '^{$1}')
+
+  return result
+}
+
+/**
  * Applies Markdown-style inline formatting markers to HTML.
  * Called on plain-text segments ONLY — never passed into KaTeX.
  * Segments must already be HTML-escaped (via renderSegment) before calling this.
@@ -183,17 +209,17 @@ function applyInlineFormatting(text: string): string {
     .replace(/(?<!_)__(?!_)(.+?)(?<!_)__(?!_)/gs, '<u>$1</u>')
 
   // Superscript: ^{multi}, ^|...|  (absolute value), ^(...) (parenthesized group),
-  // or ^x (single non-space char or number with optional sign/decimal)
+  // or ^x (word identifier, digits/signed number, or single char)
   result = result.replace(/\^\{([^}]+)\}/g, '<sup>$1</sup>')
   result = result.replace(/\^\|([^|]*)\|/g, '<sup>|$1|</sup>')
   result = result.replace(/\^\(([^)]*)\)/g, '<sup>($1)</sup>')
-  result = result.replace(/\^([+-]?\d+(?:\.\d+)?|[^\s{|(])/g, '<sup>$1</sup>')
+  result = result.replace(/\^([a-zA-Z][a-zA-Z0-9_]+|[0-9]+|[+-]?\d+(?:\.\d+)?|[^\s{|(])/g, '<sup>$1</sup>')
 
   // Subscript: _{multi}, _(...) (parenthesized group),
-  // or _x (single non-space char or number with optional sign/decimal)
+  // or _x (word identifier, digits/signed number, or single char)
   result = result.replace(/\_\{([^}]+)\}/g, '<sub>$1</sub>')
   result = result.replace(/\_\(([^)]*)\)/g, '<sub>($1)</sub>')
-  result = result.replace(/(?<!\*\*?)(?<!_)_(?!\*\*?)([+-]?\d+(?:\.\d+)?|[^\s_{(])/g, '<sub>$1</sub>')
+  result = result.replace(/(?<!\*\*?)(?<!_)_(?!\*\*?)([a-zA-Z][a-zA-Z0-9_]+|[0-9]+|[+-]?\d+(?:\.\d+)?|[^\s_{(])/g, '<sub>$1</sub>')
 
   return result
 }
@@ -248,8 +274,8 @@ function renderProseSegment(segment: string): string {
 export const renderMath = (text: string): string => {
   if (!text || typeof text !== 'string') return ''
 
-  // ── Normalize non-standard / MathJax-only commands to KaTeX equivalents ──
-  const normalized = text
+  // ── Auto-brace multi-character subscripts/superscripts & normalize non-standard commands ──
+  const normalized = normalizeLatexSubscriptsAndSuperscripts(text)
     .replace(/\\exponentialE\b/g, 'e')           // Euler's number e
     .replace(/\\imaginaryI\b/g, 'i')             // imaginary unit i
     .replace(/\\imaginaryJ\b/g, 'j')             // imaginary unit j (engineering)

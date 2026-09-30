@@ -14,7 +14,7 @@ import { gauntletService } from '../services/gauntlet.service'
 import { dbService } from '../services/db.service'
 import { renderMath, renderPlainText, renderQuestionPreview } from '../lib/latex'
 import { SUBJECT_LINE_COLOR } from '../lib/dashboardUtils'
-import { formatTosBadge } from '../lib/tosClassification'
+import { formatTosBadge, getTosTopicGroupsBySubject } from '../lib/tosClassification'
 import type { Card, MCQData, Subject } from '../types'
 import type { QueueItem } from '../store/useGauntletStore'
 import { AnimatePresence } from 'framer-motion'
@@ -44,6 +44,9 @@ import {
   BookOpen,
   Flag,
   Folder,
+  Tag,
+  Search,
+  Loader2,
 } from 'lucide-react'
 
 export const LINGER_CORRECT_MS = 1800
@@ -130,6 +133,13 @@ const RunPlaceholder: React.FC<RunPlaceholderProps> = ({
   const [flaggedMap, setFlaggedMap] = useState<Record<string, { reason: string | null; flaggedAt: number }>>({})
   const [flagModalCard, setFlagModalCard] = useState<{ id: string; question: string } | null>(null)
 
+  // TOS category editing state (in review summary)
+  const [editingCategoryCardId, setEditingCategoryCardId] = useState<string | null>(null)
+  const [categorySearch, setCategorySearch] = useState('')
+  const [savingCategoryId, setSavingCategoryId] = useState<string | null>(null)
+  const [tosTopicOverrides, setTosTopicOverrides] = useState<Record<string, string | null>>({})
+  const categoryPopoverRef = useRef<HTMLDivElement | null>(null)
+
   const missedCards = useMemo(() => {
     const map = new Map<string, Card>()
     for (const a of answers) {
@@ -166,6 +176,19 @@ const RunPlaceholder: React.FC<RunPlaceholderProps> = ({
       }
     }
   }, [phase, answers])
+
+  // Close category popover on click outside
+  useEffect(() => {
+    if (!editingCategoryCardId) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (categoryPopoverRef.current && !categoryPopoverRef.current.contains(e.target as Node)) {
+        setEditingCategoryCardId(null)
+        setCategorySearch('')
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [editingCategoryCardId])
 
   const handleGetContext = useCallback((mcq: MCQData) => {
     if (!mcq || !Array.isArray(mcq.choices)) return
@@ -984,24 +1007,40 @@ Please explain:
                             a.item.card.tags
                           )
                           if (!partner) return null
+                          const partnerColor = SUBJECT_LINE_COLOR[partner as keyof typeof SUBJECT_LINE_COLOR] ?? '#888'
                           return (
                             <Tooltip content={`Shared topic with ${partner}: Elo split 50/50`} position="top">
-                              <span className="px-1.5 py-0.5 rounded text-[9px] font-['Orbitron'] font-bold border border-brand-cyan/40 bg-brand-cyan/10 text-brand-cyan shrink-0 cursor-default">
+                              <span
+                                className="px-1.5 py-0.5 rounded text-[9px] font-['Orbitron'] font-bold shrink-0 cursor-default"
+                                style={{
+                                  color: partnerColor,
+                                  borderWidth: 1,
+                                  borderStyle: 'solid',
+                                  borderColor: `${partnerColor}66`,
+                                  backgroundColor: `${partnerColor}18`,
+                                }}
+                              >
                                 +{partner}
                               </span>
                             </Tooltip>
                           )
                         })()}
 
-                        {a.item.card.tosTopicId && (
-                          <Tooltip content={formatTosBadge(a.item.card.tosTopicId) || a.item.card.tosTopicId} position="top">
-                            <span
-                              className="px-1.5 py-0.5 rounded text-[9px] font-['JetBrains_Mono'] font-bold border border-border-base bg-[#181818] text-[#888] shrink-0 cursor-default"
-                            >
-                              {a.item.card.tosTopicId}
-                            </span>
-                          </Tooltip>
-                        )}
+                        {(() => {
+                          const effectiveTosId = tosTopicOverrides.hasOwnProperty(a.item.card.id)
+                            ? tosTopicOverrides[a.item.card.id]
+                            : a.item.card.tosTopicId
+                          const tosLabel = effectiveTosId ? (formatTosBadge(effectiveTosId) || effectiveTosId) : null
+                          return effectiveTosId ? (
+                            <Tooltip content={tosLabel || effectiveTosId!} position="top">
+                              <span
+                                className="px-1.5 py-0.5 rounded text-[9px] font-['JetBrains_Mono'] font-bold border border-border-base bg-[#181818] text-[#888] shrink-0 cursor-default"
+                              >
+                                {effectiveTosId}
+                              </span>
+                            </Tooltip>
+                          ) : null
+                        })()}
 
                         {/* Deck & Card Location Badge */}
                         {a.item.card.deckName && (
@@ -1243,6 +1282,144 @@ Please explain:
                             />
                           </div>
                         )}
+
+                        {/* TOS Category Changer */}
+                        {(() => {
+                          const cardId = a.item.card.id
+                          const subject = a.item.subject
+                          const currentTosId = tosTopicOverrides.hasOwnProperty(cardId)
+                            ? tosTopicOverrides[cardId]
+                            : a.item.card.tosTopicId
+                          const isEditing = editingCategoryCardId === cardId
+                          const isSaving = savingCategoryId === cardId
+
+                          const topicGroups = isEditing
+                            ? (() => {
+                                const groups = getTosTopicGroupsBySubject(subject)
+                                if (!categorySearch.trim()) return groups
+                                const q = categorySearch.toLowerCase()
+                                return groups
+                                  .map((g) => ({
+                                    ...g,
+                                    subtopics: g.subtopics.filter(
+                                      (st) =>
+                                        st.code.toLowerCase().includes(q) ||
+                                        st.name.toLowerCase().includes(q) ||
+                                        st.title.toLowerCase().includes(q) ||
+                                        st.id.toLowerCase().includes(q) ||
+                                        g.parent.name.toLowerCase().includes(q)
+                                    ),
+                                  }))
+                                  .filter((g) => g.subtopics.length > 0 || g.parent.name.toLowerCase().includes(q))
+                              })()
+                            : []
+
+                          const handleSelectCategory = async (newTosTopicId: string | null) => {
+                            setSavingCategoryId(cardId)
+                            try {
+                              await dbService.decks.batchUpdateCardTosTopic([{ id: cardId, tos_topic_id: newTosTopicId }])
+                              setTosTopicOverrides(prev => ({ ...prev, [cardId]: newTosTopicId }))
+                              setEditingCategoryCardId(null)
+                              setCategorySearch('')
+                              setToastMessage('TOS category updated')
+                              setShowToast(true)
+                            } catch (err) {
+                              console.error('Failed to update TOS category:', err)
+                            } finally {
+                              setSavingCategoryId(null)
+                            }
+                          }
+
+                          return (
+                            <div className="relative">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  if (isEditing) {
+                                    setEditingCategoryCardId(null)
+                                    setCategorySearch('')
+                                  } else {
+                                    setEditingCategoryCardId(cardId)
+                                    setCategorySearch('')
+                                  }
+                                }}
+                                className={`px-2.5 py-1 rounded text-xs font-['Rajdhani'] font-bold flex items-center gap-1.5 transition-colors ${
+                                  isEditing
+                                    ? 'bg-accent/15 border border-accent/60 text-accent'
+                                    : 'bg-surface border border-border-base hover:border-accent text-text-muted hover:text-accent'
+                                }`}
+                              >
+                                {isSaving ? <Loader2 size={12} className="animate-spin" /> : <Tag size={12} />}
+                                {currentTosId ? `Change Category (${currentTosId})` : 'Assign Category'}
+                              </button>
+
+                              {isEditing && (
+                                <div
+                                  ref={categoryPopoverRef}
+                                  className="absolute z-50 bottom-full mb-2 left-0 w-72 bg-[#111] border border-[#333] rounded-xl shadow-2xl overflow-hidden"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {/* Search */}
+                                  <div className="p-2 border-b border-[#222] flex items-center gap-2">
+                                    <Search size={12} className="text-text-muted shrink-0" />
+                                    <input
+                                      autoFocus
+                                      type="text"
+                                      placeholder="Search topics…"
+                                      value={categorySearch}
+                                      onChange={(e) => setCategorySearch(e.target.value)}
+                                      className="flex-1 bg-transparent text-[11px] text-text-primary font-['JetBrains_Mono'] outline-none placeholder-[#444]"
+                                    />
+                                  </div>
+
+                                  {/* Clear option */}
+                                  {currentTosId && (
+                                    <button
+                                      type="button"
+                                      onClick={() => void handleSelectCategory(null)}
+                                      className="w-full px-3 py-1.5 text-left text-[11px] font-['JetBrains_Mono'] text-[#ef4444] hover:bg-[#ef4444]/10 transition-colors flex items-center gap-1.5"
+                                    >
+                                      <X size={11} /> Remove category
+                                    </button>
+                                  )}
+
+                                  {/* Topic list */}
+                                  <div className="max-h-48 overflow-y-auto show-scrollbar">
+                                    {topicGroups.length === 0 ? (
+                                      <div className="px-3 py-4 text-center text-[11px] text-text-muted font-['JetBrains_Mono']">
+                                        No matching topics
+                                      </div>
+                                    ) : (
+                                      topicGroups.map((group) => (
+                                        <div key={group.parent.id}>
+                                          {/* Parent header */}
+                                          <div className="px-3 py-1 text-[9px] font-['JetBrains_Mono'] font-bold text-text-muted uppercase tracking-widest bg-[#0D0D0D] border-b border-[#1a1a1a]">
+                                            {group.parent.code} {group.parent.title}
+                                          </div>
+                                          {/* Subtopics */}
+                                          {group.subtopics.map((sub) => (
+                                            <button
+                                              key={sub.id}
+                                              type="button"
+                                              onClick={() => void handleSelectCategory(sub.id)}
+                                              className={`w-full px-4 py-1.5 text-left text-[11px] font-['JetBrains_Mono'] hover:bg-accent/10 hover:text-accent transition-colors flex items-center justify-between gap-2 ${
+                                                currentTosId === sub.id ? 'text-accent bg-accent/5' : 'text-[#aaa]'
+                                              }`}
+                                            >
+                                              <span className="truncate">{sub.code} {sub.title}</span>
+                                              {currentTosId === sub.id && <CheckCircle2 size={11} className="shrink-0 text-accent" />}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      ))
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })()}
 
                         {/* Row Actions: Get Context + AI Explain + Flag Question */}
                         <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">

@@ -166,13 +166,52 @@ function toQueueItem(source: GauntletCard): QueueItem {
   return { card, subject: source.subjectCode, parMs, weight, cardRating: cardRating(weight) }
 }
 
-/** Survival ramp: pull the remaining card closest to the streak's target weight into position `from`. */
-function rampNext(queue: QueueItem[], from: number, streak: number): QueueItem[] {
+/** Spacing pass: swap adjacent cards that share a tos_topic_id with the next card that doesn't. */
+function spaceByTopic(queue: QueueItem[], startFrom = 0): QueueItem[] {
+  const q = [...queue]
+  const start = Math.max(1, startFrom)
+  for (let i = start; i < q.length; i++) {
+    const prevTopic = q[i - 1].card.tosTopicId
+    const currTopic = q[i].card.tosTopicId
+    if (!prevTopic || currTopic !== prevTopic) continue
+
+    let j = i + 1
+    while (j < q.length && q[j].card.tosTopicId === prevTopic) {
+      j++
+    }
+    if (j < q.length) {
+      ;[q[i], q[j]] = [q[j], q[i]]
+    }
+  }
+  return q
+}
+
+/** Survival ramp: pull the remaining card closest to the streak's target weight into position `from`, avoiding recent topics if possible. */
+function rampNext(queue: QueueItem[], from: number, streak: number, excludeTopics: string[] = []): QueueItem[] {
   const remaining = queue.slice(from)
-  const i = pickNextIndex(remaining.map(q => q.weight), streak)
-  if (i > 0) {
+  if (remaining.length <= 1) return queue
+
+  const items = remaining.map((q, idx) => ({
+    weight: q.weight,
+    origIdx: idx,
+    excluded:
+      excludeTopics.length > 0 &&
+      !!q.card.tosTopicId &&
+      excludeTopics.includes(q.card.tosTopicId),
+  }))
+
+  const nonExcluded = items.filter(it => !it.excluded)
+  const pool = nonExcluded.length > 0 ? nonExcluded : items
+
+  const pickedPoolIdx = pickNextIndex(
+    pool.map(it => it.weight),
+    streak
+  )
+  const actualRelIdx = pool[pickedPoolIdx]?.origIdx ?? 0
+
+  if (actualRelIdx > 0) {
     const q = [...queue]
-    ;[q[from], q[from + i]] = [q[from + i], q[from]]
+    ;[q[from], q[from + actualRelIdx]] = [q[from + actualRelIdx], q[from]]
     return q
   }
   return queue
@@ -348,7 +387,7 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
         reqArgs.push(topicIds)
       }
       const cards = await (gauntletService.getQuestions as any)(...reqArgs)
-      items = shuffle(cards.map(toQueueItem))
+      items = spaceByTopic(shuffle(cards.map(toQueueItem)))
     } catch {
       items = []
     }
@@ -358,8 +397,14 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
       return
     }
     const waiting = cur.index >= cur.queue.length
-    let queue = [...cur.queue, ...items]
-    if (waiting && items.length > 0) queue = rampNext(queue, cur.index, cur.streak)
+    let queue = spaceByTopic([...cur.queue, ...items], cur.index)
+    if (waiting && items.length > 0) {
+      const recentTopics = cur.answers
+        .slice(-3)
+        .map(a => a.item.card.tosTopicId)
+        .filter((id): id is string => Boolean(id))
+      queue = rampNext(queue, cur.index, cur.streak, recentTopics)
+    }
     set({
       queue,
       isRefilling: false,
@@ -504,7 +549,11 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
     }
 
     const nextIndex = s.index + 1
-    const queue = survival ? rampNext(s.queue, nextIndex, res.streakAfter) : s.queue
+    const recentTopics = [...s.answers, record]
+      .slice(-3)
+      .map(a => a.item.card.tosTopicId)
+      .filter((id): id is string => Boolean(id))
+    const queue = survival ? rampNext(s.queue, nextIndex, res.streakAfter, recentTopics) : s.queue
 
     set({
       answers: [...s.answers, record],
@@ -598,7 +647,7 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
           reqArgs.push(topicIds)
         }
         const cards: GauntletCard[] = await (gauntletService.getQuestions as any)(...reqArgs)
-        let queue = shuffle(cards.map(toQueueItem))
+        let queue = spaceByTopic(shuffle(cards.map(toQueueItem)))
         if (queue.length === 0) throw new Error('No questions available for the selected subjects.')
         if (config.mode === 'survival') queue = rampNext(queue, 0, 0)
         set({

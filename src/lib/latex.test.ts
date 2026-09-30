@@ -9,6 +9,7 @@ import {
   scanForDoubleEscapes,
   formatQuestionPreview,
   renderQuestionPreview,
+  normalizeLatexSubscriptsAndSuperscripts,
 } from './latex'
 
 // ─── isRawLatex ─────────────────────────────────────────────────────────────
@@ -216,6 +217,32 @@ describe('renderMath', () => {
     const html = renderMath(broken)
     expect(html).not.toContain('katex-error')
     expect(html).not.toContain('color:#cc0000')
+  })
+
+  it('correctly normalizes and renders long multi-character subscripts in equations', () => {
+    const equation = '1. \\Delta H = H_products - H_reactants < 0.'
+    const html = renderMath(equation)
+    expect(html).toContain('<sub>products</sub>')
+    expect(html).toContain('<sub>reactants</sub>')
+
+    const delimited = '1. $$\\Delta H = H_products - H_reactants < 0.$$'
+    const htmlDelimited = renderMath(delimited)
+    expect(htmlDelimited).toContain('katex')
+    expect(htmlDelimited).not.toContain('katex-error')
+  })
+})
+
+describe('normalizeLatexSubscriptsAndSuperscripts', () => {
+  it('auto-braces unbraced multi-character subscripts and superscripts', () => {
+    expect(normalizeLatexSubscriptsAndSuperscripts('H_products - H_reactants')).toBe('H_{products} - H_{reactants}')
+    expect(normalizeLatexSubscriptsAndSuperscripts('V_gs + I_out')).toBe('V_{gs} + I_{out}')
+    expect(normalizeLatexSubscriptsAndSuperscripts('x^10 + r^max')).toBe('x^{10} + r^{max}')
+  })
+
+  it('preserves single-character, already-braced, or command subscripts', () => {
+    expect(normalizeLatexSubscriptsAndSuperscripts('H_p - H_r')).toBe('H_p - H_r')
+    expect(normalizeLatexSubscriptsAndSuperscripts('H_{products}')).toBe('H_{products}')
+    expect(normalizeLatexSubscriptsAndSuperscripts('x_\\frac{1}{2}')).toBe('x_\\frac{1}{2}')
   })
 })
 
