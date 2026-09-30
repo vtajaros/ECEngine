@@ -448,7 +448,7 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
     }
 
     const playerRating = s.ratings[item.subject]?.rating ?? TUNING.startRating
-    const isInsulator = playerRating < 800
+    const isInsulator = playerRating < 850
 
     const res = scoreAnswer({
       outcome,

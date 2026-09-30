@@ -321,15 +321,15 @@ export function expectedScore(playerRating: number, opponentRating: number): num
 
 export function kFactor(answersSoFar: number, currentRating: number = 500): number {
   let baseK: number
-  if (currentRating < 800) {
+  if (currentRating < 850) {
     baseK = 40 // Insulator
-  } else if (currentRating < 1000) {
+  } else if (currentRating < 1200) {
     baseK = 32 // Semiconductor
-  } else if (currentRating < 1100) {
-    baseK = 26 // Conductor
-  } else if (currentRating < 1300) {
-    baseK = 22 // Copper
   } else if (currentRating < 1500) {
+    baseK = 26 // Conductor
+  } else if (currentRating < 1800) {
+    baseK = 22 // Copper
+  } else if (currentRating < 2000) {
     baseK = 18 // Silver
   } else {
     baseK = 14 // Superconductor
@@ -440,8 +440,8 @@ export function computeAnswerEloDelta(
   const k = kFactor(answersSoFar, playerRating)
   let rawDelta = k * (s - e)
 
-  // Insulator rank (500–799): soften Elo loss on mistakes by 50% to incentivize grinding
-  if (playerRating < 800 && rawDelta < 0) {
+  // Insulator rank (500–849): soften Elo loss on mistakes by 50% to incentivize grinding
+  if (playerRating < 850 && rawDelta < 0) {
     rawDelta = rawDelta * 0.5
   }
 
@@ -558,21 +558,21 @@ export interface RatingTierInfo {
 }
 
 export const TIER_COLORS: Record<TierName, string> = {
-  INSULATOR: '#94A3B8',
+  INSULATOR: '#FFFFFF',
   SEMICONDUCTOR: '#38BDF8',
-  CONDUCTOR: '#00FF41',
+  CONDUCTOR: '#C084FC',
   COPPER: '#F97316',
   SILVER: '#E2E8F0',
-  SUPERCONDUCTOR: '#C084FC',
+  SUPERCONDUCTOR: '#00FF41',
 }
 
 export function ratingTier(rating: number): RatingTierInfo {
-  if (rating < 800) return { name: 'INSULATOR', floor: 500, next: 800 }
-  if (rating < 1000) return { name: 'SEMICONDUCTOR', floor: 800, next: 1000 }
-  if (rating < 1100) return { name: 'CONDUCTOR', floor: 1000, next: 1100 }
-  if (rating < 1300) return { name: 'COPPER', floor: 1100, next: 1300 }
-  if (rating < 1500) return { name: 'SILVER', floor: 1300, next: 1500 }
-  return { name: 'SUPERCONDUCTOR', floor: 1500, next: null }
+  if (rating < 850) return { name: 'INSULATOR', floor: 500, next: 850 }
+  if (rating < 1200) return { name: 'SEMICONDUCTOR', floor: 850, next: 1200 }
+  if (rating < 1500) return { name: 'CONDUCTOR', floor: 1200, next: 1500 }
+  if (rating < 1800) return { name: 'COPPER', floor: 1500, next: 1800 }
+  if (rating < 2000) return { name: 'SILVER', floor: 1800, next: 2000 }
+  return { name: 'SUPERCONDUCTOR', floor: 2000, next: null }
 }
 
 // ── Pace Model & Session Planning ────────────────────────────────────────────

@@ -130,12 +130,12 @@ const FAQ_ITEMS: AccordionItem[] = [
         <div className="p-2.5 rounded-lg bg-surface-2 border border-border-base space-y-1.5 text-[11px]">
           <span className="font-bold text-accent block uppercase font-['Orbitron'] text-[10px]">6 Progression Tiers:</span>
           <div className="grid grid-cols-2 gap-2 text-text-muted">
-            <div><strong className="text-[#94A3B8]">INSULATOR:</strong> 500 – 799</div>
-            <div><strong className="text-[#F97316]">COPPER:</strong> 1100 – 1299</div>
-            <div><strong className="text-[#38BDF8]">SEMICONDUCTOR:</strong> 800 – 999</div>
-            <div><strong className="text-[#E2E8F0]">SILVER:</strong> 1300 – 1499</div>
-            <div><strong className="text-[#00FF41]">CONDUCTOR:</strong> 1000 – 1099</div>
-            <div><strong className="text-[#C084FC]">SUPERCONDUCTOR:</strong> 1500+</div>
+            <div><strong className="text-[#FFFFFF]">INSULATOR:</strong> 500 – 849</div>
+            <div><strong className="text-[#F97316]">COPPER:</strong> 1500 – 1799</div>
+            <div><strong className="text-[#38BDF8]">SEMICONDUCTOR:</strong> 850 – 1199</div>
+            <div><strong className="text-[#E2E8F0]">SILVER:</strong> 1800 – 1999</div>
+            <div><strong className="text-[#C084FC]">CONDUCTOR:</strong> 1200 – 1499</div>
+            <div><strong className="text-[#00FF41]">SUPERCONDUCTOR:</strong> 2000+</div>
           </div>
         </div>
         <p className="text-text-muted">

@@ -197,11 +197,11 @@ describe('GauntletSetup Component', () => {
       root.render(<GauntletSetup />)
     })
 
-    // Ratings in hub are 1200 across all subjects -> Overall 1200 is COPPER tier
-    expect(container.textContent).toContain('COPPER')
+    // Ratings in hub are 1200 across all subjects -> Overall 1200 is CONDUCTOR tier
+    expect(container.textContent).toContain('CONDUCTOR')
     expect(container.textContent).toContain('1200')
     expect(container.textContent).toContain('XP')
-    expect(container.textContent).toContain('+100 pts') // 1300 - 1200 = 100 to Silver
+    expect(container.textContent).toContain('+300 pts') // 1500 - 1200 = 300 to Copper
   })
 
   it('defaults topic modal tab to solo subject when filter topics is clicked', async () => {

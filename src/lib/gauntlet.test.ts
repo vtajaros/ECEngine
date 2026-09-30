@@ -273,7 +273,7 @@ describe('rating', () => {
     expect(down.rating).toBe(500) // Hard floor at 500
     expect(up.answers).toBe(1)
   })
-  it('softens Elo loss by 50% in Insulator rank (under 800) on wrong answers', () => {
+  it('softens Elo loss by 50% in Insulator rank (under 850) on wrong answers', () => {
     // Insulator rating 700: K=40*1.25=50, expected=0.5, rawDelta=-25 -> halved to -12.5 -> rating 687.5
     const insulatorDown = applyAnswerToRating({ rating: 700, answers: 0 }, 700, 'wrong', 0)
     expect(insulatorDown.rating).toBe(687.5)
@@ -329,18 +329,18 @@ describe('allocation and ramp', () => {
 
 describe('rating tiers', () => {
   it('maps rating to proper tier and boundaries', () => {
-    expect(ratingTier(500)).toEqual({ name: 'INSULATOR', floor: 500, next: 800 })
-    expect(ratingTier(799)).toEqual({ name: 'INSULATOR', floor: 500, next: 800 })
-    expect(ratingTier(800)).toEqual({ name: 'SEMICONDUCTOR', floor: 800, next: 1000 })
-    expect(ratingTier(999)).toEqual({ name: 'SEMICONDUCTOR', floor: 800, next: 1000 })
-    expect(ratingTier(1000)).toEqual({ name: 'CONDUCTOR', floor: 1000, next: 1100 })
-    expect(ratingTier(1099)).toEqual({ name: 'CONDUCTOR', floor: 1000, next: 1100 })
-    expect(ratingTier(1100)).toEqual({ name: 'COPPER', floor: 1100, next: 1300 })
-    expect(ratingTier(1299)).toEqual({ name: 'COPPER', floor: 1100, next: 1300 })
-    expect(ratingTier(1300)).toEqual({ name: 'SILVER', floor: 1300, next: 1500 })
-    expect(ratingTier(1499)).toEqual({ name: 'SILVER', floor: 1300, next: 1500 })
-    expect(ratingTier(1500)).toEqual({ name: 'SUPERCONDUCTOR', floor: 1500, next: null })
-    expect(ratingTier(2000)).toEqual({ name: 'SUPERCONDUCTOR', floor: 1500, next: null })
+    expect(ratingTier(500)).toEqual({ name: 'INSULATOR', floor: 500, next: 850 })
+    expect(ratingTier(849)).toEqual({ name: 'INSULATOR', floor: 500, next: 850 })
+    expect(ratingTier(850)).toEqual({ name: 'SEMICONDUCTOR', floor: 850, next: 1200 })
+    expect(ratingTier(1199)).toEqual({ name: 'SEMICONDUCTOR', floor: 850, next: 1200 })
+    expect(ratingTier(1200)).toEqual({ name: 'CONDUCTOR', floor: 1200, next: 1500 })
+    expect(ratingTier(1499)).toEqual({ name: 'CONDUCTOR', floor: 1200, next: 1500 })
+    expect(ratingTier(1500)).toEqual({ name: 'COPPER', floor: 1500, next: 1800 })
+    expect(ratingTier(1799)).toEqual({ name: 'COPPER', floor: 1500, next: 1800 })
+    expect(ratingTier(1800)).toEqual({ name: 'SILVER', floor: 1800, next: 2000 })
+    expect(ratingTier(1999)).toEqual({ name: 'SILVER', floor: 1800, next: 2000 })
+    expect(ratingTier(2000)).toEqual({ name: 'SUPERCONDUCTOR', floor: 2000, next: null })
+    expect(ratingTier(2500)).toEqual({ name: 'SUPERCONDUCTOR', floor: 2000, next: null })
   })
 })
 
@@ -636,7 +636,7 @@ describe('pace model and warnings', () => {
         expect(wrongDelta).toBeLessThan(0)
       })
 
-      it('softens wrong delta by 50% for Insulator rank (< 800)', () => {
+      it('softens wrong delta by 50% for Insulator rank (< 850)', () => {
         const normalDelta = computeAnswerEloDelta(900, 900, 30, 'wrong', 0)
         const insulatorDelta = computeAnswerEloDelta(750, 750, 30, 'wrong', 0)
         expect(Math.abs(insulatorDelta)).toBeLessThan(Math.abs(normalDelta))
