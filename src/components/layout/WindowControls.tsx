@@ -87,7 +87,7 @@ export const WindowControls: React.FC = () => {
       <button
         type="button"
         onClick={() => controls?.close()}
-        className="w-[46px] h-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#e81123] active:bg-[#c4101e] transition-colors duration-150 focus:outline-none"
+        className={`w-[46px] h-full flex items-center justify-center text-gray-400 hover:text-white hover:bg-[#e81123] active:bg-[#c4101e] transition-colors duration-150 focus:outline-none ${isMaximized ? '' : 'rounded-tr-xl'}`}
         title="Close"
         aria-label="Close"
       >

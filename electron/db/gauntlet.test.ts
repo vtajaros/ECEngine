@@ -952,6 +952,7 @@ describe('Gauntlet DB persistence', () => {
 
       saveRun(db, {
         id: 'run-eda-1',
+        config: {},
         startedAt: 1000,
         endedAt: 2000,
         mode: 'timed',

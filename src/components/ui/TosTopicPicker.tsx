@@ -6,7 +6,7 @@ import { getTosTopicGroupsBySubject, formatTosBadge } from '../../lib/tosClassif
 export interface TosTopicPickerProps {
   value: string | null
   onChange: (newTopicId: string | null) => void
-  subject?: Subject | null
+  subject?: Subject | string | null
   placeholder?: string
   fullWidth?: boolean
   className?: string

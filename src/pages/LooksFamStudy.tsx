@@ -445,42 +445,6 @@ export default function LooksFamStudy() {
     loadDBSets()
   }, [])
 
-  const restoredReturnRef = useRef(false)
-  useEffect(() => {
-    if (isLoading || allSets.length === 0) return
-    const returnDeckId = sessionStorage.getItem('ecengine:returnDeckId:/study')
-    const returnScroll = sessionStorage.getItem('ecengine:returnScroll:/study')
-    if (!returnDeckId && !returnScroll) return
-    if (restoredReturnRef.current) return
-
-    if (returnDeckId) {
-      const idx = filteredAndSortedSets.findIndex(s => s.id === returnDeckId)
-      if (idx !== -1 && idx >= visibleLimit) {
-        setVisibleLimit(idx + 10)
-        return
-      }
-    }
-
-    restoredReturnRef.current = true
-    sessionStorage.removeItem('ecengine:returnDeckId:/study')
-    sessionStorage.removeItem('ecengine:returnScroll:/study')
-
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        if (returnDeckId) {
-          const el = scrollContainerRef.current?.querySelector(`[data-deck-id="${returnDeckId}"]`)
-          if (el) {
-            el.scrollIntoView({ block: 'center', behavior: 'auto' })
-            return
-          }
-        }
-        if (returnScroll && scrollContainerRef.current) {
-          scrollContainerRef.current.scrollTop = parseInt(returnScroll, 10)
-        }
-      }, 60)
-    })
-  }, [isLoading, allSets.length, filteredAndSortedSets, visibleLimit])
-
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (filterPopoverRef.current && !filterPopoverRef.current.contains(event.target as Node)) {
@@ -622,6 +586,42 @@ export default function LooksFamStudy() {
   const visibleSets = useMemo(() => {
     return filteredAndSortedSets.slice(0, visibleLimit)
   }, [filteredAndSortedSets, visibleLimit])
+
+  const restoredReturnRef = useRef(false)
+  useEffect(() => {
+    if (isLoading || allSets.length === 0) return
+    const returnDeckId = sessionStorage.getItem('ecengine:returnDeckId:/study')
+    const returnScroll = sessionStorage.getItem('ecengine:returnScroll:/study')
+    if (!returnDeckId && !returnScroll) return
+    if (restoredReturnRef.current) return
+
+    if (returnDeckId) {
+      const idx = filteredAndSortedSets.findIndex(s => s.id === returnDeckId)
+      if (idx !== -1 && idx >= visibleLimit) {
+        setVisibleLimit(idx + 10)
+        return
+      }
+    }
+
+    restoredReturnRef.current = true
+    sessionStorage.removeItem('ecengine:returnDeckId:/study')
+    sessionStorage.removeItem('ecengine:returnScroll:/study')
+
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        if (returnDeckId) {
+          const el = scrollContainerRef.current?.querySelector(`[data-deck-id="${returnDeckId}"]`)
+          if (el) {
+            el.scrollIntoView({ block: 'center', behavior: 'auto' })
+            return
+          }
+        }
+        if (returnScroll && scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = parseInt(returnScroll, 10)
+        }
+      }, 60)
+    })
+  }, [isLoading, allSets.length, filteredAndSortedSets, visibleLimit])
 
   useEffect(() => {
     if (visibleLimit >= filteredAndSortedSets.length) return

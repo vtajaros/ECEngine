@@ -730,6 +730,7 @@ export default function PrintView() {
   }, [])
 
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [isMaximized, setIsMaximized] = useState(false)
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -737,6 +738,15 @@ export default function PrintView() {
     }
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+  }, [])
+
+  useEffect(() => {
+    if (window.electron?.windowControls?.isMaximized) {
+      window.electron.windowControls.isMaximized().then(setIsMaximized).catch(() => {})
+    }
+    if (window.electron?.windowControls?.onMaximizedChanged) {
+      return window.electron.windowControls.onMaximizedChanged(setIsMaximized)
+    }
   }, [])
 
   useEffect(() => {
@@ -835,11 +845,13 @@ export default function PrintView() {
 
 
 
+  const isBorderless = isFullscreen || isMaximized
+
   // -------------------------------------------------------------------------
   // Titlebar (custom centered, matching main window, not printed)
   // -------------------------------------------------------------------------
   const titleBar = (
-    <div className="print:hidden w-full h-8 bg-surface text-gray-400 flex items-center justify-between select-none [-webkit-app-region:drag] relative shrink-0 px-0">
+    <div className={`print:hidden w-full h-8 bg-surface text-gray-400 flex items-center justify-between select-none [-webkit-app-region:drag] relative shrink-0 px-0 ${isBorderless ? '' : 'rounded-t-xl'} overflow-hidden border-b border-[#333]/50`}>
       {/* Left side spacer to balance the right controls or put logo */}
       <div className="flex items-center [-webkit-app-region:no-drag] pl-3">
         <img
@@ -1475,7 +1487,7 @@ export default function PrintView() {
   }
 
   return (
-    <div className={`h-screen w-full flex flex-col overflow-hidden bg-engine-black print:bg-white ${isFullscreen ? '' : 'rounded-xl border border-[#333]'}`}>
+    <div className={`h-full w-full flex flex-col overflow-hidden bg-engine-black print:bg-white ${isBorderless ? '' : 'rounded-xl border border-[#333]'}`}>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         .animate-spin { animation: spin 1s linear infinite; }

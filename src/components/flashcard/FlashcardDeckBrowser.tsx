@@ -63,7 +63,7 @@ export interface FlashcardDeckBrowserProps {
   showFlashModal: { isOpen: boolean; deckId: string | null }
   flashModalSettings: FlashCardSettings
   filterPopoverRef: React.RefObject<HTMLDivElement>
-  scrollContainerRef?: React.RefObject<HTMLDivElement | null>
+  scrollContainerRef?: React.RefObject<HTMLDivElement>
   onFolderSelect: (f: string | 'all') => void
   onSubjectSelect: (s: FilterSubject) => void
   onShowAdvancedFilters: (v: boolean) => void
