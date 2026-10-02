@@ -34,6 +34,7 @@ export const TitleBar: React.FC<TitleBarProps> = ({ isCollapsed, onToggleSidebar
     '/':           'Dashboard',
     '/study':      'LooksFam',
     '/gauntlet':   'Gauntlet',
+    '/lab':        'Data Analytics',
     '/flashcards': 'Flashcards',
     '/formulas':   'Formulas',
     '/topics':     'EELE ToS',

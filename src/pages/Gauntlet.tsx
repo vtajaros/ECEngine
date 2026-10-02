@@ -880,7 +880,7 @@ Please explain:
               className="w-full py-2.5 px-4 rounded-xl font-bold font-['Orbitron'] tracking-wider text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 bg-surface-2 border border-border-base hover:border-accent text-text-primary"
             >
               <RotateCcw size={14} />
-              RUN AGAIN
+              RUN IT BACK
             </button>
             <button
               type="button"
@@ -2107,11 +2107,11 @@ export default function Gauntlet() {
     void loadHub()
   }, [loadHub])
 
-  // Reset to home on page unmount if not playing or countdown
+  // Reset to home on page unmount if not playing, countdown, or review summary
   useEffect(() => {
     return () => {
       const curPhase = useGauntletStore.getState().phase
-      if (curPhase !== 'playing' && curPhase !== 'countdown') {
+      if (curPhase !== 'playing' && curPhase !== 'countdown' && curPhase !== 'summary') {
         useGauntletStore.getState().resetToHome()
       }
     }

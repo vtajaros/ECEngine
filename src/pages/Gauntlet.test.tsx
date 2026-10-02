@@ -220,7 +220,7 @@ describe('Gauntlet Summary Review List', () => {
     expect(container?.textContent).toContain('Answer Review (4/4)')
     expect(container?.textContent).toContain('SLOW')
     expect(container?.textContent).toContain('TOO FAST')
-    expect(container?.textContent).toContain('RUN AGAIN')
+    expect(container?.textContent).toContain('RUN IT BACK')
     expect(container?.textContent).toContain('NEW CONFIG')
     expect(container?.textContent).toContain('BACK TO HOME')
   })
@@ -344,7 +344,7 @@ describe('Gauntlet Summary Review List', () => {
     expect(container?.textContent).toContain('Context copied to clipboard — paste into Gemini, ChatGPT, or Claude')
   })
 
-  it('RUN AGAIN calls startRun with existing config and NEW CONFIG calls openSetup', async () => {
+  it('RUN IT BACK calls startRun with existing config and NEW CONFIG calls openSetup', async () => {
     setupSummaryState()
 
     const startRunSpy = vi.spyOn(useGauntletStore.getState(), 'startRun').mockResolvedValue()
@@ -357,7 +357,7 @@ describe('Gauntlet Summary Review List', () => {
     })
 
     const runAgainBtn = Array.from(container!.querySelectorAll('button')).find(b =>
-      b.textContent?.includes('RUN AGAIN'),
+      b.textContent?.includes('RUN IT BACK'),
     )
     const newConfigBtn = Array.from(container!.querySelectorAll('button')).find(b =>
       b.textContent?.includes('NEW CONFIG'),

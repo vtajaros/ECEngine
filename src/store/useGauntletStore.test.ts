@@ -2,7 +2,15 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import type { Subject } from '../types'
 import type { GauntletCard } from '../services/gauntlet.service'
 import { gauntletService } from '../services/gauntlet.service'
-import { useGauntletStore, resetGauntletStore, DEFAULT_CONFIG, type GauntletConfig } from './useGauntletStore'
+import {
+  useGauntletStore,
+  resetGauntletStore,
+  DEFAULT_CONFIG,
+  type GauntletConfig,
+  saveSummarySnapshot,
+  clearSummarySnapshot,
+  loadSummarySnapshot,
+} from './useGauntletStore'
 
 vi.mock('../services/gauntlet.service', () => ({
   gauntletService: {
@@ -81,11 +89,33 @@ describe('phases, setup and navigation', () => {
     expect(store().setupMode).toBeNull()
   })
 
-  it('resets to home cleanly with resetToHome', () => {
+  it('resets to home cleanly with resetToHome and clears snapshot', () => {
+    saveSummarySnapshot({ phase: 'summary', answers: [] } as any)
+    expect(loadSummarySnapshot()).not.toBeNull()
     store().openSetup('timed')
     store().resetToHome()
     expect(store().phase).toBe('home')
     expect(store().setupMode).toBeNull()
+    expect(loadSummarySnapshot()).toBeNull()
+  })
+
+  it('persists and loads review summary snapshot', () => {
+    const dummyAnswers = [{ seq: 0, outcome: 'correct', points: 100 }]
+    saveSummarySnapshot({
+      phase: 'summary',
+      answers: dummyAnswers as any,
+      score: 100,
+      bestStreak: 1,
+    } as any)
+
+    const loaded = loadSummarySnapshot()
+    expect(loaded).not.toBeNull()
+    expect(loaded?.phase).toBe('summary')
+    expect(loaded?.answers).toHaveLength(1)
+    expect(loaded?.score).toBe(100)
+
+    clearSummarySnapshot()
+    expect(loadSummarySnapshot()).toBeNull()
   })
 })
 

@@ -112,4 +112,27 @@ describe('useChecklistStore', () => {
     expect(localStorage.getItem(STORAGE_REFRESHER)).toBe('{}')
     expect(localStorage.getItem(STORAGE_SELF_REVIEW)).toBe('{}')
   })
+
+  it('starts with all topics collapsed and remembers expanded topics in session', () => {
+    // Initial state is empty (all collapsed)
+    expect(useChecklistStore.getState().expandedTopics).toEqual({})
+
+    // Toggle a topic to expanded
+    useChecklistStore.getState().toggleTopic('MATH::MATH-1.0')
+    expect(useChecklistStore.getState().expandedTopics['MATH::MATH-1.0']).toBe(true)
+
+    // Toggle another topic to expanded
+    useChecklistStore.getState().toggleTopic('ELECS::ELECS-2.0')
+    expect(useChecklistStore.getState().expandedTopics['ELECS::ELECS-2.0']).toBe(true)
+    expect(useChecklistStore.getState().expandedTopics['MATH::MATH-1.0']).toBe(true)
+
+    // Toggle first topic back to collapsed
+    useChecklistStore.getState().toggleTopic('MATH::MATH-1.0')
+    expect(useChecklistStore.getState().expandedTopics['MATH::MATH-1.0']).toBe(false)
+    expect(useChecklistStore.getState().expandedTopics['ELECS::ELECS-2.0']).toBe(true)
+
+    // Directly set expanded state
+    useChecklistStore.getState().setTopicExpanded('GEAS::GEAS-1.0', true)
+    expect(useChecklistStore.getState().expandedTopics['GEAS::GEAS-1.0']).toBe(true)
+  })
 })

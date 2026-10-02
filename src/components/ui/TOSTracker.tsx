@@ -338,31 +338,22 @@ export const TOSTracker: React.FC = () => {
     reviewed,
     refresher,
     selfReview,
+    expandedTopics,
     toggleReview: handleToggleReview,
     toggleRefresher: handleToggleRefresher,
     toggleSelfReview: handleToggleSelfReview,
+    toggleTopic,
     resetAll,
   } = useChecklistStore()
 
   const [showReset, setShowReset] = useState(false)
   const [activeTab, setActiveTab] = useState<SubjectCode>('MATH')
 
-  const [expandedTopics, setExpandedTopics] = useState<Record<string, boolean>>({
-    'MATH::MATH-1.0': true,
-    'ELECS::ELECS-1.0': true,
-    'GEAS::GEAS-1.0': true,
-    'EST::EST-1.0': true,
-  })
-
   // Reset all progress
   const handleReset = useCallback(() => {
     resetAll()
     setShowReset(false)
   }, [resetAll])
-
-  const toggleTopic = useCallback((key: string) => {
-    setExpandedTopics(prev => ({ ...prev, [key]: !prev[key] }))
-  }, [])
 
   // Global stats (all subjects, review column only)
   const globalStats = useMemo(() => {

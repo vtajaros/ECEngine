@@ -239,6 +239,7 @@ export function GauntletEloTrajectoryDemo() {
                 dot={false}
                 name="MATH"
                 isAnimationActive={false}
+                connectNulls={true}
               />
             )}
             {(activeFilter === 'ALL' || activeFilter === 'GEAS') && (
@@ -250,6 +251,7 @@ export function GauntletEloTrajectoryDemo() {
                 dot={false}
                 name="GEAS"
                 isAnimationActive={false}
+                connectNulls={true}
               />
             )}
             {(activeFilter === 'ALL' || activeFilter === 'ELECS') && (
@@ -261,6 +263,7 @@ export function GauntletEloTrajectoryDemo() {
                 dot={false}
                 name="ELECS"
                 isAnimationActive={false}
+                connectNulls={true}
               />
             )}
             {(activeFilter === 'ALL' || activeFilter === 'EST') && (
@@ -272,6 +275,7 @@ export function GauntletEloTrajectoryDemo() {
                 dot={false}
                 name="EST"
                 isAnimationActive={false}
+                connectNulls={true}
               />
             )}
             {(activeFilter === 'ALL' || activeFilter === 'OVERALL') && (
@@ -284,6 +288,7 @@ export function GauntletEloTrajectoryDemo() {
                 dot={false}
                 name="Overall"
                 isAnimationActive={false}
+                connectNulls={true}
               />
             )}
           </LineChart>

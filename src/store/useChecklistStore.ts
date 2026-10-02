@@ -29,9 +29,12 @@ export interface ChecklistStore {
   reviewed: Record<string, boolean>
   refresher: Record<string, boolean>
   selfReview: Record<string, boolean>
+  expandedTopics: Record<string, boolean>
   toggleReview: (key: string) => void
   toggleRefresher: (key: string) => void
   toggleSelfReview: (key: string) => void
+  toggleTopic: (key: string) => void
+  setTopicExpanded: (key: string, expanded: boolean) => void
   resetAll: () => void
 }
 
@@ -39,6 +42,7 @@ export const useChecklistStore = create<ChecklistStore>((set) => ({
   reviewed: loadState(STORAGE_REVIEWED),
   refresher: loadState(STORAGE_REFRESHER),
   selfReview: loadState(STORAGE_SELF_REVIEW),
+  expandedTopics: {},
 
   toggleReview: (key: string) =>
     set((state) => {
@@ -60,6 +64,22 @@ export const useChecklistStore = create<ChecklistStore>((set) => ({
       saveState(STORAGE_SELF_REVIEW, next)
       return { selfReview: next }
     }),
+
+  toggleTopic: (key: string) =>
+    set((state) => ({
+      expandedTopics: {
+        ...state.expandedTopics,
+        [key]: !state.expandedTopics[key],
+      },
+    })),
+
+  setTopicExpanded: (key: string, expanded: boolean) =>
+    set((state) => ({
+      expandedTopics: {
+        ...state.expandedTopics,
+        [key]: expanded,
+      },
+    })),
 
   resetAll: () => {
     saveState(STORAGE_REVIEWED, {})

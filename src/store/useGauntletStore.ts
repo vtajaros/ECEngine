@@ -345,6 +345,55 @@ export function buildRunPayload(s: RunState, reason: EndReason, endedAt: number)
   }
 }
 
+const SUMMARY_STORAGE_KEY = 'ecengine_gauntlet_summary_snapshot'
+
+export function saveSummarySnapshot(state: Partial<GauntletStore>): void {
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.setItem(SUMMARY_STORAGE_KEY, JSON.stringify({
+        phase: 'summary',
+        answers: state.answers,
+        config: state.config,
+        score: state.score,
+        streak: state.streak,
+        bestStreak: state.bestStreak,
+        durationMs: state.durationMs,
+        startedAt: state.startedAt,
+        ratingsBefore: state.ratingsBefore,
+        ratings: state.ratings,
+        endReason: state.endReason,
+        rated: state.rated,
+        queue: state.queue,
+        index: state.index,
+        savedRunId: state.savedRunId,
+      }))
+    }
+  } catch {}
+}
+
+export function clearSummarySnapshot(): void {
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.removeItem(SUMMARY_STORAGE_KEY)
+    }
+  } catch {}
+}
+
+export function loadSummarySnapshot(): Partial<GauntletStore> | null {
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      const raw = sessionStorage.getItem(SUMMARY_STORAGE_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (parsed && parsed.phase === 'summary' && Array.isArray(parsed.answers)) {
+          return parsed
+        }
+      }
+    }
+  } catch {}
+  return null
+}
+
 export const useGauntletStore = create<GauntletStore>((set, get) => {
   const finish = async (reason: EndReason): Promise<void> => {
     const s = get()
@@ -355,12 +404,15 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
       0,
       Math.round(s.config.mode === 'timed' ? Math.min(rawDuration, s.config.durationSec * 1000) : rawDuration),
     )
-    set({ phase: 'summary', endReason: reason, pausedAt: null, durationMs })
+    const summaryUpdate = { phase: 'summary' as const, endReason: reason, pausedAt: null, durationMs }
+    set(summaryUpdate)
+    saveSummarySnapshot({ ...get(), ...summaryUpdate })
     if (s.answers.length === 0) return
     const payload = buildRunPayload(s, reason, endedAt)
     try {
       await gauntletService.saveRun(payload)
       set({ savedRunId: payload.id })
+      saveSummarySnapshot({ ...get(), savedRunId: payload.id })
       // Track Gauntlet session duration as study time for the activity heatmap.
       // durationMs is the actual played time (excludes pauses in survival mode).
       const minutes = payload.durationMs / 60_000
@@ -625,15 +677,21 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
     if (isStreamMode && queue.length - nextIndex <= REFILL_THRESHOLD) void refill()
   }
 
+  const initialSnapshot = loadSummarySnapshot()
+
   return {
-    phase: 'home',
+    phase: (initialSnapshot?.phase as GauntletPhase) || 'home',
     loadError: null,
     hub: null,
     setupMode: null,
     setupPrefill: null,
     ...freshRun(),
+    ...(initialSnapshot ?? {}),
 
-    openSetup: (mode, prefill) => set({ phase: 'setup', setupMode: mode, setupPrefill: prefill ?? null }),
+    openSetup: (mode, prefill) => {
+      clearSummarySnapshot()
+      set({ phase: 'setup', setupMode: mode, setupPrefill: prefill ?? null })
+    },
     closeSetup: () => set({ phase: 'home', setupMode: null, setupPrefill: null }),
 
     loadHub: async () => {
@@ -654,6 +712,7 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
     },
 
     startRun: async input => {
+      clearSummarySnapshot()
       const config = normalizeConfig(input)
       if (config.subjects.length === 0) {
         set({ loadError: 'Pick at least one subject.' })
@@ -761,6 +820,7 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
     },
 
     backToHome: async () => {
+      clearSummarySnapshot()
       set({ ...freshRun(), phase: 'home', loadError: null, setupMode: null, pausedAt: null })
       await get().loadHub()
     },
@@ -770,6 +830,7 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
     },
 
     resetToHome: () => {
+      clearSummarySnapshot()
       set({ ...freshRun(), phase: 'home', loadError: null, setupMode: null, pausedAt: null })
     },
   }
@@ -777,6 +838,7 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
 
 /** Test helper: reset to a clean home state without touching services. */
 export function resetGauntletStore(): void {
+  clearSummarySnapshot()
   useGauntletStore.setState({
     phase: 'home',
     loadError: null,

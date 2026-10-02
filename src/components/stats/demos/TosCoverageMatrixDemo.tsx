@@ -295,18 +295,6 @@ export function TosCoverageMatrixDemo() {
             </button>
           </div>
 
-          {/* Quick excluded chip if > 0 */}
-          {totalExcludedCount > 0 && (
-            <button
-              onClick={() => setActiveMatrixTab('excluded')}
-              className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-['JetBrains_Mono'] font-bold flex items-center gap-1.5 transition-colors"
-              title="Inspect questions flagged or filtered and excluded from Gauntlet"
-            >
-              <AlertTriangle size={12} />
-              <span>{totalExcludedCount.toLocaleString()} Excluded in Gauntlet</span>
-            </button>
-          )}
-
           {/* Global untagged status chip */}
           {stats.unclassified > 0 ? (
             <button

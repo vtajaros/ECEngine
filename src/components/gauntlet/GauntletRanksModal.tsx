@@ -33,7 +33,7 @@ const TIERS: TierDefinition[] = [
     bg: 'rgba(0, 255, 65, 0.08)',
     border: 'rgba(0, 255, 65, 0.3)',
     glow: 'rgba(0, 255, 65, 0.15)',
-    description: 'Foundational high-resistance state. Rapid early calibration with review session bonuses.',
+    description: 'Foundational state. Early calibration phase with review bonuses.',
   },
   {
     name: 'SEMICONDUCTOR',
@@ -44,7 +44,7 @@ const TIERS: TierDefinition[] = [
     bg: 'rgba(250, 204, 21, 0.08)',
     border: 'rgba(250, 204, 21, 0.3)',
     glow: 'rgba(250, 204, 21, 0.15)',
-    description: 'Transitioning state. Controlled conduction emerging with moderate volatility.',
+    description: 'Transitioning state. Controlled conduction emerging with developing consistency.',
   },
   {
     name: 'CONDUCTOR',
@@ -55,7 +55,7 @@ const TIERS: TierDefinition[] = [
     bg: 'rgba(192, 132, 252, 0.08)',
     border: 'rgba(192, 132, 252, 0.3)',
     glow: 'rgba(192, 132, 252, 0.15)',
-    description: 'Free-flowing charge. Strong baseline competency across core engineering subjects.',
+    description: 'Free-flowing charge. Strong baseline competency across core engineering topics.',
   },
   {
     name: 'COPPER',
@@ -66,7 +66,7 @@ const TIERS: TierDefinition[] = [
     bg: 'rgba(249, 115, 22, 0.08)',
     border: 'rgba(249, 115, 22, 0.3)',
     glow: 'rgba(249, 115, 22, 0.15)',
-    description: 'High electrical conductivity. Rapid recognition and solid consistency under pressure.',
+    description: 'High conductivity. Rapid problem recognition and solid consistency under pressure.',
   },
   {
     name: 'SILVER',
@@ -77,7 +77,7 @@ const TIERS: TierDefinition[] = [
     bg: 'rgba(226, 232, 240, 0.08)',
     border: 'rgba(226, 232, 240, 0.3)',
     glow: 'rgba(226, 232, 240, 0.15)',
-    description: 'Superior conductivity. Elite board exam recall and minimal error rate across all domains.',
+    description: 'Superior conductivity. Elite board exam recall and minimal error across all domains.',
   },
   {
     name: 'SUPERCONDUCTOR',
@@ -88,7 +88,7 @@ const TIERS: TierDefinition[] = [
     bg: 'rgba(56, 189, 248, 0.08)',
     border: 'rgba(56, 189, 248, 0.35)',
     glow: 'rgba(56, 189, 248, 0.25)',
-    description: 'Zero electrical resistance. Pinnacle arena mastery, unmatched speed, and absolute recall.',
+    description: 'Zero resistance. Pinnacle arena mastery, high speed, and absolute recall.',
   },
 ]
 
@@ -291,7 +291,7 @@ export const GauntletRanksModal: React.FC<GauntletRanksModalProps> = ({
                         </div>
                       </div>
 
-                      <p className="text-[10px] text-text-muted font-['JetBrains_Mono'] leading-tight line-clamp-1">
+                      <p className="text-[10.5px] text-text-muted font-['JetBrains_Mono'] leading-relaxed">
                         {tier.description}
                       </p>
                     </div>
