@@ -33,6 +33,7 @@ interface DeckCardProps {
 export const DeckCard = React.memo(function DeckCard({ deck, onLearn, onPreview, onEdit, onDelete, onPrint, onToggleFavorite }: DeckCardProps) {
   return (
     <div
+      data-deck-id={deck.id}
       className="relative isolate group transition-all duration-300 border border-[#333] bg-surface p-5 flex flex-col w-full min-h-[180px] justify-between hover:-translate-x-[6px] hover:-translate-y-[6px] rounded-xl before:absolute before:w-full before:h-full before:top-0 before:left-0 before:bg-surface before:border before:border-[#333] before:rounded-xl before:translate-x-[6px] before:translate-y-[6px] before:z-[-1] before:transition-transform before:duration-300 group-hover:before:translate-x-[12px] group-hover:before:translate-y-[12px] after:absolute after:w-full after:h-full after:top-0 after:left-0 after:bg-surface after:border after:border-[#333] after:rounded-xl after:translate-x-[12px] after:translate-y-[12px] after:z-[-2] after:transition-transform after:duration-300 group-hover:after:translate-x-[18px] group-hover:after:translate-y-[18px]"
     >
       {/* Top Section: Title & Stats Stack */}

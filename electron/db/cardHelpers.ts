@@ -13,6 +13,7 @@ export function deleteCardsWithProgress(db: Database.Database, cardIds: string[]
     deleteProgress.run(id)
     try {
       db.prepare('DELETE FROM gauntlet_flagged_cards WHERE card_id = ?').run(id)
+      db.prepare('DELETE FROM gauntlet_allowed_cards WHERE card_id = ?').run(id)
     } catch {}
     deleteCard.run(id)
   }

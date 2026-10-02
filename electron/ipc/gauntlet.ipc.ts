@@ -73,6 +73,19 @@ const GetFlaggedQuestionsSchema = z.object({
   cardIds: z.array(z.string().min(1)).optional(),
 }).optional()
 
+const GetExcludedQuestionsSchema = z.object({
+  type: z.enum(['flagged', 'problem_solving', 'all']).optional(),
+  subject: z.string().optional(),
+  reason: z.string().optional(),
+  search: z.string().optional(),
+  limit: z.number().int().min(1).max(500).optional(),
+  offset: z.number().int().min(0).optional(),
+}).optional()
+
+const ReinsertQuestionsSchema = z.object({
+  cardIds: z.array(z.string().min(1)),
+})
+
 const fail = (e: unknown) => ({ success: false, error: (e as Error).message })
 
 export function registerGauntletHandlers(): void {
@@ -202,4 +215,32 @@ export function registerGauntletHandlers(): void {
       return fail(e)
     }
   })
+
+  ipcMain.handle('gauntlet:getEdaStats', async () => {
+    try {
+      return { success: true, data: G.getGauntletEdaStats(getDB()) }
+    } catch (e) {
+      return fail(e)
+    }
+  })
+
+  ipcMain.handle('gauntlet:getExcludedQuestions', async (_, payload: unknown) => {
+    try {
+      const parsed = GetExcludedQuestionsSchema.parse(payload)
+      return { success: true, data: G.getExcludedGauntletQuestions(getDB(), parsed) }
+    } catch (e) {
+      return fail(e)
+    }
+  })
+
+  ipcMain.handle('gauntlet:reinsertQuestions', async (_, payload: unknown) => {
+    try {
+      const { cardIds } = ReinsertQuestionsSchema.parse(payload)
+      G.reinsertQuestions(getDB(), cardIds)
+      return { success: true }
+    } catch (e) {
+      return fail(e)
+    }
+  })
 }
+

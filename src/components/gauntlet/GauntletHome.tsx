@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { Flame, HelpCircle, History, Award, Target } from 'lucide-react'
-import { GAUNTLET_SUBJECTS, TUNING, overallRating, ratingTier } from '../../lib/gauntlet'
+import { GAUNTLET_SUBJECTS, TUNING, overallRating, ratingTier, TIER_COLORS } from '../../lib/gauntlet'
 import { SUBJECT_LINE_COLOR } from '../../lib/dashboardUtils'
 import { useGauntletStore } from '../../store/useGauntletStore'
 import { GauntletFaqModal } from './GauntletFaqModal'
@@ -82,6 +82,7 @@ export const GauntletHome: React.FC = () => {
 
   const overall = overallRating(ratings)
   const overallTier = ratingTier(overall.rating)
+  const overallColor = TIER_COLORS[overallTier.name] ?? '#00FF41'
 
   // Animated ratings
   const countedMath = useCountUp(Math.round(ratings.MATH.rating))
@@ -286,15 +287,29 @@ export const GauntletHome: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsRanksOpen(true)}
-              className="bg-[#141414] border border-accent/40 hover:border-accent rounded-xl px-2.5 sm:px-3 py-1.5 flex items-center gap-1.5 sm:gap-2 text-xs shadow-[0_0_12px_rgba(0,255,65,0.1)] hover:shadow-[0_0_16px_rgba(0,255,65,0.25)] shrink-0 transition-all cursor-pointer group"
+              className="bg-[#141414] rounded-xl px-2.5 sm:px-3 py-1.5 flex items-center gap-1.5 sm:gap-2 text-xs shrink-0 transition-all cursor-pointer group"
+              style={{
+                border: `1px solid ${overallColor}66`,
+                boxShadow: `0 0 12px ${overallColor}22`,
+              }}
             >
-              <span className="font-['Orbitron'] font-bold text-[11px] text-accent group-hover:underline">
+              <span
+                className="font-['Orbitron'] font-bold text-[11px] group-hover:underline"
+                style={{ color: overallColor }}
+              >
                 OVERALL
               </span>
               <span className="font-['JetBrains_Mono'] font-bold text-white text-sm">
                 {countedOverall}
               </span>
-              <span className="font-['Rajdhani'] font-bold text-[10px] text-accent px-1.5 py-0.2 bg-accent/15 rounded uppercase tracking-wider">
+              <span
+                className="font-['Rajdhani'] font-bold text-[10px] px-1.5 py-0.2 rounded uppercase tracking-wider"
+                style={{
+                  color: overallColor,
+                  backgroundColor: `${overallColor}20`,
+                  border: `1px solid ${overallColor}40`,
+                }}
+              >
                 {overallTier.name}
               </span>
               {overall.provisional && (

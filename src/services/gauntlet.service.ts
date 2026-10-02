@@ -18,6 +18,85 @@ export type WeakTopicStat = {
   accuracy: number
 }
 
+export interface GauntletTosAccuracyItem {
+  tosTopicId: string
+  subject: GauntletSubjectCode
+  totalAnswers: number
+  correctAnswers: number
+  wrongAnswers: number
+  timeoutAnswers: number
+  accuracy: number
+  isWeak: boolean
+}
+
+export interface GauntletSpeedParItem {
+  subject: GauntletSubjectCode
+  totalAnswers: number
+  avgTimeMs: number
+  avgParMs: number
+  speedRatio: number
+  fastWrongCount: number
+  wrongCount: number
+  fastWrongRate: number
+}
+
+export interface GauntletEloTrajectoryPoint {
+  date: string
+  timestamp: number
+  MATH: number | null
+  GEAS: number | null
+  ELECS: number | null
+  EST: number | null
+  overall: number | null
+}
+
+export interface GauntletCoverageDensityItem {
+  subject: GauntletSubjectCode
+  libraryCards: number
+  arenaCards: number
+  penetrationPct: number
+}
+
+export interface GauntletTopicCoverageItem {
+  tosTopicId: string
+  subject: GauntletSubjectCode
+  libraryCards: number
+  arenaCards: number
+  penetrationPct: number
+}
+
+export interface GauntletEnduranceStats {
+  totalRuns: number
+  totalAnswers: number
+  avgRunDurationSec: number
+  avgRunScore: number
+  avgQuestionsPerRun: number
+  bestStreakOverall: number
+  streakBuckets: Array<{
+    bucket: string
+    count: number
+    pct: number
+  }>
+  failureModes: Array<{
+    mode: string
+    count: number
+    pct: number
+  }>
+}
+
+export interface GauntletEdaStats {
+  tosAccuracy: GauntletTosAccuracyItem[]
+  speedPar: GauntletSpeedParItem[]
+  eloTrajectory: GauntletEloTrajectoryPoint[]
+  currentRatings: Record<GauntletSubjectCode, { rating: number; peak: number; answers: number }>
+  coverageDensity: {
+    bySubject: GauntletCoverageDensityItem[]
+    byTopic: GauntletTopicCoverageItem[]
+    untestedBlindSpots: GauntletTopicCoverageItem[]
+  }
+  endurance: GauntletEnduranceStats
+}
+
 export const gauntletService = {
   async getPoolSizes(opts?: { allowSolutions?: boolean; tosTopicId?: string; tosTopicIds?: string[] } | boolean): Promise<Record<GauntletSubjectCode, number>> {
     const payload = typeof opts === 'boolean'
@@ -132,4 +211,58 @@ export const gauntletService = {
     if (!res.success) throw new Error(res.error || 'Failed to get flagged questions')
     return res.data ?? {}
   },
+
+  async getEdaStats(): Promise<GauntletEdaStats> {
+    const res = await window.electron.gauntlet.getEdaStats()
+    if (!res.success) throw new Error(res.error || 'Failed to get Gauntlet EDA stats')
+    return res.data
+  },
+
+  async getExcludedQuestions(options?: {
+    type?: 'flagged' | 'problem_solving' | 'all'
+    subject?: string
+    reason?: string
+    search?: string
+    limit?: number
+    offset?: number
+  }): Promise<ExcludedGauntletResult> {
+    const res = await window.electron.gauntlet.getExcludedQuestions(options)
+    if (!res.success) throw new Error(res.error || 'Failed to get excluded Gauntlet questions')
+    return res.data
+  },
+
+  async reinsertQuestions(cardIds: string[]): Promise<void> {
+    const res = await window.electron.gauntlet.reinsertQuestions({ cardIds })
+    if (!res.success) throw new Error(res.error || 'Failed to reinsert questions')
+  },
 }
+
+export interface ExcludedGauntletCard {
+  id: string
+  topicId: string
+  type: string
+  subject: GauntletSubjectCode
+  deckName: string
+  tosTopicId: string | null
+  question: string
+  choices: string[]
+  answer: number
+  explanation?: string
+  imagePath?: string | null
+  solutionImagePath?: string | null
+  difficulty: string
+  reason: string
+  flaggedAt: number
+  exclusionType: 'flagged' | 'problem_solving'
+}
+
+export interface ExcludedGauntletResult {
+  cards: ExcludedGauntletCard[]
+  total: number
+  totalExcludedCount: number
+  flaggedCount: number
+  autoExcludedCount: number
+  reasonsBreakdown: Record<string, number>
+  subjectsBreakdown: Record<string, number>
+}
+

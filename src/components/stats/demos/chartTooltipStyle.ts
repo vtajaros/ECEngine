@@ -6,6 +6,8 @@ export const CHART_TOOLTIP_STYLE = {
   fontFamily: 'JetBrains Mono',
   boxShadow: '0 0 15px rgba(0,255,65,0.35)',
   padding: '8px 12px',
+  zIndex: 9999,
+  pointerEvents: 'none' as const,
 }
 
 export const CHART_TOOLTIP_LABEL_STYLE = {

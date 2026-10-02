@@ -44,6 +44,7 @@ import os
 import re
 import csv
 import json
+import time
 import sqlite3
 import argparse
 from collections import Counter
@@ -1027,7 +1028,7 @@ SUBTOPIC_RULES = {
         'GEAS-4.1': [ r'\btaylor\'?s scientific management\b',
             r'\bfayol\'?s principles\b', r'\bhawthorne (?:effect|studies)\b', r'\bscientific management theory\b',
             r'\bmax weber\b', r'\bbureaucracy\b',
-            r'\bengineering management\b', r'\bmanagement functions?\b', r'\bplanning\b', r'\borganizing\b', r'\bleading\b', r'\bcontrolling\b',
+            r'\bengineering management\b', r'\bmanagement functions?\b',
             r'\bcontingency theory\b', r'\bmanagement theory\b', r'\bmanagement principle\w*\b',
             r'\btheory x\b', r'\btheory y\b',
             r'\bmanaging the marketing function\b', r'\bmarketing function\b',
@@ -1049,6 +1050,7 @@ SUBTOPIC_RULES = {
 
         'GEAS-4.3': [ r'\bstrategic planning\b', r'\borganization(?:al)? structure\b', r'\bleadership style\b',
             r'\bcontrolling function\b', r'\borganizing function\b', r'\bplanning and organizing\b',
+            r'\bplanning\b', r'\borganizing\b', r'\bleading\b', r'\bcontrolling\b',
             r'\bleading and controlling\b', r'\bdelegation of authority\b', r'\bspan of control\b',
             r'\bmission statement\b', r'\bwhy (?:an? )?organization exists\b', r'\borganization\'?s? purpose\b',
             r'\bbusiness ethics\b', r'\bethical dilemma\b', r'\bstakeholders?\b',
@@ -2634,6 +2636,74 @@ for _subj, _topics in REFINED_SUBTOPIC_RULES.items():
             if _p not in SUBTOPIC_RULES[_subj][_sub_id]:
                 SUBTOPIC_RULES[_subj][_sub_id].append(_p)
 
+# Additional high-frequency keyword patterns discovered from unclassified question analysis
+ADDITIONAL_SUBTOPIC_RULES = {
+    'GEAS': {
+        'GEAS-7.2': [  # Structure of Crystalline Materials
+            r'\bcrystals?\b', r'\bcrystalline\b', r'\bcrystal (?:structure|lattice|systems?|defects?)\b',
+            r'\bbody-centered cubic\b', r'\bface-centered cubic\b', r'\bhexagonal close-packed\b',
+            r'\bpolycrystalline\b', r'\bmonocrystalline\b', r'\bamorphous solid\b',
+            r'\bcoordination number\b', r'\blattice parameter\b',
+        ],
+        'GEAS-4.2': [  # Management and Its Functions
+            r'\bfunctions? of management\b', r'\bmanagement principles?\b', r'\bmanagerial\b',
+            r'\bleadership styles?\b', r'\bmanagement is defined\b', r'\bsynonym for the others\b',
+            r'\btheory of management\b', r'\bmanagement theories\b',
+        ],
+        'GEAS-4.3': [  # Planning, Leading, Organizing, Controlling
+            r'\bcontrolling function\b', r'\borganizing function\b', r'\bleading function\b',
+            r'\bplanning,? leading,? organizing\b', r'\bspan of control\b', r'\bunity of command\b',
+        ],
+        'GEAS-4.4': [  # Managing Product and Service Operations
+            r'\boperations? management\b', r'\btotal quality management\b', r'\btqm\b',
+            r'\bquality control\b', r'\bsupply chain\b', r'\binventory management\b',
+        ],
+        'GEAS-4.5': [  # Managing Marketing and Finance Functions
+            r'\bmarketing (?:management|functions?|mix|strategy)\b', r'\bfinance functions?\b',
+            r'\bproduct life cycle\b', r'\bmarket research\b', r'\bpricing strateg\w+\b',
+            r'\bmarket segmentation\b',
+        ],
+        'GEAS-2.3': [  # Kinematics
+            r'\bacceleration is constant\b', r'\bconstant acceleration\b',
+            r'\buniformly accelerated motion\b',
+        ],
+        'GEAS-2.6': [  # Elasticity & Strength
+            r'\bstrain in the cable\b', r'\btension in the cable\b', r'\belongation of the cable\b',
+            r'\byoung\'?s modulus\b',
+        ],
+    },
+    'MATH': {
+        'MATH-6.1': [  # Vector Analysis / Electromagnetics
+            r'\belectric charges?\b', r'\belectric \(?e-?\)? fields?\b', r'\bcoulombs?\b',
+            r'\bspace distribution of charge\b', r'\bpoint charge\b',
+        ],
+        'MATH-3.1': [  # First-Order ODE and its Application
+            r'\byearly exponential\b', r'\bpetroleum consumption\b',
+            r'\bmodeled by (?:the )?differential equation\b',
+            r'\bexponential growth (?:and|or) decay\b',
+        ],
+    },
+    'ELECS': {
+        'ELECS-1.5': [  # Solution to DC Network Problems & DC Machines
+            r'\bgenerators? does not need equalizers?\b',
+            r'\bequalizers? for (?:satisfactory )?parallel operation\b',
+        ],
+        'ELECS-8.1': [  # Microprocessor Unit
+            r'\b\d+-bit register\b', r'\bregister store\b',
+        ],
+    },
+}
+
+for _subj, _topics in ADDITIONAL_SUBTOPIC_RULES.items():
+    if _subj not in SUBTOPIC_RULES:
+        SUBTOPIC_RULES[_subj] = {}
+    for _sub_id, _pats in _topics.items():
+        if _sub_id not in SUBTOPIC_RULES[_subj]:
+            SUBTOPIC_RULES[_subj][_sub_id] = []
+        for _p in _pats:
+            if _p not in SUBTOPIC_RULES[_subj][_sub_id]:
+                SUBTOPIC_RULES[_subj][_sub_id].append(_p)
+
 # Precompile all regex rules and build subtopic-to-parent mapping
 COMPILED_SUBTOPIC_RULES = {}
 for subj, sub_dict in SUBTOPIC_RULES.items():
@@ -2995,8 +3065,107 @@ def extract_card_text(data_str, card_type):
 
 
 
+def get_groq_api_key():
+    if os.environ.get('GROQ_API_KEY'):
+        return os.environ['GROQ_API_KEY'].strip()
+    config_paths = [
+        os.path.expanduser('~/.config/ECEngine/config.json'),
+        os.path.expanduser('~/.config/ecengine/config.json'),
+    ]
+    for cp in config_paths:
+        if os.path.exists(cp):
+            try:
+                with open(cp, 'r', encoding='utf-8') as f:
+                    cfg = json.load(f)
+                    key = cfg.get('groqApiKey')
+                    if key and str(key).strip():
+                        return str(key).strip()
+            except Exception:
+                pass
+    return None
+
+
+def classify_batch_with_groq(batch_cards, api_key, model='openai/gpt-oss-120b', retry_count=3):
+    """
+    Classifies a batch of up to 20 cards using Groq chat completion API.
+    batch_cards: list of dicts: [{'id': ..., 'subject': ..., 'text': ...}]
+    Returns dict: { card_id: subtopic_code }
+    """
+    import urllib.request
+    import urllib.error
+
+    if not batch_cards or not api_key:
+        return {}
+
+    items_payload = []
+    for c in batch_cards:
+        items_payload.append({
+            'id': c['id'],
+            'subject': c['subject'],
+            'question_snippet': c['text'][:350]
+        })
+
+    prompt = (
+        "You are an expert PRC Electronics Engineering Licensure Exam (ECE) Table of Specifications (TOS) classifier.\n"
+        "Given the following questions, map each card id to the single most accurate Table of Specifications (TOS) decimal subtopic code.\n"
+        "Valid codes follow the official PECE syllabus, such as:\n"
+        "- MATH: MATH-1.1 to MATH-8.3 (e.g. MATH-1.2, MATH-2.4, MATH-3.1, MATH-4.1, MATH-5.2, MATH-6.1, MATH-7.1, MATH-8.1)\n"
+        "- ELECS: ELECS-1.1 to ELECS-9.5 (e.g. ELECS-1.1, ELECS-2.3, ELECS-3.2, ELECS-4.5, ELECS-5.1, ELECS-7.1, ELECS-8.1, ELECS-9.2)\n"
+        "- GEAS: GEAS-1.1 to GEAS-11.3 (e.g. GEAS-1.1, GEAS-2.3, GEAS-3.1, GEAS-4.2, GEAS-5.1, GEAS-6.1, GEAS-7.2, GEAS-8.1, GEAS-10.1)\n"
+        "- EST: EST-1.1 to EST-6.6 (e.g. EST-1.2, EST-2.2, EST-3.3, EST-4.6, EST-5.1, EST-6.1)\n\n"
+        f"Questions to classify:\n{json.dumps(items_payload, indent=2)}\n\n"
+        "Return ONLY a JSON object mapping each card id string to its assigned TOS subtopic code string, like:\n"
+        '{"card_123": "GEAS-4.2", "card_456": "MATH-6.1"}'
+    )
+
+    req_data = json.dumps({
+        'model': model,
+        'messages': [{'role': 'user', 'content': prompt}],
+        'temperature': 0.1,
+        'response_format': {'type': 'json_object'}
+    }).encode('utf-8')
+
+    endpoint = 'https://api.groq.com/openai/v1/chat/completions'
+
+    for attempt in range(retry_count):
+        try:
+            req = urllib.request.Request(
+                endpoint,
+                data=req_data,
+                headers={
+                    'Authorization': f'Bearer {api_key}',
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'ECEngine/1.0'
+                }
+            )
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                resp_data = json.loads(resp.read().decode('utf-8'))
+                content = resp_data['choices'][0]['message']['content']
+                parsed = json.loads(content)
+                if isinstance(parsed, dict):
+                    valid_results = {}
+                    for cid, code in parsed.items():
+                        if isinstance(code, str) and re.match(r'^[A-Z]+-\d+\.\d+$', code):
+                            valid_results[cid] = code
+                    return valid_results
+                return {}
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                time.sleep(20)
+                continue
+            else:
+                print(f"[Groq AI] HTTP {e.code} error: {e.read().decode('utf-8', errors='ignore')[:200]}", file=sys.stderr)
+                break
+        except Exception as e:
+            print(f"[Groq AI] Attempt {attempt+1} error: {e}", file=sys.stderr)
+            time.sleep(5)
+
+    return {}
+
+
 def run_classification(db_path=DEFAULT_DB_PATH, deck_id=None, apply_changes=False,
-                        output_json=False, card_type='mcq', review_csv=None):
+                        output_json=False, card_type='all', review_csv=None,
+                        force_reclassify_all=False, no_ai_fallback=False):
     if not os.path.exists(db_path):
         err_msg = f"Database not found at {db_path}"
         if output_json:
@@ -3020,6 +3189,8 @@ def run_classification(db_path=DEFAULT_DB_PATH, deck_id=None, apply_changes=Fals
     """
     conditions = []
     params = []
+    if not force_reclassify_all:
+        conditions.append("(c.tos_topic_id IS NULL OR c.tos_topic_id = '')")
     if deck_id:
         conditions.append("t.id = ?")
         params.append(deck_id)
@@ -3105,12 +3276,60 @@ def run_classification(db_path=DEFAULT_DB_PATH, deck_id=None, apply_changes=Fals
         if curr_tags != orig_tags:
             tag_updates.append((json.dumps(curr_tags), card_id))
 
+    ai_classified_count = 0
     if apply_changes:
         if updates:
             cursor.executemany("UPDATE cards SET tos_topic_id = ? WHERE id = ?", updates)
         if tag_updates:
             cursor.executemany("UPDATE cards SET tags = ? WHERE id = ?", tag_updates)
         conn.commit()
+
+        # Groq AI Redundancy Fallback for unclassified cards
+        if not no_ai_fallback:
+            classified_card_ids = set(c_id for _, c_id in updates)
+            unclassified_cards = [
+                {'id': r[0], 'subject': normalize_subject(r[1]), 'text': extract_card_text(r[4], r[3])}
+                for r in rows
+                if r[0] not in classified_card_ids
+            ]
+            if unclassified_cards:
+                groq_key = get_groq_api_key()
+                if groq_key:
+                    if not output_json:
+                        print(f"\n[Groq AI Fallback] Found {len(unclassified_cards)} unclassified cards. Running AI batch classification in batches of 20...", flush=True)
+                    batch_size = 20
+                    ai_updates = []
+                    for b_idx in range(0, len(unclassified_cards), batch_size):
+                        batch = unclassified_cards[b_idx:b_idx + batch_size]
+                        batch_num = (b_idx // batch_size) + 1
+                        total_batches = (len(unclassified_cards) + batch_size - 1) // batch_size
+                        if not output_json:
+                            print(f"  -> Sending batch {batch_num}/{total_batches} ({len(batch)} cards) to Groq...", flush=True)
+
+                        batch_res = classify_batch_with_groq(batch, groq_key)
+                        for cid, assigned_topic in batch_res.items():
+                            ai_updates.append((assigned_topic, cid))
+                            distribution[assigned_topic] += 1
+                            subj_code = next((c['subject'] for c in batch if c['id'] == cid), None)
+                            if subj_code:
+                                subject_distribution[subj_code] += 1
+                            subtopic_count += 1
+                            ai_classified_count += 1
+
+                        if b_idx + batch_size < len(unclassified_cards):
+                            if not output_json:
+                                print("     Throttling 15s to respect Groq 8,000 TPM limit...", flush=True)
+                            time.sleep(15)
+
+                    if ai_updates:
+                        cursor.executemany("UPDATE cards SET tos_topic_id = ? WHERE id = ?", ai_updates)
+                        conn.commit()
+                        updates.extend(ai_updates)
+                        if not output_json:
+                            print(f"[Groq AI Fallback] Successfully classified {len(ai_updates)} cards with Groq AI!\n", flush=True)
+                else:
+                    if not output_json:
+                        print("\n[Groq AI Fallback] Notice: No Groq API key found in ~/.config/ECEngine/config.json or environment. Skipped AI fallback.", flush=True)
 
     if review_csv and review_rows:
         with open(review_csv, 'w', newline='', encoding='utf-8') as f:
@@ -3126,6 +3345,7 @@ def run_classification(db_path=DEFAULT_DB_PATH, deck_id=None, apply_changes=Fals
         "card_type_scope": card_type,
         "total_cards": total,
         "auto_classified_cards": len(updates),
+        "groq_ai_classified": ai_classified_count,
         "flagged_for_review": review_count,
         "cards_tagged_needs_image_review": needs_image_review_count,
         "tag_updates_count": len(tag_updates),
@@ -3272,6 +3492,10 @@ def main():
     parser.add_argument('--review-csv', default=None, help="Write low-confidence/ambiguous cards to this CSV instead of silently applying them")
     parser.add_argument('--validate', action='store_true', help="Run deck-name proxy accuracy check instead of classifying")
     parser.add_argument('--stdin', action='store_true', help="Read cards JSON array from stdin and output classifications JSON")
+    parser.add_argument('--force-reclassify-all', action='store_true',
+                        help="Reclassify all cards even if they already have a tos_topic_id (default protects existing/manual tags)")
+    parser.add_argument('--no-ai-fallback', action='store_true',
+                        help="Disable automatic Groq AI fallback for unclassified cards during --apply")
 
     args = parser.parse_args()
     apply_mode = args.apply and not args.dry_run
@@ -3289,6 +3513,8 @@ def main():
         output_json=args.json,
         card_type=args.card_type,
         review_csv=args.review_csv,
+        force_reclassify_all=args.force_reclassify_all,
+        no_ai_fallback=args.no_ai_fallback,
     ))
 
 

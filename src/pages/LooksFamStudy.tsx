@@ -88,6 +88,7 @@ const LooksFamCard = React.memo(function LooksFamCard({
 }: LooksFamCardProps) {
   return (
     <div
+      data-deck-id={set.id}
       className="relative isolate group transition-all duration-300 border border-[#333] bg-surface p-5 flex flex-col w-full min-h-[180px] justify-between hover:-translate-x-[6px] hover:-translate-y-[6px] rounded-xl before:absolute before:w-full before:h-full before:top-0 before:left-0 before:bg-surface before:border before:border-[#333] before:rounded-xl before:translate-x-[6px] before:translate-y-[6px] before:z-[-1] before:transition-transform before:duration-300 group-hover:before:translate-x-[12px] group-hover:before:translate-y-[12px] after:absolute after:w-full after:h-full after:top-0 after:left-0 after:bg-surface after:border after:border-[#333] after:rounded-xl after:translate-x-[12px] after:translate-y-[12px] after:z-[-2] after:transition-transform after:duration-300 group-hover:after:translate-x-[18px] group-hover:after:translate-y-[18px]"
     >
       <div className="flex justify-between items-start gap-4">
@@ -292,11 +293,24 @@ export default function LooksFamStudy() {
 
   // Advanced Filters State
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
-  const [filterTags, setFilterTags] = useState<string[]>([])
-  const [sortBy, setSortBy] = useState<'date' | 'title' | 'mastery'>('date')
-  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [filterType, setFilterType] = useState<'all' | 'mcq' | 'flashcard' | 'mixed'>('all')
+  const [filterTags, setFilterTags] = useState<string[]>(() => {
+    try {
+      const saved = sessionStorage.getItem('looksfam:filterTags')
+      return saved ? JSON.parse(saved) : []
+    } catch { return [] }
+  })
+  const [sortBy, setSortBy] = useState<'date' | 'title' | 'mastery'>(
+    () => (sessionStorage.getItem('looksfam:sortBy') as any) || 'date'
+  )
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>(
+    () => (sessionStorage.getItem('looksfam:sortOrder') as any) || 'desc'
+  )
+  const [searchQuery, setSearchQuery] = useState(
+    () => sessionStorage.getItem('looksfam:searchQuery') || ''
+  )
+  const [filterType, setFilterType] = useState<'all' | 'mcq' | 'flashcard' | 'mixed'>(
+    () => (sessionStorage.getItem('looksfam:filterType') as any) || 'all'
+  )
   const [favoritesOnly, setFavoritesOnly] = useState<boolean>(
     () => sessionStorage.getItem('looksfam:favoritesOnly') === 'true'
   )
@@ -306,6 +320,21 @@ export default function LooksFamStudy() {
   useEffect(() => {
     sessionStorage.setItem('looksfam:favoritesOnly', String(favoritesOnly))
   }, [favoritesOnly])
+  useEffect(() => {
+    sessionStorage.setItem('looksfam:searchQuery', searchQuery)
+  }, [searchQuery])
+  useEffect(() => {
+    sessionStorage.setItem('looksfam:filterType', filterType)
+  }, [filterType])
+  useEffect(() => {
+    sessionStorage.setItem('looksfam:filterTags', JSON.stringify(filterTags))
+  }, [filterTags])
+  useEffect(() => {
+    sessionStorage.setItem('looksfam:sortBy', sortBy)
+  }, [sortBy])
+  useEffect(() => {
+    sessionStorage.setItem('looksfam:sortOrder', sortOrder)
+  }, [sortOrder])
 
   const availableTags = useMemo(() => {
     const tags = new Set<string>(PREDEFINED_TAGS)
@@ -416,13 +445,41 @@ export default function LooksFamStudy() {
     loadDBSets()
   }, [])
 
+  const restoredReturnRef = useRef(false)
   useEffect(() => {
-    const saved = sessionStorage.getItem('ecengine:returnScroll:/study')
-    if (saved) {
-      window.scrollTo(0, parseInt(saved, 10))
-      sessionStorage.removeItem('ecengine:returnScroll:/study')
+    if (isLoading || allSets.length === 0) return
+    const returnDeckId = sessionStorage.getItem('ecengine:returnDeckId:/study')
+    const returnScroll = sessionStorage.getItem('ecengine:returnScroll:/study')
+    if (!returnDeckId && !returnScroll) return
+    if (restoredReturnRef.current) return
+
+    if (returnDeckId) {
+      const idx = filteredAndSortedSets.findIndex(s => s.id === returnDeckId)
+      if (idx !== -1 && idx >= visibleLimit) {
+        setVisibleLimit(idx + 10)
+        return
+      }
     }
-  }, [])
+
+    restoredReturnRef.current = true
+    sessionStorage.removeItem('ecengine:returnDeckId:/study')
+    sessionStorage.removeItem('ecengine:returnScroll:/study')
+
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        if (returnDeckId) {
+          const el = scrollContainerRef.current?.querySelector(`[data-deck-id="${returnDeckId}"]`)
+          if (el) {
+            el.scrollIntoView({ block: 'center', behavior: 'auto' })
+            return
+          }
+        }
+        if (returnScroll && scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = parseInt(returnScroll, 10)
+        }
+      }, 60)
+    })
+  }, [isLoading, allSets.length, filteredAndSortedSets, visibleLimit])
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -681,7 +738,9 @@ export default function LooksFamStudy() {
   }, [])
 
   const handleCardEdit = React.useCallback((id: string) => {
-    sessionStorage.setItem('ecengine:returnScroll:/study', String(window.scrollY))
+    const scrollPos = scrollContainerRef.current ? scrollContainerRef.current.scrollTop : 0
+    sessionStorage.setItem('ecengine:returnDeckId:/study', id)
+    sessionStorage.setItem('ecengine:returnScroll:/study', String(scrollPos))
     safeNavigate(`/edit-deck/${id}?returnTo=/study`)
   }, [safeNavigate])
 

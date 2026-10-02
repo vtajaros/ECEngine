@@ -63,6 +63,7 @@ export interface FlashcardDeckBrowserProps {
   showFlashModal: { isOpen: boolean; deckId: string | null }
   flashModalSettings: FlashCardSettings
   filterPopoverRef: React.RefObject<HTMLDivElement>
+  scrollContainerRef?: React.RefObject<HTMLDivElement | null>
   onFolderSelect: (f: string | 'all') => void
   onSubjectSelect: (s: FilterSubject) => void
   onShowAdvancedFilters: (v: boolean) => void
@@ -141,11 +142,12 @@ export function FlashcardDeckBrowser({
   favoritesOnly,
   setFavoritesOnly,
   onToggleFavorite,
+  scrollContainerRef,
 }: FlashcardDeckBrowserProps) {
   return (
     <div className="flex flex-col h-full w-full">
       <div className="flex flex-row flex-1 w-full overflow-hidden">
-        <div className="flex flex-col flex-1 min-w-0 overflow-y-auto show-scrollbar">
+        <div ref={scrollContainerRef} className="flex flex-col flex-1 min-w-0 overflow-y-auto show-scrollbar">
           {/* Header centered above decks */}
           <div className="flex flex-col items-center w-full pt-6 pb-0 px-6">
             <div className="w-full max-w-5xl flex flex-col items-center justify-center gap-6 mb-2 border-b border-[var(--bg-card)] pb-4 pt-4 relative z-30">

@@ -59,6 +59,10 @@ export const GAUNTLET_DDL: string[] = [
      reason TEXT,
      flagged_at INTEGER NOT NULL
    )`,
+  `CREATE TABLE IF NOT EXISTS gauntlet_allowed_cards (
+     card_id TEXT PRIMARY KEY,
+     allowed_at INTEGER NOT NULL
+   )`,
   `CREATE TABLE IF NOT EXISTS gauntlet_daily_review_elo (
      subject TEXT NOT NULL,
      date TEXT NOT NULL,
@@ -69,7 +73,14 @@ export const GAUNTLET_DDL: string[] = [
   'CREATE INDEX IF NOT EXISTS idx_gauntlet_answers_run ON gauntlet_answers(run_id, seq)',
   'CREATE INDEX IF NOT EXISTS idx_gauntlet_answers_card ON gauntlet_answers(card_id)',
   'CREATE INDEX IF NOT EXISTS idx_gauntlet_flagged_card ON gauntlet_flagged_cards(card_id)',
+  'CREATE INDEX IF NOT EXISTS idx_gauntlet_allowed_card ON gauntlet_allowed_cards(card_id)',
 ]
+
+export function ensureGauntletTables(db: Database.Database): void {
+  for (const sql of GAUNTLET_DDL) {
+    db.prepare(sql).run()
+  }
+}
 
 // Exclude calculation/problem-solving questions:
 // 1. Cards with a solution image containing numbers/math.
@@ -108,6 +119,7 @@ const NOT_PROBLEM_SOLVING = `(
 )`
 const VALID_MCQ = `(json_type(c.data, '$.choices') = 'array' AND json_array_length(c.data, '$.choices') >= 2)`
 const NOT_FLAGGED = `(c.id NOT IN (SELECT card_id FROM gauntlet_flagged_cards))`
+const ALLOWED_OVERRIDE = `(c.id IN (SELECT card_id FROM gauntlet_allowed_cards))`
 
 const safeParse = (s: unknown): unknown => {
   if (typeof s !== 'string') return null
@@ -127,7 +139,7 @@ export function getPoolSizes(
         : []
     : []
   const out: Record<GauntletSubjectCode, number> = { MATH: 0, GEAS: 0, ELECS: 0, EST: 0 }
-  const solutionClause = allowSolutions ? '1=1' : NOT_PROBLEM_SOLVING
+  const solutionClause = allowSolutions ? '1=1' : `(${NOT_PROBLEM_SOLVING} OR ${ALLOWED_OVERRIDE})`
 
   let topicClause = '1=1'
   const topicParams: string[] = []
@@ -263,7 +275,7 @@ export function sampleQuestions(
         ? [options.tosTopicId]
         : []
     : []
-  const solutionClause = allowSolutions ? '1=1' : NOT_PROBLEM_SOLVING
+  const solutionClause = allowSolutions ? '1=1' : `(${NOT_PROBLEM_SOLVING} OR ${ALLOWED_OVERRIDE})`
   const weakTopics = getWeakTosTopics(db, subject, 5).map(w => w.tosTopicId)
 
   let topicClause = '1=1'
@@ -553,15 +565,326 @@ export function resetRatings(db: Database.Database): void {
 }
 
 export function flagQuestion(db: Database.Database, cardId: string, reason?: string): void {
+  ensureGauntletTables(db)
   db.prepare(`
     INSERT INTO gauntlet_flagged_cards (card_id, reason, flagged_at)
     VALUES (?, ?, ?)
     ON CONFLICT(card_id) DO UPDATE SET reason = excluded.reason, flagged_at = excluded.flagged_at
   `).run(cardId, reason ?? null, Date.now())
+  db.prepare('DELETE FROM gauntlet_allowed_cards WHERE card_id = ?').run(cardId)
 }
 
 export function unflagQuestion(db: Database.Database, cardId: string): void {
+  ensureGauntletTables(db)
   db.prepare('DELETE FROM gauntlet_flagged_cards WHERE card_id = ?').run(cardId)
+  db.prepare(`
+    INSERT OR REPLACE INTO gauntlet_allowed_cards (card_id, allowed_at)
+    VALUES (?, ?)
+  `).run(cardId, Date.now())
+}
+
+export function reinsertQuestions(db: Database.Database, cardIds: string[]): void {
+  ensureGauntletTables(db)
+  const now = Date.now()
+  const deleteFlag = db.prepare('DELETE FROM gauntlet_flagged_cards WHERE card_id = ?')
+  const insertAllow = db.prepare('INSERT OR REPLACE INTO gauntlet_allowed_cards (card_id, allowed_at) VALUES (?, ?)')
+  const tx = db.transaction((ids: string[]) => {
+    for (const id of ids) {
+      deleteFlag.run(id)
+      insertAllow.run(id, now)
+    }
+  })
+  tx(cardIds)
+}
+
+export interface ExcludedGauntletCard {
+  id: string
+  topicId: string
+  type: string
+  subject: GauntletSubjectCode
+  deckName: string
+  tosTopicId: string | null
+  question: string
+  choices: string[]
+  answer: number
+  explanation?: string
+  imagePath?: string | null
+  solutionImagePath?: string | null
+  difficulty: string
+  reason: string
+  flaggedAt: number
+  exclusionType: 'flagged' | 'problem_solving'
+}
+
+export interface ExcludedGauntletResult {
+  cards: ExcludedGauntletCard[]
+  total: number
+  totalExcludedCount: number
+  flaggedCount: number
+  autoExcludedCount: number
+  reasonsBreakdown: Record<string, number>
+  subjectsBreakdown: Record<string, number>
+}
+
+export function getExcludedGauntletQuestions(
+  db: Database.Database,
+  options?: {
+    type?: 'flagged' | 'problem_solving' | 'all'
+    subject?: string
+    reason?: string
+    search?: string
+    limit?: number
+    offset?: number
+  },
+): ExcludedGauntletResult {
+  ensureGauntletTables(db)
+  const mode = options?.type || 'all'
+  const limit = options?.limit ?? 50
+  const offset = options?.offset ?? 0
+  const search = options?.search?.trim() || ''
+  const subjectFilter = options?.subject && options.subject !== 'ALL' ? options.subject : null
+  const reasonFilter = options?.reason && options.reason !== 'ALL' ? options.reason : null
+
+  // 1. Overall counts
+  const flaggedCountRow = db.prepare(`
+    SELECT COUNT(*) as cnt 
+    FROM cards c 
+    JOIN gauntlet_flagged_cards f ON f.card_id = c.id
+    WHERE c.type = 'mcq'
+  `).get() as { cnt: number } | undefined
+  const flaggedCount = flaggedCountRow?.cnt ?? 0
+
+  const autoExcludedCountRow = db.prepare(`
+    SELECT COUNT(*) as cnt
+    FROM cards c
+    WHERE c.type = 'mcq'
+      AND ${VALID_MCQ}
+      AND NOT (${NOT_PROBLEM_SOLVING})
+      AND c.id NOT IN (SELECT card_id FROM gauntlet_flagged_cards)
+      AND c.id NOT IN (SELECT card_id FROM gauntlet_allowed_cards)
+  `).get() as { cnt: number } | undefined
+  const autoExcludedCount = autoExcludedCountRow?.cnt ?? 0
+  const totalExcludedCount = flaggedCount + autoExcludedCount
+
+  // 2. Breakdown by reason across all excluded MCQs
+  const reasonsRows = db.prepare(`
+    SELECT 
+      COALESCE(f.reason, 'Problem Solving (Calculation Heuristic)') as reason,
+      COUNT(*) as cnt
+    FROM cards c
+    LEFT JOIN gauntlet_flagged_cards f ON f.card_id = c.id
+    WHERE c.type = 'mcq'
+      AND (
+        f.card_id IS NOT NULL
+        OR
+        (
+          c.id NOT IN (SELECT card_id FROM gauntlet_allowed_cards)
+          AND NOT (${NOT_PROBLEM_SOLVING})
+        )
+      )
+    GROUP BY 1
+    ORDER BY cnt DESC
+  `).all() as Array<{ reason: string; cnt: number }>
+  const reasonsBreakdown: Record<string, number> = {}
+  for (const r of reasonsRows) {
+    reasonsBreakdown[r.reason] = r.cnt
+  }
+
+  // 3. Breakdown by subject for the active mode
+  let subjectWhereClause = ''
+  if (mode === 'flagged') {
+    subjectWhereClause = `AND f.card_id IS NOT NULL`
+  } else if (mode === 'problem_solving') {
+    subjectWhereClause = `AND f.card_id IS NULL AND c.id NOT IN (SELECT card_id FROM gauntlet_allowed_cards) AND NOT (${NOT_PROBLEM_SOLVING})`
+  } else {
+    subjectWhereClause = `AND (
+      f.card_id IS NOT NULL
+      OR (
+        c.id NOT IN (SELECT card_id FROM gauntlet_allowed_cards)
+        AND NOT (${NOT_PROBLEM_SOLVING})
+      )
+    )`
+  }
+
+  const subjectsRows = db.prepare(`
+    SELECT 
+      CASE 
+        WHEN t.subject IN ('Mathematics', 'MATH') OR c.tos_topic_id LIKE 'MATH-%' THEN 'MATH'
+        WHEN t.subject IN ('General Engineering & Applied Sciences', 'GEAS') OR c.tos_topic_id LIKE 'GEAS-%' THEN 'GEAS'
+        WHEN t.subject IN ('Electronics Engineering', 'ELECS') OR c.tos_topic_id LIKE 'ELECS-%' THEN 'ELECS'
+        WHEN t.subject IN ('Electronics Systems & Technologies', 'EST') OR c.tos_topic_id LIKE 'EST-%' THEN 'EST'
+        ELSE 'OTHER'
+      END as subject_code,
+      COUNT(*) as cnt
+    FROM cards c
+    JOIN topics t ON t.id = c.topic_id
+    LEFT JOIN gauntlet_flagged_cards f ON f.card_id = c.id
+    WHERE c.type = 'mcq'
+      ${subjectWhereClause}
+    GROUP BY 1
+  `).all() as Array<{ subject_code: string; cnt: number }>
+  const subjectsBreakdown: Record<string, number> = { MATH: 0, GEAS: 0, ELECS: 0, EST: 0 }
+  for (const s of subjectsRows) {
+    if (s.subject_code in subjectsBreakdown) {
+      subjectsBreakdown[s.subject_code] = s.cnt
+    }
+  }
+
+  // 4. Construct filtered query for cards list
+  const whereClauses: string[] = [`c.type = 'mcq'`]
+  const params: unknown[] = []
+
+  if (mode === 'flagged') {
+    whereClauses.push(`f.card_id IS NOT NULL`)
+    if (reasonFilter) {
+      whereClauses.push(`f.reason = ?`)
+      params.push(reasonFilter)
+    }
+  } else if (mode === 'problem_solving') {
+    whereClauses.push(`f.card_id IS NULL`)
+    whereClauses.push(`c.id NOT IN (SELECT card_id FROM gauntlet_allowed_cards)`)
+    whereClauses.push(`NOT (${NOT_PROBLEM_SOLVING})`)
+  } else {
+    // mode === 'all'
+    whereClauses.push(`(
+      f.card_id IS NOT NULL
+      OR (
+        c.id NOT IN (SELECT card_id FROM gauntlet_allowed_cards)
+        AND NOT (${NOT_PROBLEM_SOLVING})
+      )
+    )`)
+    if (reasonFilter) {
+      if (reasonFilter === 'Problem Solving (Calculation Heuristic)') {
+        whereClauses.push(`f.card_id IS NULL`)
+      } else {
+        whereClauses.push(`f.reason = ?`)
+        params.push(reasonFilter)
+      }
+    }
+  }
+
+  if (subjectFilter) {
+    whereClauses.push(`
+      (
+        CASE 
+          WHEN t.subject IN ('Mathematics', 'MATH') OR c.tos_topic_id LIKE 'MATH-%' THEN 'MATH'
+          WHEN t.subject IN ('General Engineering & Applied Sciences', 'GEAS') OR c.tos_topic_id LIKE 'GEAS-%' THEN 'GEAS'
+          WHEN t.subject IN ('Electronics Engineering', 'ELECS') OR c.tos_topic_id LIKE 'ELECS-%' THEN 'ELECS'
+          WHEN t.subject IN ('Electronics Systems & Technologies', 'EST') OR c.tos_topic_id LIKE 'EST-%' THEN 'EST'
+          ELSE 'OTHER'
+        END
+      ) = ?
+    `)
+    params.push(subjectFilter)
+  }
+
+  if (search) {
+    whereClauses.push(`(c.data LIKE ? OR t.name LIKE ? OR c.tos_topic_id LIKE ?)`)
+    params.push(`%${search}%`, `%${search}%`, `%${search}%`)
+  }
+
+  const whereSql = whereClauses.join(' AND ')
+
+  // Total matching filtered
+  const totalRow = db.prepare(`
+    SELECT COUNT(*) as total
+    FROM cards c
+    JOIN topics t ON t.id = c.topic_id
+    LEFT JOIN gauntlet_flagged_cards f ON f.card_id = c.id
+    WHERE ${whereSql}
+  `).get(...params) as { total: number } | undefined
+  const total = totalRow?.total ?? 0
+
+  // Rows query
+  const rows = db.prepare(`
+    SELECT 
+      c.id, c.topic_id, c.type, c.data, c.difficulty, c.tags, c.tos_topic_id, c.created_at,
+      t.name AS deck_name, t.subject AS raw_subject,
+      COALESCE(f.reason, 'Problem Solving (Calculation Heuristic)') AS reason,
+      COALESCE(f.flagged_at, c.created_at) AS flagged_at,
+      CASE WHEN f.card_id IS NOT NULL THEN 'flagged' ELSE 'problem_solving' END AS exclusion_type
+    FROM cards c
+    JOIN topics t ON t.id = c.topic_id
+    LEFT JOIN gauntlet_flagged_cards f ON f.card_id = c.id
+    WHERE ${whereSql}
+    ORDER BY (f.card_id IS NOT NULL) DESC, COALESCE(f.flagged_at, c.created_at) DESC
+    LIMIT ? OFFSET ?
+  `).all(...params, limit, offset) as Array<{
+    id: string
+    topic_id: string
+    type: string
+    data: string
+    difficulty: string
+    tags: string
+    tos_topic_id: string | null
+    created_at: number
+    deck_name: string
+    raw_subject: string
+    reason: string | null
+    flagged_at: number
+    exclusion_type: 'flagged' | 'problem_solving'
+  }>
+
+  const cards: ExcludedGauntletCard[] = rows.map(r => {
+    let question = ''
+    let choices: string[] = []
+    let answer = 0
+    let explanation = ''
+    let imagePath: string | null = null
+    let solutionImagePath: string | null = null
+
+    try {
+      const parsed = typeof r.data === 'string' ? JSON.parse(r.data) : r.data
+      question = parsed?.question || parsed?.front || ''
+      choices = Array.isArray(parsed?.choices) ? parsed.choices : []
+      answer = typeof parsed?.answer === 'number' ? parsed.answer : (typeof parsed?.answerIndex === 'number' ? parsed.answerIndex : 0)
+      explanation = parsed?.explanation || ''
+      imagePath = parsed?.imagePath || null
+      solutionImagePath = parsed?.solutionImagePath || null
+    } catch {
+      question = String(r.data || '')
+    }
+
+    let subCode: GauntletSubjectCode = 'MATH'
+    if (['Mathematics', 'MATH'].includes(r.raw_subject) || (r.tos_topic_id && r.tos_topic_id.startsWith('MATH-'))) {
+      subCode = 'MATH'
+    } else if (['General Engineering & Applied Sciences', 'GEAS'].includes(r.raw_subject) || (r.tos_topic_id && r.tos_topic_id.startsWith('GEAS-'))) {
+      subCode = 'GEAS'
+    } else if (['Electronics Engineering', 'ELECS'].includes(r.raw_subject) || (r.tos_topic_id && r.tos_topic_id.startsWith('ELECS-'))) {
+      subCode = 'ELECS'
+    } else if (['Electronics Systems & Technologies', 'EST'].includes(r.raw_subject) || (r.tos_topic_id && r.tos_topic_id.startsWith('EST-'))) {
+      subCode = 'EST'
+    }
+
+    return {
+      id: r.id,
+      topicId: r.topic_id,
+      type: r.type,
+      subject: subCode,
+      deckName: r.deck_name,
+      tosTopicId: r.tos_topic_id,
+      question,
+      choices,
+      answer,
+      explanation,
+      imagePath,
+      solutionImagePath,
+      difficulty: r.difficulty || 'MEDIUM',
+      reason: r.reason || 'Flagged for Gauntlet',
+      flaggedAt: r.flagged_at,
+      exclusionType: r.exclusion_type,
+    }
+  })
+
+  return {
+    cards,
+    total,
+    totalExcludedCount,
+    flaggedCount,
+    autoExcludedCount,
+    reasonsBreakdown,
+    subjectsBreakdown,
+  }
 }
 
 export function getFlaggedQuestions(
@@ -660,5 +983,388 @@ export function rewardReviewElo(
 
   return { gained: allowable, newRating: nextRating }
 }
+
+export interface GauntletTosAccuracyItem {
+  tosTopicId: string
+  subject: GauntletSubjectCode
+  totalAnswers: number
+  correctAnswers: number
+  wrongAnswers: number
+  timeoutAnswers: number
+  accuracy: number
+  isWeak: boolean
+}
+
+export interface GauntletSpeedParItem {
+  subject: GauntletSubjectCode
+  totalAnswers: number
+  avgTimeMs: number
+  avgParMs: number
+  speedRatio: number
+  fastWrongCount: number
+  wrongCount: number
+  fastWrongRate: number
+}
+
+export interface GauntletEloTrajectoryPoint {
+  date: string
+  timestamp: number
+  MATH: number | null
+  GEAS: number | null
+  ELECS: number | null
+  EST: number | null
+  overall: number | null
+}
+
+export interface GauntletCoverageDensityItem {
+  subject: GauntletSubjectCode
+  libraryCards: number
+  arenaCards: number
+  penetrationPct: number
+}
+
+export interface GauntletTopicCoverageItem {
+  tosTopicId: string
+  subject: GauntletSubjectCode
+  libraryCards: number
+  arenaCards: number
+  penetrationPct: number
+}
+
+export interface GauntletEnduranceStats {
+  totalRuns: number
+  totalAnswers: number
+  avgRunDurationSec: number
+  avgRunScore: number
+  avgQuestionsPerRun: number
+  bestStreakOverall: number
+  streakBuckets: Array<{
+    bucket: string
+    count: number
+    pct: number
+  }>
+  failureModes: Array<{
+    mode: string
+    count: number
+    pct: number
+  }>
+}
+
+export interface GauntletEdaStats {
+  tosAccuracy: GauntletTosAccuracyItem[]
+  speedPar: GauntletSpeedParItem[]
+  eloTrajectory: GauntletEloTrajectoryPoint[]
+  currentRatings: Record<GauntletSubjectCode, { rating: number; peak: number; answers: number }>
+  coverageDensity: {
+    bySubject: GauntletCoverageDensityItem[]
+    byTopic: GauntletTopicCoverageItem[]
+    untestedBlindSpots: GauntletTopicCoverageItem[]
+  }
+  endurance: GauntletEnduranceStats
+}
+
+export function getGauntletEdaStats(db: Database.Database): GauntletEdaStats {
+  const SUBJECTS: GauntletSubjectCode[] = ['MATH', 'GEAS', 'ELECS', 'EST']
+
+  // 1. ToS Accuracy
+  const tosAccuracyRows = db.prepare(`
+    SELECT c.tos_topic_id,
+           a.subject,
+           COUNT(*) as total_answers,
+           SUM(CASE WHEN a.outcome = 'correct' THEN 1 ELSE 0 END) as correct_answers,
+           SUM(CASE WHEN a.outcome = 'wrong' THEN 1 ELSE 0 END) as wrong_answers,
+           SUM(CASE WHEN a.outcome = 'timeout' THEN 1 ELSE 0 END) as timeout_answers,
+           ROUND(CAST(SUM(CASE WHEN a.outcome = 'correct' THEN 1 ELSE 0 END) AS REAL) / COUNT(*), 4) as accuracy
+    FROM gauntlet_answers a
+    JOIN cards c ON c.id = a.card_id
+    WHERE c.tos_topic_id IS NOT NULL AND c.tos_topic_id != ''
+    GROUP BY c.tos_topic_id, a.subject
+    ORDER BY total_answers DESC
+  `).all() as Array<{
+    tos_topic_id: string
+    subject: string
+    total_answers: number
+    correct_answers: number
+    wrong_answers: number
+    timeout_answers: number
+    accuracy: number
+  }>
+
+  const tosAccuracy: GauntletTosAccuracyItem[] = tosAccuracyRows.map(r => ({
+    tosTopicId: r.tos_topic_id,
+    subject: (['MATH', 'GEAS', 'ELECS', 'EST'].includes(r.subject) ? r.subject : 'MATH') as GauntletSubjectCode,
+    totalAnswers: r.total_answers,
+    correctAnswers: r.correct_answers,
+    wrongAnswers: r.wrong_answers,
+    timeoutAnswers: r.timeout_answers,
+    accuracy: r.accuracy,
+    isWeak: r.total_answers >= 3 && r.accuracy < 0.70,
+  }))
+
+  // 2. Speed vs Par Efficiency
+  const speedParRows = db.prepare(`
+    SELECT a.subject,
+           COUNT(*) as total_answers,
+           ROUND(AVG(a.time_ms), 1) as avg_time_ms,
+           ROUND(AVG(a.par_ms), 1) as avg_par_ms,
+           ROUND(CAST(SUM(a.time_ms) AS REAL) / NULLIF(SUM(a.par_ms), 0), 3) as speed_ratio,
+           SUM(CASE WHEN a.outcome IN ('wrong', 'timeout') AND a.time_ms < a.par_ms * 0.25 THEN 1 ELSE 0 END) as fast_wrong_count,
+           SUM(CASE WHEN a.outcome IN ('wrong', 'timeout') THEN 1 ELSE 0 END) as wrong_count
+    FROM gauntlet_answers a
+    GROUP BY a.subject
+  `).all() as Array<{
+    subject: string
+    total_answers: number
+    avg_time_ms: number
+    avg_par_ms: number
+    speed_ratio: number | null
+    fast_wrong_count: number
+    wrong_count: number
+  }>
+
+  const speedPar: GauntletSpeedParItem[] = SUBJECTS.map(sub => {
+    const found = speedParRows.find(r => r.subject === sub)
+    if (!found) {
+      return {
+        subject: sub,
+        totalAnswers: 0,
+        avgTimeMs: 0,
+        avgParMs: 0,
+        speedRatio: 1.0,
+        fastWrongCount: 0,
+        wrongCount: 0,
+        fastWrongRate: 0,
+      }
+    }
+    return {
+      subject: sub,
+      totalAnswers: found.total_answers,
+      avgTimeMs: found.avg_time_ms ?? 0,
+      avgParMs: found.avg_par_ms ?? 0,
+      speedRatio: found.speed_ratio ?? 1.0,
+      fastWrongCount: found.fast_wrong_count ?? 0,
+      wrongCount: found.wrong_count ?? 0,
+      fastWrongRate: found.wrong_count > 0 ? Math.round(((found.fast_wrong_count ?? 0) / found.wrong_count) * 1000) / 1000 : 0,
+    }
+  })
+
+  // 3. Elo Trajectory & Current Ratings
+  const runRows = db.prepare(`
+    SELECT started_at, ratings_after
+    FROM gauntlet_runs
+    WHERE ratings_after IS NOT NULL
+    ORDER BY started_at ASC
+  `).all() as Array<{ started_at: number; ratings_after: string }>
+
+  const eloTrajectory: GauntletEloTrajectoryPoint[] = []
+  for (const r of runRows) {
+    const parsed = safeParse(r.ratings_after) as Record<string, { rating?: number } | number> | null
+    if (!parsed || typeof parsed !== 'object') continue
+
+    const getSubRating = (code: string): number | null => {
+      const val = parsed[code]
+      if (val == null) return null
+      const num = typeof val === 'number' ? val : val.rating
+      return typeof num === 'number' && !isNaN(num) ? Math.round(num * 10) / 10 : null
+    }
+
+    const math = getSubRating('MATH')
+    const geas = getSubRating('GEAS')
+    const elecs = getSubRating('ELECS')
+    const est = getSubRating('EST')
+
+    const present = [math, geas, elecs, est].filter((v): v is number => v != null)
+    const overall = present.length > 0
+      ? Math.round((present.reduce((a, b) => a + b, 0) / present.length) * 10) / 10
+      : null
+
+    const d = new Date(r.started_at)
+    eloTrajectory.push({
+      date: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+      timestamp: r.started_at,
+      MATH: math,
+      GEAS: geas,
+      ELECS: elecs,
+      EST: est,
+      overall,
+    })
+  }
+
+  const ratingRows = db.prepare('SELECT subject, rating, peak, answers FROM gauntlet_ratings').all() as Array<{
+    subject: string
+    rating: number
+    peak: number | null
+    answers: number
+  }>
+  const currentRatings: Record<GauntletSubjectCode, { rating: number; peak: number; answers: number }> = {
+    MATH: { rating: 500, peak: 500, answers: 0 },
+    GEAS: { rating: 500, peak: 500, answers: 0 },
+    ELECS: { rating: 500, peak: 500, answers: 0 },
+    EST: { rating: 500, peak: 500, answers: 0 },
+  }
+  for (const row of ratingRows) {
+    if (SUBJECTS.includes(row.subject as GauntletSubjectCode)) {
+      currentRatings[row.subject as GauntletSubjectCode] = {
+        rating: Math.round(row.rating * 10) / 10,
+        peak: Math.round((row.peak ?? row.rating) * 10) / 10,
+        answers: row.answers,
+      }
+    }
+  }
+
+  // 4. Coverage Density: Arena vs. Playable Gauntlet Pool
+  const subjectCoverageRows = db.prepare(`
+    SELECT 
+      CASE 
+        WHEN t.subject IN ('Mathematics', 'MATH') OR c.tos_topic_id LIKE 'MATH-%' THEN 'MATH'
+        WHEN t.subject IN ('General Engineering & Applied Sciences', 'GEAS') OR c.tos_topic_id LIKE 'GEAS-%' THEN 'GEAS'
+        WHEN t.subject IN ('Electronics Engineering', 'ELECS') OR c.tos_topic_id LIKE 'ELECS-%' THEN 'ELECS'
+        WHEN t.subject IN ('Electronics Systems & Technologies', 'EST') OR c.tos_topic_id LIKE 'EST-%' THEN 'EST'
+        ELSE 'OTHER'
+      END as subject,
+      COUNT(DISTINCT c.id) as pool_cards,
+      COUNT(DISTINCT a.card_id) as arena_cards
+    FROM cards c
+    JOIN topics t ON t.id = c.topic_id
+    LEFT JOIN gauntlet_answers a ON a.card_id = c.id
+    WHERE c.tos_topic_id IS NOT NULL AND c.tos_topic_id != ''
+      AND c.type = 'mcq'
+      AND (${NOT_PROBLEM_SOLVING} OR ${ALLOWED_OVERRIDE})
+      AND ${VALID_MCQ}
+      AND ${NOT_FLAGGED}
+    GROUP BY 1
+  `).all() as Array<{ subject: string; pool_cards: number; arena_cards: number }>
+
+  const bySubject: GauntletCoverageDensityItem[] = SUBJECTS.map(sub => {
+    const found = subjectCoverageRows.find(r => r.subject === sub)
+    const pool = found?.pool_cards ?? 0
+    const arena = found?.arena_cards ?? 0
+    return {
+      subject: sub,
+      libraryCards: pool,
+      arenaCards: arena,
+      penetrationPct: pool > 0 ? Math.round((arena / pool) * 1000) / 10 : 0,
+    }
+  })
+
+  const topicCoverageRows = db.prepare(`
+    SELECT 
+      c.tos_topic_id,
+      CASE 
+        WHEN t.subject IN ('Mathematics', 'MATH') OR c.tos_topic_id LIKE 'MATH-%' THEN 'MATH'
+        WHEN t.subject IN ('General Engineering & Applied Sciences', 'GEAS') OR c.tos_topic_id LIKE 'GEAS-%' THEN 'GEAS'
+        WHEN t.subject IN ('Electronics Engineering', 'ELECS') OR c.tos_topic_id LIKE 'ELECS-%' THEN 'ELECS'
+        WHEN t.subject IN ('Electronics Systems & Technologies', 'EST') OR c.tos_topic_id LIKE 'EST-%' THEN 'EST'
+        ELSE 'OTHER'
+      END as subject,
+      COUNT(DISTINCT c.id) as pool_cards,
+      COUNT(DISTINCT a.card_id) as arena_cards
+    FROM cards c
+    JOIN topics t ON t.id = c.topic_id
+    LEFT JOIN gauntlet_answers a ON a.card_id = c.id
+    WHERE c.tos_topic_id IS NOT NULL AND c.tos_topic_id != ''
+      AND c.type = 'mcq'
+      AND (${NOT_PROBLEM_SOLVING} OR ${ALLOWED_OVERRIDE})
+      AND ${VALID_MCQ}
+      AND ${NOT_FLAGGED}
+    GROUP BY c.tos_topic_id
+    HAVING pool_cards > 0
+    ORDER BY (COUNT(DISTINCT c.id) - COUNT(DISTINCT a.card_id)) DESC
+  `).all() as Array<{ tos_topic_id: string; subject: string; pool_cards: number; arena_cards: number }>
+
+  const byTopic: GauntletTopicCoverageItem[] = topicCoverageRows.map(r => ({
+    tosTopicId: r.tos_topic_id,
+    subject: (['MATH', 'GEAS', 'ELECS', 'EST'].includes(r.subject) ? r.subject : 'MATH') as GauntletSubjectCode,
+    libraryCards: r.pool_cards,
+    arenaCards: r.arena_cards,
+    penetrationPct: r.pool_cards > 0 ? Math.round((r.arena_cards / r.pool_cards) * 1000) / 10 : 0,
+  }))
+
+  const untestedBlindSpots: GauntletTopicCoverageItem[] = byTopic
+    .filter(t => t.libraryCards > 0)
+    .slice(0, 8)
+
+  // 5. Endurance & Streak Survival Curve
+  const enduranceSummary = db.prepare(`
+    SELECT 
+      COUNT(*) as total_runs,
+      ROUND(AVG(duration_ms) / 1000.0, 1) as avg_duration_sec,
+      ROUND(AVG(score), 1) as avg_score,
+      ROUND(AVG(answered), 1) as avg_answered,
+      MAX(best_streak) as best_streak_overall
+    FROM gauntlet_runs
+  `).get() as {
+    total_runs: number
+    avg_duration_sec: number | null
+    avg_score: number | null
+    avg_answered: number | null
+    best_streak_overall: number | null
+  } | undefined
+
+  const totalRuns = enduranceSummary?.total_runs ?? 0
+
+  const streakBucketOrder = ['0-4', '5-9', '10-14', '15-19', '20-29', '30+']
+  const streakRows = db.prepare(`
+    SELECT 
+      CASE 
+        WHEN best_streak BETWEEN 0 AND 4 THEN '0-4'
+        WHEN best_streak BETWEEN 5 AND 9 THEN '5-9'
+        WHEN best_streak BETWEEN 10 AND 14 THEN '10-14'
+        WHEN best_streak BETWEEN 15 AND 19 THEN '15-19'
+        WHEN best_streak BETWEEN 20 AND 29 THEN '20-29'
+        ELSE '30+'
+      END as bucket,
+      COUNT(*) as count
+    FROM gauntlet_runs
+    GROUP BY 1
+  `).all() as Array<{ bucket: string; count: number }>
+
+  const streakBuckets = streakBucketOrder.map(b => {
+    const found = streakRows.find(r => r.bucket === b)
+    const count = found?.count ?? 0
+    return {
+      bucket: b,
+      count,
+      pct: totalRuns > 0 ? Math.round((count / totalRuns) * 1000) / 10 : 0,
+    }
+  })
+
+  const failureRows = db.prepare(`
+    SELECT end_reason, COUNT(*) as count
+    FROM gauntlet_runs
+    GROUP BY end_reason
+  `).all() as Array<{ end_reason: string; count: number }>
+
+  const failureModes = failureRows.map(r => ({
+    mode: r.end_reason,
+    count: r.count,
+    pct: totalRuns > 0 ? Math.round((r.count / totalRuns) * 1000) / 10 : 0,
+  }))
+
+  const answerCountRow = db.prepare('SELECT COUNT(*) as cnt FROM gauntlet_answers').get() as { cnt: number } | undefined
+
+  return {
+    tosAccuracy,
+    speedPar,
+    eloTrajectory,
+    currentRatings,
+    coverageDensity: {
+      bySubject,
+      byTopic,
+      untestedBlindSpots,
+    },
+    endurance: {
+      totalRuns,
+      totalAnswers: answerCountRow?.cnt ?? 0,
+      avgRunDurationSec: enduranceSummary?.avg_duration_sec ?? 0,
+      avgRunScore: enduranceSummary?.avg_score ?? 0,
+      avgQuestionsPerRun: enduranceSummary?.avg_answered ?? 0,
+      bestStreakOverall: enduranceSummary?.best_streak_overall ?? 0,
+      streakBuckets,
+      failureModes,
+    },
+  }
+}
+
 
 

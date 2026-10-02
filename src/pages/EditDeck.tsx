@@ -19,7 +19,8 @@ import { AIDescriptionButton } from '../components/deck/AIDescriptionButton'
 import { Tooltip } from '../components/ui/Tooltip'
 import { generateDeckSummary } from '../services/aiSummary.service'
 import { useDataVersionStore } from '../store/useDataVersionStore'
-import { getTosTopicGroupsBySubject, getTosParentTopicsBySubject, formatTosBadge } from '../lib/tosClassification'
+import { getTosTopicGroupsBySubject, formatTosBadge } from '../lib/tosClassification'
+import { TosTopicPicker } from '../components/ui/TosTopicPicker'
 import {
   DndContext,
   closestCenter,
@@ -1035,25 +1036,12 @@ const CardRow: React.FC<CardRowProps & { dragHandleProps?: React.HTMLAttributes<
                   <span className="text-[10px] font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted">
                     TOS Category:
                   </span>
-                  <select
-                    value={card.tosTopicId || ''}
-                    onChange={e => onUpdate(card.id, { tosTopicId: e.target.value || null })}
-                    className="bg-[#151515] border border-border-base rounded px-2.5 py-1 text-xs font-['JetBrains_Mono'] text-text-primary focus:border-accent outline-none max-w-[280px]"
-                  >
-                    <option value="">(Default from Deck / None)</option>
-                    {getTosTopicGroupsBySubject(subject).map(group => (
-                      <optgroup key={group.parent.id} label={`${group.parent.code} ${group.parent.title}`}>
-                        <option value={group.parent.id}>
-                          {group.parent.code} {group.parent.title} (General)
-                        </option>
-                        {group.subtopics.map(sub => (
-                          <option key={sub.id} value={sub.id}>
-                            {sub.code} {sub.title}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
+                  <TosTopicPicker
+                    value={card.tosTopicId || null}
+                    onChange={topicId => onUpdate(card.id, { tosTopicId: topicId })}
+                    subject={subject}
+                    placeholder="(Default from Deck / None)"
+                  />
                 </div>
               </div>
               {card.type === 'mcq' ? (
@@ -1452,9 +1440,14 @@ export default function EditDeck() {
     async function fetchFolders() {
       try {
         const res = await window.electron.folders.getAll({ scope })
-        const folderNames = res.success && res.data
-          ? [...new Set(res.data.map((f: any) => f.name))].sort() as string[]
-          : []
+        const folders = res.success && res.data ? res.data : []
+        const sorted = [...folders].sort((a: any, b: any) => {
+          const countA = typeof a.deck_count === 'number' ? a.deck_count : 0
+          const countB = typeof b.deck_count === 'number' ? b.deck_count : 0
+          if (countB !== countA) return countB - countA
+          return String(a.name).localeCompare(String(b.name))
+        })
+        const folderNames = [...new Set(sorted.map((f: any) => f.name))] as string[]
         setExistingFolders(folderNames)
       } catch {
         setExistingFolders([])
@@ -1562,6 +1555,7 @@ export default function EditDeck() {
                 return { id: row.id, type: 'flashcard', data: d, tosTopicId: row.tos_topic_id ?? null } as EditCard
               }
         })
+        const prevScroll = scrollContainerRef.current?.scrollTop
         setCards(loaded)
         setOriginalCardIds(new Set(loaded.map(c => c.id)))
 
@@ -1577,6 +1571,13 @@ export default function EditDeck() {
             })
             return next
           })
+          if (prevScroll !== undefined && scrollContainerRef.current) {
+            requestAnimationFrame(() => {
+              if (scrollContainerRef.current) {
+                scrollContainerRef.current.scrollTop = prevScroll
+              }
+            })
+          }
         }
       }
     } catch (err) {
@@ -1615,6 +1616,11 @@ export default function EditDeck() {
         )
         input?.focus?.({ preventScroll: true })
       }, 150)
+    } else if (!isOpening && index !== undefined) {
+      // Keep collapsed card in view so scrolling position doesn't reset to top
+      setTimeout(() => {
+        virtualizer.scrollToIndex?.(index, { align: 'auto', behavior: 'smooth' })
+      }, 50)
     }
   }, [expandedIds, virtualizer])
 
@@ -1736,6 +1742,7 @@ export default function EditDeck() {
                           deckMeta.folderName.trim().toLowerCase() !== 'uncategorized' &&
                           !existingFolders.some(f => f.toLowerCase() === deckMeta.folderName.trim().toLowerCase())
 
+      const savedScroll = scrollContainerRef.current?.scrollTop
       const res = await window.electron.decks.updateDeckWithCards({
         deckId,
         title: deckMeta.title.trim(),
@@ -1758,6 +1765,13 @@ export default function EditDeck() {
       if (!res.success) throw new Error(res.error)
       useDataVersionStore.getState().bump()
       await loadCards(false)
+      if (savedScroll !== undefined && scrollContainerRef.current) {
+        requestAnimationFrame(() => {
+          if (scrollContainerRef.current) {
+            scrollContainerRef.current.scrollTop = savedScroll
+          }
+        })
+      }
       if (isNewFolder) {
         setToast({ type: 'success', msg: `Deck saved and new folder "${deckMeta.folderName.trim()}" created!` })
       } else {
@@ -2029,18 +2043,14 @@ export default function EditDeck() {
                   Applies to cards in this deck
                 </span>
               </div>
-              <select
-                value={deckMeta.defaultTosTopicId || ''}
-                onChange={e => setDeckMeta(m => ({ ...m, defaultTosTopicId: e.target.value || null }))}
-                className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-text-primary text-xs font-['JetBrains_Mono'] focus:border-accent focus:bg-[#111] outline-none transition-colors"
-              >
-                <option value="">None / Mixed Topics</option>
-                {getTosParentTopicsBySubject(deckMeta.subject).map(parent => (
-                  <option key={parent.id} value={parent.id}>
-                    {parent.code} {parent.title}
-                  </option>
-                ))}
-              </select>
+              <TosTopicPicker
+                value={deckMeta.defaultTosTopicId || null}
+                onChange={topicId => setDeckMeta(m => ({ ...m, defaultTosTopicId: topicId }))}
+                subject={deckMeta.subject}
+                placeholder="None / Mixed Topics"
+                clearLabel="None / Mixed Topics"
+                fullWidth
+              />
             </div>
 
             <div>

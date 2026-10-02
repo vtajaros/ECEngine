@@ -20,7 +20,7 @@ import { EditCard } from './CardEditor'
 import { AIDescriptionButton } from './AIDescriptionButton'
 import { Tooltip } from '../ui/Tooltip'
 import { generateDeckSummary } from '../../services/aiSummary.service'
-import { getTosParentTopicsBySubject } from '../../lib/tosClassification'
+import { TosTopicPicker } from '../ui/TosTopicPicker'
 
 export type DeckMetadata = {
   title: string
@@ -29,7 +29,7 @@ export type DeckMetadata = {
   customTagInput: string
   folderName: string
   folderId: string | null
-  existingFolders: { id: string, name: string }[]
+  existingFolders: { id: string, name: string, deckCount?: number }[]
   showFolderDropdown: boolean
   deckTags: string[]
   defaultTosTopicId?: string | null
@@ -188,7 +188,13 @@ export default function DeckMetadataForm({ metadata, setMetadata, scope, cards =
       try {
         const res = await window.electron.folders.getAll({ scope })
         const folders = res.success && res.data
-          ? res.data.map((f: any) => ({ id: f.id, name: f.name })).sort((a: any, b: any) => a.name.localeCompare(b.name))
+          ? res.data
+              .map((f: any) => ({
+                id: f.id,
+                name: f.name,
+                deckCount: typeof f.deck_count === 'number' ? f.deck_count : 0,
+              }))
+              .sort((a: any, b: any) => (b.deckCount - a.deckCount) || a.name.localeCompare(b.name))
           : []
         setMetadata(prev => ({ ...prev, existingFolders: folders }))
       } catch {
@@ -368,18 +374,14 @@ export default function DeckMetadataForm({ metadata, setMetadata, scope, cards =
             Applies to cards in this deck
           </span>
         </div>
-        <select
-          value={metadata.defaultTosTopicId || ''}
-          onChange={e => setMetadata(prev => ({ ...prev, defaultTosTopicId: e.target.value || null }))}
-          className="w-full bg-[#111] border border-[#333] rounded px-3 py-2 text-text-primary text-xs font-['JetBrains_Mono'] focus:border-accent focus:bg-[#111] outline-none transition-colors"
-        >
-          <option value="">None / Mixed Topics</option>
-          {getTosParentTopicsBySubject(metadata.subject).map(parent => (
-            <option key={parent.id} value={parent.id}>
-              {parent.code} {parent.title}
-            </option>
-          ))}
-        </select>
+        <TosTopicPicker
+          value={metadata.defaultTosTopicId || null}
+          onChange={topicId => setMetadata(prev => ({ ...prev, defaultTosTopicId: topicId }))}
+          subject={metadata.subject}
+          placeholder="None / Mixed Topics"
+          clearLabel="None / Mixed Topics"
+          fullWidth
+        />
       </div>
 
       <div>

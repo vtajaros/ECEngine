@@ -76,7 +76,9 @@ export default function FlashcardLearn() {
 
 
   // ── Deck listing state ──
-  const [activeSubject, setActiveSubject] = useState<FilterSubject>('ALL')
+  const [activeSubject, setActiveSubject] = useState<FilterSubject>(
+    () => (sessionStorage.getItem('flashcards:activeSubject') as FilterSubject) || 'ALL'
+  )
   const [decks, setDecks] = useState<DeckInfo[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [setToDelete, setSetToDelete] = useState<DeckInfo | null>(null)
@@ -84,11 +86,24 @@ export default function FlashcardLearn() {
 
   // Advanced Filters State
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
-  const [filterTags, setFilterTags] = useState<string[]>([])
-  const [sortBy, setSortBy] = useState<'date' | 'title'>('date')
-  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [filterType, setFilterType] = useState<'all' | 'mcq' | 'flashcard' | 'mixed'>('all')
+  const [filterTags, setFilterTags] = useState<string[]>(() => {
+    try {
+      const saved = sessionStorage.getItem('flashcards:filterTags')
+      return saved ? JSON.parse(saved) : []
+    } catch { return [] }
+  })
+  const [sortBy, setSortBy] = useState<'date' | 'title'>(
+    () => (sessionStorage.getItem('flashcards:sortBy') as any) || 'date'
+  )
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>(
+    () => (sessionStorage.getItem('flashcards:sortOrder') as any) || 'desc'
+  )
+  const [searchQuery, setSearchQuery] = useState(
+    () => sessionStorage.getItem('flashcards:searchQuery') || ''
+  )
+  const [filterType, setFilterType] = useState<'all' | 'mcq' | 'flashcard' | 'mixed'>(
+    () => (sessionStorage.getItem('flashcards:filterType') as any) || 'all'
+  )
   const [includeMCQ, setIncludeMCQ] = useState<boolean>(() => {
     try {
       return localStorage.getItem('ecengine:flashcards:includeMCQ') === 'true'
@@ -103,8 +118,61 @@ export default function FlashcardLearn() {
       localStorage.setItem('ecengine:flashcards:includeMCQ', String(val))
     } catch {}
   }
-  const [activeFolder, setActiveFolder] = useState<string | 'all'>('all')
+  const [activeFolder, setActiveFolder] = useState<string | 'all'>(
+    () => sessionStorage.getItem('flashcards:activeFolder') || 'all'
+  )
   const filterPopoverRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    sessionStorage.setItem('flashcards:activeSubject', activeSubject)
+  }, [activeSubject])
+  useEffect(() => {
+    sessionStorage.setItem('flashcards:activeFolder', activeFolder)
+  }, [activeFolder])
+  useEffect(() => {
+    sessionStorage.setItem('flashcards:searchQuery', searchQuery)
+  }, [searchQuery])
+  useEffect(() => {
+    sessionStorage.setItem('flashcards:filterType', filterType)
+  }, [filterType])
+  useEffect(() => {
+    sessionStorage.setItem('flashcards:filterTags', JSON.stringify(filterTags))
+  }, [filterTags])
+  useEffect(() => {
+    sessionStorage.setItem('flashcards:sortBy', sortBy)
+  }, [sortBy])
+  useEffect(() => {
+    sessionStorage.setItem('flashcards:sortOrder', sortOrder)
+  }, [sortOrder])
+
+  const restoredReturnRef = useRef(false)
+  useEffect(() => {
+    if (isLoading || decks.length === 0) return
+    const returnDeckId = sessionStorage.getItem('ecengine:returnDeckId:/flashcards')
+    const returnScroll = sessionStorage.getItem('ecengine:returnScroll:/flashcards')
+    if (!returnDeckId && !returnScroll) return
+    if (restoredReturnRef.current) return
+
+    restoredReturnRef.current = true
+    sessionStorage.removeItem('ecengine:returnDeckId:/flashcards')
+    sessionStorage.removeItem('ecengine:returnScroll:/flashcards')
+
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        if (returnDeckId) {
+          const el = scrollContainerRef.current?.querySelector(`[data-deck-id="${returnDeckId}"]`)
+          if (el) {
+            el.scrollIntoView({ block: 'center', behavior: 'auto' })
+            return
+          }
+        }
+        if (returnScroll && scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = parseInt(returnScroll, 10)
+        }
+      }, 60)
+    })
+  }, [isLoading, decks.length])
 
   // Decks available in Flashcards view depending on includeMCQ toggle
   const availableDecks = useMemo(() => {
@@ -953,8 +1021,11 @@ Provide a thorough explanation covering ALL of the following:
       onShowAdvancedFilters={setShowAdvancedFilters}
       onLearnDeck={(id) => setShowFlashModal({ isOpen: true, deckId: id })}
       onPreviewDeck={handlePreviewStart}
+      scrollContainerRef={scrollContainerRef}
       onEditDeck={(id) => {
-        sessionStorage.setItem('ecengine:returnScroll:/flashcards', String(window.scrollY))
+        const scrollPos = scrollContainerRef.current ? scrollContainerRef.current.scrollTop : 0
+        sessionStorage.setItem('ecengine:returnDeckId:/flashcards', id)
+        sessionStorage.setItem('ecengine:returnScroll:/flashcards', String(scrollPos))
         navigate(`/edit-deck/${id}?returnTo=/flashcards`)
       }}
       onDeleteDeck={setSetToDelete}

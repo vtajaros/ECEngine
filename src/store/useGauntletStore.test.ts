@@ -258,6 +258,24 @@ describe('timed run lifecycle', () => {
     expect(store().phase).toBe('home')
     expect(svc.saveRun).not.toHaveBeenCalled()
   })
+
+  it('enforces 60-second hard cap timeout per question in timed mode to reset streak and deduct points', async () => {
+    svc.getQuestions.mockResolvedValue(cards(3))
+    await store().startRun(timedCfg({ totalItems: 3, durationSec: 300 }))
+    store().beginRun()
+    // Answer first question correctly
+    vi.advanceTimersByTime(2000)
+    store().answer(0)
+    expect(store().streak).toBe(1)
+
+    // Second question sits for 60s hard cap and times out
+    vi.advanceTimersByTime(60_000)
+    store().timeoutCurrent()
+    expect(store().streak).toBe(0)
+    expect(store().answers[1].outcome).toBe('timeout')
+    expect(store().answers[1].timeMs).toBe(60_000)
+    expect(store().answers[1].points).toBeLessThan(0)
+  })
 })
 
 describe('rating', () => {
@@ -585,6 +603,47 @@ describe('life-bonus streak in survival mode', () => {
       // Scaled delta should be approximately 40% of full delta
       expect(scaledDelta).toBeCloseTo(fullDelta * 0.4, 1)
       expect(scaledDelta).toBeGreaterThan(0)
+    })
+
+    it('scales positive ratings with diminishing returns in timed mode while anchoring penalties to starting rank', async () => {
+      // Start in Insulator rank (500)
+      svc.getRatings.mockResolvedValue([{ subject: 'MATH', rating: 500, answers: 30, peak: 500 }])
+      svc.getQuestions.mockResolvedValue(cards(10, 'MATH'))
+
+      await store().startRun(timedCfg({ subjects: ['MATH'], rated: true }))
+      store().beginRun()
+
+      // Answer 1 (correct)
+      vi.advanceTimersByTime(2000)
+      store().answer(0)
+      const ratingAfter1 = store().ratings.MATH.rating
+      const gain1 = ratingAfter1 - 500
+
+      // Answer 2 (correct)
+      vi.advanceTimersByTime(2000)
+      store().answer(0)
+      const ratingAfter2 = store().ratings.MATH.rating
+      const gain2 = ratingAfter2 - ratingAfter1
+
+      // Answer 3 (correct)
+      vi.advanceTimersByTime(2000)
+      store().answer(0)
+      const ratingAfter3 = store().ratings.MATH.rating
+      const gain3 = ratingAfter3 - ratingAfter2
+
+      // Positive gains diminish as virtual rating climbs
+      expect(gain1).toBeGreaterThanOrEqual(gain2)
+      expect(gain2).toBeGreaterThanOrEqual(gain3)
+
+      // Now answer wrong (question 4)
+      vi.advanceTimersByTime(2000)
+      store().answer(1) // wrong choice
+      const ratingAfterWrong = store().ratings.MATH.rating
+      const penalty = ratingAfter3 - ratingAfterWrong
+
+      // Penalty should be positive (a loss) and softened because startRating was Insulator (500 < 850)
+      expect(penalty).toBeGreaterThan(0)
+      expect(penalty).toBeLessThan(15) // Insulator 50% mitigated loss
     })
   })
 

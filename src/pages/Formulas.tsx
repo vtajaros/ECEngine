@@ -94,7 +94,9 @@ export default function Formulas() {
   const { startSession, rateCard, isSubmitting } = useSessionStore()
 
   // ── Deck listing state ──
-  const [activeSubject, setActiveSubject] = useState<FilterSubject>('ALL')
+  const [activeSubject, setActiveSubject] = useState<FilterSubject>(
+    () => (sessionStorage.getItem('formulas:activeSubject') as FilterSubject) || 'ALL'
+  )
   const [decks, setDecks] = useState<DeckInfo[]>(() => formulaDecksCache ?? [])
   const [isLoading, setIsLoading] = useState(() => !formulaDecksCache)
   const [setToDelete, setSetToDelete] = useState<DeckInfo | null>(null)
@@ -102,20 +104,85 @@ export default function Formulas() {
 
   // Advanced Filters State
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
-  const [filterTags, setFilterTags] = useState<string[]>([])
-  const [sortBy, setSortBy] = useState<'date' | 'title' | 'mastery'>('date')
-  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [filterType, setFilterType] = useState<'all' | 'mcq' | 'formula' | 'mixed'>('all')
-  const [activeFolder, setActiveFolder] = useState<string | 'all'>('all')
+  const [filterTags, setFilterTags] = useState<string[]>(() => {
+    try {
+      const saved = sessionStorage.getItem('formulas:filterTags')
+      return saved ? JSON.parse(saved) : []
+    } catch { return [] }
+  })
+  const [sortBy, setSortBy] = useState<'date' | 'title' | 'mastery'>(
+    () => (sessionStorage.getItem('formulas:sortBy') as any) || 'date'
+  )
+  const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>(
+    () => (sessionStorage.getItem('formulas:sortOrder') as any) || 'desc'
+  )
+  const [searchQuery, setSearchQuery] = useState(
+    () => sessionStorage.getItem('formulas:searchQuery') || ''
+  )
+  const [filterType, setFilterType] = useState<'all' | 'mcq' | 'formula' | 'mixed'>(
+    () => (sessionStorage.getItem('formulas:filterType') as any) || 'all'
+  )
+  const [activeFolder, setActiveFolder] = useState<string | 'all'>(
+    () => sessionStorage.getItem('formulas:activeFolder') || 'all'
+  )
   const [favoritesOnly, setFavoritesOnly] = useState<boolean>(
     () => sessionStorage.getItem('formulas:favoritesOnly') === 'true'
   )
   const filterPopoverRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
+  useEffect(() => {
+    sessionStorage.setItem('formulas:activeSubject', activeSubject)
+  }, [activeSubject])
+  useEffect(() => {
+    sessionStorage.setItem('formulas:activeFolder', activeFolder)
+  }, [activeFolder])
   useEffect(() => {
     sessionStorage.setItem('formulas:favoritesOnly', String(favoritesOnly))
   }, [favoritesOnly])
+  useEffect(() => {
+    sessionStorage.setItem('formulas:searchQuery', searchQuery)
+  }, [searchQuery])
+  useEffect(() => {
+    sessionStorage.setItem('formulas:filterType', filterType)
+  }, [filterType])
+  useEffect(() => {
+    sessionStorage.setItem('formulas:filterTags', JSON.stringify(filterTags))
+  }, [filterTags])
+  useEffect(() => {
+    sessionStorage.setItem('formulas:sortBy', sortBy)
+  }, [sortBy])
+  useEffect(() => {
+    sessionStorage.setItem('formulas:sortOrder', sortOrder)
+  }, [sortOrder])
+
+  const restoredReturnRef = useRef(false)
+  useEffect(() => {
+    if (isLoading || decks.length === 0) return
+    const returnDeckId = sessionStorage.getItem('ecengine:returnDeckId:/formulas')
+    const returnScroll = sessionStorage.getItem('ecengine:returnScroll:/formulas')
+    if (!returnDeckId && !returnScroll) return
+    if (restoredReturnRef.current) return
+
+    restoredReturnRef.current = true
+    sessionStorage.removeItem('ecengine:returnDeckId:/formulas')
+    sessionStorage.removeItem('ecengine:returnScroll:/formulas')
+
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        if (returnDeckId) {
+          const el = scrollContainerRef.current?.querySelector(`[data-deck-id="${returnDeckId}"]`)
+          if (el) {
+            el.scrollIntoView({ block: 'center', behavior: 'auto' })
+            return
+          }
+        }
+        if (returnScroll && scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTop = parseInt(returnScroll, 10)
+        }
+      }, 60)
+    })
+  }, [isLoading, decks.length])
 
   const favoriteCount = useMemo(() => {
     return decks.filter(d => d.isFavorite).length
@@ -689,7 +756,7 @@ export default function Formulas() {
     <div className="flex flex-col h-full w-full">
       {/* Folder Panel + Deck Grid */}
       <div className="flex flex-row flex-1 w-full overflow-hidden">
-        <div className="flex flex-col flex-1 min-w-0 overflow-y-auto show-scrollbar">
+        <div ref={scrollContainerRef} className="flex flex-col flex-1 min-w-0 overflow-y-auto show-scrollbar">
           {/* Header centered above decks */}
           <div className="flex flex-col items-center w-full pt-6 pb-0 px-6">
             <div className="w-full max-w-5xl flex flex-col items-center justify-center gap-6 mb-2 border-b border-[var(--bg-card)] pb-4 pt-4 relative z-30">
@@ -985,7 +1052,9 @@ export default function Formulas() {
                       onLearn={(id) => openDeck(decks.find(d => d.id === id)!, 'study')}
                       onPreview={(id) => openDeck(decks.find(d => d.id === id)!, 'preview')}
                       onEdit={(id) => {
-                        sessionStorage.setItem('ecengine:returnScroll:/formulas', String(window.scrollY))
+                        const scrollPos = scrollContainerRef.current ? scrollContainerRef.current.scrollTop : 0
+                        sessionStorage.setItem('ecengine:returnDeckId:/formulas', id)
+                        sessionStorage.setItem('ecengine:returnScroll:/formulas', String(scrollPos))
                         navigate(`/edit-deck/${id}?returnTo=/formulas`)
                       }}
                       onDelete={setSetToDelete}

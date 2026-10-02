@@ -18,6 +18,9 @@ import {
   unflagQuestion,
   getFlaggedQuestions,
   getWeakTosTopics,
+  getGauntletEdaStats,
+  getExcludedGauntletQuestions,
+  reinsertQuestions,
 } from './gauntlet'
 
 const SCHEMA = `
@@ -929,6 +932,172 @@ describe('Gauntlet DB persistence', () => {
       expect(allAcc.length).toBe(2)
       expect(allAcc[0].tosTopicId).toBe('ELECS-5.0')
       expect(allAcc[1].tosTopicId).toBe('ELECS-4.0')
+    })
+
+    it('computes complete GauntletEdaStats correctly', () => {
+      // Test empty db
+      const emptyStats = getGauntletEdaStats(db)
+      expect(emptyStats.tosAccuracy).toEqual([])
+      expect(emptyStats.speedPar.length).toBe(4)
+      expect(emptyStats.eloTrajectory).toEqual([])
+      expect(emptyStats.currentRatings.MATH.rating).toBe(500)
+      expect(emptyStats.endurance.totalRuns).toBe(0)
+      expect(emptyStats.endurance.streakBuckets.length).toBe(6)
+
+      db.prepare("INSERT INTO topics VALUES ('t-elecs', 'Electronics Topic', 'Electronics Engineering')").run()
+      const validCardData = JSON.stringify({ choices: ['A', 'B'] })
+      db.prepare("INSERT INTO cards VALUES ('c1', 't-elecs', 'mcq', ?, 'EASY', '', 'ELECS-1.1', 0, 0, 0)").run(validCardData)
+      db.prepare("INSERT INTO cards VALUES ('c2', 't-elecs', 'mcq', ?, 'EASY', '', 'ELECS-1.1', 0, 0, 0)").run(validCardData)
+      db.prepare("INSERT INTO cards VALUES ('c3', 't-elecs', 'mcq', ?, 'EASY', '', 'ELECS-1.2', 0, 0, 0)").run(validCardData)
+
+      saveRun(db, {
+        id: 'run-eda-1',
+        startedAt: 1000,
+        endedAt: 2000,
+        mode: 'timed',
+        rated: true,
+        score: 250,
+        answered: 2,
+        correct: 1,
+        wrong: 1,
+        skipped: 0,
+        bestStreak: 6,
+        durationMs: 45000,
+        endReason: 'time',
+        ratingsBefore: { ELECS: { rating: 500, answers: 0 } },
+        ratingsAfter: { ELECS: { rating: 520, answers: 2 } },
+        answers: [
+          {
+            seq: 0,
+            cardId: 'c1',
+            subject: 'ELECS',
+            chosen: 0,
+            answerIndex: 0,
+            outcome: 'correct',
+            timeMs: 4000,
+            parMs: 6000,
+            points: 150,
+            streakAfter: 1,
+            choices: ['A', 'B'],
+            answeredAt: 1050,
+          },
+          {
+            seq: 1,
+            cardId: 'c2',
+            subject: 'ELECS',
+            chosen: 1,
+            answerIndex: 0,
+            outcome: 'wrong',
+            timeMs: 1000, // fast wrong (1000 < 6000 * 0.25)
+            parMs: 6000,
+            points: 0,
+            streakAfter: 0,
+            choices: ['A', 'B'],
+            answeredAt: 1100,
+          },
+        ],
+      })
+
+      const populatedStats = getGauntletEdaStats(db)
+      expect(populatedStats.tosAccuracy.length).toBe(1)
+      expect(populatedStats.tosAccuracy[0].tosTopicId).toBe('ELECS-1.1')
+      expect(populatedStats.tosAccuracy[0].totalAnswers).toBe(2)
+      expect(populatedStats.tosAccuracy[0].correctAnswers).toBe(1)
+      expect(populatedStats.tosAccuracy[0].wrongAnswers).toBe(1)
+      expect(populatedStats.tosAccuracy[0].accuracy).toBe(0.5)
+
+      // Speed vs Par
+      const elecsSpeed = populatedStats.speedPar.find(s => s.subject === 'ELECS')
+      expect(elecsSpeed).toBeDefined()
+      expect(elecsSpeed!.totalAnswers).toBe(2)
+      expect(elecsSpeed!.fastWrongCount).toBe(1)
+      expect(elecsSpeed!.wrongCount).toBe(1)
+      expect(elecsSpeed!.fastWrongRate).toBe(1.0)
+
+      // Elo Trajectory
+      expect(populatedStats.eloTrajectory.length).toBe(1)
+      expect(populatedStats.eloTrajectory[0].ELECS).toBe(520)
+      expect(populatedStats.eloTrajectory[0].overall).toBe(520)
+
+      // Current Ratings
+      expect(populatedStats.currentRatings.ELECS.rating).toBe(520)
+
+      // Coverage
+      const elecsCoverage = populatedStats.coverageDensity.bySubject.find(c => c.subject === 'ELECS')
+      expect(elecsCoverage).toBeDefined()
+      expect(elecsCoverage!.libraryCards).toBe(3)
+      expect(elecsCoverage!.arenaCards).toBe(2)
+
+      // Endurance
+      expect(populatedStats.endurance.totalRuns).toBe(1)
+      expect(populatedStats.endurance.totalAnswers).toBe(2)
+      expect(populatedStats.endurance.avgRunDurationSec).toBe(45)
+      expect(populatedStats.endurance.avgRunScore).toBe(250)
+      expect(populatedStats.endurance.bestStreakOverall).toBe(6)
+      const bucket5to9 = populatedStats.endurance.streakBuckets.find(b => b.bucket === '5-9')
+      expect(bucket5to9?.count).toBe(1)
+      const timeFailure = populatedStats.endurance.failureModes.find(m => m.mode === 'time')
+      expect(timeFailure?.count).toBe(1)
+    })
+
+    it('retrieves excluded questions and reinserts them into the gauntlet fetching pool', () => {
+      db.prepare("INSERT INTO topics VALUES ('t-est', 'EST Deck', 'Electronics Systems & Technologies')").run()
+      const mcq1 = JSON.stringify({ question: 'What does ASCII mean?', choices: ['A', 'B'], answer: 0 })
+      const mcq2 = JSON.stringify({ question: 'Calculate the antenna gain in dB', choices: ['10 dB', '20 dB'], answer: 1 })
+      const flashData = JSON.stringify({ front: 'Flashcard Q', back: 'Flashcard A' })
+      const formulaData = JSON.stringify({ title: 'Formula Q', formula: 'E = mc^2' })
+
+      db.prepare("INSERT INTO cards VALUES ('c-flag1', 't-est', 'mcq', ?, 'EASY', '', 'EST-1.1', 0, 0, 0)").run(mcq1)
+      db.prepare("INSERT INTO cards VALUES ('c-calc2', 't-est', 'mcq', ?, 'HARD', '', 'EST-4.6', 0, 0, 0)").run(mcq2)
+      db.prepare("INSERT INTO cards VALUES ('c-flash3', 't-est', 'flashcard', ?, 'EASY', '', 'EST-1.1', 0, 0, 0)").run(flashData)
+      db.prepare("INSERT INTO cards VALUES ('c-form4', 't-est', 'formula', ?, 'EASY', '', 'EST-1.1', 0, 0, 0)").run(formulaData)
+
+      // Flag c-flag1
+      flagQuestion(db, 'c-flag1', 'Other issue')
+
+      // 1. Check getExcludedGauntletQuestions with default mode ('all')
+      const allRes = getExcludedGauntletQuestions(db)
+      expect(allRes.totalExcludedCount).toBe(2) // 1 flagged + 1 calc MCQ; flashcard and formula excluded!
+      expect(allRes.flaggedCount).toBe(1)
+      expect(allRes.autoExcludedCount).toBe(1)
+      expect(allRes.cards.length).toBe(2)
+      // Flagged cards should appear first
+      expect(allRes.cards[0].id).toBe('c-flag1')
+      expect(allRes.cards[0].exclusionType).toBe('flagged')
+      expect(allRes.cards[1].id).toBe('c-calc2')
+      expect(allRes.cards[1].exclusionType).toBe('problem_solving')
+
+      // 2. Check getExcludedGauntletQuestions for flagged cards
+      const flaggedRes = getExcludedGauntletQuestions(db, { type: 'flagged' })
+      expect(flaggedRes.flaggedCount).toBe(1)
+      expect(flaggedRes.cards.length).toBe(1)
+      expect(flaggedRes.cards[0].id).toBe('c-flag1')
+      expect(flaggedRes.cards[0].reason).toBe('Other issue')
+      expect(flaggedRes.cards[0].subject).toBe('EST')
+      expect(flaggedRes.cards[0].question).toBe('What does ASCII mean?')
+
+      // c-calc2 is auto-excluded calculation problem
+      const autoRes = getExcludedGauntletQuestions(db, { type: 'problem_solving' })
+      expect(autoRes.autoExcludedCount).toBe(1)
+      expect(autoRes.cards.length).toBe(1)
+      expect(autoRes.cards[0].id).toBe('c-calc2')
+
+      // c-flag1 is NOT in pool
+      let pool = getPoolSizes(db)
+      expect(pool.EST).toBe(0) // c-flag1 is flagged, c-calc2 is auto-excluded calculation
+
+      // 3. Unflag/reinsert c-flag1 back into the fetching pool
+      unflagQuestion(db, 'c-flag1')
+      pool = getPoolSizes(db)
+      expect(pool.EST).toBe(1) // c-flag1 is now back in the fetching pool!
+
+      const flaggedAfter = getExcludedGauntletQuestions(db, { type: 'flagged' })
+      expect(flaggedAfter.flaggedCount).toBe(0)
+
+      // 4. Batch reinserting calculation problem c-calc2 overrides calculation heuristic
+      reinsertQuestions(db, ['c-calc2'])
+      pool = getPoolSizes(db)
+      expect(pool.EST).toBe(2) // Both cards are now in the pool!
     })
   })
 })

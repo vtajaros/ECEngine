@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { useDataLabStore } from './useDataLabStore'
 import { useDataVersionStore } from './useDataVersionStore'
 import { dbService } from '../services/db.service'
+import { gauntletService } from '../services/gauntlet.service'
+
 
 describe('useDataLabStore', () => {
   beforeEach(() => {
@@ -22,11 +24,13 @@ describe('useDataLabStore', () => {
     expect(state.answerPositionCounts).toBeNull()
     expect(state.answerPositionBySubject).toBeNull()
     expect(state.responseTimeDistribution).toBeNull()
+    expect(state.gauntletEda).toBeNull()
     expect(state.loading.contentCoverage).toBe(true)
     expect(state.loading.questionLengthDistribution).toBe(true)
     expect(state.loading.answerPositionCounts).toBe(true)
     expect(state.loading.answerPositionBySubject).toBe(true)
     expect(state.loading.responseTimeDistribution).toBe(true)
+    expect(state.loading.gauntletEda).toBe(true)
   })
 
   it('preloadAll fetches all 5 datasets and populates the store', async () => {
@@ -83,6 +87,29 @@ describe('useDataLabStore', () => {
     expect(state.contentCoverage).toBeNull()
     expect(state.loading.contentCoverage).toBe(false)
     expect(state.errors.contentCoverage).toBe('Coverage query failed')
+  })
+
+  it('fetchGauntletEda populates gauntletEda and handles errors', async () => {
+    const mockGauntletData: any = {
+      tosAccuracy: [{ tosTopicId: 'MATH-1.1', accuracy: 0.8 }],
+      speedPar: [],
+      eloTrajectory: [],
+      currentRatings: { MATH: { rating: 500, peak: 500, answers: 0 } },
+      coverageDensity: { bySubject: [], byTopic: [], untestedBlindSpots: [] },
+      endurance: { totalRuns: 1 },
+    }
+
+    const spy = vi.spyOn(gauntletService, 'getEdaStats').mockResolvedValue(mockGauntletData)
+    await useDataLabStore.getState().fetchGauntletEda()
+
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(useDataLabStore.getState().gauntletEda).toEqual(mockGauntletData)
+    expect(useDataLabStore.getState().loading.gauntletEda).toBe(false)
+
+    // Error case
+    spy.mockRejectedValueOnce(new Error('Gauntlet fetch error'))
+    await useDataLabStore.getState().fetchGauntletEda(true)
+    expect(useDataLabStore.getState().errors.gauntletEda).toBe('Gauntlet fetch error')
   })
 
   it('reset() restores initial state', async () => {

@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { dbService } from '../services/db.service'
+import { gauntletService, GauntletEdaStats } from '../services/gauntlet.service'
 import { useDataVersionStore } from './useDataVersionStore'
+
 
 export type ContentCoverageData = Record<string, { topics: number; cards: number }>
 export type QuestionLengthItem = { subject: string; qlen: number }
@@ -35,6 +37,7 @@ export interface DataLabState {
   answerPositionCounts: AnswerPositionCountItem[] | null
   answerPositionBySubject: AnswerPositionBySubjectItem[] | null
   responseTimeDistribution: ResponseTimeDistributionData | null
+  gauntletEda: GauntletEdaStats | null
 
   // Loading flags (true if initial load pending and no data cached)
   loading: {
@@ -44,6 +47,7 @@ export interface DataLabState {
     answerPositionCounts: boolean
     answerPositionBySubject: boolean
     responseTimeDistribution: boolean
+    gauntletEda: boolean
   }
 
   // Error messages
@@ -54,6 +58,7 @@ export interface DataLabState {
     answerPositionCounts: string | null
     answerPositionBySubject: string | null
     responseTimeDistribution: string | null
+    gauntletEda: string | null
   }
 
   loadedVersion: number | null
@@ -65,6 +70,7 @@ export interface DataLabState {
   fetchAnswerPositionCounts: (force?: boolean) => Promise<void>
   fetchAnswerPositionBySubject: (force?: boolean) => Promise<void>
   fetchResponseTimeDistribution: (force?: boolean) => Promise<void>
+  fetchGauntletEda: (force?: boolean) => Promise<void>
   preloadAll: () => Promise<void>
   reset: () => void
 }
@@ -76,6 +82,7 @@ const initialLoading = {
   answerPositionCounts: true,
   answerPositionBySubject: true,
   responseTimeDistribution: true,
+  gauntletEda: true,
 }
 
 const initialErrors = {
@@ -85,6 +92,7 @@ const initialErrors = {
   answerPositionCounts: null,
   answerPositionBySubject: null,
   responseTimeDistribution: null,
+  gauntletEda: null,
 }
 
 export const useDataLabStore = create<DataLabState>((set, get) => ({
@@ -94,6 +102,7 @@ export const useDataLabStore = create<DataLabState>((set, get) => ({
   answerPositionCounts: null,
   answerPositionBySubject: null,
   responseTimeDistribution: null,
+  gauntletEda: null,
 
   loading: { ...initialLoading },
   errors: { ...initialErrors },
@@ -243,6 +252,30 @@ export const useDataLabStore = create<DataLabState>((set, get) => ({
     }
   },
 
+  fetchGauntletEda: async (force = false) => {
+    const { gauntletEda } = get()
+    if (gauntletEda !== null && !force) return
+
+    set((state) => ({
+      loading: { ...state.loading, gauntletEda: state.gauntletEda === null },
+      errors: { ...state.errors, gauntletEda: null },
+    }))
+
+    try {
+      const res = await gauntletService.getEdaStats()
+      set((state) => ({
+        gauntletEda: res,
+        loading: { ...state.loading, gauntletEda: false },
+        errors: { ...state.errors, gauntletEda: null },
+      }))
+    } catch (err: any) {
+      set((state) => ({
+        loading: { ...state.loading, gauntletEda: false },
+        errors: { ...state.errors, gauntletEda: err?.message || 'Failed to load Gauntlet EDA stats' },
+      }))
+    }
+  },
+
   preloadAll: async () => {
     const currentVersion = useDataVersionStore.getState().version
     await Promise.allSettled([
@@ -252,6 +285,7 @@ export const useDataLabStore = create<DataLabState>((set, get) => ({
       get().fetchAnswerPositionCounts(true),
       get().fetchAnswerPositionBySubject(true),
       get().fetchResponseTimeDistribution(true),
+      get().fetchGauntletEda(true),
     ])
     set({ loadedVersion: currentVersion })
   },
@@ -264,6 +298,7 @@ export const useDataLabStore = create<DataLabState>((set, get) => ({
       answerPositionCounts: null,
       answerPositionBySubject: null,
       responseTimeDistribution: null,
+      gauntletEda: null,
       loading: { ...initialLoading },
       errors: { ...initialErrors },
       loadedVersion: null,

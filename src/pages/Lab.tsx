@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { FlaskConical, Layers, BarChart3 } from 'lucide-react'
+import { FlaskConical, Layers, BarChart3, Swords } from 'lucide-react'
 import { ContentCoverageDemo } from '../components/stats/demos/ContentCoverageDemo'
 import { TosCoverageMatrixDemo } from '../components/stats/demos/TosCoverageMatrixDemo'
 import { QuestionLengthDemo } from '../components/stats/demos/QuestionLengthDemo'
@@ -8,9 +8,14 @@ import { QuestionLengthAnovaDemo } from '../components/stats/demos/QuestionLengt
 import { AnswerPositionContingencyDemo } from '../components/stats/demos/AnswerPositionContingencyDemo'
 import { QuestionLengthZScoreDemo } from '../components/stats/demos/QuestionLengthZScoreDemo'
 import { ResponseTimeDemo } from '../components/stats/demos/ResponseTimeDemo'
+import { GauntletSpeedParDemo } from '../components/stats/demos/gauntlet/GauntletSpeedParDemo'
+import { GauntletEloTrajectoryDemo } from '../components/stats/demos/gauntlet/GauntletEloTrajectoryDemo'
+import { GauntletCoverageDensityDemo } from '../components/stats/demos/gauntlet/GauntletCoverageDensityDemo'
+import { GauntletEnduranceStreakDemo } from '../components/stats/demos/gauntlet/GauntletEnduranceStreakDemo'
 
 export default function Lab() {
-  const [activeTab, setActiveTab] = useState<'tos' | 'eda'>('tos')
+  const [activeTab, setActiveTab] = useState<'tos' | 'eda' | 'gauntlet'>('tos')
+
 
   return (
     <div className="h-full bg-transparent px-8 pb-8 pt-6 lg:px-12 lg:pb-12 lg:pt-6 overflow-y-auto show-scrollbar w-full flex flex-col gap-6">
@@ -26,7 +31,9 @@ export default function Lab() {
           <p className="text-text-muted font-['Rajdhani'] text-lg uppercase tracking-widest">
             {activeTab === 'tos'
               ? 'PRC Table of Specifications Classification & Library Coverage'
-              : 'EDA concepts, live on your review data.'}
+              : activeTab === 'eda'
+              ? 'EDA concepts, live on your review data.'
+              : 'Arena speed-run performance, Elo trajectory & ToS mastery.'}
           </p>
         </div>
 
@@ -54,6 +61,17 @@ export default function Lab() {
             <BarChart3 size={15} />
             <span>Statistical EDA</span>
           </button>
+          <button
+            onClick={() => setActiveTab('gauntlet')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all ${
+              activeTab === 'gauntlet'
+                ? 'bg-accent/15 text-accent border border-accent/40 shadow-[0_0_12px_rgba(0,255,65,0.2)]'
+                : 'text-text-muted hover:text-text-primary border border-transparent'
+            }`}
+          >
+            <Swords size={15} />
+            <span>Gauntlet Analytics</span>
+          </button>
         </div>
       </header>
 
@@ -76,6 +94,25 @@ export default function Lab() {
             <ResponseTimeDemo />
           </div>
         </>
+      )}
+
+      {/* Tab 3: Gauntlet Analytics & Performance EDA */}
+      {activeTab === 'gauntlet' && (
+        <div className="flex flex-col gap-6 animate-in fade-in duration-200">
+          {/* Row 1: Full-width Elo Rating Growth & Trajectory */}
+          <GauntletEloTrajectoryDemo />
+
+          {/* Row 2: Speed vs Par Pacing + Endurance & Streak Distribution */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <GauntletSpeedParDemo />
+            <GauntletEnduranceStreakDemo />
+          </div>
+
+          {/* Row 3: Full-width Topic Coverage Density */}
+          <div className="pb-6">
+            <GauntletCoverageDensityDemo />
+          </div>
+        </div>
       )}
     </div>
   )

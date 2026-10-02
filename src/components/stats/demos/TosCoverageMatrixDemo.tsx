@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import {
   Search,
   ExternalLink,
@@ -7,11 +7,14 @@ import {
   CheckCircle2,
   Eye,
   Filter,
+  ShieldAlert,
 } from 'lucide-react'
 import { TOC_DATA, SubjectArea, Topic } from '../../toc/data'
 import { TOS_SUBJECT_COLORS } from '../../../lib/tosData'
 import { useDataLabStore } from '../../../store/useDataLabStore'
+import { gauntletService } from '../../../services/gauntlet.service'
 import { TosCardInspectorModal } from './TosCardInspectorModal'
+import { GauntletExcludedQuestionsDemo } from './gauntlet/GauntletExcludedQuestionsDemo'
 
 type StatusFilter = 'all' | 'covered' | 'missing' | 'unclassified'
 type SubjectTab = 'ALL' | 'MATH' | 'GEAS' | 'ELECS' | 'EST'
@@ -24,6 +27,8 @@ export function TosCoverageMatrixDemo() {
   const error = useDataLabStore((state) => state.errors.tosCoverageMatrix)
   const fetchTosCoverageMatrix = useDataLabStore((state) => state.fetchTosCoverageMatrix)
 
+  const [activeMatrixTab, setActiveMatrixTab] = useState<'hierarchy' | 'excluded'>('hierarchy')
+  const [totalExcludedCount, setTotalExcludedCount] = useState<number>(0)
   const [selectedSubject, setSelectedSubject] = useState<SubjectTab>('ALL')
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
@@ -41,6 +46,19 @@ export function TosCoverageMatrixDemo() {
     topicTitle: '',
   })
 
+  const refreshFlaggedCount = useCallback(async () => {
+    try {
+      const res = await gauntletService.getExcludedQuestions({ limit: 1 })
+      setTotalExcludedCount(res?.totalExcludedCount ?? ((res?.flaggedCount ?? 0) + (res?.autoExcludedCount ?? 0)))
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  useEffect(() => {
+    refreshFlaggedCount()
+  }, [refreshFlaggedCount])
+
   useEffect(() => {
     fetchTosCoverageMatrix()
   }, [fetchTosCoverageMatrix])
@@ -48,10 +66,11 @@ export function TosCoverageMatrixDemo() {
   useEffect(() => {
     const handleFocus = () => {
       fetchTosCoverageMatrix(true)
+      refreshFlaggedCount()
     }
     window.addEventListener('focus', handleFocus)
     return () => window.removeEventListener('focus', handleFocus)
-  }, [fetchTosCoverageMatrix])
+  }, [fetchTosCoverageMatrix, refreshFlaggedCount])
 
   // Handle subject switching cleanly, syncing the active topic
   const handleSubjectChange = (newSubject: SubjectTab) => {
@@ -200,6 +219,18 @@ export function TosCoverageMatrixDemo() {
     return found || filteredTopics[0]
   }, [filteredTopics, selectedTopicId])
 
+  if (activeMatrixTab === 'excluded') {
+    return (
+      <GauntletExcludedQuestionsDemo
+        onBackToHierarchy={() => setActiveMatrixTab('hierarchy')}
+        onQuestionReinserted={() => {
+          refreshFlaggedCount()
+          fetchTosCoverageMatrix(true)
+        }}
+      />
+    )
+  }
+
   if (loading && !matrix) {
     return (
       <div className="bg-surface p-5 rounded-xl border border-border-base shadow-lg flex flex-col gap-3 min-h-[350px] justify-center items-center">
@@ -226,7 +257,7 @@ export function TosCoverageMatrixDemo() {
       data-testid="tos-coverage-matrix-demo"
     >
       {/* Header & Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border-base/50 pb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border-base/50 pb-3">
         <div className="flex items-center gap-2.5">
           <Layers className="text-accent shrink-0" size={18} />
           <div>
@@ -239,8 +270,44 @@ export function TosCoverageMatrixDemo() {
           </div>
         </div>
 
-        {/* Global untagged status chip */}
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        {/* Header Controls: Sub-tab Switcher & Status Chips */}
+        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+          {/* Sub-tab switcher: ToS Hierarchy vs Gauntlet Excluded */}
+          <div className="flex items-center p-1 bg-[#0c0c0c] rounded-lg border border-border-base">
+            <button
+              onClick={() => setActiveMatrixTab('hierarchy')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all bg-accent/15 text-accent border border-accent/40 shadow-[0_0_10px_rgba(0,255,65,0.2)]"
+            >
+              <Layers size={13} />
+              <span>ToS Hierarchy</span>
+            </button>
+            <button
+              onClick={() => setActiveMatrixTab('excluded')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all text-text-muted hover:text-amber-400 border border-transparent"
+            >
+              <ShieldAlert size={13} />
+              <span>Gauntlet Excluded</span>
+              {totalExcludedCount > 0 && (
+                <span className="font-['JetBrains_Mono'] text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                  {totalExcludedCount.toLocaleString()}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Quick excluded chip if > 0 */}
+          {totalExcludedCount > 0 && (
+            <button
+              onClick={() => setActiveMatrixTab('excluded')}
+              className="px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 text-xs font-['JetBrains_Mono'] font-bold flex items-center gap-1.5 transition-colors"
+              title="Inspect questions flagged or filtered and excluded from Gauntlet"
+            >
+              <AlertTriangle size={12} />
+              <span>{totalExcludedCount.toLocaleString()} Excluded in Gauntlet</span>
+            </button>
+          )}
+
+          {/* Global untagged status chip */}
           {stats.unclassified > 0 ? (
             <button
               onClick={() =>

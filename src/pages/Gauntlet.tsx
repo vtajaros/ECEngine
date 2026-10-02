@@ -23,7 +23,18 @@ import { GetContextDropdown } from '../components/ui/GetContextDropdown'
 import { useSound } from '../hooks/useSound'
 import { useGauntletMusic, getTimedMusicRegion, getSurvivalMusicRegion } from '../hooks/useGauntletMusic'
 import { VolumeControl } from '../components/ui/VolumeControl'
-import { formatRunDuration, getSharedTopicPartnerSubject, GAUNTLET_SUBJECTS } from '../lib/gauntlet'
+import {
+  formatRunDuration,
+  getSharedTopicPartnerSubject,
+  GAUNTLET_SUBJECTS,
+  TIMED_QUESTION_CAP_SEC,
+  detectRankUp,
+  type RankUpEvent,
+  overallRating,
+  defaultRating,
+  TUNING,
+} from '../lib/gauntlet'
+import { GauntletRankUpModal } from '../components/gauntlet/GauntletRankUpModal'
 import {
   Timer,
   Clock,
@@ -121,6 +132,60 @@ const RunPlaceholder: React.FC<RunPlaceholderProps> = ({
       : isUnlimitedSurvival
       ? Math.floor((now - questionShownAt) / 1000)
       : Math.max(0, Math.ceil((config.perQuestionSec * 1000 - (now - questionShownAt)) / 1000))
+
+  const timedQuestionRemainingSec =
+    config.mode === 'timed'
+      ? Math.max(0, Math.ceil((TIMED_QUESTION_CAP_SEC * 1000 - (now - questionShownAt)) / 1000))
+      : 0
+  const isUrgentQuestionCap =
+    config.mode === 'timed' && timedQuestionRemainingSec <= 5
+
+  // Rank-up splash state when transitioning to summary with promotions
+  const [rankUpEvents, setRankUpEvents] = useState<RankUpEvent[]>([])
+  const [currentRankUpIndex, setCurrentRankUpIndex] = useState(0)
+  const checkedRankUpKeyRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (phase !== 'summary' || !rated) {
+      if (phase !== 'summary') {
+        checkedRankUpKeyRef.current = null
+        setRankUpEvents([])
+        setCurrentRankUpIndex(0)
+      }
+      return
+    }
+
+    const key = `${savedRunId || 'run'}-${answers.length}`
+    if (checkedRankUpKeyRef.current === key) return
+    checkedRankUpKeyRef.current = key
+
+    const events: RankUpEvent[] = []
+    // 1. Check each subject that was played or changed rating
+    for (const s of GAUNTLET_SUBJECTS) {
+      const before = ratingsBefore[s]?.rating ?? defaultRating().rating
+      const after = ratings[s]?.rating ?? defaultRating().rating
+      if (after > before) {
+        const ev = detectRankUp(before, after, s)
+        if (ev.isRankUp) {
+          events.push(ev)
+        }
+      }
+    }
+    // 2. Also check overall rating rank up
+    const overallBefore = overallRating(ratingsBefore).rating
+    const overallAfter = overallRating(ratings).rating
+    if (overallAfter > overallBefore) {
+      const evOverall = detectRankUp(overallBefore, overallAfter)
+      if (evOverall.isRankUp && !events.some(e => e.newTier.name === evOverall.newTier.name)) {
+        events.push(evOverall)
+      }
+    }
+
+    if (events.length > 0) {
+      setRankUpEvents(events)
+      setCurrentRankUpIndex(0)
+    }
+  }, [phase, rated, savedRunId, answers.length, ratingsBefore, ratings])
 
   // Summary review state (declared unconditionally at top of component)
   const [outcomeFilter, setOutcomeFilter] = useState<'all' | 'wrong' | 'skipped_timeout' | 'correct'>('all')
@@ -248,24 +313,27 @@ Please explain:
   }, [index])
 
   // Play 'tick' sound once per integer second at 5, 4, 3, 2, 1 (not 0)
+  const tickSec =
+    config.mode === 'timed'
+      ? (timeRemainingSec <= 5 ? timeRemainingSec : timedQuestionRemainingSec <= 5 ? timedQuestionRemainingSec : null)
+      : (!isUnlimitedSurvival && timeRemainingSec <= 5 ? timeRemainingSec : null)
+
   useEffect(() => {
     if (phase !== 'playing' || revealState !== null || isModalOpen) {
       lastTickSecRef.current = null
       return
     }
 
-    if (timeRemainingSec > 5) {
+    if (tickSec === null || tickSec <= 0 || tickSec > 5) {
       lastTickSecRef.current = null
       return
     }
 
-    if (timeRemainingSec >= 1 && timeRemainingSec <= 5) {
-      if (lastTickSecRef.current !== timeRemainingSec) {
-        lastTickSecRef.current = timeRemainingSec
-        play('tick')
-      }
+    if (lastTickSecRef.current !== tickSec) {
+      lastTickSecRef.current = tickSec
+      play('tick')
     }
-  }, [timeRemainingSec, phase, revealState, isModalOpen, play])
+  }, [tickSec, phase, revealState, isModalOpen, play])
 
   // Play sounds on answer reveal and timeout
   useEffect(() => {
@@ -400,6 +468,8 @@ Please explain:
       if (s.config.mode === 'timed') {
         if (s.endsAt !== null && curNow >= s.endsAt) {
           s.expire()
+        } else if (curNow - s.questionShownAt >= TIMED_QUESTION_CAP_SEC * 1000) {
+          s.timeoutCurrent()
         }
       } else if (s.config.mode === 'survival') {
         if (s.config.perQuestionSec > 0 && curNow - s.questionShownAt >= s.config.perQuestionSec * 1000) {
@@ -1660,6 +1730,21 @@ Please explain:
             />
           )}
         </AnimatePresence>
+
+        {/* Rank Up Splash Modal */}
+        {rankUpEvents.length > 0 && currentRankUpIndex < rankUpEvents.length && (
+          <GauntletRankUpModal
+            isOpen={true}
+            event={rankUpEvents[currentRankUpIndex]}
+            onClose={() => {
+              if (currentRankUpIndex + 1 < rankUpEvents.length) {
+                setCurrentRankUpIndex(prev => prev + 1)
+              } else {
+                setRankUpEvents([])
+              }
+            }}
+          />
+        )}
       </div>
     )
   }
@@ -1743,6 +1828,30 @@ Please explain:
 
         {/* Right HUD: Timer + VolumeControl + Quit Run */}
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Per-question 1-minute hard cap badge in timed mode */}
+          {config.mode === 'timed' && (
+            <div
+              className={`relative overflow-hidden flex items-center gap-1.5 font-['JetBrains_Mono'] font-bold text-xs bg-surface-2 px-2.5 py-1.5 rounded-lg border transition-all ${
+                isUrgentQuestionCap
+                  ? 'border-[#FF3333]/70 gauntlet-timer-shake text-[#FF3333] shadow-[0_0_12px_rgba(255,51,51,0.25)]'
+                  : 'border-border-base text-text-muted'
+              }`}
+              title="Per-question hard cap (1 min max per question in Time Trial to protect fair streaks)"
+            >
+              <div
+                className={`absolute left-0 bottom-0 h-0.5 transition-all duration-300 ${
+                  isUrgentQuestionCap ? 'bg-[#FF3333]' : 'bg-accent/60'
+                }`}
+                style={{ width: `${Math.min(100, (timedQuestionRemainingSec / TIMED_QUESTION_CAP_SEC) * 100)}%` }}
+              />
+              <Clock
+                size={13}
+                className={isUrgentQuestionCap ? 'text-[#FF3333] animate-pulse' : 'text-accent'}
+              />
+              <span>Q: {timedQuestionRemainingSec}s</span>
+            </div>
+          )}
+
           {/* Timer Chip with Draining Progress Bar and <=5s Shake */}
           <div
             className={`relative overflow-hidden flex items-center gap-1.5 font-['JetBrains_Mono'] font-bold text-sm bg-surface-2 px-3 py-1.5 rounded-lg border transition-all ${

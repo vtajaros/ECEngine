@@ -86,5 +86,39 @@ class TestTosClassifier(unittest.TestCase):
         self.assertEqual(mapping["card-9"], "EST-6.2")
         self.assertEqual(mapping["card-10"], "EST-2.8")
 
+    def test_additional_patterns(self):
+        cards = [
+            {
+                "id": "card-geas-crystal",
+                "subject": "GEAS",
+                "deckName": "Review Exam GEAS",
+                "text": "What type of crystal structure has an atomic packing factor of 0.68 and coordination number of 8? Body-centered cubic Face-centered cubic"
+            },
+            {
+                "id": "card-geas-mgmt",
+                "subject": "GEAS",
+                "deckName": "Review Exam GEAS",
+                "text": "The controlling function and organizing function in a company ensure that performance matches plans. Planning Leading Organizing Controlling"
+            },
+            {
+                "id": "card-math-em",
+                "subject": "MATH",
+                "deckName": "Review Exam Math",
+                "text": "Point charges in free space produce an electric (E-) field measured in coulombs. Calculate the electric charge density."
+            }
+        ]
+        res = subprocess.run(
+            ["python3", "scripts/classify_database_tos.py", "--stdin"],
+            input=json.dumps(cards),
+            text=True,
+            capture_output=True,
+            check=True
+        )
+        data = json.loads(res.stdout)
+        mapping = {item["id"]: item["tosTopicId"] for item in data}
+        self.assertEqual(mapping["card-geas-crystal"], "GEAS-7.2")
+        self.assertEqual(mapping["card-geas-mgmt"], "GEAS-4.3")
+        self.assertEqual(mapping["card-math-em"], "MATH-6.1")
+
 if __name__ == "__main__":
     unittest.main()

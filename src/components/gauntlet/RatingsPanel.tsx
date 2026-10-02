@@ -1,6 +1,6 @@
 import React from 'react'
 import { Subject } from '../../types'
-import { GAUNTLET_SUBJECTS, TUNING, overallRating } from '../../lib/gauntlet'
+import { GAUNTLET_SUBJECTS, TUNING, overallRating, ratingTier, TIER_COLORS } from '../../lib/gauntlet'
 import { SUBJECT_LINE_COLOR } from '../../lib/dashboardUtils'
 import { useGauntletStore } from '../../store/useGauntletStore'
 import { Tooltip } from '../ui/Tooltip'
@@ -23,6 +23,8 @@ export const RatingsPanel: React.FC = () => {
   }
   const peaks = hub?.peaks ?? {}
   const overall = overallRating(ratings)
+  const overallTier = ratingTier(overall.rating)
+  const overallColor = TIER_COLORS[overallTier.name] ?? '#00FF41'
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2.5 shrink-0">
@@ -76,11 +78,14 @@ export const RatingsPanel: React.FC = () => {
       <Tooltip content="TOS-Weighted Average (MATH 20%, GEAS 20%, ELECS 30%, EST 30%)" position="bottom">
         <div
           className="bg-surface rounded-lg p-2.5 border border-border-base flex flex-col justify-between h-[88px] relative overflow-hidden"
-          style={{ borderTop: '3px solid #00FF41' }}
+          style={{ borderTop: `3px solid ${overallColor}` }}
         >
           {/* Line 1: OVERALL + Provisional badge */}
           <div className="flex items-center justify-between gap-1 leading-none">
-            <span className="font-['Orbitron'] font-bold text-xs tracking-wider text-accent flex items-center gap-1">
+            <span
+              className="font-['Orbitron'] font-bold text-xs tracking-wider flex items-center gap-1"
+              style={{ color: overallColor }}
+            >
               <Zap size={11} />
               OVERALL
             </span>
@@ -89,14 +94,20 @@ export const RatingsPanel: React.FC = () => {
                 PROVISIONAL
               </span>
             ) : (
-              <span className="px-1 py-0.5 rounded text-[8px] font-['Rajdhani'] font-bold uppercase tracking-wider border border-accent text-accent shrink-0 leading-none">
-                SETTLED
+              <span
+                className="px-1 py-0.5 rounded text-[8px] font-['Rajdhani'] font-bold uppercase tracking-wider border shrink-0 leading-none"
+                style={{ borderColor: overallColor, color: overallColor }}
+              >
+                {overallTier.name}
               </span>
             )}
           </div>
 
           {/* Line 2: Large rating */}
-          <div className="font-['JetBrains_Mono'] font-bold text-xl text-accent tracking-tight leading-none">
+          <div
+            className="font-['JetBrains_Mono'] font-bold text-xl tracking-tight leading-none"
+            style={{ color: overallColor }}
+          >
             {Math.round(overall.rating)}
           </div>
 

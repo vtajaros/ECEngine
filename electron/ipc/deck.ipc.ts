@@ -639,10 +639,17 @@ export function registerDeckHandlers(): void {
 
   // ── Folder handlers (v4) ──────────────────────────────────────────────────
 
-  ipcMain.handle('folders:getAll', async (_, payload?: { scope: string }) => {
+  ipcMain.handle('folders:getAll', async (_, payload?: { scope?: string }) => {
     try {
       const scope = payload?.scope || 'study'
-      const rows = queryAll(`SELECT id, name, parent_id, order_index FROM folders WHERE scope = ? ORDER BY order_index ASC, name ASC`, [scope])
+      const rows = queryAll(`
+        SELECT f.id, f.name, f.parent_id, f.order_index, COUNT(t.id) AS deck_count
+        FROM folders f
+        LEFT JOIN topics t ON (t.folder_id = f.id OR (t.folder_id IS NULL AND t.folder_name = f.name))
+        WHERE f.scope = ?
+        GROUP BY f.id
+        ORDER BY f.order_index ASC, f.name ASC
+      `, [scope])
       return { success: true, data: rows }
     } catch (error) {
       return { success: false, error: (error as Error).message }

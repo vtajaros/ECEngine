@@ -11,6 +11,8 @@ import {
   allocateCounts,
   applyAnswerToRating,
   computeAnswerEloDelta,
+  computeTimedVirtualRating,
+  TIMED_QUESTION_CAP_SEC,
   getSharedTopicPartnerSubject,
   cardRating,
   defaultRating,
@@ -430,7 +432,10 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
     const correctIndex = (item.card.data as MCQData).answer
     const outcome: AnswerOutcome =
       kind === 'skip' ? 'skipped' : kind === 'timeout' ? 'timeout' : chosen === correctIndex ? 'correct' : 'wrong'
-    const timeMs = kind === 'timeout' ? s.config.perQuestionSec * 1000 : Math.max(0, now - s.questionShownAt)
+    const timeMs =
+      kind === 'timeout'
+        ? (s.config.mode === 'timed' ? TIMED_QUESTION_CAP_SEC * 1000 : s.config.perQuestionSec * 1000)
+        : Math.max(0, now - s.questionShownAt)
 
     const nextSkipState = updateSkipState(
       { skipsAvailable: s.skipsAvailable, skipEarnStreak: s.skipEarnStreak },
@@ -447,8 +452,14 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
       eloMult = eloMult * 0.4
     }
 
-    const playerRating = s.ratings[item.subject]?.rating ?? TUNING.startRating
-    const isInsulator = playerRating < 850
+    const startRating = s.ratingsBefore[item.subject]?.rating ?? TUNING.startRating
+    const currentRating = s.ratings[item.subject]?.rating ?? TUNING.startRating
+
+    // For Time Trial (timed mode):
+    // - Positive rating gains: scale against dynamic in-session virtual rating (diminishing returns as you drill)
+    // - Negative penalties: anchor against the actual current rank/rating at the start of the session
+    const isTimedMode = s.config.mode === 'timed'
+    const isInsulator = isTimedMode ? startRating < 850 : currentRating < 850
 
     const res = scoreAnswer({
       outcome,
@@ -461,7 +472,19 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
     })
     const ratings = { ...s.ratings }
     if (s.rated) {
-      const dynamicOpponentRating = cardRating(playerRating, item.weight)
+      let evalPlayerRating = currentRating
+      if (isTimedMode) {
+        if (outcome === 'correct') {
+          const subjectCorrectInSession = s.answers.filter(
+            a => a.item.subject === item.subject && a.outcome === 'correct',
+          ).length
+          evalPlayerRating = computeTimedVirtualRating(currentRating, subjectCorrectInSession)
+        } else {
+          evalPlayerRating = startRating
+        }
+      }
+
+      const dynamicOpponentRating = cardRating(evalPlayerRating, item.weight)
       const partnerSubject = getSharedTopicPartnerSubject(
         item.subject,
         item.card.tosTopicId,
@@ -471,7 +494,7 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
       if (partnerSubject) {
         // Shared topic: Calculate standard card delta once, then apply 50% (+Δ/2 or -Δ/2) to both subjects
         const fullDelta = computeAnswerEloDelta(
-          playerRating,
+          evalPlayerRating,
           dynamicOpponentRating,
           s.ratings[item.subject]?.answers ?? 0,
           outcome,
@@ -494,13 +517,19 @@ export const useGauntletStore = create<GauntletStore>((set, get) => {
           answers: partnerCur.answers,
         }
       } else {
-        ratings[item.subject] = applyAnswerToRating(
-          ratings[item.subject],
+        const delta = computeAnswerEloDelta(
+          evalPlayerRating,
           dynamicOpponentRating,
+          s.ratings[item.subject]?.answers ?? 0,
           outcome,
           res.speedNorm,
           eloMult,
         )
+        const cur = s.ratings[item.subject] ?? defaultRating()
+        ratings[item.subject] = {
+          rating: Math.max(500, Math.round((cur.rating + delta) * 10) / 10),
+          answers: cur.answers + 1,
+        }
       }
     }
 

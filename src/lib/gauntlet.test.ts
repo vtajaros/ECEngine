@@ -16,6 +16,7 @@ import {
   reshapeRunsToEloHistory,
   getSharedTopicPartnerSubject,
   computeAnswerEloDelta,
+  computeTimedVirtualRating,
   SHARED_TOPICS,
 } from './gauntlet'
 
@@ -646,6 +647,36 @@ describe('pace model and warnings', () => {
         expect(computeAnswerEloDelta(1000, 1000, 30, 'correct', 0.5, 0.08)).toBe(1)
         expect(computeAnswerEloDelta(1000, 1000, 30, 'wrong', 0.5, 0.08)).toBe(-1)
         expect(computeAnswerEloDelta(1000, 1000, 30, 'skipped', 0.5, 0.08)).toBe(0)
+      })
+    })
+
+    describe('computeTimedVirtualRating and diminishing returns', () => {
+      it('accelerates in-session virtual rating as correct answers accumulate', () => {
+        expect(computeTimedVirtualRating(500, 0)).toBe(500)
+        expect(computeTimedVirtualRating(500, 5)).toBe(600)
+        expect(computeTimedVirtualRating(500, 20)).toBe(900)
+        expect(computeTimedVirtualRating(500, 50)).toBe(1500)
+      })
+
+      it('produces diminishing positive Elo deltas as drilling progresses', () => {
+        const cardOpponentRating = 600
+        const answersSoFar = 30
+
+        // Answer 1: virtual rating is baseline 500
+        const vRating1 = computeTimedVirtualRating(500, 0)
+        const delta1 = computeAnswerEloDelta(vRating1, cardOpponentRating, answersSoFar, 'correct', 1.0)
+
+        // Answer 10: virtual rating climbed to 700
+        const vRating10 = computeTimedVirtualRating(500, 10)
+        const delta10 = computeAnswerEloDelta(vRating10, cardOpponentRating, answersSoFar, 'correct', 1.0)
+
+        // Answer 30: virtual rating climbed to 1100
+        const vRating30 = computeTimedVirtualRating(500, 30)
+        const delta30 = computeAnswerEloDelta(vRating30, cardOpponentRating, answersSoFar, 'correct', 1.0)
+
+        expect(delta1).toBeGreaterThan(delta10)
+        expect(delta10).toBeGreaterThan(delta30)
+        expect(delta30).toBeLessThan(10) // compressed down significantly
       })
     })
   })

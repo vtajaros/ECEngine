@@ -200,6 +200,17 @@ const MIGRATIONS: Array<{ version: number; sql: string | string[] }> = [
       `UPDATE cards SET tos_topic_id = NULL WHERE tos_topic_id LIKE '%.0'`,
     ],
   },
+  {
+    // v18: Gauntlet allowed cards (whitelist for cards reinserted into Gauntlet pool)
+    version: 18,
+    sql: [
+      `CREATE TABLE IF NOT EXISTS gauntlet_allowed_cards (
+         card_id TEXT PRIMARY KEY,
+         allowed_at INTEGER NOT NULL
+       )`,
+      'CREATE INDEX IF NOT EXISTS idx_gauntlet_allowed_card ON gauntlet_allowed_cards(card_id)',
+    ],
+  },
 ]
 
 /**

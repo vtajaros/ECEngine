@@ -207,6 +207,16 @@ declare global {
           }>
           error?: string
         }>
+        getEdaStats: () => Promise<{ success: boolean; data?: any; error?: string }>
+        getExcludedQuestions: (payload?: {
+          type?: 'flagged' | 'problem_solving' | 'all'
+          subject?: string
+          reason?: string
+          search?: string
+          limit?: number
+          offset?: number
+        }) => Promise<{ success: boolean; data?: any; error?: string }>
+        reinsertQuestions: (payload: { cardIds: string[] }) => Promise<{ success: boolean; error?: string }>
       }
       file: {
         import: (filePath?: string) => Promise<{ success: boolean; data?: string; canceled?: boolean; error?: string }>

@@ -101,6 +101,17 @@ contextBridge.exposeInMainWorld('electron', {
       mode?: string
       sortBy?: string
     }) => ipcRenderer.invoke('gauntlet:getWeakTosTopics', payload),
+    getEdaStats: () => ipcRenderer.invoke('gauntlet:getEdaStats'),
+    getExcludedQuestions: (payload?: {
+      type?: 'flagged' | 'problem_solving' | 'all'
+      subject?: string
+      reason?: string
+      search?: string
+      limit?: number
+      offset?: number
+    }) => ipcRenderer.invoke('gauntlet:getExcludedQuestions', payload),
+    reinsertQuestions: (payload: { cardIds: string[] }) =>
+      ipcRenderer.invoke('gauntlet:reinsertQuestions', payload),
   },
   file: {
     import: (filePath?: string) => ipcRenderer.invoke('file:import', filePath),

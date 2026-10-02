@@ -477,6 +477,14 @@ export function applyAnswerToRating(
   }
 }
 
+export function computeTimedVirtualRating(
+  currentRating: number,
+  subjectCorrectInSession: number,
+): number {
+  const virtualBoost = Math.min(1500, subjectCorrectInSession * 20)
+  return currentRating + virtualBoost
+}
+
 export function defaultRating(): SubjectRating {
   return { rating: TUNING.startRating, answers: 0 }
 }
@@ -558,12 +566,12 @@ export interface RatingTierInfo {
 }
 
 export const TIER_COLORS: Record<TierName, string> = {
-  INSULATOR: '#FFFFFF',
-  SEMICONDUCTOR: '#38BDF8',
+  INSULATOR: '#00FF41',
+  SEMICONDUCTOR: '#FACC15',
   CONDUCTOR: '#C084FC',
   COPPER: '#F97316',
   SILVER: '#E2E8F0',
-  SUPERCONDUCTOR: '#00FF41',
+  SUPERCONDUCTOR: '#38BDF8',
 }
 
 export function ratingTier(rating: number): RatingTierInfo {
@@ -574,6 +582,45 @@ export function ratingTier(rating: number): RatingTierInfo {
   if (rating < 2000) return { name: 'SILVER', floor: 1800, next: 2000 }
   return { name: 'SUPERCONDUCTOR', floor: 2000, next: null }
 }
+
+export const TIER_RANKS: Record<TierName, number> = {
+  INSULATOR: 0,
+  SEMICONDUCTOR: 1,
+  CONDUCTOR: 2,
+  COPPER: 3,
+  SILVER: 4,
+  SUPERCONDUCTOR: 5,
+}
+
+export interface RankUpEvent {
+  isRankUp: boolean
+  subject?: Subject
+  oldRating: number
+  newRating: number
+  oldTier: RatingTierInfo
+  newTier: RatingTierInfo
+}
+
+export function detectRankUp(
+  ratingBefore: number,
+  ratingAfter: number,
+  subject?: Subject,
+): RankUpEvent {
+  const oldTier = ratingTier(ratingBefore)
+  const newTier = ratingTier(ratingAfter)
+  const isRankUp = TIER_RANKS[newTier.name] > TIER_RANKS[oldTier.name]
+  return {
+    isRankUp,
+    subject,
+    oldRating: ratingBefore,
+    newRating: ratingAfter,
+    oldTier,
+    newTier,
+  }
+}
+
+/** Hard cap: 1 minute (60 seconds) per question in Time Trial to prevent buying time. */
+export const TIMED_QUESTION_CAP_SEC = 60
 
 // ── Pace Model & Session Planning ────────────────────────────────────────────
 

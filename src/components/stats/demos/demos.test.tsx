@@ -14,7 +14,14 @@ import { AnswerPositionContingencyDemo } from './AnswerPositionContingencyDemo'
 import { ResponseTimeDemo } from './ResponseTimeDemo'
 import { QuestionLengthZScoreDemo } from './QuestionLengthZScoreDemo'
 import { TosCoverageMatrixDemo } from './TosCoverageMatrixDemo'
+import { GauntletSpeedParDemo } from './gauntlet/GauntletSpeedParDemo'
+import { GauntletEloTrajectoryDemo } from './gauntlet/GauntletEloTrajectoryDemo'
+import { GauntletCoverageDensityDemo } from './gauntlet/GauntletCoverageDensityDemo'
+import { GauntletEnduranceStreakDemo } from './gauntlet/GauntletEnduranceStreakDemo'
+import { GauntletExcludedQuestionsDemo } from './gauntlet/GauntletExcludedQuestionsDemo'
 import { useDataLabStore } from '../../../store/useDataLabStore'
+import { gauntletService } from '../../../services/gauntlet.service'
+
 
 // Mock Recharts ResponsiveContainer so children render synchronously in jsdom
 vi.mock('recharts', async (importOriginal) => {
@@ -48,7 +55,6 @@ describe('Data Lab Demo Components', () => {
   })
 
   afterEach(() => {
-    useDataLabStore.getState().reset()
     if (root && container) {
       act(() => {
         root!.unmount()
@@ -57,6 +63,7 @@ describe('Data Lab Demo Components', () => {
       container = null
       root = null
     }
+    useDataLabStore.getState().reset()
     vi.restoreAllMocks()
   })
 
@@ -593,8 +600,280 @@ describe('Data Lab Demo Components', () => {
       expect(container?.textContent).toContain('1.0 Differential Calculus')
       expect(container?.textContent).toContain('1.1 Functions, Continuity, Limits')
     })
+
+    it('switches to Gauntlet Excluded view when clicking the Gauntlet Excluded subtab', async () => {
+      vi.spyOn(gauntletService, 'getExcludedQuestions').mockResolvedValue({
+        cards: [],
+        total: 0,
+        totalExcludedCount: 3,
+        flaggedCount: 3,
+        autoExcludedCount: 0,
+        reasonsBreakdown: {},
+        subjectsBreakdown: {},
+      })
+      useDataLabStore.setState({
+        tosCoverageMatrix: mockMatrix as any,
+        loading: { ...useDataLabStore.getState().loading, tosCoverageMatrix: false },
+      })
+
+      await act(async () => {
+        root!.render(<TosCoverageMatrixDemo />)
+        await new Promise((r) => setTimeout(r, 0))
+      })
+
+      const excludedTabBtn = Array.from(container?.querySelectorAll('button') || []).find((b) =>
+        b.textContent?.includes('Gauntlet Excluded')
+      )
+      expect(excludedTabBtn).toBeDefined()
+
+      await act(async () => {
+        excludedTabBtn?.click()
+        await new Promise((r) => setTimeout(r, 0))
+      })
+
+      expect(container?.querySelector('[data-testid="gauntlet-excluded-questions-demo"]')).not.toBeNull()
+      expect(container?.textContent).toContain('Gauntlet Excluded Questions')
+    })
+  })
+
+  describe('Gauntlet EDA Components', () => {
+    const mockGauntletData: any = {
+      tosAccuracy: [
+        {
+          tosTopicId: 'ELECS-1.1',
+          subject: 'ELECS',
+          totalAnswers: 10,
+          correctAnswers: 5,
+          wrongAnswers: 5,
+          timeoutAnswers: 0,
+          accuracy: 0.5,
+          isWeak: true,
+        },
+        {
+          tosTopicId: 'MATH-1.1',
+          subject: 'MATH',
+          totalAnswers: 15,
+          correctAnswers: 12,
+          wrongAnswers: 3,
+          timeoutAnswers: 0,
+          accuracy: 0.8,
+          isWeak: false,
+        },
+      ],
+      speedPar: [
+        {
+          subject: 'ELECS',
+          totalAnswers: 50,
+          avgTimeMs: 12000,
+          avgParMs: 8000,
+          speedRatio: 1.5,
+          fastWrongCount: 4,
+          wrongCount: 15,
+          fastWrongRate: 0.267,
+        },
+        {
+          subject: 'MATH',
+          totalAnswers: 30,
+          avgTimeMs: 7000,
+          avgParMs: 9000,
+          speedRatio: 0.778,
+          fastWrongCount: 1,
+          wrongCount: 6,
+          fastWrongRate: 0.167,
+        },
+      ],
+      eloTrajectory: [
+        {
+          date: 'Oct 1',
+          timestamp: 1000,
+          MATH: 500,
+          GEAS: 500,
+          ELECS: 500,
+          EST: 500,
+          overall: 500,
+        },
+        {
+          date: 'Oct 2',
+          timestamp: 2000,
+          MATH: 520,
+          GEAS: 510,
+          ELECS: 540,
+          EST: 490,
+          overall: 515,
+        },
+      ],
+      currentRatings: {
+        MATH: { rating: 520, peak: 525, answers: 20 },
+        GEAS: { rating: 510, peak: 510, answers: 15 },
+        ELECS: { rating: 540, peak: 550, answers: 40 },
+        EST: { rating: 490, peak: 505, answers: 25 },
+      },
+      coverageDensity: {
+        bySubject: [
+          { subject: 'ELECS', libraryCards: 2000, arenaCards: 800, penetrationPct: 40.0 },
+          { subject: 'MATH', libraryCards: 1500, arenaCards: 300, penetrationPct: 20.0 },
+        ],
+        byTopic: [
+          { tosTopicId: 'EST-4.6', subject: 'EST', libraryCards: 350, arenaCards: 20, penetrationPct: 5.7 },
+        ],
+        untestedBlindSpots: [
+          { tosTopicId: 'EST-4.6', subject: 'EST', libraryCards: 350, arenaCards: 20, penetrationPct: 5.7 },
+        ],
+      },
+      endurance: {
+        totalRuns: 25,
+        totalAnswers: 250,
+        avgRunDurationSec: 120,
+        avgRunScore: 350,
+        avgQuestionsPerRun: 10,
+        bestStreakOverall: 14,
+        streakBuckets: [
+          { bucket: '0-4', count: 15, pct: 60.0 },
+          { bucket: '5-9', count: 8, pct: 32.0 },
+          { bucket: '10-14', count: 2, pct: 8.0 },
+          { bucket: '15-19', count: 0, pct: 0 },
+          { bucket: '20-29', count: 0, pct: 0 },
+          { bucket: '30+', count: 0, pct: 0 },
+        ],
+        failureModes: [
+          { mode: 'lives', count: 20, pct: 80.0 },
+          { mode: 'time', count: 5, pct: 20.0 },
+        ],
+      },
+    }
+
+    it('renders GauntletSpeedParDemo with actual vs par pacing', async () => {
+      vi.spyOn(gauntletService, 'getEdaStats').mockResolvedValue(mockGauntletData)
+      useDataLabStore.setState({
+        gauntletEda: mockGauntletData,
+        loading: { ...useDataLabStore.getState().loading, gauntletEda: false },
+      })
+
+      await act(async () => {
+        root!.render(<GauntletSpeedParDemo />)
+        await new Promise((r) => setTimeout(r, 0))
+      })
+
+      expect(container?.querySelector('[data-testid="gauntlet-speed-par-demo"]')).not.toBeNull()
+      expect(container?.textContent).toContain('Response Speed vs. Par Time')
+      expect(container?.textContent).toContain('Pace Factor')
+      expect(container?.textContent).toContain('Impulsive Errors')
+    })
+
+    it('renders GauntletEloTrajectoryDemo with ratings overview', async () => {
+      vi.spyOn(gauntletService, 'getEdaStats').mockResolvedValue(mockGauntletData)
+      useDataLabStore.setState({
+        gauntletEda: mockGauntletData,
+        loading: { ...useDataLabStore.getState().loading, gauntletEda: false },
+      })
+
+      await act(async () => {
+        root!.render(<GauntletEloTrajectoryDemo />)
+        await new Promise((r) => setTimeout(r, 0))
+      })
+
+      expect(container?.querySelector('[data-testid="gauntlet-elo-trajectory-demo"]')).not.toBeNull()
+      expect(container?.textContent).toContain('Elo Rating Growth & Trajectory')
+      expect(container?.textContent).toContain('ELECS')
+      expect(container?.textContent).toContain('540')
+      expect(container?.textContent).toContain('Peak: 550')
+    })
+
+    it('renders GauntletCoverageDensityDemo with subject progress and blind spots', async () => {
+      vi.spyOn(gauntletService, 'getEdaStats').mockResolvedValue(mockGauntletData)
+      useDataLabStore.setState({
+        gauntletEda: mockGauntletData,
+        loading: { ...useDataLabStore.getState().loading, gauntletEda: false },
+      })
+
+      await act(async () => {
+        root!.render(<GauntletCoverageDensityDemo />)
+        await new Promise((r) => setTimeout(r, 0))
+      })
+
+      expect(container?.querySelector('[data-testid="gauntlet-coverage-density-demo"]')).not.toBeNull()
+      expect(container?.textContent).toContain('Topic Coverage Density: Arena vs. Gauntlet Pool')
+      expect(container?.textContent).toContain('Highest Untested Blind Spots')
+      expect(container?.textContent).toContain('EST-4.6')
+    })
+
+    it('renders GauntletEnduranceStreakDemo with streak buckets and survival metrics', async () => {
+      vi.spyOn(gauntletService, 'getEdaStats').mockResolvedValue(mockGauntletData)
+      useDataLabStore.setState({
+        gauntletEda: mockGauntletData,
+        loading: { ...useDataLabStore.getState().loading, gauntletEda: false },
+      })
+
+      await act(async () => {
+        root!.render(<GauntletEnduranceStreakDemo />)
+        await new Promise((r) => setTimeout(r, 0))
+      })
+
+      expect(container?.querySelector('[data-testid="gauntlet-endurance-streak-demo"]')).not.toBeNull()
+      expect(container?.textContent).toContain('Endurance & Streak Survival Curve')
+      expect(container?.textContent).toContain('Avg Run Survival')
+      expect(container?.textContent).toContain('Average Run Score')
+      expect(container?.textContent).toContain('Primary Exit Mode')
+      expect(container?.textContent).toContain('lives')
+    })
+
+    it('renders GauntletExcludedQuestionsDemo with flagged questions and reinsert action', async () => {
+      const mockExcludedData = {
+        cards: [
+          {
+            id: 'c-flag-1',
+            topicId: 't-1',
+            type: 'mcq',
+            subject: 'ELECS' as const,
+            deckName: 'Circuits 101',
+            tosTopicId: 'ELECS-1.1',
+            question: "What is Ohm's Law formula?",
+            choices: ['V = I * R', 'V = I / R', 'V = I + R', 'V = I - R'],
+            answer: 0,
+            difficulty: 'EASY',
+            reason: 'Hard problem solving question',
+            flaggedAt: 1790000000000,
+            exclusionType: 'flagged' as const,
+          },
+        ],
+        total: 1,
+        totalExcludedCount: 6,
+        flaggedCount: 1,
+        autoExcludedCount: 5,
+        reasonsBreakdown: { 'Hard problem solving question': 1 },
+        subjectsBreakdown: { MATH: 0, GEAS: 0, ELECS: 1, EST: 0 },
+      }
+
+      vi.spyOn(gauntletService, 'getExcludedQuestions').mockResolvedValue(mockExcludedData)
+      vi.spyOn(gauntletService, 'unflagQuestion').mockResolvedValue(undefined)
+
+      await act(async () => {
+        root!.render(<GauntletExcludedQuestionsDemo />)
+        await new Promise((r) => setTimeout(r, 0))
+      })
+
+      expect(container?.querySelector('[data-testid="gauntlet-excluded-questions-demo"]')).not.toBeNull()
+      expect(container?.textContent).toContain('Gauntlet Excluded Questions')
+      expect(container?.textContent).toContain("What is Ohm's Law formula?")
+      expect(container?.textContent).toContain('Hard problem solving question')
+      expect(container?.textContent).toContain('Reinsert into Pool')
+
+      // Click Reinsert button
+      const reinsertBtn = container?.querySelector('button:has(svg)') as HTMLButtonElement | null
+      const buttons = Array.from(container?.querySelectorAll('button') || [])
+      const poolBtn = buttons.find((b) => b.textContent?.includes('Reinsert into Pool'))
+      expect(poolBtn).toBeDefined()
+
+      await act(async () => {
+        poolBtn?.click()
+        await new Promise((r) => setTimeout(r, 0))
+      })
+
+      expect(gauntletService.unflagQuestion).toHaveBeenCalledWith('c-flag-1')
+    })
   })
 })
+
 
 
 
