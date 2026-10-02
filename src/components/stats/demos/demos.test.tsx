@@ -19,6 +19,7 @@ import { GauntletEloTrajectoryDemo } from './gauntlet/GauntletEloTrajectoryDemo'
 import { GauntletCoverageDensityDemo } from './gauntlet/GauntletCoverageDensityDemo'
 import { GauntletEnduranceStreakDemo } from './gauntlet/GauntletEnduranceStreakDemo'
 import { GauntletExcludedQuestionsDemo } from './gauntlet/GauntletExcludedQuestionsDemo'
+import { TosCardSearchDemo } from './TosCardSearchDemo'
 import { useDataLabStore } from '../../../store/useDataLabStore'
 import { gauntletService } from '../../../services/gauntlet.service'
 
@@ -633,6 +634,165 @@ describe('Data Lab Demo Components', () => {
 
       expect(container?.querySelector('[data-testid="gauntlet-excluded-questions-demo"]')).not.toBeNull()
       expect(container?.textContent).toContain('Gauntlet Excluded Questions')
+    })
+
+    it('switches to Card Search view when clicking Card Search subtab', async () => {
+      vi.spyOn(dbService, 'getCardsByTosTopic').mockResolvedValue({
+        cards: [
+          {
+            id: 'card-1',
+            topicId: 't-1',
+            deckName: 'Diff Cal',
+            subject: 'MATH',
+            type: 'mcq',
+            difficulty: 'easy',
+            tosTopicId: 'MATH-1.1',
+            orderIndex: 0,
+            cardNumber: 1,
+            preview: 'What is limit of sin(x)/x as x approaches 0?',
+            tags: ['calculus', 'limits'],
+            choices: ['0', '1', 'infinity', 'undefined'],
+            answer: 1,
+            explanation: 'Standard limit theorem.',
+          },
+        ],
+        total: 1,
+      })
+
+      useDataLabStore.setState({
+        tosCoverageMatrix: mockMatrix as any,
+        loading: { ...useDataLabStore.getState().loading, tosCoverageMatrix: false },
+      })
+
+      await act(async () => {
+        root!.render(<TosCoverageMatrixDemo />)
+        await new Promise((r) => setTimeout(r, 0))
+      })
+
+      const cardSearchTabBtn = Array.from(container?.querySelectorAll('button') || []).find((b) =>
+        b.textContent?.includes('Card Search')
+      )
+      expect(cardSearchTabBtn).toBeDefined()
+
+      await act(async () => {
+        cardSearchTabBtn?.click()
+        await new Promise((r) => setTimeout(r, 350))
+      })
+
+      expect(container?.querySelector('[data-testid="tos-card-search-demo"]')).not.toBeNull()
+      expect(container?.textContent).toContain('Diff Cal')
+      expect(container?.textContent).toContain('limit of sin(x)/x')
+    })
+  })
+
+  describe('TosCardSearchDemo', () => {
+    it('renders search input, filters, cards, and handles jump to topic', async () => {
+      const mockJump = vi.fn()
+      vi.spyOn(dbService, 'getCardsByTosTopic').mockResolvedValue({
+        cards: [
+          {
+            id: 'c-search-1',
+            topicId: 't-1',
+            deckName: 'Circuits 101',
+            subject: 'ELECS',
+            type: 'mcq',
+            difficulty: 'moderate',
+            tosTopicId: 'ELECS-1.1',
+            orderIndex: 0,
+            cardNumber: 1,
+            preview: 'Find the Thevenin equivalent resistance across terminals A and B.',
+            tags: ['circuits', 'thevenin'],
+            choices: ['5 ohms', '10 ohms', '15 ohms', '20 ohms'],
+            answer: 1, // 10 ohms
+            explanation: 'Deactivate independent sources and look into terminals.',
+          },
+        ],
+        total: 1,
+      })
+
+      await act(async () => {
+        root!.render(
+          <TosCardSearchDemo
+            initialQuery="Thevenin"
+            initialSubject="ELECS"
+            onJumpToTopic={mockJump}
+          />
+        )
+        await new Promise((r) => setTimeout(r, 350))
+      })
+
+      expect(container?.querySelector('[data-testid="tos-card-search-demo"]')).not.toBeNull()
+      expect(container?.textContent).toContain('Circuits 101')
+      expect(container?.textContent).toContain('Thevenin equivalent resistance')
+      expect(container?.textContent).toContain('10 ohms')
+      expect(container?.textContent).toContain('Correct')
+
+      // Click Jump button
+      const jumpBtn = Array.from(container?.querySelectorAll('button') || []).find((b) =>
+        b.textContent?.includes('Jump')
+      )
+      expect(jumpBtn).toBeDefined()
+      await act(async () => {
+        jumpBtn?.click()
+      })
+      expect(mockJump).toHaveBeenCalledWith('ELECS-1.1', 'ELECS')
+    })
+
+    it('renders flashcard flip side/definition and formula equation', async () => {
+      vi.spyOn(dbService, 'getCardsByTosTopic').mockResolvedValue({
+        cards: [
+          {
+            id: 'c-fc-1',
+            topicId: 't-est',
+            deckName: 'EST Coaching 4',
+            subject: 'EST',
+            type: 'flashcard',
+            difficulty: 'easy',
+            tosTopicId: 'EST-2.6',
+            orderIndex: 0,
+            cardNumber: 1,
+            preview: 'For radio signals, the skip distance is determined by the:',
+            tags: ['propagation', 'antennas'],
+            back: 'Height of the ionosphere and the angle of radiation',
+          },
+          {
+            id: 'c-fm-1',
+            topicId: 't-math',
+            deckName: 'Formulas',
+            subject: 'MATH',
+            type: 'formula',
+            difficulty: 'moderate',
+            tosTopicId: 'MATH-1.1',
+            orderIndex: 1,
+            cardNumber: 2,
+            preview: 'Euler Formula',
+            tags: ['calculus'],
+            latex: 'e^{ix} = \\cos(x) + i\\sin(x)',
+            description: 'Fundamental relationship between complex exponentials and trigonometric functions.',
+          },
+        ],
+        total: 2,
+      })
+
+      await act(async () => {
+        root!.render(
+          <TosCardSearchDemo
+            initialQuery="angle of radiation"
+            initialSubject="ALL"
+          />
+        )
+        await new Promise((r) => setTimeout(r, 350))
+      })
+
+      expect(container?.textContent).toContain('EST Coaching 4')
+      expect(container?.textContent).toContain('skip distance is determined by the')
+      expect(container?.textContent).toContain('Answer • Definition (Flip Side)')
+      expect(container?.textContent).toContain('Height of the ionosphere and the angle of radiation')
+
+      // Formula card check
+      expect(container?.textContent).toContain('Euler Formula')
+      expect(container?.textContent).toContain('Formula • Equation & Variables')
+      expect(container?.textContent).toContain('Fundamental relationship')
     })
   })
 

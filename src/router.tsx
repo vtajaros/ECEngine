@@ -2,6 +2,7 @@ import React, { lazy, Suspense } from 'react'
 import { createHashRouter, Navigate } from 'react-router-dom'
 import { AppShell } from './components/layout/AppShell'
 import { ErrorBoundary } from './components/ui/ErrorBoundary'
+import PrintView from './pages/PrintView'
 
 const ImportBackup = lazy(() => import('./pages/ImportBackup'))
 const Dashboard      = lazy(() => import('./pages/Dashboard'))
@@ -13,7 +14,6 @@ const Lab            = lazy(() => import('./pages/Lab'))
 const AddDeck        = lazy(() => import('./pages/AddDeck'))
 const EditDeck       = lazy(() => import('./pages/EditDeck'))
 const Settings       = lazy(() => import('./pages/Settings'))
-const PrintView      = lazy(() => import('./pages/PrintView'))
 const TOSChecklist   = lazy(() => import('./pages/TOSChecklist'))
 const Gauntlet       = lazy(() => import('./pages/Gauntlet'))
 
@@ -38,7 +38,7 @@ export const router = createHashRouter([
     path: '/print',
     element: (
       <ErrorBoundary>
-        <Lazy><PrintView /></Lazy>
+        <PrintView />
       </ErrorBoundary>
     ),
   },

@@ -447,6 +447,77 @@ describe('analytics.ipc', () => {
       expect(res.total).toBeGreaterThanOrEqual(1)
       expect(res.cards.every((c) => c.tosTopicId === null || c.tosTopicId === '')).toBe(true)
     })
+
+    it('searches cards by question text, choices, tags, and deck name', () => {
+      // 1. Search by question text
+      const resQuestion = getCardsByTosTopic(
+        { search: 'derivative' },
+        (sql, params) =>
+          params && params.length ? db.prepare(sql).all(...params) : db.prepare(sql).all()
+      )
+      expect(resQuestion.total).toBe(1)
+      expect(resQuestion.cards[0].id).toBe('c-tos-1')
+
+      // 2. Search by tag
+      const resTag = getCardsByTosTopic(
+        { search: 'integral' },
+        (sql, params) =>
+          params && params.length ? db.prepare(sql).all(...params) : db.prepare(sql).all()
+      )
+      expect(resTag.total).toBe(1)
+      expect(resTag.cards[0].id).toBe('c-tos-2')
+
+      // 3. Search by deck name
+      const resDeck = getCardsByTosTopic(
+        { search: 'Calculus I' },
+        (sql, params) =>
+          params && params.length ? db.prepare(sql).all(...params) : db.prepare(sql).all()
+      )
+      expect(resDeck.total).toBeGreaterThanOrEqual(2)
+      expect(resDeck.cards.every((c) => c.deckName === 'Calculus I')).toBe(true)
+    })
+
+    it('parses choices, answer, and explanation on returned cards', () => {
+      const res = getCardsByTosTopic(
+        { search: '1+1' },
+        (sql, params) =>
+          params && params.length ? db.prepare(sql).all(...params) : db.prepare(sql).all()
+      )
+      expect(res.total).toBe(1)
+      expect(res.cards[0].preview).toBe('What is 1+1?')
+      expect(res.cards[0].choices).toEqual(['1', '2', '3', '4'])
+      expect(res.cards[0].answer).toBe(1)
+    })
+
+    it('parses flashcard back and formula latex/variables on returned cards', () => {
+      // Seed a formula card
+      db.prepare(`
+        INSERT INTO cards (id, topic_id, type, data)
+        VALUES (?, ?, ?, ?)
+      `).run(
+        'c-formula-1',
+        't-math-1',
+        'formula',
+        JSON.stringify({
+          name: 'Friis Transmission Formula',
+          latex: 'P_r = P_t G_t G_r \\left(\\frac{\\lambda}{4\\pi d}\\right)^2',
+          description: 'Power received by an antenna under free-space conditions.',
+          variables: { P_r: 'Received power', P_t: 'Transmitted power' },
+        })
+      )
+
+      const res = getCardsByTosTopic(
+        { search: 'Friis' },
+        (sql, params) =>
+          params && params.length ? db.prepare(sql).all(...params) : db.prepare(sql).all()
+      )
+      expect(res.total).toBe(1)
+      expect(res.cards[0].preview).toBe('Friis Transmission Formula')
+      expect(res.cards[0].type).toBe('formula')
+      expect(res.cards[0].latex).toContain('P_r = P_t')
+      expect(res.cards[0].description).toContain('Power received')
+      expect(res.cards[0].variables).toEqual({ P_r: 'Received power', P_t: 'Transmitted power' })
+    })
   })
 
   describe('IPC error handling', () => {

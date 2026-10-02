@@ -25,7 +25,7 @@ export default function Lab() {
           <div className="flex items-center gap-3">
             <FlaskConical className="text-accent" size={32} />
             <h1 className="font-['Orbitron'] text-3xl lg:text-4xl font-bold text-text-primary tracking-wider uppercase">
-              Data Analytics
+              Analytics
             </h1>
           </div>
           <p className="text-text-muted font-['Rajdhani'] text-lg uppercase tracking-widest">

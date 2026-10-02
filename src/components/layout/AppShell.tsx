@@ -125,7 +125,7 @@ export const AppShell: React.FC = () => {
     { to: '/flashcards', label: 'Flashcards', icon: Layers },
     { to: '/formulas', label: 'Formulas', icon: Sigma },
     { to: '/gauntlet', label: 'Gauntlet', icon: Timer },
-    { to: '/lab', label: 'Data Analytics', icon: FlaskConical },
+    { to: '/lab', label: 'Analytics', icon: FlaskConical },
     { to: '/topics', label: 'EELE ToS', icon: BookOpen },
     { to: '/checklist', label: 'Checklist', icon: ClipboardList },
     { to: '/add-decks', label: 'Add Decks', icon: PlusCircle },

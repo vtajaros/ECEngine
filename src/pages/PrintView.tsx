@@ -762,13 +762,33 @@ export default function PrintView() {
 
   useEffect(() => {
     if (!topicId) { setLoading(false); return }
-    dbService.getAllCardsByTopic(topicId).then((result) => {
+
+    // Eagerly pre-load Rajdhani font weights so Chromium decodes them immediately
+    if (typeof document !== 'undefined' && document.fonts) {
+      document.fonts.load('500 17px Rajdhani')
+      document.fonts.load('600 18.5px Rajdhani')
+      document.fonts.load('700 18.5px Rajdhani')
+      document.fonts.load('400 17px Rajdhani')
+    }
+
+    const cardsPromise = dbService.getAllCardsByTopic(topicId)
+    const fontsPromise = (typeof document !== 'undefined' && document.fonts)
+      ? Promise.race([
+          document.fonts.ready,
+          new Promise((resolve) => setTimeout(resolve, 200))
+        ])
+      : Promise.resolve()
+
+    Promise.all([cardsPromise, fontsPromise]).then(([result]) => {
       setCards(result)
+      setLoading(false)
+    }).catch((err) => {
+      console.error(err)
       setLoading(false)
     })
 
     // Fetch description if any
-    window.electron.decks.getTopics().then((res) => {
+    window.electron?.decks?.getTopics?.().then((res: any) => {
       if (res.success && res.data) {
         const topic = res.data.find((t: any) => t.id === topicId)
         if (topic?.description) {

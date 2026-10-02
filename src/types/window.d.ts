@@ -166,6 +166,18 @@ declare global {
               tosTopicId: string | null
               preview: string
               tags: string[]
+              orderIndex?: number
+              cardNumber?: number
+              hasImage?: boolean
+              imagePath?: string | null
+              choices?: string[]
+              answer?: number | string
+              explanation?: string
+              back?: string
+              latex?: string
+              description?: string
+              variables?: Record<string, string> | string
+              imagePathBack?: string | null
             }>
             total: number
           }

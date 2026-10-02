@@ -8,13 +8,16 @@ import {
   Eye,
   Filter,
   ShieldAlert,
+  ArrowRight,
 } from 'lucide-react'
 import { TOC_DATA, SubjectArea, Topic } from '../../toc/data'
 import { TOS_SUBJECT_COLORS } from '../../../lib/tosData'
+import { getTosTopicById } from '../../../lib/tosClassification'
 import { useDataLabStore } from '../../../store/useDataLabStore'
 import { gauntletService } from '../../../services/gauntlet.service'
 import { TosCardInspectorModal } from './TosCardInspectorModal'
 import { GauntletExcludedQuestionsDemo } from './gauntlet/GauntletExcludedQuestionsDemo'
+import { TosCardSearchDemo } from './TosCardSearchDemo'
 
 type StatusFilter = 'all' | 'covered' | 'missing' | 'unclassified'
 type SubjectTab = 'ALL' | 'MATH' | 'GEAS' | 'ELECS' | 'EST'
@@ -27,7 +30,8 @@ export function TosCoverageMatrixDemo() {
   const error = useDataLabStore((state) => state.errors.tosCoverageMatrix)
   const fetchTosCoverageMatrix = useDataLabStore((state) => state.fetchTosCoverageMatrix)
 
-  const [activeMatrixTab, setActiveMatrixTab] = useState<'hierarchy' | 'excluded'>('hierarchy')
+  const [activeMatrixTab, setActiveMatrixTab] = useState<'hierarchy' | 'cards' | 'excluded'>('hierarchy')
+  const [cardSearchQuery, setCardSearchQuery] = useState<string>('')
   const [totalExcludedCount, setTotalExcludedCount] = useState<number>(0)
   const [selectedSubject, setSelectedSubject] = useState<SubjectTab>('ALL')
   const [searchQuery, setSearchQuery] = useState<string>('')
@@ -272,14 +276,29 @@ export function TosCoverageMatrixDemo() {
 
         {/* Header Controls: Sub-tab Switcher & Status Chips */}
         <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
-          {/* Sub-tab switcher: ToS Hierarchy vs Gauntlet Excluded */}
+          {/* Sub-tab switcher: ToS Hierarchy vs Card Search vs Gauntlet Excluded */}
           <div className="flex items-center p-1 bg-[#0c0c0c] rounded-lg border border-border-base">
             <button
               onClick={() => setActiveMatrixTab('hierarchy')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all bg-accent/15 text-accent border border-accent/40 shadow-[0_0_10px_rgba(0,255,65,0.2)]"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all ${
+                activeMatrixTab === 'hierarchy'
+                  ? 'bg-accent/15 text-accent border border-accent/40 shadow-[0_0_10px_rgba(0,255,65,0.2)]'
+                  : 'text-text-muted hover:text-text-primary border border-transparent'
+              }`}
             >
               <Layers size={13} />
               <span>ToS Hierarchy</span>
+            </button>
+            <button
+              onClick={() => setActiveMatrixTab('cards')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all ${
+                activeMatrixTab === 'cards'
+                  ? 'bg-accent/15 text-accent border border-accent/40 shadow-[0_0_10px_rgba(0,255,65,0.2)]'
+                  : 'text-text-muted hover:text-text-primary border border-transparent'
+              }`}
+            >
+              <Search size={13} />
+              <span>Card Search</span>
             </button>
             <button
               onClick={() => setActiveMatrixTab('excluded')}
@@ -383,73 +402,108 @@ export function TosCoverageMatrixDemo() {
         </div>
       </div>
 
-      {/* Control Bar: LooksFam Subject Pillboxes & Search */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-        {/* LooksFam Subject Filter Pillboxes */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
-          {SUBJECT_TABS.map((s) => {
-            const isActive = selectedSubject === s
-            const colors = s !== 'ALL' ? TOS_SUBJECT_COLORS[s] : null
-            const count =
-              s === 'ALL'
-                ? stats.totalCards
-                : matrix?.bySubject[s]?.totalCards || 0
+      {/* Body: Card Search Demo OR ToS Hierarchy Master-Detail */}
+      {activeMatrixTab === 'cards' ? (
+        <TosCardSearchDemo
+          initialQuery={cardSearchQuery}
+          initialSubject={selectedSubject}
+          onBackToHierarchy={() => setActiveMatrixTab('hierarchy')}
+          onJumpToTopic={(topicId, subject) => {
+            const flatTopic = getTosTopicById(topicId)
+            const targetTopicId = flatTopic?.parentTopicId || topicId
+            setSelectedSubject(subject as SubjectTab)
+            setSelectedTopicId(targetTopicId)
+            setActiveMatrixTab('hierarchy')
+          }}
+          onTagUpdated={() => {
+            fetchTosCoverageMatrix(true)
+          }}
+        />
+      ) : (
+        <>
+          {/* Control Bar: LooksFam Subject Pillboxes & Search */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+            {/* LooksFam Subject Filter Pillboxes */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+              {SUBJECT_TABS.map((s) => {
+                const isActive = selectedSubject === s
+                const colors = s !== 'ALL' ? TOS_SUBJECT_COLORS[s] : null
+                const count =
+                  s === 'ALL'
+                    ? stats.totalCards
+                    : matrix?.bySubject[s]?.totalCards || 0
 
-            return (
-              <button
-                key={s}
-                onClick={() => handleSubjectChange(s)}
-                className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg border transition-all font-['Rajdhani'] font-bold text-xs uppercase tracking-wider shrink-0"
-                style={
-                  isActive
-                    ? s === 'ALL'
-                      ? {
-                          background: 'rgba(0, 255, 65, 0.12)',
-                          borderColor: 'rgba(0, 255, 65, 0.5)',
-                          color: '#00FF41',
-                          boxShadow: '0 0 16px rgba(0, 255, 65, 0.12)',
-                        }
-                      : {
-                          background: `rgba(${colors?.accentRgb}, 0.15)`,
-                          borderColor: `rgba(${colors?.accentRgb}, 0.5)`,
-                          color: colors?.accent,
-                          boxShadow: `0 0 16px rgba(${colors?.accentRgb}, 0.12)`,
-                        }
-                    : {
-                        background: '#0c0c0c',
-                        borderColor: '#2a2a2a',
-                        color: '#777',
-                      }
-                }
-              >
-                <span>{s}</span>
-                <span
-                  className="font-['JetBrains_Mono'] text-[10px] px-1.5 py-0.2 rounded transition-colors"
-                  style={{
-                    backgroundColor: isActive ? 'rgba(0, 0, 0, 0.4)' : '#161616',
-                    color: isActive ? 'inherit' : '#666',
-                    border: isActive ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #222',
+                return (
+                  <button
+                    key={s}
+                    onClick={() => handleSubjectChange(s)}
+                    className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg border transition-all font-['Rajdhani'] font-bold text-xs uppercase tracking-wider shrink-0"
+                    style={
+                      isActive
+                        ? s === 'ALL'
+                          ? {
+                              background: 'rgba(0, 255, 65, 0.12)',
+                              borderColor: 'rgba(0, 255, 65, 0.5)',
+                              color: '#00FF41',
+                              boxShadow: '0 0 16px rgba(0, 255, 65, 0.12)',
+                            }
+                          : {
+                              background: `rgba(${colors?.accentRgb}, 0.15)`,
+                              borderColor: `rgba(${colors?.accentRgb}, 0.5)`,
+                              color: colors?.accent,
+                              boxShadow: `0 0 16px rgba(${colors?.accentRgb}, 0.12)`,
+                            }
+                        : {
+                            background: '#0c0c0c',
+                            borderColor: '#2a2a2a',
+                            color: '#777',
+                          }
+                    }
+                  >
+                    <span>{s}</span>
+                    <span
+                      className="font-['JetBrains_Mono'] text-[10px] px-1.5 py-0.2 rounded transition-colors"
+                      style={{
+                        backgroundColor: isActive ? 'rgba(0, 0, 0, 0.4)' : '#161616',
+                        color: isActive ? 'inherit' : '#666',
+                        border: isActive ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #222',
+                      }}
+                    >
+                      {count.toLocaleString()}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Topic Search Input with Search Cards bridge */}
+            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+              <div className="relative w-full sm:w-64 shrink-0">
+                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+                <input
+                  type="text"
+                  placeholder="Search topic or code (e.g. 6.4, PLC)…"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-[#0c0c0c] border border-border-base focus:border-[var(--accent-primary)] rounded-lg pl-8 pr-3 py-1.5 text-xs text-text-primary font-['JetBrains_Mono'] outline-none transition-colors"
+                />
+              </div>
+              {searchQuery.trim() && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCardSearchQuery(searchQuery.trim())
+                    setActiveMatrixTab('cards')
                   }}
+                  title="Search full question text for this term"
+                  className="px-2.5 py-1.5 rounded-lg bg-accent/10 hover:bg-accent/20 text-accent border border-accent/40 text-xs font-['Rajdhani'] font-bold uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition-colors"
                 >
-                  {count.toLocaleString()}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Topic Search Input */}
-        <div className="relative w-full sm:w-64 shrink-0">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
-          <input
-            type="text"
-            placeholder="Search topic or code (e.g. 6.4, PLC)…"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#0c0c0c] border border-border-base focus:border-[var(--accent-primary)] rounded-lg pl-8 pr-3 py-1.5 text-xs text-text-primary font-['JetBrains_Mono'] outline-none transition-colors"
-          />
-        </div>
-      </div>
+                  <span>Search Cards</span>
+                  <ArrowRight size={12} />
+                </button>
+              )}
+            </div>
+          </div>
 
       {/* Master-Detail Two-Column Layout */}
       <div className="grid grid-cols-1 md:grid-cols-12 rounded-xl border border-border-base bg-[#0A0A0A] overflow-hidden h-[580px] lg:h-[640px]">
@@ -657,6 +711,8 @@ export function TosCoverageMatrixDemo() {
           )}
         </div>
       </div>
+      </>
+      )}
 
       {/* Card Inspector Modal */}
       <TosCardInspectorModal

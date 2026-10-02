@@ -27,6 +27,7 @@ export function registerPrintHandlers(getMainWindow: () => Electron.BrowserWindo
         height: 800,
         frame: false,
         transparent: true,
+        backgroundColor: '#00000000',
         title: `Test Paper View — ${title}`,
         autoHideMenuBar: true,
         icon: iconPath,
@@ -36,7 +37,6 @@ export function registerPrintHandlers(getMainWindow: () => Electron.BrowserWindo
         ...(parent ? { parent, modal: false } : {}),
         show: false,
         webPreferences: {
-          partition: 'print',
           zoomFactor: 1.0,
           preload: join(__dirname, '../preload/index.js'),
           contextIsolation: true,
@@ -67,6 +67,7 @@ export function registerPrintHandlers(getMainWindow: () => Electron.BrowserWindo
       }
 
       printWindow.once('ready-to-show', showWindowSmoothly)
+      printWindow.webContents.on('dom-ready', showWindowSmoothly)
 
       // Override title AFTER did-finish-load — Chromium applies <title>ECEngine</title>
       // from the HTML after navigation, which overwrites the BrowserWindow constructor title.
@@ -74,7 +75,7 @@ export function registerPrintHandlers(getMainWindow: () => Electron.BrowserWindo
       printWindow.webContents.on('did-finish-load', () => {
         printWindow?.setTitle(`Test Paper View — ${title}`)
         // Fallback in case ready-to-show was already triggered or delayed by window manager
-        setTimeout(showWindowSmoothly, 100)
+        setTimeout(showWindowSmoothly, 50)
       })
 
       if (process.env['ELECTRON_RENDERER_URL']) {

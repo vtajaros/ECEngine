@@ -305,6 +305,14 @@ export interface CardByTosTopicItem {
   cardNumber?: number
   hasImage?: boolean
   imagePath?: string | null
+  choices?: string[]
+  answer?: number | string
+  explanation?: string
+  back?: string
+  latex?: string
+  description?: string
+  variables?: Record<string, string> | string
+  imagePathBack?: string | null
 }
 
 export function getCardsByTosTopic(
@@ -342,8 +350,8 @@ export function getCardsByTosTopic(
   }
 
   if (search && search.trim()) {
-    whereClauses.push(`(c.data LIKE ? OR t.name LIKE ?)`)
-    params.push(`%${search.trim()}%`, `%${search.trim()}%`)
+    whereClauses.push(`(c.data LIKE ? OR t.name LIKE ? OR c.tags LIKE ?)`)
+    params.push(`%${search.trim()}%`, `%${search.trim()}%`, `%${search.trim()}%`)
   }
 
   const whereSql = whereClauses.join(' AND ')
@@ -380,12 +388,45 @@ export function getCardsByTosTopic(
   const cards: CardByTosTopicItem[] = rows.map((r: any) => {
     let preview = ''
     let imagePath: string | null = null
+    let imagePathBack: string | null = null
     let hasImage = false
+    let choices: string[] | undefined = undefined
+    let answer: number | string | undefined = undefined
+    let explanation: string | undefined = undefined
+    let back: string | undefined = undefined
+    let latex: string | undefined = undefined
+    let description: string | undefined = undefined
+    let variables: Record<string, string> | string | undefined = undefined
+
     try {
       const parsed = typeof r.data === 'string' ? JSON.parse(r.data) : r.data
-      preview = parsed.question || parsed.front || parsed.formula || parsed.name || parsed.term || ''
-      imagePath = parsed.imagePath || parsed.imagePathFront || null
-      hasImage = Boolean(imagePath || parsed.imageUrl || parsed.image)
+      preview = parsed.question || parsed.front || parsed.formula || parsed.name || parsed.term || parsed.title || ''
+      imagePath = parsed.imagePath || parsed.imagePathFront || parsed.imageFront || null
+      imagePathBack = parsed.imageBack || parsed.imagePathBack || null
+      hasImage = Boolean(imagePath || parsed.imageUrl || parsed.image || imagePathBack)
+      if (Array.isArray(parsed.choices)) {
+        choices = parsed.choices.map((c: any) => (typeof c === 'string' ? c : c?.text || ''))
+      }
+      if (parsed.answer !== undefined) {
+        answer = parsed.answer
+      }
+      if (parsed.explanation) {
+        explanation = String(parsed.explanation)
+      }
+      if (parsed.back !== undefined) {
+        back = String(parsed.back)
+      } else if (parsed.body !== undefined) {
+        back = String(parsed.body)
+      }
+      if (parsed.latex !== undefined) {
+        latex = String(parsed.latex)
+      }
+      if (parsed.description !== undefined) {
+        description = String(parsed.description)
+      }
+      if (parsed.variables !== undefined) {
+        variables = parsed.variables
+      }
     } catch {
       preview = String(r.data || '').slice(0, 100)
     }
@@ -416,6 +457,14 @@ export function getCardsByTosTopic(
       tags: parsedTags,
       hasImage,
       imagePath,
+      imagePathBack,
+      choices,
+      answer,
+      explanation,
+      back,
+      latex,
+      description,
+      variables,
     }
   })
 

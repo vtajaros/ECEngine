@@ -78,7 +78,7 @@ describe('AppShell GauntletBackdrop integration', () => {
           element: <AppShell />,
           children: [
             { path: '', element: <div data-testid="dashboard-page">Dashboard</div> },
-            { path: 'lab', element: <div data-testid="lab-page">Data Analytics</div> },
+            { path: 'lab', element: <div data-testid="lab-page">Analytics</div> },
             { path: 'gauntlet', element: <div data-testid="gauntlet-page">Gauntlet Arena</div> },
           ],
         },
