@@ -1057,6 +1057,43 @@ describe('Data Lab Demo Components', () => {
       expect(container?.textContent).toContain('Topic Accuracy & Mastery')
       expect(container?.textContent).toContain('Differential Calculus')
       expect(container?.textContent).toContain('Functions, Continuity, Limits')
+      expect(container?.textContent).toContain('PRC Topics')
+      expect(container?.textContent).toContain('Card Penetration')
+    })
+
+    it('allows selecting a different parent topic and filtering by subject in GauntletTopicAccuracyDemo', async () => {
+      vi.spyOn(gauntletService, 'getTopicAccuracyStats').mockResolvedValue([])
+
+      await act(async () => {
+        root!.render(<GauntletTopicAccuracyDemo />)
+        await new Promise((r) => setTimeout(r, 50))
+      })
+
+      // Click on another topic (e.g. Integral Calculus) in the master list
+      const integralTopic = Array.from(container?.querySelectorAll('div') || []).find(
+        (el) => el.textContent?.includes('2.0 Integral Calculus')
+      )
+      expect(integralTopic).toBeDefined()
+
+      await act(async () => {
+        integralTopic?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+        await new Promise((r) => setTimeout(r, 50))
+      })
+
+      expect(container?.textContent).toContain('Integral Calculus')
+
+      // Switch subject tab to ELECS
+      const elecsBtn = Array.from(container?.querySelectorAll('button') || []).find(
+        (btn) => btn.textContent?.includes('ELECS')
+      )
+      expect(elecsBtn).toBeDefined()
+
+      await act(async () => {
+        elecsBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+        await new Promise((r) => setTimeout(r, 50))
+      })
+
+      expect(container?.textContent).toContain('DC Electrical Circuits')
     })
   })
 })

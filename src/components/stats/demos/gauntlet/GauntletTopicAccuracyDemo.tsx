@@ -8,19 +8,15 @@ import {
   CheckCircle2,
   RefreshCw,
   ChevronDown,
-  ChevronRight,
-  ChevronsUpDown,
   SlidersHorizontal,
-  ArrowUp,
-  ArrowDown,
   Info,
   Check,
 } from 'lucide-react'
 import { gauntletService, type TosTopicPerformanceStat, type GauntletSubjectCode } from '../../../../services/gauntlet.service'
-import { GAUNTLET_SUBJECT_COLORS } from '../../../../lib/dashboardUtils'
+import { TOS_SUBJECT_COLORS } from '../../../../lib/tosData'
 import { getTosTopicGroupsBySubject, type TosTopicGroup, type FlatTosTopic } from '../../../../lib/tosClassification'
 
-type SubjectTab = 'ALL' | GauntletSubjectCode
+type SubjectTab = GauntletSubjectCode
 type SortKey =
   | 'code_asc'
   | 'code_desc'
@@ -57,6 +53,15 @@ interface ParentTopicGroupItem {
   accuracy: number | null
   studyProgress: number
   subtopics: SubtopicStatItem[]
+}
+
+const SUBJECT_TABS: SubjectTab[] = ['MATH', 'GEAS', 'ELECS', 'EST']
+
+const SUBJECT_FULL_NAMES: Record<string, string> = {
+  MATH: 'Mathematics',
+  GEAS: 'General Engineering & Applied Sciences',
+  ELECS: 'Electronics Engineering',
+  EST: 'Electronic Systems & Technologies',
 }
 
 const SORT_OPTIONS: Array<{ key: SortKey; label: string; description: string }> = [
@@ -152,21 +157,33 @@ export function getAccuracyBadgeStyle(accuracy: number | null, totalAnswers: num
 }
 
 export function GauntletTopicAccuracyDemo() {
-  const [subject, setSubject] = useState<SubjectTab>('ALL')
+  const [subject, setSubject] = useState<SubjectTab>('MATH')
   const [scope, setScope] = useState<'gauntlet' | 'all'>('gauntlet')
   const [sortBy, setSortBy] = useState<SortKey>('code_asc')
   const [search, setSearch] = useState('')
   const [weakOnly, setWeakOnly] = useState(false)
+  const [selectedParentId, setSelectedParentId] = useState<string | null>(null)
   const [stats, setStats] = useState<TosTopicPerformanceStat[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Collapsed state per parent topic id (empty set = all expanded by default from frame 1)
-  const [collapsedParentIds, setCollapsedParentIds] = useState<Set<string>>(new Set())
-
   // Custom sort menu dropdown state
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false)
   const sortDropdownRef = useRef<HTMLDivElement>(null)
+
+  // Subtopic count per subject for tab counters
+  const subjectCounts = useMemo(() => {
+    const counts: Record<GauntletSubjectCode, number> = {
+      MATH: 0,
+      GEAS: 0,
+      ELECS: 0,
+      EST: 0,
+    }
+    for (const s of SUBJECT_TABS) {
+      counts[s] = getTosTopicGroupsBySubject(s).reduce((acc, p) => acc + p.subtopics.length, 0)
+    }
+    return counts
+  }, [])
 
   // Close sort dropdown when clicking outside
   useEffect(() => {
@@ -186,7 +203,7 @@ export function GauntletTopicAccuracyDemo() {
     setError(null)
     try {
       const data = await gauntletService.getTopicAccuracyStats({
-        subject: subject === 'ALL' ? undefined : subject,
+        subject,
         scope,
         sortBy: 'code',
       })
@@ -213,7 +230,7 @@ export function GauntletTopicAccuracyDemo() {
 
   // Aggregate hierarchical structure (Parent 1.0 -> Subtopics 1.1, 1.2...)
   const parentGroups = useMemo<ParentTopicGroupItem[]>(() => {
-    const rawGroups: TosTopicGroup[] = getTosTopicGroupsBySubject(subject === 'ALL' ? null : subject)
+    const rawGroups: TosTopicGroup[] = getTosTopicGroupsBySubject(subject)
 
     return rawGroups.map((g) => {
       const subj = g.parent.subject as GauntletSubjectCode
@@ -268,6 +285,49 @@ export function GauntletTopicAccuracyDemo() {
     })
   }, [subject, statsMap])
 
+  // Subtopic sort helper based on active sortBy
+  const sortSubtopics = useCallback(
+    (subs: SubtopicStatItem[]): SubtopicStatItem[] => {
+      return [...subs].sort((a, b) => {
+        switch (sortBy) {
+          case 'code_asc': {
+            const numA = parseFloat(a.code) || 0
+            const numB = parseFloat(b.code) || 0
+            return numA - numB
+          }
+          case 'code_desc': {
+            const numA = parseFloat(a.code) || 0
+            const numB = parseFloat(b.code) || 0
+            return numB - numA
+          }
+          case 'accuracy_asc': {
+            if (a.accuracy === null && b.accuracy === null) return 0
+            if (a.accuracy === null) return 1
+            if (b.accuracy === null) return -1
+            return a.accuracy - b.accuracy
+          }
+          case 'accuracy_desc': {
+            if (a.accuracy === null && b.accuracy === null) return 0
+            if (a.accuracy === null) return 1
+            if (b.accuracy === null) return -1
+            return b.accuracy - a.accuracy
+          }
+          case 'studied_desc':
+            return b.studyProgress - a.studyProgress
+          case 'studied_asc':
+            return a.studyProgress - b.studyProgress
+          case 'misses_desc':
+            return b.wrongAnswers - a.wrongAnswers
+          case 'attempts_desc':
+            return b.totalAnswers - a.totalAnswers
+          default:
+            return 0
+        }
+      })
+    },
+    [sortBy]
+  )
+
   // Filter and sort the hierarchical parent groups
   const filteredGroups = useMemo(() => {
     const q = search.toLowerCase().trim()
@@ -305,7 +365,7 @@ export function GauntletTopicAccuracyDemo() {
 
         return {
           ...group,
-          subtopics: matchingSubs,
+          subtopics: sortSubtopics(matchingSubs),
         }
       })
       .filter((g): g is ParentTopicGroupItem => g !== null)
@@ -324,7 +384,6 @@ export function GauntletTopicAccuracyDemo() {
           return numB - numA
         }
         case 'accuracy_asc': {
-          // Untested topics at the bottom
           if (a.accuracy === null && b.accuracy === null) return 0
           if (a.accuracy === null) return 1
           if (b.accuracy === null) return -1
@@ -348,7 +407,23 @@ export function GauntletTopicAccuracyDemo() {
           return 0
       }
     })
-  }, [parentGroups, search, weakOnly, sortBy])
+  }, [parentGroups, search, weakOnly, sortBy, sortSubtopics])
+
+  // Active selected parent group in detail pane
+  const activeGroup = useMemo(() => {
+    if (filteredGroups.length === 0) return null
+    if (selectedParentId) {
+      const found = filteredGroups.find((g) => g.parent.id === selectedParentId)
+      if (found) return found
+    }
+    return filteredGroups[0]
+  }, [filteredGroups, selectedParentId])
+
+  // Sync selected topic on subject change
+  const handleSubjectChange = (newSubject: SubjectTab) => {
+    setSubject(newSubject)
+    setSelectedParentId(null)
+  }
 
   // Summary computations
   const summary = useMemo(() => {
@@ -380,133 +455,109 @@ export function GauntletTopicAccuracyDemo() {
     }
   }, [parentGroups])
 
-  // Toggle single parent collapsed state
-  const toggleParentExpand = (parentId: string) => {
-    setCollapsedParentIds((prev) => {
-      const next = new Set(prev)
-      if (next.has(parentId)) {
-        next.delete(parentId)
-      } else {
-        next.add(parentId)
-      }
-      return next
-    })
-  }
-
-  // Check if all filtered groups are expanded
-  const areAllExpanded = useMemo(() => {
-    return filteredGroups.length > 0 && filteredGroups.every((g) => !collapsedParentIds.has(g.parent.id))
-  }, [filteredGroups, collapsedParentIds])
-
-  const toggleExpandAll = () => {
-    if (areAllExpanded) {
-      // Collapse all
-      setCollapsedParentIds(new Set(filteredGroups.map((g) => g.parent.id)))
-    } else {
-      // Expand all
-      setCollapsedParentIds(new Set())
-    }
-  }
-
-  // Toggle column header sorting
-  const handleSortAccuracy = () => {
-    if (sortBy === 'accuracy_asc') {
-      setSortBy('accuracy_desc')
-    } else {
-      setSortBy('accuracy_asc')
-    }
-  }
-
-  const handleSortStudied = () => {
-    if (sortBy === 'studied_desc') {
-      setSortBy('studied_asc')
-    } else {
-      setSortBy('studied_desc')
-    }
-  }
-
-  const handleSortSyllabus = () => {
-    if (sortBy === 'code_asc') {
-      setSortBy('code_desc')
-    } else {
-      setSortBy('code_asc')
-    }
-  }
-
   const currentSortLabel = useMemo(() => {
     return SORT_OPTIONS.find((o) => o.key === sortBy)?.label || 'Sort Topics'
   }, [sortBy])
 
   return (
-    <div className="bg-surface p-3.5 sm:p-4 rounded-xl border border-border-base shadow-xl flex flex-col gap-3">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2.5 border-b border-border-base/50">
-        <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-lg bg-accent/10 border border-accent/30 text-accent shadow-[0_0_10px_rgba(0,255,65,0.12)]">
-            <Target size={16} />
-          </div>
-          <div className="flex items-baseline gap-2">
-            <h2 className="font-['Orbitron'] font-bold text-base text-text-primary tracking-wide">
+    <div
+      className="bg-surface p-4 lg:p-5 rounded-xl border border-border-base shadow-lg flex flex-col gap-3.5 w-full max-w-7xl mx-auto"
+      data-testid="gauntlet-topic-accuracy-demo"
+    >
+      {/* Header & Title */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-border-base/50 pb-3">
+        <div className="flex items-center gap-2.5 shrink-0">
+          <Target className="text-accent shrink-0" size={18} />
+          <div>
+            <h2 className="font-['Orbitron'] text-sm sm:text-base font-bold text-text-primary tracking-wide uppercase">
               Topic Accuracy &amp; Mastery
             </h2>
-            <span className="hidden md:inline text-[11px] font-['Rajdhani'] uppercase tracking-wider text-text-muted">
-              PRC TOS Breakdown
-            </span>
+            <p className="text-[11px] font-['Rajdhani'] uppercase tracking-wider text-text-muted font-semibold">
+              PRC Table of Specifications Performance &amp; Mastery Matrix
+            </p>
           </div>
         </div>
 
-        {/* Scope Toggle: Gauntlet Arena Only vs All Study Modes */}
-        <div className="flex items-center bg-surface-2 p-0.5 rounded-lg border border-border-base shrink-0 self-start sm:self-auto">
-          <button
-            type="button"
-            onClick={() => setScope('gauntlet')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-['Rajdhani'] uppercase font-bold tracking-wider transition-all cursor-pointer ${
-              scope === 'gauntlet'
-                ? 'bg-accent/20 text-accent border border-accent/40 shadow-sm'
-                : 'text-text-muted hover:text-text-primary border border-transparent'
-            }`}
-          >
-            <Flame size={12} className={scope === 'gauntlet' ? 'text-accent' : 'text-text-muted'} />
-            <span>Arena</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setScope('all')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-['Rajdhani'] uppercase font-bold tracking-wider transition-all cursor-pointer ${
-              scope === 'all'
-                ? 'bg-accent/20 text-accent border border-accent/40 shadow-sm'
-                : 'text-text-muted hover:text-text-primary border border-transparent'
-            }`}
-          >
-            <Layers size={12} className={scope === 'all' ? 'text-accent' : 'text-text-muted'} />
-            <span>All Modes</span>
-          </button>
+        {/* Header Controls: Scope Switcher (Arena vs All Modes) & Weak Spot Status Chip */}
+        <div className="flex items-center gap-2 self-start lg:self-auto flex-nowrap overflow-x-auto max-w-full py-0.5 scrollbar-none">
+          {/* Sub-tab switcher: Arena vs All Modes */}
+          <div className="flex items-center p-0.5 sm:p-1 bg-[#0c0c0c] rounded-lg border border-border-base shrink-0">
+            <button
+              type="button"
+              onClick={() => setScope('gauntlet')}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-[11px] sm:text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all whitespace-nowrap cursor-pointer ${
+                scope === 'gauntlet'
+                  ? 'bg-accent/15 text-accent border border-accent/40 shadow-[0_0_10px_rgba(0,255,65,0.2)]'
+                  : 'text-text-muted hover:text-text-primary border border-transparent'
+              }`}
+            >
+              <Flame size={13} className={scope === 'gauntlet' ? 'text-accent' : 'text-text-muted'} />
+              <span>Arena</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setScope('all')}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-[11px] sm:text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all whitespace-nowrap cursor-pointer ${
+                scope === 'all'
+                  ? 'bg-accent/15 text-accent border border-accent/40 shadow-[0_0_10px_rgba(0,255,65,0.2)]'
+                  : 'text-text-muted hover:text-text-primary border border-transparent'
+              }`}
+            >
+              <Layers size={13} className={scope === 'all' ? 'text-accent' : 'text-text-muted'} />
+              <span>All Modes</span>
+            </button>
+          </div>
+
+          {/* Weak Spot Status Chip */}
+          {summary.weakCount > 0 ? (
+            <button
+              type="button"
+              onClick={() => setWeakOnly(!weakOnly)}
+              className={`px-2.5 py-1 sm:py-1.5 rounded-lg border text-[11px] sm:text-xs font-['JetBrains_Mono'] font-bold flex items-center gap-1.5 transition-all shrink-0 whitespace-nowrap cursor-pointer ${
+                weakOnly
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-[0_0_12px_rgba(245,158,11,0.25)]'
+                  : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border-amber-500/30'
+              }`}
+              title={weakOnly ? 'Showing weak topics only (Click to show all)' : 'Filter weak topics (<70%, ≥3 att)'}
+            >
+              <AlertTriangle size={12} />
+              <span>{summary.weakCount} Weak Spots</span>
+              {weakOnly && <span className="text-[10px] uppercase font-['Rajdhani'] opacity-80">(Filtering)</span>}
+            </button>
+          ) : (
+            <span className="px-2.5 py-1 sm:py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 text-[11px] sm:text-xs font-['JetBrains_Mono'] font-bold flex items-center gap-1.5 shrink-0 whitespace-nowrap">
+              <CheckCircle2 size={12} />
+              <span>100% Solid</span>
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Compact KPI Summary Ribbon */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <div className="px-3 py-1.5 bg-surface-2/60 border border-border-base/70 rounded-lg flex items-center justify-between">
-          <span className="text-[10px] font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted">
-            Competencies
-          </span>
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-['Orbitron'] text-sm font-bold text-text-primary">
-              {summary.totalSubtopics}
+      {/* Sleek Single-Line Summary Ribbon */}
+      <div className="bg-[#0b0b0b] border border-border-base/70 rounded-lg px-3.5 py-2 flex items-center justify-between flex-wrap gap-2 text-xs font-['JetBrains_Mono']">
+        <div className="flex items-center gap-3.5 flex-wrap">
+          {/* Competencies */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-text-muted text-[10px] font-['Rajdhani'] uppercase tracking-wider font-bold">
+              Competencies:
             </span>
-            <span className="text-[10px] font-['Rajdhani'] text-text-muted">
-              ({summary.attemptedCount} tested)
+            <span className="font-bold text-text-primary">
+              {summary.totalSubtopics}{' '}
+              <span className="text-text-muted font-normal text-[10px]">
+                ({summary.attemptedCount} tested)
+              </span>
             </span>
           </div>
-        </div>
 
-        <div className="px-3 py-1.5 bg-surface-2/60 border border-border-base/70 rounded-lg flex items-center justify-between">
-          <span className="text-[10px] font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted">
-            Avg Accuracy
-          </span>
-          <div className="flex items-baseline gap-1.5">
+          <span className="text-[#333] hidden sm:inline">|</span>
+
+          {/* Avg Accuracy */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-text-muted text-[10px] font-['Rajdhani'] uppercase tracking-wider font-bold">
+              Avg Accuracy:
+            </span>
             <span
-              className={`font-['Orbitron'] text-sm font-bold ${
+              className={`font-bold ${
                 summary.avgAccuracy === null
                   ? 'text-text-muted'
                   : summary.avgAccuracy < 70
@@ -514,129 +565,118 @@ export function GauntletTopicAccuracyDemo() {
                   : 'text-accent'
               }`}
             >
-              {summary.avgAccuracy !== null ? `${summary.avgAccuracy}%` : '—'}
+              {summary.avgAccuracy !== null ? `${summary.avgAccuracy}%` : '—'}{' '}
+              <span className="text-text-muted font-normal text-[10px]">
+                ({summary.totalAnswers.toLocaleString()} att)
+              </span>
             </span>
-            <span className="text-[10px] font-['Rajdhani'] text-text-muted">
-              {summary.totalAnswers} att
+          </div>
+
+          <span className="text-[#333] hidden sm:inline">|</span>
+
+          {/* Weak Topics Filter */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-text-muted text-[10px] font-['Rajdhani'] uppercase tracking-wider font-bold">
+              Weak (&lt;70%):
             </span>
+            {summary.weakCount > 0 ? (
+              <button
+                type="button"
+                onClick={() => setWeakOnly(!weakOnly)}
+                className={`font-bold underline transition-colors cursor-pointer ${
+                  weakOnly ? 'text-amber-300' : 'text-amber-400 hover:text-amber-300'
+                }`}
+              >
+                {summary.weakCount} topics {weakOnly ? '(filtered)' : ''}
+              </button>
+            ) : (
+              <span className="text-emerald-400 font-bold">0 topics</span>
+            )}
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setWeakOnly(!weakOnly)}
-          className={`px-3 py-1.5 rounded-lg border text-left transition-all cursor-pointer flex items-center justify-between ${
-            weakOnly
-              ? 'bg-amber-500/15 border-amber-500/60 shadow-[0_0_10px_rgba(245,158,11,0.2)]'
-              : 'bg-surface-2/60 border-border-base/70 hover:border-amber-500/40'
-          }`}
-          title={weakOnly ? 'Show all topics' : 'Filter weak topics (<70%, ≥3 att)'}
-        >
-          <div className="flex items-center gap-1.5">
-            <AlertTriangle size={11} className="text-amber-400 shrink-0" />
-            <span className="text-[10px] font-['Rajdhani'] font-bold uppercase tracking-wider text-amber-400">
-              Weak (&lt;70%)
-            </span>
-          </div>
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-['Orbitron'] text-sm font-bold text-amber-400">
-              {summary.weakCount}
-            </span>
-            <span className="text-[9px] font-['Rajdhani'] uppercase tracking-wider text-text-muted">
-              {weakOnly ? 'Active' : 'Filter'}
-            </span>
-          </div>
-        </button>
-
-        <div className="px-3 py-1.5 bg-surface-2/60 border border-border-base/70 rounded-lg flex items-center justify-between">
-          <span className="text-[10px] font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted">
-            Card Penetration
+        {/* Card Penetration */}
+        <div className="flex items-center gap-2">
+          <span className="text-text-muted text-[10px] font-['Rajdhani'] uppercase tracking-wider font-bold">
+            Card Penetration:
           </span>
-          <div className="flex items-baseline gap-1.5">
-            <span className="font-['Orbitron'] text-sm font-bold text-accent">
-              {summary.studyPenetration}%
-            </span>
-            <span className="text-[10px] font-['Rajdhani'] text-text-muted">
-              {summary.totalStudiedCards}/{summary.totalLibraryCards}
-            </span>
-          </div>
+          <span className="font-bold text-accent">
+            {summary.studyPenetration}%
+          </span>
+          <span className="text-text-muted text-[10px] font-normal">
+            ({summary.totalStudiedCards.toLocaleString()}/{summary.totalLibraryCards.toLocaleString()})
+          </span>
         </div>
       </div>
 
-      {/* Filter and Control Bar */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2.5">
-        {/* Subject Pills */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-0.5 lg:pb-0">
-          {(['ALL', 'MATH', 'GEAS', 'ELECS', 'EST'] as SubjectTab[]).map((tab) => {
-            const isSelected = subject === tab
-            const count =
-              tab === 'ALL'
-                ? parentGroups.reduce((acc, p) => acc + p.subtopics.length, 0)
-                : parentGroups
-                    .filter((p) => p.subject === tab)
-                    .reduce((acc, p) => acc + p.subtopics.length, 0)
+      {/* Control Bar: LooksFam Subject Pillboxes & Search / Sort Controls */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+        {/* LooksFam Subject Filter Pillboxes */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
+          {SUBJECT_TABS.map((s) => {
+            const isActive = subject === s
+            const colors = TOS_SUBJECT_COLORS[s]
+            const count = subjectCounts[s]
 
             return (
               <button
-                key={tab}
+                key={s}
                 type="button"
-                onClick={() => setSubject(tab)}
-                className={`px-2.5 py-1 rounded-md text-xs font-['Rajdhani'] font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shrink-0 ${
-                  isSelected
-                    ? 'bg-accent/20 text-accent border border-accent/40 shadow-sm'
-                    : 'bg-surface-2/60 text-text-muted hover:text-text-primary border border-border-base/60'
-                }`}
+                onClick={() => handleSubjectChange(s)}
+                className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg border transition-all font-['Rajdhani'] font-bold text-xs uppercase tracking-wider shrink-0 cursor-pointer"
+                style={
+                  isActive
+                    ? {
+                        background: `rgba(${colors?.accentRgb}, 0.15)`,
+                        borderColor: `rgba(${colors?.accentRgb}, 0.5)`,
+                        color: colors?.accent,
+                        boxShadow: `0 0 16px rgba(${colors?.accentRgb}, 0.12)`,
+                      }
+                    : {
+                        background: '#0c0c0c',
+                        borderColor: '#2a2a2a',
+                        color: '#777',
+                      }
+                }
               >
-                {tab !== 'ALL' && (
-                  <span
-                    className="w-1.5 h-1.5 rounded-full shrink-0"
-                    style={{ backgroundColor: GAUNTLET_SUBJECT_COLORS[tab as GauntletSubjectCode] }}
-                  />
-                )}
-                <span>{tab}</span>
-                <span className="font-['JetBrains_Mono'] text-[10px] opacity-70">{count}</span>
+                <span>{s}</span>
+                <span
+                  className="font-['JetBrains_Mono'] text-[10px] px-1.5 py-0.2 rounded transition-colors"
+                  style={{
+                    backgroundColor: isActive ? 'rgba(0, 0, 0, 0.4)' : '#161616',
+                    color: isActive ? 'inherit' : '#666',
+                    border: isActive ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid #222',
+                  }}
+                >
+                  {count}
+                </span>
               </button>
             )
           })}
         </div>
 
-        {/* Right Controls: Search, Expand All, Custom Sort Menu, Refresh */}
-        <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
-          {/* Search Box */}
-          <div className="relative flex-1 sm:w-56 min-w-[180px]">
-            <Search
-              size={13}
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none"
-            />
+        {/* Topic Search Input, Sort Menu & Refresh Button */}
+        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
+          <div className="relative w-full sm:w-56 lg:w-64 shrink-0">
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none" />
             <input
               type="text"
+              placeholder="Search topic or code (e.g. 1.1, Calculus)..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search topic or code..."
-              className="w-full pl-7 pr-2.5 py-1 bg-surface-2/80 border border-border-base rounded-md text-xs text-text-primary placeholder:text-text-muted/60 font-['Rajdhani'] focus:outline-none focus:border-accent transition-colors"
+              className="w-full bg-[#0c0c0c] border border-border-base focus:border-[var(--accent-primary)] rounded-lg pl-8 pr-3 py-1.5 text-xs text-text-primary font-['JetBrains_Mono'] outline-none transition-colors"
             />
           </div>
 
-          {/* Expand/Collapse All Button */}
-          <button
-            type="button"
-            onClick={toggleExpandAll}
-            className="px-2 py-1 bg-surface-2 hover:bg-surface-2/80 border border-border-base rounded-md text-xs font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted hover:text-text-primary transition-colors flex items-center gap-1 shrink-0 cursor-pointer"
-            title={areAllExpanded ? 'Collapse all parent topics' : 'Expand all parent topics'}
-          >
-            <ChevronsUpDown size={12} className="text-accent" />
-            <span>{areAllExpanded ? 'Collapse' : 'Expand'}</span>
-          </button>
-
-          {/* Custom Dark Sort Dropdown Menu */}
+          {/* Custom Sort Menu Dropdown */}
           <div className="relative shrink-0" ref={sortDropdownRef}>
             <button
               type="button"
               onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
-              className="flex items-center gap-1.5 px-2.5 py-1 bg-surface-2 hover:bg-surface-2/80 border border-border-base hover:border-accent/40 rounded-md text-xs font-['Rajdhani'] font-bold uppercase tracking-wider text-text-primary transition-all cursor-pointer shadow-sm"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#0c0c0c] hover:bg-[#141414] border border-border-base hover:border-accent/40 rounded-lg text-xs font-['Rajdhani'] font-bold uppercase tracking-wider text-text-primary transition-all cursor-pointer shadow-sm"
             >
               <SlidersHorizontal size={11} className="text-accent" />
-              <span className="truncate max-w-[140px]">{currentSortLabel}</span>
+              <span className="truncate max-w-[120px]">{currentSortLabel}</span>
               <ChevronDown
                 size={12}
                 className={`text-text-muted transition-transform duration-200 ${
@@ -691,334 +731,345 @@ export function GauntletTopicAccuracyDemo() {
             type="button"
             onClick={() => void loadStats()}
             title="Refresh statistics"
-            className="p-1 rounded-md bg-surface-2 text-text-muted hover:text-text-primary border border-border-base hover:border-accent/40 transition-colors cursor-pointer shrink-0"
+            className="p-1.5 rounded-lg bg-[#0c0c0c] hover:bg-[#161616] text-text-muted hover:text-text-primary border border-border-base hover:border-accent/40 transition-colors cursor-pointer shrink-0"
           >
             <RefreshCw size={13} className={loading ? 'animate-spin text-accent' : ''} />
           </button>
         </div>
       </div>
 
-      {/* Interactive Column Sort Headers */}
-      <div className="hidden sm:flex items-center justify-between px-3.5 py-1.5 bg-surface-2/40 border border-border-base/60 rounded-lg text-[10px] font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted">
-        <button
-          type="button"
-          onClick={handleSortSyllabus}
-          className="flex items-center gap-1.5 hover:text-text-primary transition-colors cursor-pointer group"
-        >
-          <span>PRC Syllabus Topic &amp; Subtopics</span>
-          {sortBy === 'code_asc' ? (
-            <ArrowUp size={12} className="text-accent" />
-          ) : sortBy === 'code_desc' ? (
-            <ArrowDown size={12} className="text-accent" />
-          ) : (
-            <ChevronsUpDown size={12} className="opacity-40 group-hover:opacity-100 transition-opacity" />
-          )}
-        </button>
-
-        <div className="flex items-center gap-8 pr-3">
-          <button
-            type="button"
-            onClick={handleSortAccuracy}
-            className="flex items-center gap-1.5 w-36 justify-between hover:text-text-primary transition-colors cursor-pointer group"
-          >
-            <span>Accuracy</span>
-            {sortBy === 'accuracy_asc' ? (
-              <span className="flex items-center gap-0.5 text-amber-400 font-bold">
-                Low <ArrowUp size={12} />
-              </span>
-            ) : sortBy === 'accuracy_desc' ? (
-              <span className="flex items-center gap-0.5 text-accent font-bold">
-                High <ArrowDown size={12} />
-              </span>
-            ) : (
-              <ChevronsUpDown size={12} className="opacity-40 group-hover:opacity-100 transition-opacity" />
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleSortStudied}
-            className="flex items-center gap-1.5 w-32 justify-between hover:text-text-primary transition-colors cursor-pointer group"
-          >
-            <span>Studied</span>
-            {sortBy === 'studied_desc' ? (
-              <span className="flex items-center gap-0.5 text-accent font-bold">
-                High <ArrowDown size={12} />
-              </span>
-            ) : sortBy === 'studied_asc' ? (
-              <span className="flex items-center gap-0.5 text-amber-400 font-bold">
-                Low <ArrowUp size={12} />
-              </span>
-            ) : (
-              <ChevronsUpDown size={12} className="opacity-40 group-hover:opacity-100 transition-opacity" />
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* Main Hierarchical Topics List */}
-      <div className="flex flex-col gap-3 min-h-[350px]">
-        {loading && stats.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <RefreshCw size={26} className="animate-spin text-accent" />
-            <span className="font-['JetBrains_Mono'] text-xs text-text-muted uppercase tracking-widest animate-pulse">
-              Structuring Syllabus Competency Mastery…
+      {/* Master-Detail Two-Column Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-12 rounded-xl border border-border-base bg-[#0A0A0A] overflow-hidden h-[580px] lg:h-[640px]">
+        {/* Left Column: Master Topics List */}
+        <div className="md:col-span-5 lg:col-span-4 border-b md:border-b-0 md:border-r border-border-base flex flex-col h-[280px] md:h-full min-h-0 bg-[#080808]">
+          <div className="shrink-0 px-3.5 py-2.5 bg-[#111] border-b border-border-base flex items-center justify-between text-xs font-['Rajdhani'] uppercase tracking-wider font-bold">
+            <span className="text-text-muted">PRC Topics</span>
+            <span className="text-text-muted font-['JetBrains_Mono'] text-[11px]">
+              {filteredGroups.length} {filteredGroups.length === 1 ? 'Topic' : 'Topics'}
             </span>
           </div>
-        ) : error ? (
-          <div className="p-6 bg-red-500/10 border border-red-500/30 rounded-xl text-center flex flex-col items-center gap-2">
-            <AlertTriangle className="text-red-400" size={24} />
-            <p className="font-['Rajdhani'] text-sm text-red-400 font-bold">{error}</p>
-          </div>
-        ) : filteredGroups.length === 0 ? (
-          <div className="py-16 px-4 text-center border border-dashed border-border-base rounded-xl bg-surface-2/30 flex flex-col items-center gap-2">
-            <CheckCircle2 size={32} className="text-accent/60 mb-1" />
-            <p className="font-['Orbitron'] text-sm font-bold text-text-primary uppercase tracking-wide">
-              No Competencies Match
-            </p>
-            <p className="font-['Rajdhani'] text-xs text-text-muted max-w-md">
-              {weakOnly
-                ? 'No weak subtopics (<70% accuracy with ≥3 attempts) found under the selected filter!'
-                : search
-                ? `No topics found matching "${search}".`
-                : 'No topic statistics available.'}
-            </p>
-            {weakOnly && (
-              <button
-                type="button"
-                onClick={() => setWeakOnly(false)}
-                className="mt-2 px-3 py-1.5 bg-accent/20 border border-accent/40 text-accent font-['Rajdhani'] text-xs font-bold uppercase rounded-lg hover:bg-accent/30 transition-all cursor-pointer"
-              >
-                Show All Competencies
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-3 max-h-[720px] overflow-y-auto pr-1.5 show-scrollbar">
-            {filteredGroups.map((group) => {
-              const isExpanded = !collapsedParentIds.has(group.parent.id)
-              const parentBadgeStyle = getAccuracyBadgeStyle(group.accuracy, group.totalAnswers)
-              const subjColor = GAUNTLET_SUBJECT_COLORS[group.subject] || '#00FF41'
-              const parentAccDisplay =
-                group.accuracy !== null && group.totalAnswers > 0
-                  ? `${Math.round(group.accuracy * 100)}%`
-                  : '—'
 
-              return (
-                <div
-                  key={group.parent.id}
-                  className="w-full shrink-0 bg-surface-2/40 border border-border-base rounded-xl overflow-hidden transition-all shadow-sm"
-                >
-                  {/* Parent Topic Header Card (1.0) */}
+          <div className="overflow-y-auto show-scrollbar flex-1 min-h-0 divide-y divide-border-base/30 pb-4">
+            {loading && stats.length === 0 ? (
+              <div className="p-8 text-center flex flex-col items-center justify-center gap-2">
+                <RefreshCw size={20} className="animate-spin text-accent" />
+                <span className="font-['JetBrains_Mono'] text-xs text-text-muted uppercase tracking-wider">
+                  Loading topics…
+                </span>
+              </div>
+            ) : filteredGroups.length === 0 ? (
+              <div className="p-6 text-center text-text-muted font-['JetBrains_Mono'] text-xs">
+                No topics match your filter.
+              </div>
+            ) : (
+              filteredGroups.map((group) => {
+                const isSelected = group.parent.id === activeGroup?.parent.id
+                const color = TOS_SUBJECT_COLORS[group.subject]?.accent || '#00FF41'
+                const groupBadgeStyle = getAccuracyBadgeStyle(group.accuracy, group.totalAnswers)
+                const hasWeakSubs = group.subtopics.some(
+                  (s) => s.accuracy !== null && s.accuracy < 0.7 && s.totalAnswers >= 3
+                )
+
+                return (
                   <div
-                    onClick={() => toggleParentExpand(group.parent.id)}
-                    className={`p-3.5 min-h-[52px] bg-surface-2/70 hover:bg-surface-2/90 ${
-                      isExpanded ? 'border-b border-border-base/50' : ''
-                    } transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left cursor-pointer select-none`}
+                    key={group.parent.id}
+                    onClick={() => setSelectedParentId(group.parent.id)}
+                    className={`relative p-3 transition-colors cursor-pointer flex items-center justify-between gap-3 border-l-2 ${
+                      isSelected
+                        ? 'bg-surface-2/90 text-text-primary'
+                        : 'bg-transparent hover:bg-surface-2/30 text-text-muted border-l-transparent'
+                    }`}
+                    style={{
+                      borderLeftColor: isSelected ? color : 'transparent',
+                    }}
                   >
-                    {/* Left: Chevron + Subject + Code + Title + Subtopic Count */}
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      <div className="p-1 rounded-md bg-surface text-text-muted hover:text-accent transition-colors shrink-0">
-                        {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                      </div>
+                    {/* Active Indicator Bar on right edge */}
+                    {isSelected && (
+                      <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-accent shadow-[0_0_10px_#00FF41]" />
+                    )}
 
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
                       <span
-                        className="font-['Orbitron'] text-[10px] font-black px-1.5 py-0.5 rounded text-black shrink-0 tracking-wider"
-                        style={{ backgroundColor: subjColor }}
+                        className="px-1.5 py-0.2 rounded text-[9px] font-['Rajdhani'] font-bold uppercase tracking-wider shrink-0"
+                        style={{
+                          color: color,
+                          backgroundColor: `${color}15`,
+                          border: `1px solid ${color}35`,
+                        }}
                       >
                         {group.subject}
                       </span>
-
-                      <div className="flex items-baseline gap-2 min-w-0 truncate">
-                        <span className="font-['Orbitron'] text-sm font-bold text-text-primary tracking-wide">
-                          {group.parent.code}
-                        </span>
-                        <h3
-                          className="font-['Rajdhani'] font-bold text-sm text-text-primary tracking-wide truncate"
-                          title={group.parent.title}
-                        >
-                          {group.parent.title}
-                        </h3>
-                      </div>
-
-                      <span className="hidden md:inline-flex text-[10px] font-['JetBrains_Mono'] text-text-muted bg-surface/60 px-2 py-0.5 rounded border border-border-base/40 shrink-0">
-                        {group.subtopics.length} Subtopics · {group.totalCards} cards
+                      <span
+                        className={`font-['Orbitron'] text-xs font-bold truncate ${
+                          isSelected ? 'text-text-primary' : 'text-text-muted'
+                        }`}
+                        title={group.parent.name}
+                      >
+                        {group.parent.name}
                       </span>
                     </div>
 
-                    {/* Right: Parent Overall Accuracy & Studied Progress */}
-                    <div className="flex items-center gap-6 sm:gap-8 shrink-0 pl-7 sm:pl-0">
-                      {/* Overall Accuracy */}
-                      <div className="flex flex-col w-32 sm:w-36">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[10px] font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted">
-                            Overall Acc
-                          </span>
-                          <span className={`font-['Orbitron'] text-xs font-bold ${parentBadgeStyle.text}`}>
-                            {parentAccDisplay}
+                    {/* Right: Accuracy & Attempt pill */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {hasWeakSubs && (
+                        <span
+                          className="w-1.5 h-1.5 rounded-full bg-amber-400 shrink-0"
+                          title="Contains certified weak competencies"
+                        />
+                      )}
+                      {group.accuracy !== null && group.totalAnswers > 0 ? (
+                        <div
+                          className={`px-2 py-0.5 rounded text-[11px] font-['JetBrains_Mono'] font-bold border ${groupBadgeStyle.bg} ${groupBadgeStyle.border} ${groupBadgeStyle.text}`}
+                        >
+                          {Math.round(group.accuracy * 100)}%
+                          <span className="text-[9px] opacity-75 font-normal ml-1">
+                            ({group.totalAnswers} att)
                           </span>
                         </div>
-                        <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden border border-border-base/40">
-                          {group.accuracy !== null && group.totalAnswers > 0 ? (
-                            <div
-                              className={`h-full ${parentBadgeStyle.barColor} transition-all duration-500 rounded-full`}
-                              style={{ width: `${Math.min(100, Math.max(3, group.accuracy * 100))}%` }}
-                            />
-                          ) : (
-                            <div className="h-full bg-border-base/40 w-0" />
-                          )}
-                        </div>
-                        <span className="text-[10px] font-['JetBrains_Mono'] text-text-muted/80 mt-1 truncate">
-                          {group.totalAnswers > 0
-                            ? `${group.correctAnswers}✓ · ${group.wrongAnswers}✗ (${group.totalAnswers} att)`
-                            : '0 attempts'}
+                      ) : (
+                        <span className="px-1.5 py-0.5 rounded text-[10px] font-['JetBrains_Mono'] text-[#555] bg-[#141414] border border-[#222]">
+                          Untested
                         </span>
-                      </div>
-
-                      {/* Overall Studied */}
-                      <div className="flex flex-col w-28 sm:w-32">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-[10px] font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted">
-                            Coverage
-                          </span>
-                          <span className="font-['Orbitron'] text-xs font-bold text-text-primary">
-                            {group.studyProgress}%
-                          </span>
-                        </div>
-                        <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden border border-border-base/40">
-                          <div
-                            className="h-full bg-accent/70 transition-all duration-500 rounded-full"
-                            style={{ width: `${Math.min(100, group.studyProgress)}%` }}
-                          />
-                        </div>
-                        <span className="text-[10px] font-['JetBrains_Mono'] text-text-muted/80 mt-1 truncate">
-                          {group.studiedCards} / {group.totalCards} cards
-                        </span>
-                      </div>
+                      )}
                     </div>
                   </div>
-
-                  {/* Subtopics List (1.1, 1.2, 1.3...) */}
-                  {isExpanded && (
-                    <div className="divide-y divide-border-base/30 bg-[#121212]/60">
-                      {group.subtopics.map((sub) => {
-                        const subBadgeStyle = getAccuracyBadgeStyle(sub.accuracy, sub.totalAnswers)
-                        const subAccDisplay =
-                          sub.accuracy !== null && sub.totalAnswers > 0
-                            ? `${Math.round(sub.accuracy * 100)}%`
-                            : '—'
-
-                        return (
-                          <div
-                            key={sub.id}
-                            className="p-3 sm:pl-10 sm:pr-4 hover:bg-surface-2/40 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-left group"
-                          >
-                            {/* Decimal Topic Code & Title */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                <span className="font-['JetBrains_Mono'] text-xs font-bold text-accent shrink-0">
-                                  {sub.code}
-                                </span>
-
-                                <span
-                                  className={`text-[9px] font-['Rajdhani'] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider shrink-0 ${subBadgeStyle.bg} ${subBadgeStyle.border} ${subBadgeStyle.text}`}
-                                >
-                                  {subBadgeStyle.label}
-                                </span>
-
-                                {subBadgeStyle.isWeak && (
-                                  <span className="flex items-center gap-1 text-[9px] font-['Rajdhani'] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">
-                                    <AlertTriangle size={10} />
-                                    Weak Spot
-                                  </span>
-                                )}
-
-                                {sub.totalAnswers > 0 && sub.totalAnswers < 3 && (
-                                  <span
-                                    className="flex items-center gap-1 text-[9px] font-['Rajdhani'] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20 shrink-0"
-                                    title="Under 3 attempts. Baseline calibration in progress."
-                                  >
-                                    <Info size={10} />
-                                    Low Sample
-                                  </span>
-                                )}
-                              </div>
-
-                              <h4
-                                className="font-['Rajdhani'] font-semibold text-xs sm:text-sm text-text-primary tracking-wide truncate group-hover:text-accent transition-colors"
-                                title={sub.title}
-                              >
-                                {sub.title}
-                              </h4>
-                            </div>
-
-                            {/* Subtopic Accuracy Bar & Numerical Stats */}
-                            <div className="flex items-center gap-6 sm:gap-8 shrink-0 pl-5 sm:pl-0">
-                              {/* Subtopic Accuracy */}
-                              <div className="flex flex-col w-32 sm:w-36">
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="text-[10px] font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted">
-                                    Accuracy
-                                  </span>
-                                  <span className={`font-['Orbitron'] text-xs font-bold ${subBadgeStyle.text}`}>
-                                    {subAccDisplay}
-                                  </span>
-                                </div>
-
-                                <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden border border-border-base/40">
-                                  {sub.accuracy !== null && sub.totalAnswers > 0 ? (
-                                    <div
-                                      className={`h-full ${subBadgeStyle.barColor} transition-all duration-500 rounded-full`}
-                                      style={{
-                                        width: `${Math.min(100, Math.max(3, sub.accuracy * 100))}%`,
-                                      }}
-                                    />
-                                  ) : (
-                                    <div className="h-full bg-border-base/40 w-0" />
-                                  )}
-                                </div>
-
-                                <span className="text-[10px] font-['JetBrains_Mono'] text-text-muted/80 mt-1 truncate">
-                                  {sub.totalAnswers > 0
-                                    ? `${sub.correctAnswers}✓ · ${sub.wrongAnswers}✗ (${sub.totalAnswers} att)`
-                                    : '0 attempts'}
-                                </span>
-                              </div>
-
-                              {/* Subtopic Studied Progress */}
-                              <div className="flex flex-col w-28 sm:w-32">
-                                <div className="flex items-center justify-between mb-1">
-                                  <span className="text-[10px] font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted">
-                                    Studied
-                                  </span>
-                                  <span className="font-['Orbitron'] text-xs font-bold text-text-primary">
-                                    {sub.studyProgress}%
-                                  </span>
-                                </div>
-
-                                <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden border border-border-base/40">
-                                  <div
-                                    className="h-full bg-accent/70 transition-all duration-500 rounded-full"
-                                    style={{ width: `${Math.min(100, sub.studyProgress)}%` }}
-                                  />
-                                </div>
-
-                                <span className="text-[10px] font-['JetBrains_Mono'] text-text-muted/80 mt-1 truncate">
-                                  {sub.studiedCards} / {sub.totalCards} cards
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
+                )
+              })
+            )}
           </div>
-        )}
+        </div>
+
+        {/* Right Column: Detail Pane for Selected Topic */}
+        <div className="md:col-span-7 lg:col-span-8 flex flex-col h-[380px] md:h-full min-h-0 bg-[#0C0C0C]">
+          {activeGroup ? (
+            <>
+              {/* Detail Header */}
+              <div className="shrink-0 p-3.5 sm:p-4 bg-[#111] border-b border-border-base flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex flex-col gap-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className="px-2 py-0.5 rounded text-[10px] font-['Rajdhani'] font-bold uppercase tracking-wider"
+                      style={{
+                        color: TOS_SUBJECT_COLORS[activeGroup.subject]?.accent || '#00FF41',
+                        backgroundColor: `${TOS_SUBJECT_COLORS[activeGroup.subject]?.accent || '#00FF41'}15`,
+                        border: `1px solid ${TOS_SUBJECT_COLORS[activeGroup.subject]?.accent || '#00FF41'}30`,
+                      }}
+                    >
+                      {activeGroup.subject} • {SUBJECT_FULL_NAMES[activeGroup.subject] || activeGroup.subject}
+                    </span>
+                    <span className="font-['JetBrains_Mono'] text-xs text-accent font-bold">
+                      • {activeGroup.totalCards.toLocaleString()} cards
+                    </span>
+                    <span className="font-['JetBrains_Mono'] text-xs text-text-muted">
+                      • {activeGroup.subtopics.length} {activeGroup.subtopics.length === 1 ? 'subtopic' : 'subtopics'}
+                    </span>
+                  </div>
+                  <h3 className="font-['Orbitron'] text-sm sm:text-base font-bold text-text-primary tracking-wide">
+                    {activeGroup.parent.name}
+                  </h3>
+                </div>
+
+                {/* Parent Overall Accuracy & Studied Progress Meters */}
+                <div className="flex items-center gap-5 sm:gap-6 shrink-0 self-start sm:self-center">
+                  {/* Overall Acc */}
+                  <div className="flex flex-col w-28 sm:w-32">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted">
+                        Overall Acc
+                      </span>
+                      <span
+                        className={`font-['Orbitron'] text-xs font-bold ${
+                          getAccuracyBadgeStyle(activeGroup.accuracy, activeGroup.totalAnswers).text
+                        }`}
+                      >
+                        {activeGroup.accuracy !== null && activeGroup.totalAnswers > 0
+                          ? `${Math.round(activeGroup.accuracy * 100)}%`
+                          : '—'}
+                      </span>
+                    </div>
+                    <div className="w-full h-1.5 bg-black/60 rounded-full overflow-hidden border border-[#222]">
+                      {activeGroup.accuracy !== null && activeGroup.totalAnswers > 0 ? (
+                        <div
+                          className={`h-full ${
+                            getAccuracyBadgeStyle(activeGroup.accuracy, activeGroup.totalAnswers).barColor
+                          } transition-all duration-500 rounded-full`}
+                          style={{ width: `${Math.min(100, Math.max(3, activeGroup.accuracy * 100))}%` }}
+                        />
+                      ) : (
+                        <div className="h-full bg-border-base/40 w-0" />
+                      )}
+                    </div>
+                    <span className="text-[10px] font-['JetBrains_Mono'] text-text-muted/80 mt-1 truncate">
+                      {activeGroup.totalAnswers > 0
+                        ? `${activeGroup.correctAnswers}✓ · ${activeGroup.wrongAnswers}✗ (${activeGroup.totalAnswers} att)`
+                        : '0 attempts'}
+                    </span>
+                  </div>
+
+                  {/* Coverage */}
+                  <div className="flex flex-col w-24 sm:w-28">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted">
+                        Coverage
+                      </span>
+                      <span className="font-['Orbitron'] text-xs font-bold text-text-primary">
+                        {activeGroup.studyProgress}%
+                      </span>
+                    </div>
+                    <div className="w-full h-1.5 bg-black/60 rounded-full overflow-hidden border border-[#222]">
+                      <div
+                        className="h-full bg-accent/70 transition-all duration-500 rounded-full"
+                        style={{ width: `${Math.min(100, activeGroup.studyProgress)}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] font-['JetBrains_Mono'] text-text-muted/80 mt-1 truncate">
+                      {activeGroup.studiedCards} / {activeGroup.totalCards} cards
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Subtopics List */}
+              <div className="overflow-y-auto show-scrollbar flex-1 min-h-0 p-3 sm:p-4 space-y-2 pb-6">
+                {activeGroup.subtopics.map((sub) => {
+                  const subBadgeStyle = getAccuracyBadgeStyle(sub.accuracy, sub.totalAnswers)
+                  const subAccDisplay =
+                    sub.accuracy !== null && sub.totalAnswers > 0
+                      ? `${Math.round(sub.accuracy * 100)}%`
+                      : '—'
+
+                  return (
+                    <div
+                      key={sub.id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-2.5 sm:p-3 rounded-lg border bg-[#101010] border-[#222] hover:border-accent/40 hover:bg-[#141414] transition-all gap-2.5 group"
+                    >
+                      {/* Left: Indicator dot + Code + Badges + Title */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span
+                            className="w-1.5 h-1.5 rounded-full shrink-0"
+                            style={{
+                              backgroundColor:
+                                sub.accuracy === null || sub.totalAnswers === 0
+                                  ? '#555'
+                                  : sub.accuracy < 0.5 && sub.totalAnswers >= 3
+                                  ? '#ef4444'
+                                  : sub.accuracy < 0.7 && sub.totalAnswers >= 3
+                                  ? '#f59e0b'
+                                  : sub.totalAnswers < 3
+                                  ? '#3b82f6'
+                                  : '#00FF41',
+                            }}
+                          />
+                          <span className="font-['JetBrains_Mono'] text-xs font-bold text-accent shrink-0">
+                            {sub.id}
+                          </span>
+                          <span
+                            className={`text-[9px] font-['Rajdhani'] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider shrink-0 ${subBadgeStyle.bg} ${subBadgeStyle.border} ${subBadgeStyle.text}`}
+                          >
+                            {subBadgeStyle.label}
+                          </span>
+                          {subBadgeStyle.isWeak && (
+                            <span className="flex items-center gap-1 text-[9px] font-['Rajdhani'] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">
+                              <AlertTriangle size={10} />
+                              Weak Spot
+                            </span>
+                          )}
+                          {sub.totalAnswers > 0 && sub.totalAnswers < 3 && (
+                            <span
+                              className="flex items-center gap-1 text-[9px] font-['Rajdhani'] text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded border border-blue-500/20 shrink-0"
+                              title="Under 3 attempts. Baseline calibration in progress."
+                            >
+                              <Info size={10} />
+                              Low Sample
+                            </span>
+                          )}
+                        </div>
+
+                        <h4
+                          className="font-['Rajdhani'] font-semibold text-xs sm:text-sm text-text-primary tracking-wide truncate group-hover:text-accent transition-colors"
+                          title={sub.title}
+                        >
+                          {sub.title}
+                        </h4>
+                      </div>
+
+                      {/* Right: Accuracy & Studied Progress Meters */}
+                      <div className="flex items-center gap-4 sm:gap-6 shrink-0 pl-3.5 sm:pl-0">
+                        {/* Accuracy Meter */}
+                        <div className="flex flex-col w-28 sm:w-32">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[9px] font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted">
+                              Accuracy
+                            </span>
+                            <span className={`font-['Orbitron'] text-xs font-bold ${subBadgeStyle.text}`}>
+                              {subAccDisplay}
+                            </span>
+                          </div>
+                          <div className="w-full h-1.5 bg-black/60 rounded-full overflow-hidden border border-[#222]">
+                            {sub.accuracy !== null && sub.totalAnswers > 0 ? (
+                              <div
+                                className={`h-full ${subBadgeStyle.barColor} transition-all duration-500 rounded-full`}
+                                style={{ width: `${Math.min(100, Math.max(3, sub.accuracy * 100))}%` }}
+                              />
+                            ) : (
+                              <div className="h-full bg-border-base/40 w-0" />
+                            )}
+                          </div>
+                          <span className="text-[10px] font-['JetBrains_Mono'] text-text-muted/80 mt-1 truncate">
+                            {sub.totalAnswers > 0
+                              ? `${sub.correctAnswers}✓ · ${sub.wrongAnswers}✗ (${sub.totalAnswers} att)`
+                              : '0 attempts'}
+                          </span>
+                        </div>
+
+                        {/* Studied Meter */}
+                        <div className="flex flex-col w-24 sm:w-28">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[9px] font-['Rajdhani'] font-bold uppercase tracking-wider text-text-muted">
+                              Studied
+                            </span>
+                            <span className="font-['Orbitron'] text-xs font-bold text-text-primary">
+                              {sub.studyProgress}%
+                            </span>
+                          </div>
+                          <div className="w-full h-1.5 bg-black/60 rounded-full overflow-hidden border border-[#222]">
+                            <div
+                              className="h-full bg-accent/70 transition-all duration-500 rounded-full"
+                              style={{ width: `${Math.min(100, sub.studyProgress)}%` }}
+                            />
+                          </div>
+                          <span className="text-[10px] font-['JetBrains_Mono'] text-text-muted/80 mt-1 truncate">
+                            {sub.studiedCards} / {sub.totalCards} cards
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex flex-col items-center justify-center p-6 text-center text-text-muted font-['JetBrains_Mono'] text-xs gap-2">
+              <p>No topic selected or matching current filter.</p>
+              {(search || weakOnly) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch('')
+                    setWeakOnly(false)
+                  }}
+                  className="text-accent underline text-xs font-['Rajdhani'] font-bold uppercase tracking-wider cursor-pointer"
+                >
+                  Clear filters
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
 }
+
+export default GauntletTopicAccuracyDemo
