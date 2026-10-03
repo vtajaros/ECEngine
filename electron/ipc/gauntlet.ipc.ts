@@ -86,6 +86,12 @@ const ReinsertQuestionsSchema = z.object({
   cardIds: z.array(z.string().min(1)),
 })
 
+const GetTopicAccuracyStatsSchema = z.object({
+  subject: SubjectSchema.optional(),
+  scope: z.enum(['gauntlet', 'all']).optional().default('gauntlet'),
+  sortBy: z.enum(['code', 'accuracy_asc', 'accuracy_desc', 'misses', 'attempts']).optional().default('code'),
+}).optional()
+
 const fail = (e: unknown) => ({ success: false, error: (e as Error).message })
 
 export function registerGauntletHandlers(): void {
@@ -238,6 +244,23 @@ export function registerGauntletHandlers(): void {
       const { cardIds } = ReinsertQuestionsSchema.parse(payload)
       G.reinsertQuestions(getDB(), cardIds)
       return { success: true }
+    } catch (e) {
+      return fail(e)
+    }
+  })
+
+  ipcMain.handle('gauntlet:getTopicAccuracyStats', async (_, payload: unknown) => {
+    try {
+      const parsed = GetTopicAccuracyStatsSchema.parse(payload)
+      return {
+        success: true,
+        data: G.getTosTopicPerformanceStats(
+          getDB(),
+          parsed?.subject,
+          parsed?.scope ?? 'gauntlet',
+          parsed?.sortBy ?? 'code',
+        ),
+      }
     } catch (e) {
       return fail(e)
     }

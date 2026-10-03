@@ -21,6 +21,7 @@ import {
   getGauntletEdaStats,
   getExcludedGauntletQuestions,
   reinsertQuestions,
+  getTosTopicPerformanceStats,
 } from './gauntlet'
 
 const SCHEMA = `
@@ -1099,6 +1100,95 @@ describe('Gauntlet DB persistence', () => {
       reinsertQuestions(db, ['c-calc2'])
       pool = getPoolSizes(db)
       expect(pool.EST).toBe(2) // Both cards are now in the pool!
+    })
+  })
+
+  describe('getTosTopicPerformanceStats', () => {
+    it('returns natural sorted topics, accuracy, and study progress with scope support', () => {
+      const db = createFreshDB()
+
+      // Insert topics and cards across multiple ToS codes including 1.2 and 1.10
+      db.prepare("INSERT INTO topics (id, name, subject) VALUES ('t1', 'Calculus', 'Mathematics')").run()
+      db.prepare("INSERT INTO topics (id, name, subject) VALUES ('t2', 'Electronics', 'Electronics Engineering')").run()
+
+      db.prepare(`
+        INSERT INTO cards (id, topic_id, type, data, difficulty, tags, tos_topic_id, created_at)
+        VALUES 
+          ('c1', 't1', 'mcq', '{"question":"Limit 1","options":["A","B"],"answer":0}', 'medium', '', 'MATH-1.1', 1000),
+          ('c2', 't1', 'mcq', '{"question":"Deriv 1","options":["A","B"],"answer":0}', 'medium', '', 'MATH-1.2', 1000),
+          ('c3', 't1', 'mcq', '{"question":"Deriv 2","options":["A","B"],"answer":0}', 'medium', '', 'MATH-1.10', 1000),
+          ('c4', 't2', 'mcq', '{"question":"Circuit 1","options":["A","B"],"answer":0}', 'medium', '', 'ELECS-1.1', 1000)
+      `).run()
+
+      // Insert Gauntlet answers
+      db.prepare(`
+        INSERT INTO gauntlet_answers (run_id, seq, card_id, subject, chosen, answer_index, outcome, time_ms, par_ms, points, streak_after, answered_at)
+        VALUES
+          ('r1', 1, 'c1', 'MATH', 0, 0, 'correct', 1000, 1000, 10, 1, 1000),
+          ('r1', 2, 'c1', 'MATH', 1, 0, 'wrong', 1200, 1000, 0, 0, 1100),
+          ('r1', 3, 'c2', 'MATH', 1, 0, 'wrong', 1200, 1000, 0, 0, 1200)
+      `).run()
+
+      // 1. Check default gauntlet scope and numeric syllabus sort
+      const stats = getTosTopicPerformanceStats(db)
+      expect(stats.length).toBe(4)
+      
+      // Check numeric sorting of MATH topics: 1.1, 1.2, then 1.10 (not lexicographical 1.10 before 1.2)
+      const mathStats = stats.filter(s => s.subject === 'MATH')
+      expect(mathStats.map(s => s.code)).toEqual(['1.1', '1.2', '1.10'])
+
+      // Check stats for MATH-1.1
+      const s1 = stats.find(s => s.tosTopicId === 'MATH-1.1')!
+      expect(s1.totalCards).toBe(1)
+      expect(s1.studiedCards).toBe(1)
+      expect(s1.totalAnswers).toBe(2)
+      expect(s1.correctAnswers).toBe(1)
+      expect(s1.wrongAnswers).toBe(1)
+      expect(s1.accuracy).toBe(0.5) // 50%
+      expect(s1.studyProgress).toBe(100)
+
+      // Check stats for MATH-1.2
+      const s2 = stats.find(s => s.tosTopicId === 'MATH-1.2')!
+      expect(s2.accuracy).toBe(0) // 0%
+      expect(s2.wrongAnswers).toBe(1)
+
+      // Check stats for untested topic MATH-1.10
+      const s3 = stats.find(s => s.tosTopicId === 'MATH-1.10')!
+      expect(s3.accuracy).toBeNull()
+      expect(s3.totalAnswers).toBe(0)
+
+      // 2. Filter by subject
+      const elecsOnly = getTosTopicPerformanceStats(db, 'ELECS')
+      expect(elecsOnly.length).toBe(1)
+      expect(elecsOnly[0].subject).toBe('ELECS')
+
+      // 3. Sort by lowest accuracy
+      const sortedByAcc = getTosTopicPerformanceStats(db, undefined, 'gauntlet', 'accuracy_asc')
+      // MATH-1.2 (0%) should come before MATH-1.1 (50%)
+      expect(sortedByAcc[0].tosTopicId).toBe('MATH-1.2')
+
+      // 4. Test 'all' scope with attempt_log table
+      db.prepare(`
+        CREATE TABLE IF NOT EXISTS attempt_log (
+          id TEXT PRIMARY KEY,
+          card_id TEXT,
+          mode TEXT,
+          correct INTEGER,
+          created_at INTEGER
+        )
+      `).run()
+
+      db.prepare(`
+        INSERT INTO attempt_log (id, card_id, mode, correct, created_at)
+        VALUES ('a1', 'c2', 'learn', 1, 2000)
+      `).run()
+
+      const allScopeStats = getTosTopicPerformanceStats(db, undefined, 'all')
+      const s2All = allScopeStats.find(s => s.tosTopicId === 'MATH-1.2')!
+      // In 'all' scope, c2 now has 1 gauntlet wrong + 1 learn correct = 2 total answers, 1 correct => 50%
+      expect(s2All.totalAnswers).toBe(2)
+      expect(s2All.correctAnswers).toBe(1)
+      expect(s2All.accuracy).toBe(0.5)
     })
   })
 })

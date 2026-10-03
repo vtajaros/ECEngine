@@ -22,6 +22,9 @@ export function registerPrintHandlers(getMainWindow: () => Electron.BrowserWindo
 
       const parent = getMainWindow() ?? undefined
 
+      const parentWin = getMainWindow()
+      const savedParentZoom = parentWin && !parentWin.isDestroyed() ? parentWin.webContents.getZoomFactor() : null
+
       printWindow = new BrowserWindow({
         width: 900,
         height: 800,
@@ -37,6 +40,7 @@ export function registerPrintHandlers(getMainWindow: () => Electron.BrowserWindo
         ...(parent ? { parent, modal: false } : {}),
         show: false,
         webPreferences: {
+          partition: 'print',
           zoomFactor: 1.0,
           preload: join(__dirname, '../preload/index.js'),
           contextIsolation: true,
@@ -54,28 +58,45 @@ export function registerPrintHandlers(getMainWindow: () => Electron.BrowserWindo
         printWindow?.webContents.send('window:maximized', false)
       })
 
-      printWindow.on('closed', () => {
-        printWindow = null
-      })
-
       let hasShown = false
+      let fallbackTimer: NodeJS.Timeout | null = null
+
       const showWindowSmoothly = () => {
+        if (fallbackTimer) {
+          clearTimeout(fallbackTimer)
+          fallbackTimer = null
+        }
         if (hasShown || !printWindow || printWindow.isDestroyed()) return
         hasShown = true
-        printWindow.webContents.setZoomFactor(1)
         printWindow.show()
+        if (savedParentZoom !== null && parentWin && !parentWin.isDestroyed()) {
+          parentWin.webContents.setZoomFactor(savedParentZoom)
+        }
       }
 
-      printWindow.once('ready-to-show', showWindowSmoothly)
-      printWindow.webContents.on('dom-ready', showWindowSmoothly)
+      const onPrintReady = () => {
+        showWindowSmoothly()
+      }
+
+      ipcMain.once('print:ready', onPrintReady)
+
+      // Fallback: if renderer does not send print:ready within 1200ms (e.g. empty or error), show anyway
+      fallbackTimer = setTimeout(showWindowSmoothly, 1200)
+
+      printWindow.on('closed', () => {
+        ipcMain.removeListener('print:ready', onPrintReady)
+        if (fallbackTimer) {
+          clearTimeout(fallbackTimer)
+          fallbackTimer = null
+        }
+        printWindow = null
+      })
 
       // Override title AFTER did-finish-load — Chromium applies <title>ECEngine</title>
       // from the HTML after navigation, which overwrites the BrowserWindow constructor title.
       // Hooking did-finish-load guarantees our title wins every time.
       printWindow.webContents.on('did-finish-load', () => {
         printWindow?.setTitle(`Test Paper View — ${title}`)
-        // Fallback in case ready-to-show was already triggered or delayed by window manager
-        setTimeout(showWindowSmoothly, 50)
       })
 
       if (process.env['ELECTRON_RENDERER_URL']) {

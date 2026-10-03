@@ -229,6 +229,26 @@ declare global {
           offset?: number
         }) => Promise<{ success: boolean; data?: any; error?: string }>
         reinsertQuestions: (payload: { cardIds: string[] }) => Promise<{ success: boolean; error?: string }>
+        getTopicAccuracyStats: (payload?: {
+          subject?: string
+          scope?: 'gauntlet' | 'all'
+          sortBy?: 'code' | 'accuracy_asc' | 'accuracy_desc' | 'misses' | 'attempts'
+        }) => Promise<{
+          success: boolean
+          data?: Array<{
+            tosTopicId: string
+            code: string
+            subject: 'MATH' | 'GEAS' | 'ELECS' | 'EST'
+            totalCards: number
+            studiedCards: number
+            totalAnswers: number
+            correctAnswers: number
+            wrongAnswers: number
+            accuracy: number | null
+            studyProgress: number
+          }>
+          error?: string
+        }>
       }
       file: {
         import: (filePath?: string) => Promise<{ success: boolean; data?: string; canceled?: boolean; error?: string }>
@@ -312,6 +332,7 @@ declare global {
       }
       print: {
         open: (topicId: string, title: string) => Promise<{ success: boolean; error?: string }>
+        sendReady?: () => void
         toPDF: (
           suggestedName: string,
           themeVars: Record<string, string>,

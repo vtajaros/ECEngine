@@ -257,6 +257,185 @@ export function getWeakTosTopics(
   }
 }
 
+export interface TosTopicPerformanceStat {
+  tosTopicId: string
+  code: string
+  subject: GauntletSubjectCode
+  totalCards: number
+  studiedCards: number
+  totalAnswers: number
+  correctAnswers: number
+  wrongAnswers: number
+  accuracy: number | null
+  studyProgress: number
+}
+
+/**
+ * Return comprehensive performance statistics for all ToS topics in the syllabus.
+ * Supports filtering by subject, scope (Gauntlet-only vs All study modes), and sorting.
+ */
+export function getTosTopicPerformanceStats(
+  db: Database.Database,
+  subject?: GauntletSubjectCode,
+  scope: 'gauntlet' | 'all' = 'gauntlet',
+  sortBy: 'code' | 'accuracy_asc' | 'accuracy_desc' | 'misses' | 'attempts' = 'code',
+): TosTopicPerformanceStat[] {
+  try {
+    ensureGauntletTables(db)
+
+    const hasAttemptLog = scope === 'all' && !!db.prepare(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name='attempt_log'"
+    ).get()
+
+    let attemptsSql = `
+      SELECT a.card_id, a.outcome, CASE WHEN a.outcome = 'correct' THEN 1 ELSE 0 END as is_correct
+      FROM gauntlet_answers a
+    `
+    if (hasAttemptLog) {
+      attemptsSql += `
+        UNION ALL
+        SELECT card_id, CASE WHEN correct = 1 THEN 'correct' ELSE 'wrong' END as outcome, correct as is_correct
+        FROM attempt_log
+      `
+    }
+
+    let sql = `
+      WITH card_counts AS (
+        SELECT c.tos_topic_id,
+               t.subject,
+               COUNT(DISTINCT c.id) as total_cards
+        FROM cards c
+        JOIN topics t ON t.id = c.topic_id
+        WHERE c.tos_topic_id IS NOT NULL AND c.tos_topic_id != ''
+        GROUP BY c.tos_topic_id
+      ),
+      answer_counts AS (
+        SELECT c.tos_topic_id,
+               COUNT(*) as total_answers,
+               SUM(CASE WHEN u.outcome = 'correct' THEN 1 ELSE 0 END) as correct_answers,
+               SUM(CASE WHEN u.outcome IN ('wrong', 'timeout') THEN 1 ELSE 0 END) as wrong_answers,
+               COUNT(DISTINCT u.card_id) as studied_cards
+        FROM (${attemptsSql}) u
+        JOIN cards c ON c.id = u.card_id
+        WHERE c.tos_topic_id IS NOT NULL AND c.tos_topic_id != ''
+        GROUP BY c.tos_topic_id
+      )
+      SELECT cc.tos_topic_id,
+             cc.subject,
+             cc.total_cards,
+             COALESCE(ac.studied_cards, 0) as studied_cards,
+             COALESCE(ac.total_answers, 0) as total_answers,
+             COALESCE(ac.correct_answers, 0) as correct_answers,
+             COALESCE(ac.wrong_answers, 0) as wrong_answers
+      FROM card_counts cc
+      LEFT JOIN answer_counts ac ON ac.tos_topic_id = cc.tos_topic_id
+    `
+
+    const params: unknown[] = []
+    if (subject) {
+      sql += ` WHERE cc.subject = ?`
+      params.push(SUBJECT_DB_NAME[subject])
+    }
+
+    const rows = db.prepare(sql).all(...params) as Array<{
+      tos_topic_id: string
+      subject: string
+      total_cards: number
+      studied_cards: number
+      total_answers: number
+      correct_answers: number
+      wrong_answers: number
+    }>
+
+    const stats: TosTopicPerformanceStat[] = rows.map((r) => {
+      let code: GauntletSubjectCode = 'MATH'
+      for (const [k, v] of Object.entries(SUBJECT_DB_NAME)) {
+        if (v === r.subject) {
+          code = k as GauntletSubjectCode
+          break
+        }
+      }
+      const parts = r.tos_topic_id.split('-')
+      const topicCode = parts.length > 1 ? parts.slice(1).join('-') : r.tos_topic_id
+      const totalAnswers = Number(r.total_answers) || 0
+      const correctAnswers = Number(r.correct_answers) || 0
+      const wrongAnswers = Number(r.wrong_answers) || 0
+      const totalCards = Number(r.total_cards) || 0
+      const studiedCards = Number(r.studied_cards) || 0
+
+      const accuracy = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) / 100 : null
+      const studyProgress = totalCards > 0 ? Math.round((studiedCards / totalCards) * 1000) / 10 : 0
+
+      return {
+        tosTopicId: r.tos_topic_id,
+        code: topicCode,
+        subject: code,
+        totalCards,
+        studiedCards,
+        totalAnswers,
+        correctAnswers,
+        wrongAnswers,
+        accuracy,
+        studyProgress,
+      }
+    })
+
+    const parseCodeNums = (c: string): number[] => {
+      return c.split('.').map(p => Number(p) || 0)
+    }
+
+    const compareCodes = (a: string, b: string): number => {
+      const aNums = parseCodeNums(a)
+      const bNums = parseCodeNums(b)
+      const maxLen = Math.max(aNums.length, bNums.length)
+      for (let i = 0; i < maxLen; i++) {
+        const aVal = aNums[i] ?? 0
+        const bVal = bNums[i] ?? 0
+        if (aVal !== bVal) return aVal - bVal
+      }
+      return a.localeCompare(b)
+    }
+
+    stats.sort((a, b) => {
+      if (sortBy === 'code') {
+        if (a.subject !== b.subject) {
+          const subOrder: GauntletSubjectCode[] = ['MATH', 'GEAS', 'ELECS', 'EST']
+          return subOrder.indexOf(a.subject) - subOrder.indexOf(b.subject)
+        }
+        return compareCodes(a.code, b.code)
+      }
+      if (sortBy === 'accuracy_asc') {
+        if (a.accuracy === null && b.accuracy === null) return compareCodes(a.code, b.code)
+        if (a.accuracy === null) return 1
+        if (b.accuracy === null) return -1
+        if (a.accuracy !== b.accuracy) return a.accuracy - b.accuracy
+        return b.wrongAnswers - a.wrongAnswers
+      }
+      if (sortBy === 'accuracy_desc') {
+        if (a.accuracy === null && b.accuracy === null) return compareCodes(a.code, b.code)
+        if (a.accuracy === null) return 1
+        if (b.accuracy === null) return -1
+        if (a.accuracy !== b.accuracy) return b.accuracy - a.accuracy
+        return b.totalAnswers - a.totalAnswers
+      }
+      if (sortBy === 'misses') {
+        if (a.wrongAnswers !== b.wrongAnswers) return b.wrongAnswers - a.wrongAnswers
+        return compareCodes(a.code, b.code)
+      }
+      if (sortBy === 'attempts') {
+        if (a.totalAnswers !== b.totalAnswers) return b.totalAnswers - a.totalAnswers
+        return compareCodes(a.code, b.code)
+      }
+      return compareCodes(a.code, b.code)
+    })
+
+    return stats
+  } catch (err) {
+    console.error('getTosTopicPerformanceStats error:', err)
+    return []
+  }
+}
+
 /** Random MCQs for one subject: prioritizing struggling TOS topics, then unseen-in-Gauntlet first, then previously seen, always random within each group. */
 export function sampleQuestions(
   db: Database.Database,

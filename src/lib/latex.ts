@@ -261,6 +261,24 @@ function renderProseSegment(segment: string): string {
   return parts.join('')
 }
 
+const MATH_CACHE = new Map<string, string>()
+const PLAIN_TEXT_CACHE = new Map<string, string>()
+const MAX_CACHE_SIZE = 2000
+
+export const clearLatexCache = (): void => {
+  MATH_CACHE.clear()
+  PLAIN_TEXT_CACHE.clear()
+}
+
+function setCached(cache: Map<string, string>, key: string, value: string): string {
+  if (cache.size >= MAX_CACHE_SIZE) {
+    const firstKey = cache.keys().next().value
+    if (firstKey !== undefined) cache.delete(firstKey)
+  }
+  cache.set(key, value)
+  return value
+}
+
 /**
  * Render inline LaTeX math expressions within text.
  * Handles three cases:
@@ -273,6 +291,8 @@ function renderProseSegment(segment: string): string {
  */
 export const renderMath = (text: string): string => {
   if (!text || typeof text !== 'string') return ''
+  const cached = MATH_CACHE.get(text)
+  if (cached !== undefined) return cached
 
   // ── Auto-brace multi-character subscripts/superscripts & normalize non-standard commands ──
   const normalized = normalizeLatexSubscriptsAndSuperscripts(text)
@@ -304,15 +324,19 @@ export const renderMath = (text: string): string => {
     const hasFormatting = /\*\*|\*[^*]|__/.test(t)
     if (!hasFormatting) {
       try {
-        return restoreCurrencyTokens(
-          katex.renderToString(t, {
-            throwOnError: true,
-            displayMode: true,
-            trust: true
-          })
+        return setCached(
+          MATH_CACHE,
+          text,
+          restoreCurrencyTokens(
+            katex.renderToString(t, {
+              throwOnError: true,
+              displayMode: true,
+              trust: true
+            })
+          )
         )
       } catch {
-        return restoreCurrencyTokens(renderSegment(t))
+        return setCached(MATH_CACHE, text, restoreCurrencyTokens(renderSegment(t)))
       }
     }
   }
@@ -347,11 +371,11 @@ export const renderMath = (text: string): string => {
   }
 
   if (segments.length > 0) {
-    return restoreCurrencyTokens(segments.join(''))
+    return setCached(MATH_CACHE, text, restoreCurrencyTokens(segments.join('')))
   }
 
   // ── Pure plain text: no math at all ──
-  return restoreCurrencyTokens(renderProseSegment(t))
+  return setCached(MATH_CACHE, text, restoreCurrencyTokens(renderProseSegment(t)))
 }
 
 /**
@@ -362,7 +386,10 @@ export const renderMath = (text: string): string => {
  */
 export const renderPlainText = (text: string): string => {
   if (!text || typeof text !== 'string') return ''
-  return restoreCurrencyTokens(applyInlineFormatting(renderSegment(protectCurrencyAndEscapedDollars(text))))
+  const cached = PLAIN_TEXT_CACHE.get(text)
+  if (cached !== undefined) return cached
+  const result = restoreCurrencyTokens(applyInlineFormatting(renderSegment(protectCurrencyAndEscapedDollars(text))))
+  return setCached(PLAIN_TEXT_CACHE, text, result)
 }
 
 /**

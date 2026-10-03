@@ -19,6 +19,7 @@ import { GauntletEloTrajectoryDemo } from './gauntlet/GauntletEloTrajectoryDemo'
 import { GauntletCoverageDensityDemo } from './gauntlet/GauntletCoverageDensityDemo'
 import { GauntletEnduranceStreakDemo } from './gauntlet/GauntletEnduranceStreakDemo'
 import { GauntletExcludedQuestionsDemo } from './gauntlet/GauntletExcludedQuestionsDemo'
+import { GauntletTopicAccuracyDemo } from './gauntlet/GauntletTopicAccuracyDemo'
 import { TosCardSearchDemo } from './TosCardSearchDemo'
 import { useDataLabStore } from '../../../store/useDataLabStore'
 import { gauntletService } from '../../../services/gauntlet.service'
@@ -1030,6 +1031,32 @@ describe('Data Lab Demo Components', () => {
       })
 
       expect(gauntletService.unflagQuestion).toHaveBeenCalledWith('c-flag-1')
+    })
+
+    it('renders GauntletTopicAccuracyDemo with hierarchical parents and subtopics', async () => {
+      vi.spyOn(gauntletService, 'getTopicAccuracyStats').mockResolvedValue([
+        {
+          tosTopicId: 'MATH-1.1',
+          code: '1.1',
+          subject: 'MATH',
+          totalCards: 10,
+          studiedCards: 5,
+          totalAnswers: 8,
+          correctAnswers: 6,
+          wrongAnswers: 2,
+          accuracy: 0.75,
+          studyProgress: 50,
+        },
+      ])
+
+      await act(async () => {
+        root!.render(<GauntletTopicAccuracyDemo />)
+        await new Promise((r) => setTimeout(r, 50))
+      })
+
+      expect(container?.textContent).toContain('Topic Accuracy & Mastery')
+      expect(container?.textContent).toContain('Differential Calculus')
+      expect(container?.textContent).toContain('Functions, Continuity, Limits')
     })
   })
 })

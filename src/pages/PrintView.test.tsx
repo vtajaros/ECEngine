@@ -101,4 +101,22 @@ describe('PrintView Find Shortcut', () => {
 
     expect(container?.querySelector('input[placeholder*="Find in document"]')).not.toBeNull()
   })
+
+  it('signals sendReady to Electron once cards and view finish loading', async () => {
+    await renderComponent()
+
+    expect((window as any).electron.print.sendReady).toHaveBeenCalled()
+  })
+
+  it('batches and displays topic description alongside cards', async () => {
+    ;(window as any).electron.decks.getTopics.mockResolvedValueOnce({
+      success: true,
+      data: [{ id: 'topic-1', description: 'Coordinated batch description' }]
+    })
+
+    await renderComponent()
+
+    expect(container?.textContent).toContain('Coordinated batch description')
+    expect(container?.textContent).toContain('Sample question?')
+  })
 })

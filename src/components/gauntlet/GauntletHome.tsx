@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Flame, HelpCircle, History, Award, Target } from 'lucide-react'
 import { GAUNTLET_SUBJECTS, TUNING, overallRating, ratingTier, TIER_COLORS } from '../../lib/gauntlet'
 import { SUBJECT_LINE_COLOR } from '../../lib/dashboardUtils'
@@ -6,7 +7,6 @@ import { useGauntletStore } from '../../store/useGauntletStore'
 import { GauntletFaqModal } from './GauntletFaqModal'
 import { GauntletRecordsModal } from './GauntletRecordsModal'
 import { GauntletRanksModal } from './GauntletRanksModal'
-import { GauntletWeakAreasModal } from './GauntletWeakAreasModal'
 import { Tooltip } from '../ui/Tooltip'
 
 // Number count-up hook (~600ms cubic ease-out)
@@ -37,13 +37,13 @@ function useCountUp(target: number, durationMs = 600): number {
 }
 
 export const GauntletHome: React.FC = () => {
+  const navigate = useNavigate()
   const hub = useGauntletStore(s => s.hub)
   const openSetup = useGauntletStore(s => s.openSetup)
 
   const [isFaqOpen, setIsFaqOpen] = useState(false)
   const [isRecordsOpen, setIsRecordsOpen] = useState(false)
   const [isRanksOpen, setIsRanksOpen] = useState(false)
-  const [isWeakAreasOpen, setIsWeakAreasOpen] = useState(false)
 
   // 3D tilt state for each card
   const [timedTilt, setTimedTilt] = useState({ rx: 0, ry: 0 })
@@ -352,11 +352,12 @@ export const GauntletHome: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => setIsWeakAreasOpen(true)}
+            onClick={() => navigate('/lab?tab=gauntlet')}
             className="text-text-muted hover:text-text-primary text-xs font-['Rajdhani'] font-bold uppercase tracking-widest flex items-center gap-1.5 transition-colors py-1.5 px-3 rounded hover:bg-surface-2 cursor-pointer"
+            title="View syllabus topic accuracy, study penetration & weak area diagnostics"
           >
             <Target size={14} className="text-warn" />
-            Weak Areas
+            Weak Areas & Stats
           </button>
         </div>
       </div>
@@ -370,7 +371,6 @@ export const GauntletHome: React.FC = () => {
       />
       <GauntletFaqModal isOpen={isFaqOpen} onClose={() => setIsFaqOpen(false)} />
       <GauntletRecordsModal isOpen={isRecordsOpen} onClose={() => setIsRecordsOpen(false)} />
-      <GauntletWeakAreasModal isOpen={isWeakAreasOpen} onClose={() => setIsWeakAreasOpen(false)} />
     </div>
   )
 }

@@ -100,14 +100,14 @@ function isFormula(card: Card): card is Card & { data: FormulaData } {
 }
 
 /** Renders text that may contain LaTeX via dangerouslySetInnerHTML. */
-function MathText({ text, style, plainText }: { text: string; style?: React.CSSProperties; plainText?: boolean }) {
+const MathText = React.memo(function MathText({ text, style, plainText }: { text: string; style?: React.CSSProperties; plainText?: boolean }) {
   return (
     <span
       style={style}
       dangerouslySetInnerHTML={{ __html: plainText ? renderPlainText(text) : renderMath(text) }}
     />
   )
-}
+})
 
 /** Clickable image that calls onZoom with the image path when clicked. */
 function ClickableImg({
@@ -143,7 +143,7 @@ interface MCQTableRowProps {
   hideSolutions?: boolean
   onZoom: (src: string) => void
 }
-function MCQTableRow({ index, card, hideAnswers, hideSolutions, onZoom }: MCQTableRowProps) {
+const MCQTableRow = React.memo(function MCQTableRow({ index, card, hideAnswers, hideSolutions, onZoom }: MCQTableRowProps) {
   const { question, choices, answer, explanation, solutionImagePath, imagePath, choicesPlainText } = card.data
   const hasSolution = !hideSolutions && ((explanation && explanation.trim().length > 0) || !!solutionImagePath)
   return (
@@ -231,7 +231,7 @@ function MCQTableRow({ index, card, hideAnswers, hideSolutions, onZoom }: MCQTab
       </td>
     </tr>
   )
-}
+})
 
 interface MCQGlossaryItemProps {
   index: number
@@ -241,7 +241,7 @@ interface MCQGlossaryItemProps {
   hideSolutions?: boolean
   onZoom: (src: string) => void
 }
-function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers, hideSolutions, onZoom }: MCQGlossaryItemProps) {
+const MCQGlossaryItem = React.memo(function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers, hideSolutions, onZoom }: MCQGlossaryItemProps) {
   const { question, choices, answer, imagePath, choicesPlainText, explanation, solutionImagePath } = card.data
   const hasSolution = !hideSolutions && ((explanation && explanation.trim().length > 0) || !!solutionImagePath)
   if (qaMode) {
@@ -361,14 +361,14 @@ function MCQGlossaryItem({ index, card, qaMode = false, hideAnswers, hideSolutio
       )}
     </div>
   )
-}
+})
 
 interface FormulaItemProps {
   index: number
   card: Card & { data: FormulaData }
   onZoom: (src: string) => void
 }
-function FormulaItem({ index, card, onZoom }: FormulaItemProps) {
+const FormulaItem = React.memo(function FormulaItem({ index, card, onZoom }: FormulaItemProps) {
   const { name, latex, variables, imagePath } = card.data
   const vars = variables as unknown
   return (
@@ -414,7 +414,7 @@ function FormulaItem({ index, card, onZoom }: FormulaItemProps) {
       </div>
     </div>
   )
-}
+})
 
 // ---------------------------------------------------------------------------
 // Main Component
@@ -763,40 +763,55 @@ export default function PrintView() {
   useEffect(() => {
     if (!topicId) { setLoading(false); return }
 
-    // Eagerly pre-load Rajdhani font weights so Chromium decodes them immediately
-    if (typeof document !== 'undefined' && document.fonts) {
-      document.fonts.load('500 17px Rajdhani')
-      document.fonts.load('600 18.5px Rajdhani')
-      document.fonts.load('700 18.5px Rajdhani')
-      document.fonts.load('400 17px Rajdhani')
+    const loadFonts = async () => {
+      if (typeof document !== 'undefined' && document.fonts && typeof document.fonts.load === 'function') {
+        try {
+          await Promise.all([
+            document.fonts.load('400 17px Rajdhani'),
+            document.fonts.load('500 16.5px Rajdhani'),
+            document.fonts.load('500 17px Rajdhani'),
+            document.fonts.load('600 18px Rajdhani'),
+            document.fonts.load('600 18.5px Rajdhani'),
+            document.fonts.load('700 12px Rajdhani'),
+            document.fonts.load('700 13px Rajdhani'),
+            document.fonts.load('700 16.5px Rajdhani'),
+            document.fonts.load('700 17px Rajdhani'),
+            document.fonts.load('700 18px Rajdhani'),
+            document.fonts.load('700 18.5px Rajdhani'),
+            document.fonts.load('700 32px Rajdhani'),
+            document.fonts.ready,
+          ])
+        } catch (err) {
+          console.warn('Font loading failed or timed out:', err)
+        }
+      }
     }
 
     const cardsPromise = dbService.getAllCardsByTopic(topicId)
-    const fontsPromise = (typeof document !== 'undefined' && document.fonts)
-      ? Promise.race([
-          document.fonts.ready,
-          new Promise((resolve) => setTimeout(resolve, 200))
-        ])
-      : Promise.resolve()
+    const fontsPromise = loadFonts()
+    const topicsPromise = window.electron?.decks?.getTopics?.() ?? Promise.resolve(null)
 
-    Promise.all([cardsPromise, fontsPromise]).then(([result]) => {
+    Promise.all([cardsPromise, fontsPromise, topicsPromise]).then(([result, _, topicRes]: any) => {
       setCards(result)
+      if (topicRes?.success && topicRes?.data) {
+        const topic = topicRes.data.find((t: any) => t.id === topicId)
+        if (topic?.description) {
+          setTopicDescription(topic.description)
+        }
+      }
       setLoading(false)
     }).catch((err) => {
       console.error(err)
       setLoading(false)
     })
-
-    // Fetch description if any
-    window.electron?.decks?.getTopics?.().then((res: any) => {
-      if (res.success && res.data) {
-        const topic = res.data.find((t: any) => t.id === topicId)
-        if (topic?.description) {
-          setTopicDescription(topic.description)
-        }
-      }
-    }).catch(console.error)
   }, [topicId])
+
+  // Coordinate with Electron window to show only once rendered & fonts decoded
+  useEffect(() => {
+    if (!loading) {
+      window.electron?.print?.sendReady?.()
+    }
+  }, [loading])
 
   // Signal to print.ipc.ts that the PDF render is complete.
   // Fires only in PDF mode, after cards have loaded and React has committed the DOM.
@@ -847,6 +862,38 @@ export default function PrintView() {
   const mcqCards = useMemo(() => cards.filter(isMCQ), [cards])
   const flashcardCards = useMemo(() => cards.filter(isFlashcard), [cards])
   const formulaCards = useMemo(() => cards.filter(isFormula), [cards])
+
+  // Progressive rendering for large decks (>60 cards)
+  const INITIAL_BATCH = 60
+  const [renderedCount, setRenderedCount] = useState(isPdfMode ? 999999 : INITIAL_BATCH)
+
+  useEffect(() => {
+    if (isPdfMode) {
+      setRenderedCount(999999)
+      return
+    }
+    if (renderedCount < cards.length) {
+      const handle = requestAnimationFrame(() => {
+        setRenderedCount((prev) => Math.min(prev + 60, cards.length))
+      })
+      return () => cancelAnimationFrame(handle)
+    }
+  }, [renderedCount, cards.length, isPdfMode])
+
+  const visibleMcqCards = useMemo(() => {
+    if (isPdfMode || renderedCount >= mcqCards.length) return mcqCards
+    return mcqCards.slice(0, renderedCount)
+  }, [mcqCards, renderedCount, isPdfMode])
+
+  const visibleFlashcardCards = useMemo(() => {
+    if (isPdfMode || renderedCount >= flashcardCards.length) return flashcardCards
+    return flashcardCards.slice(0, renderedCount)
+  }, [flashcardCards, renderedCount, isPdfMode])
+
+  const visibleFormulaCards = useMemo(() => {
+    if (isPdfMode || renderedCount >= formulaCards.length) return formulaCards
+    return formulaCards.slice(0, renderedCount)
+  }, [formulaCards, renderedCount, isPdfMode])
 
   const isFlashcardOnly = flashcardCards.length > 0 && mcqCards.length === 0
   const hasFormulas = formulaCards.length > 0
@@ -1305,14 +1352,14 @@ export default function PrintView() {
                 </tr>
               </thead>
               <tbody style={{ display: 'table-row-group' }}>
-                {mcqCards.map((card, i) => (
+                {visibleMcqCards.map((card, i) => (
                   <MCQTableRow key={card.id} index={i + 1} card={card} hideAnswers={!showAnswers} hideSolutions={!showSolutions} onZoom={setZoomedImage} />
                 ))}
               </tbody>
             </table>
           ) : (
             <div>
-              {mcqCards.map((card, i) => (
+              {visibleMcqCards.map((card, i) => (
                 <MCQGlossaryItem key={card.id} index={i + 1} card={card} qaMode={layout === 'qa'} hideAnswers={!showAnswers} hideSolutions={!showSolutions} onZoom={setZoomedImage} />
               ))}
             </div>
@@ -1337,7 +1384,7 @@ export default function PrintView() {
                 </tr>
               </thead>
               <tbody>
-                {flashcardCards.map((card) => {
+                {visibleFlashcardCards.map((card) => {
                   const { front, back, imageFront, imageBack, imagePath } = card.data
                   return (
                     <tr key={card.id} style={{ borderBottom: '1px solid var(--pt-border)', pageBreakInside: 'avoid' }}>
@@ -1378,7 +1425,7 @@ export default function PrintView() {
             </table>
           ) : (
             <div>
-              {flashcardCards.map((card) => {
+              {visibleFlashcardCards.map((card) => {
                 const { front, back, imageFront, imageBack, imagePath } = card.data
                 return (
                   <div key={card.id} style={{ marginBottom: '16px', pageBreakInside: 'avoid' }}>
@@ -1426,7 +1473,7 @@ export default function PrintView() {
           <h2 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--pt-text-body)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '12px', borderBottom: '1px solid var(--pt-border-light)', paddingBottom: '4px' }}>
             Formulas
           </h2>
-          {formulaCards.map((card, i) => (
+          {visibleFormulaCards.map((card, i) => (
             <FormulaItem key={card.id} index={i + 1} card={card} onZoom={setZoomedImage} />
           ))}
         </section>

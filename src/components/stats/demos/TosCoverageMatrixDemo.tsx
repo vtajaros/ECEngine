@@ -261,8 +261,8 @@ export function TosCoverageMatrixDemo() {
       data-testid="tos-coverage-matrix-demo"
     >
       {/* Header & Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border-base/50 pb-3">
-        <div className="flex items-center gap-2.5">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-border-base/50 pb-3">
+        <div className="flex items-center gap-2.5 shrink-0">
           <Layers className="text-accent shrink-0" size={18} />
           <div>
             <h2 className="font-['Orbitron'] text-sm sm:text-base font-bold text-text-primary tracking-wide uppercase">
@@ -274,13 +274,13 @@ export function TosCoverageMatrixDemo() {
           </div>
         </div>
 
-        {/* Header Controls: Sub-tab Switcher & Status Chips */}
-        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+        {/* Header Controls: Sub-tab Switcher & Status Chips (Always unified in a single row without orphaned wrap) */}
+        <div className="flex items-center gap-2 self-start lg:self-auto flex-nowrap overflow-x-auto max-w-full py-0.5 scrollbar-none">
           {/* Sub-tab switcher: ToS Hierarchy vs Card Search vs Gauntlet Excluded */}
-          <div className="flex items-center p-1 bg-[#0c0c0c] rounded-lg border border-border-base">
+          <div className="flex items-center p-0.5 sm:p-1 bg-[#0c0c0c] rounded-lg border border-border-base shrink-0">
             <button
               onClick={() => setActiveMatrixTab('hierarchy')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-[11px] sm:text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all whitespace-nowrap ${
                 activeMatrixTab === 'hierarchy'
                   ? 'bg-accent/15 text-accent border border-accent/40 shadow-[0_0_10px_rgba(0,255,65,0.2)]'
                   : 'text-text-muted hover:text-text-primary border border-transparent'
@@ -291,7 +291,7 @@ export function TosCoverageMatrixDemo() {
             </button>
             <button
               onClick={() => setActiveMatrixTab('cards')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-[11px] sm:text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all whitespace-nowrap ${
                 activeMatrixTab === 'cards'
                   ? 'bg-accent/15 text-accent border border-accent/40 shadow-[0_0_10px_rgba(0,255,65,0.2)]'
                   : 'text-text-muted hover:text-text-primary border border-transparent'
@@ -302,7 +302,7 @@ export function TosCoverageMatrixDemo() {
             </button>
             <button
               onClick={() => setActiveMatrixTab('excluded')}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all text-text-muted hover:text-amber-400 border border-transparent"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-[11px] sm:text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all text-text-muted hover:text-amber-400 border border-transparent whitespace-nowrap"
             >
               <ShieldAlert size={13} />
               <span>Gauntlet Excluded</span>
@@ -325,13 +325,13 @@ export function TosCoverageMatrixDemo() {
                   true
                 )
               }
-              className="px-2.5 py-1 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-['JetBrains_Mono'] font-bold flex items-center gap-1.5 transition-colors"
+              className="px-2.5 py-1 sm:py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 text-[11px] sm:text-xs font-['JetBrains_Mono'] font-bold flex items-center gap-1.5 transition-colors shrink-0 whitespace-nowrap"
             >
               <AlertTriangle size={12} />
               <span>{stats.unclassified} Untagged Cards</span>
             </button>
           ) : (
-            <span className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 text-xs font-['JetBrains_Mono'] font-bold flex items-center gap-1.5">
+            <span className="px-2.5 py-1 sm:py-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 text-[11px] sm:text-xs font-['JetBrains_Mono'] font-bold flex items-center gap-1.5 shrink-0 whitespace-nowrap">
               <CheckCircle2 size={12} />
               <span>100% Classified</span>
             </span>

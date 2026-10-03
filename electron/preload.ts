@@ -112,6 +112,11 @@ contextBridge.exposeInMainWorld('electron', {
     }) => ipcRenderer.invoke('gauntlet:getExcludedQuestions', payload),
     reinsertQuestions: (payload: { cardIds: string[] }) =>
       ipcRenderer.invoke('gauntlet:reinsertQuestions', payload),
+    getTopicAccuracyStats: (payload?: {
+      subject?: string
+      scope?: 'gauntlet' | 'all'
+      sortBy?: 'code' | 'accuracy_asc' | 'accuracy_desc' | 'misses' | 'attempts'
+    }) => ipcRenderer.invoke('gauntlet:getTopicAccuracyStats', payload),
   },
   file: {
     import: (filePath?: string) => ipcRenderer.invoke('file:import', filePath),
@@ -203,6 +208,7 @@ contextBridge.exposeInMainWorld('electron', {
   print: {
     open: (topicId: string, title: string): Promise<{ success: boolean; error?: string }> =>
       ipcRenderer.invoke('print:open', topicId, title),
+    sendReady: () => ipcRenderer.send('print:ready'),
     toPDF: (
       suggestedName: string,
       themeVars: Record<string, string>,

@@ -235,6 +235,29 @@ export const gauntletService = {
     const res = await window.electron.gauntlet.reinsertQuestions({ cardIds })
     if (!res.success) throw new Error(res.error || 'Failed to reinsert questions')
   },
+
+  async getTopicAccuracyStats(options?: {
+    subject?: GauntletSubjectCode
+    scope?: 'gauntlet' | 'all'
+    sortBy?: 'code' | 'accuracy_asc' | 'accuracy_desc' | 'misses' | 'attempts'
+  }): Promise<TosTopicPerformanceStat[]> {
+    const res = await window.electron.gauntlet.getTopicAccuracyStats(options)
+    if (!res.success) throw new Error(res.error || 'Failed to get topic accuracy stats')
+    return (res.data ?? []) as TosTopicPerformanceStat[]
+  },
+}
+
+export interface TosTopicPerformanceStat {
+  tosTopicId: string
+  code: string
+  subject: GauntletSubjectCode
+  totalCards: number
+  studiedCards: number
+  totalAnswers: number
+  correctAnswers: number
+  wrongAnswers: number
+  accuracy: number | null
+  studyProgress: number
 }
 
 export interface ExcludedGauntletCard {

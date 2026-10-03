@@ -1,4 +1,5 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { FlaskConical, Layers, BarChart3, Swords } from 'lucide-react'
 import { ContentCoverageDemo } from '../components/stats/demos/ContentCoverageDemo'
 import { TosCoverageMatrixDemo } from '../components/stats/demos/TosCoverageMatrixDemo'
@@ -9,12 +10,28 @@ import { AnswerPositionContingencyDemo } from '../components/stats/demos/AnswerP
 import { QuestionLengthZScoreDemo } from '../components/stats/demos/QuestionLengthZScoreDemo'
 import { ResponseTimeDemo } from '../components/stats/demos/ResponseTimeDemo'
 import { GauntletSpeedParDemo } from '../components/stats/demos/gauntlet/GauntletSpeedParDemo'
-import { GauntletEloTrajectoryDemo } from '../components/stats/demos/gauntlet/GauntletEloTrajectoryDemo'
 import { GauntletCoverageDensityDemo } from '../components/stats/demos/gauntlet/GauntletCoverageDensityDemo'
 import { GauntletEnduranceStreakDemo } from '../components/stats/demos/gauntlet/GauntletEnduranceStreakDemo'
+import { GauntletTopicAccuracyDemo } from '../components/stats/demos/gauntlet/GauntletTopicAccuracyDemo'
 
 export default function Lab() {
-  const [activeTab, setActiveTab] = useState<'tos' | 'eda' | 'gauntlet'>('tos')
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialTab = searchParams.get('tab')
+  const [activeTab, setActiveTab] = useState<'tos' | 'eda' | 'gauntlet'>(
+    initialTab === 'gauntlet' || initialTab === 'eda' || initialTab === 'tos' ? initialTab : 'tos'
+  )
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab')
+    if (tabParam === 'gauntlet' || tabParam === 'eda' || tabParam === 'tos') {
+      setActiveTab(tabParam)
+    }
+  }, [searchParams])
+
+  const handleTabChange = (tab: 'tos' | 'eda' | 'gauntlet') => {
+    setActiveTab(tab)
+    setSearchParams({ tab })
+  }
 
 
   return (
@@ -40,7 +57,7 @@ export default function Lab() {
         {/* Tab Switcher */}
         <div className="flex items-center p-1 bg-surface rounded-xl border border-border-base shrink-0">
           <button
-            onClick={() => setActiveTab('tos')}
+            onClick={() => handleTabChange('tos')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all ${
               activeTab === 'tos'
                 ? 'bg-accent/15 text-accent border border-accent/40 shadow-[0_0_12px_rgba(0,255,65,0.2)]'
@@ -51,7 +68,7 @@ export default function Lab() {
             <span>ToS Matrix</span>
           </button>
           <button
-            onClick={() => setActiveTab('eda')}
+            onClick={() => handleTabChange('eda')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all ${
               activeTab === 'eda'
                 ? 'bg-accent/15 text-accent border border-accent/40 shadow-[0_0_12px_rgba(0,255,65,0.2)]'
@@ -62,7 +79,7 @@ export default function Lab() {
             <span>Statistical EDA</span>
           </button>
           <button
-            onClick={() => setActiveTab('gauntlet')}
+            onClick={() => handleTabChange('gauntlet')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all ${
               activeTab === 'gauntlet'
                 ? 'bg-accent/15 text-accent border border-accent/40 shadow-[0_0_12px_rgba(0,255,65,0.2)]'
@@ -99,8 +116,8 @@ export default function Lab() {
       {/* Tab 3: Gauntlet Analytics & Performance EDA */}
       {activeTab === 'gauntlet' && (
         <div className="flex flex-col gap-6 animate-in fade-in duration-200">
-          {/* Row 1: Full-width Elo Rating Growth & Trajectory */}
-          <GauntletEloTrajectoryDemo />
+          {/* Row 1: Dedicated Competency Mastery, Weak Areas & Topic Accuracy Diagnostic Matrix */}
+          <GauntletTopicAccuracyDemo />
 
           {/* Row 2: Speed vs Par Pacing + Endurance & Streak Distribution */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
