@@ -257,6 +257,8 @@ const freshRun = () => ({
   saveError: null as string | null,
   isRefilling: false,
   refillExhausted: false,
+  summarySoundPlayed: false,
+  rankUpShown: false,
 })
 
 type RunState = ReturnType<typeof freshRun>
@@ -366,6 +368,8 @@ export function saveSummarySnapshot(state: Partial<GauntletStore>): void {
         queue: state.queue,
         index: state.index,
         savedRunId: state.savedRunId,
+        summarySoundPlayed: state.summarySoundPlayed ?? false,
+        rankUpShown: state.rankUpShown ?? false,
       }))
     }
   } catch {}

@@ -92,15 +92,21 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
   * **Clean In-Game Focus**: Question cards keep syllabus topic classifications hidden during active play to prevent spoilers.
 * **Ranked vs. Unranked Runs**:
   * **Ranked**: Tracks per-subject Elo-style ratings across all 4 subjects with provisional rating indicators ($<30$ answers) and official PRC TOS-weighted overall rating score.
+  * **Shared Topics 50/50 Elo Split**: Automatically detects syllabus competencies shared between subjects (e.g. Mathematics and Electronics overlap). Correct and wrong answers dynamically distribute rating adjustments 50/50 across both subjects without duplicating attempt counts.
   * **Unranked**: Casual practice runs leaving Elo ratings unchanged.
-* **Comprehensive Post-Run Review & FAQ**:
+* **Rank-Up Celebration Modal (`GauntletRankUpModal`)**:
+  * Automatically triggered upon earning a promotion into a higher progression tier (e.g. Copper, Silver, Superconductor).
+  * Features real-time animated rating counter interpolation, XP bar filling up to the next tier floor, radial tier-colored ambient glow, keyboard/escape dismissal, and celebration fanfare SFX.
+* **Comprehensive Post-Run Review & Session Persistence**:
   * **Two-Column Tactical Breakdown**: Stats sidebar with accuracy, speed, rating deltas, and score metrics.
   * **Struggling Topics Focus Area**: Highlights top problem TOS topics from the run with miss ratios to immediately focus review.
   * **Question Origin & Deck Tracking**: Every reviewed question displays its source deck name and 1-based card position in that deck (e.g. `📁 [Deck Name] #[number]`), enabling instant cross-referencing.
   * **Question Flagging & Exclusion**: Directly flag broken or ambiguous questions with custom reason tags; flagged questions are automatically excluded from subsequent Gauntlet pools.
+  * **Inline TOS Category Overrides**: Directly reassign or correct question Table of Specifications (TOS) tags within the post-run review list with a searchable category picker popover.
   * **Learn Missed Items**: Launch an on-demand Learn Mode session targeting only the questions missed in that run, cleanly isolated from core session history and statistics.
   * **Centered Tactical Action Bar**: Quick controls for **Get Context** (formatted clipboard export for AI), **AI Explain** (inline step-by-step breakdown), and **Flag Question**.
   * **Filterable Review List**: Filter by All, Mistakes, Skipped/Timeout, or Correct with inline choices and full mathematical solutions.
+  * **Session Snapshot Persistence (`useGauntletStore`)**: In-memory and `sessionStorage` snapshot persistence ensures users can seamlessly navigate between Gauntlet and other tabs without losing review progress, replaying game-over sounds, or re-triggering rank-up popups upon return.
   * **Gauntlet FAQ Modal**: Complete in-game guide covering scoring mechanics, time limits, multipliers, progression tiers, and SM-2 protection.
 
 ---
@@ -113,6 +119,7 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
   * Parenthesized expressions: `e^(v - u)`, `u = ln(e^v + c)`, `f_(n + 1)`
 * **ECE Symbol Normalization**: Seamlessly parses non-standard and MathJax symbols into standard KaTeX (e.g. `\phase{}`, `\SI{}{}`, `\ang{}`, `\boldsymbol{}`, `\exponentialE`, `\imaginaryI`).
 * **MathLive Equation Editor**: Interactive visual equation editor (Σ button) embedded into card forms with real-time preview and instant text/math mode toggling.
+* **High-Performance LRU Rendering Cache**: In-memory LRU render cache (`MATH_CACHE` / `PLAIN_TEXT_CACHE` capped at 2,000 entries) in `src/lib/latex.ts`, eliminating duplicate KaTeX parsing and delivering instantaneous, flicker-free re-render performance for complex mathematical equations and solutions.
 
 ---
 
@@ -127,11 +134,14 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 * **Find in Document (`Ctrl + F`)**: Integrated search bar with live text highlighting (`<mark>`), occurrence counter, and match stepping.
 * **High-Res Image Lightbox**: Click any diagram or solution schematic to expand into a high-resolution lightbox overlay.
 * **Themed PDF Export**: Exports clean multi-page PDFs with persistent headers/footers matching the selected paper theme.
+* **Chunked Rendering & Window Management**: Asynchronous chunked DOM rendering ensures snappy responsiveness even across large, multi-hundred question test sheets; supports window maximization state and custom title bar controls.
 
 ---
 
 ### 🗂️ Deck Management & Authoring
 * **Comprehensive Deck Editor**: Create and edit MCQ, Flashcard, and Formula decks with live previews and image attachment support.
+* **Default Deck TOS Topic Support**: Assign a default decimal Table of Specifications category (`default_tos_topic_id`) at the deck level so newly added or imported questions automatically inherit the appropriate syllabus code.
+* **Batch TOS Auto-Tagger Modal (`OperationProgressModal`)**: Full database and deck-level classification utility with choice between overwriting existing tags or tagging untagged questions only, accompanied by real-time progress bar telemetry.
 * **Favorite Decks & Instant Filtering**: Star high-priority decks across Study, LooksFam, and Formula banks. Filter favorites with a single click from the Folder panel or Advanced Filters popover.
 * **AI-Powered Deck Description**: Auto-generate concise, topic-focused deck descriptions (<12 words) directly in the deck editor using Groq AI (`openai/gpt-oss-120b`).
 * **Drag-and-Drop Card Reordering**: Powered by `@dnd-kit`, card order is saved directly to SQLite.
@@ -173,7 +183,7 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
   * **Per-Row Exam Item Mapping**: Fine-grained mapping of subtopics to official exam items with cognitive level badges ($K$ Knowledge, $C$ Comprehension, $A$ Application, $An$ Analysis, $S$ Synthesis, $E$ Evaluation).
   * **Grouped Syllabus Accordions**: Subtopic clusters grouped according to PDF specifications with search filtering and instant text highlighting.
 * **Interactive Review Checklist**:
-  * Synchronously preloaded in-memory state via `useChecklistStore` for instant, flicker-free tab transitions and offline `localStorage` persistence.
+  * Synchronously preloaded in-memory state via `useChecklistStore` for instant, flicker-free tab transitions, per-topic accordion expansion state tracking (`expandedTopics`), and offline `localStorage` persistence.
   * Multi-column weighted progress tracking: *Review* (10%), *Refresher* (20%), and *Self Review* (70%) with dynamic subject badges and overall progress animations.
 * **Activity Heatmap & Trends**: 6-month study activity heatmap, subject accuracy trends, and mastery metrics.
 * **Gauntlet Subject Elo History Chart (`SubjectEloChart`)**: Interactive dashboard chart visualizing Elo rating evolution over time across **MATH**, **GEAS**, **ELECS**, and **EST** with hover telemetry and subject toggling.
@@ -183,23 +193,56 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 
 ### 🏷️ Table of Specifications (TOS) Classification System
 * **Official PRC ECE Board Exam Taxonomy**: Built-in hierarchy encompassing 34 parent topics ($x.0$) and 181 granular subtopics ($x.x$) across Mathematics, Electronics Engineering, GEAS, and EST per official PRC Board Examination specifications.
+* **Granular Decimal Tagging**: Cards are classified under granular decimal subtopics ($x.x$) or left untagged, while parent topics ($x.0$) serve as high-level organizational aggregators.
 * **Card & Question Categorization**: Assign decimal TOS topic tags to questions in the Deck Editor with an organized, searchable dropdown and formatted badge previews.
-* **Automated AI Batch Classifier**: Python and Groq AI classifier script integration (`scripts/classify_database_tos.py`) for automated syllabus mapping, parsing question contents to accurately tag whole databases with decimal TOS subtopic codes.
+* **Automated AI Batch Classifier**: Python and Groq AI classifier script integration (`scripts/classify_database_tos.py`) with expanded regex pattern coverage across Mathematics, Access Control, Signal Processing, and Electronics for automated syllabus mapping and whole-database tagging.
 * **Syllabus-Linked Gauntlet Targeting**: Classifications link directly with Gauntlet telemetry, automatically detecting struggling subtopics ($<70\%$ accuracy) to prioritize them in practice runs.
 
 ---
 
-### 🔬 Data Lab: Exploratory Data Analysis (EDA) & Statistics
-* **EDA Concepts, Live on Your Review Data**: An interactive Exploratory Data Analysis (EDA) suite that computes real-time inferential and descriptive statistics on question bank composition and personal study telemetry:
+### 🔬 Data Analytics: TOS Matrix, Statistical EDA & Gauntlet Telemetry
+The **Data Analytics Command Center** (`/lab`) provides an integrated, 3-pillar data suite for syllabus mapping, inferential statistics, and competitive speed-run telemetry:
+
+#### 1. ToS Classification & Coverage Matrix (`TosCoverageMatrixDemo`)
+* **Master-Detail Two-Column Layout**: Left-hand master syllabus list displaying all 34 PRC parent topics ($x.0$) with live card counts, active neon border indicator, and subject isolation badges; right-hand detail pane listing all decimal subtopics ($x.x$) with direct coverage status bullets and card volume tags.
+* **LooksFam Subject Filter Pillboxes**: Instant filter pills (`ALL`, `MATH`, `GEAS`, `ELECS`, `EST`) with custom RGB border/glow accents and inner card count badges.
+* **Single-Line Summary Ribbon**: Sleek JetBrains Mono telemetry ribbon tracking Total Cards, Classified %, Untagged Card alert chip, and official subtopic syllabus coverage ratio ($x/181\text{ Subtopics}$).
+* **Card Inspector Modal (`TosCardInspectorModal`)**: Deep-dive inspection modal to preview, flip, and manage all cards under any parent topic, subtopic, or untagged pool.
+* **Interactive Card Search (`TosCardSearchDemo`)**: Full-text question search across the library with real-time flashcard flip previews, formula/solution inspection, and 1-click jump-to-topic navigation.
+* **Gauntlet Excluded Questions Browser**: Dedicated view listing flagged or auto-excluded cards with 1-click reinsertion actions.
+
+#### 2. Statistical EDA (Exploratory Data Analysis)
+* **Live Inferential & Descriptive Statistics**:
   * **Content Coverage vs. PRC TOS Target**: Card counts and topic proportions across **MATH**, **GEAS**, **ELECS**, and **EST** compared directly against official PRC Board Examination TOS target weights (20%, 20%, 30%, 30%).
   * **Mean Question Length by Subject (MCQ)**: Character length metrics per subject with total $N$, library mean, and median values to visualize problem statement right-skewness.
   * **Answer Key Position Balance (MCQ)**: Chi-square goodness-of-fit ($\chi^2$), $p$-value, and Cramér's $V$ effect size tests measuring uniform distribution across choices A (0), B (1), C (2), and D (3) to evaluate option balance.
   * **Question Length: One-Way ANOVA (MCQ)**: One-way Analysis of Variance testing whether question character length differs significantly across exam subjects ($F$-statistic, $p$-value, and degrees of freedom $df_1 / df_2$).
   * **Answer Position vs. Subject Independence**: $4 \times 4$ contingency table and two-way Chi-Square Test of Independence ($\chi^2$, $p$-value, $df = 9$) testing whether correct answer placement is independent of subject category, rendered as a color-coded heatmap intensity grid.
   * **Outlier Detection via Z-Scores**: Library-wide question length standardization ($z = \frac{x - \bar{x}}{s}$) categorizing questions into Typical ($|z| \le 2$), Outlier ($|z| > 2$), and Severe Outlier ($|z| > 3$), identifying extreme questions and their respective subject areas.
-  * **Response Time Distribution (MCQ vs. Flashcard)**: Unpooled response latency histograms and separate mean/median review paces comparing timed first-attempt MCQ recall (Learn Mode) against self-paced SM-2 spaced repetition (Flashcard Mode) in dark recessed cyber-styled panels.
+  * **Response Time Distribution (MCQ vs. Flashcard)**: Unpooled response latency histograms and separate mean/median review paces comparing timed first-attempt MCQ recall (Learn Mode) against self-paced SM-2 spaced repetition (Flashcard Mode).
 * **Interactive Stat Info Modals**: Click any statistical metric tile to open an in-depth modal featuring mathematical formulas rendered in KaTeX, conceptual explanations, and practical review takeaways.
-* **In-Memory Caching & Snappy Visualization**: Powered by a dedicated Zustand store (`useDataLabStore`) with background preloading on application launch and automatic cache refresh on study completion or deck imports. Features responsive 3×2 and 2×3 adaptive grids with smooth 600ms ease-out animations and cyber-terminal neon green styling.
+* **In-Memory Caching & Snappy Visualization**: Powered by `useDataLabStore` with background preloading on application launch and automatic cache refresh on study completion or deck imports.
+
+#### 3. Gauntlet Analytics (Performance Telemetry & Topic Mastery)
+* **Topic Accuracy & Mastery (`GauntletTopicAccuracyDemo`)**:
+  * **Unified Master-Detail Two-Column Architecture**: Aligned 1:1 with the TOS Matrix design for visual consistency. Left pane displays parent syllabus topics with overall accuracy percentages, attempt counts, and weak spot indicator dots; right pane details subtopic competencies.
+  * **Strict Per-Subject Categorization**: Streamlined tabs (`[MATH 32]`, `[GEAS 64]`, `[ELECS 45]`, `[EST 40]`) with subject-themed glows, eliminating cross-subject topic interleaving.
+  * **Real-Time Certified Weak Spot Filter**: 1-click toggle isolating competencies struggling under 70% accuracy with $\ge 3$ attempts.
+  * **Calibrated Decimal Subtopic Mastery Tags**:
+    * `Calibrating` (blue badge, $<3$ attempts)
+    * `Critical Weakness` (red badge, $<50\%$ accuracy, $\ge 3$ attempts)
+    * `Needs Review` (amber badge, $<70\%$ accuracy, $\ge 3$ attempts)
+    * `Solid` (emerald badge, $70\%\text{--}84\%$ accuracy)
+    * `Mastered` (cyan badge, $\ge 85\%$ accuracy, $\ge 5$ attempts)
+    * `Untested` (dim gray badge, 0 attempts)
+  * **Dual Progress Telemetry**: Side-by-side accuracy bars (accuracy %, correct/wrong attempts) and card penetration meters (coverage %, studied/total cards).
+  * **Scope Switcher**: Toggle between **Arena Only** (high-stakes Gauntlet speed runs) and **All Modes** (combined Learn, Test, and Gauntlet attempts).
+  * **Custom Sort Engine**: Sort competencies by Syllabus Order, Reverse Syllabus, Lowest Accuracy (Weakest first), Highest Accuracy, Studied Progress, Most Misses, and Most Practiced.
+* **Speed & Par Pacing (`GauntletSpeedParDemo`)**: Pacing curves comparing player response times against algorithmic question par times across difficulty weights.
+* **Elo Trajectory (`GauntletEloTrajectoryDemo`)**: Interactive telemetry tracking rating evolution, peak milestones, and provisional status over time.
+* **Coverage Density (`GauntletCoverageDensityDemo`)**: Syllabus penetration and blind-spot heatmaps identifying unattempted card pools.
+* **Endurance & Survival Streak (`GauntletEnduranceStreakDemo`)**: Survival curves, survival run survival rates, and streak bucket distributions.
+* **Excluded & Flagged Questions (`GauntletExcludedQuestionsDemo`)**: Comprehensive management table for flagged questions with 1-click reinsertion into the Gauntlet question pool.
 
 ---
 
@@ -305,6 +348,7 @@ CREATE TABLE topics (
   folder_name TEXT DEFAULT 'Uncategorized',
   folder_id TEXT REFERENCES folders(id) ON DELETE SET NULL,
   is_favorite BOOLEAN DEFAULT 0,
+  default_tos_topic_id TEXT,
   created_at INTEGER DEFAULT (strftime('%s', 'now'))
 );
 
@@ -355,6 +399,7 @@ CREATE INDEX IF NOT EXISTS idx_cards_tos_topic ON cards(tos_topic_id);
 CREATE INDEX IF NOT EXISTS idx_topics_folder_id ON topics(folder_id);
 CREATE INDEX IF NOT EXISTS idx_topics_subject ON topics(subject);
 CREATE INDEX IF NOT EXISTS idx_topics_is_favorite ON topics(is_favorite);
+CREATE INDEX IF NOT EXISTS idx_topics_default_tos ON topics(default_tos_topic_id);
 
 -- Daily activity tracking
 CREATE TABLE study_activity (
@@ -451,10 +496,25 @@ CREATE TABLE gauntlet_flagged_cards (
   flagged_at INTEGER NOT NULL
 );
 
+-- Allowed cards (whitelist for cards reinserted into Gauntlet pool)
+CREATE TABLE gauntlet_allowed_cards (
+  card_id TEXT PRIMARY KEY,
+  allowed_at INTEGER NOT NULL
+);
+
+-- Daily review Elo bonus tracking
+CREATE TABLE gauntlet_daily_review_elo (
+  subject TEXT NOT NULL,       -- 'MATH' | 'GEAS' | 'ELECS' | 'EST'
+  date TEXT NOT NULL,          -- YYYY-MM-DD
+  gained REAL NOT NULL DEFAULT 0,
+  PRIMARY KEY (subject, date)
+);
+
 CREATE INDEX IF NOT EXISTS idx_gauntlet_runs_started ON gauntlet_runs(started_at);
 CREATE INDEX IF NOT EXISTS idx_gauntlet_answers_run ON gauntlet_answers(run_id, seq);
 CREATE INDEX IF NOT EXISTS idx_gauntlet_answers_card ON gauntlet_answers(card_id);
 CREATE INDEX IF NOT EXISTS idx_gauntlet_flagged_card ON gauntlet_flagged_cards(card_id);
+CREATE INDEX IF NOT EXISTS idx_gauntlet_allowed_card ON gauntlet_allowed_cards(card_id);
 ```
 
 ---
@@ -466,19 +526,19 @@ ecengine/
 ├── electron/                    # Electron Backend Process
 │   ├── main.ts                  # App lifecycle, window management, zoom, hotkeys
 │   ├── preload.ts               # contextBridge IPC API exposure
-│   ├── db/                      # SQLite connection, schema bootstrap, migrations (v1–v14)
+│   ├── db/                      # SQLite connection, schema bootstrap, migrations (v1–v18)
 │   └── ipc/                     # Modular IPC handlers (DB, Deck, Analytics, AI, Print, Config, TTS, Export)
 ├── src/                         # React Frontend (Renderer)
 │   ├── assets/                  # Brand assets, icons, bundled fonts (Rajdhani, JetBrains Mono, Orbitron)
 │   ├── components/              # Modular UI Components
-│   │   ├── ui/                  # Tooltip (auto-flipping), GetContextDropdown (split-button), VolumeControl, FolderPanel, Toast, TOSTracker
-│   │   ├── gauntlet/            # GauntletHome, GauntletSetup, GauntletTopicModal, GauntletRanksModal, GauntletFaqModal, GauntletRecordsModal, GauntletWeakAreasModal, GauntletBackdrop
+│   │   ├── ui/                  # Tooltip (auto-flipping), GetContextDropdown (split-button), OperationProgressModal, TosTopicPicker, VolumeControl, FolderPanel, Toast, TOSTracker
+│   │   ├── gauntlet/            # GauntletHome, GauntletSetup, GauntletTopicModal, GauntletRanksModal, GauntletRankUpModal, GauntletFaqModal, GauntletRecordsModal, GauntletWeakAreasModal, GauntletBackdrop
 │   │   ├── mcq/                 # MCQCard, LearnMode, TestMode, BookmarkedCardsModal
 │   │   ├── flashcard/           # FlashcardSession, FlashcardDeckBrowser, StudyCard
 │   │   ├── deck/                # CardForms, DeckCard, AIDescriptionButton, AdvancedFiltersPopover
 │   │   ├── study/               # StudyHeader, StudySessionStats
 │   │   ├── dashboard/           # ReviewHeatmap, SessionHistory, ExamCountdown, SubjectEloChart
-│   │   ├── stats/demos/         # Data Lab EDA demos (ContentCoverage, QuestionLength, ANOVA, Contingency, Z-Score, ResponseTime, StatInfoModal)
+│   │   ├── stats/demos/         # Data Analytics suites (TosCoverageMatrixDemo, TosCardSearchDemo, TosCardInspectorModal, GauntletTopicAccuracyDemo, GauntletSpeedParDemo, GauntletEloTrajectoryDemo, GauntletCoverageDensityDemo, GauntletEnduranceStreakDemo, GauntletExcludedQuestionsDemo, Statistical EDA demos)
 │   │   ├── toc/                 # SubjectCard, Table of Specifications data, tosItems, tosRows
 │   │   └── layout/              # AppShell, custom TitleBar, navigation sidebar
 │   ├── hooks/                   # Business logic (SM-2, timer, TTS, useGauntletMusic, sound volume, import)

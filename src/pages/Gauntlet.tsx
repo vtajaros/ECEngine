@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useBlocker } from 'react-router-dom'
-import { useGauntletStore, selectCurrentItem } from '../store/useGauntletStore'
+import { useGauntletStore, selectCurrentItem, saveSummarySnapshot } from '../store/useGauntletStore'
 import { useLayoutStore } from '../store/useLayoutStore'
 import { GauntletHome } from '../components/gauntlet/GauntletHome'
 import { GauntletSetup } from '../components/gauntlet/GauntletSetup'
@@ -108,6 +108,8 @@ const RunPlaceholder: React.FC<RunPlaceholderProps> = ({
   const ratings = useGauntletStore(s => s.ratings)
   const answers = useGauntletStore(s => s.answers)
   const durationMs = useGauntletStore(s => s.durationMs)
+  const summarySoundPlayed = useGauntletStore(s => s.summarySoundPlayed)
+  const rankUpShown = useGauntletStore(s => s.rankUpShown)
 
   const answer = useGauntletStore(s => s.answer)
   const skip = useGauntletStore(s => s.skip)
@@ -143,21 +145,20 @@ const RunPlaceholder: React.FC<RunPlaceholderProps> = ({
   // Rank-up splash state when transitioning to summary with promotions
   const [rankUpEvents, setRankUpEvents] = useState<RankUpEvent[]>([])
   const [currentRankUpIndex, setCurrentRankUpIndex] = useState(0)
-  const checkedRankUpKeyRef = useRef<string | null>(null)
 
   useEffect(() => {
     if (phase !== 'summary' || !rated) {
       if (phase !== 'summary') {
-        checkedRankUpKeyRef.current = null
         setRankUpEvents([])
         setCurrentRankUpIndex(0)
       }
       return
     }
 
-    const key = `${savedRunId || 'run'}-${answers.length}`
-    if (checkedRankUpKeyRef.current === key) return
-    checkedRankUpKeyRef.current = key
+    if (rankUpShown) return
+
+    useGauntletStore.setState({ rankUpShown: true })
+    saveSummarySnapshot({ ...useGauntletStore.getState(), rankUpShown: true })
 
     const events: RankUpEvent[] = []
     // 1. Check each subject that was played or changed rating
@@ -185,7 +186,7 @@ const RunPlaceholder: React.FC<RunPlaceholderProps> = ({
       setRankUpEvents(events)
       setCurrentRankUpIndex(0)
     }
-  }, [phase, rated, savedRunId, answers.length, ratingsBefore, ratings])
+  }, [phase, rated, rankUpShown, ratingsBefore, ratings])
 
   // Summary review state (declared unconditionally at top of component)
   const [outcomeFilter, setOutcomeFilter] = useState<'all' | 'wrong' | 'skipped_timeout' | 'correct'>('all')
@@ -388,20 +389,22 @@ Please explain:
   }, [feedback, play])
 
   // Play game over sound when lives run out (summary phase with endReason === 'lives')
-  const lastSummarySoundRef = useRef<string | null>(null)
   useEffect(() => {
     if (phase !== 'summary') {
-      lastSummarySoundRef.current = null
       return
     }
-    const key = `summary-${endReason}`
-    if (lastSummarySoundRef.current === key) return
-    lastSummarySoundRef.current = key
+
+    if (summarySoundPlayed) {
+      return
+    }
+
+    useGauntletStore.setState({ summarySoundPlayed: true })
+    saveSummarySnapshot({ ...useGauntletStore.getState(), summarySoundPlayed: true })
 
     if (endReason === 'lives') {
       play('gameOver')
     }
-  }, [phase, endReason, play])
+  }, [phase, endReason, summarySoundPlayed, play])
 
   // Adaptive background music regions based on run mode, progress, and summary
   const activeScope = learnModeScope ?? (isLearningMissed ? 'missed' : null)

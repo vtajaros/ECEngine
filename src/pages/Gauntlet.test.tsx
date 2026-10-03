@@ -581,6 +581,82 @@ describe('Gauntlet Summary Review List', () => {
     expect(mockPlay).toHaveBeenCalledWith('gameOver')
   })
 
+  it('does not replay gameOver sound or re-show rank up modal when returning to summary', async () => {
+    useGauntletStore.setState({
+      phase: 'summary',
+      endReason: 'lives',
+      rated: true,
+      ratingsBefore: {
+        MATH: { rating: 840, answers: 10 },
+        GEAS: { rating: 1000, answers: 0 },
+        ELECS: { rating: 1000, answers: 0 },
+        EST: { rating: 1000, answers: 0 },
+      },
+      ratings: {
+        MATH: { rating: 860, answers: 11 },
+        GEAS: { rating: 1000, answers: 0 },
+        ELECS: { rating: 1000, answers: 0 },
+        EST: { rating: 1000, answers: 0 },
+      },
+      score: 100,
+      streak: 0,
+      bestStreak: 2,
+      durationMs: 45000,
+      answers: [
+        {
+          seq: 1,
+          item: mockItem('q1', 'MATH', 5000),
+          chosen: 0,
+          outcome: 'wrong',
+          timeMs: 5000,
+          points: 0,
+          streakAfter: 0,
+          answeredAt: Date.now(),
+        },
+      ],
+      config: {
+        mode: 'survival',
+        subjects: ['MATH'],
+        rated: true,
+        durationSec: 1200,
+        totalItems: 4,
+        allocation: 'tos',
+        customCounts: {},
+        lives: 3,
+        perQuestionSec: 30,
+      },
+    })
+
+    // First mount: should play gameOver sound and trigger rank-up modal
+    await act(async () => {
+      root!.render(renderWithRouter(<Gauntlet />))
+    })
+
+    expect(mockPlay).toHaveBeenCalledWith('gameOver')
+    expect(container!.textContent).toContain('Promotion Achieved')
+    mockPlay.mockClear()
+
+    // Simulate navigating away (unmount)
+    await act(async () => {
+      root!.unmount()
+    })
+
+    // Re-create root and mount again (simulating returning to Gauntlet review summary)
+    root = createRoot(container!)
+    await act(async () => {
+      root!.render(renderWithRouter(<Gauntlet />))
+    })
+
+    // Should NOT replay gameOver sound
+    expect(mockPlay).not.toHaveBeenCalledWith('gameOver')
+
+    // Should NOT show rank-up modal again
+    expect(container!.textContent).not.toContain('Promotion Achieved')
+
+    // Still renders Review Summary
+    expect(container!.textContent).toContain('Answer Review')
+  })
+
   it('plays plusOne sound when life bonus feedback is triggered', async () => {
     useGauntletStore.setState({
       phase: 'playing',
