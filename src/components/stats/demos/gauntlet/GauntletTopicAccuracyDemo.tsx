@@ -774,7 +774,7 @@ export function GauntletTopicAccuracyDemo() {
                   <div
                     key={group.parent.id}
                     onClick={() => setSelectedParentId(group.parent.id)}
-                    className={`relative p-3 transition-colors cursor-pointer flex items-center justify-between gap-3 border-l-2 ${
+                    className={`p-3 transition-colors cursor-pointer flex items-center justify-between gap-3 border-l-2 ${
                       isSelected
                         ? 'bg-surface-2/90 text-text-primary'
                         : 'bg-transparent hover:bg-surface-2/30 text-text-muted border-l-transparent'
@@ -783,10 +783,6 @@ export function GauntletTopicAccuracyDemo() {
                       borderLeftColor: isSelected ? color : 'transparent',
                     }}
                   >
-                    {/* Active Indicator Bar on right edge */}
-                    {isSelected && (
-                      <div className="absolute right-0 top-0 bottom-0 w-[3px] bg-accent shadow-[0_0_10px_#00FF41]" />
-                    )}
 
                     <div className="flex items-center gap-2 min-w-0 flex-1">
                       <span
