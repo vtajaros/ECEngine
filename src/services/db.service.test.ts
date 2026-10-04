@@ -37,6 +37,7 @@ const mockElectron = {
     deleteExamSession: vi.fn(),
     clearExamSessions: vi.fn(),
     getContentCoverage: vi.fn(),
+    recordCardResultsBatch: vi.fn(),
     getQuestionLengthDistribution: vi.fn(),
     getAnswerPositionCounts: vi.fn(),
     getAnswerPositionBySubject: vi.fn(),
@@ -725,6 +726,51 @@ describe('dbService.decks TOS classification', () => {
     const result = await dbService.decks.classifyCardsBatch(mockCards)
     expect(mockElectron.decks.classifyCardsBatch).toHaveBeenCalledWith(mockCards)
     expect(result).toEqual(mockResult)
+  })
+})
+
+// ─── recordCardResultsBatch ──────────────────────────────────────────────────
+
+describe('dbService.recordCardResultsBatch', () => {
+  it('calls window.electron.data.recordCardResultsBatch with mapped payloads and bumps version', async () => {
+    mockElectron.data.recordCardResultsBatch.mockResolvedValue({ success: true })
+
+    const input = [
+      { cardId: 'c1', isCorrect: true, mode: 'learn' as const, responseMs: 1200, answeredAt: 100000 },
+      { cardId: 'c2', isCorrect: false, mode: 'learn' as const, responseMs: 2400, answeredAt: 100500 },
+    ]
+
+    await dbService.recordCardResultsBatch(input)
+
+    expect(mockElectron.data.recordCardResultsBatch).toHaveBeenCalledTimes(1)
+    const callArg = mockElectron.data.recordCardResultsBatch.mock.calls[0][0]
+    expect(callArg.results).toHaveLength(2)
+    expect(callArg.results[0]).toMatchObject({
+      cardId: 'c1',
+      isCorrect: true,
+      mode: 'learn',
+      responseMs: 1200,
+      answeredAt: 100000,
+    })
+    expect(typeof callArg.results[0].lastReviewed).toBe('string')
+    expect(useDataVersionStore.getState().version).toBe(1)
+  })
+
+  it('no-ops when passed an empty array without bumping version', async () => {
+    await dbService.recordCardResultsBatch([])
+    expect(mockElectron.data.recordCardResultsBatch).not.toHaveBeenCalled()
+    expect(useDataVersionStore.getState().version).toBe(0)
+  })
+
+  it('throws when the batch IPC call fails', async () => {
+    mockElectron.data.recordCardResultsBatch.mockResolvedValue({
+      success: false,
+      error: 'Disk full',
+    })
+
+    await expect(
+      dbService.recordCardResultsBatch([{ cardId: 'c1', isCorrect: true }])
+    ).rejects.toThrow('Database Operation Failed: Disk full')
   })
 })
 

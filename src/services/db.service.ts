@@ -430,6 +430,53 @@ export const dbService = {
   },
 
   /**
+   * High-performance batch MCQ progress write.
+   * Atomically records all cards and updates daily activity in one transaction,
+   * bumping the data version store once at the end.
+   */
+  recordCardResultsBatch: async (
+    results: Array<{
+      cardId: string
+      isCorrect: boolean
+      mode?: 'learn' | 'test'
+      responseMs?: number | null
+      answeredAt?: number | null
+    }>
+  ): Promise<void> => {
+    if (results.length === 0) return
+    const lastReviewed = new Date().toISOString()
+    const payload = {
+      results: results.map(r => ({
+        cardId: r.cardId,
+        isCorrect: r.isCorrect,
+        lastReviewed,
+        ...(r.mode != null ? { mode: r.mode } : {}),
+        ...(r.responseMs !== undefined ? { responseMs: r.responseMs } : {}),
+        ...(r.answeredAt !== undefined ? { answeredAt: r.answeredAt } : {}),
+      }))
+    }
+    if (window.electron?.data?.recordCardResultsBatch) {
+      const result = await window.electron.data.recordCardResultsBatch(payload)
+      if (!result.success) {
+        throw new Error(`Database Operation Failed: ${result.error || 'Failed to record card results batch'}`)
+      }
+    } else {
+      // Fallback for environments/mocks without batch support
+      for (const item of results) {
+        await window.electron.data.recordCardResult({
+          cardId: item.cardId,
+          isCorrect: item.isCorrect,
+          lastReviewed,
+          mode: item.mode,
+          responseMs: item.responseMs,
+          answeredAt: item.answeredAt,
+        })
+      }
+    }
+    useDataVersionStore.getState().bump()
+  },
+
+  /**
    * Record a single MCQ answer without touching SM-2 scheduling fields.
    * Only call this for native DB MCQ cards (card.type === 'mcq' && !card.isGenerated).
    * Also records activity for dashboard streak tracking.

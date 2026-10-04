@@ -175,9 +175,9 @@ export const gauntletService = {
     if (!res.success) throw new Error(res.error || 'Failed to reset ratings')
   },
 
-  async rewardReviewElo(subject: string): Promise<{ gained: number; newRating: number } | null> {
+  async rewardReviewElo(subject: string, count = 1): Promise<{ gained: number; newRating: number } | null> {
     try {
-      const res = await window.electron.gauntlet.rewardReviewElo(subject)
+      const res = await window.electron.gauntlet.rewardReviewElo(subject, count)
       if (res?.success) return res.data ?? null
       return null
     } catch {

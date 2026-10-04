@@ -15,6 +15,10 @@ const RecordCardResultSchema = z.object({
   answeredAt: z.number().optional().nullable(),
 })
 
+const RecordCardResultsBatchSchema = z.object({
+  results: z.array(RecordCardResultSchema).max(5000),
+})
+
 const SaveProgressSchema = z.object({
   cardId: z.string().min(1),
   easeFactor: z.number(),
@@ -31,6 +35,68 @@ const SaveProgressSchema = z.object({
 })
 
 export function registerProgressHandlers(): void {
+  /**
+   * data:recordCardResultsBatch
+   * High-performance batch MCQ progress write. Updates card progress, attempt log,
+   * and study activity within a single atomic SQLite transaction.
+   */
+  ipcMain.handle('data:recordCardResultsBatch', async (_, payload: unknown) => {
+    try {
+      const { results } = RecordCardResultsBatchSchema.parse(payload)
+      if (results.length === 0) return { success: true }
+
+      const db = getDB()
+      const sqlProgress = `
+        INSERT INTO progress
+          (card_id, ease_factor, interval, repetitions,
+           correct_count, total_count, last_result, last_reviewed)
+        VALUES (?, 2.5, 1, 0, ?, 1, ?, ?)
+        ON CONFLICT(card_id) DO UPDATE SET
+          total_count   = total_count + 1,
+          correct_count = correct_count + ?,
+          last_result   = excluded.last_result,
+          last_reviewed = excluded.last_reviewed
+      `
+      const stmtProgress = db.prepare(sqlProgress)
+
+      let totalCorrect = 0
+      const totalAnswers = results.length
+
+      db.transaction(() => {
+        for (const item of results) {
+          const correctInc = item.isCorrect ? 1 : 0
+          if (item.isCorrect) totalCorrect++
+          const lastResult = item.isCorrect ? 'correct' : 'wrong'
+          stmtProgress.run(item.cardId, correctInc, lastResult, item.lastReviewed, correctInc)
+          logAttempt(db, {
+            cardId: item.cardId,
+            mode: item.mode,
+            correct: item.isCorrect,
+            responseMs: item.responseMs,
+            answeredAt: item.answeredAt,
+          })
+        }
+
+        const now = new Date()
+        const pad = (n: number) => String(n).padStart(2, '0')
+        const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+        const sqlActivity = `
+          INSERT INTO study_activity (day, count, correct_count, total_count) 
+          VALUES (?, ?, ?, ?) 
+          ON CONFLICT(day) DO UPDATE SET 
+            count = count + excluded.count,
+            correct_count = correct_count + excluded.correct_count,
+            total_count = total_count + excluded.total_count
+        `
+        db.prepare(sqlActivity).run(today, totalAnswers, totalCorrect, totalAnswers)
+      })()
+
+      return { success: true }
+    } catch (error) {
+      return { success: false, error: (error as Error).message }
+    }
+  })
+
   /**
    * data:recordCardResult
    * Lightweight MCQ progress write. Only updates correct_count, total_count,

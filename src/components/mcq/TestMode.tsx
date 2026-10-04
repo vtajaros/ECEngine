@@ -542,22 +542,23 @@ Please explain:
     // Guard: only native DB MCQ cards (type === 'mcq' && !isGenerated).
     // Generated cards reuse a flashcard's DB id; writing here would corrupt
     // that flashcard's SM-2 state (ease_factor, repetitions, etc.).
-    const progressWrites: Promise<void>[] = []
-    for (const card of testCards) {
-      if (card.type !== 'mcq' || card.isGenerated) continue
-      const mcq = card.data as MCQData
-      const userAnswered = answers[card.id] !== undefined
-      // Only record attempted questions — unanswered cards don't count
-      if (!userAnswered) continue
-      const isCorrect = answers[card.id] === mcq.answer
-      progressWrites.push(
-        dbService.recordCardResult(card.id, isCorrect, { mode: 'test' }).catch(err => {
-          console.warn('[TestMode] Failed to record card result:', err)
-        })
-      )
+    const eligibleCards = testCards.filter(c => c.type === 'mcq' && !c.isGenerated)
+    const resultsToRecord = eligibleCards
+      .filter(card => answers[card.id] !== undefined)
+      .map(card => {
+        const mcq = card.data as MCQData
+        return {
+          cardId: card.id,
+          isCorrect: answers[card.id] === mcq.answer,
+          mode: 'test' as const,
+        }
+      })
+
+    if (resultsToRecord.length > 0) {
+      dbService.recordCardResultsBatch(resultsToRecord).catch(err => {
+        console.warn('[TestMode] Failed to record card results batch:', err)
+      })
     }
-    // Fire all writes concurrently; don't block UI transition on completion
-    Promise.all(progressWrites).catch(() => { /* already caught per-item above */ })
 
     setScore({ correct, total: testCards.length })
     setViewState('summary')

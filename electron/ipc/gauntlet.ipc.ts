@@ -173,10 +173,11 @@ export function registerGauntletHandlers(): void {
     },
   )
 
-  ipcMain.handle('gauntlet:rewardReviewElo', async (_, subject: unknown) => {
+  ipcMain.handle('gauntlet:rewardReviewElo', async (_, subject: unknown, count?: unknown) => {
     try {
       const code = z.string().min(1).parse(subject)
-      return { success: true, data: G.rewardReviewElo(getDB(), code) }
+      const countNum = typeof count === 'number' && Number.isFinite(count) && count > 0 ? Math.trunc(count) : 1
+      return { success: true, data: G.rewardReviewElo(getDB(), code, countNum) }
     } catch (e) { return fail(e) }
   })
 

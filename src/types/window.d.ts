@@ -113,6 +113,7 @@ declare global {
         getCardsWithProgress: (topicId: string) => Promise<{ success: boolean; data?: any; error?: string }>
         /** Write MCQ correctness without touching SM-2 fields. Safe to call for native MCQ cards only. */
         recordCardResult: (payload: { cardId: string, isCorrect: boolean, lastReviewed: string, mode?: 'learn' | 'test', responseMs?: number | null, answeredAt?: number | null }) => Promise<{ success: boolean; error?: string }>
+        recordCardResultsBatch: (payload: { results: Array<{ cardId: string, isCorrect: boolean, lastReviewed: string, mode?: 'learn' | 'test', responseMs?: number | null, answeredAt?: number | null }> }) => Promise<{ success: boolean; error?: string }>
         saveExamSession: (payload: {
           id?: string
           topicId?: string | null
@@ -198,7 +199,7 @@ declare global {
         getRunAnswers: (runId: string) => Promise<{ success: boolean; data?: any[]; error?: string }>
         getBests: () => Promise<{ success: boolean; data?: any[]; error?: string }>
         getPaceStats: () => Promise<{ success: boolean; data?: Array<{ subject: string; n: number; avgMs: number }>; error?: string }>
-        rewardReviewElo: (subject: string) => Promise<{ success: boolean; data?: { gained: number; newRating: number }; error?: string }>
+        rewardReviewElo: (subject: string, count?: number) => Promise<{ success: boolean; data?: { gained: number; newRating: number }; error?: string }>
         flagQuestion: (payload: { cardId: string; reason?: string }) => Promise<{ success: boolean; error?: string }>
         unflagQuestion: (payload: { cardId: string }) => Promise<{ success: boolean; error?: string }>
         getFlaggedQuestions: (payload?: { cardIds?: string[] }) => Promise<{ success: boolean; data?: Record<string, { reason: string | null; flaggedAt: number }>; error?: string }>

@@ -380,25 +380,30 @@ interface LearnCardStat {
         play('finish')
         const allCardStats = cardStatsRef.current
         if (recordProgress) {
-          const progressWrites: Promise<void>[] = []
-          for (const [id, stats] of Object.entries(allCardStats)) {
-            const card = cards.find(c => c.id === id)
-            if (card && card.type === 'mcq' && !card.isGenerated) {
-              if (stats.wasCorrectFirstTry && subject) {
-                gauntletService.rewardReviewElo(subject).catch(() => {})
+          const eligibleCards = cards.filter(c => c.type === 'mcq' && !c.isGenerated)
+          const resultsToRecord = eligibleCards
+            .filter(c => allCardStats[c.id] !== undefined)
+            .map(c => {
+              const stats = allCardStats[c.id]
+              return {
+                cardId: c.id,
+                isCorrect: stats.wasCorrectFirstTry,
+                mode: 'learn' as const,
+                responseMs: stats.firstResponseMs ?? null,
+                answeredAt: stats.firstAnsweredAt ?? null,
               }
-              progressWrites.push(
-                dbService.recordCardResult(id, stats.wasCorrectFirstTry, {
-                  mode: 'learn',
-                  responseMs: stats.firstResponseMs ?? null,
-                  answeredAt: stats.firstAnsweredAt ?? null,
-                }).catch(err => {
-                  console.warn('[LearnMode] Failed to record card result:', err)
-                })
-              )
-            }
+            })
+
+          if (resultsToRecord.length > 0) {
+            dbService.recordCardResultsBatch(resultsToRecord).catch(err => {
+              console.warn('[LearnMode] Failed to record card results batch:', err)
+            })
           }
-          Promise.all(progressWrites).catch(() => { /* already caught above */ })
+
+          const flawlessEligibleCount = eligibleCards.filter(c => allCardStats[c.id]?.wasCorrectFirstTry).length
+          if (flawlessEligibleCount > 0 && subject) {
+            gauntletService.rewardReviewElo(subject, flawlessEligibleCount).catch(() => {})
+          }
         }
 
         const flawlessCount = cards.filter(c => allCardStats[c.id]?.wasCorrectFirstTry === true).length

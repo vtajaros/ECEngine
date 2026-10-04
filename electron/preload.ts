@@ -62,6 +62,8 @@ contextBridge.exposeInMainWorld('electron', {
     getFlashcardSchedule: () => ipcRenderer.invoke('data:getFlashcardSchedule'),
     recordCardResult: (payload: { cardId: string; isCorrect: boolean }) =>
       ipcRenderer.invoke('data:recordCardResult', payload),
+    recordCardResultsBatch: (payload: { results: any[] }) =>
+      ipcRenderer.invoke('data:recordCardResultsBatch', payload),
     saveExamSession: (payload: any) => ipcRenderer.invoke('data:saveExamSession', payload),
     getExamSessions: (limit?: number) => ipcRenderer.invoke('data:getExamSessions', limit),
     deleteExamSession: (id: string) => ipcRenderer.invoke('data:deleteExamSession', id),
@@ -87,7 +89,7 @@ contextBridge.exposeInMainWorld('electron', {
     getRunAnswers: (runId: string) => ipcRenderer.invoke('gauntlet:getRunAnswers', runId),
     getBests: () => ipcRenderer.invoke('gauntlet:getBests'),
     getPaceStats: () => ipcRenderer.invoke('gauntlet:getPaceStats'),
-    rewardReviewElo: (subject: string) => ipcRenderer.invoke('gauntlet:rewardReviewElo', subject),
+    rewardReviewElo: (subject: string, count?: number) => ipcRenderer.invoke('gauntlet:rewardReviewElo', subject, count),
     resetRatings: () => ipcRenderer.invoke('gauntlet:resetRatings'),
     flagQuestion: (payload: { cardId: string; reason?: string }) =>
       ipcRenderer.invoke('gauntlet:flagQuestion', payload),

@@ -1090,6 +1090,7 @@ export function getFlaggedQuestions(
 export function rewardReviewElo(
   db: Database.Database,
   subjectCode: string,
+  count = 1,
 ): { gained: number; newRating: number } {
   let code = subjectCode as GauntletSubjectCode
   if (!['MATH', 'GEAS', 'ELECS', 'EST'].includes(code)) {
@@ -1118,11 +1119,11 @@ export function rewardReviewElo(
   const currentPeak = row?.peak ?? currentRating
 
   // Only Insulator (< 800) and Semiconductor (< 1000) receive review bonuses
-  let reward = 0
+  let rewardPerUnit = 0
   if (currentRating < 800) {
-    reward = 0.5 // Insulator
+    rewardPerUnit = 0.5 // Insulator
   } else if (currentRating < 1000) {
-    reward = 0.2 // Semiconductor
+    rewardPerUnit = 0.2 // Semiconductor
   } else {
     return { gained: 0, newRating: currentRating }
   }
@@ -1133,7 +1134,8 @@ export function rewardReviewElo(
     return { gained: 0, newRating: currentRating }
   }
 
-  const allowable = Math.min(reward, 25.0 - dailyGained)
+  const totalReward = rewardPerUnit * Math.max(1, count)
+  const allowable = Math.min(totalReward, 25.0 - dailyGained)
   if (allowable <= 0) {
     return { gained: 0, newRating: currentRating }
   }

@@ -277,17 +277,23 @@ export const useDataLabStore = create<DataLabState>((set, get) => ({
   },
 
   preloadAll: async () => {
-    const currentVersion = useDataVersionStore.getState().version
-    await Promise.allSettled([
-      get().fetchContentCoverage(true),
-      get().fetchTosCoverageMatrix(true),
-      get().fetchQuestionLengthDistribution(true),
-      get().fetchAnswerPositionCounts(true),
-      get().fetchAnswerPositionBySubject(true),
-      get().fetchResponseTimeDistribution(true),
-      get().fetchGauntletEda(true),
-    ])
-    set({ loadedVersion: currentVersion })
+    if (isPreloading) return
+    isPreloading = true
+    try {
+      const currentVersion = useDataVersionStore.getState().version
+      await Promise.allSettled([
+        get().fetchContentCoverage(true),
+        get().fetchTosCoverageMatrix(true),
+        get().fetchQuestionLengthDistribution(true),
+        get().fetchAnswerPositionCounts(true),
+        get().fetchAnswerPositionBySubject(true),
+        get().fetchResponseTimeDistribution(true),
+        get().fetchGauntletEda(true),
+      ])
+      set({ loadedVersion: currentVersion })
+    } finally {
+      isPreloading = false
+    }
   },
 
   reset: () => {
@@ -306,9 +312,15 @@ export const useDataLabStore = create<DataLabState>((set, get) => ({
   },
 }))
 
-// Auto-refresh cache whenever database writes occur
+let isPreloading = false
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+
+// Auto-refresh cache whenever database writes occur (debounced to avoid thrashing during rapid writes)
 useDataVersionStore.subscribe((state, prevState) => {
   if (state.version !== prevState?.version) {
-    useDataLabStore.getState().preloadAll()
+    if (debounceTimer) clearTimeout(debounceTimer)
+    debounceTimer = setTimeout(() => {
+      useDataLabStore.getState().preloadAll()
+    }, 300)
   }
 })
