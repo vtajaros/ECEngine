@@ -5,6 +5,7 @@ import React from 'react'
 import { act } from 'react'
 import { createRoot, Root } from 'react-dom/client'
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { createMemoryRouter, RouterProvider } from 'react-router-dom'
 import { dbService } from '../../../services/db.service'
 import { ContentCoverageDemo } from './ContentCoverageDemo'
 import { QuestionLengthDemo } from './QuestionLengthDemo'
@@ -37,6 +38,19 @@ vi.mock('recharts', async (importOriginal) => {
     ),
   }
 })
+
+// Mock localStorage for jsdom environment
+const mockStorage = (() => {
+  let store: Record<string, string> = {}
+  return {
+    getItem: (key: string) => store[key] || null,
+    setItem: (key: string, value: string) => { store[key] = value },
+    removeItem: (key: string) => { delete store[key] },
+    clear: () => { store = {} },
+  }
+})()
+Object.defineProperty(window, 'localStorage', { value: mockStorage, writable: true })
+Object.defineProperty(globalThis, 'localStorage', { value: mockStorage, writable: true })
 
 describe('Data Lab Demo Components', () => {
   let container: HTMLDivElement | null = null
@@ -1094,6 +1108,150 @@ describe('Data Lab Demo Components', () => {
       })
 
       expect(container?.textContent).toContain('DC Electrical Circuits')
+    })
+
+    it('opens LearnSettingsModal and starts drill when clicking Practice Topic', async () => {
+      vi.spyOn(gauntletService, 'getTopicAccuracyStats').mockResolvedValue([
+        {
+          tosTopicId: 'MATH-1.1',
+          code: '1.1',
+          subject: 'MATH',
+          totalCards: 25,
+          studiedCards: 5,
+          totalAnswers: 8,
+          correctAnswers: 6,
+          wrongAnswers: 2,
+          accuracy: 0.75,
+          studyProgress: 20,
+        },
+      ])
+
+      const mockCard = {
+        id: 'c-math-1',
+        topic_id: 't-1',
+        type: 'mcq' as const,
+        data: {
+          question: 'What is the limit of sin(x)/x as x approaches 0?',
+          choices: ['0', '1', 'Infinity', 'Undefined'],
+          answer: 1,
+        },
+        difficulty: 1,
+        subjectCode: 'MATH' as const,
+      }
+      const getQuestionsSpy = vi.spyOn(gauntletService, 'getQuestions').mockResolvedValue([mockCard as any])
+
+      await act(async () => {
+        const router = createMemoryRouter([
+          { path: '/', element: <GauntletTopicAccuracyDemo /> },
+        ])
+        root!.render(<RouterProvider router={router} />)
+        await new Promise((r) => setTimeout(r, 50))
+      })
+
+      // Find "Practice Topic" button
+      const practiceBtn = Array.from(container?.querySelectorAll('button') || []).find(
+        (btn) => btn.textContent?.includes('Practice Topic')
+      )
+      expect(practiceBtn).toBeDefined()
+      expect(practiceBtn?.hasAttribute('disabled')).toBe(false)
+
+      // Click Practice Topic to open LearnSettingsModal
+      await act(async () => {
+        practiceBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+        await new Promise((r) => setTimeout(r, 50))
+      })
+
+      // Learn Settings Modal should be open
+      expect(container?.textContent).toContain('Learn Settings')
+      expect(container?.textContent).toContain('Accessibility')
+
+      // Click Start Session button in the modal
+      const startBtn = Array.from(container?.querySelectorAll('button') || []).find(
+        (btn) => btn.textContent?.includes('Start Session')
+      )
+      expect(startBtn).toBeDefined()
+
+      await act(async () => {
+        startBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+        await new Promise((r) => setTimeout(r, 50))
+      })
+
+      // Should have invoked gauntletService.getQuestions with the parent topic ID
+      expect(getQuestionsSpy).toHaveBeenCalledWith(
+        [{ subject: 'MATH', count: 25 }],
+        [],
+        false, // scope === 'all' is false since default is 'gauntlet'
+        'MATH-1.0'
+      )
+    })
+
+    it('opens LearnSettingsModal for an individual subtopic drill', async () => {
+      vi.spyOn(gauntletService, 'getTopicAccuracyStats').mockResolvedValue([
+        {
+          tosTopicId: 'MATH-1.1',
+          code: '1.1',
+          subject: 'MATH',
+          totalCards: 12,
+          studiedCards: 3,
+          totalAnswers: 5,
+          correctAnswers: 4,
+          wrongAnswers: 1,
+          accuracy: 0.8,
+          studyProgress: 25,
+        },
+      ])
+
+      const mockCard = {
+        id: 'c-math-sub-1',
+        topic_id: 't-1',
+        type: 'mcq' as const,
+        data: {
+          question: 'Test subtopic question',
+          choices: ['A', 'B'],
+          answer: 0,
+        },
+        difficulty: 1,
+        subjectCode: 'MATH' as const,
+      }
+      const getQuestionsSpy = vi.spyOn(gauntletService, 'getQuestions').mockResolvedValue([mockCard as any])
+
+      await act(async () => {
+        const router = createMemoryRouter([
+          { path: '/', element: <GauntletTopicAccuracyDemo /> },
+        ])
+        root!.render(<RouterProvider router={router} />)
+        await new Promise((r) => setTimeout(r, 50))
+      })
+
+      // Find subtopic drill button with aria-label="Drill MATH-1.1"
+      const subDrillBtn = container?.querySelector('button[aria-label="Drill MATH-1.1"]')
+      expect(subDrillBtn).toBeDefined()
+      expect(subDrillBtn?.hasAttribute('disabled')).toBe(false)
+
+      await act(async () => {
+        subDrillBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+        await new Promise((r) => setTimeout(r, 50))
+      })
+
+      expect(container?.textContent).toContain('Learn Settings')
+
+      // Click Start Session
+      const startBtn = Array.from(container?.querySelectorAll('button') || []).find(
+        (btn) => btn.textContent?.includes('Start Session')
+      )
+      expect(startBtn).toBeDefined()
+
+      await act(async () => {
+        startBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+        await new Promise((r) => setTimeout(r, 50))
+      })
+
+      expect(getQuestionsSpy).toHaveBeenCalledWith(
+        [{ subject: 'MATH', count: 12 }],
+        [],
+        false,
+        'MATH-1.1'
+      )
     })
   })
 })

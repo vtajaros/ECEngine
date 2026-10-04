@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
 import FolderPanel from '@/components/ui/FolderPanel'
 import { useFolderState } from '../hooks/useFolderState'
+import type { FolderRow } from '../types/window'
 import { useNavigate, useBlocker } from 'react-router-dom'
 import { FlashDeck } from '../components/flashcard/FlashDeck'
 import { MCQDeck } from '../components/mcq/MCQDeck'
@@ -10,13 +11,24 @@ import { LearnSettingsModal, LearnSettings, loadTTSPreference } from '../compone
 import { TestSettingsModal, TestSettings } from '../components/mcq/TestSettingsModal'
 import { LeaveConfirmModal } from '@/components/ui/LeaveConfirmModal'
 import { MOCK_FLASHCARDS, MOCK_MCQS } from '../lib/mockData'
-import { Play, Bookmark, X, Trash2, AlertTriangle, ClipboardList, SlidersHorizontal, Check, Pencil, Brain, Trophy, ScrollText, Search, Plus, Star } from 'lucide-react'
+import { Play, Bookmark, X, Trash2, AlertTriangle, ClipboardList, SlidersHorizontal, Check, Pencil, Brain, Trophy, ScrollText, Search, Plus, Star, BookOpen, Folder } from 'lucide-react'
 import { getSubjectFilterClasses, getSubjectBadgeClasses, SUBJECT_MAP } from '../lib/subjectColors'
 import { TOS_SUBJECT_COLORS } from '../lib/tosData'
+import { ALL_TOS_SUBTOPICS, ALL_PARENT_TOS_TOPICS, type FlatTosTopic } from '../lib/tosClassification'
+import { gauntletService, type TosTopicPerformanceStat, type GauntletSubjectCode } from '../services/gauntlet.service'
 import { useSessionStore } from '../store/useSessionStore'
 import { motion, AnimatePresence } from 'framer-motion'
 import { shuffle, shuffleChoices, isSafeToShuffleChoices } from '../lib/scrambler'
 import { useIdleAwareTimer } from '../hooks/useIdleAwareTimer'
+
+function getTosSubtreeIds(folderId: string, rows: FolderRow[]): string[] {
+  const result: string[] = [folderId]
+  const children = rows.filter(r => r.parent_id === folderId)
+  for (const child of children) {
+    result.push(...getTosSubtreeIds(child.id, rows))
+  }
+  return result
+}
 
 import { StudyHeader } from '../components/study/StudyHeader'
 import { StudySessionStats } from '../components/study/StudySessionStats'
@@ -122,7 +134,7 @@ const LooksFamCard = React.memo(function LooksFamCard({
         {/* Right Column: Favorite Star & Administrative Info */}
         <div className="flex flex-col items-end gap-1.5 shrink-0">
           {/* Favorite Star Button */}
-          {onToggleFavorite && (
+          {!set.id.startsWith('tos_') && onToggleFavorite && (
             <Tooltip content={set.isFavorite ? "Remove from Favorites" : "Mark as Favorite"} position="top">
               <button
                 onClick={(e) => {
@@ -150,10 +162,16 @@ const LooksFamCard = React.memo(function LooksFamCard({
             {set.count} ITEMS
           </span>
 
-          {/* Date Created */}
-          <span className="text-[10px] text-gray-400 uppercase font-['JetBrains_Mono'] tracking-widest">
-            {set.createdAt ? new Date(set.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
-          </span>
+          {/* Date Created / PRC TOS Indicator */}
+          {!set.id.startsWith('tos_') ? (
+            <span className="text-[10px] text-gray-400 uppercase font-['JetBrains_Mono'] tracking-widest">
+              {set.createdAt ? new Date(set.createdAt * 1000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() : 'N/A'}
+            </span>
+          ) : (
+            <span className="text-[10px] text-accent/80 uppercase font-['JetBrains_Mono'] tracking-wider">
+              PRC TOS
+            </span>
+          )}
         </div>
       </div>
 
@@ -223,7 +241,7 @@ const LooksFamCard = React.memo(function LooksFamCard({
             </Tooltip>
           )}
 
-          {set.id.startsWith('topic_') && (
+          {(set.id.startsWith('topic_') || set.id.startsWith('tos_')) && (
             <Tooltip content="Test Paper View" position="top">
               <button
                 onClick={(e) => {
@@ -238,20 +256,22 @@ const LooksFamCard = React.memo(function LooksFamCard({
             </Tooltip>
           )}
 
-          <Tooltip content="Edit Deck" position="top">
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                onEdit(set.id)
-              }}
-              className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
-              aria-label="Edit Deck"
-            >
-              <Pencil className="w-4 h-4" />
-            </button>
-          </Tooltip>
+          {!set.id.startsWith('tos_') && (
+            <Tooltip content="Edit Deck" position="top">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onEdit(set.id)
+                }}
+                className="p-2 bg-[#111] border border-[#333] hover:border-[#555] text-gray-400 hover:text-white rounded transition-colors"
+                aria-label="Edit Deck"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+            </Tooltip>
+          )}
 
-          {set.id !== 'set-1' && (
+          {!set.id.startsWith('tos_') && set.id !== 'set-1' && (
             <Tooltip content="Delete Deck" position="top">
               <button
                 onClick={(e) => { e.stopPropagation(); onDelete(set); }}
@@ -317,6 +337,124 @@ export default function LooksFamStudy() {
   const filterPopoverRef = useRef<HTMLDivElement>(null)
   const scrollContainerRef = useRef<HTMLDivElement>(null)
 
+  // Segmented view mode: Custom user decks vs PRC Syllabus ToS topics
+  type DeckViewMode = 'custom' | 'syllabus'
+  const [deckViewMode, setDeckViewMode] = useState<DeckViewMode>(
+    () => (sessionStorage.getItem('looksfam:deckViewMode') as DeckViewMode) || 'custom'
+  )
+  const [tosTopicStats, setTosTopicStats] = useState<TosTopicPerformanceStat[]>([])
+
+  useEffect(() => {
+    sessionStorage.setItem('looksfam:deckViewMode', deckViewMode)
+  }, [deckViewMode])
+
+  const [activeSubject, setActiveSubject] = useState<Subject>(
+    () => (sessionStorage.getItem('looksfam:activeSubject') as Subject) ?? 'ALL'
+  )
+
+  useEffect(() => {
+    sessionStorage.setItem('looksfam:activeSubject', activeSubject)
+  }, [activeSubject])
+
+  const [activeFolder, setActiveFolder] = useState<string | 'all'>(
+    () => sessionStorage.getItem('looksfam:activeFolder') ?? 'all'
+  )
+
+  useEffect(() => {
+    sessionStorage.setItem('looksfam:activeFolder', activeFolder)
+  }, [activeFolder])
+
+  const loadTosTopicStats = React.useCallback(async () => {
+    try {
+      const data = await gauntletService.getTopicAccuracyStats({ scope: 'all' })
+      setTosTopicStats(data)
+    } catch (e) {
+      console.warn('[LooksFamStudy] Failed to load ToS stats:', e)
+    }
+  }, [])
+
+  // Virtual decimal study sets computed from PRC Table of Specifications taxonomy
+  const virtualSyllabusSets = useMemo<StudySet[]>(() => {
+    const statsMap = new Map<string, TosTopicPerformanceStat>()
+    for (const s of tosTopicStats) {
+      statsMap.set(s.tosTopicId.toUpperCase().trim(), s)
+    }
+
+    const parentMap = new Map<string, FlatTosTopic>()
+    for (const p of ALL_PARENT_TOS_TOPICS) {
+      parentMap.set(p.id.toUpperCase().trim(), p)
+    }
+
+    const totalSubtopics = ALL_TOS_SUBTOPICS.length
+
+    return ALL_TOS_SUBTOPICS.map((sub, index) => {
+      const stat = statsMap.get(sub.id.toUpperCase().trim())
+      const totalCards = stat?.totalCards || 0
+      const totalAnswers = stat?.totalAnswers || 0
+      const correctAnswers = stat?.correctAnswers || 0
+      const mastery = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0
+
+      const parent = sub.parentTopicId ? parentMap.get(sub.parentTopicId.toUpperCase().trim()) : null
+      const parentName = parent ? parent.name : ''
+
+      return {
+        id: `tos_${sub.id}`,
+        title: sub.name,
+        description: parentName ? `${parentName} • PRC Board Exam Syllabus` : 'PRC Board Exam Syllabus',
+        subject: sub.subject as any,
+        count: totalCards,
+        mastery,
+        deckType: 'mcq' as const,
+        tags: ['Syllabus', sub.code, ...(parent ? [parent.code] : [])],
+        createdAt: totalSubtopics - index,
+        folderName: parentName || 'ToS Topics',
+        folderId: sub.parentTopicId ? `tos_parent_${sub.parentTopicId}` : null,
+        order_index: index,
+        isFavorite: false,
+      }
+    })
+  }, [tosTopicStats])
+
+  const tosFolderRows = useMemo<FolderRow[]>(() => {
+    if (activeSubject === 'ALL') {
+      const subjectRoots: FolderRow[] = [
+        { id: 'tos_subj_MATH', name: 'Mathematics', parent_id: null, order_index: 0, created_at: 0 },
+        { id: 'tos_subj_GEAS', name: 'GEAS', parent_id: null, order_index: 1, created_at: 0 },
+        { id: 'tos_subj_ELECS', name: 'ELECS', parent_id: null, order_index: 2, created_at: 0 },
+        { id: 'tos_subj_EST', name: 'EST', parent_id: null, order_index: 3, created_at: 0 },
+      ]
+
+      const parentTopics: FolderRow[] = ALL_PARENT_TOS_TOPICS.map((p, idx) => ({
+        id: `tos_parent_${p.id}`,
+        name: p.name,
+        parent_id: `tos_subj_${p.subject}`,
+        order_index: idx,
+        created_at: 0,
+      }))
+
+      return [...subjectRoots, ...parentTopics]
+    } else {
+      const filtered = ALL_PARENT_TOS_TOPICS.filter(p => p.subject === activeSubject)
+      return filtered.map((p, idx) => ({
+        id: `tos_parent_${p.id}`,
+        name: p.name,
+        parent_id: null,
+        order_index: idx,
+        created_at: 0,
+      }))
+    }
+  }, [activeSubject])
+
+  const tosDeckCountByFolder = useMemo(() => {
+    const acc: Record<string, number> = {}
+    for (const s of virtualSyllabusSets) {
+      if (s.folderId) {
+        acc[s.folderId] = (acc[s.folderId] || 0) + 1
+      }
+    }
+    return acc
+  }, [virtualSyllabusSets])
+
   useEffect(() => {
     sessionStorage.setItem('looksfam:favoritesOnly', String(favoritesOnly))
   }, [favoritesOnly])
@@ -337,14 +475,16 @@ export default function LooksFamStudy() {
   }, [sortOrder])
 
   const availableTags = useMemo(() => {
+    const currentBase = deckViewMode === 'syllabus' ? virtualSyllabusSets : allSets
     const tags = new Set<string>(PREDEFINED_TAGS)
-    allSets.forEach(s => s.tags?.forEach(t => tags.add(t)))
+    currentBase.forEach(s => s.tags?.forEach(t => tags.add(t)))
     return Array.from(tags).sort()
-  }, [allSets])
+  }, [allSets, virtualSyllabusSets, deckViewMode])
 
   const favoriteCount = useMemo(() => {
-    return allSets.filter(s => s.isFavorite).length
-  }, [allSets])
+    const currentBase = deckViewMode === 'syllabus' ? virtualSyllabusSets : allSets
+    return currentBase.filter(s => s.isFavorite).length
+  }, [allSets, virtualSyllabusSets, deckViewMode])
 
   // Load user-created sets from DB
   const loadDBSets = async () => {
@@ -443,6 +583,7 @@ export default function LooksFamStudy() {
 
   useEffect(() => {
     loadDBSets()
+    void loadTosTopicStats()
   }, [])
 
   useEffect(() => {
@@ -455,20 +596,9 @@ export default function LooksFamStudy() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const [activeSubject, setActiveSubject] = useState<Subject>(
-    () => (sessionStorage.getItem('looksfam:activeSubject') as Subject) ?? 'ALL'
-  )
-
   useEffect(() => {
-    sessionStorage.setItem('looksfam:activeSubject', activeSubject)
-  }, [activeSubject])
-  const [activeFolder, setActiveFolder] = useState<string | 'all'>(
-    () => sessionStorage.getItem('looksfam:activeFolder') ?? 'all'
-  )
-
-  useEffect(() => {
-    sessionStorage.setItem('looksfam:activeFolder', activeFolder)
-  }, [activeFolder])
+    setActiveFolder('all')
+  }, [deckViewMode, activeSubject])
 
   useEffect(() => {
     const saved = sessionStorage.getItem('looksfam:scrollTop')
@@ -545,9 +675,14 @@ export default function LooksFamStudy() {
   }, [allSets, folderRows])
 
   const filteredAndSortedSets = useMemo(() => {
-    const folderFiltered = activeFolder === 'all'
-      ? allSets
-      : allSets.filter(d => {
+    const currentBaseSets = deckViewMode === 'syllabus' ? virtualSyllabusSets : allSets
+    const folderFiltered = (activeFolder === 'all')
+      ? currentBaseSets
+      : currentBaseSets.filter(d => {
+          if (deckViewMode === 'syllabus') {
+            const ids = getTosSubtreeIds(activeFolder, tosFolderRows)
+            return d.folderId ? ids.includes(d.folderId) : false
+          }
           const ids = subtreeIds(activeFolder)
           return d.folderId ? ids.includes(d.folderId) : activeFolder === 'Uncategorized'
         })
@@ -560,7 +695,11 @@ export default function LooksFamStudy() {
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase()
-      result = result.filter(s => s.title.toLowerCase().includes(q))
+      result = result.filter(s =>
+        s.title.toLowerCase().includes(q) ||
+        (s.description && s.description.toLowerCase().includes(q)) ||
+        (s.tags && s.tags.some(t => t.toLowerCase().includes(q)))
+      )
     }
 
     if (filterType !== 'all') {
@@ -575,13 +714,13 @@ export default function LooksFamStudy() {
       let comparison = 0
       if (sortBy === 'date') comparison = (a.createdAt || 0) - (b.createdAt || 0)
       else if (sortBy === 'mastery') comparison = a.mastery - b.mastery
-      else if (sortBy === 'title') comparison = a.title.localeCompare(b.title)
+      else if (sortBy === 'title') comparison = a.title.localeCompare(b.title, undefined, { numeric: true })
 
       return sortOrder === 'desc' ? -comparison : comparison
     })
 
     return result
-  }, [allSets, activeFolder, activeSubject, favoritesOnly, filterType, filterTags, sortBy, sortOrder, searchQuery])
+  }, [deckViewMode, virtualSyllabusSets, allSets, activeFolder, tosFolderRows, activeSubject, favoritesOnly, filterType, filterTags, sortBy, sortOrder, searchQuery])
 
   const visibleSets = useMemo(() => {
     return filteredAndSortedSets.slice(0, visibleLimit)
@@ -838,13 +977,25 @@ export default function LooksFamStudy() {
     setIsSessionActive(true)
     setActiveSessionSetId(setId)
 
-    const setInfo = allSets.find(s => s.id === setId)
+    const currentSetsPool = deckViewMode === 'syllabus' ? virtualSyllabusSets : allSets
+    const setInfo = currentSetsPool.find(s => s.id === setId) || allSets.find(s => s.id === setId) || virtualSyllabusSets.find(s => s.id === setId)
     if (setInfo) setActiveSessionTitle(setInfo.title)
 
     let filteredData: any[] = []
     let realDeckCount = 0
 
-    if (setId.startsWith('topic_')) {
+    if (setId.startsWith('tos_')) {
+      const tosTopicId = setId.replace('tos_', '')
+      const subj = (setInfo?.subject && setInfo.subject !== 'ALL' ? setInfo.subject : activeSubject !== 'ALL' ? activeSubject : 'MATH') as GauntletSubjectCode
+      const rawCards = await gauntletService.getQuestions(
+        [{ subject: subj, count: 5000 }],
+        [],
+        true, // allowSolutions: true for library practice
+        tosTopicId
+      )
+      filteredData = rawCards
+      realDeckCount = filteredData.length
+    } else if (setId.startsWith('topic_')) {
       // Load real cards from DB
       const prioritizedCards = await dbService.getCardsWithProgress(setId)
       const rawCards = prioritizedCards.map(card => ({
@@ -922,7 +1073,7 @@ export default function LooksFamStudy() {
       }
     }
 
-    if (setId.startsWith('topic_') && filteredData.length === 0) {
+    if ((setId.startsWith('topic_') || setId.startsWith('tos_')) && filteredData.length === 0) {
       handleExit()
       setIsSessionActive(false)
       setMode('flashcard')
@@ -948,13 +1099,25 @@ export default function LooksFamStudy() {
     setIsSessionActive(true)
     setActiveSessionSetId(setId)
 
-    const setInfo = allSets.find(s => s.id === setId)
+    const currentSetsPool = deckViewMode === 'syllabus' ? virtualSyllabusSets : allSets
+    const setInfo = currentSetsPool.find(s => s.id === setId) || allSets.find(s => s.id === setId) || virtualSyllabusSets.find(s => s.id === setId)
     if (setInfo) setActiveSessionTitle(setInfo.title)
 
     let filteredData: any[] = []
     let realDeckCount = 0
 
-    if (setId.startsWith('topic_')) {
+    if (setId.startsWith('tos_')) {
+      const tosTopicId = setId.replace('tos_', '')
+      const subj = (setInfo?.subject && setInfo.subject !== 'ALL' ? setInfo.subject : activeSubject !== 'ALL' ? activeSubject : 'MATH') as GauntletSubjectCode
+      const rawCards = await gauntletService.getQuestions(
+        [{ subject: subj, count: 5000 }],
+        [],
+        true,
+        tosTopicId
+      )
+      filteredData = rawCards
+      realDeckCount = filteredData.length
+    } else if (setId.startsWith('topic_')) {
       // Load real cards from DB
       const prioritizedCards = await dbService.getCardsWithProgress(setId)
       const rawCards = prioritizedCards.map(card => ({
@@ -1031,7 +1194,7 @@ export default function LooksFamStudy() {
       }
     }
 
-    if (setId.startsWith('topic_') && filteredData.length === 0) {
+    if ((setId.startsWith('topic_') || setId.startsWith('tos_')) && filteredData.length === 0) {
       handleExit()
       setIsSessionActive(false)
       setMode('flashcard')
@@ -1091,6 +1254,7 @@ export default function LooksFamStudy() {
             setIsSessionActive(false)
             // Re-fetch mastery now that per-answer progress has been written.
             loadDBSets()
+            void loadTosTopicStats()
             setGlobalBookmarks(readBookmarks())
           }}
         />
@@ -1130,7 +1294,10 @@ export default function LooksFamStudy() {
             setIsSessionActive(false)
             // TestMode batches writes at submit and fires them concurrently;
             // give SQLite ~300 ms to commit before re-fetching mastery.
-            setTimeout(() => loadDBSets(), 300)
+            setTimeout(() => {
+              loadDBSets()
+              void loadTosTopicStats()
+            }, 300)
             setGlobalBookmarks(readBookmarks())
           }}
         />
@@ -1185,7 +1352,7 @@ export default function LooksFamStudy() {
         isOpen={showSettingsModal.isOpen}
         setId={showSettingsModal.setId}
         settings={learnSettings}
-        allSets={allSets}
+        allSets={deckViewMode === 'syllabus' ? virtualSyllabusSets : allSets}
         onSettingsChange={setLearnSettings}
         onStart={handleStartLearn}
         onClose={() => setShowSettingsModal({ isOpen: false, setId: null })}
@@ -1196,7 +1363,7 @@ export default function LooksFamStudy() {
         isOpen={showTestModal.isOpen}
         setId={showTestModal.setId}
         settings={testSettings}
-        allSets={allSets}
+        allSets={deckViewMode === 'syllabus' ? virtualSyllabusSets : allSets}
         onSettingsChange={setTestSettings}
         onStart={handleStartTest}
         onClose={() => setShowTestModal({ isOpen: false, setId: null })}
@@ -1206,18 +1373,57 @@ export default function LooksFamStudy() {
         <div ref={scrollContainerRef} className="flex flex-col flex-1 min-w-0 overflow-y-auto show-scrollbar">
           <div className="flex flex-col items-center w-full pt-6 pb-0 px-6">
             <div className="w-full max-w-5xl flex flex-col items-center justify-center gap-6 mb-2 border-b border-[var(--bg-card)] pb-4 relative z-30 pt-4">
-              <div className="w-full flex items-center justify-center relative min-h-[40px]">
-                <h1 className="text-3xl lg:text-4xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-4 uppercase">
-                  <Brain className="text-[var(--accent-primary)]" size={32} />
-                  LOOKS<span className="text-[var(--accent-primary)]">FAM</span>
-                </h1>
-                <button
-                  onClick={() => navigate('/add-decks?type=mcq')}
-                  className="absolute right-0 flex items-center gap-2 px-4 py-2 rounded-md border border-[var(--bg-card)] bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)] font-['Rajdhani'] font-bold text-sm uppercase tracking-widest transition-all"
-                >
-                  <Plus size={15} />
-                  Add MCQ Deck
-                </button>
+              <div className="w-full flex items-center justify-between relative min-h-[44px]">
+                {/* Upper Left: Mode Segmented Toggle (Custom Decks vs ToS Topics) */}
+                <div className="flex items-center z-10">
+                  <div className="flex items-center p-0.5 bg-[#0c0c0c] rounded-lg border border-[#2a2a2a]">
+                    <button
+                      type="button"
+                      onClick={() => setDeckViewMode('custom')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all cursor-pointer ${
+                        deckViewMode === 'custom'
+                          ? 'bg-accent/15 text-accent border border-accent/40 shadow-[0_0_10px_rgba(0,255,65,0.2)]'
+                          : 'text-text-muted hover:text-text-primary border border-transparent'
+                      }`}
+                    >
+                      <Folder size={13} />
+                      <span>Custom Decks</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeckViewMode('syllabus')}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all cursor-pointer ${
+                        deckViewMode === 'syllabus'
+                          ? 'bg-accent/15 text-accent border border-accent/40 shadow-[0_0_10px_rgba(0,255,65,0.2)]'
+                          : 'text-text-muted hover:text-text-primary border border-transparent'
+                      }`}
+                    >
+                      <BookOpen size={13} />
+                      <span>ToS Topics</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Center: Brand Title & Brain Icon */}
+                <div className="absolute left-1/2 -translate-x-1/2 flex items-center pointer-events-none">
+                  <h1 className="text-3xl lg:text-4xl font-['Orbitron'] text-[var(--text-primary)] tracking-wider font-bold flex items-center gap-3 lg:gap-4 uppercase select-none pointer-events-auto">
+                    <Brain className="text-[var(--accent-primary)] shrink-0" size={32} />
+                    <span>LOOKS<span className="text-[var(--accent-primary)]">FAM</span></span>
+                  </h1>
+                </div>
+
+                {/* Upper Right: Add MCQ Deck (when custom decks is active) */}
+                <div className="flex items-center justify-end z-10 min-w-[140px]">
+                  {deckViewMode === 'custom' && (
+                    <button
+                      onClick={() => navigate('/add-decks?type=mcq')}
+                      className="flex items-center gap-2 px-4 py-2 rounded-md border border-[var(--bg-card)] bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--accent-primary)] hover:border-[var(--accent-primary)] font-['Rajdhani'] font-bold text-sm uppercase tracking-widest transition-all cursor-pointer"
+                    >
+                      <Plus size={15} />
+                      Add MCQ Deck
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="flex items-center justify-center flex-wrap gap-2 w-full bg-[var(--bg-secondary)] p-1 rounded-lg border border-[var(--bg-card)] no-scrollbar px-1">
@@ -1439,15 +1645,19 @@ export default function LooksFamStudy() {
                 <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
                   <Trophy className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Test Mode
                 </span>
-                <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                  <ScrollText className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Test Paper View
-                </span>
-                <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                  <Pencil className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Edit Deck
-                </span>
-                <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
-                  <Trash2 className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Delete Deck
-                </span>
+                {deckViewMode === 'custom' && (
+                  <>
+                    <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                      <ScrollText className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Test Paper View
+                    </span>
+                    <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                      <Pencil className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Edit Deck
+                    </span>
+                    <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
+                      <Trash2 className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Delete Deck
+                    </span>
+                  </>
+                )}
                 <span className="flex items-center gap-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>
                   <Bookmark className="shrink-0" size={14} style={{ color: 'rgba(255,255,255,0.45)' }} /> Bookmarked Items
                 </span>
@@ -1489,7 +1699,9 @@ export default function LooksFamStudy() {
                   </div>
                 ) : filteredAndSortedSets.length === 0 ? (
                   <div className="text-center py-20 text-text-muted font-rajdhani uppercase tracking-widest text-lg">
-                    No decks found{activeSubject !== 'ALL' ? ` for ${activeSubject}` : ''}. Import some from Add Decks.
+                    {deckViewMode === 'syllabus'
+                      ? `No ToS topics found${activeSubject !== 'ALL' ? ` for ${activeSubject}` : ''}.`
+                      : `No decks found${activeSubject !== 'ALL' ? ` for ${activeSubject}` : ''}. Import some from Add Decks.`}
                   </div>
                 ) : null}
               </div>
@@ -1573,10 +1785,13 @@ export default function LooksFamStudy() {
           </AnimatePresence>
         </div>
         <FolderPanel
-          folderRows={folderRows}
+          folderRows={deckViewMode === 'syllabus' ? tosFolderRows : folderRows}
           folders={folders}
-          deckCountByFolder={deckCountByFolder}
-          totalDeckCount={allSets.length}
+          deckCountByFolder={deckViewMode === 'syllabus' ? tosDeckCountByFolder : deckCountByFolder}
+          totalDeckCount={deckViewMode === 'syllabus'
+            ? (activeSubject === 'ALL' ? virtualSyllabusSets.length : virtualSyllabusSets.filter(s => s.subject === activeSubject).length)
+            : allSets.length
+          }
           displayedDeckCount={filteredAndSortedSets.length}
           activeSubject={activeSubject}
           searchQuery={searchQuery}
@@ -1585,12 +1800,14 @@ export default function LooksFamStudy() {
           favoritesOnly={favoritesOnly}
           selected={activeFolder}
           onSelect={setActiveFolder}
-          onDeleteFolder={handleDeleteFolder}
-          onReorderFolders={handleReorderFolders}
-          onCreateFolder={onCreateFolder}
-          onPromoteFolder={onPromoteFolder}
-          onNestFolder={onNestFolder}
-          onRenameFolder={onRenameFolder}
+          title={deckViewMode === 'syllabus' ? 'TOS TOPICS' : 'FOLDERS'}
+          readOnly={deckViewMode === 'syllabus'}
+          onDeleteFolder={deckViewMode === 'syllabus' ? undefined : handleDeleteFolder}
+          onReorderFolders={deckViewMode === 'syllabus' ? undefined : handleReorderFolders}
+          onCreateFolder={deckViewMode === 'syllabus' ? undefined : onCreateFolder}
+          onPromoteFolder={deckViewMode === 'syllabus' ? undefined : onPromoteFolder}
+          onNestFolder={deckViewMode === 'syllabus' ? undefined : onNestFolder}
+          onRenameFolder={deckViewMode === 'syllabus' ? undefined : onRenameFolder}
         />
       </div>
     </div>

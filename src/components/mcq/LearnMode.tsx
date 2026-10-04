@@ -108,8 +108,12 @@ export const LearnMode: React.FC<LearnModeProps> = ({ cards, title, subject, tts
   const [choiceStatus, setChoiceStatus] = useState<QuestionStatus>('unanswered')
   const [showSolution, setShowSolution] = useState(false)
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(() => {
-    const saved = localStorage.getItem('bookmarkedIds')
-    return saved ? new Set(JSON.parse(saved)) : new Set()
+    try {
+      const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('bookmarkedIds') : null
+      return saved ? new Set(JSON.parse(saved)) : new Set()
+    } catch {
+      return new Set()
+    }
   })
 
   // Tracking
@@ -293,7 +297,11 @@ interface LearnCardStat {
       const next = new Set(prev)
       if (next.has(targetId)) next.delete(targetId)
       else next.add(targetId)
-      localStorage.setItem('bookmarkedIds', JSON.stringify(Array.from(next)))
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('bookmarkedIds', JSON.stringify(Array.from(next)))
+        }
+      } catch { /* storage unavailable */ }
       return next
     })
   }

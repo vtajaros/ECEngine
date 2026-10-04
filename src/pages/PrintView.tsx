@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FileText, Table2, List, BookOpen, Bold, Loader2, CheckCircle2, AlertCircle, X, Search, ChevronUp, ChevronDown } from 'lucide-react'
 import { dbService } from '../services/db.service'
+import { gauntletService, type GauntletSubjectCode } from '../services/gauntlet.service'
+import { ALL_TOS_SUBTOPICS, ALL_PARENT_TOS_TOPICS } from '../lib/tosClassification'
 import { Card, MCQData, FlashcardData, FormulaData } from '../types'
 import { renderMath, renderPlainText } from '../lib/latex'
 import { Tooltip } from '../components/ui/Tooltip'
@@ -787,13 +789,35 @@ export default function PrintView() {
       }
     }
 
-    const cardsPromise = dbService.getAllCardsByTopic(topicId)
+    const isTos = topicId.startsWith('tos_')
+    const cardsPromise = isTos
+      ? (async () => {
+          const tosTopicId = topicId.replace('tos_', '')
+          const subj = (searchParams.get('subject') || tosTopicId.split('-')[0]) as GauntletSubjectCode
+          return gauntletService.getQuestions(
+            [{ subject: subj, count: 5000 }],
+            [],
+            true,
+            tosTopicId
+          )
+        })()
+      : dbService.getAllCardsByTopic(topicId)
+
     const fontsPromise = loadFonts()
-    const topicsPromise = window.electron?.decks?.getTopics?.() ?? Promise.resolve(null)
+    const topicsPromise = isTos
+      ? Promise.resolve(null)
+      : (window.electron?.decks?.getTopics?.() ?? Promise.resolve(null))
 
     Promise.all([cardsPromise, fontsPromise, topicsPromise]).then(([result, _, topicRes]: any) => {
       setCards(result)
-      if (topicRes?.success && topicRes?.data) {
+      if (isTos) {
+        const tosTopicId = topicId.replace('tos_', '')
+        const sub = ALL_TOS_SUBTOPICS.find(s => s.id.toUpperCase() === tosTopicId.toUpperCase())
+        const parent = sub?.parentTopicId
+          ? ALL_PARENT_TOS_TOPICS.find(p => p.id.toUpperCase() === sub.parentTopicId?.toUpperCase())
+          : ALL_PARENT_TOS_TOPICS.find(p => p.id.toUpperCase() === tosTopicId.toUpperCase())
+        setTopicDescription(parent?.name ? `${parent.name} • PRC Board Exam Syllabus` : 'PRC Board Exam Syllabus')
+      } else if (topicRes?.success && topicRes?.data) {
         const topic = topicRes.data.find((t: any) => t.id === topicId)
         if (topic?.description) {
           setTopicDescription(topic.description)

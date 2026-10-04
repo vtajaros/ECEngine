@@ -5,6 +5,7 @@ import React, { act } from 'react'
 import { createRoot, Root } from 'react-dom/client'
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { createMemoryRouter, RouterProvider } from 'react-router-dom'
+import { gauntletService } from '../services/gauntlet.service'
 import PrintView from './PrintView'
 
 vi.mock('../services/db.service', () => ({
@@ -118,5 +119,47 @@ describe('PrintView Find Shortcut', () => {
 
     expect(container?.textContent).toContain('Coordinated batch description')
     expect(container?.textContent).toContain('Sample question?')
+  })
+
+  it('loads and renders cards for ToS topics using gauntletService', async () => {
+    vi.spyOn(gauntletService, 'getQuestions').mockResolvedValueOnce([
+      {
+        id: 'tos-card-1',
+        topicId: 'tos_ELECS-1.1',
+        type: 'mcq',
+        difficulty: 'medium',
+        tags: [],
+        isCustom: false,
+        data: {
+          question: "What is Ohm's Law for resistive circuits?",
+          choices: ['V = IR', 'P = IV', 'I = VR', 'R = VI'],
+          answer: 0,
+        },
+      } as any,
+    ])
+
+    const router = createMemoryRouter(
+      [
+        {
+          path: '/print',
+          element: <PrintView />,
+        },
+      ],
+      {
+        initialEntries: ['/print?topicId=tos_ELECS-1.1&title=1.1%20Resistive%20Network'],
+      }
+    )
+
+    await act(async () => {
+      root?.render(<RouterProvider router={router} />)
+    })
+
+    expect(gauntletService.getQuestions).toHaveBeenCalledWith(
+      [{ subject: 'ELECS', count: 5000 }],
+      [],
+      true,
+      'ELECS-1.1'
+    )
+    expect(container?.textContent).toContain("What is Ohm's Law for resistive circuits?")
   })
 })

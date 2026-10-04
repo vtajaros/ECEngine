@@ -41,6 +41,8 @@ export interface FolderPanelProps {
   onPromoteFolder?: (folderId: string) => Promise<void>
   onNestFolder?: (folderId: string, parentId: string) => Promise<void>
   onRenameFolder?: (folderId: string, newName: string) => void
+  title?: string
+  readOnly?: boolean
 }
 
 interface TreeNode extends FolderRow {
@@ -226,9 +228,11 @@ const FolderRowItem: React.FC<{
   onRequestDelete: (id: string, name: string) => void
   onRequestCreate: (parentId: string) => void
   onRenameFolder?: (folderId: string, newName: string) => void
+  readOnly?: boolean
 }> = ({
   node, isEditing, isCollapsed, selected, depth,
   isExpanded, activeDragId, activeDragDepth, dropTargetId, dropIntent,
+  readOnly,
   onSelect, onToggleExpand, onRequestDelete, onRequestCreate, onRenameFolder,
 }) => {
   const isUncategorized = node.name === 'Uncategorized'
@@ -239,7 +243,7 @@ const FolderRowItem: React.FC<{
   const {
     attributes, listeners, setNodeRef,
     transform, transition, isDragging,
-  } = useSortable({ id: node.id, disabled: isUncategorized })
+  } = useSortable({ id: node.id, disabled: isUncategorized || Boolean(readOnly) })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -285,6 +289,7 @@ const FolderRowItem: React.FC<{
             onRequestDelete={onRequestDelete}
             onRequestCreate={onRequestCreate}
             onRenameFolder={onRenameFolder}
+            readOnly={readOnly}
           />
         ))}
       </div>
@@ -519,6 +524,7 @@ const FolderRowItem: React.FC<{
                 onRequestDelete={onRequestDelete}
                 onRequestCreate={onRequestCreate}
                 onRenameFolder={onRenameFolder}
+                readOnly={readOnly}
               />
             ))}
           </motion.div>
@@ -876,6 +882,8 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
   onPromoteFolder,
   onNestFolder,
   onRenameFolder,
+  title = 'FOLDERS',
+  readOnly = false,
 }) => {
   const [isEditing, setIsEditing] = useState(false)
   const [isCollapsed, setIsCollapsed] = useState(() =>
@@ -899,6 +907,13 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
 
   const [folderToDelete, setFolderToDelete] = useState<{ id: string; name: string } | null>(null)
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (readOnly && folderRows) {
+      setExpandedIds(new Set(folderRows.filter(r => !r.parent_id).map(r => r.id)))
+    }
+  }, [readOnly, folderRows])
+
   const [creatingUnder, setCreatingUnder] = useState<string | null | undefined>(undefined)
   const [activeDragId, setActiveDragId] = useState<string | null>(null)
   const [activeDragDepth, setActiveDragDepth] = useState<number | null>(null)
@@ -915,7 +930,8 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
 
   countMap = deckCountByFolder
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }))
+  const pointerSensor = useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  const sensors = useSensors(...(readOnly ? [] : [pointerSensor]))
 
   const toggleExpand = (id: string) => {
     setExpandedIds(prev => {
@@ -1110,31 +1126,33 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                     </svg>
                   </button>
                 </Tooltip>
-                <h2 className="text-gray-400 text-xs uppercase tracking-[0.15em] font-bold font-['Rajdhani']">FOLDERS</h2>
+                <h2 className="text-gray-400 text-xs uppercase tracking-[0.15em] font-bold font-['Rajdhani']">{title}</h2>
               </div>
-              <div className="flex items-center gap-0.5">
-                {!isEditing && (
-                  <Tooltip content="New folder" position="bottom">
+              {!readOnly && (
+                <div className="flex items-center gap-0.5">
+                  {!isEditing && (
+                    <Tooltip content="New folder" position="bottom">
+                      <button
+                        onClick={() => setCreatingUnder(null)}
+                        className="text-gray-400 hover:text-accent hover:bg-border-base transition-colors p-1 rounded"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                    </Tooltip>
+                  )}
+                  <Tooltip content={isEditing ? 'Done' : 'Edit folders'} position="bottom">
                     <button
-                      onClick={() => setCreatingUnder(null)}
+                      onClick={toggleEdit}
                       className="text-gray-400 hover:text-accent hover:bg-border-base transition-colors p-1 rounded"
                     >
-                      <Plus className="w-3.5 h-3.5" />
+                      {isEditing
+                        ? <Check className="w-3.5 h-3.5 text-white" />
+                        : <Pencil className="w-3.5 h-3.5 text-white" />
+                      }
                     </button>
                   </Tooltip>
-                )}
-                <Tooltip content={isEditing ? 'Done' : 'Edit folders'} position="bottom">
-                  <button
-                    onClick={toggleEdit}
-                    className="text-gray-400 hover:text-accent hover:bg-border-base transition-colors p-1 rounded"
-                  >
-                    {isEditing
-                      ? <Check className="w-3.5 h-3.5 text-white" />
-                      : <Pencil className="w-3.5 h-3.5 text-white" />
-                    }
-                  </button>
-                </Tooltip>
-              </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1224,6 +1242,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                       onRequestDelete={(id, name) => setFolderToDelete({ id, name })}
                       onRequestCreate={(parentId) => setCreatingUnder(parentId)}
                       onRenameFolder={onRenameFolder}
+                      readOnly={readOnly}
                     />
                     {/* Subfolder create input — indented under its parent */}
                     {!isCollapsed && creatingUnder === node.id && (
@@ -1397,18 +1416,20 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
                   </svg>
                 </button>
               </Tooltip>
-              <h2 className="text-gray-400 text-xs uppercase tracking-[0.15em] font-bold font-['Rajdhani']">FOLDERS</h2>
+              <h2 className="text-gray-400 text-xs uppercase tracking-[0.15em] font-bold font-['Rajdhani']">{title}</h2>
             </div>
-            <div className="flex items-center gap-0.5">
-              <Tooltip content={isEditing ? 'Done' : 'Edit folders'} position="bottom">
-                <button
-                  onClick={toggleEdit}
-                  className="text-gray-400 hover:text-accent hover:bg-border-base transition-colors p-1 rounded"
-                >
-                  {isEditing ? <Check className="w-3.5 h-3.5 text-white" /> : <Pencil className="w-3.5 h-3.5 text-white" />}
-                </button>
-              </Tooltip>
-            </div>
+            {!readOnly && (
+              <div className="flex items-center gap-0.5">
+                <Tooltip content={isEditing ? 'Done' : 'Edit folders'} position="bottom">
+                  <button
+                    onClick={toggleEdit}
+                    className="text-gray-400 hover:text-accent hover:bg-border-base transition-colors p-1 rounded"
+                  >
+                    {isEditing ? <Check className="w-3.5 h-3.5 text-white" /> : <Pencil className="w-3.5 h-3.5 text-white" />}
+                  </button>
+                </Tooltip>
+              </div>
+            )}
           </div>
         )}
 

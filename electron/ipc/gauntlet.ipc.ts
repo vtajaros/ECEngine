@@ -12,7 +12,7 @@ const RatingsMapSchema = z.object({
 })
 
 const GetQuestionsSchema = z.object({
-  counts: z.array(z.object({ subject: SubjectSchema, count: z.number().int().min(0).max(500) })).min(1),
+  counts: z.array(z.object({ subject: SubjectSchema, count: z.number().int().min(0).max(5000) })).min(1),
   excludeIds: z.array(z.string()).max(5000).optional().default([]),
   allowSolutions: z.boolean().optional().default(false),
   tosTopicId: z.string().optional(),

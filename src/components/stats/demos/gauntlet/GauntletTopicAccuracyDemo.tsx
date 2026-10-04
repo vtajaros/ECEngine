@@ -11,8 +11,13 @@ import {
   SlidersHorizontal,
   Info,
   Check,
+  Play,
 } from 'lucide-react'
 import { gauntletService, type TosTopicPerformanceStat, type GauntletSubjectCode } from '../../../../services/gauntlet.service'
+import { dbService } from '../../../../services/db.service'
+import type { Card } from '../../../../types'
+import { LearnMode } from '../../../mcq/LearnMode'
+import { LearnSettingsModal, type LearnSettings, loadTTSPreference } from '../../../mcq/LearnSettingsModal'
 import { TOS_SUBJECT_COLORS } from '../../../../lib/tosData'
 import { getTosTopicGroupsBySubject, type TosTopicGroup, type FlatTosTopic } from '../../../../lib/tosClassification'
 
@@ -170,6 +175,80 @@ export function GauntletTopicAccuracyDemo() {
   // Custom sort menu dropdown state
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false)
   const sortDropdownRef = useRef<HTMLDivElement>(null)
+
+  // Topic Drill / Learn Session State
+  const [drillTarget, setDrillTarget] = useState<{
+    id: string
+    title: string
+    totalCards: number
+    subject: GauntletSubjectCode
+  } | null>(null)
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false)
+  const [learnSettings, setLearnSettings] = useState<LearnSettings>({
+    type: 'MCQ',
+    shuffleQuestions: false,
+    shuffleChoices: false,
+    bookmarkedOnly: false,
+    itemCount: 'All',
+    randomSample: false,
+    ttsEnabled: loadTTSPreference(),
+  })
+  const [isStartingDrill, setIsStartingDrill] = useState(false)
+  const [activeSession, setActiveSession] = useState<{
+    cards: Card[]
+    title: string
+    subject: GauntletSubjectCode
+  } | null>(null)
+
+  const handleOpenDrillModal = useCallback((target: {
+    id: string
+    title: string
+    totalCards: number
+    subject: GauntletSubjectCode
+  }) => {
+    if (target.totalCards <= 0) return
+    setDrillTarget(target)
+    setLearnSettings(prev => ({
+      ...prev,
+      itemCount: 'All',
+    }))
+    setIsSettingsModalOpen(true)
+  }, [])
+
+  const handleStartDrill = useCallback(async () => {
+    if (!drillTarget) return
+    setIsStartingDrill(true)
+    setIsSettingsModalOpen(false)
+    try {
+      const maxCount = typeof learnSettings.itemCount === 'number' ? learnSettings.itemCount : drillTarget.totalCards
+      const rawCards = await gauntletService.getQuestions(
+        [{ subject: drillTarget.subject, count: Math.min(maxCount, 5000) }],
+        [],
+        scope === 'all',
+        drillTarget.id
+      )
+
+      if (!rawCards || rawCards.length === 0) {
+        setError(`No questions available for ${drillTarget.title} with current filters`)
+        return
+      }
+
+      let finalCards = rawCards as Card[]
+      if (learnSettings.shuffleQuestions) {
+        finalCards = [...finalCards].sort(() => Math.random() - 0.5)
+      }
+
+      setActiveSession({
+        cards: finalCards,
+        title: drillTarget.title,
+        subject: drillTarget.subject,
+      })
+    } catch (err) {
+      setError((err as Error).message || 'Failed to start topic drill')
+    } finally {
+      setIsStartingDrill(false)
+    }
+  }, [drillTarget, learnSettings, scope])
 
   // Subtopic count per subject for tab counters
   const subjectCounts = useMemo(() => {
@@ -458,6 +537,43 @@ export function GauntletTopicAccuracyDemo() {
   const currentSortLabel = useMemo(() => {
     return SORT_OPTIONS.find((o) => o.key === sortBy)?.label || 'Sort Topics'
   }, [sortBy])
+
+  if (activeSession) {
+    return (
+      <div className="fixed inset-0 z-[150] bg-[#0D0D0D] flex flex-col overflow-y-auto">
+        <LearnMode
+          cards={activeSession.cards}
+          title={activeSession.title}
+          subject={activeSession.subject}
+          ttsEnabled={learnSettings.ttsEnabled}
+          shuffleChoices={learnSettings.shuffleChoices}
+          onComplete={(sessionStats) => {
+            const total = activeSession.cards.length || (sessionStats.correct + sessionStats.wrong)
+            dbService.saveExamSession({
+              topicId: null,
+              mode: 'learn',
+              score: sessionStats.correct,
+              total,
+              answers: JSON.stringify({
+                deckTitle: activeSession.title,
+                deckDescription: `Topic Drill: ${activeSession.title}`,
+                subject: activeSession.subject,
+                correctFirstTry: sessionStats.correct,
+                wrongFirstTry: sessionStats.wrong,
+                bookmarkedCount: sessionStats.bookmarked,
+              }),
+            }).catch(err => {
+              console.warn('Failed to save topic drill exam session:', err)
+            })
+          }}
+          onExit={() => {
+            setActiveSession(null)
+            void loadStats()
+          }}
+        />
+      </div>
+    )
+  }
 
   return (
     <div
@@ -865,8 +981,8 @@ export function GauntletTopicAccuracyDemo() {
                   </h3>
                 </div>
 
-                {/* Parent Overall Accuracy & Studied Progress Meters */}
-                <div className="flex items-center gap-5 sm:gap-6 shrink-0 self-start sm:self-center">
+                {/* Parent Overall Accuracy & Studied Progress Meters + Drill Action */}
+                <div className="flex items-center gap-4 sm:gap-6 shrink-0 self-start sm:self-center flex-wrap sm:flex-nowrap">
                   {/* Overall Acc */}
                   <div className="flex flex-col w-28 sm:w-32">
                     <div className="flex items-center justify-between mb-1">
@@ -922,6 +1038,29 @@ export function GauntletTopicAccuracyDemo() {
                       {activeGroup.studiedCards} / {activeGroup.totalCards} cards
                     </span>
                   </div>
+
+                  {/* Practice Topic Action */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleOpenDrillModal({
+                        id: activeGroup.parent.id,
+                        title: `${activeGroup.parent.code} ${activeGroup.parent.name}`,
+                        totalCards: activeGroup.totalCards,
+                        subject: activeGroup.subject,
+                      })
+                    }
+                    disabled={activeGroup.totalCards === 0 || isStartingDrill}
+                    aria-label={`Practice ${activeGroup.parent.name}`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-wider transition-all shadow-sm shrink-0 cursor-pointer ${
+                      activeGroup.totalCards > 0
+                        ? 'bg-accent/15 border border-accent/40 text-accent hover:bg-accent/25 hover:border-accent hover:shadow-[0_0_12px_rgba(0,255,65,0.25)] active:scale-95'
+                        : 'bg-surface-2 border border-border-base text-text-muted/40 cursor-not-allowed opacity-50'
+                    }`}
+                  >
+                    <Play size={12} className={activeGroup.totalCards > 0 ? 'fill-accent' : ''} />
+                    <span>Practice Topic</span>
+                  </button>
                 </div>
               </div>
 
@@ -1039,6 +1178,31 @@ export function GauntletTopicAccuracyDemo() {
                             {sub.studiedCards} / {sub.totalCards} cards
                           </span>
                         </div>
+
+                        {/* Subtopic Drill Action */}
+                        <div className="shrink-0 flex items-center pl-1 sm:pl-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleOpenDrillModal({
+                                id: sub.id,
+                                title: `${sub.id} ${sub.title}`,
+                                totalCards: sub.totalCards,
+                                subject: sub.subject,
+                              })
+                            }
+                            disabled={sub.totalCards === 0 || isStartingDrill}
+                            title={sub.totalCards > 0 ? `Drill ${sub.id}: ${sub.title} (${sub.totalCards} cards)` : 'No cards available'}
+                            aria-label={`Drill ${sub.id}`}
+                            className={`flex items-center justify-center p-2 rounded transition-all cursor-pointer ${
+                              sub.totalCards > 0
+                                ? 'bg-surface-2 border border-[#333] hover:border-accent hover:text-accent hover:bg-accent/10 text-text-muted active:scale-95'
+                                : 'bg-surface-2 border border-border-base text-text-muted/30 cursor-not-allowed'
+                            }`}
+                          >
+                            <Play size={13} className={sub.totalCards > 0 ? 'fill-current' : ''} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   )
@@ -1064,6 +1228,22 @@ export function GauntletTopicAccuracyDemo() {
           )}
         </div>
       </div>
+
+      {/* Learn Settings Modal for Topic Practice */}
+      {drillTarget && (
+        <LearnSettingsModal
+          isOpen={isSettingsModalOpen}
+          setId={drillTarget.id}
+          settings={learnSettings}
+          allSets={[{ id: drillTarget.id, count: drillTarget.totalCards }]}
+          onSettingsChange={setLearnSettings}
+          onStart={() => void handleStartDrill()}
+          onClose={() => {
+            setIsSettingsModalOpen(false)
+            setDrillTarget(null)
+          }}
+        />
+      )}
     </div>
   )
 }
