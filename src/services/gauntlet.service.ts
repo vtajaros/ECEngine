@@ -113,8 +113,9 @@ export const gauntletService = {
     allowSolutions?: boolean,
     tosTopicId?: string,
     tosTopicIds?: string[],
+    scope?: 'gauntlet' | 'all',
   ): Promise<GauntletCard[]> {
-    const res = await window.electron.gauntlet.getQuestions({ counts, excludeIds, allowSolutions, tosTopicId, tosTopicIds })
+    const res = await window.electron.gauntlet.getQuestions({ counts, excludeIds, allowSolutions, tosTopicId, tosTopicIds, scope: scope ?? 'all' })
     if (!res.success) throw new Error(res.error || 'Failed to get questions')
     const rows = res.data || []
     return rows.map((r: any) => ({
@@ -190,6 +191,7 @@ export const gauntletService = {
     limit?: number
     mode?: 'all' | 'survival' | 'timed'
     sortBy?: 'misses' | 'accuracy'
+    scope?: 'gauntlet' | 'all'
   }) {
     const res = await window.electron.gauntlet.getWeakTosTopics(opts)
     if (!res.success) throw new Error(res.error || 'Failed to get weak TOS topics')

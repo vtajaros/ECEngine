@@ -88,7 +88,7 @@ export default function Lab() {
               ? 'PRC Table of Specifications Classification & Library Coverage'
               : activeTab === 'eda'
               ? 'EDA concepts, live on your review data.'
-              : 'Arena speed-run performance, Elo trajectory & ToS mastery.'}
+              : 'Gauntlet speed-run performance, Elo trajectory & ToS mastery.'}
           </p>
         </div>
 
@@ -106,6 +106,17 @@ export default function Lab() {
             <span>ToS Matrix</span>
           </button>
           <button
+            onClick={() => handleTabChange('gauntlet')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all ${
+              activeTab === 'gauntlet'
+                ? 'bg-accent/15 text-accent border border-accent/40 shadow-[0_0_12px_rgba(0,255,65,0.2)]'
+                : 'text-text-muted hover:text-text-primary border border-transparent'
+            }`}
+          >
+            <Swords size={15} />
+            <span>Mastery Analytics</span>
+          </button>
+          <button
             onClick={() => handleTabChange('eda')}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all ${
               activeTab === 'eda'
@@ -115,17 +126,6 @@ export default function Lab() {
           >
             <BarChart3 size={15} />
             <span>Statistical EDA</span>
-          </button>
-          <button
-            onClick={() => handleTabChange('gauntlet')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all ${
-              activeTab === 'gauntlet'
-                ? 'bg-accent/15 text-accent border border-accent/40 shadow-[0_0_12px_rgba(0,255,65,0.2)]'
-                : 'text-text-muted hover:text-text-primary border border-transparent'
-            }`}
-          >
-            <Swords size={15} />
-            <span>Gauntlet Analytics</span>
           </button>
         </div>
       </header>

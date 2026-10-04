@@ -17,6 +17,7 @@ const GetQuestionsSchema = z.object({
   allowSolutions: z.boolean().optional().default(false),
   tosTopicId: z.string().optional(),
   tosTopicIds: z.array(z.string()).optional(),
+  scope: z.enum(['gauntlet', 'all']).optional().default('all'),
 })
 
 const AnswerSchema = z.object({
@@ -110,10 +111,10 @@ export function registerGauntletHandlers(): void {
 
   ipcMain.handle('gauntlet:getQuestions', async (_, payload: unknown) => {
     try {
-      const { counts, excludeIds, allowSolutions, tosTopicId, tosTopicIds } = GetQuestionsSchema.parse(payload)
+      const { counts, excludeIds, allowSolutions, tosTopicId, tosTopicIds, scope } = GetQuestionsSchema.parse(payload)
       const db = getDB()
       const rows = counts.flatMap(({ subject, count }) =>
-        G.sampleQuestions(db, subject, count, excludeIds, { allowSolutions, tosTopicId, tosTopicIds }),
+        G.sampleQuestions(db, subject, count, excludeIds, { allowSolutions, tosTopicId, tosTopicIds, scope }),
       )
       return { success: true, data: rows }
     } catch (e) { return fail(e) }
@@ -154,6 +155,7 @@ export function registerGauntletHandlers(): void {
         limit?: number
         mode?: 'all' | 'survival' | 'timed'
         sortBy?: 'misses' | 'accuracy'
+        scope?: 'gauntlet' | 'all'
       } = {},
     ) => {
       try {
@@ -165,6 +167,7 @@ export function registerGauntletHandlers(): void {
             payload?.limit,
             payload?.mode,
             payload?.sortBy,
+            payload?.scope ?? 'gauntlet',
           ),
         }
       } catch (e) {

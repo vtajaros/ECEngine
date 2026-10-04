@@ -176,7 +176,7 @@ export interface GauntletTopicAccuracyDemoProps {
 
 export function GauntletTopicAccuracyDemo({ onStartSession }: GauntletTopicAccuracyDemoProps = {}) {
   const [subject, setSubject] = useState<SubjectTab>('MATH')
-  const [scope, setScope] = useState<'gauntlet' | 'all'>('gauntlet')
+  const [scope, setScope] = useState<'gauntlet' | 'all'>('all')
   const [sortBy, setSortBy] = useState<SortKey>('code_asc')
   const [search, setSearch] = useState('')
   const [weakOnly, setWeakOnly] = useState(false)
@@ -615,22 +615,10 @@ export function GauntletTopicAccuracyDemo({ onStartSession }: GauntletTopicAccur
           </div>
         </div>
 
-        {/* Header Controls: Scope Switcher (Arena vs All Modes) & Weak Spot Status Chip */}
+        {/* Header Controls: Scope Switcher (All Modes vs Gauntlet) & Weak Spot Status Chip */}
         <div className="flex items-center gap-2 self-start lg:self-auto flex-nowrap overflow-x-auto max-w-full py-0.5 scrollbar-none">
-          {/* Sub-tab switcher: Arena vs All Modes */}
+          {/* Sub-tab switcher: All Modes vs Gauntlet */}
           <div className="flex items-center p-0.5 sm:p-1 bg-[#0c0c0c] rounded-lg border border-border-base shrink-0">
-            <button
-              type="button"
-              onClick={() => setScope('gauntlet')}
-              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-[11px] sm:text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all whitespace-nowrap cursor-pointer ${
-                scope === 'gauntlet'
-                  ? 'bg-accent/15 text-accent border border-accent/40 shadow-[0_0_10px_rgba(0,255,65,0.2)]'
-                  : 'text-text-muted hover:text-text-primary border border-transparent'
-              }`}
-            >
-              <Flame size={13} className={scope === 'gauntlet' ? 'text-accent' : 'text-text-muted'} />
-              <span>Arena</span>
-            </button>
             <button
               type="button"
               onClick={() => setScope('all')}
@@ -642,6 +630,18 @@ export function GauntletTopicAccuracyDemo({ onStartSession }: GauntletTopicAccur
             >
               <Layers size={13} className={scope === 'all' ? 'text-accent' : 'text-text-muted'} />
               <span>All Modes</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setScope('gauntlet')}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-md text-[11px] sm:text-xs font-['Rajdhani'] uppercase tracking-wider font-bold transition-all whitespace-nowrap cursor-pointer ${
+                scope === 'gauntlet'
+                  ? 'bg-accent/15 text-accent border border-accent/40 shadow-[0_0_10px_rgba(0,255,65,0.2)]'
+                  : 'text-text-muted hover:text-text-primary border border-transparent'
+              }`}
+            >
+              <Flame size={13} className={scope === 'gauntlet' ? 'text-accent' : 'text-text-muted'} />
+              <span>Gauntlet</span>
             </button>
           </div>
 

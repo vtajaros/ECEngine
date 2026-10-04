@@ -81,7 +81,7 @@ contextBridge.exposeInMainWorld('electron', {
   gauntlet: {
     getPoolSizes: (payload?: { allowSolutions?: boolean; tosTopicId?: string; tosTopicIds?: string[] }) =>
       ipcRenderer.invoke('gauntlet:getPoolSizes', payload),
-    getQuestions: (payload: { counts: Array<{ subject: string; count: number }>; excludeIds?: string[]; allowSolutions?: boolean; tosTopicId?: string; tosTopicIds?: string[] }) =>
+    getQuestions: (payload: { counts: Array<{ subject: string; count: number }>; excludeIds?: string[]; allowSolutions?: boolean; tosTopicId?: string; tosTopicIds?: string[]; scope?: 'gauntlet' | 'all' }) =>
       ipcRenderer.invoke('gauntlet:getQuestions', payload),
     getRatings: () => ipcRenderer.invoke('gauntlet:getRatings'),
     saveRun: (payload: unknown) => ipcRenderer.invoke('gauntlet:saveRun', payload),
@@ -102,6 +102,7 @@ contextBridge.exposeInMainWorld('electron', {
       limit?: number
       mode?: string
       sortBy?: string
+      scope?: 'gauntlet' | 'all'
     }) => ipcRenderer.invoke('gauntlet:getWeakTosTopics', payload),
     getEdaStats: () => ipcRenderer.invoke('gauntlet:getEdaStats'),
     getExcludedQuestions: (payload?: {

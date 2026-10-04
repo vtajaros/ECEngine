@@ -217,7 +217,7 @@ export function GauntletExcludedQuestionsDemo({
               This will reinsert{' '}
               <strong className="text-white">{data.cards.length} questions</strong> back into your
               active Gauntlet fetching pool. They will immediately become eligible to appear in future
-              timed and survival arena runs.
+              timed and survival gauntlet runs.
             </p>
             <div className="flex items-center justify-end gap-3 pt-3 border-t border-border-base/50">
               <button
@@ -250,7 +250,7 @@ export function GauntletExcludedQuestionsDemo({
               Gauntlet Excluded Questions
             </h2>
             <p className="text-xs font-['Rajdhani'] uppercase tracking-wider text-text-muted font-semibold">
-              Review questions flagged or filtered from the arena pool & reinsert valid questions
+              Review questions flagged or filtered from the gauntlet pool & reinsert valid questions
             </p>
           </div>
         </div>

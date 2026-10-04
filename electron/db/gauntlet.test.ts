@@ -1191,5 +1191,74 @@ describe('Gauntlet DB persistence', () => {
       expect(s2All.accuracy).toBe(0.5)
     })
   })
+
+  describe('Global Stats vs Gauntlet Scope for Question Fetching and Weak Topics', () => {
+    it('prefers cards unseen across all modes when using default global scope', () => {
+      insertCard(db, 'global-c1', 'top-elecs')
+      insertCard(db, 'global-c2', 'top-elecs')
+
+      db.prepare(`
+        CREATE TABLE IF NOT EXISTS attempt_log (
+          id TEXT PRIMARY KEY,
+          card_id TEXT,
+          mode TEXT,
+          correct INTEGER,
+          created_at INTEGER
+        )
+      `).run()
+
+      // Log attempt for global-c1 in Learn Mode (attempt_log)
+      db.prepare(`
+        INSERT INTO attempt_log (id, card_id, mode, correct, created_at)
+        VALUES ('att-1', 'global-c1', 'learn', 1, 3000)
+      `).run()
+
+      // Default scope is 'all': global-c2 (unseen in all modes) is preferred over global-c1 (seen in learn mode)
+      const sampledAll = sampleQuestions(db, 'ELECS', 1)
+      expect(sampledAll.length).toBe(1)
+      expect(sampledAll[0].id).toBe('global-c2')
+
+      // Gauntlet scope: global-c1 is unseen in Gauntlet, so both are considered unseen in Gauntlet
+      const sampledGauntlet = sampleQuestions(db, 'ELECS', 2, [], { scope: 'gauntlet' })
+      expect(sampledGauntlet.length).toBe(2)
+      const ids = sampledGauntlet.map(c => c.id)
+      expect(ids).toContain('global-c1')
+      expect(ids).toContain('global-c2')
+    })
+
+    it('identifies weak topics from attempt_log when scope is all', () => {
+      insertCard(db, 'weak-t1-c1', 'top-elecs', 'mcq', { question: 'Q1', choices: ['A', 'B'], answerIndex: 0 }, 'ELECS-9.1')
+      insertCard(db, 'weak-t1-c2', 'top-elecs', 'mcq', { question: 'Q2', choices: ['A', 'B'], answerIndex: 0 }, 'ELECS-9.1')
+
+      db.prepare(`
+        CREATE TABLE IF NOT EXISTS attempt_log (
+          id TEXT PRIMARY KEY,
+          card_id TEXT,
+          mode TEXT,
+          correct INTEGER,
+          created_at INTEGER
+        )
+      `).run()
+
+      // Insert 3 attempts for ELECS-9.1 with only 1 correct (33.3% accuracy < 70%)
+      db.prepare(`
+        INSERT INTO attempt_log (id, card_id, mode, correct, created_at)
+        VALUES ('att-w1', 'weak-t1-c1', 'learn', 0, 4000),
+               ('att-w2', 'weak-t1-c1', 'learn', 0, 4001),
+               ('att-w3', 'weak-t1-c2', 'learn', 1, 4002)
+      `).run()
+
+      // With scope 'gauntlet': empty (no gauntlet answers for this topic)
+      const weakGauntlet = getWeakTosTopics(db, 'ELECS', 5, undefined, 'accuracy', 'gauntlet')
+      expect(weakGauntlet.find(w => w.tosTopicId === 'ELECS-9.1')).toBeUndefined()
+
+      // With scope 'all': recognizes ELECS-9.1 as weak from learn attempts
+      const weakAll = getWeakTosTopics(db, 'ELECS', 5, undefined, 'accuracy', 'all')
+      const found = weakAll.find(w => w.tosTopicId === 'ELECS-9.1')
+      expect(found).toBeDefined()
+      expect(found!.totalAnswers).toBe(3)
+      expect(found!.accuracy).toBeCloseTo(0.33, 2)
+    })
+  })
 })
 

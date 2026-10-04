@@ -167,7 +167,7 @@ export function GauntletEloTrajectoryDemo() {
             No rated runs recorded
           </p>
           <p className="text-text-muted text-xs font-['JetBrains_Mono']">
-            Play rated Gauntlet arena matches to establish and track skill rating growth.
+            Play rated Gauntlet matches to establish and track skill rating growth.
           </p>
         </div>
       </div>

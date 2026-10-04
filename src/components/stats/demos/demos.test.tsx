@@ -595,7 +595,7 @@ describe('Data Lab Demo Components', () => {
 
       // Header & Container
       expect(container?.querySelector('[data-testid="tos-coverage-matrix-demo"]')).not.toBeNull()
-      expect(container?.textContent).toContain('ToS Classification & Coverage Matrix')
+      expect(container?.textContent).toContain('ToS Matrix')
 
       // Single-line summary ribbon
       expect(container?.textContent).toContain('Total Cards:')
@@ -638,7 +638,7 @@ describe('Data Lab Demo Components', () => {
       })
 
       const excludedTabBtn = Array.from(container?.querySelectorAll('button') || []).find((b) =>
-        b.textContent?.includes('Gauntlet Excluded')
+        b.textContent?.includes('Excluded')
       )
       expect(excludedTabBtn).toBeDefined()
 
@@ -967,7 +967,7 @@ describe('Data Lab Demo Components', () => {
       })
 
       expect(container?.querySelector('[data-testid="gauntlet-coverage-density-demo"]')).not.toBeNull()
-      expect(container?.textContent).toContain('Topic Coverage Density: Arena vs. Gauntlet Pool')
+      expect(container?.textContent).toContain('Topic Coverage Density: Gauntlet vs. Pool')
       expect(container?.textContent).toContain('Highest Untested Blind Spots')
       expect(container?.textContent).toContain('EST-4.6')
     })
@@ -1180,7 +1180,7 @@ describe('Data Lab Demo Components', () => {
       expect(getQuestionsSpy).toHaveBeenCalledWith(
         [{ subject: 'MATH', count: 25 }],
         [],
-        false, // scope === 'all' is false since default is 'gauntlet'
+        true, // scope === 'all' is true since default is 'all'
         'MATH-1.0'
       )
     })
@@ -1249,7 +1249,7 @@ describe('Data Lab Demo Components', () => {
       expect(getQuestionsSpy).toHaveBeenCalledWith(
         [{ subject: 'MATH', count: 12 }],
         [],
-        false,
+        true, // scope === 'all' is true since default is 'all'
         'MATH-1.1'
       )
     })

@@ -188,7 +188,26 @@ export function getWeakTosTopics(
   limit = 5,
   mode?: 'all' | 'survival' | 'timed',
   sortBy: 'misses' | 'accuracy' = 'accuracy',
+  scope: 'gauntlet' | 'all' = 'gauntlet',
 ): WeakTopicStat[] {
+  ensureGauntletTables(db)
+
+  const hasAttemptLog = scope === 'all' && (!mode || mode === 'all') && !!db.prepare(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name='attempt_log'"
+  ).get()
+
+  let attemptsSql = `
+    SELECT a.card_id, a.outcome, a.run_id
+    FROM gauntlet_answers a
+  `
+  if (hasAttemptLog) {
+    attemptsSql += `
+      UNION ALL
+      SELECT card_id, CASE WHEN correct = 1 THEN 'correct' ELSE 'wrong' END as outcome, NULL as run_id
+      FROM attempt_log
+    `
+  }
+
   let sql = `
     SELECT c.tos_topic_id,
            t.subject,
@@ -196,7 +215,7 @@ export function getWeakTosTopics(
            SUM(CASE WHEN a.outcome = 'correct' THEN 1 ELSE 0 END) as correct_answers,
            SUM(CASE WHEN a.outcome IN ('wrong', 'timeout') THEN 1 ELSE 0 END) as wrong_answers,
            CAST(SUM(CASE WHEN a.outcome = 'correct' THEN 1 ELSE 0 END) AS REAL) / COUNT(*) as accuracy
-    FROM gauntlet_answers a
+    FROM (${attemptsSql}) a
     JOIN cards c ON c.id = a.card_id
     JOIN topics t ON t.id = c.topic_id
     LEFT JOIN gauntlet_runs r ON r.id = a.run_id
@@ -442,10 +461,16 @@ export function sampleQuestions(
   subject: GauntletSubjectCode,
   count: number,
   excludeIds: string[] = [],
-  options?: { allowSolutions?: boolean; tosTopicId?: string; tosTopicIds?: string[] } | boolean,
+  options?: {
+    allowSolutions?: boolean
+    tosTopicId?: string
+    tosTopicIds?: string[]
+    scope?: 'gauntlet' | 'all'
+  } | boolean,
 ): Array<Record<string, unknown>> {
   if (count <= 0) return []
 
+  const scope = typeof options === 'object' && options?.scope ? options.scope : 'all'
   const allowSolutions = typeof options === 'boolean' ? options : options?.allowSolutions ?? false
   const filterTopicIds = typeof options === 'object'
     ? options?.tosTopicIds?.length
@@ -455,7 +480,7 @@ export function sampleQuestions(
         : []
     : []
   const solutionClause = allowSolutions ? '1=1' : `(${NOT_PROBLEM_SOLVING} OR ${ALLOWED_OVERRIDE})`
-  const weakTopics = getWeakTosTopics(db, subject, 5).map(w => w.tosTopicId)
+  const weakTopics = getWeakTosTopics(db, subject, 5, undefined, 'accuracy', scope).map(w => w.tosTopicId)
 
   let topicClause = '1=1'
   const extraParams: string[] = []
@@ -474,11 +499,19 @@ export function sampleQuestions(
     topicClause = `(${clauses.join(' OR ')})`
   }
 
+  const hasAttemptLog = scope === 'all' && !!db.prepare(
+    "SELECT name FROM sqlite_master WHERE type='table' AND name='attempt_log'"
+  ).get()
+
+  const answeredCardsSubquery = hasAttemptLog
+    ? `(SELECT card_id FROM gauntlet_answers UNION SELECT card_id FROM attempt_log)`
+    : `(SELECT DISTINCT card_id FROM gauntlet_answers)`
+
   const sampled = db.prepare(`
     SELECT c.id, c.topic_id, c.type, c.data, c.difficulty, c.tags, c.is_custom, c.created_at, c.tos_topic_id, t.subject, t.name AS deck_name
     FROM cards c
     JOIN topics t ON t.id = c.topic_id
-    LEFT JOIN (SELECT DISTINCT card_id FROM gauntlet_answers) g ON g.card_id = c.id
+    LEFT JOIN ${answeredCardsSubquery} g ON g.card_id = c.id
     WHERE c.type = 'mcq' AND t.subject = ? AND ${solutionClause} AND ${VALID_MCQ} AND ${NOT_FLAGGED} AND ${topicClause}
       AND c.id NOT IN (SELECT value FROM json_each(?))
     ORDER BY

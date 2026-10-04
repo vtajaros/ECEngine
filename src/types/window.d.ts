@@ -191,7 +191,7 @@ declare global {
       }
       gauntlet: {
         getPoolSizes: (payload?: { allowSolutions?: boolean; tosTopicId?: string; tosTopicIds?: string[] }) => Promise<{ success: boolean; data?: any; error?: string }>
-        getQuestions: (payload: { counts: Array<{ subject: string; count: number }>; excludeIds?: string[]; allowSolutions?: boolean; tosTopicId?: string; tosTopicIds?: string[] }) => Promise<{ success: boolean; data?: any[]; error?: string }>
+        getQuestions: (payload: { counts: Array<{ subject: string; count: number }>; excludeIds?: string[]; allowSolutions?: boolean; tosTopicId?: string; tosTopicIds?: string[]; scope?: 'gauntlet' | 'all' }) => Promise<{ success: boolean; data?: any[]; error?: string }>
         getRatings: () => Promise<{ success: boolean; data?: any; error?: string }>
         resetRatings: () => Promise<{ success: boolean; error?: string }>
         saveRun: (payload: unknown) => Promise<{ success: boolean; data?: any; error?: string }>
@@ -208,6 +208,7 @@ declare global {
           limit?: number
           mode?: 'all' | 'survival' | 'timed'
           sortBy?: 'misses' | 'accuracy'
+          scope?: 'gauntlet' | 'all'
         }) => Promise<{
           success: boolean
           data?: Array<{

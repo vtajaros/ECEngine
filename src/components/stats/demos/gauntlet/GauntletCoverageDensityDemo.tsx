@@ -70,7 +70,7 @@ export function GauntletCoverageDensityDemo() {
         <div className="flex items-center justify-between border-b border-border-base/50 pb-2.5">
           <h2 className="font-['Rajdhani'] font-bold text-sm text-text-primary uppercase tracking-widest flex items-center gap-2">
             <Compass className="text-accent" size={16} />
-            Topic Coverage Density: Arena vs. Gauntlet Pool
+            Topic Coverage Density: Gauntlet vs. Pool
           </h2>
         </div>
         <div className="py-12 flex flex-col items-center justify-center text-center gap-2">
@@ -78,7 +78,7 @@ export function GauntletCoverageDensityDemo() {
             No playable cards found
           </p>
           <p className="text-text-muted text-xs font-['JetBrains_Mono']">
-            Import cards to inspect your arena penetration rates.
+            Import cards to inspect your gauntlet penetration rates.
           </p>
         </div>
       </div>
@@ -92,7 +92,7 @@ export function GauntletCoverageDensityDemo() {
         <div className="flex items-center gap-3">
           <h2 className="font-['Rajdhani'] font-bold text-base text-text-primary uppercase tracking-widest flex items-center gap-2">
             <Compass className="text-accent" size={18} />
-            Topic Coverage Density: Arena vs. Gauntlet Pool
+            Topic Coverage Density: Gauntlet vs. Pool
           </h2>
         </div>
         <span className="font-['JetBrains_Mono'] text-xs text-text-muted px-2.5 py-0.5 rounded bg-surface-2 border border-border-base">
@@ -144,7 +144,7 @@ export function GauntletCoverageDensityDemo() {
               Highest Untested Blind Spots
             </span>
             <span className="text-[10px] font-['JetBrains_Mono'] text-text-muted">
-              Unseen in Arena
+              Unseen in Gauntlet
             </span>
           </div>
 
