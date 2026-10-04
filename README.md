@@ -61,6 +61,7 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 * **Test Mode**: Simulates exam conditions with randomized choice orders, live timer, and a comprehensive end-of-test summary.
 * **Bookmarked Items Manager**: Quickly review, preview, and manage bookmarked questions directly from the deck browser with a dedicated legend and modal.
 * **Choice Shuffling**: Automatically randomizes options on every run while preserving correct answer mappings.
+* **ToS Topics Tab**: Dedicated **ToS Topics** panel alongside the Custom Decks view in LooksFam. Displays a nested folder sidebar organized by subject (**MATH**, **ELECS**, **GEAS**, **EST**) → parent topic (e.g. `1.0`, `2.0`, `3.0`) → granular decimal subtopics (e.g. `1.1`, `1.2`), with live card counts and per-topic mastery progress bars. Selecting a subtopic or parent folder launches a Learn session scoped exactly to that TOS classification. Decimal subtopics are prioritized in the ToS Topics panel; parent-level "Learn All" is available only from the Gauntlet Analytics section.
 
 ---
 
@@ -173,6 +174,7 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 * **Study Anywhere**: Transfer your exported `ecengine.sqlite` and `ece-images.zip` directly to your Android device.
 * **Unified Cyberpunk Aesthetic**: Consistent dark mode interface with vibrant neon green accents and crisp LaTeX equation rendering.
 * **Full Offline Portability**: Access all study decks, question explanations, and schematics on the go without requiring an internet connection.
+* **ToS Topics on Mobile**: The companion app mirrors the ToS Topics navigation — subject → parent folder → decimal subtopic — allowing targeted PRC-syllabus-aligned review sessions directly from your phone.
 
 ---
 
@@ -192,11 +194,12 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 ---
 
 ### 🏷️ Table of Specifications (TOS) Classification System
-* **Official PRC ECE Board Exam Taxonomy**: Built-in hierarchy encompassing 34 parent topics ($x.0$) and 181 granular subtopics ($x.x$) across Mathematics, Electronics Engineering, GEAS, and EST per official PRC Board Examination specifications.
+* **Official PRC ECE Board Exam Taxonomy**: Built-in hierarchy encompassing 34 parent topics ($x.0$) and 181 granular subtopics ($x.x$) across **Mathematics**, **ELECS** (Electronics Engineering), **GEAS**, and **EST** (Electronics Systems & Technologies) per official PRC Board Examination specifications.
 * **Granular Decimal Tagging**: Cards are classified under granular decimal subtopics ($x.x$) or left untagged, while parent topics ($x.0$) serve as high-level organizational aggregators.
 * **Card & Question Categorization**: Assign decimal TOS topic tags to questions in the Deck Editor with an organized, searchable dropdown and formatted badge previews.
 * **Automated AI Batch Classifier**: Python and Groq AI classifier script integration (`scripts/classify_database_tos.py`) with expanded regex pattern coverage across Mathematics, Access Control, Signal Processing, and Electronics for automated syllabus mapping and whole-database tagging.
 * **Syllabus-Linked Gauntlet Targeting**: Classifications link directly with Gauntlet telemetry, automatically detecting struggling subtopics ($<70\%$ accuracy) to prioritize them in practice runs.
+* **ToS Topics Navigator in LooksFam**: Subject-scoped nested folder view (MATH → ELECS → GEAS → EST) exposing parent topics and decimal subtopics with live card counts. Decimal subtopics launch direct Learn sessions; parent-level "Learn All" is exposed in Gauntlet Analytics.
 
 ---
 
@@ -226,7 +229,7 @@ The **Data Analytics Command Center** (`/lab`) provides an integrated, 3-pillar 
 #### 3. Gauntlet Analytics (Performance Telemetry & Topic Mastery)
 * **Topic Accuracy & Mastery (`GauntletTopicAccuracyDemo`)**:
   * **Unified Master-Detail Two-Column Architecture**: Aligned 1:1 with the TOS Matrix design for visual consistency. Left pane displays parent syllabus topics with overall accuracy percentages, attempt counts, and weak spot indicator dots; right pane details subtopic competencies.
-  * **Strict Per-Subject Categorization**: Streamlined tabs (`[MATH 32]`, `[GEAS 64]`, `[ELECS 45]`, `[EST 40]`) with subject-themed glows, eliminating cross-subject topic interleaving.
+  * **Strict Per-Subject Categorization**: Streamlined tabs (`[MATH]`, `[GEAS]`, `[ELECS]`, `[EST]`) with subject-themed glows, eliminating cross-subject topic interleaving.
   * **Real-Time Certified Weak Spot Filter**: 1-click toggle isolating competencies struggling under 70% accuracy with $\ge 3$ attempts.
   * **Calibrated Decimal Subtopic Mastery Tags**:
     * `Calibrating` (blue badge, $<3$ attempts)
@@ -238,6 +241,7 @@ The **Data Analytics Command Center** (`/lab`) provides an integrated, 3-pillar 
   * **Dual Progress Telemetry**: Side-by-side accuracy bars (accuracy %, correct/wrong attempts) and card penetration meters (coverage %, studied/total cards).
   * **Scope Switcher**: Toggle between **Arena Only** (high-stakes Gauntlet speed runs) and **All Modes** (combined Learn, Test, and Gauntlet attempts).
   * **Custom Sort Engine**: Sort competencies by Syllabus Order, Reverse Syllabus, Lowest Accuracy (Weakest first), Highest Accuracy, Studied Progress, Most Misses, and Most Practiced.
+  * **Learn All from Parent Topic**: Each parent topic row in the Gauntlet Analytics view exposes a **Learn All** button that launches a LooksFam session scoped to the entire parent TOS classification (all subtopics under that `x.0` aggregator), sourcing Gauntlet-eligible questions only. This is the recommended entry point for topic-wide drill sessions from analytics.
 * **Speed & Par Pacing (`GauntletSpeedParDemo`)**: Pacing curves comparing player response times against algorithmic question par times across difficulty weights.
 * **Elo Trajectory (`GauntletEloTrajectoryDemo`)**: Interactive telemetry tracking rating evolution, peak milestones, and provisional status over time.
 * **Coverage Density (`GauntletCoverageDensityDemo`)**: Syllabus penetration and blind-spot heatmaps identifying unattempted card pools.
