@@ -931,7 +931,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
   countMap = deckCountByFolder
 
   const pointerSensor = useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
-  const sensors = useSensors(...(readOnly ? [] : [pointerSensor]))
+  const sensors = useSensors(pointerSensor)
 
   const toggleExpand = (id: string) => {
     setExpandedIds(prev => {
@@ -1209,7 +1209,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
 
           {/* DndContext wraps entire tree */}
           <DndContext
-            sensors={sensors}
+            sensors={readOnly ? [] : sensors}
             collisionDetection={closestCenter}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
@@ -1458,7 +1458,7 @@ const FolderPanel: React.FC<FolderPanelProps> = ({
             </motion.button>
           </Tooltip>
 
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleLegacyDragEnd}>
+          <DndContext sensors={readOnly ? [] : sensors} collisionDetection={closestCenter} onDragEnd={handleLegacyDragEnd}>
             <SortableContext items={sortable} strategy={verticalListSortingStrategy}>
               {sortable.map(f => (
                 <LegacySortableItem

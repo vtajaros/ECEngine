@@ -18,6 +18,7 @@ import { dbService } from '../../../../services/db.service'
 import type { Card } from '../../../../types'
 import { LearnMode } from '../../../mcq/LearnMode'
 import { LearnSettingsModal, type LearnSettings, loadTTSPreference } from '../../../mcq/LearnSettingsModal'
+import { Tooltip } from '../../../ui/Tooltip'
 import { TOS_SUBJECT_COLORS } from '../../../../lib/tosData'
 import { getTosTopicGroupsBySubject, type TosTopicGroup, type FlatTosTopic } from '../../../../lib/tosClassification'
 
@@ -161,7 +162,19 @@ export function getAccuracyBadgeStyle(accuracy: number | null, totalAnswers: num
   }
 }
 
-export function GauntletTopicAccuracyDemo() {
+export interface ActiveDrillSession {
+  cards: Card[]
+  title: string
+  subject: GauntletSubjectCode
+  ttsEnabled?: boolean
+  shuffleChoices?: boolean
+}
+
+export interface GauntletTopicAccuracyDemoProps {
+  onStartSession?: (session: ActiveDrillSession) => void
+}
+
+export function GauntletTopicAccuracyDemo({ onStartSession }: GauntletTopicAccuracyDemoProps = {}) {
   const [subject, setSubject] = useState<SubjectTab>('MATH')
   const [scope, setScope] = useState<'gauntlet' | 'all'>('gauntlet')
   const [sortBy, setSortBy] = useState<SortKey>('code_asc')
@@ -238,17 +251,25 @@ export function GauntletTopicAccuracyDemo() {
         finalCards = [...finalCards].sort(() => Math.random() - 0.5)
       }
 
-      setActiveSession({
+      const sessionData: ActiveDrillSession = {
         cards: finalCards,
         title: drillTarget.title,
         subject: drillTarget.subject,
-      })
+        ttsEnabled: learnSettings.ttsEnabled,
+        shuffleChoices: learnSettings.shuffleChoices,
+      }
+
+      if (onStartSession) {
+        onStartSession(sessionData)
+      } else {
+        setActiveSession(sessionData)
+      }
     } catch (err) {
       setError((err as Error).message || 'Failed to start topic drill')
     } finally {
       setIsStartingDrill(false)
     }
-  }, [drillTarget, learnSettings, scope])
+  }, [drillTarget, learnSettings, scope, onStartSession])
 
   // Subtopic count per subject for tab counters
   const subjectCounts = useMemo(() => {
@@ -540,7 +561,7 @@ export function GauntletTopicAccuracyDemo() {
 
   if (activeSession) {
     return (
-      <div className="fixed inset-0 z-[150] bg-[#0D0D0D] flex flex-col overflow-y-auto">
+      <div className="w-full h-full flex flex-col overflow-y-auto">
         <LearnMode
           cards={activeSession.cards}
           title={activeSession.title}
@@ -1040,27 +1061,32 @@ export function GauntletTopicAccuracyDemo() {
                   </div>
 
                   {/* Practice Topic Action */}
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleOpenDrillModal({
-                        id: activeGroup.parent.id,
-                        title: `${activeGroup.parent.code} ${activeGroup.parent.name}`,
-                        totalCards: activeGroup.totalCards,
-                        subject: activeGroup.subject,
-                      })
-                    }
-                    disabled={activeGroup.totalCards === 0 || isStartingDrill}
-                    aria-label={`Practice ${activeGroup.parent.name}`}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-wider transition-all shadow-sm shrink-0 cursor-pointer ${
-                      activeGroup.totalCards > 0
-                        ? 'bg-accent/15 border border-accent/40 text-accent hover:bg-accent/25 hover:border-accent hover:shadow-[0_0_12px_rgba(0,255,65,0.25)] active:scale-95'
-                        : 'bg-surface-2 border border-border-base text-text-muted/40 cursor-not-allowed opacity-50'
-                    }`}
+                  <Tooltip
+                    content={activeGroup.totalCards > 0 ? `Practice ${activeGroup.parent.name}` : 'No cards available'}
+                    position="top"
                   >
-                    <Play size={12} className={activeGroup.totalCards > 0 ? 'fill-accent' : ''} />
-                    <span>Practice Topic</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleOpenDrillModal({
+                          id: activeGroup.parent.id,
+                          title: `${activeGroup.parent.code} ${activeGroup.parent.name}`,
+                          totalCards: activeGroup.totalCards,
+                          subject: activeGroup.subject,
+                        })
+                      }
+                      disabled={activeGroup.totalCards === 0 || isStartingDrill}
+                      aria-label={`Practice ${activeGroup.parent.name}`}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-['Rajdhani'] font-bold uppercase tracking-wider transition-all shadow-sm shrink-0 cursor-pointer ${
+                        activeGroup.totalCards > 0
+                          ? 'bg-accent/15 border border-accent/40 text-accent hover:bg-accent/25 hover:border-accent hover:shadow-[0_0_12px_rgba(0,255,65,0.25)] active:scale-95'
+                          : 'bg-surface-2 border border-border-base text-text-muted/40 cursor-not-allowed opacity-50'
+                      }`}
+                    >
+                      <Play size={12} className={activeGroup.totalCards > 0 ? 'fill-accent' : ''} />
+                      <span>Practice Topic</span>
+                    </button>
+                  </Tooltip>
                 </div>
               </div>
 
@@ -1181,27 +1207,31 @@ export function GauntletTopicAccuracyDemo() {
 
                         {/* Subtopic Drill Action */}
                         <div className="shrink-0 flex items-center pl-1 sm:pl-2">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleOpenDrillModal({
-                                id: sub.id,
-                                title: `${sub.id} ${sub.title}`,
-                                totalCards: sub.totalCards,
-                                subject: sub.subject,
-                              })
-                            }
-                            disabled={sub.totalCards === 0 || isStartingDrill}
-                            title={sub.totalCards > 0 ? `Drill ${sub.id}: ${sub.title} (${sub.totalCards} cards)` : 'No cards available'}
-                            aria-label={`Drill ${sub.id}`}
-                            className={`flex items-center justify-center p-2 rounded transition-all cursor-pointer ${
-                              sub.totalCards > 0
-                                ? 'bg-surface-2 border border-[#333] hover:border-accent hover:text-accent hover:bg-accent/10 text-text-muted active:scale-95'
-                                : 'bg-surface-2 border border-border-base text-text-muted/30 cursor-not-allowed'
-                            }`}
+                          <Tooltip
+                            content={sub.totalCards > 0 ? `Drill ${sub.id}: ${sub.title} (${sub.totalCards} cards)` : 'No cards available'}
+                            position="top"
                           >
-                            <Play size={13} className={sub.totalCards > 0 ? 'fill-current' : ''} />
-                          </button>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                handleOpenDrillModal({
+                                  id: sub.id,
+                                  title: `${sub.id} ${sub.title}`,
+                                  totalCards: sub.totalCards,
+                                  subject: sub.subject,
+                                })
+                              }
+                              disabled={sub.totalCards === 0 || isStartingDrill}
+                              aria-label={`Drill ${sub.id}`}
+                              className={`flex items-center justify-center p-2 rounded transition-all cursor-pointer ${
+                                sub.totalCards > 0
+                                  ? 'bg-surface-2 border border-[#333] hover:border-accent hover:text-accent hover:bg-accent/10 text-text-muted active:scale-95'
+                                  : 'bg-surface-2 border border-border-base text-text-muted/30 cursor-not-allowed'
+                              }`}
+                            >
+                              <Play size={13} className={sub.totalCards > 0 ? 'fill-current' : ''} />
+                            </button>
+                          </Tooltip>
                         </div>
                       </div>
                     </div>

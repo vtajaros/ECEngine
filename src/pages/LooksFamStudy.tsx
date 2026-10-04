@@ -408,7 +408,7 @@ export default function LooksFamStudy() {
         tags: ['Syllabus', sub.code, ...(parent ? [parent.code] : [])],
         createdAt: totalSubtopics - index,
         folderName: parentName || 'ToS Topics',
-        folderId: sub.parentTopicId ? `tos_parent_${sub.parentTopicId}` : null,
+        folderId: sub.parentTopicId ? `tos_parent_${sub.parentTopicId}` : undefined,
         order_index: index,
         isFavorite: false,
       }
@@ -418,10 +418,10 @@ export default function LooksFamStudy() {
   const tosFolderRows = useMemo<FolderRow[]>(() => {
     if (activeSubject === 'ALL') {
       const subjectRoots: FolderRow[] = [
-        { id: 'tos_subj_MATH', name: 'Mathematics', parent_id: null, order_index: 0, created_at: 0 },
-        { id: 'tos_subj_GEAS', name: 'GEAS', parent_id: null, order_index: 1, created_at: 0 },
-        { id: 'tos_subj_ELECS', name: 'ELECS', parent_id: null, order_index: 2, created_at: 0 },
-        { id: 'tos_subj_EST', name: 'EST', parent_id: null, order_index: 3, created_at: 0 },
+        { id: 'tos_subj_MATH', name: 'Mathematics', parent_id: null, order_index: 0 },
+        { id: 'tos_subj_GEAS', name: 'GEAS', parent_id: null, order_index: 1 },
+        { id: 'tos_subj_ELECS', name: 'ELECS', parent_id: null, order_index: 2 },
+        { id: 'tos_subj_EST', name: 'EST', parent_id: null, order_index: 3 },
       ]
 
       const parentTopics: FolderRow[] = ALL_PARENT_TOS_TOPICS.map((p, idx) => ({
@@ -429,7 +429,6 @@ export default function LooksFamStudy() {
         name: p.name,
         parent_id: `tos_subj_${p.subject}`,
         order_index: idx,
-        created_at: 0,
       }))
 
       return [...subjectRoots, ...parentTopics]
@@ -440,7 +439,6 @@ export default function LooksFamStudy() {
         name: p.name,
         parent_id: null,
         order_index: idx,
-        created_at: 0,
       }))
     }
   }, [activeSubject])

@@ -12,7 +12,9 @@ import { ResponseTimeDemo } from '../components/stats/demos/ResponseTimeDemo'
 import { GauntletSpeedParDemo } from '../components/stats/demos/gauntlet/GauntletSpeedParDemo'
 import { GauntletCoverageDensityDemo } from '../components/stats/demos/gauntlet/GauntletCoverageDensityDemo'
 import { GauntletEnduranceStreakDemo } from '../components/stats/demos/gauntlet/GauntletEnduranceStreakDemo'
-import { GauntletTopicAccuracyDemo } from '../components/stats/demos/gauntlet/GauntletTopicAccuracyDemo'
+import { GauntletTopicAccuracyDemo, type ActiveDrillSession } from '../components/stats/demos/gauntlet/GauntletTopicAccuracyDemo'
+import { LearnMode } from '../components/mcq/LearnMode'
+import { dbService } from '../services/db.service'
 
 export default function Lab() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -20,6 +22,7 @@ export default function Lab() {
   const [activeTab, setActiveTab] = useState<'tos' | 'eda' | 'gauntlet'>(
     initialTab === 'gauntlet' || initialTab === 'eda' || initialTab === 'tos' ? initialTab : 'tos'
   )
+  const [activeDrillSession, setActiveDrillSession] = useState<ActiveDrillSession | null>(null)
 
   useEffect(() => {
     const tabParam = searchParams.get('tab')
@@ -33,6 +36,41 @@ export default function Lab() {
     setSearchParams({ tab })
   }
 
+  if (activeDrillSession) {
+    return (
+      <div className="w-full h-full flex flex-col overflow-y-auto">
+        <LearnMode
+          cards={activeDrillSession.cards}
+          title={activeDrillSession.title}
+          subject={activeDrillSession.subject}
+          ttsEnabled={activeDrillSession.ttsEnabled}
+          shuffleChoices={activeDrillSession.shuffleChoices}
+          onComplete={(sessionStats) => {
+            const total = activeDrillSession.cards.length || (sessionStats.correct + sessionStats.wrong)
+            dbService.saveExamSession({
+              topicId: null,
+              mode: 'learn',
+              score: sessionStats.correct,
+              total,
+              answers: JSON.stringify({
+                deckTitle: activeDrillSession.title,
+                deckDescription: `Topic Drill: ${activeDrillSession.title}`,
+                subject: activeDrillSession.subject,
+                correctFirstTry: sessionStats.correct,
+                wrongFirstTry: sessionStats.wrong,
+                bookmarkedCount: sessionStats.bookmarked,
+              }),
+            }).catch(err => {
+              console.warn('Failed to save topic drill exam session:', err)
+            })
+          }}
+          onExit={() => {
+            setActiveDrillSession(null)
+          }}
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="h-full bg-transparent px-8 pb-8 pt-6 lg:px-12 lg:pb-12 lg:pt-6 overflow-y-auto show-scrollbar w-full flex flex-col gap-6">
@@ -117,7 +155,7 @@ export default function Lab() {
       {activeTab === 'gauntlet' && (
         <div className="flex flex-col gap-6 animate-in fade-in duration-200">
           {/* Row 1: Dedicated Competency Mastery, Weak Areas & Topic Accuracy Diagnostic Matrix */}
-          <GauntletTopicAccuracyDemo />
+          <GauntletTopicAccuracyDemo onStartSession={setActiveDrillSession} />
 
           {/* Row 2: Speed vs Par Pacing + Endurance & Streak Distribution */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
