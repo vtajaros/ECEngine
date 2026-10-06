@@ -304,8 +304,12 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
   const [testCards, setTestCards] = useState<Card[]>([])
   const [answers, setAnswers] = useState<Record<string, number>>({})
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(() => {
-    const saved = localStorage.getItem('bookmarkedIds')
-    return saved ? new Set(JSON.parse(saved)) : new Set()
+    try {
+      const saved = typeof localStorage !== 'undefined' ? localStorage.getItem('bookmarkedIds') : null
+      return saved ? new Set(JSON.parse(saved)) : new Set()
+    } catch {
+      return new Set()
+    }
   })
   const [viewState, setViewState] = useState<ViewState>('test')
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false)
@@ -328,7 +332,16 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
   const scrollContainerRef = useRef<HTMLDivElement>(null)
   const isClickNavigating = useRef(false)
   const clickNavTimeout = useRef<NodeJS.Timeout | null>(null)
+  const autoSubmitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [currentVisibleIndex, setCurrentVisibleIndex] = useState(0)
+
+  useEffect(() => {
+    return () => {
+      if (autoSubmitTimerRef.current) {
+        clearTimeout(autoSubmitTimerRef.current)
+      }
+    }
+  }, [])
 
   // ── Virtualizer ────────────────────────────────────────────────────────────
   const virtualizer = useVirtualizer({
@@ -430,6 +443,10 @@ export const TestMode: React.FC<TestModeProps> = ({ cards, title, settings, onCo
   }, [viewState, zoomedImage])
 
   const handleExit = () => {
+    if (autoSubmitTimerRef.current) {
+      clearTimeout(autoSubmitTimerRef.current)
+      autoSubmitTimerRef.current = null
+    }
     if (blocker.state === 'blocked') blocker.reset()
     onExit()
   }
@@ -500,35 +517,18 @@ Please explain:
     return () => clearInterval(interval)
   }, [viewState])
 
-  const handleSelectChoice = useCallback((cardId: string, choiceIndex: number) => {
-    if (viewState !== 'test') return
-    if (settings.instantChecking && answers[cardId] !== undefined) return
-    setAnswers(prev => ({ ...prev, [cardId]: choiceIndex }))
-    if (settings.instantChecking) {
-      const card = testCards.find(c => c.id === cardId)
-      if (card) {
-        const mcq = card.data as MCQData
-        play(choiceIndex === mcq.answer ? 'correct' : 'wrong')
-      }
+  const handleSubmit = useCallback(async (overrideAnswers?: Record<string, number> | unknown) => {
+    if (autoSubmitTimerRef.current) {
+      clearTimeout(autoSubmitTimerRef.current)
+      autoSubmitTimerRef.current = null
     }
-  }, [viewState, settings.instantChecking, answers, testCards, play])
-
-  const toggleBookmark = useCallback((cardId: string) => {
-    setBookmarkedIds(prev => {
-      const next = new Set(prev)
-      if (next.has(cardId)) next.delete(cardId)
-      else next.add(cardId)
-      localStorage.setItem('bookmarkedIds', JSON.stringify(Array.from(next)))
-      return next
-    })
-  }, [])
-
-  const handleSubmit = async () => {
     setShowSubmitConfirm(false)
+    const isAnswersMap = overrideAnswers && typeof overrideAnswers === 'object' && !('nativeEvent' in (overrideAnswers as any))
+    const currentAnswers = isAnswersMap ? (overrideAnswers as Record<string, number>) : answers
     let correct = 0
     testCards.forEach(card => {
       const mcq = card.data as MCQData
-      if (answers[card.id] === mcq.answer) correct++
+      if (currentAnswers[card.id] === mcq.answer) correct++
     })
 
     // ── Progress writes (batched at submission) ─────────────────────────────
@@ -544,12 +544,12 @@ Please explain:
     // that flashcard's SM-2 state (ease_factor, repetitions, etc.).
     const eligibleCards = testCards.filter(c => c.type === 'mcq' && !c.isGenerated)
     const resultsToRecord = eligibleCards
-      .filter(card => answers[card.id] !== undefined)
+      .filter(card => currentAnswers[card.id] !== undefined)
       .map(card => {
         const mcq = card.data as MCQData
         return {
           cardId: card.id,
-          isCorrect: answers[card.id] === mcq.answer,
+          isCorrect: currentAnswers[card.id] === mcq.answer,
           mode: 'test' as const,
         }
       })
@@ -565,10 +565,49 @@ Please explain:
     play('finish')
     const correctIds = testCards.filter(card => {
       const mcq = card.data as MCQData
-      return answers[card.id] === mcq.answer
+      return currentAnswers[card.id] === mcq.answer
     }).map(card => card.id)
     onComplete({ score: correct, total: testCards.length, bookmarked: testCards.filter(c => bookmarkedIds.has(c.id)).length, correctIds })
-  }
+  }, [answers, testCards, bookmarkedIds, onComplete, play])
+
+  const handleSelectChoice = useCallback((cardId: string, choiceIndex: number) => {
+    if (viewState !== 'test') return
+    if (settings.instantChecking && answers[cardId] !== undefined) return
+    const newAnswers = { ...answers, [cardId]: choiceIndex }
+    setAnswers(newAnswers)
+    if (settings.instantChecking) {
+      const card = testCards.find(c => c.id === cardId)
+      if (card) {
+        const mcq = card.data as MCQData
+        play(choiceIndex === mcq.answer ? 'correct' : 'wrong')
+      }
+
+      // If instant checking is on, auto submit the test after answering the last question
+      const isLastQuestionInList = testCards.length > 0 && cardId === testCards[testCards.length - 1]?.id
+      const allQuestionsAnswered = testCards.every(c => newAnswers[c.id] !== undefined)
+
+      if (isLastQuestionInList || allQuestionsAnswered) {
+        if (autoSubmitTimerRef.current) clearTimeout(autoSubmitTimerRef.current)
+        autoSubmitTimerRef.current = setTimeout(() => {
+          handleSubmit(newAnswers)
+        }, 700)
+      }
+    }
+  }, [viewState, settings.instantChecking, answers, testCards, play, handleSubmit])
+
+  const toggleBookmark = useCallback((cardId: string) => {
+    setBookmarkedIds(prev => {
+      const next = new Set(prev)
+      if (next.has(cardId)) next.delete(cardId)
+      else next.add(cardId)
+      try {
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('bookmarkedIds', JSON.stringify(Array.from(next)))
+        }
+      } catch {}
+      return next
+    })
+  }, [])
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60)
