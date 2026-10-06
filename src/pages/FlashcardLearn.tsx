@@ -19,8 +19,10 @@ import { dbService } from '../services/db.service'
 import { useTTS } from '../hooks/useTTS'
 import { useIdleAwareTimer } from '../hooks/useIdleAwareTimer'
 import { FlashcardSession } from '../components/flashcard/FlashcardSession'
+import { FlashcardReviewSummary, CardGradeInfo } from '../components/flashcard/FlashcardReviewSummary'
 import { FlashcardDeckBrowser } from '../components/flashcard/FlashcardDeckBrowser'
 import { useSessionStore } from '../store/useSessionStore'
+import { useSound } from '../hooks/useSound'
 import { useDataVersionStore } from '../store/useDataVersionStore'
 import { gauntletService } from '../services/gauntlet.service'
 import { PREDEFINED_TAGS } from '../lib/constants'
@@ -72,6 +74,7 @@ function saveFCBookmarks(set: Set<string>) {
 export default function FlashcardLearn() {
   const navigate = useNavigate()
   const { startSession, rateCard, isSubmitting } = useSessionStore()
+  const { play } = useSound()
 
 
 
@@ -203,6 +206,8 @@ export default function FlashcardLearn() {
   const [isAutoplay, setIsAutoplay] = useState(false)
   const [wasAutoplayed, setWasAutoplayed] = useState(false)
   const [sessionMode, setSessionMode] = useState<'study' | 'preview'>('study')
+  const [showSummary, setShowSummary] = useState(false)
+  const [cardGrades, setCardGrades] = useState<Record<string, CardGradeInfo>>({})
 
   const autoplayRef = useRef<{
     timer: ReturnType<typeof setTimeout> | null
@@ -233,7 +238,7 @@ export default function FlashcardLearn() {
   // Navigation Blocking logic
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
-      activeDeck !== null && currentLocation.pathname !== nextLocation.pathname
+      activeDeck !== null && !showSummary && currentLocation.pathname !== nextLocation.pathname
   )
 
 
@@ -429,7 +434,7 @@ export default function FlashcardLearn() {
       quality = writtenCorrect ? 4 : 1
     }
     await rateCard(quality)
-    exitSession()
+    handleFinishSession()
   }
   const goPrev = () => {
     stop()
@@ -505,6 +510,15 @@ export default function FlashcardLearn() {
     setWrittenCorrect(isCorrect)
     setWrittenSubmitted(true)
     setWrittenStats(prev => ({ correct: prev.correct + (isCorrect ? 1 : 0), total: prev.total + 1 }))
+    setCardGrades(prev => ({
+      ...prev,
+      [currentCard.id]: {
+        ...prev[currentCard.id],
+        rating: prev[currentCard.id]?.rating ?? (isCorrect ? 4 : 1),
+        writtenAnswer,
+        writtenCorrect: isCorrect,
+      }
+    }))
   }
 
   // ── Exit session ──
@@ -515,6 +529,8 @@ export default function FlashcardLearn() {
     setCurrentIndex(0)
     setIsFlipped(false)
     setShowSettings(false)
+    setShowSummary(false)
+    setCardGrades({})
     setSettings(s => ({ ...s, bookmarkedOnly: false })) // Reset bookmark filter on exit
     setWrittenStats({ correct: 0, total: 0 })
     setShowContext(false)
@@ -524,6 +540,43 @@ export default function FlashcardLearn() {
     // SM-2 writes are per-card and synchronous (rateCard awaits before
     // advancing), so all writes are committed by the time we exit.
     loadDecks()
+  }
+
+  const handleFinishSession = () => {
+    stop()
+    if (isAutoplay) setIsAutoplay(false)
+    if (sessionMode === 'preview') {
+      exitSession()
+      return
+    }
+    play('finish')
+    setShowSummary(true)
+    loadDecks()
+  }
+
+  const handleStudyAgain = () => {
+    setShowSummary(false)
+    setCurrentIndex(0)
+    setIsFlipped(false)
+    setCardGrades({})
+    setWrittenAnswer('')
+    setWrittenSubmitted(false)
+    setWrittenCorrect(null)
+    startSession(sessionCards)
+  }
+
+  const handleDrillWeakCards = (weakCardIds: string[]) => {
+    const weakCards = sessionCards.filter(c => weakCardIds.includes(c.id))
+    if (weakCards.length === 0) return
+    setShowSummary(false)
+    setSessionCards(weakCards)
+    setCurrentIndex(0)
+    setIsFlipped(false)
+    setCardGrades({})
+    setWrittenAnswer('')
+    setWrittenSubmitted(false)
+    setWrittenCorrect(null)
+    startSession(weakCards)
   }
 
   const handleGetContext = () => {
@@ -615,6 +668,8 @@ Provide a thorough explanation covering ALL of the following:
 
     setCurrentIndex(0)
     setIsFlipped(false)
+    setShowSummary(false)
+    setCardGrades({})
     setSessionCards(cards)
     setActiveDeck({ id: deck.id, title: deck.title, subject: deck.subject, cards: rawCards })
 
@@ -639,6 +694,8 @@ Provide a thorough explanation covering ALL of the following:
       return
     }
     setSessionMode('preview')
+    setShowSummary(false)
+    setCardGrades({})
     setCurrentIndex(0)
     setIsFlipped(false)
     setSessionCards(cards)
@@ -841,6 +898,27 @@ Provide a thorough explanation covering ALL of the following:
   const isBookmarked = currentCard ? bookmarks.has(`fc_bookmark_${currentCard.id}`) : false
 
   // ══════════════════════════════════════════════
+  // RENDER — Summary Mode
+  // ══════════════════════════════════════════════
+  if (showSummary && activeDeck) {
+    return (
+      <FlashcardReviewSummary
+        deckTitle={activeDeck.title}
+        deckSubject={activeDeck.subject}
+        deckId={activeDeck.id}
+        cards={sessionCards}
+        cardGrades={cardGrades}
+        swapTermDef={settings.swapTermDef}
+        bookmarks={bookmarks}
+        onToggleBookmark={toggleBookmark}
+        onStudyAgain={handleStudyAgain}
+        onDrillWeakCards={handleDrillWeakCards}
+        onDone={exitSession}
+      />
+    )
+  }
+
+  // ══════════════════════════════════════════════
   // RENDER — Flashcard View Mode
   // ══════════════════════════════════════════════
   if (activeDeck && currentCard) {
@@ -872,6 +950,7 @@ Provide a thorough explanation covering ALL of the following:
         enableTTS={true}
         enableAutoplay={sessionMode === 'study'}
         onExit={handleExit}
+        onFinish={handleFinishSession}
         onBlockerProceed={() => { stop(); blocker.proceed && blocker.proceed() }}
         onBlockerReset={() => blocker.reset && blocker.reset()}
         onSetExitConfirm={setShowExitConfirm}
@@ -909,10 +988,31 @@ Provide a thorough explanation covering ALL of the following:
           if (rating >= 3 && activeDeck?.subject) {
             gauntletService.rewardReviewElo(activeDeck.subject).catch(() => {})
           }
-          if (useSessionStore.getState().isFinished) { exitSession() }
+          if (currentCard) {
+            const storeDeck = useSessionStore.getState().currentDeck
+            const updatedCard = storeDeck.find(c => c.id === currentCard.id) || currentCard
+            setCardGrades(prev => ({
+              ...prev,
+              [currentCard.id]: {
+                rating,
+                writtenAnswer: settings.writtenMode ? writtenAnswer : undefined,
+                writtenCorrect: settings.writtenMode ? writtenCorrect : undefined,
+                interval: updatedCard.interval,
+                easeFactor: updatedCard.easeFactor,
+                repetitions: updatedCard.repetitions,
+                nextReview: updatedCard.nextReview,
+              }
+            }))
+          }
         }}
         onGetContext={handleGetContext}
-        onGoNext={sessionMode === 'preview' ? goNext : () => {
+        onGoNext={sessionMode === 'preview' ? () => {
+          if (currentIndex < sessionCards.length - 1) {
+            goNext()
+          } else {
+            handleFinishSession()
+          }
+        } : () => {
           stop()
           if (isAutoplay) setIsAutoplay(false)
           let nextIdx = useSessionStore.getState().currentIndex
@@ -921,7 +1021,7 @@ Provide a thorough explanation covering ALL of the following:
             useSessionStore.setState({ currentIndex: nextIdx })
           }
           if (useSessionStore.getState().isFinished || nextIdx >= sessionCards.length) {
-            exitSession()
+            handleFinishSession()
             return
           }
           setCurrentIndex(nextIdx)

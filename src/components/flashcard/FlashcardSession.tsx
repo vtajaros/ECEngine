@@ -45,6 +45,7 @@ export interface FlashcardSessionProps {
   enableAutoplay?: boolean
   wasAutoplayed?: boolean
   onExit: () => void
+  onFinish?: () => void
   onBlockerProceed: () => void
   onBlockerReset: () => void
   onSetExitConfirm: (v: boolean) => void
@@ -97,6 +98,7 @@ export function FlashcardSession({
   blockerState,
   progress,
   onExit,
+  onFinish,
   onBlockerProceed,
   onBlockerReset,
   onSetExitConfirm,
@@ -250,9 +252,13 @@ export function FlashcardSession({
     if (currentIndex < sessionCards.length - 1) {
       onGoNext()
     } else {
-      onExit()
+      if (onFinish) {
+        onFinish()
+      } else {
+        onExit()
+      }
     }
-  }, [currentIndex, sessionCards.length, onGoNext, onExit])
+  }, [currentIndex, sessionCards.length, onGoNext, onFinish, onExit])
 
   const handlePrevCard = React.useCallback(() => {
     setSelectedRating(null)
@@ -591,17 +597,20 @@ export function FlashcardSession({
                   <Sparkles className="w-3.5 h-3.5" /> Explain
                 </button>
               )}
-              {/* Skip — dimmed once rated (feedback+Next Card row below takes over) */}
+              {/* Skip / Finish (if on last card) — dimmed once rated (feedback+Next Card row below takes over) */}
               <button
                 onClick={handleNextCard}
-                disabled={currentIndex === sessionCards.length - 1}
-                className={`flex items-center gap-2 px-4 py-2 bg-[#111] border rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all disabled:opacity-30 disabled:cursor-default text-xs ${
+                className={`flex items-center gap-2 px-4 py-2 bg-[#111] border rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all text-xs ${
                   selectedRating !== null
                     ? 'border-[#222] text-[#444] pointer-events-none'
                     : 'border-[#333] text-text-muted hover:bg-border-base hover:border-[#555]'
                 }`}
               >
-                Skip <ArrowRight className="w-3 h-3" />
+                {currentIndex === sessionCards.length - 1 ? (
+                  <>Finish <ArrowRight className="w-3 h-3" /></>
+                ) : (
+                  <>Skip <ArrowRight className="w-3 h-3" /></>
+                )}
               </button>
             </div>
           </div>
