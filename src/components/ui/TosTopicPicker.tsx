@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { Search, X, Check, ChevronDown } from 'lucide-react'
 import type { Subject } from '../../types'
 import { getTosTopicGroupsBySubject, formatTosBadge } from '../../lib/tosClassification'
@@ -27,8 +28,10 @@ export const TosTopicPicker: React.FC<TosTopicPickerProps> = ({
   const [isOpen, setIsOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [direction, setDirection] = useState<'up' | 'down'>('down')
+  const [popoverStyle, setPopoverStyle] = useState<React.CSSProperties>({})
   const containerRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
+  const popoverRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
   const activeSubject = subject || 'ELECS'
@@ -74,11 +77,74 @@ export const TosTopicPicker: React.FC<TosTopicPickerProps> = ({
       .filter(g => g.subtopics.length > 0)
   }, [groups, search])
 
-  // Handle outside clicks to close
+  const updateCoords = () => {
+    if (!triggerRef.current) return
+    const rect = triggerRef.current.getBoundingClientRect()
+    const spaceBelow = window.innerHeight - rect.bottom
+    const spaceAbove = rect.top
+
+    const popoverWidth = Math.min(320, typeof window !== 'undefined' ? window.innerWidth - 16 : 320)
+
+    // Open upward only if space below is tight (< 220px) AND space above has more room
+    const openUp = spaceBelow < 220 && spaceAbove > spaceBelow
+
+    let left = rect.left
+    if (typeof window !== 'undefined') {
+      if (left + popoverWidth > window.innerWidth - 8) {
+        left = Math.max(8, window.innerWidth - popoverWidth - 8)
+      }
+      if (left < 8) left = 8
+    }
+
+    const availableSpace = openUp ? spaceAbove - 16 : spaceBelow - 16
+    const maxHeight = Math.max(160, Math.min(320, availableSpace))
+
+    setDirection(openUp ? 'up' : 'down')
+    setPopoverStyle({
+      position: 'fixed',
+      left: `${left}px`,
+      width: `${popoverWidth}px`,
+      maxHeight: `${maxHeight}px`,
+      zIndex: 99999,
+      ...(openUp
+        ? { bottom: `${window.innerHeight - rect.top + 6}px` }
+        : { top: `${rect.bottom + 6}px` }),
+    })
+  }
+
+  // Handle repositioning on resize and scroll
+  useEffect(() => {
+    if (!isOpen) return
+    const handleScrollOrResize = () => {
+      if (triggerRef.current) {
+        const rect = triggerRef.current.getBoundingClientRect()
+        if (rect.bottom < 0 || rect.top > window.innerHeight) {
+          setIsOpen(false)
+          setSearch('')
+          return
+        }
+      }
+      updateCoords()
+    }
+    window.addEventListener('resize', handleScrollOrResize)
+    window.addEventListener('scroll', handleScrollOrResize, true)
+    return () => {
+      window.removeEventListener('resize', handleScrollOrResize)
+      window.removeEventListener('scroll', handleScrollOrResize, true)
+    }
+  }, [isOpen])
+
+  // Handle outside clicks to close (checking both trigger/container and portal popover)
   useEffect(() => {
     if (!isOpen) return
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(target) &&
+        popoverRef.current &&
+        !popoverRef.current.contains(target)
+      ) {
         setIsOpen(false)
         setSearch('')
       }
@@ -101,11 +167,7 @@ export const TosTopicPicker: React.FC<TosTopicPickerProps> = ({
       setIsOpen(false)
       setSearch('')
     } else {
-      if (triggerRef.current) {
-        const rect = triggerRef.current.getBoundingClientRect()
-        const spaceBelow = window.innerHeight - rect.bottom
-        setDirection(spaceBelow < 330 ? 'up' : 'down')
-      }
+      updateCoords()
       setIsOpen(true)
       setSearch('')
     }
@@ -117,6 +179,8 @@ export const TosTopicPicker: React.FC<TosTopicPickerProps> = ({
     setIsOpen(false)
     setSearch('')
   }
+
+  const canUseDOM = typeof document !== 'undefined'
 
   return (
     <div
@@ -149,15 +213,16 @@ export const TosTopicPicker: React.FC<TosTopicPickerProps> = ({
         />
       </button>
 
-      {/* Popover */}
-      {isOpen && (
+      {/* Popover rendered via Portal to avoid overflow clipping */}
+      {isOpen && canUseDOM && createPortal(
         <div
-          className={`absolute left-0 ${
-            direction === 'up' ? 'bottom-full mb-1.5 origin-bottom-left' : 'top-full mt-1.5 origin-top-left'
-          } w-72 sm:w-80 max-h-76 bg-[#161616] border border-accent/40 rounded-xl shadow-[0_10px_35px_rgba(0,0,0,0.95)] z-50 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150`}
+          ref={popoverRef}
+          style={popoverStyle}
+          className="bg-[#161616] border border-accent/40 rounded-xl shadow-[0_10px_35px_rgba(0,0,0,0.95)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150"
+          onClick={e => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="p-2.5 border-b border-border-base/50 bg-[#1c1c1c] flex flex-col gap-1.5">
+          <div className="p-2.5 border-b border-border-base/50 bg-[#1c1c1c] flex flex-col gap-1.5 shrink-0">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold font-['Orbitron'] text-text-muted tracking-wider uppercase">
                 {activeSubject} Subtopics
@@ -188,7 +253,7 @@ export const TosTopicPicker: React.FC<TosTopicPickerProps> = ({
           </div>
 
           {/* Clear / Untag Option */}
-          <div className="px-2 pt-1.5 pb-1 border-b border-border-base/30">
+          <div className="px-2 pt-1.5 pb-1 border-b border-border-base/30 shrink-0">
             <button
               type="button"
               onClick={e => handleSelect(null, e)}
@@ -207,7 +272,7 @@ export const TosTopicPicker: React.FC<TosTopicPickerProps> = ({
           </div>
 
           {/* Subtopics List Grouped by Parent Topic Header */}
-          <div className="overflow-y-auto show-scrollbar p-1.5 flex-1 max-h-52 space-y-2">
+          <div className="overflow-y-auto show-scrollbar p-1.5 flex-1 space-y-2">
             {filteredGroups.length === 0 ? (
               <div className="p-3 text-center text-[11px] font-['JetBrains_Mono'] text-text-muted">
                 No subtopics match &ldquo;{search}&rdquo;
@@ -245,7 +310,8 @@ export const TosTopicPicker: React.FC<TosTopicPickerProps> = ({
               ))
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

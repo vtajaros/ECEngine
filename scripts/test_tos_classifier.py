@@ -120,5 +120,36 @@ class TestTosClassifier(unittest.TestCase):
         self.assertEqual(mapping["card-geas-mgmt"], "GEAS-4.3")
         self.assertEqual(mapping["card-math-em"], "MATH-6.1")
 
+    def test_deck_default_tos_bias(self):
+        cards = [
+            {
+                "id": "card-micro-pwm",
+                "subject": "ELECS",
+                "deckName": "MICROPS Top",
+                "defaultTosTopicId": "ELECS-8.1",
+                "text": "A microcontroller component that allows it to output an analog signal through some of its digital pins? PWM ADC DAC Timer"
+            },
+            {
+                "id": "card-micro-default",
+                "subject": "ELECS",
+                "deckName": "MICROPS Top",
+                "defaultTosTopicId": "ELECS-8.1",
+                "text": "Which of the following is an instruction to clear the accumulator? CLA NOP HLT RET"
+            }
+        ]
+        res = subprocess.run(
+            ["python3", "scripts/classify_database_tos.py", "--stdin"],
+            input=json.dumps(cards),
+            text=True,
+            capture_output=True,
+            check=True
+        )
+        data = json.loads(res.stdout)
+        mapping = {item["id"]: item["tosTopicId"] for item in data}
+        # Microcontroller question with PWM/ADC distractors should stay in topic 8 (8.5), not 6.3
+        self.assertEqual(mapping["card-micro-pwm"], "ELECS-8.5")
+        # Card with general microprocessor content should receive deck default 8.1
+        self.assertEqual(mapping["card-micro-default"], "ELECS-8.1")
+
 if __name__ == "__main__":
     unittest.main()

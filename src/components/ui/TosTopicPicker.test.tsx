@@ -73,11 +73,11 @@ describe('TosTopicPicker Component', () => {
       triggerBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
 
-    // Popover is open
-    expect(container.textContent).toContain('ELECS Subtopics')
+    // Popover is open in document.body via portal
+    expect(document.body.textContent).toContain('ELECS Subtopics')
 
     // Find all buttons inside the popover
-    const buttons = Array.from(container.querySelectorAll('button'))
+    const buttons = Array.from(document.body.querySelectorAll('button'))
     // Parent headers like '1.0 DC Electrical Circuits' must NOT be in buttons
     const buttonTexts = buttons.map(b => b.textContent)
 
@@ -109,7 +109,7 @@ describe('TosTopicPicker Component', () => {
       triggerBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
 
-    const searchInput = container.querySelector('input[type="text"]') as HTMLInputElement
+    const searchInput = document.body.querySelector('input[type="text"]') as HTMLInputElement
     expect(searchInput).not.toBeNull()
 
     act(() => {
@@ -142,7 +142,7 @@ describe('TosTopicPicker Component', () => {
       triggerBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
     })
 
-    const clearBtn = Array.from(container.querySelectorAll('button')).find(
+    const clearBtn = Array.from(document.body.querySelectorAll('button')).find(
       b => b.textContent?.includes('Clear / Untag') || b.textContent?.includes('Default from Deck')
     )
     expect(clearBtn).toBeDefined()

@@ -604,7 +604,7 @@ export default function AddDeck() {
 
         {/* 2 & 3. Cards Pane — Pane 2 (right, 2/3 wide) */}
         <div className="w-full max-w-4xl xl:max-w-none xl:col-span-2 flex flex-col gap-6">
-          <section className="flex flex-row flex-wrap items-center justify-between gap-4">
+          <section className="flex flex-col items-center justify-center gap-3 w-full">
             {/* Deck Type Toggle */}
             <div className="flex flex-row w-auto bg-[#111] border border-border-base p-1 rounded-lg gap-1">
               <button
@@ -637,7 +637,19 @@ export default function AddDeck() {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-3 justify-end">
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <button
+                onClick={() => openImportModal('mcq')}
+                className="flex items-center gap-2 px-4 py-2 rounded border border-[#333] bg-surface-2 text-text-muted hover:text-accent hover:border-accent/50 font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all"
+              >
+                <Upload size={14} /> Import MCQs
+              </button>
+              <button
+                onClick={() => openImportModal('flashcard')}
+                className="flex items-center gap-2 px-4 py-2 rounded border border-[#333] bg-surface-2 text-text-muted hover:text-accent hover:border-accent/50 font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all"
+              >
+                <Upload size={14} /> Import Flashcards
+              </button>
               <Tooltip
                 content="Automatically classify and tag all cards in this deck using the offline PRC TOS classifier"
                 position="bottom"
@@ -652,18 +664,6 @@ export default function AddDeck() {
                   {isClassifyingTos ? 'Tagging...' : 'Auto-Tag Cards'}
                 </button>
               </Tooltip>
-              <button
-                onClick={() => openImportModal('mcq')}
-                className="flex items-center gap-2 px-4 py-2 rounded border border-[#333] bg-surface-2 text-text-muted hover:text-accent hover:border-accent/50 font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all"
-              >
-                <Upload size={14} /> Import MCQs
-              </button>
-              <button
-                onClick={() => openImportModal('flashcard')}
-                className="flex items-center gap-2 px-4 py-2 rounded border border-[#333] bg-surface-2 text-text-muted hover:text-accent hover:border-accent/50 font-['Rajdhani'] uppercase tracking-widest text-xs font-bold transition-all"
-              >
-                <Upload size={14} /> Import Flashcards
-              </button>
             </div>
           </section>
 

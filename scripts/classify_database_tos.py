@@ -779,7 +779,11 @@ SUBTOPIC_RULES = {
         ],
         'ELECS-8.5': [  # Microcontrollers
             r'\bmicrocontrollers?\b', r'\b8051\b', r'\bpic microcontroller\b', r'\bavr\b', r'\barduino\b', r'\bon-chip peripheral\b',
-            r'\bwatchdog timer\b'
+            r'\bwatchdog timer\b',
+            r'\bpwm\b', r'\bpulse width modulation\b', r'\bgpio\b', r'\bgeneral purpose i/o\b',
+            r'\bdigital pins?\b', r'\banalog pins?\b', r'\bmicrocontroller component\b',
+            r'\bmicrocontroller peripheral\b', r'\btimer/counter\b', r'\bcapture/compare\b',
+            r'\batmega\d*\b', r'\battiny\d*\b', r'\besp32\b', r'\besp8266\b', r'\bstm32\b'
         ],
 
         # 9.0 Feedback and Control Systems (also shared with MATH-8.0)
@@ -2001,7 +2005,7 @@ DECK_KEYWORD_PATTERNS = {
         (re.compile(r'\b(?:op-amp|operational amplifier|differential amplifier|multistage|cascade|cascode|feedback amplifier|oscillator|filter)\b', re.I), 'ELECS-5.0'),
         (re.compile(r'\b(?:power electronics|thyristor|scr|triac|diac|ujt|transducer|plc|sensors?)\b', re.I), 'ELECS-6.0'),
         (re.compile(r'\b(?:digital electronics|logic circuits?|boolean|k-map|flip-flop|counter|sequential logic|combinational logic)\b', re.I), 'ELECS-7.0'),
-        (re.compile(r'\b(?:microprocessor|microcontroller|assembly|8085|8086|pic|avr|8051|embedded)\b', re.I), 'ELECS-8.0'),
+        (re.compile(r'\b(?:microprocessors?|microcontrollers?|microps|assembly|8085|8086|pic|avr|8051|embedded)\b', re.I), 'ELECS-8.0'),
         (re.compile(r'\b(?:control systems?|feedback and control|root locus|bode|nyquist|state space)\b', re.I), 'ELECS-9.0'),
     ],
     'GEAS': [
@@ -2874,11 +2878,21 @@ def classify_text(text, subject_code, deck_name=None, deck_desc=None, default_to
     primary_parent = None
     target_subtopic = None
     if default_tos:
-        if '.' in default_tos and not default_tos.endswith('.0'):
-            target_subtopic = default_tos
-            primary_parent = SUBTOPIC_TO_PARENT.get(default_tos, f"{default_tos.split('.')[0]}.0")
+        default_tos_clean = str(default_tos).strip()
+        m_sub = re.search(r'([A-Z]+-)?(\d+\.\d+)', default_tos_clean)
+        m_parent = re.search(r'([A-Z]+-)?(\d+\.0)', default_tos_clean)
+        if m_sub and not m_sub.group(2).endswith('.0'):
+            code = m_sub.group(2)
+            prefix = (m_sub.group(1) or f"{subject_code}-").rstrip('-')
+            candidate_id = f"{prefix}-{code}"
+            target_subtopic = candidate_id
+            primary_parent = SUBTOPIC_TO_PARENT.get(candidate_id, f"{prefix}-{code.split('.')[0]}.0")
+        elif m_parent:
+            code = m_parent.group(2)
+            prefix = (m_parent.group(1) or f"{subject_code}-").rstrip('-')
+            primary_parent = f"{prefix}-{code}"
         else:
-            primary_parent = default_tos
+            primary_parent = default_tos_clean
     else:
         detected = detect_deck_topic(deck_name, deck_desc, subject_code)
         if detected:
@@ -2898,7 +2912,8 @@ def classify_text(text, subject_code, deck_name=None, deck_desc=None, default_to
                 if sub_id == 'EST-3.5' and any(k in pat.pattern for k in ["carson", r"transmission\s+bandwidth"]):
                     weight = 10
                 else:
-                    words_in_pat = len(re.findall(r'[a-zA-Z0-9]+', pat.pattern))
+                    clean_pat = re.sub(r'\\[a-zA-Z]|[^a-zA-Z0-9\s]', ' ', pat.pattern)
+                    words_in_pat = len(clean_pat.split())
                     if words_in_pat >= 3:
                         weight = 5
                     elif words_in_pat == 2 or any(k in pat.pattern.lower() for k in ['b2b', 'b2c', 'c2c', 'b2g', 'eia', 'ecc', '8-psk', '16-psk', 'qpsk', 'd_min', 'k-factor']):
@@ -2915,7 +2930,8 @@ def classify_text(text, subject_code, deck_name=None, deck_desc=None, default_to
                 for pat in p_patterns:
                     cnt = len(pat.findall(text))
                     if cnt > 0:
-                        words_in_pat = len(re.findall(r'[a-zA-Z0-9]+', pat.pattern))
+                        clean_pat = re.sub(r'\\[a-zA-Z]|[^a-zA-Z0-9\s]', ' ', pat.pattern)
+                        words_in_pat = len(clean_pat.split())
                         weight = 3 if words_in_pat >= 2 else 1
                         raw_subtopic_scores[native_sub_id] += cnt * weight
 
@@ -2927,8 +2943,11 @@ def classify_text(text, subject_code, deck_name=None, deck_desc=None, default_to
                 if sub_id in raw_subtopic_scores:
                     # Give bonus to matches in the deck's primary topic
                     subtopic_scores[sub_id] += 3
-        if target_subtopic and target_subtopic in raw_subtopic_scores:
-            subtopic_scores[target_subtopic] += 2
+        if target_subtopic:
+            if target_subtopic in raw_subtopic_scores:
+                subtopic_scores[target_subtopic] += 4
+            else:
+                subtopic_scores[target_subtopic] += 2
 
     # Parent family aggregate scores
     parent_family_scores = Counter()
@@ -2947,35 +2966,48 @@ def classify_text(text, subject_code, deck_name=None, deck_desc=None, default_to
 
         # If deck has a verified primary topic
         if primary_parent:
+            primary_subs = [
+                (s_id, s_score)
+                for s_id, s_score in subtopic_scores.items()
+                if SUBTOPIC_TO_PARENT.get(s_id) == primary_parent
+            ]
+            primary_subs.sort(key=lambda x: x[1], reverse=True)
+            best_primary_sub = primary_subs[0][0] if primary_subs else None
+            best_primary_score = primary_subs[0][1] if primary_subs else 0
+
             top_id, top_score = subtopic_scores.most_common(1)[0]
             top_parent = SUBTOPIC_TO_PARENT.get(top_id, top_id)
+
             if top_parent == primary_parent:
+                if target_subtopic and best_primary_sub != target_subtopic:
+                    raw_best = raw_subtopic_scores.get(best_primary_sub, 0)
+                    if raw_best >= 2:
+                        return best_primary_sub, True
+                    else:
+                        return target_subtopic, True
                 confident = (top_score >= MIN_CONFIDENCE_SCORE)
                 return top_id, True if confident else (default_tos if default_tos else top_id)
             else:
                 # Top match is from a different topic family
                 raw_top = raw_subtopic_scores.get(top_id, 0)
-                # Allow cross-topic classification if confident keyword match
-                if raw_top >= 3:
+
+                # Only allow cross-topic classification if foreign match is strongly confident (>= 6)
+                # and clearly dominates any match within the primary family
+                if raw_top >= 6 and raw_top >= (best_primary_score + 4):
                     return top_id, True
 
-                # Check if primary parent had any subtopic matches
-                best_primary_sub = None
-                best_primary_score = 0
-                for s_id, s_cnt in raw_subtopic_scores.items():
-                    if SUBTOPIC_TO_PARENT.get(s_id) == primary_parent and s_cnt > best_primary_score:
-                        best_primary_score = s_cnt
-                        best_primary_sub = s_id
-
-                if best_primary_sub and best_primary_score >= MIN_CONFIDENCE_SCORE:
+                # Otherwise, maintain deck family loyalty:
+                if best_primary_sub and raw_subtopic_scores.get(best_primary_sub, 0) >= 1:
                     return best_primary_sub, True
-                if raw_top >= 1:
-                    return top_id, True
                 if target_subtopic:
                     return target_subtopic, True
                 if default_tos and not default_tos.endswith('.0'):
-                    return default_tos, False
-                return None, False
+                    return default_tos, True
+                if best_primary_sub:
+                    return best_primary_sub, True
+                if raw_top >= 4:
+                    return top_id, True
+                return (target_subtopic or default_tos or top_id), False
 
         # No primary parent or pool deck (e.g. Pre-Board, Coaching, Review Exam):
         if top_family_subs:
