@@ -79,12 +79,33 @@ const TOPIC_BY_ID_MAP = new Map<string, FlatTosTopic>(
   ALL_TOS_TOPICS.map(t => [t.id.toUpperCase(), t])
 )
 
+const CANONICAL_SUBJECT_MAP: Record<string, Subject> = {
+  'MATHEMATICS': 'MATH',
+  'MATH': 'MATH',
+  'GENERAL ENGINEERING & APPLIED SCIENCES': 'GEAS',
+  'GENERAL ENGINEERING AND APPLIED SCIENCES': 'GEAS',
+  'GENERAL ENGINEERING': 'GEAS',
+  'GEN ENG': 'GEAS',
+  'GEAS': 'GEAS',
+  'ELECTRONICS ENGINEERING': 'ELECS',
+  'ELECTRONICS': 'ELECS',
+  'ELECS': 'ELECS',
+  'ELEC': 'ELECS',
+  'ELECTRONICS SYSTEMS & TECHNOLOGIES': 'EST',
+  'ELECTRONICS SYSTEMS AND TECHNOLOGIES': 'EST',
+  'ELECTRONICS SYSTEMS & TECHNOLOGY': 'EST',
+  'ELECTRONICS SYSTEMS AND TECHNOLOGY': 'EST',
+  'ELECTRONICS SYSTEMS': 'EST',
+  'EST': 'EST',
+}
+
 /** Normalize a subject string to canonical Subject code */
 export function normalizeSubjectCode(subj?: string | null): Subject | null {
   if (!subj) return null
   const s = subj.toUpperCase().trim()
+  if (CANONICAL_SUBJECT_MAP[s]) return CANONICAL_SUBJECT_MAP[s]
   if (s.startsWith('MATH')) return 'MATH'
-  if (s.startsWith('GEAS')) return 'GEAS'
+  if (s.startsWith('GEAS') || s.startsWith('GEN') || s.includes('GEAS') || s.includes('APPLIED')) return 'GEAS'
   if (s.includes('SYSTEM') || s.startsWith('EST') || s.includes('COMM')) return 'EST'
   if (s.startsWith('ELEC')) return 'ELECS'
   return null

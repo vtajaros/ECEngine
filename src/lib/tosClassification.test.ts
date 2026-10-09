@@ -29,6 +29,9 @@ describe('tosClassification', () => {
     expect(normalizeSubjectCode('Electronics Systems & Technologies')).toBe('EST')
     expect(normalizeSubjectCode('Electronics Systems and Technologies')).toBe('EST')
     expect(normalizeSubjectCode('GEAS')).toBe('GEAS')
+    expect(normalizeSubjectCode('General Engineering & Applied Sciences')).toBe('GEAS')
+    expect(normalizeSubjectCode('General Engineering and Applied Sciences')).toBe('GEAS')
+    expect(normalizeSubjectCode('General Engineering')).toBe('GEAS')
     expect(normalizeSubjectCode('EST')).toBe('EST')
     expect(normalizeSubjectCode('unknown')).toBeNull()
     expect(normalizeSubjectCode(null)).toBeNull()
@@ -97,6 +100,13 @@ describe('tosClassification', () => {
       'MATH-1.4',
       'MATH-1.5',
     ])
+
+    const geasGroups = getTosTopicGroupsBySubject('General Engineering & Applied Sciences')
+    expect(geasGroups.length).toBe(11)
+    expect(geasGroups.every(g => g.parent.subject === 'GEAS')).toBe(true)
+    expect(geasGroups.every(g => g.subtopics.every(st => st.subject === 'GEAS'))).toBe(true)
+    // Verify no math topics are included
+    expect(geasGroups.some(g => g.parent.title === 'Differential Calculus')).toBe(false)
   })
 
   it('formats badge label cleanly for both parent topics and subtopics', () => {

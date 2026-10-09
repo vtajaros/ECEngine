@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { Search, X, Check, ChevronDown } from 'lucide-react'
 import type { Subject } from '../../types'
-import { getTosTopicGroupsBySubject, formatTosBadge } from '../../lib/tosClassification'
+import { getTosTopicGroupsBySubject, formatTosBadge, normalizeSubjectCode } from '../../lib/tosClassification'
 
 export interface TosTopicPickerProps {
   value: string | null
@@ -34,7 +34,8 @@ export const TosTopicPicker: React.FC<TosTopicPickerProps> = ({
   const popoverRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
 
-  const activeSubject = subject || 'ELECS'
+  const normalizedSubject = useMemo(() => normalizeSubjectCode(subject), [subject])
+  const activeSubject = normalizedSubject || subject || 'ELECS'
   const groups = useMemo(() => getTosTopicGroupsBySubject(activeSubject), [activeSubject])
 
   // Resolve current selection label

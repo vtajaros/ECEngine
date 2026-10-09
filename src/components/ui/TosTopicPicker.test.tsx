@@ -153,4 +153,35 @@ describe('TosTopicPicker Component', () => {
 
     expect(handleChange).toHaveBeenCalledWith(null)
   })
+
+  it('restricts dropdown strictly to GEAS topics when subject is "General Engineering & Applied Sciences"', () => {
+    act(() => {
+      root.render(
+        <TosTopicPicker
+          value={null}
+          onChange={vi.fn()}
+          subject="General Engineering & Applied Sciences"
+          placeholder="(Default from Deck / None)"
+        />
+      )
+    })
+
+    const triggerBtn = container.querySelector('button')
+    act(() => {
+      triggerBtn?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    })
+
+    // Popover header should display GEAS Subtopics
+    expect(document.body.textContent).toContain('GEAS Subtopics')
+
+    // GEAS topics should be present
+    expect(document.body.textContent).toContain('Chemistry for Engineers')
+    expect(document.body.textContent).toContain('Physics for Engineers')
+
+    // Topics from other subjects must NOT be present
+    expect(document.body.textContent).not.toContain('Differential Calculus')
+    expect(document.body.textContent).not.toContain('Integral Calculus')
+    expect(document.body.textContent).not.toContain('DC Electrical Circuits')
+    expect(document.body.textContent).not.toContain('Radio Communication Systems')
+  })
 })
