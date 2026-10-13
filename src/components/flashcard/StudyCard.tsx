@@ -6,7 +6,6 @@ import { getDynamicFontSize } from '../../lib/textUtils'
 import type { Card, MCQData, FlashcardData } from '../../types'
 import type { FormulaData } from '../../types'
 import { AutoFitText } from '../ui/AutoFitText'
-import { formatTosBadge } from '../../lib/tosClassification'
 import { Tooltip } from '../ui/Tooltip'
 
 // ── Pure helper functions (extracted from FlashcardLearn) ──────────────────
@@ -321,19 +320,10 @@ export const StudyCard = React.memo(function StudyCard({
             </Tooltip>
 
             {/* Card Label */}
-            <div className="px-8 pt-6 pb-2 flex items-center justify-between">
+            <div className="px-8 pt-6 pb-2">
               <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-text-muted">
                 {swapTermDef ? 'Definition' : 'Term'}
               </span>
-              {card.tosTopicId && (
-                <Tooltip content={formatTosBadge(card.tosTopicId) || card.tosTopicId} position="top">
-                  <span
-                    className="px-2 py-0.5 text-[10px] font-['JetBrains_Mono'] font-bold bg-[#181818] text-accent/90 rounded border border-accent/30 mr-8 cursor-default"
-                  >
-                    {formatTosBadge(card.tosTopicId) || card.tosTopicId}
-                  </span>
-                </Tooltip>
-              )}
             </div>
 
             {/* Front Content */}
@@ -373,19 +363,10 @@ export const StudyCard = React.memo(function StudyCard({
             }}
           >
             {/* Card Label */}
-            <div className="px-8 pt-6 pb-2 flex items-center justify-between">
+            <div className="px-8 pt-6 pb-2">
               <span className="text-xs font-['Rajdhani'] uppercase tracking-widest text-text-muted">
                 {swapTermDef ? 'Term' : 'Definition'}
               </span>
-              {card.tosTopicId && (
-                <Tooltip content={formatTosBadge(card.tosTopicId) || card.tosTopicId} position="top">
-                  <span
-                    className="px-2 py-0.5 text-[10px] font-['JetBrains_Mono'] font-bold bg-[#181818] text-accent/90 rounded border border-accent/30 cursor-default"
-                  >
-                    {formatTosBadge(card.tosTopicId) || card.tosTopicId}
-                  </span>
-                </Tooltip>
-              )}
             </div>
 
             {/* Back Content */}
