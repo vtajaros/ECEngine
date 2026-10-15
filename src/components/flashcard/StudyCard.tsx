@@ -130,15 +130,27 @@ const ExplanationBlock: React.FC<{
   forceOpen?: boolean
 }> = ({ card, onZoomImage, onOpenChange, forceOpen }) => {
   const [open, setOpen] = React.useState(false)
+  const [contentHeight, setContentHeight] = React.useState<number>(800)
+  const [isFullyOpen, setIsFullyOpen] = React.useState(false)
   const sizerRef = React.useRef<HTMLDivElement>(null)
   const explanation = getExplanation(card)
   if (!explanation) return null
+
+  // Measure content height whenever card changes, capped at 220px to keep flashcard balanced
+  React.useEffect(() => {
+    if (sizerRef.current) {
+      const h = sizerRef.current.offsetHeight
+      if (h > 0) setContentHeight(Math.min(h + 24, 220))
+    }
+  }, [card])
 
   // Sync with external forceOpen (arrow key control)
   React.useEffect(() => {
     if (forceOpen === undefined) return
     if (forceOpen === open) return
     const h = sizerRef.current?.offsetHeight ?? 0
+    if (h > 0) setContentHeight(Math.min(h + 24, 220))
+    if (!forceOpen) setIsFullyOpen(false)
     setOpen(forceOpen)
     onOpenChange?.(forceOpen, forceOpen ? h : 0, Boolean(explanation.imagePath))
   }, [forceOpen])
@@ -147,6 +159,8 @@ const ExplanationBlock: React.FC<{
     e.stopPropagation()
     const next = !open
     const h = sizerRef.current?.offsetHeight ?? 0
+    if (h > 0) setContentHeight(Math.min(h + 24, 220))
+    if (!next) setIsFullyOpen(false)
     setOpen(next)
     onOpenChange?.(next, next ? h : 0, Boolean(explanation.imagePath))
   }
@@ -174,7 +188,7 @@ const ExplanationBlock: React.FC<{
   )
 
   return (
-    <div className="border-t border-[#222] mt-4 pt-3 px-8 pb-4" onClick={e => e.stopPropagation()}>
+    <div className="border-t border-[#222] mt-4 pt-3 px-8 pb-4 relative shrink-0" onClick={e => e.stopPropagation()}>
       <button
         onClick={toggle}
         className="flex items-center gap-2 text-[11px] font-['Rajdhani'] uppercase tracking-widest text-text-muted hover:text-accent transition-colors font-bold w-full text-left"
@@ -187,23 +201,25 @@ const ExplanationBlock: React.FC<{
       <div
         ref={sizerRef}
         aria-hidden="true"
-        style={{ visibility: 'hidden', position: 'absolute', top: 0, left: 0, width: '100%', pointerEvents: 'none' }}
+        style={{ visibility: 'hidden', position: 'absolute', top: 0, left: '2rem', right: '2rem', pointerEvents: 'none' }}
         className="flex flex-col gap-3 mt-3"
       >
         {explanationContent}
       </div>
 
-      {/* Animated reveal */}
+      {/* Animated reveal — comfortably proportioned with clean scroll area */}
       <div
         style={{
-          maxHeight: open ? '600px' : '0px',
+          maxHeight: open ? `${contentHeight}px` : '0px',
           opacity: open ? 1 : 0,
           overflow: 'hidden',
           transition: 'max-height 0.28s ease-in-out, opacity 0.22s ease-in-out',
         }}
-        className="flex flex-col gap-3 mt-3"
+        className="mt-3"
       >
-        {explanationContent}
+        <div className="overflow-y-auto max-h-[200px] pr-2 custom-scrollbar flex flex-col gap-3">
+          {explanationContent}
+        </div>
       </div>
     </div>
   )
@@ -272,6 +288,8 @@ export const StudyCard = React.memo(function StudyCard({
     ? 'transform 0.5s cubic-bezier(0.4, 0, 0.2, 1)'
     : 'none'
 
+  const isBackActive = isPresent ? isFlipped : wasFlippedRef.current
+
   return (
     <motion.div
       key={`${card.id}-${currentIndex}`}
@@ -279,12 +297,12 @@ export const StudyCard = React.memo(function StudyCard({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -direction * 35, pointerEvents: 'none' } as any}
       transition={{ duration: 0.22, ease: 'easeOut' }}
-      className="w-full"
+      className="w-full max-w-full min-w-0"
       style={{ gridColumn: 1, gridRow: 1 }}
     >
       {/* 3D Flip Card Container */}
       <div
-        className={`w-full ${explanationOpen ? 'cursor-default' : 'cursor-pointer'}`}
+        className={`w-full max-w-full min-w-0 ${explanationOpen ? 'cursor-default' : 'cursor-pointer'}`}
         style={{ perspective: '1200px', minHeight: '350px' }}
         onClick={explanationOpen ? undefined : onFlip}
       >
@@ -292,6 +310,7 @@ export const StudyCard = React.memo(function StudyCard({
           style={{
             position: 'relative',
             width: '100%',
+            maxWidth: '100%',
             minHeight: '350px',
             transformStyle: 'preserve-3d',
             transition: effectiveTransition,
@@ -301,13 +320,16 @@ export const StudyCard = React.memo(function StudyCard({
         >
           {/* FRONT FACE */}
           <div
-            className="bg-surface-2 border border-border-base rounded-xl shadow-2xl flex flex-col"
+            className="bg-surface-2 border border-border-base rounded-xl shadow-2xl flex flex-col w-full max-w-full min-w-0 overflow-hidden"
             style={{
-              position: 'absolute',
-              left: 0,
-              right: 0,
-              top: 0,
-              minHeight: '100%',
+              position: isBackActive ? 'absolute' : 'relative',
+              left: isBackActive ? 0 : undefined,
+              right: isBackActive ? 0 : undefined,
+              top: isBackActive ? 0 : undefined,
+              bottom: isBackActive ? 0 : undefined,
+              width: '100%',
+              maxWidth: '100%',
+              minHeight: '350px',
               backfaceVisibility: 'hidden',
               WebkitBackfaceVisibility: 'hidden',
             }}
@@ -327,7 +349,7 @@ export const StudyCard = React.memo(function StudyCard({
             </div>
 
             {/* Front Content */}
-            <div className="flex-1 flex items-center justify-center px-8 pb-8 overflow-hidden w-full max-w-full">
+            <div className="flex-1 flex items-center justify-center px-8 pb-8 overflow-hidden w-full max-w-full min-w-0">
               <div className="text-center w-full max-w-full">
                 <AutoFitText className={`${getDynamicFontSize(getFrontText(card, swapTermDef))} font-['Rajdhani'] font-bold text-text-primary leading-relaxed text-center`} html={renderMath(getFrontText(card, swapTermDef))} />
                 {((card.data as any).imagePathFront || card.data.imagePath) && (() => {
@@ -350,13 +372,16 @@ export const StudyCard = React.memo(function StudyCard({
 
           {/* BACK FACE */}
           <div
-            className="bg-surface-2 border border-border-base rounded-xl shadow-2xl flex flex-col"
+            className="bg-surface-2 border border-border-base rounded-xl shadow-2xl flex flex-col w-full max-w-full min-w-0 overflow-hidden"
             style={{
-              position: 'absolute',
-              left: 0,
-              right: 0,
-              top: 0,
-              minHeight: '100%',
+              position: isBackActive ? 'relative' : 'absolute',
+              left: isBackActive ? undefined : 0,
+              right: isBackActive ? undefined : 0,
+              top: isBackActive ? undefined : 0,
+              bottom: isBackActive ? undefined : 0,
+              width: '100%',
+              maxWidth: '100%',
+              minHeight: '350px',
               backfaceVisibility: 'hidden',
               WebkitBackfaceVisibility: 'hidden',
               transform: 'rotateY(180deg)',
@@ -370,7 +395,7 @@ export const StudyCard = React.memo(function StudyCard({
             </div>
 
             {/* Back Content */}
-            <div className="flex-1 flex items-center justify-center px-8 pb-4 overflow-hidden w-full max-w-full">
+            <div className="flex-1 flex items-center justify-center px-8 pb-4 overflow-hidden w-full max-w-full min-w-0">
               <div className="text-center w-full text-text-primary flex flex-col items-center gap-4 max-w-full">
                 {getBackContent(card, swapTermDef)}
                 {(card.data as any).imageBack && (

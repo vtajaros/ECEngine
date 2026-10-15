@@ -422,7 +422,7 @@ export function FlashcardSession({
       </AnimatePresence>
 
       {/* Card Area — single centered column */}
-      <div ref={scrollContainerRef} className="flex-1 flex items-start justify-center min-h-0 px-6 lg:px-10 overflow-y-auto">
+      <div ref={scrollContainerRef} className="flex-1 flex items-start justify-center min-h-0 px-6 lg:px-10 overflow-y-auto overflow-x-hidden">
         <div
           className="w-full max-w-3xl flex flex-col gap-4"
           style={{
@@ -433,8 +433,8 @@ export function FlashcardSession({
         >
           {/* Card */}
           <div
-            className="w-full relative min-h-[350px] overflow-hidden"
-            style={{ display: 'grid', gridTemplateColumns: '1fr', gridTemplateRows: '1fr' }}
+            className="w-full max-w-full min-w-0 relative min-h-[350px] overflow-visible"
+            style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr)', gridTemplateRows: '1fr' }}
           >
             <AnimatePresence initial={false}>
               <StudyCard
