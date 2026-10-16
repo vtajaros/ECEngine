@@ -912,6 +912,127 @@ describe('Gauntlet Summary Review List', () => {
     expect(container!.textContent).toContain('to retry')
   })
 
+  it('opens Learn Settings modal when clicking settings gear next to LEARN MISSED, showing minimal options', async () => {
+    setupSummaryState()
+
+    await act(async () => {
+      root!.render(renderWithRouter(<Gauntlet />))
+    })
+
+    const gearBtn = container!.querySelector('[data-testid="learn-missed-settings-button"]') as HTMLButtonElement
+    expect(gearBtn).toBeTruthy()
+
+    await act(async () => {
+      gearBtn.click()
+    })
+
+    // Learn Settings modal should be visible
+    expect(container!.textContent).toContain('Learn Settings')
+    expect(container!.textContent).toContain('Shuffle Questions')
+    expect(container!.textContent).toContain('Shuffle Choices')
+    expect(container!.textContent).toContain('Read Questions Aloud (TTS)')
+
+    // Minimal mode: Should NOT show Number of Items, Bookmarked Only, or Random Sample
+    expect(container!.textContent).not.toContain('Number of Items')
+    expect(container!.textContent).not.toContain('Bookmarked Only')
+    expect(container!.textContent).not.toContain('Random Sample')
+
+    // Close via cancel
+    const cancelBtn = container!.querySelector('[data-testid="learn-settings-cancel-button"]') as HTMLButtonElement
+    expect(cancelBtn).toBeTruthy()
+    await act(async () => {
+      cancelBtn.click()
+    })
+
+    // Modal is closed, LearnMode is NOT started
+    expect(container!.textContent).not.toContain('Exit Learn Mode')
+    expect(container!.querySelector('[data-testid="learn-missed-button"]')).toBeTruthy()
+  })
+
+  it('persists modified learn settings to localStorage and launches LearnMode on Start Session', async () => {
+    localStorage.clear()
+    setupSummaryState()
+
+    await act(async () => {
+      root!.render(renderWithRouter(<Gauntlet />))
+    })
+
+    const gearBtn = container!.querySelector('[data-testid="learn-missed-settings-button"]') as HTMLButtonElement
+    await act(async () => {
+      gearBtn.click()
+    })
+
+    // Toggle shuffle questions and TTS
+    const shuffleQuestionsToggle = container!.querySelector('[data-testid="toggle-shuffleQuestions"]') as HTMLButtonElement
+    const ttsToggle = container!.querySelector('[data-testid="toggle-ttsEnabled"]') as HTMLButtonElement
+    expect(shuffleQuestionsToggle).toBeTruthy()
+    expect(ttsToggle).toBeTruthy()
+
+    await act(async () => {
+      shuffleQuestionsToggle.click()
+    })
+    expect(localStorage.getItem('ecengine:gauntlet:learn:shuffleQuestions')).toBe('true')
+
+    await act(async () => {
+      ttsToggle.click()
+    })
+    expect(localStorage.getItem('ecengine:tts:enabled')).toBe('true')
+
+    // Start session
+    const startBtn = container!.querySelector('[data-testid="learn-settings-start-button"]') as HTMLButtonElement
+    expect(startBtn).toBeTruthy()
+    await act(async () => {
+      startBtn.click()
+    })
+
+    // Confirm LearnMode is mounted
+    expect(container!.textContent).toContain('Exit Learn Mode')
+    expect(container!.textContent).toContain('to retry')
+  })
+
+  it('opens Learn Settings modal when clicking settings gear next to LEARN ALL and review header buttons', async () => {
+    setupSummaryState()
+
+    await act(async () => {
+      root!.render(renderWithRouter(<Gauntlet />))
+    })
+
+    // 1. Learn All Sidebar Gear
+    const learnAllGear = container!.querySelector('[data-testid="learn-all-settings-button"]') as HTMLButtonElement
+    expect(learnAllGear).toBeTruthy()
+    await act(async () => {
+      learnAllGear.click()
+    })
+    expect(container!.textContent).toContain('Learn Settings')
+
+    // Close via close X button
+    const closeBtn = container!.querySelector('[data-testid="learn-settings-close-button"]') as HTMLButtonElement
+    await act(async () => {
+      closeBtn.click()
+    })
+
+    // 2. Header Missed Gear
+    const headerMissedGear = container!.querySelector('[data-testid="learn-missed-header-settings-button"]') as HTMLButtonElement
+    expect(headerMissedGear).toBeTruthy()
+    await act(async () => {
+      headerMissedGear.click()
+    })
+    expect(container!.textContent).toContain('Learn Settings')
+
+    const cancelBtn = container!.querySelector('[data-testid="learn-settings-cancel-button"]') as HTMLButtonElement
+    await act(async () => {
+      cancelBtn.click()
+    })
+
+    // 3. Header All Gear
+    const headerAllGear = container!.querySelector('[data-testid="learn-all-header-settings-button"]') as HTMLButtonElement
+    expect(headerAllGear).toBeTruthy()
+    await act(async () => {
+      headerAllGear.click()
+    })
+    expect(container!.textContent).toContain('Learn Settings')
+  })
+
   it('renders Flag Question button and opens modal to flag question', async () => {
     setupSummaryState()
 

@@ -21,17 +21,20 @@ interface StudySet {
   count: number
 }
 
-interface LearnSettingsModalProps {
+export interface LearnSettingsModalProps {
   isOpen: boolean
-  setId: string | null
+  setId?: string | null
   settings: LearnSettings
-  allSets: StudySet[]
+  allSets?: StudySet[]
   onSettingsChange: (settings: LearnSettings) => void
   onStart: () => void
   onClose: () => void
+  minimal?: boolean
 }
 
 const TTS_STORAGE_KEY = 'ecengine:tts:enabled'
+export const GAUNTLET_SHUFFLE_QUESTIONS_KEY = 'ecengine:gauntlet:learn:shuffleQuestions'
+export const GAUNTLET_SHUFFLE_CHOICES_KEY = 'ecengine:gauntlet:learn:shuffleChoices'
 
 /** Read the persisted TTS preference. Call this when initialising LearnSettings
  *  in LooksFamStudy so the default reflects the user's last choice. */
@@ -43,14 +46,55 @@ export function loadTTSPreference(): boolean {
   }
 }
 
+/** Read the persisted Gauntlet Learn settings. */
+export function loadGauntletLearnSettings(): LearnSettings {
+  let shuffleQuestions = false
+  let shuffleChoices = true
+  try {
+    const sq = localStorage.getItem(GAUNTLET_SHUFFLE_QUESTIONS_KEY)
+    if (sq !== null) shuffleQuestions = sq === 'true'
+    const sc = localStorage.getItem(GAUNTLET_SHUFFLE_CHOICES_KEY)
+    if (sc !== null) shuffleChoices = sc === 'true'
+  } catch {
+    /* storage unavailable */
+  }
+  return {
+    type: 'MCQ',
+    shuffleQuestions,
+    shuffleChoices,
+    bookmarkedOnly: false,
+    itemCount: 'All',
+    randomSample: false,
+    ttsEnabled: loadTTSPreference(),
+  }
+}
+
+/** Persist Gauntlet Learn settings to localStorage. */
+export function saveGauntletLearnSettings(settings: Partial<LearnSettings>) {
+  try {
+    if (typeof settings.shuffleQuestions === 'boolean') {
+      localStorage.setItem(GAUNTLET_SHUFFLE_QUESTIONS_KEY, String(settings.shuffleQuestions))
+    }
+    if (typeof settings.shuffleChoices === 'boolean') {
+      localStorage.setItem(GAUNTLET_SHUFFLE_CHOICES_KEY, String(settings.shuffleChoices))
+    }
+    if (typeof settings.ttsEnabled === 'boolean') {
+      localStorage.setItem(TTS_STORAGE_KEY, String(settings.ttsEnabled))
+    }
+  } catch {
+    /* storage unavailable */
+  }
+}
+
 export const LearnSettingsModal: React.FC<LearnSettingsModalProps> = ({
   isOpen,
-  setId,
+  setId = null,
   settings,
-  allSets,
+  allSets = [],
   onSettingsChange,
   onStart,
   onClose,
+  minimal = false,
 }) => {
   const setInfo = allSets.find(s => s.id === setId)
 
@@ -71,6 +115,8 @@ export const LearnSettingsModal: React.FC<LearnSettingsModalProps> = ({
     Icon: React.FC<{ className?: string }>
   ) => (
     <button
+      type="button"
+      data-testid={`toggle-${key}`}
       onClick={() => toggle(key)}
       className="flex items-center justify-between p-3 bg-surface-2 rounded border border-border-base hover:border-[#333] transition-colors"
     >
@@ -107,15 +153,20 @@ export const LearnSettingsModal: React.FC<LearnSettingsModalProps> = ({
                   Learn Settings
                 </h2>
               </div>
-              <button onClick={onClose} className="text-text-muted hover:text-white transition-colors">
+              <button
+                type="button"
+                data-testid="learn-settings-close-button"
+                onClick={onClose}
+                className="text-text-muted hover:text-white transition-colors"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Body */}
             <div className="p-6 flex flex-col gap-6">
-              {/* Item Count — only shown if set has more than 20 items */}
-              {setInfo && setInfo.count > 20 && (() => {
+              {/* Item Count — only shown if set has more than 20 items and not minimal */}
+              {!minimal && setInfo && setInfo.count > 20 && (() => {
                 const options: ('All' | number)[] = ['All', ...[20, 50, 100].filter(c => c < setInfo.count)]
                 return (
                   <div className="flex flex-col gap-3">
@@ -124,6 +175,7 @@ export const LearnSettingsModal: React.FC<LearnSettingsModalProps> = ({
                       {options.map(count => (
                         <button
                           key={count}
+                          type="button"
                           onClick={() => onSettingsChange({ ...settings, itemCount: count })}
                           className={`py-2 rounded font-['Rajdhani'] uppercase tracking-wider text-sm transition-all border ${settings.itemCount === count
                             ? 'bg-[rgba(0,255,65,0.1)] border-accent text-accent'
@@ -165,8 +217,8 @@ export const LearnSettingsModal: React.FC<LearnSettingsModalProps> = ({
                 <div className="flex flex-col gap-2">
                   {renderToggle('shuffleQuestions', 'Shuffle Questions', ({ className }) => <Shuffle className={className} />)}
                   {renderToggle('shuffleChoices', 'Shuffle Choices', ({ className }) => <Shuffle className={className} />)}
-                  {renderToggle('bookmarkedOnly', 'Bookmarked Only', ({ className }) => <Bookmark className={className} />)}
-                  {renderToggle('randomSample', 'Random Sample', ({ className }) => <Dices className={className} />)}
+                  {!minimal && renderToggle('bookmarkedOnly', 'Bookmarked Only', ({ className }) => <Bookmark className={className} />)}
+                  {!minimal && renderToggle('randomSample', 'Random Sample', ({ className }) => <Dices className={className} />)}
                 </div>
               </div>
 
@@ -187,12 +239,16 @@ export const LearnSettingsModal: React.FC<LearnSettingsModalProps> = ({
             {/* Footer */}
             <div className="p-6 border-t border-border-base bg-surface-2 flex justify-end gap-3">
               <button
+                type="button"
+                data-testid="learn-settings-cancel-button"
                 onClick={onClose}
                 className="px-5 py-2 rounded bg-transparent border border-[#333] text-text-muted hover:text-text-primary hover:border-[#555] transition-colors font-['Rajdhani'] uppercase tracking-wider text-sm"
               >
                 Cancel
               </button>
               <button
+                type="button"
+                data-testid="learn-settings-start-button"
                 onClick={onStart}
                 className="flex items-center px-6 py-2 rounded bg-accent text-black font-bold hover:bg-[rgba(0,255,65,0.8)] shadow-[0_0_10px_rgba(0,255,65,0.2)] transition-all font-['Rajdhani'] uppercase tracking-wider text-sm"
               >

@@ -10,6 +10,13 @@ import { LeaveConfirmModal } from '../components/ui/LeaveConfirmModal'
 import { ExplanationPanel } from '../components/ui/ExplanationPanel'
 import { Tooltip } from '../components/ui/Tooltip'
 import { LearnMode } from '../components/mcq/LearnMode'
+import {
+  LearnSettingsModal,
+  type LearnSettings,
+  loadGauntletLearnSettings,
+  saveGauntletLearnSettings,
+} from '../components/mcq/LearnSettingsModal'
+import { shuffle } from '../lib/scrambler'
 import { gauntletService } from '../services/gauntlet.service'
 import { dbService } from '../services/db.service'
 import { renderMath, renderPlainText, renderQuestionPreview } from '../lib/latex'
@@ -53,6 +60,7 @@ import {
   X,
   Brain,
   BookOpen,
+  Settings2,
   Flag,
   Folder,
   Tag,
@@ -198,6 +206,20 @@ const RunPlaceholder: React.FC<RunPlaceholderProps> = ({
   const [zoomedImage, setZoomedImage] = useState<string | null>(null)
   const [flaggedMap, setFlaggedMap] = useState<Record<string, { reason: string | null; flaggedAt: number }>>({})
   const [flagModalCard, setFlagModalCard] = useState<{ id: string; question: string } | null>(null)
+
+  // Learn Settings state for Gauntlet summary
+  const [learnSettings, setLearnSettings] = useState<LearnSettings>(loadGauntletLearnSettings)
+  const [settingsModalScope, setSettingsModalScope] = useState<'missed' | 'all' | null>(null)
+  const [preparedLearnCards, setPreparedLearnCards] = useState<Card[] | null>(null)
+
+  const handleSettingsChange = (newSettings: LearnSettings) => {
+    setLearnSettings(newSettings)
+    saveGauntletLearnSettings(newSettings)
+  }
+
+  const handleOpenSettings = (scope: 'missed' | 'all') => {
+    setSettingsModalScope(scope)
+  }
 
   // TOS category editing state (in review summary)
   const [editingCategoryCardId, setEditingCategoryCardId] = useState<string | null>(null)
@@ -598,6 +620,7 @@ Please explain:
   }, [phase, isModalOpen, revealState, handleAnswer])
 
   const activeCards = activeScope === 'all' ? allSessionCards : missedCards
+  const cardsToLearn = preparedLearnCards ?? activeCards
   const modeLabel = config.mode === 'survival' ? 'Survival' : 'Timed'
   const learnTitle =
     activeScope === 'all'
@@ -605,24 +628,36 @@ Please explain:
       : `Gauntlet ${modeLabel} — Missed Items`
 
   const handleStartLearn = (scope: 'missed' | 'all') => {
+    const baseCards = scope === 'all' ? allSessionCards : missedCards
+    const finalCards = learnSettings.shuffleQuestions ? shuffle([...baseCards]) : baseCards
+    setPreparedLearnCards(finalCards)
     setLearnModeScope?.(scope)
     setIsLearningMissed?.(true)
   }
 
+  const handleStartFromSettings = () => {
+    if (settingsModalScope) {
+      const scope = settingsModalScope
+      setSettingsModalScope(null)
+      handleStartLearn(scope)
+    }
+  }
+
   const handleExitLearn = () => {
+    setPreparedLearnCards(null)
     setLearnModeScope?.(null)
     setIsLearningMissed?.(false)
   }
 
   if (phase === 'summary') {
-    if (activeScope && activeCards.length > 0) {
+    if (activeScope && cardsToLearn.length > 0) {
       return (
         <div className="w-full h-full flex flex-col">
           <LearnMode
-            cards={activeCards}
+            cards={cardsToLearn}
             title={learnTitle}
-            ttsEnabled={false}
-            shuffleChoices={true}
+            ttsEnabled={learnSettings.ttsEnabled}
+            shuffleChoices={learnSettings.shuffleChoices}
             recordProgress={false}
             onComplete={() => {}}
             onExit={handleExitLearn}
@@ -852,30 +887,54 @@ Please explain:
           {/* Action Buttons: Stacked vertically in Left Sidebar */}
           <div className="flex flex-col gap-2 pt-2 border-t border-border-base mt-auto">
             {missedCards.length > 0 && (
-              <button
-                type="button"
-                data-testid="learn-missed-button"
-                onClick={() => handleStartLearn('missed')}
-                className="w-full py-2.5 px-4 rounded-xl bg-accent text-black font-bold font-['Orbitron'] tracking-wider text-xs sm:text-sm hover:bg-[#00e63a] transition-all flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(0,255,65,0.25)]"
-              >
-                <Brain size={14} />
-                LEARN MISSED ({missedCards.length})
-              </button>
+              <div className="flex items-center gap-1.5 w-full">
+                <button
+                  type="button"
+                  data-testid="learn-missed-button"
+                  onClick={() => handleStartLearn('missed')}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-accent text-black font-bold font-['Orbitron'] tracking-wider text-xs sm:text-sm hover:bg-[#00e63a] transition-all flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(0,255,65,0.25)]"
+                >
+                  <Brain size={14} />
+                  LEARN MISSED ({missedCards.length})
+                </button>
+                <button
+                  type="button"
+                  data-testid="learn-missed-settings-button"
+                  onClick={() => handleOpenSettings('missed')}
+                  aria-label="Learn Missed Settings"
+                  title="Learn Missed Settings"
+                  className="self-stretch px-3 rounded-xl bg-surface-2 border border-border-base hover:border-accent text-text-muted hover:text-accent transition-all flex items-center justify-center shrink-0"
+                >
+                  <Settings2 size={16} />
+                </button>
+              </div>
             )}
             {allSessionCards.length > 0 && (
-              <button
-                type="button"
-                data-testid="learn-all-button"
-                onClick={() => handleStartLearn('all')}
-                className={`w-full py-2.5 px-4 rounded-xl font-bold font-['Orbitron'] tracking-wider text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 ${
-                  missedCards.length === 0
-                    ? 'bg-accent text-black hover:bg-[#00e63a] shadow-[0_0_15px_rgba(0,255,65,0.25)]'
-                    : 'bg-surface-2 border border-border-base hover:border-accent text-text-primary hover:text-accent'
-                }`}
-              >
-                <BookOpen size={14} />
-                LEARN ALL ({allSessionCards.length})
-              </button>
+              <div className="flex items-center gap-1.5 w-full">
+                <button
+                  type="button"
+                  data-testid="learn-all-button"
+                  onClick={() => handleStartLearn('all')}
+                  className={`flex-1 py-2.5 px-4 rounded-xl font-bold font-['Orbitron'] tracking-wider text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 ${
+                    missedCards.length === 0
+                      ? 'bg-accent text-black hover:bg-[#00e63a] shadow-[0_0_15px_rgba(0,255,65,0.25)]'
+                      : 'bg-surface-2 border border-border-base hover:border-accent text-text-primary hover:text-accent'
+                  }`}
+                >
+                  <BookOpen size={14} />
+                  LEARN ALL ({allSessionCards.length})
+                </button>
+                <button
+                  type="button"
+                  data-testid="learn-all-settings-button"
+                  onClick={() => handleOpenSettings('all')}
+                  aria-label="Learn All Settings"
+                  title="Learn All Settings"
+                  className="self-stretch px-3 rounded-xl bg-surface-2 border border-border-base hover:border-accent text-text-muted hover:text-accent transition-all flex items-center justify-center shrink-0"
+                >
+                  <Settings2 size={16} />
+                </button>
+              </div>
             )}
             <button
               type="button"
@@ -913,26 +972,50 @@ Please explain:
                 Answer Review ({filteredAnswers.length}/{answers.length})
               </span>
               {missedCards.length > 0 && (
-                <button
-                  type="button"
-                  data-testid="learn-missed-header-button"
-                  onClick={() => handleStartLearn('missed')}
-                  className="px-2 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold bg-accent/15 border border-accent/40 text-accent hover:bg-accent/25 transition-colors flex items-center gap-1"
-                >
-                  <Brain size={11} />
-                  Learn {missedCards.length} Missed
-                </button>
+                <div className="inline-flex items-stretch rounded">
+                  <button
+                    type="button"
+                    data-testid="learn-missed-header-button"
+                    onClick={() => handleStartLearn('missed')}
+                    className="px-2 py-0.5 rounded-l text-[10px] font-['Orbitron'] font-bold bg-accent/15 border-y border-l border-accent/40 text-accent hover:bg-accent/25 transition-colors flex items-center gap-1"
+                  >
+                    <Brain size={11} />
+                    Learn {missedCards.length} Missed
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="learn-missed-header-settings-button"
+                    onClick={() => handleOpenSettings('missed')}
+                    aria-label="Learn Missed Settings"
+                    title="Learn Missed Settings"
+                    className="px-1.5 py-0.5 rounded-r border border-accent/40 bg-accent/15 text-accent hover:bg-accent/25 transition-colors flex items-center justify-center"
+                  >
+                    <Settings2 size={10} />
+                  </button>
+                </div>
               )}
               {allSessionCards.length > 0 && (
-                <button
-                  type="button"
-                  data-testid="learn-all-header-button"
-                  onClick={() => handleStartLearn('all')}
-                  className="px-2 py-0.5 rounded text-[10px] font-['Orbitron'] font-bold bg-surface-2 border border-border-base hover:border-accent text-text-muted hover:text-accent transition-colors flex items-center gap-1"
-                >
-                  <BookOpen size={11} />
-                  Learn All ({allSessionCards.length})
-                </button>
+                <div className="inline-flex items-stretch rounded">
+                  <button
+                    type="button"
+                    data-testid="learn-all-header-button"
+                    onClick={() => handleStartLearn('all')}
+                    className="px-2 py-0.5 rounded-l text-[10px] font-['Orbitron'] font-bold bg-surface-2 border-y border-l border-border-base hover:border-accent text-text-muted hover:text-accent transition-colors flex items-center gap-1"
+                  >
+                    <BookOpen size={11} />
+                    Learn All ({allSessionCards.length})
+                  </button>
+                  <button
+                    type="button"
+                    data-testid="learn-all-header-settings-button"
+                    onClick={() => handleOpenSettings('all')}
+                    aria-label="Learn All Settings"
+                    title="Learn All Settings"
+                    className="px-1.5 py-0.5 rounded-r border border-border-base hover:border-accent text-text-muted hover:text-accent bg-surface-2 transition-colors flex items-center justify-center"
+                  >
+                    <Settings2 size={10} />
+                  </button>
+                </div>
               )}
             </div>
 
@@ -1748,6 +1831,16 @@ Please explain:
             }}
           />
         )}
+
+        {/* Learn Settings Modal */}
+        <LearnSettingsModal
+          isOpen={settingsModalScope !== null}
+          settings={learnSettings}
+          minimal={true}
+          onSettingsChange={handleSettingsChange}
+          onStart={handleStartFromSettings}
+          onClose={() => setSettingsModalScope(null)}
+        />
       </div>
     )
   }
