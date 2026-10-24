@@ -516,13 +516,13 @@ export function TosCardInspectorModal({
 
                 {/* Formula Equation (Flip Side) */}
                 {card.type === 'formula' && card.latex && (
-                  <div className="rounded-xl border border-cyan-500/40 bg-gradient-to-br from-cyan-500/[0.08] via-surface-2 to-[#101010] p-3 flex flex-col gap-2 shadow-[0_0_16px_rgba(6,182,212,0.08)]">
-                    <div className="flex items-center gap-1.5 text-xs font-['Orbitron'] font-bold text-cyan-400 tracking-wider uppercase">
-                      <Sparkles size={12} className="text-cyan-400" />
+                  <div className="rounded-xl border border-accent/40 bg-gradient-to-br from-accent/[0.08] via-surface-2 to-[#101010] p-3 flex flex-col gap-2 shadow-[0_0_16px_rgba(0,255,65,0.08)]">
+                    <div className="flex items-center gap-1.5 text-xs font-['Orbitron'] font-bold text-accent tracking-wider uppercase">
+                      <Sparkles size={12} className="text-accent drop-shadow-[0_0_6px_rgba(0,255,65,0.5)]" />
                       <span>Formula &bull; Equation (Flip Side)</span>
                     </div>
                     <div
-                      className="font-['JetBrains_Mono'] text-sm text-cyan-300 font-bold overflow-x-auto py-1"
+                      className="font-['Rajdhani'] text-sm text-white font-bold overflow-x-auto py-1 text-left"
                       dangerouslySetInnerHTML={{ __html: renderMath(`$$${card.latex}$$`) }}
                     />
                   </div>

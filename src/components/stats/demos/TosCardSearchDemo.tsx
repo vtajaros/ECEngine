@@ -722,16 +722,16 @@ export function TosCardSearchDemo({
 
                 {/* Formula Equation & Variables (Flip Side) */}
                 {isFormula && (card.latex || card.description || card.variables || card.back) && (
-                  <div className="rounded-xl border border-cyan-500/40 bg-gradient-to-br from-cyan-500/[0.08] via-surface-2 to-[#101010] p-3.5 flex flex-col gap-2.5 shadow-[0_0_16px_rgba(6,182,212,0.08)] transition-all">
-                    <div className="flex items-center justify-between border-b border-cyan-500/20 pb-2">
-                      <div className="flex items-center gap-1.5 text-xs font-['Orbitron'] font-bold text-cyan-400 tracking-wider uppercase">
-                        <Sparkles size={13} className="text-cyan-400 drop-shadow-[0_0_6px_rgba(6,182,212,0.5)]" />
+                  <div className="rounded-xl border border-accent/40 bg-gradient-to-br from-accent/[0.08] via-surface-2 to-[#101010] p-3.5 flex flex-col gap-2.5 shadow-[0_0_16px_rgba(0,255,65,0.08)] transition-all">
+                    <div className="flex items-center justify-between border-b border-accent/20 pb-2">
+                      <div className="flex items-center gap-1.5 text-xs font-['Orbitron'] font-bold text-accent tracking-wider uppercase">
+                        <Sparkles size={13} className="text-accent drop-shadow-[0_0_6px_rgba(0,255,65,0.5)]" />
                         <span>Formula &bull; Equation &amp; Variables (Flip Side)</span>
                       </div>
                       <button
                         type="button"
                         onClick={() => toggleDefinition(card.id)}
-                        className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-['JetBrains_Mono'] font-bold text-cyan-400 hover:text-white bg-cyan-500/15 hover:bg-cyan-500/25 border border-cyan-500/30 transition-colors"
+                        className="flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-['JetBrains_Mono'] font-bold text-accent hover:text-white bg-accent/15 hover:bg-accent/25 border border-accent/30 transition-colors"
                         title={isDefHidden ? 'Reveal formula' : 'Hide formula'}
                       >
                         {isDefHidden ? <Eye size={11} /> : <EyeOff size={11} />}
@@ -743,15 +743,15 @@ export function TosCardSearchDemo({
                       <>
                         {/* Equation in KaTeX */}
                         {card.latex ? (
-                          <div className="py-2.5 px-3 rounded-lg bg-black/60 border border-cyan-500/30 text-center flex items-center justify-center overflow-x-auto show-scrollbar shadow-inner">
+                          <div className="py-2.5 px-3 rounded-lg bg-black/60 border border-accent/30 flex items-center justify-start text-left overflow-x-auto show-scrollbar shadow-inner">
                             <div
-                              className="font-['Rajdhani'] font-bold text-base sm:text-lg text-white"
+                              className="font-['Rajdhani'] font-bold text-base sm:text-lg text-white text-left w-full"
                               dangerouslySetInnerHTML={{ __html: renderMath(`$$${card.latex}$$`) }}
                             />
                           </div>
                         ) : card.back ? (
                           <div
-                            className="font-['Rajdhani'] font-bold text-base text-white"
+                            className="font-['Rajdhani'] font-bold text-base text-white text-left"
                             dangerouslySetInnerHTML={{ __html: renderMath(card.back) }}
                           />
                         ) : null}
@@ -759,7 +759,7 @@ export function TosCardSearchDemo({
                         {/* Description / Meaning */}
                         {card.description && (
                           <div
-                            className="font-['Rajdhani'] font-medium text-xs sm:text-sm text-text-primary leading-relaxed"
+                            className="font-['Rajdhani'] font-medium text-xs sm:text-sm text-text-primary leading-relaxed text-left"
                             dangerouslySetInnerHTML={{ __html: renderMath(card.description) }}
                           />
                         )}
@@ -767,7 +767,7 @@ export function TosCardSearchDemo({
                         {/* Variables Breakdown */}
                         {card.variables && (
                           <div className="pt-1.5 border-t border-border-base/50 flex flex-col gap-1.5">
-                            <span className="text-[10px] font-['JetBrains_Mono'] font-bold text-cyan-400/80 uppercase tracking-wider">
+                            <span className="text-[10px] font-['JetBrains_Mono'] font-bold text-accent/80 uppercase tracking-wider">
                               Variables:
                             </span>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
@@ -778,19 +778,19 @@ export function TosCardSearchDemo({
                                       className="flex items-baseline gap-1.5 bg-black/40 px-2.5 py-1.5 rounded-lg border border-border-base/50 text-xs font-['JetBrains_Mono']"
                                     >
                                       <span
-                                        className="text-cyan-400 font-bold shrink-0"
+                                        className="text-accent font-bold shrink-0"
                                         dangerouslySetInnerHTML={{ __html: renderMath(`$${k}$`) }}
                                       />
                                       <span className="text-text-muted shrink-0">:</span>
                                       <span
-                                        className="text-text-primary leading-snug truncate"
+                                        className="text-text-primary leading-snug truncate text-left"
                                         dangerouslySetInnerHTML={{ __html: renderMath(String(v)) }}
                                       />
                                     </div>
                                   ))
                                 : (
                                     <div
-                                      className="text-text-primary text-xs font-['JetBrains_Mono']"
+                                      className="text-text-primary text-xs font-['JetBrains_Mono'] text-left"
                                       dangerouslySetInnerHTML={{ __html: renderMath(String(card.variables)) }}
                                     />
                                   )}
@@ -803,7 +803,7 @@ export function TosCardSearchDemo({
                             <button
                               type="button"
                               onClick={() => setZoomedImage(card.imagePathBack!)}
-                              className="flex items-center gap-1.5 text-xs text-cyan-400 hover:underline font-['JetBrains_Mono'] bg-surface-2 px-2.5 py-1 rounded border border-border-base"
+                              className="flex items-center gap-1.5 text-xs text-accent hover:underline font-['JetBrains_Mono'] bg-surface-2 px-2.5 py-1 rounded border border-border-base"
                             >
                               <ImageIcon size={13} />
                               <span>View Formula Diagram</span>

@@ -190,19 +190,29 @@ input[type='number'] {
   background: #888888;
 }
 
-/* KaTeX display-mode equations inside MCQ choices render left-aligned.
-   KaTeX applies text-align:center on BOTH .katex-display AND .katex-display > .katex,
-   so we must override both levels. */
+/* KaTeX display-mode equations render left-aligned across the application.
+   KaTeX applies text-align:center on BOTH .katex-display AND .katex-display > .katex by default,
+   causing equations/latex to be auto-centered. We override both levels to align left. */
+.katex-display,
+.katex-display > .katex,
+.katex-display > .katex > .katex-html {
+  text-align: left !important;
+  text-align: -webkit-left !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+.katex-display.fleqn {
+  padding-left: 0 !important;
+}
+
 .mcq-choice-text .katex-display,
 .mcq-choice-text .katex-display > .katex {
-  text-align: left !important;
   margin: 0 !important;
 }
 
-/* KaTeX display-mode equations inside MCQ question text render left-aligned */
 .mcq-question-text .katex-display,
 .mcq-question-text .katex-display > .katex {
-  text-align: left !important;
   margin: 0 !important;
 }
 

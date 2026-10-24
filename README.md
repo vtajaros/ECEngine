@@ -51,14 +51,24 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 * **Written Mode & Study Controls**:
   * Active typed-answer mode requiring exact input validation and live accuracy tracking before revealing card answers.
   * Study controls for shuffling, bookmarked-only filtering, and term/definition swapping.
+* **Post-Session Review Summary & Retry Drills (`FlashcardReviewSummary`)**:
+  * Comprehensive review summary upon session completion displaying rating breakdowns (Again, Hard, Good, Easy), overall retention rate, and response latencies.
+  * 1-click retry drill options to instantly review lapsed ("Again") or difficult ("Hard") cards without leaving the study flow.
 
 ---
 
 ### 📝 Multiple Choice (MCQ) & "LooksFam" Engine
 * **Learn Mode**: Immediate feedback with instant answer validation, detailed solution breakdowns, and AI-powered explanations. Features an ergonomic question header with an integrated, non-overlapping bookmark button.
+* **Intelligent Choice Layout & Adaptive Stacking**:
+  * Arranged in row-first reading order (`[A] [B]` on row 1, `[C] [D]` on row 2) matching standard exam reading ergonomics across Learn Mode, Test Mode, PrintView, and Analytics previews.
+  * Adaptive single-column vertical stacking (`[A]`, `[B]`, `[C]`, `[D]`): Automatically activates when choices contain lengthy explanations or complex formulas (>55 characters in any single option or >180 characters combined), preventing cramped multi-line text wrapping.
+* **Resilient Answer Resolution (`resolveCorrectAnswer`)**:
+  * Robust answer resolution engine supporting letter keys (`A`–`D`), zero-based indices (`0`–`3`), and exact choice string matching to eliminate duplicate selection highlights and ensure 100% accurate answer validation.
+* **Persistent Subject & Folder Filter Memory**:
+  * Preserves active Subject and Folder filter settings across navigation and deck edits, preventing unintended resets back to "All Folders".
 * **Partitioned Learning Rounds**: Breaks large question sets into manageable batches (default 5 cards per round) with dynamic retry queues for incorrect items until 100% mastery is achieved.
 * **Isolated Practice Mode**: Supports clean practice runs (e.g. for Gauntlet missed items) that reinforce concepts without altering core SM-2 intervals, attempt logs, or session history.
-* **Test Mode**: Simulates exam conditions with randomized choice orders, live timer, and a comprehensive end-of-test summary.
+* **Test Mode**: Simulates exam conditions with randomized choice orders, live countdown timer, configurable auto-submission on timer expiry, and a comprehensive end-of-test summary.
 * **Bookmarked Items Manager**: Quickly review, preview, and manage bookmarked questions directly from the deck browser with a dedicated legend and modal.
 * **Choice Shuffling**: Automatically randomizes options on every run while preserving correct answer mappings.
 * **ToS Topics Tab**: Dedicated **ToS Topics** panel alongside the Custom Decks view in LooksFam. Displays a nested folder sidebar organized by subject (**MATH**, **ELECS**, **GEAS**, **EST**) → parent topic (e.g. `1.0`, `2.0`, `3.0`) → granular decimal subtopics (e.g. `1.1`, `1.2`), with live card counts and per-topic mastery progress bars. Selecting a subtopic or parent folder launches a Learn session scoped exactly to that TOS classification. Decimal subtopics are prioritized in the ToS Topics panel; parent-level "Learn All" is available only from the Gauntlet Analytics section.
@@ -105,6 +115,7 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
   * **Question Flagging & Exclusion**: Directly flag broken or ambiguous questions with custom reason tags; flagged questions are automatically excluded from subsequent Gauntlet pools.
   * **Inline TOS Category Overrides**: Directly reassign or correct question Table of Specifications (TOS) tags within the post-run review list with a searchable category picker popover.
   * **Learn Missed Items**: Launch an on-demand Learn Mode session targeting only the questions missed in that run, cleanly isolated from core session history and statistics.
+  * **Practice Run Customization (`GauntletLearnSettingsModal`)**: Integrated learn settings modal allowing examinees to configure batch sizes, retry queues, and study parameters before launching missed-item drill sessions.
   * **Centered Tactical Action Bar**: Quick controls for **Get Context** (formatted clipboard export for AI), **AI Explain** (inline step-by-step breakdown), and **Flag Question**.
   * **Filterable Review List**: Filter by All, Mistakes, Skipped/Timeout, or Correct with inline choices and full mathematical solutions.
   * **Session Snapshot Persistence (`useGauntletStore`)**: In-memory and `sessionStorage` snapshot persistence ensures users can seamlessly navigate between Gauntlet and other tabs without losing review progress, replaying game-over sounds, or re-triggering rank-up popups upon return.
@@ -114,6 +125,8 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 
 ### 📐 Mathematical & LaTeX Rendering Engine
 * **Hybrid KaTeX + Plain Text Parser**: Supports raw LaTeX, inline `$...$` and block `$$...$$` math, alongside markdown styling (`**bold**`, `*italic*`, `__underline__`).
+* **Global Left-Aligned LaTeX & Flush Equations**: Display-mode equations (`$$...$$`, `\[...\]`, and raw math blocks) render flush-left across the app with `fleqn: true` and CSS overrides, eliminating jarring auto-centering inside question cards, choices, and formula banks for natural reading flow.
+* **Unified Cyber-Neon Formula Cards**: Formula cards feature signature neon-green accents (`#00FF41`), dark glassmorphic backgrounds, formatted equation displays, and structured variable breakdown chips in Card Search and the Topic Inspector.
 * **Advanced Super/Subscript Parsing**:
   * Single character: `x^2`, `R_L`
   * Curly braces: `10^{-8}`, `V_{out}`
@@ -131,6 +144,7 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
   * **Table**: Compact grid with problem and answer/solution columns.
   * **Q&A**: Classic question-and-answer format.
 * **Themes**: Switch between **Light**, **Sepia**, and **Dark** (default, with cyber-neon green highlights matching the companion app).
+* **Intelligent Choice Flow & Typography**: Questions format choices in intuitive row-first order ($[A]\ [B]$ / $[C]\ [D]$), dynamically collapsing into a single-column stack when options or equations are verbose.
 * **Solution & Answer Toggles**: Show or hide answers and detailed solutions with a single click.
 * **Find in Document (`Ctrl + F`)**: Integrated search bar with live text highlighting (`<mark>`), occurrence counter, and match stepping.
 * **High-Res Image Lightbox**: Click any diagram or solution schematic to expand into a high-resolution lightbox overlay.
@@ -210,8 +224,8 @@ The **Data Analytics Command Center** (`/lab`) provides an integrated, 3-pillar 
 * **Master-Detail Two-Column Layout**: Left-hand master syllabus list displaying all 34 PRC parent topics ($x.0$) with live card counts, active neon border indicator, and subject isolation badges; right-hand detail pane listing all decimal subtopics ($x.x$) with direct coverage status bullets and card volume tags.
 * **LooksFam Subject Filter Pillboxes**: Instant filter pills (`ALL`, `MATH`, `GEAS`, `ELECS`, `EST`) with custom RGB border/glow accents and inner card count badges.
 * **Single-Line Summary Ribbon**: Sleek JetBrains Mono telemetry ribbon tracking Total Cards, Classified %, Untagged Card alert chip, and official subtopic syllabus coverage ratio ($x/181\text{ Subtopics}$).
-* **Card Inspector Modal (`TosCardInspectorModal`)**: Deep-dive inspection modal to preview, flip, and manage all cards under any parent topic, subtopic, or untagged pool.
-* **Interactive Card Search (`TosCardSearchDemo`)**: Full-text question search across the library with real-time flashcard flip previews, formula/solution inspection, and 1-click jump-to-topic navigation.
+* **Card Inspector Modal (`TosCardInspectorModal`)**: Deep-dive inspection modal to preview, flip, and manage all cards under any parent topic, subtopic, or untagged pool, with full MCQ option choices, answer key highlights, and neon-green formula equation previews.
+* **Interactive Card Search (`TosCardSearchDemo`)**: Full-text question search across the library with real-time flashcard flip previews, formula/solution inspection with neon-green accent styling, inline MCQ choices with correct answer highlighting, and 1-click jump-to-topic navigation.
 * **Gauntlet Excluded Questions Browser**: Dedicated view listing flagged or auto-excluded cards with 1-click reinsertion actions.
 
 #### 2. Statistical EDA (Exploratory Data Analysis)
@@ -285,7 +299,7 @@ Text fields across questions, choices, formulas, and explanations support inline
 | `10^{-8}` / `V_{out}` | Multi-character super/subscript (braces) | 10⁻⁸, V<sub>out</sub> |
 | `e^(v - u)` / `f_(n + 1)` | Expression super/subscript (parentheses) | e<sup>(v - u)</sup>, f<sub>(n + 1)</sub> |
 | `$\sin\theta$` | Inline LaTeX equation | $\sin\theta$ |
-| `$$E = mc^2$$` | Centered display block equation | $$E = mc^2$$ |
+| `$$E = mc^2$$` | Display block equation (left-aligned) | $$E = mc^2$$ |
 | `\phase{30}` | Electrical angle / phasor | $\angle 30^{\circ}$ |
 | `\SI{10}{k\Omega}` | SI unit formatting | $10\text{ k}\Omega$ |
 

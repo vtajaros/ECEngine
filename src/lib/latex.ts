@@ -331,7 +331,8 @@ export const renderMath = (text: string): string => {
             katex.renderToString(t, {
               throwOnError: true,
               displayMode: true,
-              trust: true
+              trust: true,
+              fleqn: true
             })
           )
         )
@@ -357,7 +358,8 @@ export const renderMath = (text: string): string => {
       segments.push(
         katex.renderToString(restoreCurrencyTokens(inner.trim()), {
           throwOnError: true,
-          displayMode: isDisplay
+          displayMode: isDisplay,
+          fleqn: true
         })
       )
     } catch {
