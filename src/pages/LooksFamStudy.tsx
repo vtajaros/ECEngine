@@ -594,9 +594,28 @@ export default function LooksFamStudy() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  // Reset activeFolder ONLY when deckViewMode actually changes (not on initial mount or return navigation)
+  const prevDeckViewModeRef = useRef<DeckViewMode>(deckViewMode)
   useEffect(() => {
-    setActiveFolder('all')
-  }, [deckViewMode, activeSubject])
+    if (prevDeckViewModeRef.current !== deckViewMode) {
+      prevDeckViewModeRef.current = deckViewMode
+      setActiveFolder('all')
+    }
+  }, [deckViewMode])
+
+  // In syllabus mode, if subject changes and the selected ToS folder doesn't exist in the new subject tree, reset to 'all'
+  const prevSubjectRef = useRef<Subject>(activeSubject)
+  useEffect(() => {
+    if (prevSubjectRef.current !== activeSubject) {
+      prevSubjectRef.current = activeSubject
+      if (deckViewMode === 'syllabus' && activeFolder !== 'all') {
+        const exists = tosFolderRows.some(f => f.id === activeFolder)
+        if (!exists) {
+          setActiveFolder('all')
+        }
+      }
+    }
+  }, [deckViewMode, activeSubject, tosFolderRows, activeFolder])
 
   useEffect(() => {
     const saved = sessionStorage.getItem('looksfam:scrollTop')

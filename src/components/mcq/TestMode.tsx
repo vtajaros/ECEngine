@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Bookmark, Clock, ArrowRight, RefreshCw, ClipboardCheck, X, AlertTriangle, Copy, Sparkles, Volume2, VolumeX, CheckCircle2, XCircle } from 'lucide-react'
 import { shuffle, shuffleChoices, isSafeToShuffleChoices } from '../../lib/scrambler'
 import { renderMath, renderPlainText } from '../../lib/latex'
+import { shouldStackChoices } from '../../lib/utils'
 import { formatTosBadge } from '../../lib/tosClassification'
 import { ExplanationPanel } from '../ui/ExplanationPanel'
 import { Tooltip } from '../ui/Tooltip'
@@ -151,56 +152,53 @@ const TestQuestionCard = memo(({
         </Tooltip>
       </div>
 
-      <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-        {[0, 1, 2, 3].map((cIdx) => {
-          const choice = mcq.choices[cIdx]
-          if (choice === undefined) return null
+      {(() => {
+        const isStacked = shouldStackChoices(mcq.choices)
+        return (
+          <div className={`p-6 grid ${isStacked ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'} gap-4`}>
+            {[0, 1, 2, 3].map((cIdx) => {
+              const choice = mcq.choices[cIdx]
+              if (choice === undefined) return null
 
-          const isSelected = userAnswer === cIdx
+              const isSelected = userAnswer === cIdx
 
-          let stateStyles = 'border-[#2c2c2c] hover:border-accent hover:bg-[#1c1c1c] hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] bg-[#121212] text-text-muted'
-          let prefixStyles = 'border-[#444] text-text-muted bg-surface/50 group-hover:border-accent group-hover:text-accent'
-          let textStyles = 'text-text-primary'
+              let stateStyles = 'border-[#2c2c2c] hover:border-accent hover:bg-[#1c1c1c] hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] bg-[#121212] text-text-muted'
+              let prefixStyles = 'border-[#444] text-text-muted bg-surface/50 group-hover:border-accent group-hover:text-accent'
+              let textStyles = 'text-text-primary'
 
-          if (showFeedback) {
-            const isChoiceCorrect = cIdx === mcq.answer
-            if (isChoiceCorrect) {
-              stateStyles = 'border-accent bg-[rgba(0,255,65,0.08)] shadow-[0_0_16px_rgba(0,255,65,0.22)] cursor-default'
-              prefixStyles = 'bg-accent text-[#0D0D0D] border-accent font-bold'
-              textStyles = 'text-white'
-            } else if (isSelected && !isChoiceCorrect) {
-              stateStyles = 'border-danger bg-[rgba(255,51,51,0.08)] shadow-[0_0_16px_rgba(255,51,51,0.22)] cursor-default'
-              prefixStyles = 'bg-danger text-[#0D0D0D] border-danger font-bold'
-              textStyles = 'text-[#aaa]'
-            } else {
-              stateStyles = 'border-[#222] bg-[#0e0e0e] opacity-50 cursor-default'
-              prefixStyles = 'border-[#333] text-[#444] bg-[#0a0a0a]'
-              textStyles = 'text-[#555]'
-            }
-          } else {
-            if (isSelected) {
-              stateStyles = 'border-accent bg-[rgba(0,255,65,0.08)] shadow-[0_0_12px_rgba(0,255,65,0.15)] text-white'
-              prefixStyles = 'bg-accent/20 border-accent text-accent font-bold'
-              textStyles = 'text-white'
-            }
-          }
+              if (showFeedback) {
+                const isChoiceCorrect = cIdx === mcq.answer
+                if (isChoiceCorrect) {
+                  stateStyles = 'border-accent bg-[rgba(0,255,65,0.08)] shadow-[0_0_16px_rgba(0,255,65,0.22)] cursor-default'
+                  prefixStyles = 'bg-accent text-[#0D0D0D] border-accent font-bold'
+                  textStyles = 'text-white'
+                } else if (isSelected && !isChoiceCorrect) {
+                  stateStyles = 'border-danger bg-[rgba(255,51,51,0.08)] shadow-[0_0_16px_rgba(255,51,51,0.22)] cursor-default'
+                  prefixStyles = 'bg-danger text-[#0D0D0D] border-danger font-bold'
+                  textStyles = 'text-[#aaa]'
+                } else {
+                  stateStyles = 'border-[#222] bg-[#0e0e0e] opacity-50 cursor-default'
+                  prefixStyles = 'border-[#333] text-[#444] bg-[#0a0a0a]'
+                  textStyles = 'text-[#555]'
+                }
+              } else {
+                if (isSelected) {
+                  stateStyles = 'border-accent bg-[rgba(0,255,65,0.08)] shadow-[0_0_12px_rgba(0,255,65,0.15)] text-white'
+                  prefixStyles = 'bg-accent/20 border-accent text-accent font-bold'
+                  textStyles = 'text-white'
+                }
+              }
 
-          const choiceLabel = String.fromCharCode(65 + cIdx)
+              const choiceLabel = String.fromCharCode(65 + cIdx)
 
-          let orderClass = ""
-          if (cIdx === 0) orderClass = "order-1"
-          else if (cIdx === 1) orderClass = "order-2 md:order-3"
-          else if (cIdx === 2) orderClass = "order-3 md:order-2"
-          else if (cIdx === 3) orderClass = "order-4"
-
-          return (
-            <button
-              key={cIdx}
-              onClick={(e) => { e.stopPropagation(); onSelectChoice(card.id, cIdx) }}
-              disabled={viewState === 'review' || (settings.instantChecking && isAnswered)}
-              className={`w-full flex items-center text-left py-4 px-4 min-h-[56px] rounded-xl border transition-all duration-200 group font-['Rajdhani'] ${stateStyles} ${orderClass} ${viewState === 'review' || (settings.instantChecking && isAnswered) ? 'cursor-default' : 'cursor-pointer'
-                }`}
-            >
+              return (
+                <button
+                  key={cIdx}
+                  onClick={(e) => { e.stopPropagation(); onSelectChoice(card.id, cIdx) }}
+                  disabled={viewState === 'review' || (settings.instantChecking && isAnswered)}
+                  className={`w-full h-full flex items-center text-left py-4 px-4 min-h-[56px] rounded-xl border transition-all duration-200 group font-['Rajdhani'] ${stateStyles} ${viewState === 'review' || (settings.instantChecking && isAnswered) ? 'cursor-default' : 'cursor-pointer'
+                    }`}
+                >
               <div className={`w-6 h-6 flex items-center justify-center rounded border font-['Rajdhani'] font-bold text-sm mr-3 shrink-0 transition-colors ${prefixStyles}`}>
                 {choiceLabel}
               </div>
@@ -218,6 +216,8 @@ const TestQuestionCard = memo(({
           )
         })}
       </div>
+    )
+  })()}
 
       {showFeedback && (mcq.explanation || mcq.solutionImagePath) && (
         <div className="px-6 pb-6 pt-2">

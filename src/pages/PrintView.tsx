@@ -7,6 +7,7 @@ import { gauntletService, type GauntletSubjectCode } from '../services/gauntlet.
 import { ALL_TOS_SUBTOPICS, ALL_PARENT_TOS_TOPICS } from '../lib/tosClassification'
 import { Card, MCQData, FlashcardData, FormulaData } from '../types'
 import { renderMath, renderPlainText } from '../lib/latex'
+import { shouldStackChoices } from '../lib/utils'
 import { Tooltip } from '../components/ui/Tooltip'
 import { WindowControls } from '../components/layout/WindowControls'
 
@@ -166,35 +167,38 @@ const MCQTableRow = React.memo(function MCQTableRow({ index, card, hideAnswers, 
                 style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid var(--pt-border-light)', display: 'block' }}
               />
             )}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: 'auto auto', gap: '2px 8px', marginTop: '4px' }}>
-              {[0, 1, 2, 3].map((ci) => {
-                const choice = choices[ci]
-                if (choice === undefined) return null
-                return (
-                  <div
-                    key={ci}
-                    style={{
-                      padding: '4px 8px',
-                      backgroundColor: (!hideAnswers && ci === answer) ? 'var(--pt-answer-bg)' : 'transparent',
-                      color: (!hideAnswers && ci === answer) ? 'var(--pt-answer-text)' : 'var(--pt-text-body)',
-                      fontWeight: (!hideAnswers && ci === answer) ? 700 : 500,
-                      fontSize: '16.5px',
-                      lineHeight: 1.4,
-                      borderRadius: '3px',
-                      display: 'flex',
-                      gap: '6px',
-                      gridColumn: ci < 2 ? 1 : 2,
-                      gridRow: ci % 2 === 0 ? 1 : 2,
-                      alignSelf: 'start',
-                      justifySelf: 'start',
-                    }}
-                  >
-                    <span style={{ minWidth: '20px', fontWeight: 700 }}>{CHOICE_LABELS[ci]}.</span>
-                    <span><MathText text={choice} plainText={choicesPlainText?.[ci]} /></span>
-                  </div>
-                )
-              })}
-            </div>
+            {(() => {
+              const isStacked = shouldStackChoices(choices)
+              return (
+                <div style={{ display: 'grid', gridTemplateColumns: isStacked ? '1fr' : '1fr 1fr', gap: isStacked ? '4px 0px' : '2px 8px', marginTop: '4px' }}>
+                  {[0, 1, 2, 3].map((ci) => {
+                    const choice = choices[ci]
+                    if (choice === undefined) return null
+                    return (
+                      <div
+                        key={ci}
+                        style={{
+                          padding: '4px 8px',
+                          backgroundColor: (!hideAnswers && ci === answer) ? 'var(--pt-answer-bg)' : 'transparent',
+                          color: (!hideAnswers && ci === answer) ? 'var(--pt-answer-text)' : 'var(--pt-text-body)',
+                          fontWeight: (!hideAnswers && ci === answer) ? 700 : 500,
+                          fontSize: '16.5px',
+                          lineHeight: 1.4,
+                          borderRadius: '3px',
+                          display: 'flex',
+                          gap: '6px',
+                          alignSelf: 'start',
+                          justifySelf: 'start',
+                        }}
+                      >
+                        <span style={{ minWidth: '20px', fontWeight: 700 }}>{CHOICE_LABELS[ci]}.</span>
+                        <span><MathText text={choice} plainText={choicesPlainText?.[ci]} /></span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })()}
           </div>
         </div>
       </td>
@@ -313,35 +317,38 @@ const MCQGlossaryItem = React.memo(function MCQGlossaryItem({ index, card, qaMod
           style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain', marginBottom: '6px', borderRadius: '4px', border: '1px solid var(--pt-border-light)', display: 'block' }}
         />
       )}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: 'auto auto', gap: '4px 12px', marginTop: '10px' }}>
-        {[0, 1, 2, 3].map((ci) => {
-          const choice = choices[ci]
-          if (choice === undefined) return null
-          return (
-            <div
-              key={ci}
-              style={{
-                padding: '4px 8px',
-                backgroundColor: (!hideAnswers && ci === answer) ? 'var(--pt-answer-bg)' : 'transparent',
-                color: (!hideAnswers && ci === answer) ? 'var(--pt-answer-text)' : 'var(--pt-text-body)',
-                fontWeight: (!hideAnswers && ci === answer) ? 700 : 500,
-                fontSize: '17px',
-                lineHeight: 1.4,
-                borderRadius: '3px',
-                display: 'flex',
-                gap: '6px',
-                gridColumn: ci < 2 ? 1 : 2,
-                gridRow: ci % 2 === 0 ? 1 : 2,
-                alignSelf: 'start',
-                justifySelf: 'start',
-              }}
-            >
-              <span style={{ minWidth: '20px', fontWeight: 700 }}>{CHOICE_LABELS[ci]}.</span>
-              <span><MathText text={choice} plainText={choicesPlainText?.[ci]} /></span>
-            </div>
-          )
-        })}
-      </div>
+      {(() => {
+        const isStacked = shouldStackChoices(choices)
+        return (
+          <div style={{ display: 'grid', gridTemplateColumns: isStacked ? '1fr' : '1fr 1fr', gap: isStacked ? '6px 0px' : '4px 12px', marginTop: '10px' }}>
+            {[0, 1, 2, 3].map((ci) => {
+              const choice = choices[ci]
+              if (choice === undefined) return null
+              return (
+                <div
+                  key={ci}
+                  style={{
+                    padding: '4px 8px',
+                    backgroundColor: (!hideAnswers && ci === answer) ? 'var(--pt-answer-bg)' : 'transparent',
+                    color: (!hideAnswers && ci === answer) ? 'var(--pt-answer-text)' : 'var(--pt-text-body)',
+                    fontWeight: (!hideAnswers && ci === answer) ? 700 : 500,
+                    fontSize: '17px',
+                    lineHeight: 1.4,
+                    borderRadius: '3px',
+                    display: 'flex',
+                    gap: '6px',
+                    alignSelf: 'start',
+                    justifySelf: 'start',
+                  }}
+                >
+                  <span style={{ minWidth: '20px', fontWeight: 700 }}>{CHOICE_LABELS[ci]}.</span>
+                  <span><MathText text={choice} plainText={choicesPlainText?.[ci]} /></span>
+                </div>
+              )
+            })}
+          </div>
+        )
+      })()}
       {/* Solution block (glossary mode) */}
       {hasSolution && (
         <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px dashed var(--pt-border-light)' }}>

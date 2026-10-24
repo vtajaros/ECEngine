@@ -221,3 +221,104 @@ describe('TestMode auto-submit', () => {
     expect(container?.textContent).toContain('Submit Test')
   })
 })
+
+describe('TestMode choices layout', () => {
+  let container: HTMLDivElement | null = null
+  let root: Root | null = null
+
+  beforeEach(() => {
+    vi.useFakeTimers()
+    window.HTMLElement.prototype.scrollIntoView = vi.fn()
+    container = document.createElement('div')
+    document.body.appendChild(container)
+    root = createRoot(container)
+  })
+
+  afterEach(() => {
+    act(() => {
+      root?.unmount()
+    })
+    container?.remove()
+    container = null
+    root = null
+    vi.useRealTimers()
+  })
+
+  it('renders short choices in 2-column grid without order-reversing classes', () => {
+    act(() => {
+      root!.render(
+        <TestMode
+          cards={[mockCards[0]]}
+          title="Choices Layout Test"
+          settings={{
+            instantChecking: false,
+            shuffleQuestions: false,
+            shuffleChoices: false,
+            bookmarkedOnly: false,
+          }}
+          onComplete={vi.fn()}
+          onExit={vi.fn()}
+        />
+      )
+    })
+
+    const choiceButtons = Array.from(container?.querySelectorAll('button') || []).filter((b) =>
+      b.textContent?.includes('Choice 1')
+    )
+    expect(choiceButtons).toHaveLength(4)
+
+    // Choice buttons should NOT have order swapping classes
+    choiceButtons.forEach((btn) => {
+      expect(btn.className).not.toContain('md:order-3')
+      expect(btn.className).not.toContain('md:order-2')
+    })
+
+    // Choices grid should have md:grid-cols-2
+    const gridContainer = choiceButtons[0].parentElement
+    expect(gridContainer?.className).toContain('md:grid-cols-2')
+  })
+
+  it('renders long choices in 1-column stacked layout', () => {
+    const longCard: Card = {
+      ...mockCards[0],
+      data: {
+        question: 'Long choices question',
+        choices: [
+          'Short choice A',
+          'This is a choice that is deliberately made exceedingly long to exceed 45 characters',
+          'Choice C',
+          'Choice D',
+        ],
+        answer: 0,
+      },
+    }
+
+    act(() => {
+      root!.render(
+        <TestMode
+          cards={[longCard]}
+          title="Choices Layout Test"
+          settings={{
+            instantChecking: false,
+            shuffleQuestions: false,
+            shuffleChoices: false,
+            bookmarkedOnly: false,
+          }}
+          onComplete={vi.fn()}
+          onExit={vi.fn()}
+        />
+      )
+    })
+
+    const choiceButtons = Array.from(container?.querySelectorAll('button') || []).filter((b) =>
+      b.textContent?.includes('choice') || b.textContent?.includes('Choice')
+    )
+    expect(choiceButtons).toHaveLength(4)
+
+    // Grid container should be grid-cols-1 without md:grid-cols-2
+    const gridContainer = choiceButtons[0].parentElement
+    expect(gridContainer?.className).toContain('grid-cols-1')
+    expect(gridContainer?.className).not.toContain('md:grid-cols-2')
+  })
+})
+

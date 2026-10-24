@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Bookmark, Play, AlertCircle, ArrowRight, Flag, X, Copy, Sparkles, Volume2, VolumeX, CheckCircle2, XCircle } from 'lucide-react'
 import { renderMath, renderPlainText } from '../../lib/latex'
 import { shuffleChoices, isSafeToShuffleChoices } from '../../lib/scrambler'
+import { shouldStackChoices } from '../../lib/utils'
 import Toast from '../ui/Toast'
 import { ExplanationPanel } from '../ui/ExplanationPanel'
 import { Tooltip } from '../ui/Tooltip'
@@ -841,44 +842,41 @@ interface LearnCardStat {
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            {[0, 1, 2, 3].map((idx) => {
-              const choice = mcqData.choices[idx];
-              if (choice === undefined) return null;
+          {(() => {
+            const isStacked = shouldStackChoices(mcqData.choices)
+            return (
+              <div className={`grid ${isStacked ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'} gap-4 mb-8`}>
+                {[0, 1, 2, 3].map((idx) => {
+                  const choice = mcqData.choices[idx];
+                  if (choice === undefined) return null;
 
-              let btnClass = "border-[#2c2c2c] bg-[#121212] hover:bg-[#1c1c1c] hover:border-accent hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] cursor-pointer text-text-muted"
-              let prefixClass = "border-[#444] text-text-muted bg-surface/50 group-hover:border-accent group-hover:text-accent"
-              let textClass = "text-text-primary"
+                  let btnClass = "border-[#2c2c2c] bg-[#121212] hover:bg-[#1c1c1c] hover:border-accent hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] cursor-pointer text-text-muted"
+                  let prefixClass = "border-[#444] text-text-muted bg-surface/50 group-hover:border-accent group-hover:text-accent"
+                  let textClass = "text-text-primary"
 
-              if (viewState === 'feedback') {
-                if (idx === mcqData.answer) {
-                  btnClass = "border-accent bg-[rgba(0,255,65,0.08)] shadow-[0_0_16px_rgba(0,255,65,0.22)] cursor-default"
-                  prefixClass = "bg-accent text-[#0D0D0D] border-accent font-bold"
-                  textClass = "text-white"
-                } else if (idx === selectedChoiceIndex) {
-                  btnClass = "border-danger bg-[rgba(255,51,51,0.08)] shadow-[0_0_16px_rgba(255,51,51,0.22)] cursor-default"
-                  prefixClass = "bg-danger text-[#0D0D0D] border-danger font-bold"
-                  textClass = "text-[#aaa]"
-                } else {
-                  btnClass = "border-[#222] bg-[#0e0e0e] opacity-50 cursor-default"
-                  prefixClass = "border-[#333] text-[#444] bg-[#0a0a0a]"
-                  textClass = "text-[#555]"
-                }
-              }
+                  if (viewState === 'feedback') {
+                    if (idx === mcqData.answer) {
+                      btnClass = "border-accent bg-[rgba(0,255,65,0.08)] shadow-[0_0_16px_rgba(0,255,65,0.22)] cursor-default"
+                      prefixClass = "bg-accent text-[#0D0D0D] border-accent font-bold"
+                      textClass = "text-white"
+                    } else if (idx === selectedChoiceIndex) {
+                      btnClass = "border-danger bg-[rgba(255,51,51,0.08)] shadow-[0_0_16px_rgba(255,51,51,0.22)] cursor-default"
+                      prefixClass = "bg-danger text-[#0D0D0D] border-danger font-bold"
+                      textClass = "text-[#aaa]"
+                    } else {
+                      btnClass = "border-[#222] bg-[#0e0e0e] opacity-50 cursor-default"
+                      prefixClass = "border-[#333] text-[#444] bg-[#0a0a0a]"
+                      textClass = "text-[#555]"
+                    }
+                  }
 
-              let orderClass = ""
-              if (idx === 0) orderClass = "order-1"
-              else if (idx === 1) orderClass = "order-2 md:order-3"
-              else if (idx === 2) orderClass = "order-3 md:order-2"
-              else if (idx === 3) orderClass = "order-4"
-
-              return (
-                <button
-                  key={idx}
-                  onClick={() => viewState === 'question' && submitAnswer(idx)}
-                  disabled={viewState === 'feedback'}
-                  className={`w-full text-left py-4 px-4 rounded-xl border flex items-center transition-all group disabled:cursor-not-allowed ${btnClass} ${orderClass}`}
-                >
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => viewState === 'question' && submitAnswer(idx)}
+                      disabled={viewState === 'feedback'}
+                      className={`w-full h-full text-left py-4 px-4 rounded-xl border flex items-center transition-all group disabled:cursor-not-allowed ${btnClass}`}
+                    >
                   <div
                     className={`w-6 h-6 flex items-center justify-center rounded border font-['Rajdhani'] font-bold text-sm mr-3 shrink-0 transition-colors ${prefixClass}`}
                   >
@@ -898,6 +896,8 @@ interface LearnCardStat {
               )
             })}
           </div>
+        )
+      })()}
 
           {/* Solution Block */}
           <AnimatePresence>

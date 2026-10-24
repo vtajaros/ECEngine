@@ -18,6 +18,7 @@ import {
   EyeOff,
 } from 'lucide-react'
 import { renderMath } from '../../../lib/latex'
+import { resolveCorrectChoiceIndex, shouldStackChoices } from '../../../lib/utils'
 import { dbService } from '../../../services/db.service'
 import { TOS_SUBJECT_COLORS } from '../../../lib/tosData'
 import { getTosTopicGroupsBySubject, getTosTopicById } from '../../../lib/tosClassification'
@@ -633,20 +634,19 @@ export function TosCardSearchDemo({
                 </div>
 
                 {/* MCQ Choices Preview */}
-                {Array.isArray(card.choices) && card.choices.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                    {card.choices.map((choice: string, cIdx: number) => {
-                      const isCorrect =
-                        card.answer !== undefined &&
-                        (cIdx === card.answer ||
-                          String(card.answer).toLowerCase() === String.fromCharCode(65 + cIdx).toLowerCase() ||
-                          String(card.answer).toLowerCase() === choice.toLowerCase())
-                      const letter = String.fromCharCode(65 + cIdx)
+                {Array.isArray(card.choices) && card.choices.length > 0 && (() => {
+                  const correctIdx = resolveCorrectChoiceIndex(card.answer, card.choices)
+                  const isStacked = shouldStackChoices(card.choices)
+                  return (
+                    <div className={`grid ${isStacked ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-2 pt-1`}>
+                      {card.choices.map((choice: string, cIdx: number) => {
+                        const isCorrect = cIdx === correctIdx
+                        const letter = String.fromCharCode(65 + cIdx)
 
                       return (
                         <div
                           key={cIdx}
-                          className={`px-3 py-2 rounded-lg border text-xs font-['Rajdhani'] flex items-start gap-2.5 transition-all ${
+                          className={`px-3 py-2 rounded-lg border text-xs font-['Rajdhani'] flex items-start gap-2.5 transition-all h-full ${
                             isCorrect
                               ? 'bg-accent/10 border-accent/60 text-white shadow-[0_0_14px_rgba(0,255,65,0.18)]'
                               : 'bg-surface-2 border-border-base text-text-muted'
@@ -672,7 +672,8 @@ export function TosCardSearchDemo({
                       )
                     })}
                   </div>
-                )}
+                  )
+                })()}
 
                 {/* Flashcard / Concept Flip Side / Definition */}
                 {isFlashcard && (card.back || card.imagePathBack) && (

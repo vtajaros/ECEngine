@@ -22,6 +22,7 @@ import { GauntletEnduranceStreakDemo } from './gauntlet/GauntletEnduranceStreakD
 import { GauntletExcludedQuestionsDemo } from './gauntlet/GauntletExcludedQuestionsDemo'
 import { GauntletTopicAccuracyDemo } from './gauntlet/GauntletTopicAccuracyDemo'
 import { TosCardSearchDemo } from './TosCardSearchDemo'
+import { TosCardInspectorModal } from './TosCardInspectorModal'
 import { useDataLabStore } from '../../../store/useDataLabStore'
 import { gauntletService } from '../../../services/gauntlet.service'
 
@@ -698,6 +699,50 @@ describe('Data Lab Demo Components', () => {
       expect(container?.textContent).toContain('Diff Cal')
       expect(container?.textContent).toContain('limit of sin(x)/x')
     })
+
+    it('renders topic cards with choices and correct answer highlighted when inspector is opened', async () => {
+      vi.spyOn(dbService, 'getCardsByTosTopic').mockResolvedValue({
+        cards: [
+          {
+            id: 'c-inspector-1',
+            topicId: 't-math-1',
+            deckName: 'Pre-Board Exam Math 2',
+            subject: 'MATH',
+            type: 'mcq',
+            cardNumber: 11,
+            preview: 'A digital control signal traces a position profile s(t) = xe^x. What is third derivative?',
+            choices: ['(x + 3)e^x', '(x + 2)e^x', '3xe^x', 'e^x'],
+            answer: 0,
+            explanation: 'Repeated product rule differentiation.',
+          },
+        ],
+        total: 1,
+      })
+
+      await act(async () => {
+        root!.render(
+          <TosCardInspectorModal
+            isOpen={true}
+            onClose={() => {}}
+            subject="MATH"
+            tosTopicId="MATH-1.3"
+            topicTitle="MATH-1.3 1.3 Higher-Order Derivatives"
+          />
+        )
+        await new Promise((r) => setTimeout(r, 50))
+      })
+
+      expect(container?.textContent).toContain('Pre-Board Exam Math 2')
+      expect(container?.textContent).toContain('A digital control signal traces')
+      expect(container?.textContent).toContain('[A]')
+      expect(container?.textContent).toContain('(x + 3)e^x')
+      expect(container?.textContent).toContain('Correct')
+
+      const correctBadges = Array.from(container?.querySelectorAll('*') || []).filter(
+        (el) => el.textContent?.trim() === 'Correct'
+      )
+      expect(correctBadges.length).toBe(1)
+    })
   })
 
   describe('TosCardSearchDemo', () => {
@@ -808,6 +853,54 @@ describe('Data Lab Demo Components', () => {
       expect(container?.textContent).toContain('Euler Formula')
       expect(container?.textContent).toContain('Formula • Equation & Variables')
       expect(container?.textContent).toContain('Fundamental relationship')
+    })
+
+    it('only marks exactly one choice as correct when choices are numbers that match index values', async () => {
+      vi.spyOn(dbService, 'getCardsByTosTopic').mockResolvedValue({
+        cards: [
+          {
+            id: 'c-math-num-choices',
+            topicId: 't-math-refresher',
+            deckName: 'Math Refresher 2',
+            subject: 'MATH',
+            type: 'mcq',
+            difficulty: 'moderate',
+            tosTopicId: 'MATH-2.2',
+            orderIndex: 0,
+            cardNumber: 14,
+            preview: 'When decomposing the rational integrand...',
+            choices: ['1', '2', '3', '4'],
+            answer: 2, // Choice index 2 is '3' (Option [C])
+            explanation: 'Partial fractions rule',
+          },
+        ],
+        total: 1,
+      })
+
+      await act(async () => {
+        root!.render(
+          <TosCardSearchDemo
+            initialQuery="decomposing"
+            initialSubject="MATH"
+          />
+        )
+        await new Promise((r) => setTimeout(r, 350))
+      })
+
+      // Find all elements or text containing 'Correct'
+      const correctBadges = Array.from(container?.querySelectorAll('*') || []).filter(
+        (el) => el.textContent?.trim() === 'Correct'
+      )
+      // Exactly 1 choice must be marked Correct, NOT 2!
+      expect(correctBadges.length).toBe(1)
+
+      // The container should have [C] styled as correct and not [B]
+      const choiceContainers = container?.querySelectorAll('.grid.grid-cols-1 > div')
+      expect(choiceContainers?.length).toBe(4)
+      if (choiceContainers) {
+        expect(choiceContainers[1].textContent).not.toContain('Correct') // Option B ('2') must NOT be correct
+        expect(choiceContainers[2].textContent).toContain('Correct') // Option C ('3') MUST be correct
+      }
     })
   })
 

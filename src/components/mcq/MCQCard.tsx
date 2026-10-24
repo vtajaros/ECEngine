@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, MCQData } from '../../types'
 import { renderMath, renderPlainText } from '../../lib/latex'
+import { shouldStackChoices } from '../../lib/utils'
 import { formatTosBadge } from '../../lib/tosClassification'
 import { Tooltip } from '../ui/Tooltip'
 import { CheckCircle2, XCircle } from 'lucide-react'
@@ -100,32 +101,35 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
       </div>
 
       {/* Choices */}
-      <div className="w-full grid grid-cols-2 gap-4 select-none">
-        {data.choices.map((choice, index) => {
-          const isSelected = selectedChoice === index
-          const isCorrectAnswer = index === data.answer
-          const showResult = selectedChoice !== null
-          
-          let btnClass = 'bg-[#121212] border border-[#2c2c2c] text-text-muted hover:border-[rgba(0,255,65,0.3)] hover:bg-[#1c1c1c] hover:text-text-primary'
-          
-          if (showResult) {
-            if (isCorrectAnswer) {
-              btnClass = 'bg-[rgba(0,255,65,0.1)] border-accent text-text-primary shadow-[0_0_15px_rgba(0,255,65,0.2)]'
-            } else if (isSelected) {
-              btnClass = 'bg-[rgba(255,51,51,0.1)] border-danger text-text-primary shadow-[0_0_15px_rgba(255,51,51,0.2)]'
-            } else {
-              btnClass = 'bg-[#0e0e0e] border-[#222] text-[#444] opacity-50'
-            }
-          }
+      {(() => {
+        const isStacked = shouldStackChoices(data.choices)
+        return (
+          <div className={`w-full grid ${isStacked ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-4 select-none`}>
+            {data.choices.map((choice, index) => {
+              const isSelected = selectedChoice === index
+              const isCorrectAnswer = index === data.answer
+              const showResult = selectedChoice !== null
+              
+              let btnClass = 'bg-[#121212] border border-[#2c2c2c] text-text-muted hover:border-[rgba(0,255,65,0.3)] hover:bg-[#1c1c1c] hover:text-text-primary'
+              
+              if (showResult) {
+                if (isCorrectAnswer) {
+                  btnClass = 'bg-[rgba(0,255,65,0.1)] border-accent text-text-primary shadow-[0_0_15px_rgba(0,255,65,0.2)]'
+                } else if (isSelected) {
+                  btnClass = 'bg-[rgba(255,51,51,0.1)] border-danger text-text-primary shadow-[0_0_15px_rgba(255,51,51,0.2)]'
+                } else {
+                  btnClass = 'bg-[#0e0e0e] border-[#222] text-[#444] opacity-50'
+                }
+              }
 
-          return (
-            <motion.button
-              key={index}
-              onClick={() => handleSelect(index)}
-              disabled={showResult}
-              whileTap={!showResult ? { scale: 0.98 } : {}}
-              className={`w-full text-left py-4 px-4 rounded-lg flex items-center transition-all duration-300 ${btnClass}`}
-            >
+              return (
+                <motion.button
+                  key={index}
+                  onClick={() => handleSelect(index)}
+                  disabled={showResult}
+                  whileTap={!showResult ? { scale: 0.98 } : {}}
+                  className={`w-full h-full text-left py-4 px-4 rounded-lg flex items-center transition-all duration-300 ${btnClass}`}
+                >
               <div className={`w-6 h-6 flex items-center justify-center rounded border font-['Rajdhani'] font-bold text-sm mr-3 flex-shrink-0 ${
                 showResult && isCorrectAnswer ? 'bg-accent text-[#0D0D0D] border-accent' :
                 showResult && isSelected ? 'bg-danger text-text-primary border-danger' :
@@ -143,6 +147,8 @@ export const MCQCard: React.FC<MCQCardProps> = ({ card, onNext, onAnswer }) => {
           )
         })}
       </div>
+    )
+  })()}
 
       {/* Explanation Panel */}
       <AnimatePresence>

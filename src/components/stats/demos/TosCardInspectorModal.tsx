@@ -1,5 +1,20 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react'
-import { X, Search, Tag, Loader2, BookOpen, AlertCircle, ChevronDown, Check, Image as ImageIcon } from 'lucide-react'
+import {
+  X,
+  Search,
+  Tag,
+  Loader2,
+  BookOpen,
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  Check,
+  CheckCheck,
+  Image as ImageIcon,
+  Sparkles,
+} from 'lucide-react'
+import { renderMath } from '../../../lib/latex'
+import { resolveCorrectChoiceIndex, shouldStackChoices } from '../../../lib/utils'
 import { dbService } from '../../../services/db.service'
 import { TOS_SUBJECT_COLORS } from '../../../lib/tosData'
 import { getTosTopicGroupsBySubject } from '../../../lib/tosClassification'
@@ -35,6 +50,21 @@ export function TosCardInspectorModal({
   const [savingTagId, setSavingTagId] = useState<string | null>(null)
   const [popoverDirection, setPopoverDirection] = useState<'down' | 'up'>('down')
   const popoverRef = useRef<HTMLDivElement | null>(null)
+
+  // Explanation accordions
+  const [expandedExplanationIds, setExpandedExplanationIds] = useState<Set<string>>(new Set())
+
+  const toggleExplanation = (cardId: string) => {
+    setExpandedExplanationIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(cardId)) {
+        next.delete(cardId)
+      } else {
+        next.add(cardId)
+      }
+      return next
+    })
+  }
 
   useEffect(() => {
     if (!isOpen) return
@@ -89,11 +119,12 @@ export function TosCardInspectorModal({
     const q = search.toLowerCase()
     return cards.filter(
       (c) =>
-        c.preview.toLowerCase().includes(q) ||
-        c.deckName.toLowerCase().includes(q) ||
+        (c.preview && c.preview.toLowerCase().includes(q)) ||
+        (c.deckName && c.deckName.toLowerCase().includes(q)) ||
         (c.tosTopicId && c.tosTopicId.toLowerCase().includes(q)) ||
-        (c.cardNumber && `#${c.cardNumber}`.includes(q)) ||
-        c.tags.some((t: string) => t.toLowerCase().includes(q))
+        (c.cardNumber != null && `#${c.cardNumber}`.includes(q)) ||
+        (c.tags && c.tags.some((t: string) => t.toLowerCase().includes(q))) ||
+        (Array.isArray(c.choices) && c.choices.some((ch: string) => typeof ch === 'string' && ch.toLowerCase().includes(q)))
     )
   }, [cards, search])
 
@@ -422,9 +453,103 @@ export function TosCardInspectorModal({
                 </div>
 
                 {/* Question / Front Snippet */}
-                <p className="text-sm font-['JetBrains_Mono'] text-text-primary leading-relaxed whitespace-pre-wrap">
-                  {card.preview || '<No content preview available>'}
-                </p>
+                <div
+                  className="font-['Rajdhani'] font-bold text-sm sm:text-base text-text-primary leading-relaxed mcq-question-text"
+                  dangerouslySetInnerHTML={{ __html: renderMath(card.preview || '<No content preview available>') }}
+                />
+
+                {/* MCQ Choices Preview */}
+                {Array.isArray(card.choices) && card.choices.length > 0 && (() => {
+                  const correctIdx = resolveCorrectChoiceIndex(card.answer, card.choices)
+                  const isStacked = shouldStackChoices(card.choices)
+                  return (
+                    <div className={`grid ${isStacked ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-2 pt-1`}>
+                      {card.choices.map((choice: string, cIdx: number) => {
+                        const isCorrect = cIdx === correctIdx
+                        const letter = String.fromCharCode(65 + cIdx)
+
+                        return (
+                          <div
+                            key={cIdx}
+                            className={`px-3 py-2 rounded-lg border text-xs font-['Rajdhani'] flex items-start gap-2.5 transition-all h-full ${
+                              isCorrect
+                                ? 'bg-accent/10 border-accent/60 text-white shadow-[0_0_14px_rgba(0,255,65,0.18)]'
+                                : 'bg-[#181818] border-border-base text-text-muted'
+                            }`}
+                          >
+                            <span
+                              className={`font-['JetBrains_Mono'] font-bold text-[11px] shrink-0 mt-0.5 ${
+                                isCorrect ? 'text-accent drop-shadow-[0_0_6px_rgba(0,255,65,0.4)]' : 'text-text-muted'
+                              }`}
+                            >
+                              [{letter}]
+                            </span>
+                            <div
+                              className={`flex-1 leading-snug ${isCorrect ? 'text-white font-semibold' : 'font-medium'}`}
+                              dangerouslySetInnerHTML={{ __html: renderMath(choice) }}
+                            />
+                            {isCorrect && (
+                              <span className="shrink-0 text-accent flex items-center gap-1 text-[10px] font-['JetBrains_Mono'] font-bold bg-accent/20 border border-accent/40 px-1.5 py-0.2 rounded shadow-[0_0_8px_rgba(0,255,65,0.2)]">
+                                <CheckCheck size={11} /> Correct
+                              </span>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })()}
+
+                {/* Flashcard / Concept Flip Side / Definition */}
+                {card.type === 'flashcard' && card.back && (
+                  <div className="rounded-xl border border-accent/40 bg-gradient-to-br from-accent/[0.08] via-surface-2 to-[#101010] p-3 flex flex-col gap-2 shadow-[0_0_16px_rgba(0,255,65,0.08)]">
+                    <div className="flex items-center gap-1.5 text-xs font-['Orbitron'] font-bold text-accent tracking-wider uppercase">
+                      <Sparkles size={12} className="text-accent" />
+                      <span>Answer &bull; Definition (Flip Side)</span>
+                    </div>
+                    <div
+                      className="font-['Rajdhani'] font-bold text-sm text-white leading-relaxed"
+                      dangerouslySetInnerHTML={{ __html: renderMath(card.back) }}
+                    />
+                  </div>
+                )}
+
+                {/* Formula Equation (Flip Side) */}
+                {card.type === 'formula' && card.latex && (
+                  <div className="rounded-xl border border-cyan-500/40 bg-gradient-to-br from-cyan-500/[0.08] via-surface-2 to-[#101010] p-3 flex flex-col gap-2 shadow-[0_0_16px_rgba(6,182,212,0.08)]">
+                    <div className="flex items-center gap-1.5 text-xs font-['Orbitron'] font-bold text-cyan-400 tracking-wider uppercase">
+                      <Sparkles size={12} className="text-cyan-400" />
+                      <span>Formula &bull; Equation (Flip Side)</span>
+                    </div>
+                    <div
+                      className="font-['JetBrains_Mono'] text-sm text-cyan-300 font-bold overflow-x-auto py-1"
+                      dangerouslySetInnerHTML={{ __html: renderMath(`$$${card.latex}$$`) }}
+                    />
+                  </div>
+                )}
+
+                {/* Explanation Accordion (if present) */}
+                {card.explanation && (
+                  <div className="flex flex-col gap-1.5 pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => toggleExplanation(card.id)}
+                      className="text-xs text-text-muted hover:text-text-primary font-['JetBrains_Mono'] flex items-center gap-1 self-start transition-colors"
+                    >
+                      {expandedExplanationIds.has(card.id) ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                      <span>{expandedExplanationIds.has(card.id) ? 'Hide Explanation' : 'Show Explanation'}</span>
+                    </button>
+
+                    {expandedExplanationIds.has(card.id) && (
+                      <div className="p-3 rounded-lg bg-[#181818] border border-border-base/70 text-xs font-['Rajdhani'] text-text-muted flex flex-col gap-2 animate-in fade-in duration-150">
+                        <div
+                          className="leading-relaxed text-text-primary font-medium"
+                          dangerouslySetInnerHTML={{ __html: renderMath(card.explanation) }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Question Image Preview if available */}
                 {card.imagePath && (

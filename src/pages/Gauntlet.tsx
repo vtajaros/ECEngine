@@ -20,6 +20,7 @@ import { shuffle } from '../lib/scrambler'
 import { gauntletService } from '../services/gauntlet.service'
 import { dbService } from '../services/db.service'
 import { renderMath, renderPlainText, renderQuestionPreview } from '../lib/latex'
+import { shouldStackChoices } from '../lib/utils'
 import { SUBJECT_LINE_COLOR } from '../lib/dashboardUtils'
 import { formatTosBadge, getTosTopicGroupsBySubject } from '../lib/tosClassification'
 import type { Card, MCQData, Subject } from '../types'
@@ -1351,41 +1352,38 @@ Please explain:
                         )}
 
                         {/* Choices Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 my-1">
-                          {Array.isArray(mcq.choices) &&
-                            mcq.choices.map((choice, idx) => {
-                              const isCorrect = idx === mcq.answer
-                              const isPicked = a.chosen === idx
-                              const renderFn = mcq.choicesPlainText?.[idx] ? renderPlainText : renderMath
-                              const letter = String.fromCharCode(65 + idx)
+                        {(() => {
+                          const isStacked = shouldStackChoices(mcq.choices)
+                          return (
+                            <div className={`grid ${isStacked ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-2 my-1`}>
+                              {Array.isArray(mcq.choices) &&
+                                mcq.choices.map((choice, idx) => {
+                                  const isCorrect = idx === mcq.answer
+                                  const isPicked = a.chosen === idx
+                                  const renderFn = mcq.choicesPlainText?.[idx] ? renderPlainText : renderMath
+                                  const letter = String.fromCharCode(65 + idx)
 
-                              let btnClass = 'border-[#222] bg-[#0e0e0e] text-[#555] opacity-60'
-                              let badgeClass = 'border-[#333] text-[#444] bg-[#0a0a0a]'
-                              let textClass = 'text-[#666]'
+                                  let btnClass = 'border-[#222] bg-[#0e0e0e] text-[#555] opacity-60'
+                                  let badgeClass = 'border-[#333] text-[#444] bg-[#0a0a0a]'
+                                  let textClass = 'text-[#666]'
 
-                              if (isCorrect) {
-                                btnClass =
-                                  'border-[#00FF41] bg-[rgba(0,255,65,0.08)] text-white shadow-[0_0_12px_rgba(0,255,65,0.15)]'
-                                badgeClass = 'bg-[#00FF41] text-[#0D0D0D] border-[#00FF41] font-bold'
-                                textClass = 'text-white font-semibold'
-                              } else if (isPicked) {
-                                btnClass =
-                                  'border-[#ef4444] bg-[rgba(255,51,51,0.08)] text-[#ddd]'
-                                badgeClass = 'bg-[#ef4444] text-[#0D0D0D] border-[#ef4444] font-bold'
-                                textClass = 'text-[#aaa]'
-                              }
+                                  if (isCorrect) {
+                                    btnClass =
+                                      'border-[#00FF41] bg-[rgba(0,255,65,0.08)] text-white shadow-[0_0_12px_rgba(0,255,65,0.15)]'
+                                    badgeClass = 'bg-[#00FF41] text-[#0D0D0D] border-[#00FF41] font-bold'
+                                    textClass = 'text-white font-semibold'
+                                  } else if (isPicked) {
+                                    btnClass =
+                                      'border-[#ef4444] bg-[rgba(255,51,51,0.08)] text-[#ddd]'
+                                    badgeClass = 'bg-[#ef4444] text-[#0D0D0D] border-[#ef4444] font-bold'
+                                    textClass = 'text-[#aaa]'
+                                  }
 
-                              let orderClass = ''
-                              if (idx === 0) orderClass = 'order-1'
-                              else if (idx === 1) orderClass = 'order-2 sm:order-3'
-                              else if (idx === 2) orderClass = 'order-3 sm:order-2'
-                              else if (idx === 3) orderClass = 'order-4'
-
-                              return (
-                                <div
-                                  key={idx}
-                                  className={`p-2.5 rounded-lg border flex items-center gap-2.5 text-xs font-['Rajdhani'] ${btnClass} ${orderClass}`}
-                                >
+                                  return (
+                                    <div
+                                      key={idx}
+                                      className={`p-2.5 rounded-lg border flex items-center gap-2.5 text-xs font-['Rajdhani'] h-full ${btnClass}`}
+                                    >
                                   <span
                                     className={`w-5 h-5 rounded flex items-center justify-center font-bold text-[11px] shrink-0 border ${badgeClass}`}
                                   >
@@ -1405,6 +1403,8 @@ Please explain:
                               )
                             })}
                         </div>
+                      )
+                    })()}
 
                         {/* Solution Diagram */}
                         {mcq.solutionImagePath && (
@@ -2049,74 +2049,73 @@ Please explain:
             </div>
           )}
 
-          {/* Choices in 2x2 Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {Array.isArray(mcq.choices) &&
-              mcq.choices.map((choice, i) => {
-                const renderFn = mcq.choicesPlainText?.[i] ? renderPlainText : renderMath
-                const letter = String.fromCharCode(65 + i)
-                const isRevealed = revealState !== null
-                const isCorrect = isRevealed && i === revealState.correctIndex
-                const isPicked = isRevealed && revealState.chosen === i
-                const isWrongPicked = isPicked && revealState.isWrong
+          {/* Choices in 2x2 Grid or 1-column Stack */}
+          {(() => {
+            const isStacked = shouldStackChoices(mcq.choices)
+            return (
+              <div className={`grid ${isStacked ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2'} gap-4`}>
+                {Array.isArray(mcq.choices) &&
+                  mcq.choices.map((choice, i) => {
+                    const renderFn = mcq.choicesPlainText?.[i] ? renderPlainText : renderMath
+                    const letter = String.fromCharCode(65 + i)
+                    const isRevealed = revealState !== null
+                    const isCorrect = isRevealed && i === revealState.correctIndex
+                    const isPicked = isRevealed && revealState.chosen === i
+                    const isWrongPicked = isPicked && revealState.isWrong
 
-                let btnStyle =
-                  'border-[#2c2c2c] bg-[#121212] hover:bg-[#1c1c1c] hover:border-accent hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] cursor-pointer text-text-muted'
-                let prefixStyle =
-                  'border-[#444] text-text-muted bg-surface/50 group-hover:border-accent group-hover:text-accent'
-                let textStyle = 'text-text-primary'
+                    let btnStyle =
+                      'border-[#2c2c2c] bg-[#121212] hover:bg-[#1c1c1c] hover:border-accent hover:shadow-[0_0_8px_rgba(0,255,65,0.2)] cursor-pointer text-text-muted'
+                    let prefixStyle =
+                      'border-[#444] text-text-muted bg-surface/50 group-hover:border-accent group-hover:text-accent'
+                    let textStyle = 'text-text-primary'
 
-                if (isRevealed) {
-                  if (isCorrect) {
-                    btnStyle =
-                      'border-accent bg-[rgba(0,255,65,0.08)] shadow-[0_0_16px_rgba(0,255,65,0.22)] cursor-default'
-                    prefixStyle = 'bg-accent text-[#0D0D0D] border-accent font-bold'
-                    textStyle = 'text-white'
-                  } else if (isWrongPicked) {
-                    btnStyle =
-                      'border-danger bg-[rgba(255,51,51,0.08)] shadow-[0_0_16px_rgba(255,51,51,0.22)] cursor-default'
-                    prefixStyle = 'bg-danger text-[#0D0D0D] border-danger font-bold'
-                    textStyle = 'text-[#aaa]'
-                  } else {
-                    btnStyle = 'border-[#222] bg-[#0e0e0e] opacity-50 cursor-default'
-                    prefixStyle = 'border-[#333] text-[#444] bg-[#0a0a0a]'
-                    textStyle = 'text-[#555]'
-                  }
-                }
+                    if (isRevealed) {
+                      if (isCorrect) {
+                        btnStyle =
+                          'border-accent bg-[rgba(0,255,65,0.08)] shadow-[0_0_16px_rgba(0,255,65,0.22)] cursor-default'
+                        prefixStyle = 'bg-accent text-[#0D0D0D] border-accent font-bold'
+                        textStyle = 'text-white'
+                      } else if (isWrongPicked) {
+                        btnStyle =
+                          'border-danger bg-[rgba(255,51,51,0.08)] shadow-[0_0_16px_rgba(255,51,51,0.22)] cursor-default'
+                        prefixStyle = 'bg-danger text-[#0D0D0D] border-danger font-bold'
+                        textStyle = 'text-[#aaa]'
+                      } else {
+                        btnStyle = 'border-[#222] bg-[#0e0e0e] opacity-50 cursor-default'
+                        prefixStyle = 'border-[#333] text-[#444] bg-[#0a0a0a]'
+                        textStyle = 'text-[#555]'
+                      }
+                    }
 
-                let orderClass = ''
-                if (i === 0) orderClass = 'order-1'
-                else if (i === 1) orderClass = 'order-2 md:order-3'
-                else if (i === 2) orderClass = 'order-3 md:order-2'
-                else if (i === 3) orderClass = 'order-4'
-
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    disabled={isModalOpen || isRevealed}
-                    onClick={() => handleAnswer(i)}
-                    className={`w-full text-left py-4 px-4 rounded-xl border flex items-center transition-all group disabled:cursor-not-allowed ${btnStyle} ${orderClass}`}
-                  >
-                    <div
-                      className={`w-6 h-6 flex items-center justify-center rounded border font-['Rajdhani'] font-bold text-sm mr-3 shrink-0 transition-colors ${prefixStyle}`}
-                    >
-                      {letter}
-                    </div>
-                    <div
-                      className={`flex-1 text-base font-['Rajdhani'] font-semibold tracking-wide mcq-choice-text leading-snug ${textStyle}`}
-                      dangerouslySetInnerHTML={{ __html: renderFn(choice) }}
-                    />
-                    {isRevealed && isCorrect && (
-                      <CheckCircle2 className="text-accent ml-3 shrink-0" size={20} />
-                    )}
-                    {isRevealed && isWrongPicked && (
-                      <XCircle className="text-danger ml-3 shrink-0" size={20} />
-                    )}
-                  </button>
-                )
-              })}
-          </div>
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        disabled={isModalOpen || isRevealed}
+                        onClick={() => handleAnswer(i)}
+                        className={`w-full h-full text-left py-4 px-4 rounded-xl border flex items-center transition-all group disabled:cursor-not-allowed ${btnStyle}`}
+                      >
+                        <div
+                          className={`w-6 h-6 flex items-center justify-center rounded border font-['Rajdhani'] font-bold text-sm mr-3 shrink-0 transition-colors ${prefixStyle}`}
+                        >
+                          {letter}
+                        </div>
+                        <div
+                          className={`flex-1 text-base font-['Rajdhani'] font-semibold tracking-wide mcq-choice-text leading-snug ${textStyle}`}
+                          dangerouslySetInnerHTML={{ __html: renderFn(choice) }}
+                        />
+                        {isRevealed && isCorrect && (
+                          <CheckCircle2 className="text-accent ml-3 shrink-0" size={20} />
+                        )}
+                        {isRevealed && isWrongPicked && (
+                          <XCircle className="text-danger ml-3 shrink-0" size={20} />
+                        )}
+                      </button>
+                    )
+                  })}
+              </div>
+            )
+          })()}
 
           {/* Bottom Actions */}
           <div className="flex items-center justify-end pt-2 border-t border-border-base/60">

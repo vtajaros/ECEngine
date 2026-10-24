@@ -22,6 +22,7 @@ import {
 import { gauntletService, ExcludedGauntletCard, ExcludedGauntletResult } from '../../../../services/gauntlet.service'
 import { useDataLabStore } from '../../../../store/useDataLabStore'
 import { TOS_SUBJECT_COLORS } from '../../../../lib/tosData'
+import { resolveCorrectChoiceIndex, shouldStackChoices } from '../../../../lib/utils'
 import { TOC_DATA } from '../../../toc/data'
 import { renderMath } from '../../../../lib/latex'
 
@@ -615,15 +616,19 @@ export function GauntletExcludedQuestionsDemo({
                   </div>
 
                   {/* Choices Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {card.choices.map((choice, cIdx) => {
-                      const isCorrect = cIdx === card.answer
-                      const letter = String.fromCharCode(65 + cIdx)
+                  {(() => {
+                    const correctIdx = resolveCorrectChoiceIndex(card.answer, card.choices)
+                    const isStacked = shouldStackChoices(card.choices)
+                    return (
+                      <div className={`grid ${isStacked ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-2`}>
+                        {card.choices.map((choice, cIdx) => {
+                          const isCorrect = cIdx === correctIdx
+                          const letter = String.fromCharCode(65 + cIdx)
 
                       return (
                         <div
                           key={cIdx}
-                          className={`px-3 py-2 rounded-lg border text-xs font-['Rajdhani'] flex items-start gap-2.5 transition-all ${
+                          className={`px-3 py-2 rounded-lg border text-xs font-['Rajdhani'] flex items-start gap-2.5 transition-all h-full ${
                             isCorrect
                               ? 'bg-accent/10 border-accent/60 text-white shadow-[0_0_14px_rgba(0,255,65,0.18)]'
                               : 'bg-surface-2 border-border-base text-text-muted'
@@ -649,6 +654,8 @@ export function GauntletExcludedQuestionsDemo({
                       )
                     })}
                   </div>
+                    )
+                  })()}
 
                   {/* Optional Solution / Explanation */}
                   {(card.explanation || card.solutionImagePath) && (

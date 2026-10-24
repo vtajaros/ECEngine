@@ -162,4 +162,73 @@ describe('PrintView Find Shortcut', () => {
     )
     expect(container?.textContent).toContain("What is Ohm's Law for resistive circuits?")
   })
+
+  it('renders short choices in 2-column grid and long choices in 1-column stacked layout', async () => {
+    vi.spyOn(gauntletService, 'getQuestions').mockResolvedValueOnce([
+      {
+        id: 'tos-card-short',
+        topicId: 'tos_ELECS-1.1',
+        type: 'mcq',
+        difficulty: 'medium',
+        tags: [],
+        isCustom: false,
+        data: {
+          question: 'Short choices question',
+          choices: ['10 V', '20 V', '30 V', '40 V'],
+          answer: 0,
+        },
+      } as any,
+      {
+        id: 'tos-card-long',
+        topicId: 'tos_ELECS-1.1',
+        type: 'mcq',
+        difficulty: 'hard',
+        tags: [],
+        isCustom: false,
+        data: {
+          question: 'Long choices question',
+          choices: [
+            'Short choice A',
+            'This is an exceptionally long multiple choice option that exceeds 45 characters',
+            'Choice C',
+            'Choice D',
+          ],
+          answer: 1,
+        },
+      } as any,
+    ])
+
+    const router = createMemoryRouter(
+      [
+        {
+          path: '/print',
+          element: <PrintView />,
+        },
+      ],
+      {
+        initialEntries: ['/print?topicId=tos_ELECS-1.1&title=1.1%20Resistive%20Network&layout=table'],
+      }
+    )
+
+    await act(async () => {
+      root?.render(<RouterProvider router={router} />)
+    })
+
+    // Find the choice grid containers inside table rows (skipping header row 0)
+    const rows = container?.querySelectorAll('tr') || []
+    expect(rows.length).toBeGreaterThanOrEqual(3)
+
+    const shortChoicesGrid = rows[1]?.querySelector('div[style*="display: grid"]') as HTMLElement
+    const longChoicesGrid = rows[2]?.querySelector('div[style*="display: grid"]') as HTMLElement
+
+    expect(shortChoicesGrid).not.toBeNull()
+    expect(longChoicesGrid).not.toBeNull()
+
+    // Short choices should have 1fr 1fr (2 columns)
+    expect(shortChoicesGrid.style.gridTemplateColumns).toBe('1fr 1fr')
+
+    // Long choices should stack in 1 column (1fr)
+    expect(longChoicesGrid.style.gridTemplateColumns).toBe('1fr')
+  })
 })
+
