@@ -46,21 +46,24 @@ describe('tags management utility', () => {
     mockLocal.clear()
   })
 
-  it('initially returns all predefined tags', () => {
-    const tags = getAllAvailableTags()
-    expect(tags).toEqual(PREDEFINED_TAGS)
+  it('returns no tags on a fresh install', () => {
+    expect(PREDEFINED_TAGS).toEqual([])
+    expect(getAllAvailableTags()).toEqual([])
   })
 
   it('excludes deleted tags when markTagDeleted is called', () => {
+    saveCustomTag('Edge')
+    saveCustomTag('Excel')
     markTagDeleted('Edge')
     const tags = getAllAvailableTags()
     expect(tags).not.toContain('Edge')
     expect(tags).toContain('Excel')
-    expect(tags).toContain('Cuervo')
     expect(getDeletedTags()).toContain('edge')
   })
 
   it('handles multiple deleted tags case-insensitively', () => {
+    saveCustomTag('Cuervo')
+    saveCustomTag('Edge')
     markTagDeleted('CUERVO')
     markTagDeleted('edge')
     const tags = getAllAvailableTags()
