@@ -206,6 +206,46 @@ input[type='number'] {
   padding-left: 0 !important;
 }
 
+/* ── Centered KaTeX Equations Exemption ─────────────────────────────────────
+   Flashcards, formulas, and centered card displays (e.g. .text-center containers,
+   StudyCard, AutoFitText, StatInfoModal) require formulas to be centered
+   horizontally rather than left-aligned so standalone math cards look balanced. */
+.text-center .katex-display,
+.text-center .katex-display > .katex,
+.text-center .katex-display > .katex > .katex-html,
+[data-center-math="true"] .katex-display,
+[data-center-math="true"] .katex-display > .katex,
+[data-center-math="true"] .katex-display > .katex > .katex-html,
+.flashcard-content .katex-display,
+.flashcard-content .katex-display > .katex,
+.flashcard-content .katex-display > .katex > .katex-html {
+  text-align: center !important;
+  text-align: -webkit-center !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.text-center .katex-display.fleqn,
+[data-center-math="true"] .katex-display.fleqn,
+.flashcard-content .katex-display.fleqn {
+  padding-left: 0 !important;
+  text-align: center !important;
+  text-align: -webkit-center !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Ensure left-aligned text blocks inside flashcards (e.g. collapsible explanations)
+   maintain natural left-aligned math */
+.text-left .katex-display,
+.text-left .katex-display > .katex,
+.text-left .katex-display > .katex > .katex-html {
+  text-align: left !important;
+  text-align: -webkit-left !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
 .mcq-choice-text .katex-display,
 .mcq-choice-text .katex-display > .katex {
   margin: 0 !important;

@@ -597,11 +597,15 @@ export function FlashcardSession({
                   <Sparkles className="w-3.5 h-3.5" /> Explain
                 </button>
               )}
-              {/* Skip / Finish (if on last card) — dimmed once rated (feedback+Next Card row below takes over) */}
+              {/* Skip / Finish (if on last card) — disabled in SM-2 study mode so user must pick an SM-2 rating to proceed */}
               <button
                 onClick={handleNextCard}
+                disabled={mode === 'study' || selectedRating !== null}
+                title={mode === 'study' ? 'Select an SM-2 rating to proceed' : undefined}
                 className={`flex items-center gap-2 px-4 py-2 bg-[#111] border rounded font-['Rajdhani'] font-bold uppercase tracking-widest transition-all text-xs ${
-                  selectedRating !== null
+                  mode === 'study'
+                    ? 'border-[#222] text-[#444] opacity-40 cursor-not-allowed'
+                    : selectedRating !== null
                     ? 'border-[#222] text-[#444] pointer-events-none'
                     : 'border-[#333] text-text-muted hover:bg-border-base hover:border-[#555]'
                 }`}

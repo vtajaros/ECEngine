@@ -131,7 +131,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting
               </span>
             </div>
 
-            <div className="flex-1 flex flex-col items-center justify-center text-center w-full">
+            <div className="flex-1 flex flex-col items-center justify-center text-center w-full flashcard-content" data-center-math="true">
               <h2
                 className={`${getDynamicFontSize(data.front)} font-['Rajdhani'] font-semibold leading-snug text-center break-words w-full`}
                 dangerouslySetInnerHTML={{ __html: renderMath(data.front) }}
@@ -164,7 +164,7 @@ export const FlashCard: React.FC<FlashCardProps> = ({ card, onRate, isSubmitting
             <div className="text-center text-text-muted text-sm mb-4 font-['Rajdhani'] uppercase tracking-widest border-b border-[#111111] pb-2">
               Answer
             </div>
-            <div className="flex-1 flex flex-col items-center justify-center text-center overflow-y-auto w-full gap-4">
+            <div className="flex-1 flex flex-col items-center justify-center text-center overflow-y-auto w-full gap-4 flashcard-content" data-center-math="true">
               <div
                 className={`${getDynamicFontSize(data.back)} font-['Rajdhani'] font-medium leading-snug text-center break-words w-full`}
                 dangerouslySetInnerHTML={{ __html: renderMath(data.back) }}

@@ -71,6 +71,8 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 ### 📝 Multiple Choice (MCQ) & "LooksFam" Engine
 
 ![LooksFam MCQ Learn Mode with Instant Answer Validation & AI Explanation](resources/screenshots/looksfam-mcq-learn-mode.png)
+![LooksFam MCQ Learn Settings Modal](resources/screenshots/looksfam-learn-settings-modal.png)
+![LooksFam MCQ Partitioned Learning Round Complete Summary](resources/screenshots/looksfam-round-complete-summary.png)
 
 * **Learn Mode**: Immediate feedback with instant answer validation, detailed solution breakdowns, and AI-powered explanations. Features an ergonomic question header with an integrated, non-overlapping bookmark button.
 * **Intelligent Choice Layout & Adaptive Stacking**:
@@ -136,7 +138,12 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
   * **Centered Tactical Action Bar**: Quick controls for **Get Context** (formatted clipboard export for AI), **AI Explain** (inline step-by-step breakdown), and **Flag Question**.
   * **Filterable Review List**: Filter by All, Mistakes, Skipped/Timeout, or Correct with inline choices and full mathematical solutions.
   * **Session Snapshot Persistence (`useGauntletStore`)**: In-memory and `sessionStorage` snapshot persistence ensures users can seamlessly navigate between Gauntlet and other tabs without losing review progress, replaying game-over sounds, or re-triggering rank-up popups upon return.
+
+  ![Gauntlet Post-Run Tactical Breakdown & Answer Review](resources/screenshots/gauntlet-post-run-review.png)
+
   * **Gauntlet FAQ Modal**: Complete in-game guide covering scoring mechanics, time limits, multipliers, progression tiers, and SM-2 protection.
+
+  ![Gauntlet In-Game Rules, Scoring & FAQ Modal](resources/screenshots/gauntlet-faq-modal.png)
 
 ---
 

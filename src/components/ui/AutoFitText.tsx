@@ -44,10 +44,11 @@ export const AutoFitText: React.FC<AutoFitTextProps> = ({ html, className }) => 
   }, [html])
 
   return (
-    <div ref={containerRef} className="w-full max-w-full flex justify-center items-center overflow-hidden">
+    <div ref={containerRef} className="w-full max-w-full flex justify-center items-center overflow-hidden text-center" data-center-math="true">
       <div 
         ref={contentRef}
-        className={className}
+        className={`${className || ''} text-center`}
+        data-center-math="true"
         style={{
           transform: scale < 1 ? `scale(${scale})` : 'none',
           transformOrigin: 'center center',

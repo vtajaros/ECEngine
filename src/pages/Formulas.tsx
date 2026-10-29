@@ -450,7 +450,9 @@ export default function Formulas() {
         e.preventDefault()
         setIsFlipped((f) => !f)
       }
-      if (e.key === 'ArrowRight') goNext()
+      if (e.key === 'ArrowRight') {
+        if (sessionMode !== 'study') goNext()
+      }
       if (e.key === 'ArrowLeft') goPrev()
       if (e.key === 'f' || e.key === 'F') {
         // Toggle swap term/def and reset flip so front face shows first

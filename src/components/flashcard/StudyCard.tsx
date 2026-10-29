@@ -349,8 +349,8 @@ export const StudyCard = React.memo(function StudyCard({
             </div>
 
             {/* Front Content */}
-            <div className="flex-1 flex items-center justify-center px-8 pb-8 overflow-hidden w-full max-w-full min-w-0">
-              <div className="text-center w-full max-w-full">
+            <div className="flex-1 flex items-center justify-center px-8 pb-8 overflow-hidden w-full max-w-full min-w-0" data-center-math="true">
+              <div className="text-center w-full max-w-full flashcard-content">
                 <AutoFitText className={`${getDynamicFontSize(getFrontText(card, swapTermDef))} font-['Rajdhani'] font-bold text-text-primary leading-relaxed text-center`} html={renderMath(getFrontText(card, swapTermDef))} />
                 {((card.data as any).imagePathFront || card.data.imagePath) && (() => {
                   const frontImg = (card.data as any).imagePathFront || card.data.imagePath!
@@ -395,8 +395,8 @@ export const StudyCard = React.memo(function StudyCard({
             </div>
 
             {/* Back Content */}
-            <div className="flex-1 flex items-center justify-center px-8 pb-4 overflow-hidden w-full max-w-full min-w-0">
-              <div className="text-center w-full text-text-primary flex flex-col items-center gap-4 max-w-full">
+            <div className="flex-1 flex items-center justify-center px-8 pb-4 overflow-hidden w-full max-w-full min-w-0" data-center-math="true">
+              <div className="text-center w-full text-text-primary flex flex-col items-center gap-4 max-w-full flashcard-content">
                 {getBackContent(card, swapTermDef)}
                 {(card.data as any).imageBack && (
                   <div className="w-full h-auto max-h-[300px] flex justify-center overflow-hidden rounded-lg border border-[#333] shadow-lg hover:border-accent transition-all">
