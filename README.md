@@ -15,17 +15,28 @@
 
 ---
 
+
+
 **ECEngine** is a native, offline-first desktop application designed specifically for examinees preparing for the Philippine Electronics Engineering (ECE) and Electronics Technician (ECT) Licensure Exams. Powered by a local SQLite database and modern spaced repetition (SM-2), ECEngine provides an integrated command center for reviewing multiple-choice questions (MCQs), flashcards, and LaTeX formula banks with real-time mathematical rendering.
+
+![ECEngine Review Dashboard & Command Center](resources/screenshots/dashboard-overview.png)
 
 Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-managed via **Zustand**, and styled with a cyberpunk-inspired Tailwind design system and **Framer Motion** animations.
 
 **Supported Platforms**: Windows, macOS, and Linux — 100% offline and cross-platform.
+
+![LooksFam MCQ Decks Browser](resources/screenshots/looksfam-deck-browser.png)
+![Gauntlet Elo Rating Trend Chart](resources/screenshots/gauntlet-elo-trend-chart.png)
+![Gauntlet Arena Speed & Survival Hub](resources/screenshots/gauntlet-mode-hub.png)
+![PRC Table of Specifications (TOS) Breakdown](resources/screenshots/eele-tos-syllabus-breakdown.png)
 
 ---
 
 ## 🚀 Core Features
 
 ### 🧠 Active Recall & Spaced Repetition (SM-2)
+
+![Active Recall SM-2 Flashcard Study Session](resources/screenshots/flashcard-study-sm2.png)
 * **SuperMemo-2 (SM-2) Scheduling Engine**: Fully implemented spaced repetition algorithm (`src/lib/sm2.ts`) that calculates interval expansions and Ease Factor adjustments based on review quality to maximize long-term retention:
   * **Again (`1` / `< 1m`)**: Full lapse / incorrect recall. Resets consecutive repetitions to `0`, resets interval to `1` day, and applies standard SM-2 Ease Factor penalty ($\text{EF} \ge 1.3$).
   * **Hard (`2` / `~5m`)**: Effortful retrieval. Preserves consecutive repetitions, contracts the interval by 20% ($\max(1, \text{round}(\text{Interval} \times 0.8))$), and decreases Ease Factor.
@@ -58,6 +69,9 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 ---
 
 ### 📝 Multiple Choice (MCQ) & "LooksFam" Engine
+
+![LooksFam MCQ Learn Mode with Instant Answer Validation & AI Explanation](resources/screenshots/looksfam-mcq-learn-mode.png)
+
 * **Learn Mode**: Immediate feedback with instant answer validation, detailed solution breakdowns, and AI-powered explanations. Features an ergonomic question header with an integrated, non-overlapping bookmark button.
 * **Intelligent Choice Layout & Adaptive Stacking**:
   * Arranged in row-first reading order (`[A] [B]` on row 1, `[C] [D]` on row 2) matching standard exam reading ergonomics across Learn Mode, Test Mode, PrintView, and Analytics previews.
@@ -76,6 +90,9 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 ---
 
 ### ⚔️ Gauntlet Mode: Speed, Survival & Elo Ratings
+
+![Gauntlet Survival Mode Setup](resources/screenshots/gauntlet-survival-setup.png)
+![Gauntlet Elo Ranking Progression Tiers](resources/screenshots/gauntlet-elo-ranking-tiers.png)
 * **High-Octane Arcade Challenge**: Designed for rapid-fire recall and reflex conditioning under pressure. Correct answers actively contribute to card mastery scores and review statistics while fully protecting your core SM-2 spaced repetition intervals and ease factors from fast-paced error penalties.
 * **Interactive Subject Selection & Real-Time Rank Telemetry**:
   * **Single-Click to Solo · Double-Click to Combine**: Instant single-click subject isolation or double-click combination across **MATH**, **GEAS**, **ELECS**, and **EST** with snappy debounce.
@@ -138,12 +155,18 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 ---
 
 ### 🖨️ Test Paper & PDF Engine (PrintView)
+
+![Test Paper & PDF Engine (PrintView - Cyberpunk Dark Theme)](resources/screenshots/printview-dark-exam-sheet.png)
+
 * **Mock Exam Printouts**: Turn any MCQ, Flashcard, or Formula deck into a high-density, printable exam sheet.
 * **3 Layout Modes**:
   * **Glossary**: Clean two-column vertical study list.
   * **Table**: Compact grid with problem and answer/solution columns.
   * **Q&A**: Classic question-and-answer format.
 * **Themes**: Switch between **Light**, **Sepia**, and **Dark** (default, with cyber-neon green highlights matching the companion app).
+
+![Test Paper & PDF Engine (PrintView - Light Theme Table Mode)](resources/screenshots/printview-light-table-mode.png)
+
 * **Intelligent Choice Flow & Typography**: Questions format choices in intuitive row-first order ($[A]\ [B]$ / $[C]\ [D]$), dynamically collapsing into a single-column stack when options or equations are verbose.
 * **Solution & Answer Toggles**: Show or hide answers and detailed solutions with a single click.
 * **Find in Document (`Ctrl + F`)**: Integrated search bar with live text highlighting (`<mark>`), occurrence counter, and match stepping.
@@ -154,6 +177,8 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 ---
 
 ### 🗂️ Deck Management & Authoring
+
+![Deck Editor with LaTeX MathLive and TOS Classification](resources/screenshots/deck-editor-authoring.png)
 * **Comprehensive Deck Editor**: Create and edit MCQ, Flashcard, and Formula decks with live previews and image attachment support.
 * **Default Deck TOS Topic Support**: Assign a default decimal Table of Specifications category (`default_tos_topic_id`) at the deck level so newly added or imported questions automatically inherit the appropriate syllabus code.
 * **Batch TOS Auto-Tagger Modal (`OperationProgressModal`)**: Full database and deck-level classification utility with choice between overwriting existing tags or tagging untagged questions only, accompanied by real-time progress bar telemetry.
@@ -198,9 +223,15 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
   * **Topic & Subject Item Breakdown**: Real-time item counts and proportional difficulty distribution bars (Easy `--tier-easy`, Moderate `--tier-moderate`, Difficult `--tier-difficult`).
   * **Per-Row Exam Item Mapping**: Fine-grained mapping of subtopics to official exam items with cognitive level badges ($K$ Knowledge, $C$ Comprehension, $A$ Application, $An$ Analysis, $S$ Synthesis, $E$ Evaluation).
   * **Grouped Syllabus Accordions**: Subtopic clusters grouped according to PDF specifications with search filtering and instant text highlighting.
+
+![2022 EELE Table of Specifications Cognitive Level Breakdown](resources/screenshots/tos-cognitive-level-breakdown.png)
+
 * **Interactive Review Checklist**:
   * Synchronously preloaded in-memory state via `useChecklistStore` for instant, flicker-free tab transitions, per-topic accordion expansion state tracking (`expandedTopics`), and offline `localStorage` persistence.
   * Multi-column weighted progress tracking: *Review* (10%), *Refresher* (20%), and *Self Review* (70%) with dynamic subject badges and overall progress animations.
+
+![Interactive Board Exam Review Checklist Tracker](resources/screenshots/review-checklist-tracker.png)
+
 * **Activity Heatmap & Trends**: 6-month study activity heatmap, subject accuracy trends, and mastery metrics.
 * **Gauntlet Subject Elo History Chart (`SubjectEloChart`)**: Interactive dashboard chart visualizing Elo rating evolution over time across **MATH**, **GEAS**, **ELECS**, and **EST** with hover telemetry and subject toggling.
 * **Exam Countdown Timer**: Live countdown clock targeting your scheduled Board Exam date.
@@ -208,6 +239,9 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 ---
 
 ### 🏷️ Table of Specifications (TOS) Classification System
+
+![Table of Specifications Card Inspector Modal](resources/screenshots/tos-card-inspector-modal.png)
+
 * **Official PRC ECE Board Exam Taxonomy**: Built-in hierarchy encompassing 34 parent topics ($x.0$) and 181 granular subtopics ($x.x$) across **Mathematics**, **ELECS** (Electronics Engineering), **GEAS**, and **EST** (Electronics Systems & Technologies) per official PRC Board Examination specifications.
 * **Granular Decimal Tagging**: Cards are classified under granular decimal subtopics ($x.x$) or left untagged, while parent topics ($x.0$) serve as high-level organizational aggregators.
 * **Card & Question Categorization**: Assign decimal TOS topic tags to questions in the Deck Editor with an organized, searchable dropdown and formatted badge previews.
@@ -218,6 +252,9 @@ Built with **Electron 31**, **React 18**, **TypeScript**, and **Vite**, state-ma
 ---
 
 ### 🔬 Data Analytics: TOS Matrix, Statistical EDA & Gauntlet Telemetry
+
+![Topic Accuracy & Mastery Analytics Matrix](resources/screenshots/analytics-topic-mastery.png)
+
 The **Data Analytics Command Center** (`/lab`) provides an integrated, 3-pillar data suite for syllabus mapping, inferential statistics, and competitive speed-run telemetry:
 
 #### 1. ToS Classification & Coverage Matrix (`TosCoverageMatrixDemo`)
@@ -265,6 +302,9 @@ The **Data Analytics Command Center** (`/lab`) provides an integrated, 3-pillar 
 ---
 
 ### 🤖 AI Explanations & Context Generation
+
+![Groq AI On-Demand Step-by-Step Explanation & Memory Tip](resources/screenshots/ai-explanation-breakdown.png)
+
 * **Groq AI Integration**: Direct integration with Groq (`openai/gpt-oss-120b`) for on-demand step-by-step problem explanations and automated deck summaries.
 * **AI-Powered Deck Summaries**: Single-click auto-generation of crisp deck summaries distilling up to 40 sample cards into clean topic phrases without introductory filler.
 * **Dual "Get Context" Split Exporter (`GetContextDropdown`)**:
@@ -272,6 +312,8 @@ The **Data Analytics Command Center** (`/lab`) provides an integrated, 3-pillar 
   * **Visual & Diagram Prompt**: Specialized prompt directing external AI (ChatGPT, Claude, Gemini, Midjourney) to produce mental models, renderable technical diagram code (Mermaid.js, ASCII schematics, SVG), and tailored image-generation prompts.
   * Universal integration across **Gauntlet Review**, **Learn Mode**, **Test Mode**, and **Flashcard Study**.
 * **Live AI Usage & Rate-Limit Dashboard**: Track Groq API rate limits (requests per minute/day and tokens per minute) in real time from Settings, featuring progress indicators, rate-limit warnings (>85%), and dynamic reset countdown timers.
+
+![Groq AI Rate-Limit Telemetry & Usage Monitoring Dashboard](resources/screenshots/ai-usage-rate-limits.png)
 
 ---
 
